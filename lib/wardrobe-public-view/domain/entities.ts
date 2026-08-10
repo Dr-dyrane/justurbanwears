@@ -3,6 +3,8 @@ export type WardrobePublicMediaSlot =
   | "GARMENT_BACK"
   | "MANNEQUIN_FRONT"
   | "MODEL_FRONT"
+  | "MODEL_LEFT_PROFILE"
+  | "MODEL_REAR_THREE_QUARTER"
   | "FABRIC_DETAIL";
 
 export interface WardrobePublicMedia {
@@ -37,7 +39,7 @@ export interface WardrobePublicProduct {
   media: WardrobePublicMedia[];
 }
 
-export const WARDROBE_PUBLIC_VIEW_SCHEMA_VERSION = 3 as const;
+export const WARDROBE_PUBLIC_VIEW_SCHEMA_VERSION = 4 as const;
 
 export interface WardrobePublicViewSnapshot {
   products: WardrobePublicProduct[];

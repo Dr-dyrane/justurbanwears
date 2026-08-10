@@ -6,7 +6,8 @@ import type {
   ShopProductSlug,
 } from "./entities";
 
-export const SHOP_STATE_SCHEMA_VERSION = 2 as const;
+export const SHOP_STATE_SCHEMA_VERSION = 3 as const;
+export const MAX_LOCAL_ORDERS = 25;
 
 export interface CommerceSnapshot {
   saved: ShopProductSlug[];
@@ -16,7 +17,7 @@ export interface CommerceSnapshot {
   notificationPreferences: ShopNotificationPreferences;
 }
 
-export interface StoredShopStateV2 {
+export interface StoredShopStateV3 {
   version: typeof SHOP_STATE_SCHEMA_VERSION;
   data: CommerceSnapshot;
 }
@@ -24,8 +25,8 @@ export interface StoredShopStateV2 {
 export type HydrationState = "idle" | "restoring" | "ready" | "degraded";
 export type ConnectivityState = "online" | "offline";
 export type CartState = "empty" | "ready";
-export type CheckoutState = "idle" | "reviewing" | "placing" | "blocked";
-export type OrderState = "none" | "history" | "received";
+export type CheckoutState = "idle" | "reviewing" | "saving";
+export type OrderState = "none" | "history" | "saved";
 export type PersistenceState = "available" | "unavailable";
 
 export type CommerceLifecycle =
@@ -35,8 +36,8 @@ export type CommerceLifecycle =
   | "browsing"
   | "cart-ready"
   | "checkout-review"
-  | "placing-order"
-  | "order-received"
+  | "saving-checkout"
+  | "checkout-saved"
   | "memory-only";
 
 export interface CommerceMachineState extends CommerceSnapshot {

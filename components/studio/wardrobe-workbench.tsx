@@ -186,20 +186,32 @@ function GarmentCard({ garment }: { garment: Garment }) {
     ? getApprovedPublicListingContract(garment.sku, listing.slug)
     : undefined;
   const approvedCover = approvedContract?.media.find((frame) => frame.slot === "GARMENT_FRONT");
+  const cover = approvedCover
+    ? {
+      src: approvedCover.src,
+      alt: `${garment.title}, approved garment front`,
+      width: 1122,
+      height: 1402,
+    }
+    : garment.reviewCover;
   const gates = garmentReadiness(garment);
   const ready = everyGateReady(gates);
   return (
     <article className="studio-garment-card">
-      <div className={`studio-garment-visual${approvedCover ? " is-photo" : ""}`} data-variant={garment.visual}>
-        {approvedCover ? <img alt={`${garment.title}, approved garment front`} loading="lazy" src={approvedCover.src} /> : null}
+      <div className={`studio-garment-visual${cover ? " is-photo" : ""}`} data-variant={garment.visual}>
+        {cover ? <img alt={cover.alt} height={cover.height} loading="lazy" src={cover.src} width={cover.width} /> : null}
         <span>{garment.category}</span>
-        {approvedCover ? null : <Shirt aria-hidden="true" size={54} strokeWidth={1.1} />}
+        {cover ? null : <Shirt aria-hidden="true" size={54} strokeWidth={1.1} />}
         <small>{garment.sku}</small>
       </div>
       <div className="studio-garment-body">
         <div className="studio-card-heading"><div><small>{garment.sku} · {garment.sizeLabel}</small><h3>{garment.title}</h3></div><LifecycleBadge state={listing?.state ?? garment.state} /></div>
         <p>{garment.color} · {garment.condition}</p>
-        <div className="studio-garment-facts"><span>{formatNaira(garment.price)}</span><span>{garment.quantity} unit{garment.quantity === 1 ? "" : "s"}</span><span>{garment.measurements.length} measurements</span></div>
+        <div className="studio-garment-facts">
+          <span>{garment.price > 0 ? formatNaira(garment.price) : "Price pending"}</span>
+          <span>{garment.quantity} unit{garment.quantity === 1 ? "" : "s"}</span>
+          <span>{garment.measurements.length > 0 ? `${garment.measurements.length} measurements` : "Measurements pending"}</span>
+        </div>
         <ReadinessList gates={gates} compact />
         <MissingMedia garment={garment} />
         <div className="studio-card-actions">

@@ -81,22 +81,28 @@ test("publishes only identity-cleared model fronts with their reviewed bytes", (
   }
 });
 
-test("keeps model backs out of the public catalogue until a rear identity master is approved", () => {
+test("keeps unsupported square-back claims out of the public catalogue", () => {
   for (const product of shopProducts) {
     assert.doesNotMatch(JSON.stringify(product), /05-model-back\.webp/);
   }
 });
 
-test("appends only approved model fronts to the main product gallery", () => {
+test("appends only approved Lulu views to the main product gallery", () => {
   for (const product of shopProducts) {
     const gallery = selectProductGalleryMedia(product);
     const modelFrames = gallery.filter((item) => item.presentation === "model");
 
     if (expectedApprovals.some(({ slug }) => slug === product.slug)) {
-      assert.equal(gallery.length, 5);
-      assert.equal(modelFrames.length, 1);
-      assert.equal(gallery.at(-1)?.src, `/shop/products/${product.slug}/04-model-front.webp`);
-      assert.equal(gallery.at(-1)?.modelAnchorId, "lulu-v2");
+      const expectedModelSources = product.slug === "coral-drift-dress"
+        ? [
+            `/shop/products/${product.slug}/04-model-front.webp`,
+            `/shop/products/${product.slug}/07-model-left-profile.webp`,
+            `/shop/products/${product.slug}/05-model-rear-three-quarter.webp`,
+          ]
+        : [`/shop/products/${product.slug}/04-model-front.webp`];
+      assert.equal(gallery.length, 4 + expectedModelSources.length);
+      assert.deepEqual(modelFrames.map((item) => item.src), expectedModelSources);
+      assert.ok(modelFrames.every((item) => item.modelAnchorId === "lulu-v2"));
     } else {
       assert.equal(gallery.length, 4);
       assert.equal(modelFrames.length, 0);

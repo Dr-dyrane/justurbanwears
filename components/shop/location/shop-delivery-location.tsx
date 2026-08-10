@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { useTheme } from "../../theme/theme-provider";
 import { MapboxGeocoder } from "./mapbox-geocoder";
 import { ShopMapPreview, type ShopLocationCoordinates } from "./shop-map-preview";
+import type { ShopDeliveryId } from "../../../lib/shop/domain/entities";
 
 type GeocodingFeature = Parameters<NonNullable<GeocoderProps["onRetrieve"]>>[0];
 
@@ -24,7 +25,15 @@ function contextName(feature: GeocodingFeature, key: "locality" | "place" | "dis
   return feature.properties.context?.[key]?.name ?? "";
 }
 
-export function ShopDeliveryLocation({ accessToken }: { accessToken: string }) {
+export function ShopDeliveryLocation({
+  accessToken,
+  deliveryId,
+  disabled = false,
+}: {
+  accessToken: string;
+  deliveryId: Exclude<ShopDeliveryId, "pickup">;
+  disabled?: boolean;
+}) {
   const [address, setAddress] = useState<DeliveryAddress>(emptyAddress);
   const [coordinates, setCoordinates] = useState<ShopLocationCoordinates | null>(null);
   const [locationLabel, setLocationLabel] = useState("");
@@ -102,7 +111,9 @@ export function ShopDeliveryLocation({ accessToken }: { accessToken: string }) {
               permanent: false,
               types: new Set(["address", "street", "neighborhood", "locality", "place"]),
             }}
-            placeholder="Search a Lagos address or landmark"
+            placeholder={deliveryId === "lagos"
+              ? "Search a Lagos address or landmark"
+              : "Search an address or landmark in Nigeria"}
             popoverOptions={{ flip: true, offset: 7, placement: "bottom-start" }}
             theme={geocoderTheme}
             value={searchValue}
@@ -124,6 +135,7 @@ export function ShopDeliveryLocation({ accessToken }: { accessToken: string }) {
           <span>Street address</span>
           <input
             autoComplete="street-address"
+            disabled={disabled}
             name="address"
             onChange={(event) => updateAddress("street", event.target.value)}
             required
@@ -134,6 +146,7 @@ export function ShopDeliveryLocation({ accessToken }: { accessToken: string }) {
           <span>Area or city</span>
           <input
             autoComplete="address-level2"
+            disabled={disabled}
             name="area"
             onChange={(event) => updateAddress("area", event.target.value)}
             required
@@ -144,6 +157,7 @@ export function ShopDeliveryLocation({ accessToken }: { accessToken: string }) {
           <span>State</span>
           <input
             autoComplete="address-level1"
+            disabled={disabled}
             name="state"
             onChange={(event) => updateAddress("state", event.target.value)}
             required

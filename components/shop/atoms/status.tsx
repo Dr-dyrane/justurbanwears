@@ -28,7 +28,7 @@ export function ShopStatusIndicator({
 }
 
 export const localCommerceDisclosure =
-  "No payment is taken. Placing the order saves it on this device.";
+  "Payment is required. This checkout is saved only on this device.";
 
 export function LocalCommerceDisclosure({ className }: { className?: string }) {
   return (

@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { OrderStatus } from "../../../../components/shop/order-status";
 
 export const metadata: Metadata = {
-  title: "Order status",
-  description: "Review the latest order status.",
+  title: "Checkout status",
+  description: "Review a checkout saved on this device.",
 };
 
 export default function OrderStatusPage() {

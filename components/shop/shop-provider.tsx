@@ -4,7 +4,8 @@ import { createContext, useContext, useMemo } from "react";
 import { useCommerceMachine } from "../../hooks/shop/use-commerce-machine";
 import type {
   BagItem,
-  ShopDeliveryId,
+  ShopCheckoutRequest,
+  ShopCheckoutSaveResult,
   ShopNotificationPreference,
   ShopNotificationPreferences,
   ShopOrder,
@@ -20,6 +21,8 @@ import type { CommerceService } from "../../lib/shop/services/contracts";
 export type {
   BagItem,
   ShopDeliveryId,
+  ShopCheckoutRequest,
+  ShopCheckoutSaveResult,
   ShopNotificationPreference,
   ShopNotificationPreferences,
   ShopOrder,
@@ -45,7 +48,7 @@ interface ShopContextValue {
   removeFromBag(slug: string): void;
   beginCheckout(): void;
   closeCheckout(): void;
-  placeOrder(deliveryId: ShopDeliveryId): Promise<string>;
+  saveCheckout(request: ShopCheckoutRequest): Promise<ShopCheckoutSaveResult>;
   viewOrder(id: string): void;
 }
 

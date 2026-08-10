@@ -10,6 +10,7 @@ import {
   type CommerceLifecycle,
   type CommerceMachineState,
   type CommerceSnapshot,
+  MAX_LOCAL_ORDERS,
   createInitialCommerceState,
 } from "../domain/state";
 
@@ -27,9 +28,9 @@ export type CommerceCommand =
   | { type: "BAG_ITEM_REMOVED"; slug: ShopProductSlug }
   | { type: "CHECKOUT_OPENED" }
   | { type: "CHECKOUT_CLOSED" }
-  | { type: "ORDER_PLACEMENT_REQUESTED" }
-  | { type: "ORDER_PLACEMENT_SUCCEEDED"; order: ShopOrder }
-  | { type: "ORDER_PLACEMENT_FAILED" }
+  | { type: "CHECKOUT_SAVE_REQUESTED" }
+  | { type: "CHECKOUT_SAVE_SUCCEEDED"; order: ShopOrder }
+  | { type: "CHECKOUT_SAVE_FAILED" }
   | { type: "ORDER_VIEWED"; id: string }
   | { type: "PERSISTENCE_FAILED" };
 
@@ -101,15 +102,9 @@ export function commerceReducer(
       };
     }
     case "CONNECTIVITY_CHANGED": {
-      const offline = command.connectivity === "offline";
       return {
         ...state,
         connectivity: command.connectivity,
-        checkout: offline && state.checkout !== "idle"
-          ? "blocked"
-          : !offline && state.checkout === "blocked" && state.bag.length
-            ? "reviewing"
-            : state.checkout,
       };
     }
     case "SAVED_TOGGLED":
@@ -151,40 +146,32 @@ export function commerceReducer(
     case "CHECKOUT_OPENED":
       return {
         ...state,
-        checkout: !state.bag.length
-          ? "idle"
-          : state.connectivity === "offline"
-            ? "blocked"
-            : "reviewing",
+        checkout: state.bag.length ? "reviewing" : "idle",
       };
     case "CHECKOUT_CLOSED":
       return { ...state, checkout: "idle" };
-    case "ORDER_PLACEMENT_REQUESTED":
+    case "CHECKOUT_SAVE_REQUESTED":
       return {
         ...state,
-        checkout: !state.bag.length
-          ? "idle"
-          : state.connectivity === "offline"
-            ? "blocked"
-            : "placing",
+        checkout: state.bag.length ? "saving" : "idle",
       };
-    case "ORDER_PLACEMENT_SUCCEEDED":
-      if (state.checkout !== "placing") return state;
+    case "CHECKOUT_SAVE_SUCCEEDED":
+      if (state.checkout !== "saving") return state;
       return {
         ...persistentUpdate(state, {
           bag: [],
           orders: [
             command.order,
             ...state.orders.filter((order) => order.id !== command.order.id),
-          ],
+          ].slice(0, MAX_LOCAL_ORDERS),
         }),
         checkout: "idle",
-        order: "received",
+        order: "saved",
       };
-    case "ORDER_PLACEMENT_FAILED":
+    case "CHECKOUT_SAVE_FAILED":
       return {
         ...state,
-        checkout: state.connectivity === "offline" ? "blocked" : "reviewing",
+        checkout: state.bag.length ? "reviewing" : "idle",
       };
     case "ORDER_VIEWED":
       return state.orders.some((order) => order.id === command.id)
@@ -214,10 +201,10 @@ export function selectCommerceSnapshot(state: CommerceMachineState): CommerceSna
 export function selectCommerceLifecycle(state: CommerceMachineState): CommerceLifecycle {
   if (state.hydration === "idle") return "cold-start";
   if (state.hydration === "restoring") return "hydrating";
+  if (state.checkout === "saving") return "saving-checkout";
   if (state.connectivity === "offline") return "offline-local";
-  if (state.checkout === "placing") return "placing-order";
-  if (state.checkout === "reviewing" || state.checkout === "blocked") return "checkout-review";
-  if (state.order === "received") return "order-received";
+  if (state.checkout === "reviewing") return "checkout-review";
+  if (state.order === "saved") return "checkout-saved";
   if (state.cart === "ready") return "cart-ready";
   if (state.persistence === "unavailable") return "memory-only";
   return "browsing";

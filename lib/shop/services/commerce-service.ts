@@ -4,8 +4,9 @@ import { createBrowserShopCatalogPort } from "../db/browser-wardrobe-public-view
 import { createBrowserLocalShopRepository } from "../db/browser-local-repository";
 import type {
   BagItem,
-  ShopDeliveryId,
-  ShopOrder,
+  ShopCheckoutContact,
+  ShopCheckoutFulfillment,
+  ShopCheckoutRequest,
 } from "../domain/entities";
 import type { CommerceSnapshot } from "../domain/state";
 import type { CommerceService, ShopCatalogPort, ShopStateRepository } from "./contracts";
@@ -33,6 +34,46 @@ function createLocalOrderReference(date: Date) {
     ? globalThis.crypto.randomUUID().replaceAll("-", "").slice(0, 6)
     : date.getTime().toString(36).slice(-6);
   return `JUW-${day}-${entropy.toUpperCase()}`;
+}
+
+function cleanField(value: string, maximum: number) {
+  const cleaned = value.trim().replace(/\s+/g, " ");
+  return cleaned.length <= maximum ? cleaned : "";
+}
+
+function normalizeContact(contact: ShopCheckoutContact): ShopCheckoutContact | null {
+  const name = cleanField(contact.name, 100);
+  const email = contact.email.trim().toLowerCase();
+  const phone = cleanField(contact.phone, 30);
+  if (
+    name.length < 2
+    || email.length > 160
+    || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+    || phone.replace(/\D/g, "").length < 7
+  ) {
+    return null;
+  }
+  return { name, email, phone };
+}
+
+function normalizeFulfillment(
+  fulfillment: ShopCheckoutFulfillment,
+): ShopCheckoutFulfillment | null {
+  if (fulfillment.kind === "PICKUP") {
+    return fulfillment.optionId === "pickup"
+      ? { kind: "PICKUP", optionId: "pickup" }
+      : null;
+  }
+  if (fulfillment.optionId !== "lagos" && fulfillment.optionId !== "nationwide") return null;
+  const street = cleanField(fulfillment.address.street, 180);
+  const area = cleanField(fulfillment.address.area, 100);
+  const state = cleanField(fulfillment.address.state, 100);
+  if (!street || !area || !state || fulfillment.address.country !== "Nigeria") return null;
+  return {
+    kind: "DELIVERY",
+    optionId: fulfillment.optionId,
+    address: { street, area, state, country: "Nigeria" },
+  };
 }
 
 export function createCommerceService({
@@ -79,30 +120,60 @@ export function createCommerceService({
       if (!product || product.availability !== "AVAILABLE") return null;
       return { slug: product.slug, size: product.taggedSize };
     },
-    createOrder(snapshot: CommerceSnapshot, deliveryId: ShopDeliveryId): ShopOrder | null {
+    createCheckout(snapshot: CommerceSnapshot, request: ShopCheckoutRequest) {
+      if (!snapshot.bag.length) return { ok: false, reason: "EMPTY_BAG" } as const;
+      const contact = normalizeContact(request.contact);
+      const fulfillment = normalizeFulfillment(request.fulfillment);
+      if (!contact || !fulfillment) return { ok: false, reason: "INVALID_CHECKOUT" } as const;
+
       const seen = new Set<string>();
       const products = snapshot.bag.flatMap((item) => {
         const product = catalog.getProduct(item.slug);
-        if (!product || product.availability !== "AVAILABLE" || seen.has(product.slug)) return [];
+        if (
+          !product
+          || product.availability !== "AVAILABLE"
+          || item.size !== product.taggedSize
+          || seen.has(product.slug)
+        ) return [];
         seen.add(product.slug);
         return [product];
       });
-      if (!products.length) return null;
+      if (products.length !== snapshot.bag.length) {
+        return { ok: false, reason: "BAG_CHANGED" } as const;
+      }
 
-      const delivery = shopDeliveryOptions.find((option) => option.id === deliveryId)
-        ?? shopDeliveryOptions[0];
+      const delivery = shopDeliveryOptions.find((option) => option.id === fulfillment.optionId);
+      if (!delivery) return { ok: false, reason: "INVALID_CHECKOUT" } as const;
       const subtotal = products.reduce((sum, product) => sum + product.price, 0);
-      const placedAt = now();
+      const savedAt = now();
       return {
-        id: createReference(placedAt),
-        itemSlugs: products.map((product) => product.slug),
-        subtotal,
-        deliveryFee: delivery.fee,
-        total: subtotal + delivery.fee,
-        deliveryLabel: delivery.label,
-        deliveryEstimate: delivery.estimate,
-        placedAt: placedAt.toISOString(),
-        status: "ORDER_RECEIVED",
+        ok: true,
+        order: {
+          id: createReference(savedAt),
+          lines: products.map((product) => {
+            const image = product.media?.[0];
+            return {
+              snapshot: "PRODUCT" as const,
+              slug: product.slug,
+              sku: product.sku,
+              name: product.name,
+              taggedSize: product.taggedSize,
+              unitPrice: product.price,
+              quantity: 1 as const,
+              ...(image ? { imageSrc: image.src, imageAlt: image.alt } : {}),
+            };
+          }),
+          contact,
+          fulfillment,
+          subtotal,
+          deliveryFee: delivery.fee,
+          total: subtotal + delivery.fee,
+          deliveryLabel: delivery.label,
+          deliveryEstimate: delivery.estimate,
+          savedAt: savedAt.toISOString(),
+          status: "PAYMENT_REQUIRED",
+          transmission: "LOCAL_ONLY",
+        },
       };
     },
   };

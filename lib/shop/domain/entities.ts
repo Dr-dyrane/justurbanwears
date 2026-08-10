@@ -77,21 +77,97 @@ export interface ShopDeliveryOption {
   estimate: string;
 }
 
+export interface ShopCheckoutContact {
+  name: string;
+  email: string;
+  phone: string;
+}
+
+export interface ShopDeliveryAddress {
+  street: string;
+  area: string;
+  state: string;
+  country: "Nigeria";
+}
+
+export type ShopCheckoutFulfillment =
+  | {
+      kind: "DELIVERY";
+      optionId: Exclude<ShopDeliveryId, "pickup">;
+      address: ShopDeliveryAddress;
+    }
+  | {
+      kind: "PICKUP";
+      optionId: "pickup";
+    };
+
+export interface ShopCheckoutRequest {
+  contact: ShopCheckoutContact;
+  fulfillment: ShopCheckoutFulfillment;
+}
+
+export type ShopOrderLine =
+  | {
+      snapshot: "PRODUCT";
+      slug: ShopProductSlug;
+      sku: string;
+      name: string;
+      taggedSize: string;
+      unitPrice: NairaAmount;
+      quantity: 1;
+      imageSrc?: string;
+      imageAlt?: string;
+    }
+  | {
+      snapshot: "LEGACY";
+      slug: ShopProductSlug;
+      quantity: 1;
+    };
+
+export type ShopOrderFulfillment =
+  | ShopCheckoutFulfillment
+  | {
+      kind: "LEGACY";
+      optionId: null;
+    };
+
+export type ShopOrderTransmission = "LOCAL_ONLY" | "SUBMITTED";
+
 export type ShopOrderStatus =
+  | "PAYMENT_REQUIRED"
   | "ORDER_RECEIVED"
   | "QUALITY_CHECK"
   | "READY_FOR_HANDOFF"
   | "IN_TRANSIT"
-  | "DELIVERED";
+  | "DELIVERED"
+  | "CANCELLED";
 
 export interface ShopOrder {
   id: ShopOrderReference;
-  itemSlugs: ShopProductSlug[];
+  lines: ShopOrderLine[];
+  contact: ShopCheckoutContact | null;
+  fulfillment: ShopOrderFulfillment;
   subtotal: NairaAmount;
   deliveryFee: NairaAmount;
   total: NairaAmount;
   deliveryLabel: string;
   deliveryEstimate: string;
-  placedAt: string;
+  savedAt: string;
   status: ShopOrderStatus;
+  transmission: ShopOrderTransmission;
 }
+
+export type ShopCheckoutFailureReason =
+  | "EMPTY_BAG"
+  | "BAG_CHANGED"
+  | "INVALID_CHECKOUT"
+  | "IN_PROGRESS"
+  | "PERSISTENCE_FAILED";
+
+export type ShopCheckoutCreationResult =
+  | { ok: true; order: ShopOrder }
+  | { ok: false; reason: Exclude<ShopCheckoutFailureReason, "IN_PROGRESS" | "PERSISTENCE_FAILED"> };
+
+export type ShopCheckoutSaveResult =
+  | { ok: true; orderId: ShopOrderReference }
+  | { ok: false; reason: ShopCheckoutFailureReason };

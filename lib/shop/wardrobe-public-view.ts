@@ -17,6 +17,8 @@ const mediaPresentation: Record<WardrobePublicMedia["slot"], ProductMediaPresent
   GARMENT_BACK: "garment",
   MANNEQUIN_FRONT: "mannequin",
   MODEL_FRONT: "model",
+  MODEL_LEFT_PROFILE: "model",
+  MODEL_REAR_THREE_QUARTER: "model",
   FABRIC_DETAIL: "garment",
 };
 
@@ -25,6 +27,8 @@ const mediaView: Record<WardrobePublicMedia["slot"], ProductMediaView> = {
   GARMENT_BACK: "back",
   MANNEQUIN_FRONT: "front",
   MODEL_FRONT: "front",
+  MODEL_LEFT_PROFILE: "side",
+  MODEL_REAR_THREE_QUARTER: "three-quarter",
   FABRIC_DETAIL: "detail",
 };
 
@@ -33,6 +37,8 @@ const mediaLabel: Record<WardrobePublicMedia["slot"], string> = {
   GARMENT_BACK: "Garment back",
   MANNEQUIN_FRONT: "On mannequin",
   MODEL_FRONT: "On Lulu · front",
+  MODEL_LEFT_PROFILE: "On Lulu · left profile",
+  MODEL_REAR_THREE_QUARTER: "On Lulu · rear three-quarter",
   FABRIC_DETAIL: "Fabric detail",
 };
 
@@ -40,7 +46,7 @@ function publicMedia(product: WardrobePublicProduct, item: WardrobePublicMedia):
   const presentation = mediaPresentation[item.slot];
   const view = mediaView[item.slot];
   const label = mediaLabel[item.slot];
-  const isModel = item.slot === "MODEL_FRONT";
+  const isModel = item.slot.startsWith("MODEL_");
   return {
     id: item.slot.toLowerCase().replaceAll("_", "-"),
     src: item.src,
@@ -75,7 +81,7 @@ export function wardrobePublicProductToShopProduct(product: WardrobePublicProduc
     drop: product.drop,
     tone: product.tone,
     silhouette: product.silhouette,
-    media: media.filter((item) => item.presentation !== "model"),
+    media: media.filter((item) => item.presentation !== "model" || item.view !== "front"),
     modelTryout: modelFront
       ? { modelStatus: "APPROVED", modelAnchorId: product.modelAnchor.id, frame: modelFront }
       : { modelStatus: "PENDING" },

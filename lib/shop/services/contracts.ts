@@ -1,8 +1,8 @@
 import type {
   BagItem,
   ShopAvailability,
-  ShopDeliveryId,
-  ShopOrder,
+  ShopCheckoutCreationResult,
+  ShopCheckoutRequest,
   ShopProduct,
 } from "../domain/entities";
 import type { CommerceSnapshot, ConnectivityState } from "../domain/state";
@@ -31,6 +31,9 @@ export interface CommerceService {
   readConnectivity(): ConnectivityState;
   subscribeConnectivity(listener: (state: ConnectivityState) => void): () => void;
   getProductAvailability(slug: string): ShopAvailability | null;
-  createOrder(snapshot: CommerceSnapshot, deliveryId: ShopDeliveryId): ShopOrder | null;
+  createCheckout(
+    snapshot: CommerceSnapshot,
+    request: ShopCheckoutRequest,
+  ): ShopCheckoutCreationResult;
   normalizeBagItem(item: BagItem): BagItem | null;
 }

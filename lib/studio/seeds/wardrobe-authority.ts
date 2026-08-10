@@ -8,6 +8,10 @@ import type { StudioSnapshot } from "../domain/state";
 import {
   WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS,
 } from "../../wardrobe-public-view/seeds";
+import {
+  WARDROBE_PUBLIC_DRAFTS,
+  type WardrobePublicDraftSlug,
+} from "../../wardrobe-public-view/drafts";
 
 const MIGRATION_CREATED_AT = "2026-08-10T00:00:00.000Z";
 
@@ -97,37 +101,95 @@ const migrationRows = WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS.map((product) => {
   return { garment, inventory, listing };
 });
 
-const reviewedDrafts: Array<{ garment: Garment; inventory: InventoryRecord }> = [
-  {
-    garment: {
-      id: "wardrobe-reviewed-nude-ruched-sundress",
-      sku: "REVIEW-NUDE-RUCHED-001",
-      title: "Nude ruched sundress",
-      category: "Dress",
-      sizeLabel: "Pending",
-      estimatedFit: "Pending",
-      color: "Nude",
-      price: 0,
-      condition: "Pending inspection",
-      source: "Reviewed candidate",
-      notes: "Size, measurements, and condition remain pending.",
-      privateNote: "",
-      publicDescription: "",
-      quantity: 1,
-      saleEligible: false,
-      measurements: [],
-      classificationState: "DRAFT",
-      mediaState: "EMPTY",
-      state: "DRAFT",
-      availability: "ARCHIVED",
-      canonState: "DRAFT",
-      visual: "umber",
-      references: [],
-      createdAt: MIGRATION_CREATED_AT,
-    },
+interface ReviewedDraftAuthoritySpec {
+  id: string;
+  sku: string;
+  visual: Garment["visual"];
+  referenceId: string;
+  quality: number;
+}
+
+const REVIEWED_DRAFT_AUTHORITY = {
+  "blush-scoop-mini-dress": {
+    id: "wardrobe-reviewed-nude-ruched-sundress",
+    sku: "REVIEW-BLUSH-MINI-001",
+    visual: "umber",
+    referenceId: "review-cover-blush-front",
+    quality: 0.72,
+  },
+  "orchid-beaded-column-gown": {
+    id: "wardrobe-reviewed-purple-beaded-evening-gown",
+    sku: "REVIEW-PURPLE-BEADED-002",
+    visual: "plum",
+    referenceId: "review-cover-orchid-front",
+    quality: 0.88,
+  },
+  "sage-asymmetric-ruched-maxi-dress": {
+    id: "wardrobe-reviewed-draft-003",
+    sku: "REVIEW-SAGE-RUCHED-003",
+    visual: "moss",
+    referenceId: "review-cover-sage-front",
+    quality: 0.86,
+  },
+  "magenta-plunge-ruched-mini-dress": {
+    id: "wardrobe-reviewed-draft-004",
+    sku: "REVIEW-MAGENTA-PLUNGE-004",
+    visual: "plum",
+    referenceId: "review-cover-magenta-front",
+    quality: 0.78,
+  },
+  "silver-off-shoulder-mermaid-dress": {
+    id: "wardrobe-reviewed-draft-005",
+    sku: "REVIEW-SILVER-MERMAID-005",
+    visual: "chalk",
+    referenceId: "review-cover-silver-front",
+    quality: 0.68,
+  },
+  "multicolor-abstract-strapless-mini-dress": {
+    id: "wardrobe-reviewed-draft-006",
+    sku: "REVIEW-ABSTRACT-STRAPLESS-006",
+    visual: "plum",
+    referenceId: "review-cover-abstract-front",
+    quality: 0.82,
+  },
+} satisfies Record<WardrobePublicDraftSlug, ReviewedDraftAuthoritySpec>;
+
+function createReviewedDraft(
+  draft: (typeof WARDROBE_PUBLIC_DRAFTS)[number],
+): { garment: Garment; inventory: InventoryRecord } {
+  const authority = REVIEWED_DRAFT_AUTHORITY[draft.slug];
+  const garment: Garment = {
+    id: authority.id,
+    sku: authority.sku,
+    title: draft.name,
+    category: "Dress",
+    sizeLabel: "Pending",
+    estimatedFit: "Pending",
+    color: draft.colour,
+    price: 0,
+    condition: "Pending inspection",
+    source: "Operator wardrobe intake",
+    notes: "Front study ready. Back, detail, size, measurements, and condition remain pending.",
+    privateNote: "",
+    publicDescription: "",
+    quantity: 1,
+    saleEligible: false,
+    measurements: [],
+    classificationState: "DRAFT",
+    mediaState: "DRAFT",
+    state: "DRAFT",
+    availability: "ARCHIVED",
+    canonState: "DRAFT",
+    visual: authority.visual,
+    references: [{ id: authority.referenceId, view: "FRONT", quality: authority.quality }],
+    reviewCover: { ...draft.cover },
+    createdAt: MIGRATION_CREATED_AT,
+  };
+  return {
+    garment,
     inventory: {
-      id: "wardrobe-stock-reviewed-nude-ruched-sundress",
-      garmentId: "wardrobe-reviewed-nude-ruched-sundress",
+      id: `wardrobe-stock-${authority.id.replace(/^wardrobe-/, "")}`,
+      garmentId: authority.id,
       onHand: 1,
       reserved: 0,
       sold: 0,
@@ -136,47 +198,10 @@ const reviewedDrafts: Array<{ garment: Garment; inventory: InventoryRecord }> = 
       state: "DRAFT",
       updatedAt: MIGRATION_CREATED_AT,
     },
-  },
-  {
-    garment: {
-      id: "wardrobe-reviewed-purple-beaded-evening-gown",
-      sku: "REVIEW-PURPLE-BEADED-002",
-      title: "Purple beaded evening gown",
-      category: "Dress",
-      sizeLabel: "Pending",
-      estimatedFit: "Pending",
-      color: "Purple",
-      price: 0,
-      condition: "Pending inspection",
-      source: "Reviewed candidate",
-      notes: "Size, measurements, and condition remain pending.",
-      privateNote: "",
-      publicDescription: "",
-      quantity: 1,
-      saleEligible: false,
-      measurements: [],
-      classificationState: "DRAFT",
-      mediaState: "EMPTY",
-      state: "DRAFT",
-      availability: "ARCHIVED",
-      canonState: "DRAFT",
-      visual: "plum",
-      references: [],
-      createdAt: MIGRATION_CREATED_AT,
-    },
-    inventory: {
-      id: "wardrobe-stock-reviewed-purple-beaded-evening-gown",
-      garmentId: "wardrobe-reviewed-purple-beaded-evening-gown",
-      onHand: 1,
-      reserved: 0,
-      sold: 0,
-      returned: 0,
-      writeOff: 0,
-      state: "DRAFT",
-      updatedAt: MIGRATION_CREATED_AT,
-    },
-  },
-];
+  };
+}
+
+const reviewedDrafts = WARDROBE_PUBLIC_DRAFTS.map(createReviewedDraft);
 
 export const WARDROBE_AUTHORITY_MANAGED_SLUGS = Object.freeze(
   WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS.map((product) => product.slug),
@@ -184,6 +209,38 @@ export const WARDROBE_AUTHORITY_MANAGED_SLUGS = Object.freeze(
 
 function normalizedSku(value: string) {
   return value.trim().toUpperCase();
+}
+
+const LEGACY_REVIEWED_SKUS = new Map([
+  ["wardrobe-reviewed-nude-ruched-sundress", "REVIEW-NUDE-RUCHED-001"],
+]);
+
+function upgradeLegacyBlushDraft(existing: Garment, seed: Garment): Garment {
+  const isExactLegacyPlaceholder = existing.id === "wardrobe-reviewed-nude-ruched-sundress"
+    && normalizedSku(existing.sku) === "REVIEW-NUDE-RUCHED-001"
+    && existing.title === "Nude ruched sundress"
+    && existing.color === "Nude"
+    && existing.source === "Reviewed candidate"
+    && existing.notes === "Size, measurements, and condition remain pending."
+    && existing.state === "DRAFT"
+    && existing.mediaState === "EMPTY"
+    && existing.visual === "umber"
+    && !existing.saleEligible
+    && existing.references.length === 0
+    && !existing.reviewCover;
+  if (!isExactLegacyPlaceholder) return existing;
+  return {
+    ...existing,
+    sku: seed.sku,
+    title: seed.title,
+    color: seed.color,
+    source: seed.source,
+    notes: seed.notes,
+    mediaState: seed.mediaState,
+    visual: seed.visual,
+    references: seed.references.map((reference) => ({ ...reference })),
+    reviewCover: seed.reviewCover,
+  };
 }
 
 /** Merge missing seeds while preserving every matching user-owned record. */
@@ -199,11 +256,18 @@ export function mergeWardrobeAuthoritySeeds(snapshot: StudioSnapshot): StudioSna
   ];
 
   for (const seed of seeds) {
+    const legacySku = LEGACY_REVIEWED_SKUS.get(seed.id);
     const existing = garments.find((garment) =>
-      garment.id === seed.id || normalizedSku(garment.sku) === normalizedSku(seed.sku),
+      garment.id === seed.id
+      || normalizedSku(garment.sku) === normalizedSku(seed.sku)
+      || (legacySku ? normalizedSku(garment.sku) === legacySku : false),
     );
     if (existing) {
       garmentIdMap.set(seed.id, existing.id);
+      if (seed.id === "wardrobe-reviewed-nude-ruched-sundress") {
+        const index = garments.indexOf(existing);
+        garments[index] = upgradeLegacyBlushDraft(existing, seed);
+      }
       continue;
     }
     garments.push(seed);

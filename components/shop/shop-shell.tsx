@@ -5,7 +5,7 @@ import {
   CircleUserRound,
   Heart,
   House,
-  Package,
+  ReceiptText,
   Search,
   ShoppingBag,
   type LucideIcon,
@@ -22,7 +22,7 @@ const nav: Array<{ href: string; label: string; icon: LucideIcon }> = [
   { href: "/shop", label: "Home", icon: House },
   { href: "/shop/search", label: "Search", icon: Search },
   { href: "/shop/saved", label: "Saved", icon: Heart },
-  { href: "/shop/orders", label: "Orders", icon: Package },
+  { href: "/shop/orders", label: "Checkouts", icon: ReceiptText },
 ];
 
 function ShopChrome({ children }: { children: React.ReactNode }) {
@@ -61,7 +61,7 @@ function ShopChrome({ children }: { children: React.ReactNode }) {
       : pathname === "/shop/search"
         ? { eyebrow: "Editorial rail", label: "Browse the complete edit", href: "/shop#discover" }
       : pathname.startsWith("/shop/orders")
-        ? { eyebrow: "After the update", label: "Find another piece", href: "/shop/search" }
+        ? { eyebrow: "Payment next", label: "Review saved checkouts", href: "/shop/orders" }
         : { eyebrow: "August edit", label: "Search the complete edit", href: "/shop/search" };
 
   return (

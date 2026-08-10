@@ -89,18 +89,23 @@ export function resolveApprovedModelTryout(
 }
 
 /**
- * The main product gallery may show the same cleared model front as the
- * focused tryout sheet. Pending or malformed model media never enters it.
+ * The main product gallery shows product-only frames first, then the approved
+ * front tryout and any additional views tied to that same model anchor.
  */
 export function selectProductGalleryMedia(
   product: Pick<ShopProduct, "media" | "modelTryout">,
 ): readonly ShopProductMedia[] {
   const productMedia = product.media ?? [];
   const approved = resolveApprovedModelTryout(product.modelTryout);
+  const productOnly = productMedia.filter((item) => item.presentation !== "model");
 
-  if (!approved || productMedia.some((item) => item.src === approved.frame.src)) {
-    return productMedia;
-  }
+  if (!approved) return productOnly;
 
-  return [...productMedia, approved.frame];
+  const additionalViews = productMedia.filter((item) =>
+    item.presentation === "model"
+    && item.view !== "front"
+    && item.modelAnchorId === approved.modelAnchorId,
+  );
+
+  return [...productOnly, approved.frame, ...additionalViews];
 }

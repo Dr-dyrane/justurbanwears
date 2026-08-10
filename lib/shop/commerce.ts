@@ -15,9 +15,9 @@ export const shopDeliveryOptions: ShopDeliveryOption[] = [
   {
     id: "pickup",
     label: "Studio pickup",
-    note: "Collect in person after confirmation.",
+    note: "Lagos collection by appointment.",
     fee: 0,
-    estimate: "Next working day",
+    estimate: "After payment",
   },
   {
     id: "nationwide",
@@ -28,21 +28,18 @@ export const shopDeliveryOptions: ShopDeliveryOption[] = [
   },
 ];
 
-export const orderTimeline: Array<{
-  status: ShopOrderStatus;
+export const checkoutProgress: Array<{
+  id: "SAVED" | "PAYMENT" | "FULFILMENT";
   label: string;
   note: string;
 }> = [
-  { status: "ORDER_RECEIVED", label: "Order received", note: "Saved to this device." },
-  { status: "QUALITY_CHECK", label: "Quality check", note: "The garment condition is confirmed before handoff." },
-  { status: "READY_FOR_HANDOFF", label: "Ready for handoff", note: "The piece is prepared for pickup or courier collection." },
-  { status: "IN_TRANSIT", label: "In transit", note: "The carrier has accepted the parcel." },
-  { status: "DELIVERED", label: "Delivered", note: "The parcel has reached its destination." },
+  { id: "SAVED", label: "Checkout saved", note: "On this device." },
+  { id: "PAYMENT", label: "Secure payment", note: "Required next." },
+  { id: "FULFILMENT", label: "Fulfilment", note: "Starts after payment." },
 ];
 
 export function getOrderStep(order: ShopOrder) {
-  const index = orderTimeline.findIndex((item) => item.status === order.status);
-  return Math.max(index, 0);
+  return order.status === "PAYMENT_REQUIRED" ? 1 : 2;
 }
 
 export function formatOrderDate(value: string) {
@@ -52,7 +49,16 @@ export function formatOrderDate(value: string) {
 }
 
 export function getOrderStatusLabel(status: ShopOrderStatus) {
-  return orderTimeline.find((item) => item.status === status)?.label ?? "Order received";
+  const labels: Record<ShopOrderStatus, string> = {
+    PAYMENT_REQUIRED: "Payment required",
+    ORDER_RECEIVED: "Order received",
+    QUALITY_CHECK: "Quality check",
+    READY_FOR_HANDOFF: "Ready for handoff",
+    IN_TRANSIT: "In transit",
+    DELIVERED: "Delivered",
+    CANCELLED: "Cancelled",
+  };
+  return labels[status];
 }
 
 export type {

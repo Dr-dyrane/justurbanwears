@@ -5,7 +5,7 @@ import {
   ChevronRight,
   CloudOff,
   Heart,
-  Package,
+  ReceiptText,
   Store,
   SunMoon,
   UserRound,
@@ -27,8 +27,8 @@ const notificationRows: Array<{
 }> = [
   {
     id: "delivery",
-    label: "Order updates",
-    note: "Delivery and status messages",
+    label: "Checkout updates",
+    note: "Payment and status messages",
   },
   {
     id: "saved",
@@ -86,7 +86,7 @@ export function ShopAccount() {
               <ChevronRight aria-hidden="true" size={17} />
             </Link>
             <Link href="/shop/orders">
-              <span><Package aria-hidden="true" size={18} strokeWidth={1.7} /><span><strong>Orders</strong><small>{orders.length} {orders.length === 1 ? "order" : "orders"}</small></span></span>
+              <span><ReceiptText aria-hidden="true" size={18} strokeWidth={1.7} /><span><strong>Saved checkouts</strong><small>{orders.length} {orders.length === 1 ? "checkout" : "checkouts"}</small></span></span>
               <ChevronRight aria-hidden="true" size={17} />
             </Link>
             <ShopSwitchControl

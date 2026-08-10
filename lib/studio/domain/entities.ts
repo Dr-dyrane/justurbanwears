@@ -100,6 +100,13 @@ export interface GarmentMeasurement {
   value: string;
 }
 
+export interface GarmentReviewCover {
+  src: `/studio/wardrobe/${string}/01-garment-front.webp`;
+  alt: string;
+  width: number;
+  height: number;
+}
+
 export type PublicListingMediaSlot = WardrobePublicMediaSlot;
 export type PublicListingMediaProjection = WardrobePublicMedia;
 export type PublicModelAnchorProjection = WardrobePublicModelAnchor;
@@ -129,6 +136,7 @@ export interface Garment {
   canonState: CanonState;
   visual: VisualVariant;
   references: GarmentReference[];
+  reviewCover?: GarmentReviewCover;
   heroGenerationId?: string;
   createdAt: string;
 }

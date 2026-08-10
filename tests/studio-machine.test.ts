@@ -102,10 +102,12 @@ test("the linked Studio lifecycle reaches return-to-readiness without leaking pr
   assert.equal("references" in publicView[0], false);
   assert.equal("modelId" in publicView[0], false);
   assert.deepEqual(publicView[0].modelAnchor, APPROVED_PUBLIC_MODEL_ANCHOR);
-  assert.equal(publicView[0].media.length, 5);
+  assert.equal(publicView[0].media.length, 7);
   assert.equal(publicView[0].media[0].src, "/shop/products/coral-drift-dress/01-garment-front.webp");
   assert.equal(publicView[0].media[3].src, "/shop/products/coral-drift-dress/04-model-front.webp");
   assert.equal(publicView[0].media[4].src, "/shop/products/coral-drift-dress/06-fabric-detail.webp");
+  assert.equal(publicView[0].media[5].src, "/shop/products/coral-drift-dress/07-model-left-profile.webp");
+  assert.equal(publicView[0].media[6].src, "/shop/products/coral-drift-dress/05-model-rear-three-quarter.webp");
   assert.doesNotMatch(JSON.stringify(publicView[0].media), /05-model-back/);
   assert.equal(JSON.stringify(publicView[0]).includes(garment.privateNote), false);
   assert.equal(JSON.stringify(publicView[0]).includes(garment.source), false);
@@ -204,9 +206,9 @@ test("writing off a returned sold unit preserves other sellable units", () => {
   assert.equal(state.listings[0].publicProjection?.availability, "AVAILABLE");
 });
 
-test("approved wardrobe public-view contracts expose product views and only cleared Lulu fronts", () => {
-  assert.equal(WARDROBE_PUBLIC_VIEW_PROJECTION_SCHEMA_VERSION, 3);
-  assert.equal(WARDROBE_PUBLIC_VIEW_STORAGE_KEY, "justurban-wears:wardrobe-public-view:v3");
+test("approved wardrobe public-view contracts expose only cleared Lulu views", () => {
+  assert.equal(WARDROBE_PUBLIC_VIEW_PROJECTION_SCHEMA_VERSION, 4);
+  assert.equal(WARDROBE_PUBLIC_VIEW_STORAGE_KEY, "justurban-wears:wardrobe-public-view:v4");
   for (const listing of APPROVED_PUBLIC_LISTINGS) {
     const contract = getApprovedPublicListingContract(listing.sku, listing.slug);
     assert.ok(contract);
@@ -220,6 +222,12 @@ test("approved wardrobe public-view contracts expose product views and only clea
         ? [`/shop/products/${listing.slug}/04-model-front.webp`]
         : []),
       `/shop/products/${listing.slug}/06-fabric-detail.webp`,
+      ...(listing.slug === "coral-drift-dress"
+        ? [
+            `/shop/products/${listing.slug}/07-model-left-profile.webp`,
+            `/shop/products/${listing.slug}/05-model-rear-three-quarter.webp`,
+          ]
+        : []),
     ];
     assert.deepEqual(
       contract.media.map((frame) => frame.src),

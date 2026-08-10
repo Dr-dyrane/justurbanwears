@@ -17,7 +17,12 @@ export const WARDROBE_APPROVED_MODEL_FRONT_SLUGS = Object.freeze([
   "salmon-camp-shirt",
 ] as const);
 
+export const WARDROBE_APPROVED_MODEL_MULTI_VIEW_SLUGS = Object.freeze([
+  "coral-drift-dress",
+] as const);
+
 const modelFrontSlugs = new Set<string>(WARDROBE_APPROVED_MODEL_FRONT_SLUGS);
+const modelMultiViewSlugs = new Set<string>(WARDROBE_APPROVED_MODEL_MULTI_VIEW_SLUGS);
 
 function migrationMedia(slug: string): WardrobePublicMedia[] {
   return [
@@ -28,6 +33,18 @@ function migrationMedia(slug: string): WardrobePublicMedia[] {
       ? [{ slot: "MODEL_FRONT" as const, src: `/shop/products/${slug}/04-model-front.webp` }]
       : []),
     { slot: "FABRIC_DETAIL", src: `/shop/products/${slug}/06-fabric-detail.webp` },
+    ...(modelMultiViewSlugs.has(slug)
+      ? [
+          {
+            slot: "MODEL_LEFT_PROFILE" as const,
+            src: `/shop/products/${slug}/07-model-left-profile.webp`,
+          },
+          {
+            slot: "MODEL_REAR_THREE_QUARTER" as const,
+            src: `/shop/products/${slug}/05-model-rear-three-quarter.webp`,
+          },
+        ]
+      : []),
   ];
 }
 

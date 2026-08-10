@@ -8,6 +8,7 @@ import { ShopLink as Link } from "./atoms/shop-link";
 import { ProductCard } from "./product-card";
 import { ProductVisual } from "./product-visual";
 import { useShop } from "./shop-provider";
+import { WardrobePreview } from "./wardrobe-preview";
 
 type Category = (typeof shopCategories)[number];
 
@@ -99,6 +100,8 @@ export function ShopHome() {
         )}
         <p className="shop-hero-aside">{dropProducts.length} live<br />one of each</p>
       </section>
+
+      <WardrobePreview />
 
       <section className="shop-discovery" id="discover" aria-labelledby="discover-title">
         <div className="shop-section-title">

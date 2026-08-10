@@ -6,11 +6,15 @@ import {
   type WardrobePublicProduct,
   type WardrobePublicViewSnapshot,
 } from "../domain/entities";
-import { WARDROBE_APPROVED_MODEL_FRONT_SLUGS } from "../seeds";
+import {
+  WARDROBE_APPROVED_MODEL_FRONT_SLUGS,
+  WARDROBE_APPROVED_MODEL_MULTI_VIEW_SLUGS,
+} from "../seeds";
 import type { WardrobePublicViewRepository } from "../services/contracts";
 
-export const WARDROBE_PUBLIC_VIEW_STORAGE_KEY = "justurban-wears:wardrobe-public-view:v3";
+export const WARDROBE_PUBLIC_VIEW_STORAGE_KEY = "justurban-wears:wardrobe-public-view:v4";
 export const WARDROBE_PUBLIC_VIEW_CHANGE_EVENT = "justurban-wears:wardrobe-public-view:changed";
+export const PREVIOUS_WARDROBE_PUBLIC_VIEW_STORAGE_KEY = "justurban-wears:wardrobe-public-view:v3";
 export const LEGACY_PUBLIC_CATALOG_STORAGE_KEY = "justurban-wears:catalog-projections:v2";
 
 type UnknownRecord = Record<string, unknown>;
@@ -30,9 +34,16 @@ const mediaFiles: Record<WardrobePublicMediaSlot, string> = {
   GARMENT_BACK: "02-garment-back.webp",
   MANNEQUIN_FRONT: "03-mannequin-front.webp",
   MODEL_FRONT: "04-model-front.webp",
+  MODEL_LEFT_PROFILE: "07-model-left-profile.webp",
+  MODEL_REAR_THREE_QUARTER: "05-model-rear-three-quarter.webp",
   FABRIC_DETAIL: "06-fabric-detail.webp",
 };
 const approvedModelFrontSlugs = new Set<string>(WARDROBE_APPROVED_MODEL_FRONT_SLUGS);
+const approvedModelMultiViewSlugs = new Set<string>(WARDROBE_APPROVED_MODEL_MULTI_VIEW_SLUGS);
+const supplementalModelSlots = [
+  "MODEL_LEFT_PROFILE",
+  "MODEL_REAR_THREE_QUARTER",
+] as const satisfies readonly WardrobePublicMediaSlot[];
 
 function isRecord(value: unknown): value is UnknownRecord {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
@@ -53,12 +64,34 @@ function parseMedia(value: unknown, slug: string): WardrobePublicMedia | null {
   if (!isRecord(value) || typeof value.slot !== "string" || !(value.slot in mediaFiles)) return null;
   const slot = value.slot as WardrobePublicMediaSlot;
   if (slot === "MODEL_FRONT" && !approvedModelFrontSlugs.has(slug)) return null;
+  if (
+    supplementalModelSlots.includes(slot as (typeof supplementalModelSlots)[number])
+    && !approvedModelMultiViewSlugs.has(slug)
+  ) return null;
   const src = safeText(value.src, 240);
   const expected = `/shop/products/${slug}/${mediaFiles[slot]}`;
   return src === expected ? { slot, src } : null;
 }
 
-function parseProduct(value: unknown, migrateLegacyFrames = false): WardrobePublicProduct | null {
+interface ParseProductOptions {
+  stripLegacyModelBack?: boolean;
+  addApprovedModelViews?: boolean;
+}
+
+function addApprovedModelViews(media: unknown[], slug: string) {
+  if (!approvedModelMultiViewSlugs.has(slug)) return media;
+  const migrated = [...media];
+  for (const slot of supplementalModelSlots) {
+    if (migrated.some((item) => isRecord(item) && item.slot === slot)) continue;
+    migrated.push({ slot, src: `/shop/products/${slug}/${mediaFiles[slot]}` });
+  }
+  return migrated;
+}
+
+function parseProduct(
+  value: unknown,
+  options: ParseProductOptions = {},
+): WardrobePublicProduct | null {
   if (!isRecord(value)) return null;
   const slug = safeSlug(value.slug);
   const sku = safeText(value.sku, 80);
@@ -115,7 +148,7 @@ function parseProduct(value: unknown, migrateLegacyFrames = false): WardrobePubl
     return null;
   }
 
-  if (!migrateLegacyFrames && value.media.some((item) => isRecord(item) && item.slot === "MODEL_BACK")) {
+  if (!options.stripLegacyModelBack && value.media.some((item) => isRecord(item) && item.slot === "MODEL_BACK")) {
     return null;
   }
   if (
@@ -124,17 +157,31 @@ function parseProduct(value: unknown, migrateLegacyFrames = false): WardrobePubl
   ) {
     return null;
   }
-  const mediaCandidates = migrateLegacyFrames
+  const legacySafeMedia = options.stripLegacyModelBack
     ? value.media.filter((item) => !(isRecord(item) && item.slot === "MODEL_BACK"))
     : value.media;
+  const mediaCandidates = options.addApprovedModelViews
+    ? addApprovedModelViews(legacySafeMedia, slug)
+    : legacySafeMedia;
   const media = mediaCandidates.flatMap((item) => {
     const parsed = parseMedia(item, slug);
     return parsed ? [parsed] : [];
   });
+  if (media.length !== mediaCandidates.length) return null;
   const uniqueSlots = new Set(media.map((item) => item.slot));
   const hasRequiredFrames = requiredMediaSlots.every((slot) => uniqueSlots.has(slot));
-  const expectedCount = requiredMediaSlots.length + (uniqueSlots.has("MODEL_FRONT") ? 1 : 0);
-  if (!hasRequiredFrames || media.length !== expectedCount || uniqueSlots.size !== expectedCount) return null;
+  const hasApprovedMultiView = approvedModelMultiViewSlugs.has(slug)
+    && uniqueSlots.has("MODEL_FRONT")
+    && supplementalModelSlots.every((slot) => uniqueSlots.has(slot));
+  const expectedCount = requiredMediaSlots.length
+    + (uniqueSlots.has("MODEL_FRONT") ? 1 : 0)
+    + (hasApprovedMultiView ? supplementalModelSlots.length : 0);
+  if (
+    !hasRequiredFrames
+    || (approvedModelMultiViewSlugs.has(slug) && !hasApprovedMultiView)
+    || media.length !== expectedCount
+    || uniqueSlots.size !== expectedCount
+  ) return null;
 
   return {
     slug,
@@ -166,12 +213,20 @@ export function parseStoredWardrobePublicView(raw: string | null): WardrobePubli
     if (!isRecord(envelope) || !Array.isArray(envelope.data)) {
       return { products: [], managedSlugs: [] };
     }
-    const migrateLegacyFrames = envelope.version === 2;
-    if (envelope.version !== WARDROBE_PUBLIC_VIEW_SCHEMA_VERSION && !migrateLegacyFrames) {
+    const migrateVersion2 = envelope.version === 2;
+    const migrateVersion3 = envelope.version === 3;
+    if (
+      envelope.version !== WARDROBE_PUBLIC_VIEW_SCHEMA_VERSION
+      && !migrateVersion2
+      && !migrateVersion3
+    ) {
       return { products: [], managedSlugs: [] };
     }
     const parsed = envelope.data.flatMap((candidate) => {
-      const product = parseProduct(candidate, migrateLegacyFrames);
+      const product = parseProduct(candidate, {
+        stripLegacyModelBack: migrateVersion2,
+        addApprovedModelViews: migrateVersion2 || migrateVersion3,
+      });
       return product ? [product] : [];
     });
     const products = parsed.filter((product, index) =>
@@ -203,6 +258,12 @@ export function createBrowserWardrobePublicViewRepository(): WardrobePublicViewR
       const storage = browserStorage();
       const current = storage.getItem(WARDROBE_PUBLIC_VIEW_STORAGE_KEY);
       if (current !== null) return parseStoredWardrobePublicView(current);
+      const previous = storage.getItem(PREVIOUS_WARDROBE_PUBLIC_VIEW_STORAGE_KEY);
+      if (previous !== null) {
+        const migrated = parseStoredWardrobePublicView(previous);
+        await this.write(migrated);
+        return migrated;
+      }
       const legacy = parseStoredWardrobePublicView(storage.getItem(LEGACY_PUBLIC_CATALOG_STORAGE_KEY));
       if (!legacy.products.length && !legacy.managedSlugs.length) return legacy;
       await this.write(legacy);

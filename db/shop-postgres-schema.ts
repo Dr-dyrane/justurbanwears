@@ -23,12 +23,23 @@ export const shopCartStatus = pgEnum("shop_cart_status", [
 ]);
 
 export const shopOrderStatus = pgEnum("shop_order_status", [
+  "PAYMENT_REQUIRED",
   "ORDER_RECEIVED",
   "QUALITY_CHECK",
   "READY_FOR_HANDOFF",
   "IN_TRANSIT",
   "DELIVERED",
   "CANCELLED",
+]);
+
+export const shopOrderTransmission = pgEnum("shop_order_transmission", [
+  "LOCAL_ONLY",
+  "SUBMITTED",
+]);
+
+export const shopFulfillmentKind = pgEnum("shop_fulfillment_kind", [
+  "DELIVERY",
+  "PICKUP",
 ]);
 
 export const shopCustomers = pgTable("shop_customers", {
@@ -95,18 +106,30 @@ export const shopOrders = pgTable("shop_orders", {
   reference: varchar("reference", { length: 40 }).notNull(),
   customerId: uuid("customer_id").references(() => shopCustomers.id, { onDelete: "set null" }),
   sourceCartId: uuid("source_cart_id").references(() => shopCarts.id, { onDelete: "set null" }),
-  status: shopOrderStatus("status").default("ORDER_RECEIVED").notNull(),
+  status: shopOrderStatus("status").default("PAYMENT_REQUIRED").notNull(),
+  transmission: shopOrderTransmission("transmission").default("SUBMITTED").notNull(),
+  contactName: text("contact_name").notNull(),
+  contactEmail: text("contact_email").notNull(),
+  contactPhone: text("contact_phone").notNull(),
+  fulfillmentKind: shopFulfillmentKind("fulfillment_kind").notNull(),
+  deliveryOptionId: text("delivery_option_id").notNull(),
+  deliveryAddress: jsonb("delivery_address").$type<{
+    street: string;
+    area: string;
+    state: string;
+    country: "Nigeria";
+  } | null>(),
   currency: varchar("currency", { length: 3 }).default("NGN").notNull(),
   subtotal: integer("subtotal").notNull(),
   deliveryFee: integer("delivery_fee").notNull(),
   total: integer("total").notNull(),
   deliveryLabel: text("delivery_label").notNull(),
   deliveryEstimate: text("delivery_estimate").notNull(),
-  placedAt: timestamp("placed_at", { withTimezone: true }).defaultNow().notNull(),
+  savedAt: timestamp("saved_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 }, (table) => [
   uniqueIndex("shop_orders_reference_unique").on(table.reference),
-  index("shop_orders_customer_placed_idx").on(table.customerId, table.placedAt),
+  index("shop_orders_customer_saved_idx").on(table.customerId, table.savedAt),
   check("shop_orders_amounts_nonnegative", sql`
     ${table.subtotal} >= 0
     and ${table.deliveryFee} >= 0

@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
 import type {
   BagItem,
-  ShopDeliveryId,
+  ShopCheckoutRequest,
+  ShopCheckoutSaveResult,
   ShopNotificationPreference,
 } from "../../lib/shop/domain/entities";
 import {
@@ -22,6 +23,7 @@ export function useCommerceMachine(service: CommerceService) {
   );
   const stateRef = useRef(state);
   const persistedRevisionRef = useRef(0);
+  const checkoutSaveRef = useRef<Promise<ShopCheckoutSaveResult> | null>(null);
 
   useEffect(() => {
     stateRef.current = state;
@@ -152,31 +154,52 @@ export function useCommerceMachine(service: CommerceService) {
     dispatch({ type: "CHECKOUT_CLOSED" });
   }, []);
 
-  const placeOrder = useCallback(async (deliveryId: ShopDeliveryId) => {
-    const current = stateRef.current;
-    if (current.connectivity === "offline" || !current.bag.length) return "";
-
-    const requested = commerceReducer(current, { type: "ORDER_PLACEMENT_REQUESTED" });
-    dispatch({ type: "ORDER_PLACEMENT_REQUESTED" });
-    const order = service.createOrder(selectCommerceSnapshot(current), deliveryId);
-    if (!order) {
-      dispatch({ type: "ORDER_PLACEMENT_FAILED" });
-      return "";
+  const saveCheckout = useCallback((request: ShopCheckoutRequest): Promise<ShopCheckoutSaveResult> => {
+    if (checkoutSaveRef.current) {
+      return Promise.resolve({ ok: false, reason: "IN_PROGRESS" });
     }
 
-    const placed = commerceReducer(requested, { type: "ORDER_PLACEMENT_SUCCEEDED", order });
-    try {
-      await service.persist(selectCommerceSnapshot(placed));
-    } catch {
-      dispatch({ type: "ORDER_PLACEMENT_FAILED" });
-      dispatch({ type: "PERSISTENCE_FAILED" });
-      return "";
-    }
+    const run = async (): Promise<ShopCheckoutSaveResult> => {
+      const current = stateRef.current;
+      if (!current.bag.length) return { ok: false, reason: "EMPTY_BAG" };
 
-    stateRef.current = placed;
-    persistedRevisionRef.current = placed.persistenceRevision;
-    dispatch({ type: "ORDER_PLACEMENT_SUCCEEDED", order });
-    return order.id;
+      const requested = commerceReducer(current, { type: "CHECKOUT_SAVE_REQUESTED" });
+      stateRef.current = requested;
+      dispatch({ type: "CHECKOUT_SAVE_REQUESTED" });
+
+      const creation = service.createCheckout(selectCommerceSnapshot(current), request);
+      if (creation.ok === false) {
+        const failed = commerceReducer(requested, { type: "CHECKOUT_SAVE_FAILED" });
+        stateRef.current = failed;
+        dispatch({ type: "CHECKOUT_SAVE_FAILED" });
+        return { ok: false, reason: creation.reason };
+      }
+
+      const saved = commerceReducer(requested, {
+        type: "CHECKOUT_SAVE_SUCCEEDED",
+        order: creation.order,
+      });
+      try {
+        await service.persist(selectCommerceSnapshot(saved));
+      } catch {
+        const failed = commerceReducer(requested, { type: "CHECKOUT_SAVE_FAILED" });
+        stateRef.current = failed;
+        dispatch({ type: "CHECKOUT_SAVE_FAILED" });
+        dispatch({ type: "PERSISTENCE_FAILED" });
+        return { ok: false, reason: "PERSISTENCE_FAILED" };
+      }
+
+      stateRef.current = saved;
+      persistedRevisionRef.current = saved.persistenceRevision;
+      dispatch({ type: "CHECKOUT_SAVE_SUCCEEDED", order: creation.order });
+      return { ok: true, orderId: creation.order.id };
+    };
+
+    const operation = run().finally(() => {
+      checkoutSaveRef.current = null;
+    });
+    checkoutSaveRef.current = operation;
+    return operation;
   }, [service]);
 
   const viewOrder = useCallback((id: string) => {
@@ -192,13 +215,13 @@ export function useCommerceMachine(service: CommerceService) {
     removeFromBag,
     beginCheckout,
     closeCheckout,
-    placeOrder,
+    saveCheckout,
     viewOrder,
   }), [
     addToBag,
     beginCheckout,
     closeCheckout,
-    placeOrder,
+    saveCheckout,
     prepareCheckout,
     removeFromBag,
     toggleFollowing,

@@ -38,11 +38,11 @@ export function ShopBag() {
             ))}
           </section>
           <aside className="shop-order-summary glass-surface">
-            <p className="shop-kicker">Order summary</p>
+            <p className="shop-kicker">Checkout summary</p>
             <dl>
               <div><dt>Subtotal</dt><dd>{formatNaira(subtotal)}</dd></div>
               <div><dt>Delivery</dt><dd>Chosen at checkout</dd></div>
-              <div><dt>Order status</dt><dd>Not created</dd></div>
+              <div><dt>Payment</dt><dd>Required after save</dd></div>
             </dl>
             <ShopActionLink href="/shop/checkout">Continue to checkout</ShopActionLink>
           </aside>
