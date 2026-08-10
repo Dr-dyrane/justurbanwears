@@ -145,8 +145,13 @@ test("server-renders product studies plus only identity-cleared model fronts", a
     assert.doesNotMatch(html, /05-model-back\.webp/);
     if (approvedModelSlugs.has(slugs[index])) {
       assert.match(visibleBody, /data-model-anchor="lulu-v2"/);
+      assert.match(
+        visibleBody,
+        /class="shop-media-frame is-model is-front"[^>]*data-model-anchor="lulu-v2"/,
+      );
     } else {
       assert.doesNotMatch(visibleBody, /data-model-anchor="lulu-v2"/);
+      assert.doesNotMatch(visibleBody, /class="shop-media-frame is-model/);
     }
   }
 });

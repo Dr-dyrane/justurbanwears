@@ -3,7 +3,7 @@
 import { ArrowLeft, ChevronDown, Eye, Heart, Share2, Store } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useMemo, useRef, useState, useSyncExternalStore } from "react";
-import { formatNaira, getShopProduct, shopProducts } from "../../lib/shop/catalog";
+import { formatNaira } from "../../lib/shop/catalog";
 import { resolveApprovedModelTryout } from "../../lib/shop/model-tryout";
 import { ShopActionButton, ShopActionLink } from "./atoms/action";
 import { ShopLink as Link } from "./atoms/shop-link";
@@ -37,19 +37,21 @@ function announceModelViewUrlChange() {
 
 export function ProductDetail() {
   const params = useParams<{ slug: string }>();
-  const product = getShopProduct(params.slug);
   const {
     addToBag,
     bag,
     following,
+    getProduct,
     hydration,
     isOnline,
     persistence,
     prepareCheckout,
+    products,
     saved,
     toggleFollowing,
     toggleSaved,
   } = useShop();
+  const product = getProduct(params.slug);
   const [notice, setNotice] = useState("");
   const modelTryoutTriggerRef = useRef<HTMLButtonElement>(null);
   const openedModelTryoutHereRef = useRef(false);
@@ -77,9 +79,9 @@ export function ProductDetail() {
 
   const isSaved = saved.includes(product.slug);
   const isInBag = bag.some((item) => item.slug === product.slug);
-  const related = shopProducts
+  const related = products
     .filter((item) => item.slug !== product.slug && item.category === product.category)
-    .concat(shopProducts.filter((item) => item.slug !== product.slug && item.category !== product.category))
+    .concat(products.filter((item) => item.slug !== product.slug && item.category !== product.category))
     .slice(0, 3);
 
   function addProduct() {

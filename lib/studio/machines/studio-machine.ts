@@ -24,7 +24,7 @@ import {
   type StudioMachineState,
   type StudioSnapshot,
 } from "../domain/state";
-import { createPublicListingProjection } from "../projections/public-listing";
+import { createWardrobePublicProduct } from "../projections/public-listing";
 
 export type StudioCommand =
   | { type: "HYDRATION_REQUESTED" }
@@ -259,7 +259,7 @@ export function studioReducer(
         state: "PUBLISHED",
         publishedAt: command.publishedAt,
       };
-      const publicProjection = createPublicListingProjection(published, garment);
+      const publicProjection = createWardrobePublicProduct(published, garment);
       if (!publicProjection) return state;
       published.publicProjection = publicProjection;
       return persistentUpdate(state, {

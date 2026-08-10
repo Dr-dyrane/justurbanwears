@@ -1,5 +1,6 @@
-import { getShopProduct } from "../catalog";
+import { shopProducts } from "../catalog";
 import { shopDeliveryOptions } from "../commerce";
+import { createBrowserShopCatalogPort } from "../db/browser-wardrobe-public-view";
 import { createBrowserLocalShopRepository } from "../db/browser-local-repository";
 import type {
   BagItem,
@@ -7,12 +8,23 @@ import type {
   ShopOrder,
 } from "../domain/entities";
 import type { CommerceSnapshot } from "../domain/state";
-import type { CommerceService, ShopStateRepository } from "./contracts";
+import type { CommerceService, ShopCatalogPort, ShopStateRepository } from "./contracts";
 
 interface CommerceServiceDependencies {
   repository: ShopStateRepository;
+  catalog?: ShopCatalogPort;
   now?: () => Date;
   createReference?: (date: Date) => string;
+}
+
+function createStaticMigrationCatalogPort(): ShopCatalogPort {
+  const products = [...shopProducts];
+  return {
+    hydrate: async () => products,
+    list: () => products,
+    getProduct: (slug) => products.find((product) => product.slug === slug),
+    subscribe: () => () => undefined,
+  };
 }
 
 function createLocalOrderReference(date: Date) {
@@ -25,11 +37,24 @@ function createLocalOrderReference(date: Date) {
 
 export function createCommerceService({
   repository,
+  catalog = createStaticMigrationCatalogPort(),
   now = () => new Date(),
   createReference = createLocalOrderReference,
 }: CommerceServiceDependencies): CommerceService {
+  let catalogHydration: ReturnType<ShopCatalogPort["hydrate"]> | null = null;
+  const hydrateCatalog = () => {
+    catalogHydration ??= catalog.hydrate();
+    return catalogHydration;
+  };
   return {
-    hydrate: () => repository.read(),
+    hydrateCatalog,
+    listProducts: () => catalog.list(),
+    getProduct: (slug) => catalog.getProduct(slug),
+    subscribeCatalog: (listener) => catalog.subscribe(listener),
+    async hydrate() {
+      await hydrateCatalog();
+      return repository.read();
+    },
     persist: (snapshot) => repository.write(snapshot),
     subscribe: (listener) => repository.subscribe(listener),
     readConnectivity() {
@@ -47,17 +72,17 @@ export function createCommerceService({
       };
     },
     getProductAvailability(slug) {
-      return getShopProduct(slug)?.availability ?? null;
+      return catalog.getProduct(slug)?.availability ?? null;
     },
     normalizeBagItem(item: BagItem) {
-      const product = getShopProduct(item.slug);
+      const product = catalog.getProduct(item.slug);
       if (!product || product.availability !== "AVAILABLE") return null;
       return { slug: product.slug, size: product.taggedSize };
     },
     createOrder(snapshot: CommerceSnapshot, deliveryId: ShopDeliveryId): ShopOrder | null {
       const seen = new Set<string>();
       const products = snapshot.bag.flatMap((item) => {
-        const product = getShopProduct(item.slug);
+        const product = catalog.getProduct(item.slug);
         if (!product || product.availability !== "AVAILABLE" || seen.has(product.slug)) return [];
         seen.add(product.slug);
         return [product];
@@ -84,5 +109,9 @@ export function createCommerceService({
 }
 
 export function createBrowserCommerceService() {
-  return createCommerceService({ repository: createBrowserLocalShopRepository() });
+  const catalog = createBrowserShopCatalogPort();
+  return createCommerceService({
+    catalog,
+    repository: createBrowserLocalShopRepository((slug) => catalog.getProduct(slug)),
+  });
 }

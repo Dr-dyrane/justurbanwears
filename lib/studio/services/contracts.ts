@@ -7,8 +7,8 @@ export interface StudioRepository {
   subscribe(listener: (snapshot: StudioSnapshot) => void): () => void;
 }
 
-export interface PublicCatalogPort {
-  write(projections: PublicListingProjection[]): Promise<void>;
+export interface WardrobePublicViewPort {
+  write(products: PublicListingProjection[], managedSlugs: string[]): Promise<void>;
 }
 
 export interface StudioService {

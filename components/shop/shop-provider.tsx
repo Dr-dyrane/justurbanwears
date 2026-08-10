@@ -8,6 +8,7 @@ import type {
   ShopNotificationPreference,
   ShopNotificationPreferences,
   ShopOrder,
+  ShopProduct,
 } from "../../lib/shop/domain/entities";
 import type {
   CommerceLifecycle,
@@ -25,6 +26,8 @@ export type {
 } from "../../lib/shop/domain/entities";
 
 interface ShopContextValue {
+  products: readonly ShopProduct[];
+  getProduct(slug: string): ShopProduct | undefined;
   saved: string[];
   bag: BagItem[];
   orders: ShopOrder[];
@@ -57,6 +60,8 @@ export function ShopProvider({
 }) {
   const { state, lifecycle, actions } = useCommerceMachine(service);
   const value = useMemo<ShopContextValue>(() => ({
+    products: state.catalog,
+    getProduct: (slug) => state.catalog.find((product) => product.slug === slug),
     saved: state.saved,
     bag: state.bag,
     orders: state.orders,

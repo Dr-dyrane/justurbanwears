@@ -3,7 +3,7 @@
 import { ArrowLeft, Check, PackageSearch } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useEffect } from "react";
-import { formatNaira, getShopProduct } from "../../lib/shop/catalog";
+import { formatNaira } from "../../lib/shop/catalog";
 import {
   formatOrderDate,
   getOrderStatusLabel,
@@ -18,7 +18,7 @@ import { useShop } from "./shop-provider";
 
 export function OrderStatus() {
   const params = useParams<{ id: string }>();
-  const { hydration, orders, viewOrder } = useShop();
+  const { getProduct, hydration, orders, viewOrder } = useShop();
   const order = orders.find((candidate) => candidate.id === params.id) ?? null;
   const orderId = order?.id;
 
@@ -51,7 +51,7 @@ export function OrderStatus() {
 
   const step = getOrderStep(order);
   const products = order.itemSlugs.flatMap((slug) => {
-    const product = getShopProduct(slug);
+    const product = getProduct(slug);
     return product ? [product] : [];
   });
 

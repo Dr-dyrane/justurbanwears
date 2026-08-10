@@ -1,18 +1,19 @@
 import {
   createBrowserLocalStudioRepository,
-  createBrowserPublicCatalogPort,
+  createBrowserWardrobePublicViewPort,
 } from "../db/browser-local-repository";
 import type { StudioSnapshot } from "../domain/state";
-import { selectPublicCatalog } from "../projections/public-listing";
+import { selectWardrobePublicView } from "../projections/public-listing";
+import { WARDROBE_AUTHORITY_MANAGED_SLUGS } from "../seeds/wardrobe-authority";
 import type {
-  PublicCatalogPort,
   StudioRepository,
   StudioService,
+  WardrobePublicViewPort,
 } from "./contracts";
 
 interface StudioServiceDependencies {
   repository: StudioRepository;
-  publicCatalog: PublicCatalogPort;
+  wardrobePublicView: WardrobePublicViewPort;
   clock?: () => Date;
   idFactory?: (prefix: string) => string;
 }
@@ -26,19 +27,26 @@ function localId(prefix: string) {
 
 export function createStudioService({
   repository,
-  publicCatalog,
+  wardrobePublicView,
   clock = () => new Date(),
   idFactory = localId,
 }: StudioServiceDependencies): StudioService {
+  const writeWardrobePublicView = (snapshot: StudioSnapshot) => wardrobePublicView.write(
+    selectWardrobePublicView(snapshot),
+    [...new Set([
+      ...WARDROBE_AUTHORITY_MANAGED_SLUGS,
+      ...snapshot.listings.map((listing) => listing.slug),
+    ])],
+  );
   return {
     async hydrate() {
       const snapshot = await repository.read();
-      await publicCatalog.write(selectPublicCatalog(snapshot));
+      await writeWardrobePublicView(snapshot);
       return snapshot;
     },
     async persist(snapshot: StudioSnapshot) {
       await repository.write(snapshot);
-      await publicCatalog.write(selectPublicCatalog(snapshot));
+      await writeWardrobePublicView(snapshot);
     },
     subscribe: (listener) => repository.subscribe(listener),
     createId: idFactory,
@@ -49,6 +57,6 @@ export function createStudioService({
 export function createBrowserStudioService() {
   return createStudioService({
     repository: createBrowserLocalStudioRepository(),
-    publicCatalog: createBrowserPublicCatalogPort(),
+    wardrobePublicView: createBrowserWardrobePublicViewPort(),
   });
 }

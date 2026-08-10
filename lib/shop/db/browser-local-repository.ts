@@ -3,6 +3,7 @@ import type {
   BagItem,
   ShopNotificationPreferences,
   ShopOrder,
+  ShopProduct,
 } from "../domain/entities";
 import {
   SHOP_STATE_SCHEMA_VERSION,
@@ -16,6 +17,8 @@ import type { ShopStateRepository } from "../services/contracts";
 const CURRENT_STORAGE_KEY = "justurban-wears:shop:v2";
 const LEGACY_STORAGE_KEY = "justurban-wears:shop:v1";
 const MAX_LOCAL_ORDERS = 25;
+
+type ProductResolver = (slug: string) => ShopProduct | undefined;
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -36,19 +39,19 @@ function parseJson(raw: string | null): unknown {
   }
 }
 
-function parseSaved(value: unknown): string[] {
+function parseSaved(value: unknown, resolveProduct: ProductResolver): string[] {
   if (!Array.isArray(value)) return [];
   return [...new Set(value.filter((slug): slug is string =>
-    typeof slug === "string" && Boolean(getShopProduct(slug)),
+    typeof slug === "string" && Boolean(resolveProduct(slug)),
   ))];
 }
 
-function parseBag(value: unknown): BagItem[] {
+function parseBag(value: unknown, resolveProduct: ProductResolver): BagItem[] {
   if (!Array.isArray(value)) return [];
   const seen = new Set<string>();
   return value.flatMap((candidate) => {
     if (!isRecord(candidate) || typeof candidate.slug !== "string") return [];
-    const product = getShopProduct(candidate.slug);
+    const product = resolveProduct(candidate.slug);
     if (!product || product.availability !== "AVAILABLE" || seen.has(product.slug)) return [];
     seen.add(product.slug);
     return [{ slug: product.slug, size: product.taggedSize }];
@@ -70,6 +73,10 @@ function parsePlacedAt(value: unknown): string | null {
   return Number.isNaN(timestamp) ? null : new Date(timestamp).toISOString();
 }
 
+function isSafeProductSlug(value: unknown): value is string {
+  return typeof value === "string" && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value);
+}
+
 function parseOrder(
   value: unknown,
   migrateLegacyReference = false,
@@ -78,9 +85,7 @@ function parseOrder(
   if (typeof value.id !== "string" || /sample/i.test(value.id)) return null;
   const placedAt = parsePlacedAt(value.placedAt);
   const itemSlugs = Array.isArray(value.itemSlugs)
-    ? [...new Set(value.itemSlugs.filter((slug): slug is string =>
-        typeof slug === "string" && Boolean(getShopProduct(slug)),
-      ))]
+    ? [...new Set(value.itemSlugs.filter(isSafeProductSlug))]
     : [];
   const allowedStatuses = [
     "ORDER_RECEIVED",
@@ -136,30 +141,36 @@ function parseOrders(value: unknown, migrateLegacyReference = false): ShopOrder[
     .slice(0, MAX_LOCAL_ORDERS);
 }
 
-function parseSnapshot(value: unknown): CommerceSnapshot | null {
+function parseSnapshot(value: unknown, resolveProduct: ProductResolver): CommerceSnapshot | null {
   if (!isRecord(value)) return null;
   return {
-    saved: parseSaved(value.saved),
-    bag: parseBag(value.bag),
+    saved: parseSaved(value.saved, resolveProduct),
+    bag: parseBag(value.bag, resolveProduct),
     orders: parseOrders(value.orders),
     following: value.following === true,
     notificationPreferences: parseNotificationPreferences(value.notificationPreferences),
   };
 }
 
-export function parseStoredShopState(raw: string | null): CommerceSnapshot | null {
+export function parseStoredShopState(
+  raw: string | null,
+  resolveProduct: ProductResolver = getShopProduct,
+): CommerceSnapshot | null {
   const value = parseJson(raw);
   if (!isRecord(value) || value.version !== SHOP_STATE_SCHEMA_VERSION) return null;
-  return parseSnapshot(value.data);
+  return parseSnapshot(value.data, resolveProduct);
 }
 
-export function migrateLegacyShopState(raw: string | null): CommerceSnapshot | null {
+export function migrateLegacyShopState(
+  raw: string | null,
+  resolveProduct: ProductResolver = getShopProduct,
+): CommerceSnapshot | null {
   const value = parseJson(raw);
   if (!isRecord(value)) return null;
   const currentOrder = parseOrder(value.currentOrder, true);
   return {
-    saved: parseSaved(value.saved),
-    bag: parseBag(value.bag),
+    saved: parseSaved(value.saved, resolveProduct),
+    bag: parseBag(value.bag, resolveProduct),
     orders: currentOrder ? [currentOrder] : [],
     following: value.following === true,
     notificationPreferences: parseNotificationPreferences(value.notificationPreferences),
@@ -173,16 +184,18 @@ function browserStorage() {
   return window.localStorage;
 }
 
-export function createBrowserLocalShopRepository(): ShopStateRepository {
+export function createBrowserLocalShopRepository(
+  resolveProduct: ProductResolver = getShopProduct,
+): ShopStateRepository {
   return {
     async read() {
       const storage = browserStorage();
       const currentRaw = storage.getItem(CURRENT_STORAGE_KEY);
       if (currentRaw) {
-        return parseStoredShopState(currentRaw) ?? createEmptyCommerceSnapshot();
+        return parseStoredShopState(currentRaw, resolveProduct) ?? createEmptyCommerceSnapshot();
       }
 
-      const migrated = migrateLegacyShopState(storage.getItem(LEGACY_STORAGE_KEY));
+      const migrated = migrateLegacyShopState(storage.getItem(LEGACY_STORAGE_KEY), resolveProduct);
       if (!migrated) return createEmptyCommerceSnapshot();
       await this.write(migrated);
       return migrated;
@@ -198,7 +211,7 @@ export function createBrowserLocalShopRepository(): ShopStateRepository {
       if (typeof window === "undefined") return () => undefined;
       const receiveStorage = (event: StorageEvent) => {
         if (event.key !== CURRENT_STORAGE_KEY || !event.newValue) return;
-        const snapshot = parseStoredShopState(event.newValue);
+        const snapshot = parseStoredShopState(event.newValue, resolveProduct);
         if (snapshot) listener(snapshot);
       };
       window.addEventListener("storage", receiveStorage);

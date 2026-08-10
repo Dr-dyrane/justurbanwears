@@ -100,23 +100,9 @@ export interface GarmentMeasurement {
   value: string;
 }
 
-export type PublicListingMediaSlot =
-  | "GARMENT_FRONT"
-  | "GARMENT_BACK"
-  | "MANNEQUIN_FRONT"
-  | "MODEL_FRONT"
-  | "MODEL_BACK"
-  | "FABRIC_DETAIL";
-
-export interface PublicListingMediaProjection {
-  slot: PublicListingMediaSlot;
-  src: string;
-}
-
-export interface PublicModelAnchorProjection {
-  id: string;
-  src: string;
-}
+export type PublicListingMediaSlot = WardrobePublicMediaSlot;
+export type PublicListingMediaProjection = WardrobePublicMedia;
+export type PublicModelAnchorProjection = WardrobePublicModelAnchor;
 
 export interface Garment {
   id: string;
@@ -147,27 +133,7 @@ export interface Garment {
   createdAt: string;
 }
 
-export interface PublicListingProjection {
-  slug: string;
-  sku: string;
-  name: string;
-  category: "Dresses" | "Shirts" | "Knitwear" | "Skirts" | "Trousers";
-  price: number;
-  taggedSize: string;
-  fit: string;
-  condition: string;
-  colour: string;
-  availability: "AVAILABLE" | "RESERVED" | "SOLD";
-  drop: string;
-  tone: "coral" | "indigo" | "moss" | "ivory" | "cocoa" | "salmon";
-  silhouette: "dress" | "shirt" | "knit" | "skirt" | "trouser";
-  note: string;
-  story: string;
-  details: string[];
-  measurements: GarmentMeasurement[];
-  modelAnchor: PublicModelAnchorProjection;
-  media: PublicListingMediaProjection[];
-}
+export type PublicListingProjection = WardrobePublicProduct;
 
 export interface StudioListing {
   id: string;
@@ -350,3 +316,9 @@ export const REJECTION_REASONS = [
   "poor crop",
   "other",
 ] as const;
+import type {
+  WardrobePublicMedia,
+  WardrobePublicMediaSlot,
+  WardrobePublicModelAnchor,
+  WardrobePublicProduct,
+} from "../../wardrobe-public-view/domain/entities";

@@ -2,7 +2,6 @@
 
 import { Search, SearchX } from "lucide-react";
 import { useMemo, useState } from "react";
-import { shopProducts } from "../../lib/shop/catalog";
 import { ProductCard } from "./product-card";
 import {
   defaultShopFilters,
@@ -10,14 +9,16 @@ import {
   ShopFilterSheet,
   type ShopFilterValues,
 } from "./shop-filter-sheet";
+import { useShop } from "./shop-provider";
 
 export function ShopSearch() {
+  const { products } = useShop();
   const [query, setQuery] = useState("");
   const [filters, setFilters] = useState<ShopFilterValues>(defaultShopFilters);
 
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
-    const matches = shopProducts.filter((product) => {
+    const matches = products.filter((product) => {
       const searchable = [
         product.name,
         product.category,
@@ -32,22 +33,22 @@ export function ShopSearch() {
         && (filters.size === "All" || product.taggedSize === filters.size)
         && (filters.colour === "All" || product.colour === filters.colour)
         && (filters.availability === "ALL" || product.availability === filters.availability)
-        && product.price <= filters.maximumPrice;
+        && (filters.maximumPrice === null || product.price <= filters.maximumPrice);
     });
 
     return [...matches].sort((left, right) => {
       if (filters.sort === "price-low") return left.price - right.price;
       if (filters.sort === "price-high") return right.price - left.price;
-      return shopProducts.indexOf(left) - shopProducts.indexOf(right);
+      return products.indexOf(left) - products.indexOf(right);
     });
-  }, [filters, query]);
+  }, [filters, products, query]);
 
   const activeFilterCount = [
     filters.category !== defaultShopFilters.category,
     filters.size !== defaultShopFilters.size,
     filters.colour !== defaultShopFilters.colour,
     filters.availability !== defaultShopFilters.availability,
-    filters.maximumPrice !== defaultShopFilters.maximumPrice,
+    filters.maximumPrice !== null,
     filters.sort !== defaultShopFilters.sort,
   ].filter(Boolean).length;
   const hasFilters = Boolean(query.trim()) || activeFilterCount > 0;
@@ -79,6 +80,7 @@ export function ShopSearch() {
         <ShopFilterSheet
           activeCount={activeFilterCount}
           onApply={setFilters}
+          products={products}
           values={filters}
         />
       </div>
@@ -98,7 +100,7 @@ export function ShopSearch() {
               />
             </span>
           </label>
-          <ShopFilterControls onChange={setFilters} values={filters} />
+          <ShopFilterControls onChange={setFilters} products={products} values={filters} />
         </div>
 
         <div className="shop-search-results">

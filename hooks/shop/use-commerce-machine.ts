@@ -8,14 +8,18 @@ import type {
 } from "../../lib/shop/domain/entities";
 import {
   commerceReducer,
-  initialCommerceState,
   selectCommerceLifecycle,
   selectCommerceSnapshot,
 } from "../../lib/shop/machines/commerce-machine";
+import { createInitialCommerceState } from "../../lib/shop/domain/state";
 import type { CommerceService } from "../../lib/shop/services/contracts";
 
 export function useCommerceMachine(service: CommerceService) {
-  const [state, dispatch] = useReducer(commerceReducer, initialCommerceState);
+  const [state, dispatch] = useReducer(
+    commerceReducer,
+    service.listProducts(),
+    createInitialCommerceState,
+  );
   const stateRef = useRef(state);
   const persistedRevisionRef = useRef(0);
 
@@ -37,8 +41,15 @@ export function useCommerceMachine(service: CommerceService) {
     const stopConnectivitySync = service.subscribeConnectivity((connectivity) => {
       if (active) dispatch({ type: "CONNECTIVITY_CHANGED", connectivity });
     });
+    const stopCatalogSync = service.subscribeCatalog((products) => {
+      if (active) dispatch({ type: "CATALOG_RECEIVED", products });
+    });
 
-    void service.hydrate()
+    void service.hydrateCatalog()
+      .then((products) => {
+        if (active) dispatch({ type: "CATALOG_RECEIVED", products });
+        return service.hydrate();
+      })
       .then((snapshot) => {
         if (active) dispatch({ type: "HYDRATION_SUCCEEDED", snapshot });
       })
@@ -50,6 +61,7 @@ export function useCommerceMachine(service: CommerceService) {
       active = false;
       stopStateSync();
       stopConnectivitySync();
+      stopCatalogSync();
     };
   }, [service]);
 

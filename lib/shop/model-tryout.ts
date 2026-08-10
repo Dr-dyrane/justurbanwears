@@ -2,6 +2,8 @@ import type {
   ShopApprovedModelMedia,
   ShopModelAnchorId,
   ShopModelTryout,
+  ShopProduct,
+  ShopProductMedia,
 } from "./domain/entities";
 
 export type ModelTryoutPhase = "closed" | "loading" | "ready" | "error";
@@ -84,4 +86,21 @@ export function resolveApprovedModelTryout(
     modelAnchorId: modelTryout.modelAnchorId,
     frame,
   };
+}
+
+/**
+ * The main product gallery may show the same cleared model front as the
+ * focused tryout sheet. Pending or malformed model media never enters it.
+ */
+export function selectProductGalleryMedia(
+  product: Pick<ShopProduct, "media" | "modelTryout">,
+): readonly ShopProductMedia[] {
+  const productMedia = product.media ?? [];
+  const approved = resolveApprovedModelTryout(product.modelTryout);
+
+  if (!approved || productMedia.some((item) => item.src === approved.frame.src)) {
+    return productMedia;
+  }
+
+  return [...productMedia, approved.frame];
 }

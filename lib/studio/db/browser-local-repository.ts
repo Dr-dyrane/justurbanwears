@@ -1,8 +1,11 @@
-import type {
-  Garment,
-  PublicListingProjection,
-  StudioModel,
-} from "../domain/entities";
+import type { Garment, StudioModel } from "../domain/entities";
+import {
+  WARDROBE_PUBLIC_VIEW_SCHEMA_VERSION,
+} from "../../wardrobe-public-view/domain/entities";
+import {
+  WARDROBE_PUBLIC_VIEW_STORAGE_KEY,
+  createBrowserWardrobePublicViewRepository,
+} from "../../wardrobe-public-view/db/browser-repository";
 import {
   STUDIO_STATE_SCHEMA_VERSION,
   createDefaultModel,
@@ -10,12 +13,13 @@ import {
   type StoredStudioStateV2,
   type StudioSnapshot,
 } from "../domain/state";
-import type { PublicCatalogPort, StudioRepository } from "../services/contracts";
+import type { StudioRepository, WardrobePublicViewPort } from "../services/contracts";
+import { mergeWardrobeAuthoritySeeds } from "../seeds/wardrobe-authority";
 
 export const STUDIO_STORAGE_KEY = "justurban-wears:studio:v2";
 export const LEGACY_STUDIO_STORAGE_KEY = "justurban-wears:studio:v1";
-export const PUBLIC_CATALOG_PROJECTION_SCHEMA_VERSION = 2 as const;
-export const PUBLIC_CATALOG_STORAGE_KEY = "justurban-wears:catalog-projections:v2";
+export const WARDROBE_PUBLIC_VIEW_PROJECTION_SCHEMA_VERSION = WARDROBE_PUBLIC_VIEW_SCHEMA_VERSION;
+export { WARDROBE_PUBLIC_VIEW_STORAGE_KEY };
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -47,7 +51,7 @@ function parseCurrentSnapshot(value: unknown): StudioSnapshot | null {
   const approvedDefault = createDefaultModel();
   const models = snapshot.models.map((model) => {
     if (model.id !== snapshot.defaultModelId) return model;
-    const styling = isRecord(model.styling) ? model.styling : {};
+    const styling: UnknownRecord = isRecord(model.styling) ? model.styling : {};
     return {
       ...model,
       version: approvedDefault.version,
@@ -172,12 +176,17 @@ export function createBrowserLocalStudioRepository(): StudioRepository {
     async read() {
       const storage = browserStorage();
       const currentRaw = storage.getItem(STUDIO_STORAGE_KEY);
-      if (currentRaw) return parseStoredStudioState(currentRaw) ?? createEmptyStudioSnapshot();
+      if (currentRaw) {
+        const restored = parseStoredStudioState(currentRaw) ?? createEmptyStudioSnapshot();
+        const merged = mergeWardrobeAuthoritySeeds(restored);
+        if (JSON.stringify(merged) !== JSON.stringify(restored)) await this.write(merged);
+        return merged;
+      }
 
       const migrated = migrateLegacyStudioState(storage.getItem(LEGACY_STUDIO_STORAGE_KEY));
-      if (!migrated) return createEmptyStudioSnapshot();
-      await this.write(migrated);
-      return migrated;
+      const seeded = mergeWardrobeAuthoritySeeds(migrated ?? createEmptyStudioSnapshot());
+      await this.write(seeded);
+      return seeded;
     },
     async write(snapshot) {
       const envelope: StoredStudioStateV2 = {
@@ -191,7 +200,7 @@ export function createBrowserLocalStudioRepository(): StudioRepository {
       const receiveStorage = (event: StorageEvent) => {
         if (event.key !== STUDIO_STORAGE_KEY || !event.newValue) return;
         const snapshot = parseStoredStudioState(event.newValue);
-        if (snapshot) listener(snapshot);
+        if (snapshot) listener(mergeWardrobeAuthoritySeeds(snapshot));
       };
       window.addEventListener("storage", receiveStorage);
       return () => window.removeEventListener("storage", receiveStorage);
@@ -199,13 +208,9 @@ export function createBrowserLocalStudioRepository(): StudioRepository {
   };
 }
 
-export function createBrowserPublicCatalogPort(): PublicCatalogPort {
+export function createBrowserWardrobePublicViewPort(): WardrobePublicViewPort {
+  const repository = createBrowserWardrobePublicViewRepository();
   return {
-    async write(projections: PublicListingProjection[]) {
-      browserStorage().setItem(PUBLIC_CATALOG_STORAGE_KEY, JSON.stringify({
-        version: PUBLIC_CATALOG_PROJECTION_SCHEMA_VERSION,
-        data: projections,
-      }));
-    },
+    write: (products, managedSlugs) => repository.write({ products, managedSlugs }),
   };
 }

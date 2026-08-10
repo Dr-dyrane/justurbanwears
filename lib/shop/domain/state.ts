@@ -2,6 +2,7 @@ import type {
   BagItem,
   ShopNotificationPreferences,
   ShopOrder,
+  ShopProduct,
   ShopProductSlug,
 } from "./entities";
 
@@ -39,6 +40,7 @@ export type CommerceLifecycle =
   | "memory-only";
 
 export interface CommerceMachineState extends CommerceSnapshot {
+  catalog: ShopProduct[];
   schemaVersion: typeof SHOP_STATE_SCHEMA_VERSION;
   hydration: HydrationState;
   connectivity: ConnectivityState;
@@ -65,9 +67,10 @@ export function createEmptyCommerceSnapshot(): CommerceSnapshot {
   };
 }
 
-export function createInitialCommerceState(): CommerceMachineState {
+export function createInitialCommerceState(catalog: readonly ShopProduct[] = []): CommerceMachineState {
   return {
     ...createEmptyCommerceSnapshot(),
+    catalog: [...catalog],
     schemaVersion: SHOP_STATE_SCHEMA_VERSION,
     hydration: "idle",
     connectivity: "online",

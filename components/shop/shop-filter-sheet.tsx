@@ -5,8 +5,8 @@ import { useEffect, useRef, useState } from "react";
 import {
   formatNaira,
   shopCategories,
-  shopProducts,
   type ShopAvailability,
+  type ShopProduct,
 } from "../../lib/shop/catalog";
 import {
   ShopSheet,
@@ -23,46 +23,44 @@ export interface ShopFilterValues {
   size: string;
   colour: string;
   availability: ShopAvailabilityFilter;
-  maximumPrice: number;
+  maximumPrice: number | null;
   sort: ShopSortOrder;
 }
 
-export const shopSizes = [
-  "All",
-  ...new Set(shopProducts.map((product) => product.taggedSize)),
-];
-
-export const shopColours = [
-  "All",
-  ...new Set(shopProducts.map((product) => product.colour)),
-];
-
-export const shopPriceMinimum = Math.floor(
-  Math.min(...shopProducts.map((product) => product.price)) / 2500,
-) * 2500;
-
-export const shopPriceMaximum = Math.ceil(
-  Math.max(...shopProducts.map((product) => product.price)) / 2500,
-) * 2500;
+function filterOptions(products: readonly ShopProduct[]) {
+  const prices = products.map((product) => product.price);
+  const lowest = prices.length ? Math.min(...prices) : 0;
+  const highest = prices.length ? Math.max(...prices) : 0;
+  return {
+    sizes: ["All", ...new Set(products.map((product) => product.taggedSize))],
+    colours: ["All", ...new Set(products.map((product) => product.colour))],
+    priceMinimum: Math.floor(lowest / 2500) * 2500,
+    priceMaximum: Math.ceil(highest / 2500) * 2500,
+  };
+}
 
 export const defaultShopFilters: ShopFilterValues = {
   category: "All",
   size: "All",
   colour: "All",
   availability: "ALL",
-  maximumPrice: shopPriceMaximum,
+  maximumPrice: null,
   sort: "editorial",
 };
 
 interface ShopFilterControlsProps {
   onChange(filters: ShopFilterValues): void;
+  products: readonly ShopProduct[];
   values: ShopFilterValues;
 }
 
 export function ShopFilterControls({
   onChange,
+  products,
   values,
 }: ShopFilterControlsProps) {
+  const options = filterOptions(products);
+  const priceCeiling = values.maximumPrice ?? options.priceMaximum;
   return (
     <>
       <fieldset className="shop-refine-group">
@@ -89,7 +87,7 @@ export function ShopFilterControls({
             onChange={(event) => onChange({ ...values, size: event.target.value })}
             value={values.size}
           >
-            {shopSizes.map((item) => <option key={item}>{item}</option>)}
+            {options.sizes.map((item) => <option key={item}>{item}</option>)}
           </select>
         </label>
         <label>
@@ -98,7 +96,7 @@ export function ShopFilterControls({
             onChange={(event) => onChange({ ...values, colour: event.target.value })}
             value={values.colour}
           >
-            {shopColours.map((item) => <option key={item}>{item}</option>)}
+            {options.colours.map((item) => <option key={item}>{item}</option>)}
           </select>
         </label>
         <label>
@@ -140,18 +138,19 @@ export function ShopFilterControls({
       </fieldset>
 
       <label className="shop-price-filter">
-        <span>Price ceiling <strong>{formatNaira(values.maximumPrice)}</strong></span>
+        <span>Price ceiling <strong>{formatNaira(priceCeiling)}</strong></span>
         <input
-          aria-valuetext={`Up to ${formatNaira(values.maximumPrice)}`}
-          max={shopPriceMaximum}
-          min={shopPriceMinimum}
+          aria-valuetext={`Up to ${formatNaira(priceCeiling)}`}
+          disabled={!products.length}
+          max={Math.max(options.priceMaximum, options.priceMinimum)}
+          min={options.priceMinimum}
           onChange={(event) => onChange({
             ...values,
             maximumPrice: Number(event.target.value),
           })}
           step="2500"
           type="range"
-          value={values.maximumPrice}
+          value={priceCeiling}
         />
       </label>
     </>
@@ -161,12 +160,14 @@ export function ShopFilterControls({
 interface ShopFilterSheetProps {
   activeCount: number;
   onApply(filters: ShopFilterValues): void;
+  products: readonly ShopProduct[];
   values: ShopFilterValues;
 }
 
 export function ShopFilterSheet({
   activeCount,
   onApply,
+  products,
   values,
 }: ShopFilterSheetProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -281,7 +282,7 @@ export function ShopFilterSheet({
         </header>
 
         <div className="shop-filter-sheet-body">
-          <ShopFilterControls onChange={setDraft} values={draft} />
+          <ShopFilterControls onChange={setDraft} products={products} values={draft} />
         </div>
 
         <footer className="shop-filter-sheet-actions">

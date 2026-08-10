@@ -48,7 +48,7 @@ export function createListingSlug(sku: string, title: string) {
   return approvedSlugForSku(sku) ?? `${slugify(title)}-${slugify(sku)}`;
 }
 
-export function createPublicListingProjection(
+export function createWardrobePublicProduct(
   listing: StudioListing,
   garment: Garment,
 ): PublicListingProjection | undefined {
@@ -83,7 +83,7 @@ export function createPublicListingProjection(
   };
 }
 
-export function selectPublicCatalog(snapshot: StudioSnapshot) {
+export function selectWardrobePublicView(snapshot: StudioSnapshot) {
   return snapshot.listings.flatMap((listing) => {
     if (!["PUBLISHED", "RESERVED", "SOLD"].includes(listing.state)) return [];
     const garment = snapshot.garments.find((candidate) => candidate.id === listing.garmentId);
@@ -97,7 +97,12 @@ export function selectPublicCatalog(snapshot: StudioSnapshot) {
       || !everyGateReady(modelReadiness(model))
       || !getApprovedPublicListingContract(garment.sku, listing.slug)
     ) return [];
-    const projection = createPublicListingProjection(listing, garment);
+    const projection = createWardrobePublicProduct(listing, garment);
     return projection ? [projection] : [];
   });
 }
+
+// Compatibility names for persisted V2 Studio records while callers migrate to
+// the wardrobe-public-view language.
+export const createPublicListingProjection = createWardrobePublicProduct;
+export const selectPublicCatalog = selectWardrobePublicView;

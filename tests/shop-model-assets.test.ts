@@ -4,7 +4,10 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import test from "node:test";
 import { shopModelAnchors, shopProducts } from "../lib/shop/catalog.ts";
-import { resolveApprovedModelTryout } from "../lib/shop/model-tryout.ts";
+import {
+  resolveApprovedModelTryout,
+  selectProductGalleryMedia,
+} from "../lib/shop/model-tryout.ts";
 
 const expectedApprovals = [
   {
@@ -81,5 +84,22 @@ test("publishes only identity-cleared model fronts with their reviewed bytes", (
 test("keeps model backs out of the public catalogue until a rear identity master is approved", () => {
   for (const product of shopProducts) {
     assert.doesNotMatch(JSON.stringify(product), /05-model-back\.webp/);
+  }
+});
+
+test("appends only approved model fronts to the main product gallery", () => {
+  for (const product of shopProducts) {
+    const gallery = selectProductGalleryMedia(product);
+    const modelFrames = gallery.filter((item) => item.presentation === "model");
+
+    if (expectedApprovals.some(({ slug }) => slug === product.slug)) {
+      assert.equal(gallery.length, 5);
+      assert.equal(modelFrames.length, 1);
+      assert.equal(gallery.at(-1)?.src, `/shop/products/${product.slug}/04-model-front.webp`);
+      assert.equal(gallery.at(-1)?.modelAnchorId, "lulu-v2");
+    } else {
+      assert.equal(gallery.length, 4);
+      assert.equal(modelFrames.length, 0);
+    }
   }
 });

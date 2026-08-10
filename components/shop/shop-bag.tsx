@@ -1,16 +1,16 @@
 "use client";
 
 import { ShoppingBag } from "lucide-react";
-import { formatNaira, getShopProduct } from "../../lib/shop/catalog";
+import { formatNaira } from "../../lib/shop/catalog";
 import { ShopActionLink } from "./atoms/action";
 import { ShopLink as Link } from "./atoms/shop-link";
 import { ProductVisual } from "./product-visual";
 import { useShop } from "./shop-provider";
 
 export function ShopBag() {
-  const { bag, removeFromBag } = useShop();
+  const { bag, getProduct, removeFromBag } = useShop();
   const lines = bag.flatMap((item) => {
-    const product = getShopProduct(item.slug);
+    const product = getProduct(item.slug);
     return product ? [{ ...item, product }] : [];
   });
   const subtotal = lines.reduce((sum, line) => sum + line.product.price, 0);

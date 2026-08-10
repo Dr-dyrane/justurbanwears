@@ -1,14 +1,13 @@
 "use client";
 
 import { Heart } from "lucide-react";
-import { shopProducts } from "../../lib/shop/catalog";
 import { ShopActionLink } from "./atoms/action";
 import { ProductCard } from "./product-card";
 import { useShop } from "./shop-provider";
 
 export function SavedProducts() {
-  const { saved } = useShop();
-  const products = shopProducts.filter((product) => saved.includes(product.slug));
+  const { products: catalog, saved } = useShop();
+  const products = catalog.filter((product) => saved.includes(product.slug));
 
   return (
     <div className="shop-list-page">

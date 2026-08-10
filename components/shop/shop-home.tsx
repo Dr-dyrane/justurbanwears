@@ -2,40 +2,44 @@
 
 import { ArrowUpRight, Search } from "lucide-react";
 import { useMemo, useState } from "react";
-import { shopCategories, shopProducts } from "../../lib/shop/catalog";
+import { shopCategories, shopModelAnchors } from "../../lib/shop/catalog";
 import { resolveApprovedModelTryout } from "../../lib/shop/model-tryout";
 import { ShopLink as Link } from "./atoms/shop-link";
 import { ProductCard } from "./product-card";
 import { ProductVisual } from "./product-visual";
+import { useShop } from "./shop-provider";
 
 type Category = (typeof shopCategories)[number];
 
-const dropProducts = shopProducts.filter((product) => product.availability === "AVAILABLE");
-const heroProduct = dropProducts.find((product) => resolveApprovedModelTryout(product.modelTryout))
-  ?? dropProducts[0]!;
-const heroModelView = resolveApprovedModelTryout(heroProduct.modelTryout);
-
 export function ShopHome() {
+  const { products } = useShop();
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<Category>("All");
   const [availableOnly, setAvailableOnly] = useState(true);
 
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
-    return shopProducts.filter((product) => {
+    return products.filter((product) => {
       const matchesCategory = category === "All" || product.category === category;
       const matchesAvailability = !availableOnly || product.availability === "AVAILABLE";
       const haystack = `${product.name} ${product.category} ${product.colour} ${product.fit}`.toLowerCase();
       return matchesCategory && matchesAvailability && (!needle || haystack.includes(needle));
     });
-  }, [availableOnly, category, query]);
+  }, [availableOnly, category, products, query]);
+  const dropProducts = products.filter((product) => product.availability === "AVAILABLE");
+  const heroProduct = dropProducts.find((product) => resolveApprovedModelTryout(product.modelTryout))
+    ?? dropProducts[0]
+    ?? products[0];
+  const heroModelView = heroProduct ? resolveApprovedModelTryout(heroProduct.modelTryout) : null;
+  const liveCountLabel = dropProducts.length === 4 ? "Four" : String(dropProducts.length);
+  const heroTitle = `${liveCountLabel} ${dropProducts.length === 1 ? "piece" : "pieces"}. One clean release.`;
 
   return (
     <div className="shop-home">
       <section className="shop-hero" aria-labelledby="shop-hero-title">
         <div className="shop-hero-copy">
-          <p className="shop-kicker">Drop 01 · Live now</p>
-          <h1 id="shop-hero-title">Four pieces. One clean release.</h1>
+          <p className="shop-kicker">Drop 01 · {dropProducts.length} live</p>
+          <h1 id="shop-hero-title">{heroTitle}</h1>
           <p className="shop-hero-lede">
             A tightly held edit of one-off urban womenswear—measured, condition-checked, and ready to move. The live rail shows only what you can buy now.
           </p>
@@ -44,7 +48,7 @@ export function ShopHome() {
             <Link className="shop-text-action" href="/shop/search">See the full rail <ArrowUpRight aria-hidden="true" size={14} strokeWidth={1.8} /></Link>
           </div>
         </div>
-        <Link
+        {heroProduct ? <Link
           aria-label={heroModelView
             ? `Open the model view for ${heroProduct.name}`
             : `View ${heroProduct.name}`}
@@ -79,8 +83,21 @@ export function ShopHome() {
             </span>
             <b aria-hidden="true">01</b>
           </span>
-        </Link>
-        <p className="shop-hero-aside">Four pieces<br />one of each</p>
+        </Link> : (
+          <div className="shop-hero-stage shop-hero-identity">
+            <div
+              aria-label="Lulu V2 approved public model anchor"
+              className="shop-product-visual is-photo"
+              data-model-anchor={shopModelAnchors["lulu-v2"].id}
+              role="img"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img alt="" aria-hidden="true" height={1619} src={shopModelAnchors["lulu-v2"].src} width={972} />
+            </div>
+            <span className="hero-product-caption glass-surface"><span><small>Wardrobe public view</small><strong>No live piece</strong></span><b aria-hidden="true">00</b></span>
+          </div>
+        )}
+        <p className="shop-hero-aside">{dropProducts.length} live<br />one of each</p>
       </section>
 
       <section className="shop-discovery" id="discover" aria-labelledby="discover-title">
@@ -90,7 +107,7 @@ export function ShopHome() {
             <h2 id="discover-title">Released to the rail.</h2>
           </div>
           <nav className="shop-release-index" aria-label="Drop 01 release index">
-            <span className="shop-release-count">Drop 01 · 4 live pieces</span>
+            <span className="shop-release-count">Drop 01 · {dropProducts.length} live {dropProducts.length === 1 ? "piece" : "pieces"}</span>
             {dropProducts.map((product, index) => (
               <Link
                 className="shop-release-link"
@@ -171,7 +188,7 @@ export function ShopHome() {
           <Link className="shop-action shop-action-secondary" href="#discover">Shop what is live</Link>
         </div>
         <div className="shop-editorial-products">
-          {shopProducts.filter((product) => ["coral", "cocoa", "salmon"].includes(product.tone)).slice(0, 3).map((product) => (
+          {products.filter((product) => ["coral", "cocoa", "salmon"].includes(product.tone)).slice(0, 3).map((product) => (
             <Link href={`/shop/products/${product.slug}`} key={product.slug}>
               <ProductVisual compact product={product} />
               <span>{product.name}</span>

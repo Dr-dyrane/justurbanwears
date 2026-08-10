@@ -12,7 +12,7 @@ import { everyGateReady, listingReadiness } from "../lib/studio/domain/readiness
 import { studioReducer } from "../lib/studio/machines/studio-machine";
 import {
   createListingSlug,
-  selectPublicCatalog,
+  selectWardrobePublicView,
 } from "../lib/studio/projections/public-listing";
 import {
   APPROVED_PUBLIC_LISTINGS,
@@ -20,8 +20,8 @@ import {
   getApprovedPublicListingContract,
 } from "../lib/studio/projections/approved-catalogue";
 import {
-  PUBLIC_CATALOG_PROJECTION_SCHEMA_VERSION,
-  PUBLIC_CATALOG_STORAGE_KEY,
+  WARDROBE_PUBLIC_VIEW_PROJECTION_SCHEMA_VERSION,
+  WARDROBE_PUBLIC_VIEW_STORAGE_KEY,
   migrateLegacyStudioState,
 } from "../lib/studio/db/browser-local-repository";
 
@@ -94,21 +94,21 @@ test("the linked Studio lifecycle reaches return-to-readiness without leaking pr
   assert.equal(state.listings[0].state, "PUBLISHED");
   assert.equal(everyGateReady(listingReadiness(state, state.listings[0])), true);
 
-  const publicCatalog = selectPublicCatalog(state);
-  assert.equal(publicCatalog.length, 1);
-  assert.equal(publicCatalog[0].name, garment.title);
-  assert.equal("privateNote" in publicCatalog[0], false);
-  assert.equal("source" in publicCatalog[0], false);
-  assert.equal("references" in publicCatalog[0], false);
-  assert.equal("modelId" in publicCatalog[0], false);
-  assert.deepEqual(publicCatalog[0].modelAnchor, APPROVED_PUBLIC_MODEL_ANCHOR);
-  assert.equal(publicCatalog[0].media.length, 5);
-  assert.equal(publicCatalog[0].media[0].src, "/shop/products/coral-drift-dress/01-garment-front.webp");
-  assert.equal(publicCatalog[0].media[3].src, "/shop/products/coral-drift-dress/04-model-front.webp");
-  assert.equal(publicCatalog[0].media[4].src, "/shop/products/coral-drift-dress/06-fabric-detail.webp");
-  assert.doesNotMatch(JSON.stringify(publicCatalog[0].media), /05-model-back/);
-  assert.equal(JSON.stringify(publicCatalog[0]).includes(garment.privateNote), false);
-  assert.equal(JSON.stringify(publicCatalog[0]).includes(garment.source), false);
+  const publicView = selectWardrobePublicView(state);
+  assert.equal(publicView.length, 1);
+  assert.equal(publicView[0].name, garment.title);
+  assert.equal("privateNote" in publicView[0], false);
+  assert.equal("source" in publicView[0], false);
+  assert.equal("references" in publicView[0], false);
+  assert.equal("modelId" in publicView[0], false);
+  assert.deepEqual(publicView[0].modelAnchor, APPROVED_PUBLIC_MODEL_ANCHOR);
+  assert.equal(publicView[0].media.length, 5);
+  assert.equal(publicView[0].media[0].src, "/shop/products/coral-drift-dress/01-garment-front.webp");
+  assert.equal(publicView[0].media[3].src, "/shop/products/coral-drift-dress/04-model-front.webp");
+  assert.equal(publicView[0].media[4].src, "/shop/products/coral-drift-dress/06-fabric-detail.webp");
+  assert.doesNotMatch(JSON.stringify(publicView[0].media), /05-model-back/);
+  assert.equal(JSON.stringify(publicView[0]).includes(garment.privateNote), false);
+  assert.equal(JSON.stringify(publicView[0]).includes(garment.source), false);
 
   const order: StudioOrder = {
     id: "order-test",
@@ -145,7 +145,7 @@ test("the linked Studio lifecycle reaches return-to-readiness without leaking pr
   assert.equal(state.inventory[0].onHand, 1);
   assert.equal(state.garments[0].state, "RETURNED");
   assert.equal(state.listings[0].state, "READY");
-  assert.equal(selectPublicCatalog(state).length, 0);
+  assert.equal(selectWardrobePublicView(state).length, 0);
 });
 
 test("writing off a returned sold unit preserves other sellable units", () => {
@@ -204,9 +204,9 @@ test("writing off a returned sold unit preserves other sellable units", () => {
   assert.equal(state.listings[0].publicProjection?.availability, "AVAILABLE");
 });
 
-test("approved catalogue contracts expose product views and only cleared Lulu fronts", () => {
-  assert.equal(PUBLIC_CATALOG_PROJECTION_SCHEMA_VERSION, 2);
-  assert.equal(PUBLIC_CATALOG_STORAGE_KEY, "justurban-wears:catalog-projections:v2");
+test("approved wardrobe public-view contracts expose product views and only cleared Lulu fronts", () => {
+  assert.equal(WARDROBE_PUBLIC_VIEW_PROJECTION_SCHEMA_VERSION, 3);
+  assert.equal(WARDROBE_PUBLIC_VIEW_STORAGE_KEY, "justurban-wears:wardrobe-public-view:v3");
   for (const listing of APPROVED_PUBLIC_LISTINGS) {
     const contract = getApprovedPublicListingContract(listing.sku, listing.slug);
     assert.ok(contract);
@@ -268,7 +268,7 @@ test("an unapproved SKU and slug pair cannot clear listing gates", () => {
   assert.equal(gates.find((gate) => gate.id === "model")?.ready, false);
   state = studioReducer(state, { type: "LISTING_READY_REQUESTED", id: unapprovedListing.id });
   assert.equal(state.listings[0].state, "DRAFT");
-  assert.deepEqual(selectPublicCatalog(state), []);
+  assert.deepEqual(selectWardrobePublicView(state), []);
 });
 
 test("publish rechecks the Lulu V2 readiness gate after a draft is cleared", () => {
@@ -304,7 +304,7 @@ test("publish rechecks the Lulu V2 readiness gate after a draft is cleared", () 
   });
   assert.equal(state.listings[0].state, "READY");
   assert.equal(state.listings[0].publicProjection, undefined);
-  assert.deepEqual(selectPublicCatalog(state), []);
+  assert.deepEqual(selectWardrobePublicView(state), []);
 });
 
 test("a version-one local envelope migrates into the version-two graph", () => {

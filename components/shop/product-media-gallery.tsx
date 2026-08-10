@@ -6,6 +6,7 @@
 import { ChevronLeft, ChevronRight, Expand, X } from "lucide-react";
 import { useRef, useState, type KeyboardEvent, type UIEvent } from "react";
 import type { ShopProduct } from "../../lib/shop/catalog";
+import { selectProductGalleryMedia } from "../../lib/shop/model-tryout";
 import { ProductVisual } from "./product-visual";
 
 function nextIndex(current: number, direction: number, count: number) {
@@ -13,7 +14,7 @@ function nextIndex(current: number, direction: number, count: number) {
 }
 
 export function ProductMediaGallery({ product }: { product: ShopProduct }) {
-  const media = product.media ?? [];
+  const media = selectProductGalleryMedia(product);
   const [activeIndex, setActiveIndex] = useState(0);
   const railRef = useRef<HTMLDivElement>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);

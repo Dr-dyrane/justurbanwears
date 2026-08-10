@@ -3,6 +3,7 @@ import type {
   ShopAvailability,
   ShopNotificationPreference,
   ShopOrder,
+  ShopProduct,
   ShopProductSlug,
 } from "../domain/entities";
 import {
@@ -17,6 +18,7 @@ export type CommerceCommand =
   | { type: "HYDRATION_SUCCEEDED"; snapshot: CommerceSnapshot }
   | { type: "HYDRATION_FAILED" }
   | { type: "EXTERNAL_STATE_RECEIVED"; snapshot: CommerceSnapshot }
+  | { type: "CATALOG_RECEIVED"; products: ShopProduct[] }
   | { type: "CONNECTIVITY_CHANGED"; connectivity: "online" | "offline" }
   | { type: "SAVED_TOGGLED"; slug: ShopProductSlug }
   | { type: "FOLLOWING_TOGGLED" }
@@ -84,6 +86,20 @@ export function commerceReducer(
         ...applySnapshot(state, command.snapshot),
         hydration: "ready",
       };
+    case "CATALOG_RECEIVED": {
+      const productBySlug = new Map(command.products.map((product) => [product.slug, product]));
+      const bag = state.bag.filter((item) => productBySlug.get(item.slug)?.availability === "AVAILABLE");
+      const saved = state.saved.filter((slug) => productBySlug.has(slug));
+      const changed = bag.length !== state.bag.length || saved.length !== state.saved.length;
+      return {
+        ...state,
+        catalog: command.products,
+        bag,
+        saved,
+        cart: cartState(bag),
+        persistenceRevision: changed ? state.persistenceRevision + 1 : state.persistenceRevision,
+      };
+    }
     case "CONNECTIVITY_CHANGED": {
       const offline = command.connectivity === "offline";
       return {

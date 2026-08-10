@@ -1,7 +1,7 @@
 "use client";
 
 import { ArrowUpRight } from "lucide-react";
-import { formatNaira, getShopProduct } from "../../lib/shop/catalog";
+import { formatNaira } from "../../lib/shop/catalog";
 import {
   formatOrderDate,
   getOrderStatusLabel,
@@ -14,7 +14,8 @@ import { ProductVisual } from "./product-visual";
 import { useShop } from "./shop-provider";
 
 function OrderCard({ order }: { order: ShopOrder }) {
-  const product = getShopProduct(order.itemSlugs[0]);
+  const { getProduct } = useShop();
+  const product = getProduct(order.itemSlugs[0]);
   const label = getOrderStatusLabel(order.status);
 
   return (

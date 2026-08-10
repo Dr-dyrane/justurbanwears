@@ -2,7 +2,7 @@
 
 import { ShoppingBag } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
-import { formatNaira, getShopProduct } from "../../lib/shop/catalog";
+import { formatNaira } from "../../lib/shop/catalog";
 import { shopDeliveryOptions, type ShopDeliveryId } from "../../lib/shop/commerce";
 import { ShopActionButton, ShopActionLink } from "./atoms/action";
 import { LocalCommerceDisclosure } from "./atoms/status";
@@ -11,11 +11,11 @@ import { ProductVisual } from "./product-visual";
 import { useShop } from "./shop-provider";
 
 export function ShopCheckout({ mapboxAccessToken }: { mapboxAccessToken: string }) {
-  const { bag, beginCheckout, closeCheckout, isOnline, placeOrder } = useShop();
+  const { bag, beginCheckout, closeCheckout, getProduct, isOnline, placeOrder } = useShop();
   const [deliveryId, setDeliveryId] = useState<ShopDeliveryId>("lagos");
   const [formNotice, setFormNotice] = useState("");
   const lines = bag.flatMap((item) => {
-    const product = getShopProduct(item.slug);
+    const product = getProduct(item.slug);
     return product ? [{ ...item, product }] : [];
   });
   const delivery = shopDeliveryOptions.find((item) => item.id === deliveryId) ?? shopDeliveryOptions[0];
