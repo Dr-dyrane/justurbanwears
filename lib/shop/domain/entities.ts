@@ -22,6 +22,20 @@ export interface ShopProductMedia {
   modelAnchorId?: ShopModelAnchorId;
 }
 
+export interface ShopApprovedModelMedia extends ShopProductMedia {
+  presentation: "model";
+  view: "front";
+  modelAnchorId: ShopModelAnchorId;
+}
+
+export type ShopModelTryout =
+  | { modelStatus: "PENDING" }
+  | {
+      modelStatus: "APPROVED";
+      modelAnchorId: ShopModelAnchorId;
+      frame: ShopApprovedModelMedia;
+    };
+
 export interface ShopProduct {
   slug: ShopProductSlug;
   sku: string;
@@ -37,6 +51,7 @@ export interface ShopProduct {
   tone: ProductTone;
   silhouette: ProductSilhouette;
   media?: readonly ShopProductMedia[];
+  modelTryout: ShopModelTryout;
   note: string;
   story: string;
   details: string[];

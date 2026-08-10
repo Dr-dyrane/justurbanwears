@@ -1,4 +1,4 @@
-import type { ShopProduct } from "./domain/entities";
+import type { ShopModelTryout, ShopProduct } from "./domain/entities";
 
 export type {
   ProductSilhouette,
@@ -6,6 +6,7 @@ export type {
   ProductMediaView,
   ProductTone,
   ShopProductMedia,
+  ShopModelTryout,
   ShopModelAnchorId,
   ShopAvailability,
   ShopProduct,
@@ -74,6 +75,32 @@ function createCatalogueMedia(slug: string, name: string): NonNullable<ShopProdu
   }));
 }
 
+function pendingModelTryout(): ShopModelTryout {
+  return { modelStatus: "PENDING" };
+}
+
+function approvedFrontModelTryout(
+  slug: string,
+  name: string,
+  width: number,
+): ShopModelTryout {
+  return {
+    modelStatus: "APPROVED",
+    modelAnchorId: "lulu-v2",
+    frame: {
+      id: "model-front",
+      src: `/shop/products/${slug}/04-model-front.webp`,
+      alt: `Lulu wearing ${name}, shown from the front.`,
+      label: "On model",
+      presentation: "model",
+      view: "front",
+      width,
+      height: 1619,
+      modelAnchorId: "lulu-v2",
+    },
+  };
+}
+
 // Public, shopper-safe catalogue data. This module never imports Studio state or private identity sources.
 export const shopProducts: ShopProduct[] = [
   {
@@ -90,6 +117,7 @@ export const shopProducts: ShopProduct[] = [
     drop: "August edit",
     tone: "coral",
     silhouette: "dress",
+    modelTryout: approvedFrontModelTryout("coral-drift-dress", "Coral Drift Dress", 972),
     note: "A softly gathered midi that moves without feeling precious.",
     story:
       "Chosen for the easy drape and warm, sun-faded colour. The waist sits gently rather than tightly, with enough movement for everyday plans and evening light.",
@@ -115,6 +143,7 @@ export const shopProducts: ShopProduct[] = [
     drop: "August edit",
     tone: "indigo",
     silhouette: "shirt",
+    modelTryout: pendingModelTryout(),
     media: createCatalogueMedia("indigo-workshirt", "Indigo Workshirt"),
     note: "Soft denim structure with the ease of a light jacket.",
     story:
@@ -140,6 +169,7 @@ export const shopProducts: ShopProduct[] = [
     drop: "August edit",
     tone: "moss",
     silhouette: "knit",
+    modelTryout: approvedFrontModelTryout("moss-square-knit", "Moss Square Knit", 972),
     media: createCatalogueMedia("moss-square-knit", "Moss Square Knit"),
     note: "Fine rib, square neck, and a close fit that layers cleanly.",
     story:
@@ -165,6 +195,7 @@ export const shopProducts: ShopProduct[] = [
     drop: "Archive",
     tone: "ivory",
     silhouette: "skirt",
+    modelTryout: approvedFrontModelTryout("ivory-tie-skirt", "Ivory Tie Skirt", 971),
     media: createCatalogueMedia("ivory-tie-skirt", "Ivory Tie Skirt"),
     note: "An asymmetric wrap with a clean waist tie and soft movement.",
     story:
@@ -190,6 +221,7 @@ export const shopProducts: ShopProduct[] = [
     drop: "August edit",
     tone: "cocoa",
     silhouette: "trouser",
+    modelTryout: approvedFrontModelTryout("cocoa-pleat-trouser", "Cocoa Pleat Trouser", 972),
     media: createCatalogueMedia("cocoa-pleat-trouser", "Cocoa Pleat Trouser"),
     note: "A long, fluid line with a single front pleat and gentle taper.",
     story:
@@ -215,6 +247,7 @@ export const shopProducts: ShopProduct[] = [
     drop: "August edit",
     tone: "salmon",
     silhouette: "shirt",
+    modelTryout: approvedFrontModelTryout("salmon-camp-shirt", "Salmon Camp Shirt", 972),
     media: createCatalogueMedia("salmon-camp-shirt", "Salmon Camp Shirt"),
     note: "Airy, boxy, and cut with an open collar for warm days.",
     story:

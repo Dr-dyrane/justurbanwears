@@ -1,14 +1,39 @@
 "use client";
 
-import { ArrowLeft, ChevronDown, Heart, Share2, Store } from "lucide-react";
+import { ArrowLeft, ChevronDown, Eye, Heart, Share2, Store } from "lucide-react";
 import { useParams } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { formatNaira, getShopProduct, shopProducts } from "../../lib/shop/catalog";
+import { resolveApprovedModelTryout } from "../../lib/shop/model-tryout";
 import { ShopActionButton, ShopActionLink } from "./atoms/action";
 import { ShopLink as Link } from "./atoms/shop-link";
 import { ProductCard } from "./product-card";
 import { ProductMediaGallery } from "./product-media-gallery";
+import { ProductModelTryout } from "./product-model-tryout";
 import { useShop } from "./shop-provider";
+
+const MODEL_VIEW_EVENT = "shop:model-view-url-changed";
+
+function subscribeToModelViewUrl(listener: () => void) {
+  window.addEventListener("popstate", listener);
+  window.addEventListener(MODEL_VIEW_EVENT, listener);
+  return () => {
+    window.removeEventListener("popstate", listener);
+    window.removeEventListener(MODEL_VIEW_EVENT, listener);
+  };
+}
+
+function modelViewRequested() {
+  return new URL(window.location.href).searchParams.get("view") === "model";
+}
+
+function serverModelViewSnapshot() {
+  return false;
+}
+
+function announceModelViewUrlChange() {
+  window.dispatchEvent(new Event(MODEL_VIEW_EVENT));
+}
 
 export function ProductDetail() {
   const params = useParams<{ slug: string }>();
@@ -17,13 +42,28 @@ export function ProductDetail() {
     addToBag,
     bag,
     following,
+    hydration,
     isOnline,
+    persistence,
     prepareCheckout,
     saved,
     toggleFollowing,
     toggleSaved,
   } = useShop();
   const [notice, setNotice] = useState("");
+  const modelTryoutTriggerRef = useRef<HTMLButtonElement>(null);
+  const openedModelTryoutHereRef = useRef(false);
+  const approvedModelTryout = useMemo(() => (
+    product?.modelTryout.modelStatus === "APPROVED"
+      ? resolveApprovedModelTryout(product.modelTryout)
+      : null
+  ), [product]);
+  const isModelViewRequested = useSyncExternalStore(
+    subscribeToModelViewUrl,
+    modelViewRequested,
+    serverModelViewSnapshot,
+  );
+  const isModelTryoutOpen = Boolean(approvedModelTryout && isModelViewRequested);
 
   if (!product) {
     return (
@@ -45,10 +85,45 @@ export function ProductDetail() {
   function addProduct() {
     if (!isOnline) {
       setNotice("Reconnect to add this piece to your bag.");
+      return false;
+    }
+    const added = addToBag({ slug: product!.slug, size: product!.taggedSize });
+    setNotice(added
+      ? `${product!.name} is in your bag.`
+      : `${product!.name} could not be added. Try again.`);
+    return added;
+  }
+
+  function openModelTryout() {
+    const url = new URL(window.location.href);
+    url.searchParams.set("view", "model");
+    const currentState = history.state && typeof history.state === "object"
+      ? history.state as Record<string, unknown>
+      : {};
+    history.pushState(
+      { ...currentState, shopModelView: true },
+      "",
+      `${url.pathname}${url.search}${url.hash}`,
+    );
+    openedModelTryoutHereRef.current = true;
+    announceModelViewUrlChange();
+  }
+
+  function closeModelTryout() {
+    if (openedModelTryoutHereRef.current && history.state?.shopModelView === true) {
+      openedModelTryoutHereRef.current = false;
+      history.back();
       return;
     }
-    addToBag({ slug: product!.slug, size: product!.taggedSize });
-    setNotice(`${product!.name} is in your bag.`);
+
+    const url = new URL(window.location.href);
+    url.searchParams.delete("view");
+    history.replaceState(
+      history.state,
+      "",
+      `${url.pathname}${url.search}${url.hash}`,
+    );
+    announceModelViewUrlChange();
   }
 
   async function buyProduct() {
@@ -132,6 +207,23 @@ export function ProductDetail() {
             </div>
           </div>
 
+          {approvedModelTryout ? (
+            <button
+              aria-haspopup="dialog"
+              className="shop-model-tryout-entry"
+              onClick={openModelTryout}
+              ref={modelTryoutTriggerRef}
+              type="button"
+            >
+              <span aria-hidden="true"><Eye size={19} strokeWidth={1.7} /></span>
+              <span>
+                <small>On model</small>
+                <strong>{isOnline ? "Front view" : "Reconnect to open"}</strong>
+              </span>
+              <b aria-hidden="true">01</b>
+            </button>
+          ) : null}
+
           <fieldset className="shop-size-fieldset">
             <legend>Tagged size</legend>
             <button aria-pressed="true" type="button">{product.taggedSize}</button>
@@ -198,6 +290,25 @@ export function ProductDetail() {
         <div className="shop-section-title"><div><p className="shop-kicker">Keep looking</p><h2>More from the rail.</h2></div></div>
         <div className="shop-product-grid">{related.map((item) => <ProductCard key={item.slug} product={item} />)}</div>
       </section>
+
+      {approvedModelTryout ? (
+        <ProductModelTryout
+          availability={product.availability}
+          hydration={hydration}
+          isInBag={isInBag}
+          isOnline={isOnline}
+          isOpen={isModelTryoutOpen}
+          isSaved={isSaved}
+          onAddToBag={addProduct}
+          onRequestClose={closeModelTryout}
+          onReturnFocus={() => modelTryoutTriggerRef.current?.focus()}
+          onToggleSaved={() => toggleSaved(product.slug)}
+          persistence={persistence}
+          productName={product.name}
+          taggedSize={product.taggedSize}
+          tryout={approvedModelTryout}
+        />
+      ) : null}
     </div>
   );
 }

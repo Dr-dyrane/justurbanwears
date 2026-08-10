@@ -2,7 +2,8 @@
 
 import { ArrowUpRight, Search } from "lucide-react";
 import { useMemo, useState } from "react";
-import { shopCategories, shopModelAnchors, shopProducts } from "../../lib/shop/catalog";
+import { shopCategories, shopProducts } from "../../lib/shop/catalog";
+import { resolveApprovedModelTryout } from "../../lib/shop/model-tryout";
 import { ShopLink as Link } from "./atoms/shop-link";
 import { ProductCard } from "./product-card";
 import { ProductVisual } from "./product-visual";
@@ -10,7 +11,9 @@ import { ProductVisual } from "./product-visual";
 type Category = (typeof shopCategories)[number];
 
 const dropProducts = shopProducts.filter((product) => product.availability === "AVAILABLE");
-const approvedIdentity = shopModelAnchors["lulu-v2"];
+const heroProduct = dropProducts.find((product) => resolveApprovedModelTryout(product.modelTryout))
+  ?? dropProducts[0]!;
+const heroModelView = resolveApprovedModelTryout(heroProduct.modelTryout);
 
 export function ShopHome() {
   const [query, setQuery] = useState("");
@@ -41,29 +44,42 @@ export function ShopHome() {
             <Link className="shop-text-action" href="/shop/search">See the full rail <ArrowUpRight aria-hidden="true" size={14} strokeWidth={1.8} /></Link>
           </div>
         </div>
-        <div className="shop-hero-stage shop-hero-identity">
-          <div
-            aria-label="Lulu, approved studio identity reference. Her clothing is not part of Drop 01."
-            className="shop-product-visual is-photo"
-            data-model-anchor={approvedIdentity.id}
-            role="img"
-          >
-            {/* The labelled wrapper keeps the image's role explicit without presenting it as product media. */}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              alt=""
-              aria-hidden="true"
-              fetchPriority="high"
-              height={1619}
-              src={approvedIdentity.src}
-              width={972}
-            />
-          </div>
+        <Link
+          aria-label={heroModelView
+            ? `Open the model view for ${heroProduct.name}`
+            : `View ${heroProduct.name}`}
+          className="shop-hero-stage shop-hero-identity"
+          href={`/shop/products/${heroProduct.slug}${heroModelView ? "?view=model" : ""}`}
+        >
+          {heroModelView ? (
+            <div
+              aria-label={heroModelView.frame.alt}
+              className="shop-product-visual is-photo"
+              data-model-anchor={heroModelView.modelAnchorId}
+              role="img"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                alt=""
+                aria-hidden="true"
+                fetchPriority="high"
+                height={heroModelView.frame.height}
+                src={heroModelView.frame.src}
+                style={{ objectPosition: heroModelView.frame.objectPosition ?? "50% 50%" }}
+                width={heroModelView.frame.width}
+              />
+            </div>
+          ) : (
+            <ProductVisual product={heroProduct} />
+          )}
           <span className="hero-product-caption glass-surface">
-            <span><small>Approved studio identity · not shop merchandise</small><strong>Lulu</strong></span>
+            <span>
+              <small>{heroProduct.sku} · {heroModelView ? "On Lulu" : "Drop 01"}</small>
+              <strong>{heroProduct.name}</strong>
+            </span>
             <b aria-hidden="true">01</b>
           </span>
-        </div>
+        </Link>
         <p className="shop-hero-aside">Four pieces<br />one of each</p>
       </section>
 

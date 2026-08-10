@@ -1,8 +1,9 @@
 "use client";
 
-import { Check, Heart, ShoppingBag } from "lucide-react";
+import { Check, Eye, Heart, ShoppingBag } from "lucide-react";
 import { useState } from "react";
 import { formatNaira, type ShopProduct } from "../../lib/shop/catalog";
+import { resolveApprovedModelTryout } from "../../lib/shop/model-tryout";
 import { ShopLink as Link } from "./atoms/shop-link";
 import { useShop } from "./shop-provider";
 import { ProductVisual } from "./product-visual";
@@ -19,6 +20,9 @@ export function ProductCard({ product }: { product: ShopProduct }) {
   const isSaved = saved.includes(product.slug);
   const isInBag = bag.some((item) => item.slug === product.slug);
   const isAvailable = product.availability === "AVAILABLE";
+  const approvedModelTryout = product.modelTryout.modelStatus === "APPROVED"
+    ? resolveApprovedModelTryout(product.modelTryout)
+    : null;
 
   function quickAdd() {
     if (!isAvailable || isInBag) return;
@@ -59,6 +63,23 @@ export function ProductCard({ product }: { product: ShopProduct }) {
         <h3>{product.name}</h3>
         <p>{formatNaira(product.price)}</p>
       </Link>
+      {approvedModelTryout ? (
+        isOnline ? (
+          <Link
+            aria-label={`Open the model front view of ${product.name}`}
+            className="product-model-link"
+            href={`/shop/products/${product.slug}?view=model`}
+          >
+            <Eye aria-hidden="true" size={15} strokeWidth={1.8} />
+            <span>On model</span>
+          </Link>
+        ) : (
+          <span className="product-model-link is-offline" title="Reconnect to open the model view">
+            <Eye aria-hidden="true" size={15} strokeWidth={1.8} />
+            <span>On model · Offline</span>
+          </span>
+        )
+      ) : null}
       <div className="product-card-action-row">
         {isAvailable ? (
           isInBag ? (

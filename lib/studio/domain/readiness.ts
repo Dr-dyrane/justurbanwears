@@ -49,8 +49,10 @@ export function listingReadiness(
     { id: "price", label: "Price confirmed", ready: Number.isFinite(listing.price) && listing.price > 0 },
     {
       id: "media",
-      label: "Six public frames approved",
-      ready: approvedContract?.media.length === 6,
+      label: approvedContract?.media.some((frame) => frame.slot === "MODEL_FRONT")
+        ? "Product views + model front approved"
+        : "Product views approved",
+      ready: Boolean(approvedContract && approvedContract.media.length >= 4),
     },
     {
       id: "model",

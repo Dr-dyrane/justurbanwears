@@ -24,8 +24,10 @@ async function render(pathname, accept = "text/html") {
 
 function visibleMarkup(html) {
   const bodyStart = html.indexOf("<body");
-  const firstBodyScript = html.indexOf("<script", bodyStart);
-  return html.slice(bodyStart, firstBodyScript === -1 ? undefined : firstBodyScript);
+  const bodyEnd = html.indexOf("</body>", bodyStart);
+  return html
+    .slice(bodyStart, bodyEnd === -1 ? undefined : bodyEnd)
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "");
 }
 
 test("server-renders the public shop foundation", async () => {
@@ -39,19 +41,23 @@ test("server-renders the public shop foundation", async () => {
   assert.match(html, /Four pieces\. One clean release/);
   assert.match(html, /Search the edit/);
   assert.match(html, /Quick add/);
+  assert.match(html, /data-mobile-chrome-mode="expanded"/);
+  assert.match(html, /aria-label="Show navigation\. Home selected"/);
+  assert.match(html, /id="shop-mobile-navigation"/);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/i);
 });
 
-test("publishes the approved identity hero and the four-piece Drop 01 rail", async () => {
+test("publishes a product-led Lulu hero and the four-piece Drop 01 rail", async () => {
   const response = await render("/shop");
   assert.equal(response.status, 200);
 
   const html = await response.text();
   const visibleBody = visibleMarkup(html);
-  assert.match(visibleBody, /\/shop\/model\/lulu-v2-approved\.png/);
+  assert.match(visibleBody, /\/shop\/products\/coral-drift-dress\/04-model-front\.webp/);
   assert.match(visibleBody, /data-model-anchor="lulu-v2"/);
-  assert.match(visibleBody, /Approved studio identity/);
-  assert.match(visibleBody, /not shop merchandise/);
+  assert.match(visibleBody, /On Lulu/);
+  assert.match(visibleBody, /Coral Drift Dress/);
+  assert.doesNotMatch(visibleBody, /Approved studio identity|not shop merchandise/);
   assert.match(visibleBody, /aria-pressed="true"[^>]*class="availability-filter is-active"/);
 
   const releasedProducts = [
@@ -76,9 +82,15 @@ test("keeps the private Studio and public shop visibly distinct", async () => {
 
   const html = await response.text();
   const visibleBody = visibleMarkup(html);
-  assert.match(html, /Operator surface/);
-  assert.match(html, /From source truth to final frame/);
-  assert.match(html, /Private references stay local/);
+  assert.match(visibleBody, /Studio · Lulu/);
+  assert.match(visibleBody, /Business home/);
+  assert.match(visibleBody, /Opening Lulu Studio/);
+  assert.match(visibleBody, /href="\/studio\/models"/);
+  assert.match(visibleBody, /href="\/studio\/wardrobe"/);
+  assert.match(visibleBody, /href="\/studio\/operations"/);
+  assert.match(visibleBody, /data-mobile-chrome-mode="expanded"/);
+  assert.match(visibleBody, /aria-label="Show navigation\. Business home selected"/);
+  assert.match(visibleBody, /id="studio-mobile-navigation"/);
   assert.doesNotMatch(visibleBody, /Four pieces\. One clean release/);
 });
 
@@ -95,11 +107,13 @@ test("server-renders a navigable public product detail", async () => {
   assert.match(html, /Garment back/);
   assert.match(html, /On mannequin/);
   assert.match(html, /Fabric detail/);
+  assert.match(html, /On model/);
+  assert.match(html, /data-model-anchor="lulu-v2"/);
   assert.match(html, /01-garment-front\.webp/);
   assert.match(html, /application\/ld\+json/);
 });
 
-test("server-renders a complete product-only media study for every catalogue piece", async () => {
+test("server-renders product studies plus only identity-cleared model fronts", async () => {
   const slugs = [
     "coral-drift-dress",
     "indigo-workshirt",
@@ -111,18 +125,29 @@ test("server-renders a complete product-only media study for every catalogue pie
   const responses = await Promise.all(
     slugs.map((slug) => render(`/shop/products/${slug}`)),
   );
+  const approvedModelSlugs = new Set([
+    "coral-drift-dress",
+    "moss-square-knit",
+    "ivory-tie-skirt",
+    "cocoa-pleat-trouser",
+    "salmon-camp-shirt",
+  ]);
 
   for (const [index, response] of responses.entries()) {
     assert.equal(response.status, 200);
     const html = await response.text();
+    const visibleBody = visibleMarkup(html);
     const base = `/shop/products/${slugs[index]}`;
     assert.match(html, new RegExp(`${base}/01-garment-front\\.webp`));
     assert.match(html, new RegExp(`${base}/02-garment-back\\.webp`));
     assert.match(html, new RegExp(`${base}/03-mannequin-front\\.webp`));
     assert.match(html, new RegExp(`${base}/06-fabric-detail\\.webp`));
-    assert.doesNotMatch(html, /04-model-front\.webp/);
     assert.doesNotMatch(html, /05-model-back\.webp/);
-    assert.doesNotMatch(html, /data-model-anchor="lulu-v2"/);
+    if (approvedModelSlugs.has(slugs[index])) {
+      assert.match(visibleBody, /data-model-anchor="lulu-v2"/);
+    } else {
+      assert.doesNotMatch(visibleBody, /data-model-anchor="lulu-v2"/);
+    }
   }
 });
 

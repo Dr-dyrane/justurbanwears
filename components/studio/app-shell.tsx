@@ -13,6 +13,7 @@ import {
   Users,
   type LucideIcon,
 } from "lucide-react";
+import { useMobileChrome } from "../../hooks/use-mobile-chrome";
 import { ThemeToggle } from "../theme/theme-toggle";
 import { StudioProvider } from "./studio-provider";
 
@@ -118,8 +119,22 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const viewNavigation = getViewNavigation(pathname);
   const [activeView, setActiveView] = useState("");
+  const {
+    chromeHidden,
+    closeNavigation,
+    mode: mobileChromeMode,
+    navigationRef,
+    revealNavigation,
+    suspended: mobileChromeSuspended,
+  } = useMobileChrome(pathname);
+  const activeMobileDestination = primaryNavigation.find((item) => isActive(pathname, item.href));
+  const mobileDestination = activeMobileDestination
+    ?? (pathname.startsWith("/shoots")
+      ? { label: "Shoots", icon: Camera }
+      : { label: "Studio", icon: House });
+  const MobileDestinationIcon = mobileDestination.icon;
   const contextAction = pathname.startsWith("/studio/models")
-    ? { eyebrow: "Model atelier", label: "Create and name the next model", href: "/studio/models#new-model" }
+    ? { eyebrow: "Model atelier", label: "Add another model", href: "/studio/models?intake=model" }
     : pathname.startsWith("/studio/wardrobe")
       ? { eyebrow: "Garment intake", label: "Snap and classify the next piece", href: "/studio/wardrobe?intake=1" }
       : pathname.startsWith("/studio/operations")
@@ -231,9 +246,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <StudioProvider>
-      <div className="app-shell studio-shell">
+      <div
+        className="app-shell studio-shell"
+        data-mobile-chrome-hidden={chromeHidden || undefined}
+        data-mobile-chrome-suspended={mobileChromeSuspended || undefined}
+      >
         <a className="shop-skip-link studio-skip-link" href="#studio-content">Skip to Studio content</a>
-        <header className="shop-header studio-header">
+        <header
+          aria-hidden={chromeHidden || mobileChromeSuspended || undefined}
+          className="shop-header studio-header"
+          inert={chromeHidden || mobileChromeSuspended || undefined}
+        >
           <nav className="shop-floating-nav studio-floating-nav glass-surface" aria-label="Studio navigation">
             <Link className="shop-wordmark studio-wordmark" href="/studio" aria-label="justurban wears Studio home">
               <span className="studio-brand-mark" aria-hidden="true">
@@ -307,43 +330,76 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           ) : null}
           <main className="page-canvas" id="studio-content">{children}</main>
         </div>
-        <aside className="shop-mobile-shell studio-mobile-shell" aria-label="Mobile Studio controls">
-          <Link className="shop-mobile-context shop-dock-lens" href={contextAction.href}>
-            <span>
-              <small>{contextAction.eyebrow}</small>
-              <strong>{contextAction.label}</strong>
-            </span>
-            <ArrowRight aria-hidden="true" size={17} strokeWidth={1.9} />
-          </Link>
-          <div className="shop-mobile-row">
-            <nav className="shop-mobile-dock shop-dock-lens" aria-label="Mobile Studio navigation">
-              {primaryNavigation.map((item) => {
-                const active = isActive(pathname, item.href);
-                const Icon = item.icon;
-                return (
-                  <Link
-                    aria-current={active ? "page" : undefined}
-                    aria-label={item.label}
-                    className={active ? "is-active" : undefined}
-                    href={item.href}
-                    key={item.href}
-                  >
-                    <Icon aria-hidden="true" size={22} strokeWidth={active ? 2.2 : 1.65} />
-                    <span>{item.mobileLabel}</span>
-                  </Link>
-                );
-              })}
-            </nav>
-            <Link
-              aria-label="Open the justurban wears public shop"
-              className="shop-mobile-fab shop-dock-lens studio-mobile-fab"
-              href="/shop"
+        <aside
+          aria-hidden={mobileChromeMode === "suspended" || undefined}
+          aria-label="Mobile Studio controls"
+          className="shop-mobile-shell studio-mobile-shell"
+          data-mobile-chrome-mode={mobileChromeMode}
+          inert={mobileChromeMode === "suspended" || undefined}
+        >
+          <div className="shop-mobile-composition">
+            <button
+              aria-controls="studio-mobile-navigation"
+              aria-expanded={mobileChromeMode === "navigation"}
+              aria-hidden={mobileChromeMode !== "compact" || undefined}
+              aria-label={`Show navigation. ${mobileDestination.label} selected`}
+              className="shop-mobile-nav-reveal shop-dock-lens"
+              onClick={revealNavigation}
+              tabIndex={mobileChromeMode === "compact" ? 0 : -1}
+              type="button"
             >
-              {/* Keep the proven app mark byte-for-byte identical to the installed icon. */}
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img className="studio-mobile-app-icon" src="/brand/icon-192.png" alt="" width={44} height={44} />
-              <ExternalLink className="studio-mobile-exit-mark" aria-hidden="true" size={18} strokeWidth={2.1} />
+              <span><MobileDestinationIcon aria-hidden="true" size={25} strokeWidth={2.2} /></span>
+            </button>
+            <Link
+              aria-hidden={mobileChromeMode === "navigation" || mobileChromeMode === "suspended" || undefined}
+              className="shop-mobile-context shop-dock-lens"
+              href={contextAction.href}
+              tabIndex={mobileChromeMode === "navigation" || mobileChromeMode === "suspended" ? -1 : undefined}
+            >
+              <span>
+                <small>{contextAction.eyebrow}</small>
+                <strong>{contextAction.label}</strong>
+              </span>
+              <ArrowRight aria-hidden="true" size={17} strokeWidth={1.9} />
             </Link>
+            <div className="shop-mobile-row">
+              <nav
+                aria-hidden={mobileChromeMode === "compact" || mobileChromeMode === "suspended" || undefined}
+                aria-label="Mobile Studio navigation"
+                className="shop-mobile-dock shop-dock-lens"
+                id="studio-mobile-navigation"
+                inert={mobileChromeMode === "compact" || mobileChromeMode === "suspended" || undefined}
+                ref={navigationRef}
+              >
+                {primaryNavigation.map((item) => {
+                  const active = isActive(pathname, item.href);
+                  const Icon = item.icon;
+                  return (
+                    <Link
+                      aria-current={active ? "page" : undefined}
+                      aria-label={item.label}
+                      className={active ? "is-active" : undefined}
+                      href={item.href}
+                      key={item.href}
+                      onClick={closeNavigation}
+                    >
+                      <Icon aria-hidden="true" size={22} strokeWidth={active ? 2.2 : 1.65} />
+                      <span>{item.mobileLabel}</span>
+                    </Link>
+                  );
+                })}
+              </nav>
+              <Link
+                aria-label="Open the justurban wears public shop"
+                className="shop-mobile-fab shop-dock-lens studio-mobile-fab"
+                href="/shop"
+              >
+                {/* Keep the proven app mark byte-for-byte identical to the installed icon. */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img className="studio-mobile-app-icon" src="/brand/icon-192.png" alt="" width={44} height={44} />
+                <ExternalLink className="studio-mobile-exit-mark" aria-hidden="true" size={18} strokeWidth={2.1} />
+              </Link>
+            </div>
           </div>
         </aside>
       </div>

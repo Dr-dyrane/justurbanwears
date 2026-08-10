@@ -52,7 +52,13 @@ function formatNaira(value: number) {
   return new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", maximumFractionDigits: 0 }).format(value);
 }
 
-function GarmentIntakeDialog({ dialogRef }: { dialogRef: React.RefObject<HTMLDialogElement | null> }) {
+function GarmentIntakeDialog({
+  dialogRef,
+  onClosed,
+}: {
+  dialogRef: React.RefObject<HTMLDialogElement | null>;
+  onClosed(): void;
+}) {
   const { createGarment } = useStudio();
   const [files, setFiles] = useState<Record<CaptureKey, File | null>>({ front: null, back: null, detail: null });
 
@@ -94,7 +100,7 @@ function GarmentIntakeDialog({ dialogRef }: { dialogRef: React.RefObject<HTMLDia
   }
 
   return (
-    <dialog className="studio-intake-sheet" ref={dialogRef} aria-labelledby="studio-intake-title">
+    <dialog className="studio-intake-sheet" ref={dialogRef} aria-labelledby="studio-intake-title" onClose={onClosed}>
       <form onSubmit={submit}>
         <header>
           <div><p className="eyebrow">Garment pipeline</p><h2 id="studio-intake-title">Snap. Classify. Wardrobe.</h2></div>
@@ -216,7 +222,7 @@ function ApprovedPublicMedia({ sku, slug, title }: {
     return (
       <div className="studio-public-media-empty">
         <ImagePlus aria-hidden="true" size={18} strokeWidth={1.6} />
-        <span><small>Public media</small><strong>No approved six-frame set</strong></span>
+        <span><small>Public media</small><strong>No approved product set</strong></span>
       </div>
     );
   }
@@ -295,11 +301,53 @@ export function WardrobeWorkbench() {
   const studio = useStudio();
   const searchParams = useSearchParams();
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const intakeOriginRef = useRef<"query" | "trigger" | null>(null);
+  const intakeReturnFocusRef = useRef<HTMLElement | null>(null);
   const [filter, setFilter] = useState<(typeof filters)[number]>("ALL");
 
   useEffect(() => {
-    if (searchParams.get("intake") === "1" && !dialogRef.current?.open) dialogRef.current?.showModal();
-  }, [searchParams]);
+    const queryWantsIntake = searchParams.get("intake") === "1";
+    if (queryWantsIntake && !dialogRef.current?.open) {
+      intakeOriginRef.current = "query";
+      intakeReturnFocusRef.current = null;
+      dialogRef.current?.showModal();
+    } else if (!queryWantsIntake && intakeOriginRef.current === "query" && dialogRef.current?.open) {
+      dialogRef.current.close();
+    }
+  }, [searchParams, studio.hydration]);
+
+  useEffect(() => {
+    function syncQueryIntake() {
+      const queryWantsIntake = new URLSearchParams(window.location.search).get("intake") === "1";
+      if (!queryWantsIntake && intakeOriginRef.current === "query" && dialogRef.current?.open) {
+        dialogRef.current.close();
+      }
+    }
+
+    window.addEventListener("popstate", syncQueryIntake);
+    return () => window.removeEventListener("popstate", syncQueryIntake);
+  }, []);
+
+  function openIntake(returnFocus: HTMLElement | null) {
+    intakeOriginRef.current = "trigger";
+    intakeReturnFocusRef.current = returnFocus;
+    dialogRef.current?.showModal();
+  }
+
+  function finishIntake() {
+    const origin = intakeOriginRef.current;
+    const returnFocus = intakeReturnFocusRef.current;
+    intakeOriginRef.current = null;
+    intakeReturnFocusRef.current = null;
+
+    if (origin === "query") {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("intake");
+      window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+    } else {
+      returnFocus?.focus({ preventScroll: true });
+    }
+  }
 
   const visibleGarments = useMemo(() => studio.garments.filter((garment) => {
     if (filter === "ALL") return true;
@@ -315,7 +363,7 @@ export function WardrobeWorkbench() {
     <div className="studio-ops-page">
       <header className="studio-ops-heading" id="garments">
         <div><p className="eyebrow">Garment pipeline</p><h1>The wardrobe, ready to sell.</h1><p>Capture the piece once, clear its truth gates, then publish only the approved catalogue projection.</p></div>
-        <button className="button button-primary" onClick={() => dialogRef.current?.showModal()} type="button"><Plus aria-hidden="true" size={17} />Intake garment</button>
+        <button className="button button-primary" onClick={(event) => openIntake(event.currentTarget)} type="button"><Plus aria-hidden="true" size={17} />Intake garment</button>
       </header>
 
       <div className="studio-filter-bar" role="group" aria-label="Filter wardrobe">
@@ -324,7 +372,7 @@ export function WardrobeWorkbench() {
       </div>
 
       {visibleGarments.length ? <div className="studio-garment-grid">{visibleGarments.map((garment) => <GarmentCard garment={garment} key={garment.id} />)}</div> : (
-        <div className="studio-quiet-empty studio-wardrobe-empty"><PackageOpen aria-hidden="true" size={26} strokeWidth={1.5} /><div><strong>{studio.garments.length ? "No garments in this state" : "Your wardrobe is empty"}</strong><p>{studio.garments.length ? "Choose another lifecycle filter." : "Start with one photographed and classified piece."}</p></div>{studio.garments.length ? null : <button className="button button-primary" onClick={() => dialogRef.current?.showModal()} type="button">Intake garment</button>}</div>
+        <div className="studio-quiet-empty studio-wardrobe-empty"><PackageOpen aria-hidden="true" size={26} strokeWidth={1.5} /><div><strong>{studio.garments.length ? "No garments in this state" : "Your wardrobe is empty"}</strong><p>{studio.garments.length ? "Choose another lifecycle filter." : "Start with one photographed and classified piece."}</p></div>{studio.garments.length ? null : <button className="button button-primary" onClick={(event) => openIntake(event.currentTarget)} type="button">Intake garment</button>}</div>
       )}
 
       <section className="studio-publishing-section" id="publishing" aria-labelledby="publishing-title">
@@ -332,7 +380,7 @@ export function WardrobeWorkbench() {
         {studio.listings.length ? <div className="studio-listing-stack">{studio.listings.map((listing) => <ListingEditor listing={listing} key={listing.id} />)}</div> : <div className="studio-quiet-empty"><Send aria-hidden="true" size={24} strokeWidth={1.5} /><div><strong>No listing drafts</strong><p>Move a garment to wardrobe, then prepare its listing.</p></div></div>}
       </section>
 
-      <GarmentIntakeDialog dialogRef={dialogRef} />
+      <GarmentIntakeDialog dialogRef={dialogRef} onClosed={finishIntake} />
     </div>
   );
 }

@@ -102,9 +102,11 @@ test("the linked Studio lifecycle reaches return-to-readiness without leaking pr
   assert.equal("references" in publicCatalog[0], false);
   assert.equal("modelId" in publicCatalog[0], false);
   assert.deepEqual(publicCatalog[0].modelAnchor, APPROVED_PUBLIC_MODEL_ANCHOR);
-  assert.equal(publicCatalog[0].media.length, 6);
+  assert.equal(publicCatalog[0].media.length, 5);
   assert.equal(publicCatalog[0].media[0].src, "/shop/products/coral-drift-dress/01-garment-front.webp");
-  assert.equal(publicCatalog[0].media[5].src, "/shop/products/coral-drift-dress/06-fabric-detail.webp");
+  assert.equal(publicCatalog[0].media[3].src, "/shop/products/coral-drift-dress/04-model-front.webp");
+  assert.equal(publicCatalog[0].media[4].src, "/shop/products/coral-drift-dress/06-fabric-detail.webp");
+  assert.doesNotMatch(JSON.stringify(publicCatalog[0].media), /05-model-back/);
   assert.equal(JSON.stringify(publicCatalog[0]).includes(garment.privateNote), false);
   assert.equal(JSON.stringify(publicCatalog[0]).includes(garment.source), false);
 
@@ -202,25 +204,28 @@ test("writing off a returned sold unit preserves other sellable units", () => {
   assert.equal(state.listings[0].publicProjection?.availability, "AVAILABLE");
 });
 
-test("approved catalogue contracts expose only the Lulu V2 anchor and six public frames", () => {
+test("approved catalogue contracts expose product views and only cleared Lulu fronts", () => {
   assert.equal(PUBLIC_CATALOG_PROJECTION_SCHEMA_VERSION, 2);
   assert.equal(PUBLIC_CATALOG_STORAGE_KEY, "justurban-wears:catalog-projections:v2");
   for (const listing of APPROVED_PUBLIC_LISTINGS) {
     const contract = getApprovedPublicListingContract(listing.sku, listing.slug);
     assert.ok(contract);
     assert.deepEqual(contract.modelAnchor, APPROVED_PUBLIC_MODEL_ANCHOR);
-    assert.equal(contract.media.length, 6);
+    const hasApprovedModelFront = listing.slug !== "indigo-workshirt";
+    const expected = [
+      `/shop/products/${listing.slug}/01-garment-front.webp`,
+      `/shop/products/${listing.slug}/02-garment-back.webp`,
+      `/shop/products/${listing.slug}/03-mannequin-front.webp`,
+      ...(hasApprovedModelFront
+        ? [`/shop/products/${listing.slug}/04-model-front.webp`]
+        : []),
+      `/shop/products/${listing.slug}/06-fabric-detail.webp`,
+    ];
     assert.deepEqual(
       contract.media.map((frame) => frame.src),
-      [
-        `/shop/products/${listing.slug}/01-garment-front.webp`,
-        `/shop/products/${listing.slug}/02-garment-back.webp`,
-        `/shop/products/${listing.slug}/03-mannequin-front.webp`,
-        `/shop/products/${listing.slug}/04-model-front.webp`,
-        `/shop/products/${listing.slug}/05-model-back.webp`,
-        `/shop/products/${listing.slug}/06-fabric-detail.webp`,
-      ],
+      expected,
     );
+    assert.doesNotMatch(contract.media.map((frame) => frame.src).join(" "), /05-model-back\.webp/);
     assert.equal(createListingSlug(listing.sku, "Any private working title"), listing.slug);
   }
 
