@@ -62,7 +62,7 @@ function ShopChrome({ children }: { children: React.ReactNode }) {
         ? { eyebrow: "Editorial rail", label: "Browse the complete edit", href: "/shop#discover" }
       : pathname.startsWith("/shop/orders")
         ? { eyebrow: "Payment next", label: "Review saved checkouts", href: "/shop/orders" }
-        : { eyebrow: "August edit", label: "Search the complete edit", href: "/shop/search" };
+        : { eyebrow: "Drop 01", label: "Search the complete edit", href: "/shop/search" };
 
   return (
     <div

@@ -8,12 +8,17 @@ import type { StudioSnapshot } from "../domain/state";
 import {
   WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS,
 } from "../../wardrobe-public-view/seeds";
-import {
-  WARDROBE_PUBLIC_DRAFTS,
-  type WardrobePublicDraftSlug,
-} from "../../wardrobe-public-view/drafts";
 
 const MIGRATION_CREATED_AT = "2026-08-10T00:00:00.000Z";
+
+const DROP_01_LEGACY_AUTHORITY = new Map([
+  ["DYN-087", { id: "wardrobe-reviewed-nude-ruched-sundress", skus: ["REVIEW-BLUSH-MINI-001", "REVIEW-NUDE-RUCHED-001"] }],
+  ["DYN-088", { id: "wardrobe-reviewed-purple-beaded-evening-gown", skus: ["REVIEW-PURPLE-BEADED-002"] }],
+  ["DYN-089", { id: "wardrobe-reviewed-draft-003", skus: ["REVIEW-SAGE-RUCHED-003"] }],
+  ["DYN-090", { id: "wardrobe-reviewed-draft-004", skus: ["REVIEW-MAGENTA-PLUNGE-004"] }],
+  ["DYN-091", { id: "wardrobe-reviewed-draft-005", skus: ["REVIEW-SILVER-MERMAID-005"] }],
+  ["DYN-092", { id: "wardrobe-reviewed-draft-006", skus: ["REVIEW-ABSTRACT-STRAPLESS-006"] }],
+] as const);
 
 function studioCategory(category: (typeof WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS)[number]["category"]): GarmentCategory {
   if (category === "Dresses") return "Dress";
@@ -33,7 +38,8 @@ function visualForTone(tone: (typeof WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS)[numbe
 
 const migrationRows = WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS.map((product) => {
   const token = product.sku.toLowerCase();
-  const garmentId = `wardrobe-seed-${token}`;
+  const legacyAuthority = DROP_01_LEGACY_AUTHORITY.get(product.sku);
+  const garmentId = legacyAuthority?.id ?? `wardrobe-seed-${token}`;
   const listingId = `wardrobe-listing-${token}`;
   const inventoryId = `wardrobe-stock-${token}`;
   const listingState = product.availability === "RESERVED"
@@ -51,7 +57,7 @@ const migrationRows = WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS.map((product) => {
     color: product.colour,
     price: product.price,
     condition: product.condition,
-    source: "Original Shop migration",
+    source: product.drop === "Drop 01" ? "Operator wardrobe intake" : "Original Shop migration",
     notes: product.note,
     privateNote: "",
     publicDescription: product.note,
@@ -101,108 +107,6 @@ const migrationRows = WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS.map((product) => {
   return { garment, inventory, listing };
 });
 
-interface ReviewedDraftAuthoritySpec {
-  id: string;
-  sku: string;
-  visual: Garment["visual"];
-  referenceId: string;
-  quality: number;
-}
-
-const REVIEWED_DRAFT_AUTHORITY = {
-  "blush-scoop-mini-dress": {
-    id: "wardrobe-reviewed-nude-ruched-sundress",
-    sku: "REVIEW-BLUSH-MINI-001",
-    visual: "umber",
-    referenceId: "review-cover-blush-front",
-    quality: 0.72,
-  },
-  "orchid-beaded-column-gown": {
-    id: "wardrobe-reviewed-purple-beaded-evening-gown",
-    sku: "REVIEW-PURPLE-BEADED-002",
-    visual: "plum",
-    referenceId: "review-cover-orchid-front",
-    quality: 0.88,
-  },
-  "sage-asymmetric-ruched-maxi-dress": {
-    id: "wardrobe-reviewed-draft-003",
-    sku: "REVIEW-SAGE-RUCHED-003",
-    visual: "moss",
-    referenceId: "review-cover-sage-front",
-    quality: 0.86,
-  },
-  "magenta-plunge-ruched-mini-dress": {
-    id: "wardrobe-reviewed-draft-004",
-    sku: "REVIEW-MAGENTA-PLUNGE-004",
-    visual: "plum",
-    referenceId: "review-cover-magenta-front",
-    quality: 0.78,
-  },
-  "silver-off-shoulder-mermaid-dress": {
-    id: "wardrobe-reviewed-draft-005",
-    sku: "REVIEW-SILVER-MERMAID-005",
-    visual: "chalk",
-    referenceId: "review-cover-silver-front",
-    quality: 0.68,
-  },
-  "multicolor-abstract-strapless-mini-dress": {
-    id: "wardrobe-reviewed-draft-006",
-    sku: "REVIEW-ABSTRACT-STRAPLESS-006",
-    visual: "plum",
-    referenceId: "review-cover-abstract-front",
-    quality: 0.82,
-  },
-} satisfies Record<WardrobePublicDraftSlug, ReviewedDraftAuthoritySpec>;
-
-function createReviewedDraft(
-  draft: (typeof WARDROBE_PUBLIC_DRAFTS)[number],
-): { garment: Garment; inventory: InventoryRecord } {
-  const authority = REVIEWED_DRAFT_AUTHORITY[draft.slug];
-  const garment: Garment = {
-    id: authority.id,
-    sku: authority.sku,
-    title: draft.name,
-    category: "Dress",
-    sizeLabel: "Pending",
-    estimatedFit: "Pending",
-    color: draft.colour,
-    price: 0,
-    condition: "Pending inspection",
-    source: "Operator wardrobe intake",
-    notes: "Front study ready. Back, detail, size, measurements, and condition remain pending.",
-    privateNote: "",
-    publicDescription: "",
-    quantity: 1,
-    saleEligible: false,
-    measurements: [],
-    classificationState: "DRAFT",
-    mediaState: "DRAFT",
-    state: "DRAFT",
-    availability: "ARCHIVED",
-    canonState: "DRAFT",
-    visual: authority.visual,
-    references: [{ id: authority.referenceId, view: "FRONT", quality: authority.quality }],
-    reviewCover: { ...draft.cover },
-    createdAt: MIGRATION_CREATED_AT,
-  };
-  return {
-    garment,
-    inventory: {
-      id: `wardrobe-stock-${authority.id.replace(/^wardrobe-/, "")}`,
-      garmentId: authority.id,
-      onHand: 1,
-      reserved: 0,
-      sold: 0,
-      returned: 0,
-      writeOff: 0,
-      state: "DRAFT",
-      updatedAt: MIGRATION_CREATED_AT,
-    },
-  };
-}
-
-const reviewedDrafts = WARDROBE_PUBLIC_DRAFTS.map(createReviewedDraft);
-
 export const WARDROBE_AUTHORITY_MANAGED_SLUGS = Object.freeze(
   WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS.map((product) => product.slug),
 );
@@ -211,35 +115,38 @@ function normalizedSku(value: string) {
   return value.trim().toUpperCase();
 }
 
-const LEGACY_REVIEWED_SKUS = new Map([
-  ["wardrobe-reviewed-nude-ruched-sundress", "REVIEW-NUDE-RUCHED-001"],
-]);
+function legacyAuthorityForSeed(seed: Garment) {
+  return DROP_01_LEGACY_AUTHORITY.get(normalizedSku(seed.sku));
+}
 
-function upgradeLegacyBlushDraft(existing: Garment, seed: Garment): Garment {
-  const isExactLegacyPlaceholder = existing.id === "wardrobe-reviewed-nude-ruched-sundress"
-    && normalizedSku(existing.sku) === "REVIEW-NUDE-RUCHED-001"
-    && existing.title === "Nude ruched sundress"
-    && existing.color === "Nude"
-    && existing.source === "Reviewed candidate"
-    && existing.notes === "Size, measurements, and condition remain pending."
-    && existing.state === "DRAFT"
-    && existing.mediaState === "EMPTY"
-    && existing.visual === "umber"
-    && !existing.saleEligible
-    && existing.references.length === 0
-    && !existing.reviewCover;
-  if (!isExactLegacyPlaceholder) return existing;
+function isLegacyAuthorityMatch(existing: Garment, seed: Garment) {
+  const authority = legacyAuthorityForSeed(seed);
+  if (!authority) return false;
+  const sku = normalizedSku(existing.sku);
+  return existing.id === authority.id
+    || authority.skus.some((candidate) => candidate === sku);
+}
+
+function promoteDrop01WardrobeRow(existing: Garment, seed: Garment): Garment {
+  const pendingNotes = /pending|front study ready|size, measurements/i.test(existing.notes);
   return {
-    ...existing,
-    sku: seed.sku,
-    title: seed.title,
-    color: seed.color,
-    source: seed.source,
-    notes: seed.notes,
-    mediaState: seed.mediaState,
-    visual: seed.visual,
-    references: seed.references.map((reference) => ({ ...reference })),
-    reviewCover: seed.reviewCover,
+    ...seed,
+    id: existing.id,
+    title: existing.title || seed.title,
+    sizeLabel: existing.sizeLabel !== "Pending" ? existing.sizeLabel : seed.sizeLabel,
+    estimatedFit: existing.estimatedFit !== "Pending" ? existing.estimatedFit : seed.estimatedFit,
+    price: existing.price > 0 ? existing.price : seed.price,
+    condition: existing.condition !== "Pending inspection" ? existing.condition : seed.condition,
+    source: existing.source || seed.source,
+    notes: existing.notes && !pendingNotes ? existing.notes : seed.notes,
+    privateNote: existing.privateNote,
+    publicDescription: existing.publicDescription || seed.publicDescription,
+    measurements: existing.measurements.length
+      ? existing.measurements.map((measurement) => ({ ...measurement }))
+      : seed.measurements.map((measurement) => ({ ...measurement })),
+    references: existing.references.map((reference) => ({ ...reference })),
+    reviewCover: existing.reviewCover ? { ...existing.reviewCover } : undefined,
+    createdAt: existing.createdAt,
   };
 }
 
@@ -250,23 +157,21 @@ export function mergeWardrobeAuthoritySeeds(snapshot: StudioSnapshot): StudioSna
   const listings = [...snapshot.listings];
   const garmentIdMap = new Map<string, string>();
   const newlyAddedGarments = new Set<string>();
-  const seeds = [
-    ...reviewedDrafts.map(({ garment }) => garment),
-    ...migrationRows.map(({ garment }) => garment),
-  ];
+  const promotedGarments = new Set<string>();
+  const seeds = migrationRows.map(({ garment }) => garment);
 
   for (const seed of seeds) {
-    const legacySku = LEGACY_REVIEWED_SKUS.get(seed.id);
     const existing = garments.find((garment) =>
       garment.id === seed.id
       || normalizedSku(garment.sku) === normalizedSku(seed.sku)
-      || (legacySku ? normalizedSku(garment.sku) === legacySku : false),
+      || isLegacyAuthorityMatch(garment, seed),
     );
     if (existing) {
       garmentIdMap.set(seed.id, existing.id);
-      if (seed.id === "wardrobe-reviewed-nude-ruched-sundress") {
+      if (isLegacyAuthorityMatch(existing, seed) && normalizedSku(existing.sku) !== normalizedSku(seed.sku)) {
         const index = garments.indexOf(existing);
-        garments[index] = upgradeLegacyBlushDraft(existing, seed);
+        garments[index] = promoteDrop01WardrobeRow(existing, seed);
+        promotedGarments.add(seed.id);
       }
       continue;
     }
@@ -280,19 +185,26 @@ export function mergeWardrobeAuthoritySeeds(snapshot: StudioSnapshot): StudioSna
     const existing = listings.find((listing) =>
       listing.id === seed.id || listing.slug === seed.slug || listing.garmentId === garmentId,
     );
-    if (existing || !newlyAddedGarments.has(seed.garmentId)) continue;
+    if (existing || (!newlyAddedGarments.has(seed.garmentId) && !promotedGarments.has(seed.garmentId))) continue;
     listings.push({ ...seed, garmentId });
   }
 
-  const inventorySeeds = [
-    ...reviewedDrafts.map(({ inventory: record }) => record),
-    ...migrationRows.map(({ inventory: record }) => record),
-  ];
+  const inventorySeeds = migrationRows.map(({ inventory: record }) => record);
   for (const seed of inventorySeeds) {
     const garmentId = garmentIdMap.get(seed.garmentId) ?? seed.garmentId;
     const existing = inventory.find((record) => record.id === seed.id || record.garmentId === garmentId);
-    if (existing || !newlyAddedGarments.has(seed.garmentId)) continue;
     const listing = listings.find((candidate) => candidate.garmentId === garmentId);
+    if (existing && promotedGarments.has(seed.garmentId)) {
+      const index = inventory.indexOf(existing);
+      inventory[index] = {
+        ...seed,
+        id: existing.id,
+        garmentId,
+        listingId: listing?.id,
+      };
+      continue;
+    }
+    if (existing || !newlyAddedGarments.has(seed.garmentId)) continue;
     inventory.push({
       ...seed,
       garmentId,

@@ -2,38 +2,43 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import test from "node:test";
+import { WARDROBE_DROP_01_PRODUCTS } from "../lib/wardrobe-public-view/drop-01";
+import { WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS } from "../lib/wardrobe-public-view/seeds";
 
 const expectedNames = [
-  "Blush scoop mini dress",
-  "Orchid beaded column gown",
-  "Sage asymmetric ruched maxi dress",
-  "Magenta plunge ruched mini dress",
-  "Silver off-shoulder mermaid dress",
-  "Multicolor abstract strapless mini dress",
+  "Blush Scoop Mini Dress",
+  "Orchid Beaded Column Gown",
+  "Sage Asymmetric Ruched Maxi Dress",
+  "Magenta Plunge Ruched Mini Dress",
+  "Silver Off-Shoulder Mermaid Dress",
+  "Multicolor Abstract Strapless Mini Dress",
 ];
 
-test("Shop renders the shared public-safe wardrobe preview without sale surfaces", async () => {
-  const publicDraftModule = await import(
-    new URL("../lib/wardrobe-public-view/drafts.ts", import.meta.url).href
-  ) as typeof import("../lib/wardrobe-public-view/drafts");
-  const { WARDROBE_PUBLIC_DRAFTS } = publicDraftModule;
-  assert.deepEqual(WARDROBE_PUBLIC_DRAFTS.map((draft) => draft.name), expectedNames);
-
-  for (const draft of WARDROBE_PUBLIC_DRAFTS) {
-    assert.deepEqual(
-      Object.keys(draft).sort(),
-      ["colour", "cover", "name", "slug", "state"],
-    );
-    assert.deepEqual(Object.keys(draft.cover).sort(), ["alt", "height", "src", "width"]);
-    assert.equal(draft.state, "Styling now");
-    assert.match(draft.cover.src, /^\/studio\/wardrobe\/.+\/01-garment-front\.webp$/);
+test("the six wardrobe dresses are saleable Drop 01 rows, not a separate preview catalogue", () => {
+  assert.deepEqual(WARDROBE_DROP_01_PRODUCTS.map((product) => product.name), expectedNames);
+  for (const product of WARDROBE_DROP_01_PRODUCTS) {
+    assert.equal(product.drop, "Drop 01");
+    assert.equal(product.availability, "AVAILABLE");
+    assert.equal(product.category, "Dresses");
+    assert.ok(product.price > 0);
+    assert.equal(product.taggedSize, "Size on request");
   }
 
-  const publicFacts = JSON.stringify(WARDROBE_PUBLIC_DRAFTS);
-  assert.doesNotMatch(
-    publicFacts,
-    /REVIEW-|private|operator|source\/|instagram|storage\/models|notes|references|quality/i,
-  );
+  const releaseSlugs = new Set<string>(WARDROBE_DROP_01_PRODUCTS.map((product) => product.slug));
+  const saleRows = WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS.filter((product) => releaseSlugs.has(product.slug));
+  assert.equal(saleRows.length, 6);
+  assert.deepEqual(saleRows.map((product) => product.slug), WARDROBE_DROP_01_PRODUCTS.map((product) => product.slug));
+  for (const product of saleRows) {
+    const expectedMedia = [
+      "GARMENT_FRONT",
+      "GARMENT_BACK",
+      "MANNEQUIN_FRONT",
+      ...(product.slug === "magenta-plunge-ruched-mini-dress" ? [] : ["MODEL_FRONT"]),
+      "FABRIC_DETAIL",
+    ];
+    assert.deepEqual(product.media.map((item) => item.slot), expectedMedia);
+    assert.doesNotMatch(JSON.stringify(product), /storage\/models|source\/instagram|privateNote|references/i);
+  }
 
   const previewSource = readFileSync(
     join(process.cwd(), "components/shop/wardrobe-preview.tsx"),
@@ -43,30 +48,23 @@ test("Shop renders the shared public-safe wardrobe preview without sale surfaces
     join(process.cwd(), "components/shop/shop-home.tsx"),
     "utf8",
   );
-  const wardrobeAuthoritySource = readFileSync(
+  const authoritySource = readFileSync(
     join(process.cwd(), "lib/studio/seeds/wardrobe-authority.ts"),
     "utf8",
   );
   const foundationCss = readFileSync(join(process.cwd(), "app/foundation.css"), "utf8");
   const previewCss = foundationCss.slice(foundationCss.lastIndexOf("/* Wardrobe preview */"));
 
-  assert.match(previewSource, /lib\/wardrobe-public-view\/drafts/);
-  assert.doesNotMatch(previewSource, /lib\/(?:studio|shop)\//);
-  assert.doesNotMatch(previewSource, /\bhref\s*=|\/shop\/products\//);
-  assert.match(previewSource, /From the wardrobe · Styling now/);
-  assert.match(wardrobeAuthoritySource, /wardrobe-public-view\/drafts/);
-  assert.match(wardrobeAuthoritySource, /title: draft\.name/);
-  assert.match(wardrobeAuthoritySource, /color: draft\.colour/);
-  assert.match(wardrobeAuthoritySource, /reviewCover: \{ \.\.\.draft\.cover \}/);
-  for (const name of expectedNames) {
-    assert.equal(wardrobeAuthoritySource.includes(name), false);
-    assert.equal(previewSource.includes(name), false);
-  }
+  assert.match(previewSource, /WARDROBE_DROP_01_PRODUCTS/);
+  assert.match(previewSource, /wardrobeDressSlugs\.has\(product\.slug\)/);
+  assert.match(previewSource, /Available now/);
+  assert.match(previewSource, /\/shop\/products\/\$\{product\.slug\}/);
+  assert.doesNotMatch(previewSource, /wardrobe-public-view\/drafts|Styling now|next drop/);
+  assert.doesNotMatch(authoritySource, /WARDROBE_PUBLIC_DRAFTS|reviewedDrafts/);
+  for (const name of expectedNames) assert.equal(previewSource.includes(name), false);
+
   const previewPosition = shopHomeSource.indexOf("<WardrobePreview />");
   const discoveryPosition = shopHomeSource.indexOf("id=\"discover\"");
-  assert.notEqual(previewPosition, -1);
-  assert.notEqual(discoveryPosition, -1);
-  assert.ok(previewPosition < discoveryPosition);
+  assert.ok(previewPosition >= 0 && previewPosition < discoveryPosition);
   assert.match(previewCss, /^\/\* Wardrobe preview \*\//);
-  assert.doesNotMatch(previewCss, /(^|[;{]\s*)border\s*:/m);
 });

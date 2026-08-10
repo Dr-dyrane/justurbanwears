@@ -9,6 +9,7 @@ import {
   approvedSlugForSku,
   getApprovedPublicListingContract,
 } from "./approved-catalogue";
+import { WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS } from "../../wardrobe-public-view/seeds";
 
 function slugify(value: string) {
   return value
@@ -54,6 +55,9 @@ export function createWardrobePublicProduct(
 ): PublicListingProjection | undefined {
   const approved = getApprovedPublicListingContract(garment.sku, listing.slug);
   if (!approved) return undefined;
+  const wardrobeSeed = WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS.find((product) =>
+    product.sku === garment.sku.trim().toUpperCase() && product.slug === listing.slug,
+  );
   const availability = listing.state === "RESERVED"
     ? "RESERVED"
     : listing.state === "SOLD"
@@ -71,12 +75,20 @@ export function createWardrobePublicProduct(
     condition: garment.condition,
     colour: garment.color,
     availability,
-    drop: "Studio release",
-    tone: publicTone(garment.color),
-    silhouette: publicSilhouette(garment.category),
+    drop: wardrobeSeed?.drop ?? listing.publicProjection?.drop ?? "Studio release",
+    tone: wardrobeSeed?.tone ?? listing.publicProjection?.tone ?? publicTone(garment.color),
+    silhouette: wardrobeSeed?.silhouette
+      ?? listing.publicProjection?.silhouette
+      ?? publicSilhouette(garment.category),
     note: listing.description,
-    story: "Curated by justurban wears.",
-    details: [garment.condition, garment.color, garment.sizeLabel],
+    story: wardrobeSeed?.story
+      ?? listing.publicProjection?.story
+      ?? "Curated by justurban wears.",
+    details: wardrobeSeed
+      ? [...wardrobeSeed.details]
+      : listing.publicProjection
+        ? [...listing.publicProjection.details]
+        : [garment.condition, garment.color, garment.sizeLabel],
     measurements: garment.measurements.map((measurement) => ({ ...measurement })),
     modelAnchor: approved.modelAnchor,
     media: approved.media,

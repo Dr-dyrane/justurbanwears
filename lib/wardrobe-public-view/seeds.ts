@@ -3,6 +3,10 @@ import type {
   WardrobePublicProduct,
   WardrobePublicViewSnapshot,
 } from "./domain/entities";
+import {
+  WARDROBE_DROP_01_APPROVED_MODEL_FRONT_SLUGS,
+  WARDROBE_DROP_01_PRODUCTS,
+} from "./drop-01";
 
 export const WARDROBE_PUBLIC_MODEL_ANCHOR = Object.freeze({
   id: "lulu-v2" as const,
@@ -15,6 +19,7 @@ export const WARDROBE_APPROVED_MODEL_FRONT_SLUGS = Object.freeze([
   "ivory-tie-skirt",
   "cocoa-pleat-trouser",
   "salmon-camp-shirt",
+  ...WARDROBE_DROP_01_APPROVED_MODEL_FRONT_SLUGS,
 ] as const);
 
 export const WARDROBE_APPROVED_MODEL_MULTI_VIEW_SLUGS = Object.freeze([
@@ -74,7 +79,7 @@ export const WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS: readonly WardrobePublicProduc
     condition: "Excellent pre-loved",
     colour: "Washed coral",
     availability: "AVAILABLE",
-    drop: "August edit",
+    drop: "Drop 01",
     tone: "coral",
     silhouette: "dress",
     note: "A softly gathered midi that moves without feeling precious.",
@@ -97,7 +102,7 @@ export const WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS: readonly WardrobePublicProduc
     condition: "Very good",
     colour: "Washed indigo",
     availability: "RESERVED",
-    drop: "August edit",
+    drop: "Drop 01",
     tone: "indigo",
     silhouette: "shirt",
     note: "Soft denim structure with the ease of a light jacket.",
@@ -120,7 +125,7 @@ export const WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS: readonly WardrobePublicProduc
     condition: "Good — light wear",
     colour: "Moss green",
     availability: "AVAILABLE",
-    drop: "August edit",
+    drop: "Drop 01",
     tone: "moss",
     silhouette: "knit",
     note: "Fine rib, square neck, and a close fit that layers cleanly.",
@@ -166,7 +171,7 @@ export const WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS: readonly WardrobePublicProduc
     condition: "Excellent pre-loved",
     colour: "Deep cocoa",
     availability: "AVAILABLE",
-    drop: "August edit",
+    drop: "Drop 01",
     tone: "cocoa",
     silhouette: "trouser",
     note: "A long, fluid line with a single front pleat and gentle taper.",
@@ -189,7 +194,7 @@ export const WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS: readonly WardrobePublicProduc
     condition: "Very good",
     colour: "Soft salmon",
     availability: "AVAILABLE",
-    drop: "August edit",
+    drop: "Drop 01",
     tone: "salmon",
     silhouette: "shirt",
     note: "Airy, boxy, and cut with an open collar for warm days.",
@@ -201,6 +206,11 @@ export const WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS: readonly WardrobePublicProduc
       { label: "Length", value: "64 cm" },
     ],
   }),
+  ...WARDROBE_DROP_01_PRODUCTS.map((product) => migrationSeed({
+    ...product,
+    details: [...product.details],
+    measurements: product.measurements.map((measurement) => ({ ...measurement })),
+  })),
 ]);
 
 export function createWardrobePublicViewMigrationSnapshot(): WardrobePublicViewSnapshot {

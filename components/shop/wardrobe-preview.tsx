@@ -1,42 +1,48 @@
-import { WARDROBE_PUBLIC_DRAFTS } from "../../lib/wardrobe-public-view/drafts";
+"use client";
+
+import { formatNaira } from "../../lib/shop/catalog";
+import { WARDROBE_DROP_01_PRODUCTS } from "../../lib/wardrobe-public-view/drop-01";
+import { ShopLink as Link } from "./atoms/shop-link";
+import { ProductVisual } from "./product-visual";
+import { useShop } from "./shop-provider";
 
 export function WardrobePreview() {
+  const { products } = useShop();
+  const wardrobeDressSlugs = new Set<string>(WARDROBE_DROP_01_PRODUCTS.map((product) => product.slug));
+  const drop = products.filter((product) => wardrobeDressSlugs.has(product.slug));
+
+  if (!drop.length) return null;
+
   return (
     <section className="shop-wardrobe-preview" aria-labelledby="wardrobe-preview-title">
       <header className="shop-wardrobe-preview-header">
         <div>
-          <p className="shop-kicker">From the wardrobe · Styling now</p>
-          <h2 id="wardrobe-preview-title">Six dresses in first light.</h2>
+          <p className="shop-kicker">Drop 01 · Available now</p>
+          <h2 id="wardrobe-preview-title">Six dresses from Lulu’s wardrobe.</h2>
         </div>
-        <p>
-          Front studies for the next drop.
-        </p>
+        <p>Real-worn pieces, photographed across the full product study and released one of each.</p>
       </header>
 
       <ol className="shop-wardrobe-preview-list">
-        {WARDROBE_PUBLIC_DRAFTS.map((draft, index) => (
-          <li key={draft.slug}>
+        {drop.map((product, index) => (
+          <li key={product.slug}>
             <figure>
-              <div className="shop-wardrobe-preview-frame">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  alt={draft.cover.alt}
-                  decoding="async"
-                  height={draft.cover.height}
-                  loading="lazy"
-                  src={draft.cover.src}
-                  width={draft.cover.width}
-                />
-              </div>
+              <Link
+                aria-label={`View ${product.name}`}
+                className="shop-wardrobe-preview-frame"
+                href={`/shop/products/${product.slug}`}
+              >
+                <ProductVisual compact product={product} />
+              </Link>
               <figcaption>
                 <span className="shop-wardrobe-preview-state">
                   <i aria-hidden="true" />
-                  {draft.state}
+                  Available now
                 </span>
-                <span className="shop-wardrobe-preview-index" aria-hidden="true">
-                  {String(index + 1).padStart(2, "0")}
+                <span className="shop-wardrobe-preview-index">
+                  {formatNaira(product.price)} · {String(index + 1).padStart(2, "0")}
                 </span>
-                <h3>{draft.name}</h3>
+                <h3><Link href={`/shop/products/${product.slug}`}>{product.name}</Link></h3>
               </figcaption>
             </figure>
           </li>

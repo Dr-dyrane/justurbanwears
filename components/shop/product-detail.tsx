@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, ChevronDown, Eye, Heart, Share2, Store } from "lucide-react";
+import { ArrowLeft, ChevronDown, Eye, Heart, Share2 } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { formatNaira } from "../../lib/shop/catalog";
@@ -40,7 +40,6 @@ export function ProductDetail() {
   const {
     addToBag,
     bag,
-    following,
     getProduct,
     hydration,
     isOnline,
@@ -48,7 +47,6 @@ export function ProductDetail() {
     prepareCheckout,
     products,
     saved,
-    toggleFollowing,
     toggleSaved,
   } = useShop();
   const product = getProduct(params.slug);
@@ -181,56 +179,58 @@ export function ProductDetail() {
           <p className="shop-kicker">{product.category} · {product.condition}</p>
           <div className="shop-detail-heading">
             <h1>{product.name}</h1>
+          </div>
+          <p className="shop-detail-price">{formatNaira(product.price)}</p>
+          <p className="shop-detail-note">{product.note}</p>
+
+          <div className="shop-detail-utility-row" aria-label="Product actions">
             <button
               aria-label={`${isSaved ? "Remove" : "Save"} ${product.name}`}
               aria-pressed={isSaved}
-              className={`detail-save glass-surface${isSaved ? " is-saved" : ""}`}
+              className={`shop-detail-utility${isSaved ? " is-saved" : ""}`}
               onClick={() => toggleSaved(product.slug)}
               type="button"
             >
               <Heart aria-hidden="true" fill={isSaved ? "currentColor" : "none"} size={18} strokeWidth={1.8} />
               {isSaved ? "Saved" : "Save"}
             </button>
-          </div>
-          <p className="shop-detail-price">{formatNaira(product.price)}</p>
-          <p className="shop-detail-note">{product.note}</p>
-          <div className="shop-merchant-row">
-            <span aria-hidden="true"><Store size={18} strokeWidth={1.7} /></span>
-            <div><small>Sold by</small><strong>justurban wears</strong><p>Curated in Lagos</p></div>
-            <button aria-pressed={following} onClick={toggleFollowing} type="button">{following ? "Following" : "Follow"}</button>
-            <button aria-label={`Share ${product.name}`} onClick={shareProduct} type="button"><Share2 aria-hidden="true" size={17} strokeWidth={1.8} /></button>
-          </div>
-
-          <div className="shop-availability-panel" data-state={product.availability.toLowerCase()}>
-            <span aria-hidden="true" />
-            <div>
-              <strong>{product.availability === "AVAILABLE" ? "Available now" : product.availability === "RESERVED" ? "Reserved for another shopper" : "Sold — kept as an archive reference"}</strong>
-              <small>{product.availability === "AVAILABLE" ? "One piece · bag does not reserve" : product.availability === "RESERVED" ? "Primary actions are paused" : "Archive only"}</small>
-            </div>
-          </div>
-
-          {approvedModelTryout ? (
             <button
-              aria-haspopup="dialog"
-              className="shop-model-tryout-entry"
-              onClick={openModelTryout}
-              ref={modelTryoutTriggerRef}
+              aria-label={`Share ${product.name}`}
+              className="shop-detail-utility"
+              onClick={shareProduct}
               type="button"
             >
-              <span aria-hidden="true"><Eye size={19} strokeWidth={1.7} /></span>
-              <span>
-                <small>On model</small>
-                <strong>{isOnline ? "Front view" : "Reconnect to open"}</strong>
-              </span>
-              <b aria-hidden="true">01</b>
+              <Share2 aria-hidden="true" size={18} strokeWidth={1.8} />
+              Share
             </button>
-          ) : null}
+            {approvedModelTryout ? (
+              <button
+                aria-haspopup="dialog"
+                className="shop-detail-utility"
+                onClick={openModelTryout}
+                ref={modelTryoutTriggerRef}
+                type="button"
+              >
+                <Eye aria-hidden="true" size={18} strokeWidth={1.8} />
+                {isOnline ? "On model" : "Offline"}
+              </button>
+            ) : null}
+          </div>
 
-          <fieldset className="shop-size-fieldset">
-            <legend>Tagged size</legend>
-            <button aria-pressed="true" type="button">{product.taggedSize}</button>
-            <p>Fit: {product.fit}</p>
-          </fieldset>
+          <div className="shop-product-choice-row">
+            <div className="shop-availability-panel" data-state={product.availability.toLowerCase()}>
+              <span aria-hidden="true" />
+              <div>
+                <strong>{product.availability === "AVAILABLE" ? "Available now" : product.availability === "RESERVED" ? "Reserved for another shopper" : "Sold — kept as an archive reference"}</strong>
+                <small>{product.availability === "AVAILABLE" ? "One piece · bag does not reserve" : product.availability === "RESERVED" ? "Primary actions are paused" : "Archive only"}</small>
+              </div>
+            </div>
+            <fieldset className="shop-size-fieldset">
+              <legend>Size</legend>
+              <button aria-pressed="true" type="button">{product.taggedSize}</button>
+              <p>{product.fit}</p>
+            </fieldset>
+          </div>
 
           {product.availability === "AVAILABLE" ? (
             <div className="shop-purchase-actions">
@@ -255,11 +255,13 @@ export function ProductDetail() {
                 <span>Measurements</span>
                 <ChevronDown aria-hidden="true" size={17} strokeWidth={1.7} />
               </summary>
-              <dl>
-                {product.measurements.map((item) => (
-                  <div key={item.label}><dt>{item.label}</dt><dd>{item.value}</dd></div>
-                ))}
-              </dl>
+              {product.measurements.length ? (
+                <dl>
+                  {product.measurements.map((item) => (
+                    <div key={item.label}><dt>{item.label}</dt><dd>{item.value}</dd></div>
+                  ))}
+                </dl>
+              ) : <p>Exact measurements are confirmed before payment.</p>}
             </details>
             <details>
               <summary>

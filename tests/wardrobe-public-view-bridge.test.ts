@@ -22,6 +22,7 @@ import {
   WARDROBE_AUTHORITY_MANAGED_SLUGS,
   mergeWardrobeAuthoritySeeds,
 } from "../lib/studio/seeds/wardrobe-authority";
+import { selectWardrobePublicView } from "../lib/studio/projections/public-listing";
 
 const coral = WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS[0];
 
@@ -82,107 +83,98 @@ test("the wardrobe public view strips private fields and admits only approved an
   assert.deepEqual(wrongAnchor.products, []);
 });
 
-test("Studio merges six migration garments and six front-only wardrobe drafts by stable identity", () => {
+test("Studio holds the twelve saleable wardrobe rows and promotes the six former drafts in place", () => {
   const seeded = mergeWardrobeAuthoritySeeds(createEmptyStudioSnapshot());
   assert.equal(seeded.garments.length, 12);
-  assert.equal(seeded.listings.length, 6);
+  assert.equal(seeded.listings.length, 12);
   assert.equal(seeded.inventory.length, 12);
-  assert.equal(WARDROBE_AUTHORITY_MANAGED_SLUGS.length, 6);
+  assert.equal(WARDROBE_AUTHORITY_MANAGED_SLUGS.length, 12);
 
-  const reviewed = seeded.garments.filter((garment) => garment.sku.startsWith("REVIEW-"));
-  assert.deepEqual(reviewed.map((garment) => garment.title), [
-    "Blush scoop mini dress",
-    "Orchid beaded column gown",
-    "Sage asymmetric ruched maxi dress",
-    "Magenta plunge ruched mini dress",
-    "Silver off-shoulder mermaid dress",
-    "Multicolor abstract strapless mini dress",
-  ]);
-  for (const garment of reviewed) {
-    assert.equal(garment.state, "DRAFT");
-    assert.equal(garment.saleEligible, false);
-    assert.equal(garment.sizeLabel, "Pending");
-    assert.equal(garment.condition, "Pending inspection");
-    assert.deepEqual(garment.measurements, []);
-    assert.equal(garment.mediaState, "DRAFT");
-    assert.deepEqual(garment.references.map((reference) => reference.view), ["FRONT"]);
-    assert.match(garment.reviewCover?.src ?? "", /^\/studio\/wardrobe\/.+\/01-garment-front\.webp$/);
-    assert.doesNotMatch(JSON.stringify(garment.reviewCover), /storage\/models|source\/instagram/);
-    assert.equal(seeded.listings.some((listing) => listing.garmentId === garment.id), false);
+  const drop = seeded.garments.filter((garment) => /^DYN-0(?:87|88|89|90|91|92)$/.test(garment.sku));
+  assert.equal(drop.length, 6);
+  for (const garment of drop) {
+    assert.equal(garment.state, "PUBLISHED");
+    assert.equal(garment.saleEligible, true);
+    assert.equal(garment.sizeLabel, "Size on request");
+    assert.equal(garment.mediaState, "READY");
+    assert.equal(garment.canonState, "APPROVED");
+    assert.equal(seeded.listings.some((listing) => listing.garmentId === garment.id), true);
     const stock = seeded.inventory.find((record) => record.garmentId === garment.id);
-    assert.equal(stock?.state, "DRAFT");
-    assert.equal(stock?.listingId, undefined);
+    assert.equal(stock?.state, "PUBLISHED");
+    assert.ok(stock?.listingId);
   }
 
   const reseeded = mergeWardrobeAuthoritySeeds(seeded);
   assert.deepEqual(reseeded, seeded);
 
-  const existing = createEmptyStudioSnapshot();
-  const operatorDraft = {
-    ...reviewed[0],
-    sku: "operator-sku",
-    title: "Operator title",
-    color: "Operator colour",
-    source: "Operator source",
-    notes: "Operator note",
-    visual: "studio" as const,
-    reviewCover: {
-      ...reviewed[0].reviewCover!,
-      alt: "Operator cover",
-    },
-  };
-  existing.garments.push(operatorDraft);
-  existing.garments.push({ ...reviewed[1], id: "same-sku-user-row" });
-  const merged = mergeWardrobeAuthoritySeeds(existing);
-  assert.deepEqual(merged.garments.find((garment) => garment.id === reviewed[0].id), operatorDraft);
-  assert.equal(merged.garments.filter((garment) => garment.sku === reviewed[1].sku).length, 1);
-  assert.deepEqual(
-    merged.garments.find((garment) => garment.sku === reviewed[1].sku),
-    existing.garments.find((garment) => garment.sku === reviewed[1].sku),
-  );
-
+  const blush = drop.find((garment) => garment.sku === "DYN-087")!;
   const legacy = createEmptyStudioSnapshot();
   legacy.garments.push({
-    ...reviewed[0],
-    sku: "REVIEW-NUDE-RUCHED-001",
-    title: "Nude ruched sundress",
-    color: "Nude",
-    source: "Reviewed candidate",
-    notes: "Size, measurements, and condition remain pending.",
-    mediaState: "EMPTY",
-    references: [],
-    reviewCover: undefined,
+    ...blush,
+    sku: "REVIEW-BLUSH-MINI-001",
+    title: "Operator blush title",
+    sizeLabel: "Pending",
+    estimatedFit: "Pending",
+    price: 21000,
+    condition: "Pending inspection",
+    notes: "Front study ready. Back and measurements remain pending.",
+    privateNote: "Keep operator note",
+    publicDescription: "",
+    saleEligible: false,
+    classificationState: "DRAFT",
+    mediaState: "DRAFT",
+    state: "DRAFT",
+    availability: "ARCHIVED",
+    canonState: "DRAFT",
+  });
+  legacy.inventory.push({
+    id: "wardrobe-stock-reviewed-nude-ruched-sundress",
+    garmentId: blush.id,
+    onHand: 1,
+    reserved: 0,
+    sold: 0,
+    returned: 0,
+    writeOff: 0,
+    state: "DRAFT",
+    updatedAt: "2026-08-10T00:00:00.000Z",
   });
   const upgraded = mergeWardrobeAuthoritySeeds(legacy);
-  const upgradedDraft = upgraded.garments.find((garment) => garment.id === reviewed[0].id);
-  assert.equal(upgradedDraft?.sku, "REVIEW-BLUSH-MINI-001");
-  assert.equal(upgradedDraft?.title, "Blush scoop mini dress");
-  assert.equal(upgradedDraft?.mediaState, "DRAFT");
-  assert.equal(upgradedDraft?.references[0]?.view, "FRONT");
-  assert.equal(upgradedDraft?.reviewCover?.src, "/studio/wardrobe/blush-scoop-mini-dress/01-garment-front.webp");
+  const promoted = upgraded.garments.find((garment) => garment.id === blush.id)!;
+  assert.equal(promoted.sku, "DYN-087");
+  assert.equal(promoted.title, "Operator blush title");
+  assert.equal(promoted.price, 21000);
+  assert.equal(promoted.privateNote, "Keep operator note");
+  assert.equal(promoted.state, "PUBLISHED");
+  assert.equal(promoted.saleEligible, true);
+  assert.equal(upgraded.listings.filter((listing) => listing.garmentId === blush.id).length, 1);
+  const promotedStock = upgraded.inventory.find((record) => record.garmentId === blush.id);
+  assert.equal(promotedStock?.state, "PUBLISHED");
+  assert.ok(promotedStock?.listingId);
+});
 
-  const renamedAfterUpgrade = {
-    ...upgraded,
-    garments: upgraded.garments.map((garment) => garment.id === reviewed[0].id
-      ? { ...garment, title: "Lulu's renamed blush dress" }
-      : garment),
+test("Studio preserves the authored Drop 01 product study when materializing the public wardrobe view", () => {
+  const seeded = mergeWardrobeAuthoritySeeds(createEmptyStudioSnapshot());
+  const blushListing = seeded.listings.find((listing) => listing.slug === "blush-scoop-mini-dress")!;
+  blushListing.publicProjection = {
+    ...blushListing.publicProjection!,
+    drop: "Studio release",
+    story: "Curated by justurban wears.",
+    details: ["Excellent", "Blush pink", "Size on request"],
   };
-  const reseededAfterRename = mergeWardrobeAuthoritySeeds(renamedAfterUpgrade);
-  assert.equal(
-    reseededAfterRename.garments.find((garment) => garment.id === reviewed[0].id)?.title,
-    "Lulu's renamed blush dress",
-  );
 
-  const operatorStyledLegacy = createEmptyStudioSnapshot();
-  operatorStyledLegacy.garments.push({
-    ...legacy.garments[0],
-    visual: "studio",
-  });
-  const preservedLegacy = mergeWardrobeAuthoritySeeds(operatorStyledLegacy);
-  const preservedLegacyDraft = preservedLegacy.garments.find((garment) => garment.id === reviewed[0].id);
-  assert.equal(preservedLegacyDraft?.visual, "studio");
-  assert.equal(preservedLegacyDraft?.sku, "REVIEW-NUDE-RUCHED-001");
-  assert.equal(preservedLegacyDraft?.reviewCover, undefined);
+  const blush = selectWardrobePublicView(seeded).find(
+    (product) => product.slug === "blush-scoop-mini-dress",
+  );
+  assert.ok(blush);
+  assert.equal(blush.drop, "Drop 01");
+  assert.match(blush.story, /open neckline/);
+  assert.deepEqual(blush.details, [
+    "Scoop neckline",
+    "Fitted mini length",
+    "Soft stretch hand",
+    "Real-worn wardrobe piece",
+  ]);
+  assert.doesNotMatch(JSON.stringify(blush), /Curated by justurban wears|Studio release/);
 });
 
 test("managed wardrobe slugs tombstone stale migration fallback while orders remain separate", async () => {

@@ -12,9 +12,9 @@ import {
 } from "../seeds";
 import type { WardrobePublicViewRepository } from "../services/contracts";
 
-export const WARDROBE_PUBLIC_VIEW_STORAGE_KEY = "justurban-wears:wardrobe-public-view:v4";
+export const WARDROBE_PUBLIC_VIEW_STORAGE_KEY = "justurban-wears:wardrobe-public-view:v5";
 export const WARDROBE_PUBLIC_VIEW_CHANGE_EVENT = "justurban-wears:wardrobe-public-view:changed";
-export const PREVIOUS_WARDROBE_PUBLIC_VIEW_STORAGE_KEY = "justurban-wears:wardrobe-public-view:v3";
+export const PREVIOUS_WARDROBE_PUBLIC_VIEW_STORAGE_KEY = "justurban-wears:wardrobe-public-view:v4";
 export const LEGACY_PUBLIC_CATALOG_STORAGE_KEY = "justurban-wears:catalog-projections:v2";
 
 type UnknownRecord = Record<string, unknown>;
@@ -215,17 +215,19 @@ export function parseStoredWardrobePublicView(raw: string | null): WardrobePubli
     }
     const migrateVersion2 = envelope.version === 2;
     const migrateVersion3 = envelope.version === 3;
+    const migrateVersion4 = envelope.version === 4;
     if (
       envelope.version !== WARDROBE_PUBLIC_VIEW_SCHEMA_VERSION
       && !migrateVersion2
       && !migrateVersion3
+      && !migrateVersion4
     ) {
       return { products: [], managedSlugs: [] };
     }
     const parsed = envelope.data.flatMap((candidate) => {
       const product = parseProduct(candidate, {
         stripLegacyModelBack: migrateVersion2,
-        addApprovedModelViews: migrateVersion2 || migrateVersion3,
+        addApprovedModelViews: migrateVersion2 || migrateVersion3 || migrateVersion4,
       });
       return product ? [product] : [];
     });

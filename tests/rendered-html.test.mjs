@@ -30,6 +30,14 @@ function visibleMarkup(html) {
     .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "");
 }
 
+function visibleCopy(html) {
+  return visibleMarkup(html)
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&(?:nbsp|#160);/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 test("server-renders the public shop foundation", async () => {
   const response = await render("/shop");
   assert.equal(response.status, 200);
@@ -38,7 +46,7 @@ test("server-renders the public shop foundation", async () => {
   const html = await response.text();
   assert.match(html, /justurban wears/);
   assert.match(html, /Drop 01/);
-  assert.match(html, /Four pieces\. One clean release/);
+  assert.match(html, /10 pieces\. One clean release/);
   assert.match(html, /Search the edit/);
   assert.match(html, /Quick add/);
   assert.match(html, /data-mobile-chrome-mode="expanded"/);
@@ -47,7 +55,7 @@ test("server-renders the public shop foundation", async () => {
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/i);
 });
 
-test("publishes a product-led Lulu hero and the four-piece Drop 01 rail", async () => {
+test("publishes a product-led Lulu hero and the ten-piece Drop 01 rail", async () => {
   const response = await render("/shop");
   assert.equal(response.status, 200);
 
@@ -65,6 +73,12 @@ test("publishes a product-led Lulu hero and the four-piece Drop 01 rail", async 
     ["DYN-083", "Moss Square Knit", "moss-square-knit"],
     ["DYN-085", "Cocoa Pleat Trouser", "cocoa-pleat-trouser"],
     ["DYN-086", "Salmon Camp Shirt", "salmon-camp-shirt"],
+    ["DYN-087", "Blush Scoop Mini Dress", "blush-scoop-mini-dress"],
+    ["DYN-088", "Orchid Beaded Column Gown", "orchid-beaded-column-gown"],
+    ["DYN-089", "Sage Asymmetric Ruched Maxi Dress", "sage-asymmetric-ruched-maxi-dress"],
+    ["DYN-090", "Magenta Plunge Ruched Mini Dress", "magenta-plunge-ruched-mini-dress"],
+    ["DYN-091", "Silver Off-Shoulder Mermaid Dress", "silver-off-shoulder-mermaid-dress"],
+    ["DYN-092", "Multicolor Abstract Strapless Mini Dress", "multicolor-abstract-strapless-mini-dress"],
   ];
 
   for (const [sku, name, slug] of releasedProducts) {
@@ -91,7 +105,7 @@ test("keeps the private Studio and public shop visibly distinct", async () => {
   assert.match(visibleBody, /data-mobile-chrome-mode="expanded"/);
   assert.match(visibleBody, /aria-label="Show navigation\. Business home selected"/);
   assert.match(visibleBody, /id="studio-mobile-navigation"/);
-  assert.doesNotMatch(visibleBody, /Four pieces\. One clean release/);
+  assert.doesNotMatch(visibleBody, /10 pieces\. One clean release/);
 });
 
 test("server-renders a navigable public product detail", async () => {
@@ -108,6 +122,9 @@ test("server-renders a navigable public product detail", async () => {
   assert.match(html, /On mannequin/);
   assert.match(html, /Fabric detail/);
   assert.match(html, /On model/);
+  assert.match(html, /Share/);
+  assert.match(html, /Save/);
+  assert.doesNotMatch(html, /Sold by|Following/);
   assert.match(html, /data-model-anchor="lulu-v2"/);
   assert.match(html, /01-garment-front\.webp/);
   assert.match(html, /application\/ld\+json/);
@@ -121,6 +138,12 @@ test("server-renders product studies plus only identity-cleared model fronts", a
     "ivory-tie-skirt",
     "cocoa-pleat-trouser",
     "salmon-camp-shirt",
+    "blush-scoop-mini-dress",
+    "orchid-beaded-column-gown",
+    "sage-asymmetric-ruched-maxi-dress",
+    "magenta-plunge-ruched-mini-dress",
+    "silver-off-shoulder-mermaid-dress",
+    "multicolor-abstract-strapless-mini-dress",
   ];
   const responses = await Promise.all(
     slugs.map((slug) => render(`/shop/products/${slug}`)),
@@ -131,6 +154,11 @@ test("server-renders product studies plus only identity-cleared model fronts", a
     "ivory-tie-skirt",
     "cocoa-pleat-trouser",
     "salmon-camp-shirt",
+    "blush-scoop-mini-dress",
+    "orchid-beaded-column-gown",
+    "sage-asymmetric-ruched-maxi-dress",
+    "silver-off-shoulder-mermaid-dress",
+    "multicolor-abstract-strapless-mini-dress",
   ]);
 
   for (const [index, response] of responses.entries()) {
@@ -170,9 +198,9 @@ test("server-renders the public commerce route grammar", async () => {
   }
 
   assert.match(await search.text(), /Search the whole rail/);
-  assert.match(await checkout.text(), /Your bag needs a piece first/);
-  assert.match(await orders.text(), /Opening your order history/);
-  assert.match(await status.text(), /Opening order status/);
+  assert.match(await checkout.text(), /Opening checkout/);
+  assert.match(await orders.text(), /Opening saved checkouts/);
+  assert.match(await status.text(), /Opening checkout status/);
   assert.match(await account.text(), /Your shopping space/);
 });
 
@@ -188,7 +216,7 @@ test("keeps prototype language out of the visible shopper journey", async () => 
   ]);
 
   const visible = (await Promise.all(responses.map((response) => response.text())))
-    .map(visibleMarkup)
+    .map(visibleCopy)
     .join("\n");
   assert.doesNotMatch(visible, /\b(?:demo|fictional|preview|sample)\b/i);
 });

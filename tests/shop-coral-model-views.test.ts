@@ -91,7 +91,7 @@ test("migrates stored V3 Coral data without resetting operator edits", () => {
     managedSlugs: [coral.slug],
   }));
 
-  assert.equal(WARDROBE_PUBLIC_VIEW_SCHEMA_VERSION, 4);
+  assert.equal(WARDROBE_PUBLIC_VIEW_SCHEMA_VERSION, 5);
   assert.equal(parsed.products.length, 1);
   assert.equal(parsed.products[0].name, "Operator-edited Coral title");
   assert.equal(parsed.products[0].price, 27100);

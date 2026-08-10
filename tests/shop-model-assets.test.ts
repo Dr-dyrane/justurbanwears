@@ -40,6 +40,36 @@ const expectedApprovals = [
     height: 1619,
     sha256: "048fba20e31e6fd092315bd042b161ba559a011ae4b12b72be88ac547325e1ac",
   },
+  {
+    slug: "blush-scoop-mini-dress",
+    width: 972,
+    height: 1619,
+    sha256: "3556692f2e60c202c44b449d5aa3fa54242212a5afb4ac220028cc6d361925ad",
+  },
+  {
+    slug: "orchid-beaded-column-gown",
+    width: 972,
+    height: 1619,
+    sha256: "b39a75718c9ab77057325c7549f7b749b56aead8f06634465718e3a971ba6ea8",
+  },
+  {
+    slug: "sage-asymmetric-ruched-maxi-dress",
+    width: 972,
+    height: 1619,
+    sha256: "c7fe429f33d463325924dc321bd2f8dc573f32fc975df379fe9977fe19b1dd51",
+  },
+  {
+    slug: "silver-off-shoulder-mermaid-dress",
+    width: 972,
+    height: 1619,
+    sha256: "e41334fe9952d9a2c5fb84fe3e6730099b9936f2fd5f44fc8896ee55a9ec907e",
+  },
+  {
+    slug: "multicolor-abstract-strapless-mini-dress",
+    width: 972,
+    height: 1619,
+    sha256: "32cb8b1c831708f0e347e8069639fe552dc95d842cc7a0a408f51b6dd272daee",
+  },
 ] as const;
 
 test("keeps the public Lulu V2 anchor byte-identical to the approved projection", () => {

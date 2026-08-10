@@ -24,6 +24,7 @@ import {
   WARDROBE_PUBLIC_VIEW_STORAGE_KEY,
   migrateLegacyStudioState,
 } from "../lib/studio/db/browser-local-repository";
+import { WARDROBE_APPROVED_MODEL_FRONT_SLUGS } from "../lib/wardrobe-public-view/seeds";
 
 const garment: Garment = {
   id: "garment-test",
@@ -207,13 +208,14 @@ test("writing off a returned sold unit preserves other sellable units", () => {
 });
 
 test("approved wardrobe public-view contracts expose only cleared Lulu views", () => {
-  assert.equal(WARDROBE_PUBLIC_VIEW_PROJECTION_SCHEMA_VERSION, 4);
-  assert.equal(WARDROBE_PUBLIC_VIEW_STORAGE_KEY, "justurban-wears:wardrobe-public-view:v4");
+  assert.equal(WARDROBE_PUBLIC_VIEW_PROJECTION_SCHEMA_VERSION, 5);
+  assert.equal(WARDROBE_PUBLIC_VIEW_STORAGE_KEY, "justurban-wears:wardrobe-public-view:v5");
+  const approvedModelFrontSlugs = new Set<string>(WARDROBE_APPROVED_MODEL_FRONT_SLUGS);
   for (const listing of APPROVED_PUBLIC_LISTINGS) {
     const contract = getApprovedPublicListingContract(listing.sku, listing.slug);
     assert.ok(contract);
     assert.deepEqual(contract.modelAnchor, APPROVED_PUBLIC_MODEL_ANCHOR);
-    const hasApprovedModelFront = listing.slug !== "indigo-workshirt";
+    const hasApprovedModelFront = approvedModelFrontSlugs.has(listing.slug);
     const expected = [
       `/shop/products/${listing.slug}/01-garment-front.webp`,
       `/shop/products/${listing.slug}/02-garment-back.webp`,
