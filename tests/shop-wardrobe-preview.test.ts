@@ -40,10 +40,6 @@ test("the six wardrobe dresses are saleable Drop 01 rows, not a separate preview
     assert.doesNotMatch(JSON.stringify(product), /storage\/models|source\/instagram|privateNote|references/i);
   }
 
-  const previewSource = readFileSync(
-    join(process.cwd(), "components/shop/wardrobe-preview.tsx"),
-    "utf8",
-  );
   const shopHomeSource = readFileSync(
     join(process.cwd(), "components/shop/shop-home.tsx"),
     "utf8",
@@ -52,19 +48,9 @@ test("the six wardrobe dresses are saleable Drop 01 rows, not a separate preview
     join(process.cwd(), "lib/studio/seeds/wardrobe-authority.ts"),
     "utf8",
   );
-  const foundationCss = readFileSync(join(process.cwd(), "app/foundation.css"), "utf8");
-  const previewCss = foundationCss.slice(foundationCss.lastIndexOf("/* Wardrobe preview */"));
-
-  assert.match(previewSource, /WARDROBE_DROP_01_PRODUCTS/);
-  assert.match(previewSource, /wardrobeDressSlugs\.has\(product\.slug\)/);
-  assert.match(previewSource, /Available now/);
-  assert.match(previewSource, /\/shop\/products\/\$\{product\.slug\}/);
-  assert.doesNotMatch(previewSource, /wardrobe-public-view\/drafts|Styling now|next drop/);
   assert.doesNotMatch(authoritySource, /WARDROBE_PUBLIC_DRAFTS|reviewedDrafts/);
-  for (const name of expectedNames) assert.equal(previewSource.includes(name), false);
-
-  const previewPosition = shopHomeSource.indexOf("<WardrobePreview />");
-  const discoveryPosition = shopHomeSource.indexOf("id=\"discover\"");
-  assert.ok(previewPosition >= 0 && previewPosition < discoveryPosition);
-  assert.match(previewCss, /^\/\* Wardrobe preview \*\//);
+  assert.doesNotMatch(shopHomeSource, /WardrobePreview|shop-release-index|shop-editorial-rail|shop-values/);
+  assert.match(shopHomeSource, /showModelLink=\{false\}/);
+  assert.match(shopHomeSource, /showStudyMark=\{false\}/);
+  assert.match(shopHomeSource, /product\.slug !== heroProduct\.slug/);
 });

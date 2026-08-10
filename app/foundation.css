@@ -4832,7 +4832,8 @@ html[data-theme="dark"] .shop-shell {
 .shop-home .shop-hero {
   gap: clamp(48px, 7.5vw, 120px);
   grid-template-columns: minmax(360px, 0.82fr) minmax(390px, 1.18fr);
-  padding-bottom: clamp(72px, 8vw, 112px);
+  min-height: min(720px, calc(100svh - 92px));
+  padding: clamp(38px, 5vw, 68px) 0 clamp(52px, 6vw, 82px);
 }
 
 .shop-home .shop-hero-copy {
@@ -4863,7 +4864,7 @@ html[data-theme="dark"] .shop-shell {
   display: grid;
   isolation: isolate;
   justify-items: center;
-  min-height: clamp(650px, calc(100vh - 160px), 790px);
+  min-height: clamp(560px, calc(100svh - 170px), 680px);
   text-decoration: none;
   transform: none;
 }
@@ -4926,6 +4927,14 @@ html[data-theme="dark"] .shop-shell {
   letter-spacing: 0.06em;
 }
 
+.hero-product-price {
+  color: var(--shop-nude-ink);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 560;
+  white-space: nowrap;
+}
+
 .shop-section-title:has(> .shop-release-index) {
   align-items: end;
   display: grid;
@@ -4985,7 +4994,11 @@ html[data-theme="dark"] .shop-shell {
 }
 
 .shop-discovery > .shop-product-grid {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.shop-home .shop-discovery {
+  padding-top: clamp(48px, 6vw, 82px);
 }
 
 .shop-product-card .shop-product-visual {
@@ -5047,6 +5060,7 @@ html[data-theme="dark"] .shop-shell {
   .shop-home .shop-hero {
     gap: 54px;
     grid-template-columns: 1fr;
+    min-height: 0;
   }
 
   .shop-home .shop-hero-copy {
@@ -5058,6 +5072,7 @@ html[data-theme="dark"] .shop-shell {
   }
 
   .shop-hero-identity .shop-product-visual {
+    aspect-ratio: 4 / 5;
     width: min(82vw, 440px);
   }
 
@@ -5072,19 +5087,30 @@ html[data-theme="dark"] .shop-shell {
   }
 }
 
+@media (min-width: 921px) and (max-width: 1180px) {
+  .shop-home .availability-filter {
+    display: inline-flex;
+    grid-column: 1 / -1;
+    justify-self: start;
+  }
+}
+
 @media (max-width: 680px) {
   .shop-home .shop-hero {
-    gap: 42px;
-    padding-bottom: 64px;
+    gap: 28px;
+    padding: 38px 0 42px;
   }
 
   .shop-home .shop-hero h1 {
-    font-size: clamp(52px, 15vw, 74px);
+    font-size: clamp(48px, 13vw, 64px);
   }
+
+  .shop-home .shop-hero-lede { margin-top: 20px; }
+  .shop-home .shop-hero-actions { margin-top: 26px; }
 
   .shop-hero-identity .shop-product-visual {
     border-radius: 28px 28px 17px 17px;
-    width: min(100%, 410px);
+    width: min(92%, 360px);
   }
 
   .shop-hero-identity .hero-product-caption {

@@ -14,7 +14,15 @@ const availabilityCopy = {
   SOLD: "Sold",
 } as const;
 
-export function ProductCard({ product }: { product: ShopProduct }) {
+export function ProductCard({
+  product,
+  showModelLink = true,
+  showStudyMark = true,
+}: {
+  product: ShopProduct;
+  showModelLink?: boolean;
+  showStudyMark?: boolean;
+}) {
   const { addToBag, bag, isOnline, saved, toggleSaved } = useShop();
   const [notice, setNotice] = useState("");
   const isSaved = saved.includes(product.slug);
@@ -41,13 +49,13 @@ export function ProductCard({ product }: { product: ShopProduct }) {
           aria-label={`View ${product.name}`}
           href={`/shop/products/${product.slug}`}
         >
-          <ProductVisual product={product} compact />
+          <ProductVisual product={product} compact showStudyMark={showStudyMark} />
         </Link>
-        <span
-          className={`availability-tag availability-${product.availability.toLowerCase()}`}
-        >
-          {availabilityCopy[product.availability]}
-        </span>
+        {!isAvailable ? (
+          <span className={`availability-tag availability-${product.availability.toLowerCase()}`}>
+            {availabilityCopy[product.availability]}
+          </span>
+        ) : null}
         <button
           aria-label={`${isSaved ? "Remove" : "Save"} ${product.name}`}
           aria-pressed={isSaved}
@@ -63,7 +71,7 @@ export function ProductCard({ product }: { product: ShopProduct }) {
         <h3>{product.name}</h3>
         <p>{formatNaira(product.price)}</p>
       </Link>
-      {approvedModelTryout ? (
+      {showModelLink && approvedModelTryout ? (
         isOnline ? (
           <Link
             aria-label={`Open the model front view of ${product.name}`}

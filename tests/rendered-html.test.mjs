@@ -46,7 +46,7 @@ test("server-renders the public shop foundation", async () => {
   const html = await response.text();
   assert.match(html, /justurban wears/);
   assert.match(html, /Drop 01/);
-  assert.match(html, /10 pieces\. One clean release/);
+  assert.match(html, /Clothes with a second first impression/);
   assert.match(html, /Search the edit/);
   assert.match(html, /Quick add/);
   assert.match(html, /data-mobile-chrome-mode="expanded"/);
@@ -55,7 +55,7 @@ test("server-renders the public shop foundation", async () => {
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/i);
 });
 
-test("publishes a product-led Lulu hero and the ten-piece Drop 01 rail", async () => {
+test("publishes one product-led hero and one concise Drop 01 discovery grid", async () => {
   const response = await render("/shop");
   assert.equal(response.status, 200);
 
@@ -63,30 +63,31 @@ test("publishes a product-led Lulu hero and the ten-piece Drop 01 rail", async (
   const visibleBody = visibleMarkup(html);
   assert.match(visibleBody, /\/shop\/products\/coral-drift-dress\/04-model-front\.webp/);
   assert.match(visibleBody, /data-model-anchor="lulu-v2"/);
-  assert.match(visibleBody, /On Lulu/);
+  assert.match(visibleBody, /Featured piece/);
   assert.match(visibleBody, /Coral Drift Dress/);
   assert.doesNotMatch(visibleBody, /Approved studio identity|not shop merchandise/);
   assert.match(visibleBody, /aria-pressed="true"[^>]*class="availability-filter is-active"/);
 
   const releasedProducts = [
-    ["DYN-081", "Coral Drift Dress", "coral-drift-dress"],
-    ["DYN-083", "Moss Square Knit", "moss-square-knit"],
-    ["DYN-085", "Cocoa Pleat Trouser", "cocoa-pleat-trouser"],
-    ["DYN-086", "Salmon Camp Shirt", "salmon-camp-shirt"],
-    ["DYN-087", "Blush Scoop Mini Dress", "blush-scoop-mini-dress"],
-    ["DYN-088", "Orchid Beaded Column Gown", "orchid-beaded-column-gown"],
-    ["DYN-089", "Sage Asymmetric Ruched Maxi Dress", "sage-asymmetric-ruched-maxi-dress"],
-    ["DYN-090", "Magenta Plunge Ruched Mini Dress", "magenta-plunge-ruched-mini-dress"],
-    ["DYN-091", "Silver Off-Shoulder Mermaid Dress", "silver-off-shoulder-mermaid-dress"],
-    ["DYN-092", "Multicolor Abstract Strapless Mini Dress", "multicolor-abstract-strapless-mini-dress"],
+    ["Coral Drift Dress", "coral-drift-dress"],
+    ["Moss Square Knit", "moss-square-knit"],
+    ["Cocoa Pleat Trouser", "cocoa-pleat-trouser"],
+    ["Salmon Camp Shirt", "salmon-camp-shirt"],
+    ["Blush Scoop Mini Dress", "blush-scoop-mini-dress"],
+    ["Orchid Beaded Column Gown", "orchid-beaded-column-gown"],
+    ["Sage Asymmetric Ruched Maxi Dress", "sage-asymmetric-ruched-maxi-dress"],
+    ["Magenta Plunge Ruched Mini Dress", "magenta-plunge-ruched-mini-dress"],
+    ["Silver Off-Shoulder Mermaid Dress", "silver-off-shoulder-mermaid-dress"],
+    ["Multicolor Abstract Strapless Mini Dress", "multicolor-abstract-strapless-mini-dress"],
   ];
 
-  for (const [sku, name, slug] of releasedProducts) {
-    assert.match(visibleBody, new RegExp(`data-sku="${sku}"`));
+  for (const [name, slug] of releasedProducts) {
     assert.match(visibleBody, new RegExp(`href="/shop/products/${slug}"`));
     assert.match(visibleBody, new RegExp(name));
   }
 
+  assert.doesNotMatch(visibleBody, /shop-release-index|shop-wardrobe-preview|shop-editorial-rail|shop-values/);
+  assert.doesNotMatch(visibleBody, /GARMENT STUDY|DYN-0(?:8[1-9]|9[0-2])|Six dresses from Lulu’s wardrobe|Warm colour\. Clean movement/);
   assert.doesNotMatch(visibleBody, /Indigo Workshirt|Ivory Tie Skirt/);
 });
 
@@ -105,7 +106,7 @@ test("keeps the private Studio and public shop visibly distinct", async () => {
   assert.match(visibleBody, /data-mobile-chrome-mode="expanded"/);
   assert.match(visibleBody, /aria-label="Show navigation\. Business home selected"/);
   assert.match(visibleBody, /id="studio-mobile-navigation"/);
-  assert.doesNotMatch(visibleBody, /10 pieces\. One clean release/);
+  assert.doesNotMatch(visibleBody, /Clothes with a second first impression/);
 });
 
 test("server-renders a navigable public product detail", async () => {

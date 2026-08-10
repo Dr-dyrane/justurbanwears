@@ -3,9 +3,11 @@ import type { ShopProduct } from "../../lib/shop/catalog";
 export function ProductVisual({
   product,
   compact = false,
+  showStudyMark = true,
 }: {
   product: ShopProduct;
   compact?: boolean;
+  showStudyMark?: boolean;
 }) {
   const featured = product.media?.[0];
 
@@ -30,10 +32,12 @@ export function ProductVisual({
           style={{ objectPosition: featured.objectPosition ?? "50% 50%" }}
           width={featured.width}
         />
-        <span className="product-study-mark" aria-hidden="true">
-          <small>justurban wears / GARMENT STUDY</small>
-          <span>{product.sku}</span>
-        </span>
+        {showStudyMark ? (
+          <span className="product-study-mark" aria-hidden="true">
+            <small>justurban wears / GARMENT STUDY</small>
+            <span>{product.sku}</span>
+          </span>
+        ) : null}
       </div>
     );
   }
@@ -54,10 +58,12 @@ export function ProductVisual({
         <span className="product-fold product-fold-one" />
         <span className="product-fold product-fold-two" />
       </span>
-      <span className="product-study-mark" aria-hidden="true">
-        <small>justurban wears / GARMENT STUDY</small>
-        <span>{product.sku}</span>
-      </span>
+      {showStudyMark ? (
+        <span className="product-study-mark" aria-hidden="true">
+          <small>justurban wears / GARMENT STUDY</small>
+          <span>{product.sku}</span>
+        </span>
+      ) : null}
     </div>
   );
 }
