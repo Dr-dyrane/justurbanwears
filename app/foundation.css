@@ -361,6 +361,27 @@
     linear-gradient(138deg, #2a1d18, #3a261f);
   --shop-editorial-ink: #fff8f4;
   --shop-editorial-muted: #dac7bd;
+  --shop-nav-surface: rgba(255, 253, 249, 0.84);
+  --shop-nav-surface-solid: #fffaf6;
+  --shop-nav-surface-muted: #f3e7df;
+  --shop-nav-hover: rgba(255, 253, 249, 0.96);
+  --shop-nav-ink: #2d211d;
+  --shop-nav-muted: #67534c;
+  --shop-nav-faint: #715950;
+  --shop-nav-accent: #a33e2b;
+  --shop-nav-selection: color-mix(in srgb, var(--peach) 62%, var(--shop-paper));
+  --shop-nav-selection-ink: #6f2c1e;
+  --shop-nav-action: #2d211d;
+  --shop-nav-action-hover: #3b2922;
+  --shop-nav-action-ink: #fffaf7;
+  --shop-nav-shadow: 0 20px 58px rgba(74, 45, 34, 0.12);
+  --shop-nav-edge: rgba(255, 255, 255, 0.72);
+  --shop-dock-surface:
+    linear-gradient(145deg, rgba(255, 253, 249, 0.82), rgba(245, 196, 181, 0.44) 58%, rgba(245, 152, 134, 0.2));
+  --shop-dock-specular:
+    radial-gradient(ellipse at 20% -18%, rgba(255, 255, 255, 0.62), transparent 54%),
+    radial-gradient(ellipse at 88% 116%, rgba(245, 152, 134, 0.24), transparent 56%);
+  --shop-dock-shadow: 0 14px 36px rgba(91, 54, 39, 0.16);
   --accent-text: #a33e2b;
   --glass-light: rgba(255, 250, 246, 0.76);
   --glass-edge: rgba(255, 255, 255, 0.58);
@@ -395,6 +416,27 @@ html[data-theme="dark"] .shop-shell {
     linear-gradient(138deg, #090606, #1b0e0a 58%, #28130e);
   --shop-editorial-ink: #fff8f4;
   --shop-editorial-muted: #e0c9bf;
+  --shop-nav-surface: rgba(23, 19, 16, 0.86);
+  --shop-nav-surface-solid: #171310;
+  --shop-nav-surface-muted: #29221e;
+  --shop-nav-hover: #342a25;
+  --shop-nav-ink: #f4eee9;
+  --shop-nav-muted: #c8bdb6;
+  --shop-nav-faint: #a69991;
+  --shop-nav-accent: #e28369;
+  --shop-nav-selection: color-mix(in srgb, #4a2c24 76%, #171310);
+  --shop-nav-selection-ink: #fff1eb;
+  --shop-nav-action: #f0d8cd;
+  --shop-nav-action-hover: #fff6f1;
+  --shop-nav-action-ink: #1d1512;
+  --shop-nav-shadow: 0 24px 70px rgba(0, 0, 0, 0.36);
+  --shop-nav-edge: rgba(255, 232, 220, 0.12);
+  --shop-dock-surface:
+    linear-gradient(145deg, rgba(23, 19, 16, 0.94), rgba(41, 34, 30, 0.9) 58%, rgba(74, 44, 36, 0.84));
+  --shop-dock-specular:
+    radial-gradient(ellipse at 20% -18%, rgba(255, 232, 220, 0.12), transparent 54%),
+    radial-gradient(ellipse at 88% 116%, rgba(226, 131, 105, 0.2), transparent 56%);
+  --shop-dock-shadow: 0 18px 48px rgba(0, 0, 0, 0.38);
   --accent-text: #ff9d86;
   --focus: #ffab97;
   --glass-light: rgba(15, 9, 8, 0.76);
@@ -3854,16 +3896,13 @@ html[data-theme="dark"] .pwa-install-control__action:hover {
   color: #2b1d18;
 }
 
-html[data-theme="dark"] .shop-dock-lens {
-  background:
-    linear-gradient(145deg, rgba(55, 40, 34, 0.9), rgba(84, 50, 39, 0.78) 58%, rgba(221, 96, 66, 0.25));
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.32);
+html[data-theme="dark"] .shop-shell .shop-dock-lens {
+  background: var(--shop-dock-surface);
+  box-shadow: var(--shop-dock-shadow);
 }
 
-html[data-theme="dark"] .shop-dock-lens::before {
-  background:
-    radial-gradient(ellipse at 20% -18%, rgba(255, 255, 255, 0.12), transparent 54%),
-    radial-gradient(ellipse at 88% 116%, rgba(245, 152, 134, 0.18), transparent 56%);
+html[data-theme="dark"] .shop-shell .shop-dock-lens::before {
+  background: var(--shop-dock-specular);
 }
 
 /* Theme controls --------------------------------------------------------- */
@@ -7425,5 +7464,123 @@ html[data-theme="dark"] .shop-wardrobe-preview-frame {
   .shop-wardrobe-preview-list > li:nth-child(5) {
     grid-column: auto;
     width: 100%;
+  }
+}
+
+/* Semantic navigation materials ----------------------------------------- */
+
+.shop-shell .shop-floating-nav {
+  background: var(--shop-nav-surface);
+  box-shadow:
+    var(--shop-nav-shadow),
+    inset 0 1px 0 var(--shop-nav-edge),
+    inset 0 -1px 0 color-mix(in srgb, var(--shop-nav-ink) 6%, transparent);
+  color: var(--shop-nav-ink);
+}
+
+.shop-shell .shop-wordmark,
+.shop-shell .shop-wordmark-lockup > span {
+  color: var(--shop-nav-ink);
+}
+
+.shop-shell .shop-wordmark-lockup > em,
+.shop-shell .shop-nav-links > a,
+.shop-shell .shop-account-link,
+.shop-shell .theme-toggle {
+  color: var(--shop-nav-muted);
+}
+
+.shop-shell .shop-theme-toggle,
+.shop-shell .shop-account-link {
+  background: var(--shop-nav-surface-muted);
+}
+
+.shop-shell .shop-nav-links > a:hover,
+.shop-shell .shop-account-link:hover,
+.shop-shell .theme-toggle:hover {
+  background: var(--shop-nav-hover);
+  color: var(--shop-nav-ink);
+}
+
+.shop-shell .shop-nav-links > a.is-active,
+.shop-shell .shop-account-link.is-active,
+.shop-shell .shop-mobile-dock a.is-active,
+.shop-shell .shop-mobile-fab.is-active,
+.shop-shell .shop-mobile-nav-reveal > span {
+  background: var(--shop-nav-selection);
+  box-shadow: 0 9px 24px color-mix(in srgb, var(--shop-nav-ink) 10%, transparent);
+  color: var(--shop-nav-selection-ink);
+}
+
+.shop-shell .shop-bag-link,
+html[data-theme="dark"] .shop-shell .shop-bag-link {
+  background: var(--shop-nav-action);
+  color: var(--shop-nav-action-ink);
+}
+
+.shop-shell .shop-bag-link:hover,
+html[data-theme="dark"] .shop-shell .shop-bag-link:hover {
+  background: var(--shop-nav-action-hover);
+  color: var(--shop-nav-action-ink);
+}
+
+.shop-shell .shop-dock-lens {
+  background: var(--shop-dock-surface);
+  box-shadow: var(--shop-dock-shadow);
+}
+
+.shop-shell .shop-dock-lens::before {
+  background: var(--shop-dock-specular);
+}
+
+.shop-shell .shop-mobile-context {
+  color: var(--shop-nav-ink);
+}
+
+.shop-shell .shop-mobile-context small,
+.shop-shell .shop-mobile-context > svg,
+.shop-shell .shop-mobile-fab,
+.shop-shell .shop-mobile-nav-reveal {
+  color: var(--shop-nav-accent);
+}
+
+.shop-shell .shop-mobile-context strong {
+  color: var(--shop-nav-muted);
+}
+
+.shop-shell .shop-mobile-dock a {
+  color: var(--shop-nav-faint);
+}
+
+.studio-shell {
+  --studio-chrome-lens:
+    linear-gradient(
+      145deg,
+      color-mix(in srgb, var(--studio-panel-strong) 88%, transparent),
+      color-mix(in srgb, var(--studio-panel) 86%, transparent) 58%,
+      color-mix(in srgb, var(--studio-accent-soft) 44%, transparent)
+    );
+  --studio-chrome-specular:
+    radial-gradient(ellipse at 20% -18%, var(--glass-edge), transparent 54%),
+    radial-gradient(ellipse at 88% 116%, color-mix(in srgb, var(--studio-accent) 18%, transparent), transparent 56%);
+}
+
+.studio-shell .shop-dock-lens {
+  background: var(--studio-chrome-lens);
+  box-shadow: var(--studio-shadow);
+}
+
+.studio-shell .shop-dock-lens::before {
+  background: var(--studio-chrome-specular);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .shop-shell .shop-floating-nav,
+  .shop-shell .shop-dock-lens {
+    background: var(--shop-nav-surface-solid) !important;
+  }
+
+  .studio-shell .shop-dock-lens {
+    background: var(--studio-panel-strong) !important;
   }
 }
