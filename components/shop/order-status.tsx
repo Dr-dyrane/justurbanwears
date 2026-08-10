@@ -10,6 +10,7 @@ import {
   getOrderStatusLabel,
   getOrderStep,
   checkoutProgress,
+  resolveOrderLineMedia,
 } from "../../lib/shop/commerce";
 import { ShopActionLink } from "./atoms/action";
 import { ShopLink as Link } from "./atoms/shop-link";
@@ -95,14 +96,17 @@ export function OrderStatus() {
           <p className="shop-kicker">Checkout overview</p>
           <div className="shop-status-products">
             {lines.map(({ line, product }) => {
+              const media = resolveOrderLineMedia(line, product);
               const name = line.snapshot === "PRODUCT" ? line.name : "Archived checkout item";
               const detail = line.snapshot === "PRODUCT"
                 ? `${line.taggedSize} · Quantity 1`
                 : line.slug;
               const content = (
                 <>
-                  {product ? <ProductVisual compact product={product} /> : line.snapshot === "PRODUCT" && line.imageSrc ? (
-                    <Image alt={line.imageAlt ?? ""} height={75} src={line.imageSrc} width={60} />
+                  {media.kind === "SNAPSHOT" ? (
+                    <Image alt={media.alt} height={75} src={media.src} width={60} />
+                  ) : media.kind === "CATALOG" ? (
+                    <ProductVisual compact product={media.product} />
                   ) : <span className="shop-status-product-placeholder" aria-hidden="true" />}
                   <span><strong>{name}</strong><small>{detail}</small></span>
                 </>

@@ -6,6 +6,7 @@ import { formatNaira } from "../../lib/shop/catalog";
 import {
   formatOrderDate,
   getOrderStatusLabel,
+  resolveOrderLineMedia,
   type ShopOrder,
 } from "../../lib/shop/commerce";
 import { ShopActionLink } from "./atoms/action";
@@ -18,19 +19,22 @@ function OrderCard({ order }: { order: ShopOrder }) {
   const { getProduct } = useShop();
   const firstLine = order.lines[0];
   const product = firstLine ? getProduct(firstLine.slug) : undefined;
+  const media = resolveOrderLineMedia(firstLine, product);
   const label = getOrderStatusLabel(order.status);
   const title = firstLine?.snapshot === "PRODUCT" ? firstLine.name : "Saved checkout";
 
   return (
     <Link className="shop-order-card" href={`/shop/orders/${order.id}`}>
-      {product ? <ProductVisual compact product={product} /> : firstLine?.snapshot === "PRODUCT" && firstLine.imageSrc ? (
+      {media.kind === "SNAPSHOT" ? (
         <Image
-          alt={firstLine.imageAlt ?? ""}
+          alt={media.alt}
           className="shop-order-snapshot"
           height={135}
-          src={firstLine.imageSrc}
+          src={media.src}
           width={108}
         />
+      ) : media.kind === "CATALOG" ? (
+        <ProductVisual compact product={media.product} />
       ) : <span className="shop-order-snapshot is-empty" aria-hidden="true" />}
       <div className="shop-order-card-copy">
         <span>Checkout</span>

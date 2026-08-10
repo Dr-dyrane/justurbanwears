@@ -14,6 +14,7 @@ import {
   createInitialCommerceState,
 } from "../lib/shop/domain/state";
 import { commerceReducer } from "../lib/shop/machines/commerce-machine";
+import { resolveOrderLineMedia } from "../lib/shop/commerce";
 import { createCommerceService } from "../lib/shop/services/commerce-service";
 
 const product = shopProducts[0];
@@ -99,6 +100,26 @@ test("creates a truthful local checkout with immutable product and fulfillment s
     imageSrc: product.media?.[0]?.src,
     imageAlt: product.media?.[0]?.alt,
   });
+});
+
+test("keeps checkout snapshot media stable when the live wardrobe image changes", () => {
+  const result = createService().createCheckout(snapshot(), deliveryRequest);
+  assert.equal(result.ok, true);
+  if (!result.ok) return;
+
+  const line = result.order.lines[0];
+  const changedProduct = {
+    ...product,
+    media: product.media.map((frame, index) => index === 0
+      ? { ...frame, src: "/shop/products/changed/current-frame.webp" }
+      : frame),
+  };
+  const media = resolveOrderLineMedia(line, changedProduct);
+  assert.equal(media.kind, "SNAPSHOT");
+  if (media.kind === "SNAPSHOT" && line.snapshot === "PRODUCT") {
+    assert.equal(media.src, line.imageSrc);
+    assert.notEqual(media.src, changedProduct.media[0]?.src);
+  }
 });
 
 test("pickup needs no delivery address while a delivery address remains required", () => {

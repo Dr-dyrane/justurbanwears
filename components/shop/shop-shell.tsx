@@ -25,6 +25,17 @@ const nav: Array<{ href: string; label: string; icon: LucideIcon }> = [
   { href: "/shop/orders", label: "Checkouts", icon: ReceiptText },
 ];
 
+function destinationState(href: string, pathname: string) {
+  const exact = pathname === href;
+  const nested = href === "/shop"
+    ? pathname.startsWith("/shop/products/")
+    : pathname.startsWith(`${href}/`);
+  return {
+    active: exact || nested,
+    current: exact ? "page" as const : nested ? "location" as const : undefined,
+  };
+}
+
 function ShopChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { bag, isOnline, saved } = useShop();
@@ -36,11 +47,7 @@ function ShopChrome({ children }: { children: React.ReactNode }) {
     revealNavigation,
     suspended: mobileChromeSuspended,
   } = useMobileChrome(pathname);
-  const activeMobileDestination = nav.find((item) => (
-    item.href === "/shop"
-      ? pathname === "/shop"
-      : pathname === item.href || pathname.startsWith(`${item.href}/`)
-  ));
+  const activeMobileDestination = nav.find((item) => destinationState(item.href, pathname).active);
   const mobileDestination = activeMobileDestination
     ?? (pathname === "/shop/bag" || pathname === "/shop/checkout"
       ? { label: "Bag", icon: ShoppingBag }
@@ -50,6 +57,16 @@ function ShopChrome({ children }: { children: React.ReactNode }) {
   const MobileDestinationIcon = mobileDestination.icon;
   const contextAction = !isOnline
     ? { eyebrow: "Offline", label: "Review app connection and local state", href: "/shop/account" }
+    : pathname === "/shop/bag"
+      ? bag.length
+        ? { eyebrow: "Ready to continue", label: "Continue to checkout", href: "/shop/checkout" }
+        : { eyebrow: "Drop 01", label: "Find a piece", href: "/shop/search" }
+    : pathname === "/shop/checkout"
+      ? { eyebrow: "Your bag", label: `${bag.length} ${bag.length === 1 ? "piece" : "pieces"} selected`, href: "/shop/bag" }
+    : pathname === "/shop/orders"
+      ? { eyebrow: "The wardrobe", label: "Find another piece", href: "/shop/search" }
+    : pathname.startsWith("/shop/orders/")
+      ? { eyebrow: "Saved checkouts", label: "View all checkouts", href: "/shop/orders" }
     : bag.length
     ? {
         eyebrow: "Bag ready",
@@ -59,10 +76,8 @@ function ShopChrome({ children }: { children: React.ReactNode }) {
     : pathname.startsWith("/shop/products/")
       ? { eyebrow: "Keep looking", label: "Search similar shapes", href: "/shop/search" }
       : pathname === "/shop/search"
-        ? { eyebrow: "Editorial rail", label: "Browse the complete edit", href: "/shop#discover" }
-      : pathname.startsWith("/shop/orders")
-        ? { eyebrow: "Payment next", label: "Review saved checkouts", href: "/shop/orders" }
-        : { eyebrow: "Drop 01", label: "Search the complete edit", href: "/shop/search" };
+        ? { eyebrow: "Drop 01", label: "Browse available pieces", href: "/shop#discover" }
+      : { eyebrow: "Drop 01", label: "Search the wardrobe", href: "/shop/search" };
 
   return (
     <div
@@ -85,13 +100,11 @@ function ShopChrome({ children }: { children: React.ReactNode }) {
           </Link>
           <div className="shop-nav-links">
             {nav.map((item) => {
-              const active = item.href === "/shop"
-                ? pathname === "/shop"
-                : pathname === item.href || pathname.startsWith(`${item.href}/`);
+              const destination = destinationState(item.href, pathname);
               return (
                 <Link
-                  aria-current={active ? "page" : undefined}
-                  className={active ? "is-active" : undefined}
+                  aria-current={destination.current}
+                  className={destination.active ? "is-active" : undefined}
                   href={item.href}
                   key={item.href}
                 >
@@ -115,14 +128,14 @@ function ShopChrome({ children }: { children: React.ReactNode }) {
               <span>Account</span>
             </Link>
             <Link
-              aria-current={pathname === "/shop/bag" || pathname === "/shop/checkout" ? "page" : undefined}
+              aria-current={pathname === "/shop/bag" ? "page" : pathname === "/shop/checkout" ? "location" : undefined}
               aria-label={`Bag, ${bag.length} items`}
               className="shop-bag-link"
               href="/shop/bag"
             >
               <ShoppingBag aria-hidden="true" size={16} strokeWidth={1.9} />
               <span>Bag</span>
-              <b>{bag.length}</b>
+              <b key={bag.length}>{bag.length}</b>
             </Link>
           </div>
         </nav>
@@ -137,7 +150,7 @@ function ShopChrome({ children }: { children: React.ReactNode }) {
         <Link className="shop-footer-mark" href="/shop" aria-label="justurban wears shop home">
           <span>justurban</span><em>wears</em>
         </Link>
-        <p>Urban ladies’ wear, clearly described. <Link href="/shop/account">App settings</Link></p>
+        <p>Urban ladies’ wear, clearly described.</p>
         <span>Curated in Lagos · 2026</span>
       </footer>
       <aside
@@ -182,27 +195,25 @@ function ShopChrome({ children }: { children: React.ReactNode }) {
               ref={navigationRef}
             >
               {nav.map((item) => {
-                const active = item.href === "/shop"
-                  ? pathname === "/shop"
-                  : pathname === item.href || pathname.startsWith(`${item.href}/`);
+                const destination = destinationState(item.href, pathname);
                 const Icon = item.icon;
                 return (
                   <Link
-                    aria-current={active ? "page" : undefined}
+                    aria-current={destination.current}
                     aria-label={item.label}
-                    className={active ? "is-active" : undefined}
+                    className={destination.active ? "is-active" : undefined}
                     href={item.href}
                     key={item.href}
                     onClick={closeNavigation}
                   >
-                    <Icon aria-hidden="true" size={22} strokeWidth={active ? 2.2 : 1.65} />
+                    <Icon aria-hidden="true" size={22} strokeWidth={destination.active ? 2.2 : 1.65} />
                     <span>{item.label}{item.href === "/shop/saved" && saved.length ? ` · ${saved.length}` : ""}</span>
                   </Link>
                 );
               })}
             </nav>
             <Link
-              aria-current={pathname === "/shop/bag" || pathname === "/shop/checkout" ? "page" : undefined}
+              aria-current={pathname === "/shop/bag" ? "page" : pathname === "/shop/checkout" ? "location" : undefined}
               aria-label={`Bag, ${bag.length} items`}
               className={`shop-mobile-fab shop-dock-lens${pathname === "/shop/bag" || pathname === "/shop/checkout" ? " is-active" : ""}`}
               href="/shop/bag"

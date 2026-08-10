@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, ChevronDown, Eye, Heart, Share2 } from "lucide-react";
+import { ArrowLeft, Eye, Heart, LoaderCircle, Share2 } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { formatNaira } from "../../lib/shop/catalog";
@@ -9,6 +9,7 @@ import { ShopActionButton, ShopActionLink } from "./atoms/action";
 import { ShopLink as Link } from "./atoms/shop-link";
 import { ProductCard } from "./product-card";
 import { ProductMediaGallery } from "./product-media-gallery";
+import { ProductInfoSheet } from "./product-info-sheet";
 import { ProductModelTryout } from "./product-model-tryout";
 import { useShop } from "./shop-provider";
 
@@ -51,6 +52,7 @@ export function ProductDetail() {
   } = useShop();
   const product = getProduct(params.slug);
   const [notice, setNotice] = useState("");
+  const [isPreparingCheckout, setIsPreparingCheckout] = useState(false);
   const modelTryoutTriggerRef = useRef<HTMLButtonElement>(null);
   const openedModelTryoutHereRef = useRef(false);
   const approvedModelTryout = useMemo(() => (
@@ -94,6 +96,13 @@ export function ProductDetail() {
     return added;
   }
 
+  function toggleProductSaved() {
+    toggleSaved(product!.slug);
+    setNotice(isSaved
+      ? `${product!.name} removed from saved pieces.`
+      : `${product!.name} saved.`);
+  }
+
   function openModelTryout() {
     const url = new URL(window.location.href);
     url.searchParams.set("view", "model");
@@ -127,19 +136,27 @@ export function ProductDetail() {
   }
 
   async function buyProduct() {
+    if (isPreparingCheckout) return;
     if (!isOnline) {
       setNotice("Reconnect to continue to checkout.");
       return;
     }
-    const isReady = await prepareCheckout({
-      slug: product!.slug,
-      size: product!.taggedSize,
-    });
-    if (!isReady) {
+    setIsPreparingCheckout(true);
+    try {
+      const isReady = await prepareCheckout({
+        slug: product!.slug,
+        size: product!.taggedSize,
+      });
+      if (!isReady) {
+        setNotice("Your bag could not be prepared. Try again.");
+        setIsPreparingCheckout(false);
+        return;
+      }
+      window.location.assign("/shop/checkout");
+    } catch {
       setNotice("Your bag could not be prepared. Try again.");
-      return;
+      setIsPreparingCheckout(false);
     }
-    window.location.assign("/shop/checkout");
   }
 
   async function shareProduct() {
@@ -184,11 +201,23 @@ export function ProductDetail() {
           <p className="shop-detail-note">{product.note}</p>
 
           <div className="shop-detail-utility-row" aria-label="Product actions">
+            {approvedModelTryout ? (
+              <button
+                aria-haspopup="dialog"
+                className="shop-detail-utility"
+                onClick={openModelTryout}
+                ref={modelTryoutTriggerRef}
+                type="button"
+              >
+                <Eye aria-hidden="true" size={18} strokeWidth={1.8} />
+                {isOnline ? "On Lulu" : "Offline"}
+              </button>
+            ) : null}
             <button
               aria-label={`${isSaved ? "Remove" : "Save"} ${product.name}`}
               aria-pressed={isSaved}
               className={`shop-detail-utility${isSaved ? " is-saved" : ""}`}
-              onClick={() => toggleSaved(product.slug)}
+              onClick={toggleProductSaved}
               type="button"
             >
               <Heart aria-hidden="true" fill={isSaved ? "currentColor" : "none"} size={18} strokeWidth={1.8} />
@@ -203,18 +232,6 @@ export function ProductDetail() {
               <Share2 aria-hidden="true" size={18} strokeWidth={1.8} />
               Share
             </button>
-            {approvedModelTryout ? (
-              <button
-                aria-haspopup="dialog"
-                className="shop-detail-utility"
-                onClick={openModelTryout}
-                ref={modelTryoutTriggerRef}
-                type="button"
-              >
-                <Eye aria-hidden="true" size={18} strokeWidth={1.8} />
-                {isOnline ? "On model" : "Offline"}
-              </button>
-            ) : null}
           </div>
 
           <div className="shop-product-choice-row">
@@ -234,7 +251,15 @@ export function ProductDetail() {
 
           {product.availability === "AVAILABLE" ? (
             <div className="shop-purchase-actions">
-              <ShopActionButton disabled={!isOnline} onClick={buyProduct}>Buy now</ShopActionButton>
+              <ShopActionButton
+                aria-busy={isPreparingCheckout}
+                disabled={!isOnline || isPreparingCheckout}
+                onClick={buyProduct}
+              >
+                {isPreparingCheckout ? (
+                  <><LoaderCircle aria-hidden="true" className="shop-action-spinner" size={17} strokeWidth={1.9} /> Preparing</>
+                ) : "Buy now"}
+              </ShopActionButton>
               {isInBag ? (
                 <ShopActionLink href="/shop/bag" tone="secondary">Review bag</ShopActionLink>
               ) : (
@@ -246,52 +271,27 @@ export function ProductDetail() {
               {product.availability === "RESERVED" ? "Currently reserved" : "Sold"}
             </ShopActionButton>
           )}
-          <p className="shop-delivery-note"><strong>Lagos delivery:</strong> 1–3 working days from ₦2,500.</p>
           <p className="shop-action-note" aria-live="polite" role="status">{notice}</p>
-
-          <div className="shop-detail-disclosures">
-            <details open>
-              <summary>
-                <span>Measurements</span>
-                <ChevronDown aria-hidden="true" size={17} strokeWidth={1.7} />
-              </summary>
-              {product.measurements.length ? (
-                <dl>
-                  {product.measurements.map((item) => (
-                    <div key={item.label}><dt>{item.label}</dt><dd>{item.value}</dd></div>
-                  ))}
-                </dl>
-              ) : <p>Exact measurements are confirmed before payment.</p>}
-            </details>
-            <details>
-              <summary>
-                <span>Details & care</span>
-                <ChevronDown aria-hidden="true" size={17} strokeWidth={1.7} />
-              </summary>
-              <ul>{product.details.map((detail) => <li key={detail}>{detail}</li>)}</ul>
-              <p>{product.condition}. Gently launder cold and air dry.</p>
-            </details>
-            <details>
-              <summary>
-                <span>Delivery</span>
-                <ChevronDown aria-hidden="true" size={17} strokeWidth={1.7} />
-              </summary>
-              <p>Lagos delivery takes 1–3 working days. Pickup and nationwide delivery are selected at checkout.</p>
-            </details>
-          </div>
+          <p className="shop-delivery-note">Lagos in 1–3 working days · Pickup and nationwide options at checkout.</p>
+          <ProductInfoSheet
+            condition={product.condition}
+            details={product.details}
+            measurements={product.measurements}
+            productName={product.name}
+          />
         </div>
       </section>
 
       <section className="shop-detail-story">
         <div>
-          <p className="shop-kicker">Why it made the edit</p>
+          <p className="shop-kicker">Why it works</p>
           <h2>Easy to understand. Better in motion.</h2>
         </div>
         <p>{product.story}</p>
       </section>
 
       <section className="shop-related">
-        <div className="shop-section-title"><div><p className="shop-kicker">Keep looking</p><h2>More from the rail.</h2></div></div>
+        <div className="shop-section-title"><div><p className="shop-kicker">Keep looking</p><h2>More from the wardrobe.</h2></div></div>
         <div className="shop-product-grid">{related.map((item) => <ProductCard key={item.slug} product={item} />)}</div>
       </section>
 
@@ -306,7 +306,7 @@ export function ProductDetail() {
           onAddToBag={addProduct}
           onRequestClose={closeModelTryout}
           onReturnFocus={() => modelTryoutTriggerRef.current?.focus()}
-          onToggleSaved={() => toggleSaved(product.slug)}
+          onToggleSaved={toggleProductSaved}
           persistence={persistence}
           productName={product.name}
           taggedSize={product.taggedSize}

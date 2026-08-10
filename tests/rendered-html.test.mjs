@@ -47,7 +47,7 @@ test("server-renders the public shop foundation", async () => {
   assert.match(html, /justurban wears/);
   assert.match(html, /Drop 01/);
   assert.match(html, /Clothes with a second first impression/);
-  assert.match(html, /Search the edit/);
+  assert.match(html, /Search the wardrobe/);
   assert.match(html, /Quick add/);
   assert.match(html, /data-mobile-chrome-mode="expanded"/);
   assert.match(html, /aria-label="Show navigation\. Home selected"/);
@@ -63,7 +63,7 @@ test("publishes one product-led hero and one concise Drop 01 discovery grid", as
   const visibleBody = visibleMarkup(html);
   assert.match(visibleBody, /\/shop\/products\/coral-drift-dress\/04-model-front\.webp/);
   assert.match(visibleBody, /data-model-anchor="lulu-v2"/);
-  assert.match(visibleBody, /Featured piece/);
+  assert.match(visibleBody, /On Lulu/);
   assert.match(visibleBody, /Coral Drift Dress/);
   assert.doesNotMatch(visibleBody, /Approved studio identity|not shop merchandise/);
   assert.match(visibleBody, /aria-haspopup="dialog"/);
@@ -127,6 +127,10 @@ test("server-renders a navigable public product detail", async () => {
   assert.match(html, /On model/);
   assert.match(html, /Share/);
   assert.match(html, /Save/);
+  assert.match(html, /Check the fit/);
+  assert.match(html, /Fabric and finish/);
+  assert.match(html, /shop-product-info-sheet/);
+  assert.doesNotMatch(visibleMarkup(html), /<details\b/i);
   assert.doesNotMatch(html, /Sold by|Following/);
   assert.match(html, /data-model-anchor="lulu-v2"/);
   assert.match(html, /01-garment-front\.webp/);
@@ -202,28 +206,32 @@ test("server-renders product studies plus only identity-cleared model fronts", a
 });
 
 test("server-renders the public commerce route grammar", async () => {
-  const [search, checkout, orders, status, account] = await Promise.all([
+  const [search, saved, bag, checkout, orders, status, account] = await Promise.all([
     render("/shop/search"),
+    render("/shop/saved"),
+    render("/shop/bag"),
     render("/shop/checkout"),
     render("/shop/orders"),
     render("/shop/orders/JUW-NOT-ON-THIS-DEVICE"),
     render("/shop/account"),
   ]);
 
-  for (const response of [search, checkout, orders, status, account]) {
+  for (const response of [search, saved, bag, checkout, orders, status, account]) {
     assert.equal(response.status, 200);
   }
 
   const searchHtml = await search.text();
   const visibleSearch = visibleMarkup(searchHtml);
-  assert.match(visibleSearch, /Search the whole rail/);
+  assert.match(visibleSearch, /Find your next piece/);
   assert.match(visibleSearch, /aria-haspopup="dialog"/);
   assert.match(visibleSearch, /class="[^"]*shop-filter-sheet/);
   assert.doesNotMatch(visibleSearch, /shop-desktop-search-panel|shop-search-panel/);
+  assert.match(await saved.text(), /Opening saved pieces/);
+  assert.match(await bag.text(), /Opening your bag/);
   assert.match(await checkout.text(), /Opening checkout/);
   assert.match(await orders.text(), /Opening saved checkouts/);
   assert.match(await status.text(), /Opening checkout status/);
-  assert.match(await account.text(), /Your shopping space/);
+  assert.match(await account.text(), /Your space/);
 });
 
 test("keeps prototype language out of the visible shopper journey", async () => {
@@ -241,6 +249,7 @@ test("keeps prototype language out of the visible shopper journey", async () => 
     .map(visibleCopy)
     .join("\n");
   assert.doesNotMatch(visible, /\b(?:demo|fictional|preview|sample)\b/i);
+  assert.doesNotMatch(visible, /Current mode|Your local activity|Preferences only|Required after save|App settings|Featured piece|More from the rail/i);
 });
 
 test("publishes the canonical shop PWA manifest", async () => {

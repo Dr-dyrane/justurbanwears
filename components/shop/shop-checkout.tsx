@@ -98,7 +98,7 @@ export function ShopCheckout({ mapboxAccessToken }: { mapboxAccessToken: string 
           <span aria-hidden="true"><ShoppingBag size={34} strokeWidth={1.65} /></span>
           <p className="shop-kicker">Checkout</p>
           <h1>Your bag needs a piece first.</h1>
-          <ShopActionLink href="/shop/search">Search the edit</ShopActionLink>
+          <ShopActionLink href="/shop/search">Search the wardrobe</ShopActionLink>
         </div>
       </div>
     );

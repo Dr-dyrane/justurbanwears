@@ -1,7 +1,9 @@
 import type {
   ShopDeliveryOption,
+  ShopOrderLine,
   ShopOrder,
   ShopOrderStatus,
+  ShopProduct,
 } from "./domain/entities";
 
 export const shopDeliveryOptions: ShopDeliveryOption[] = [
@@ -59,6 +61,25 @@ export function getOrderStatusLabel(status: ShopOrderStatus) {
     CANCELLED: "Cancelled",
   };
   return labels[status];
+}
+
+export type ShopOrderLineMedia =
+  | { kind: "SNAPSHOT"; src: string; alt: string }
+  | { kind: "CATALOG"; product: ShopProduct }
+  | { kind: "EMPTY" };
+
+export function resolveOrderLineMedia(
+  line: ShopOrderLine | undefined,
+  product: ShopProduct | undefined,
+): ShopOrderLineMedia {
+  if (line?.snapshot === "PRODUCT" && line.imageSrc) {
+    return {
+      kind: "SNAPSHOT",
+      src: line.imageSrc,
+      alt: line.imageAlt ?? line.name,
+    };
+  }
+  return product ? { kind: "CATALOG", product } : { kind: "EMPTY" };
 }
 
 export type {

@@ -158,10 +158,13 @@ export function ShopFilterControls({
           disabled={!products.length}
           max={Math.max(options.priceMaximum, options.priceMinimum)}
           min={options.priceMinimum}
-          onChange={(event) => onChange({
-            ...values,
-            maximumPrice: Number(event.target.value),
-          })}
+          onChange={(event) => {
+            const nextMaximum = Number(event.target.value);
+            onChange({
+              ...values,
+              maximumPrice: nextMaximum >= options.priceMaximum ? null : nextMaximum,
+            });
+          }}
           step="2500"
           type="range"
           value={priceCeiling}
@@ -190,6 +193,7 @@ export function ShopFilterSheet({
 }: ShopFilterSheetProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const pendingApplyRef = useRef<ShopFilterValues | null>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const [draft, setDraft] = useState(values);
   const [isOpen, setIsOpen] = useState(false);
@@ -210,6 +214,11 @@ export function ShopFilterSheet({
         || event.clientY < bounds.top
         || event.clientY > bounds.bottom;
       if (clickedOutside) {
+        pendingApplyRef.current = null;
+        if (window.history.state?.shopFilterSheet === dialogId) {
+          window.history.back();
+          return;
+        }
         setIsOpen(false);
         dialog.close();
       }
@@ -223,7 +232,22 @@ export function ShopFilterSheet({
       document.documentElement.style.overflow = documentOverflow;
       dialog?.removeEventListener("click", closeFromBackdrop);
     };
-  }, [isOpen]);
+  }, [dialogId, isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    function closeFromHistory() {
+      setIsOpen(false);
+      dialogRef.current?.close();
+      const pending = pendingApplyRef.current;
+      pendingApplyRef.current = null;
+      if (pending) onApply(pending);
+    }
+
+    window.addEventListener("popstate", closeFromHistory);
+    return () => window.removeEventListener("popstate", closeFromHistory);
+  }, [isOpen, onApply]);
 
   function openSheet() {
     const dialog = dialogRef.current;
@@ -231,24 +255,43 @@ export function ShopFilterSheet({
 
     setDraft(values);
     setIsOpen(true);
+    window.history.pushState(
+      { ...window.history.state, shopFilterSheet: dialogId },
+      "",
+      window.location.href,
+    );
     dialog.showModal();
     requestAnimationFrame(() => closeButtonRef.current?.focus());
   }
 
   function closeSheet() {
+    pendingApplyRef.current = null;
+    if (window.history.state?.shopFilterSheet === dialogId) {
+      window.history.back();
+      return;
+    }
     setIsOpen(false);
     dialogRef.current?.close();
   }
 
   function applyFilters() {
+    pendingApplyRef.current = draft;
+    if (window.history.state?.shopFilterSheet === dialogId) {
+      window.history.back();
+      return;
+    }
     onApply(draft);
-    closeSheet();
+    pendingApplyRef.current = null;
+    setIsOpen(false);
+    dialogRef.current?.close();
   }
 
   return (
     <div className="shop-filter-control">
       <button
-        aria-label={activeCount ? `${triggerLabel}, ${activeCount} active filters` : triggerLabel}
+        aria-label={activeCount
+          ? `${triggerLabel}, ${activeCount} active ${activeCount === 1 ? "filter" : "filters"}`
+          : triggerLabel}
         aria-controls={dialogId}
         aria-expanded={isOpen}
         aria-haspopup="dialog"
@@ -280,7 +323,7 @@ export function ShopFilterSheet({
         <ShopSheetHandle />
         <header className="shop-filter-sheet-header">
           <div>
-            <p className="shop-kicker">Refine the rail</p>
+            <p className="shop-kicker">Search filters</p>
             <h2 id={titleId}>Refine</h2>
           </div>
           <ShopSheetCloseButton

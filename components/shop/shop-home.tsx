@@ -58,13 +58,13 @@ export function ShopHome() {
     <div className="shop-home">
       <section className="shop-hero" aria-labelledby="shop-hero-title">
         <div className="shop-hero-copy">
-          <p className="shop-kicker">Lagos · Drop 01</p>
+          <p className="shop-kicker">Drop 01 · Lagos</p>
           <h1 id="shop-hero-title">Clothes with a second first impression.</h1>
           <p className="shop-hero-lede">
-            One-off urban womenswear from Lulu’s wardrobe, photographed clearly and ready to shop.
+            One-off urban womenswear from Lulu’s wardrobe, ready to move through the city.
           </p>
           <div className="shop-hero-actions">
-            <Link className="shop-action shop-action-primary" href="#discover">Shop Drop 01</Link>
+            <Link className="shop-action shop-action-primary" href="#discover">Explore the wardrobe</Link>
           </div>
         </div>
         {heroProduct ? <Link
@@ -95,7 +95,7 @@ export function ShopHome() {
           )}
           <span className="hero-product-caption glass-surface">
             <span>
-              <small>Featured piece</small>
+              <small>{heroModelView ? "On Lulu" : "Featured"}</small>
               <strong>{heroProduct.name}</strong>
             </span>
             <span className="hero-product-price">{formatNaira(heroProduct.price)}</span>
@@ -111,7 +111,7 @@ export function ShopHome() {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img alt="" aria-hidden="true" height={1619} src={shopModelAnchors["lulu-v2"].src} width={972} />
             </div>
-            <span className="hero-product-caption glass-surface"><span><small>Drop 01</small><strong>New pieces soon</strong></span></span>
+            <span className="hero-product-caption glass-surface"><span><small>Wardrobe</small><strong>New pieces soon</strong></span></span>
           </div>
         )}
       </section>
@@ -119,15 +119,15 @@ export function ShopHome() {
       <section className="shop-discovery" id="discover" aria-labelledby="discover-title">
         <div className="shop-section-title">
           <div>
-            <p className="shop-kicker">Shop</p>
-            <h2 id="discover-title">Drop 01.</h2>
+            <p className="shop-kicker">Available now</p>
+            <h2 id="discover-title">The wardrobe.</h2>
           </div>
         </div>
 
         <div className="shop-discovery-bar glass-surface">
           <label className="shop-search">
             <Search aria-hidden="true" size={19} strokeWidth={1.75} />
-            <span className="sr-only">Search the edit</span>
+            <span className="sr-only">Search the wardrobe</span>
             <input
               onChange={(event) => setQuery(event.target.value)}
               placeholder="Search colour, fit, or piece"

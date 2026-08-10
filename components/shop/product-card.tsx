@@ -15,10 +15,12 @@ const availabilityCopy = {
 } as const;
 
 export function ProductCard({
+  onSavedChange,
   product,
   showModelLink = true,
   showStudyMark = true,
 }: {
+  onSavedChange?: (notice: string, saved: boolean) => void;
   product: ShopProduct;
   showModelLink?: boolean;
   showStudyMark?: boolean;
@@ -42,6 +44,16 @@ export function ProductCard({
     setNotice(`${product.name}, tagged ${product.taggedSize}, added to your bag. It is not reserved.`);
   }
 
+  function toggleProductSaved() {
+    const nextSaved = !isSaved;
+    const nextNotice = isSaved
+      ? `${product.name} removed from saved pieces.`
+      : `${product.name} saved.`;
+    toggleSaved(product.slug);
+    setNotice(nextNotice);
+    onSavedChange?.(nextNotice, nextSaved);
+  }
+
   return (
     <article className="shop-product-card">
       <div className="shop-product-media">
@@ -60,7 +72,7 @@ export function ProductCard({
           aria-label={`${isSaved ? "Remove" : "Save"} ${product.name}`}
           aria-pressed={isSaved}
           className={`product-save${isSaved ? " is-saved" : ""}`}
-          onClick={() => toggleSaved(product.slug)}
+          onClick={toggleProductSaved}
           type="button"
         >
           <Heart aria-hidden="true" fill={isSaved ? "currentColor" : "none"} size={20} strokeWidth={1.8} />
