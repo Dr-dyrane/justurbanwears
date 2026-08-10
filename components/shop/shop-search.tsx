@@ -4,8 +4,8 @@ import { Search, SearchX } from "lucide-react";
 import { useMemo, useState } from "react";
 import { ProductCard } from "./product-card";
 import {
+  countActiveShopFilters,
   defaultShopFilters,
-  ShopFilterControls,
   ShopFilterSheet,
   type ShopFilterValues,
 } from "./shop-filter-sheet";
@@ -43,14 +43,7 @@ export function ShopSearch() {
     });
   }, [filters, products, query]);
 
-  const activeFilterCount = [
-    filters.category !== defaultShopFilters.category,
-    filters.size !== defaultShopFilters.size,
-    filters.colour !== defaultShopFilters.colour,
-    filters.availability !== defaultShopFilters.availability,
-    filters.maximumPrice !== null,
-    filters.sort !== defaultShopFilters.sort,
-  ].filter(Boolean).length;
+  const activeFilterCount = countActiveShopFilters(filters);
   const hasFilters = Boolean(query.trim()) || activeFilterCount > 0;
 
   function resetFilters() {
@@ -65,7 +58,7 @@ export function ShopSearch() {
         <h1>Find the shape you have in mind.</h1>
       </header>
 
-      <div className="shop-mobile-search-tools">
+      <div className="shop-search-toolbar glass-surface">
         <label className="shop-search-input">
           <span className="sr-only">Search the whole rail</span>
           <Search aria-hidden="true" size={18} strokeWidth={1.75} />
@@ -85,24 +78,7 @@ export function ShopSearch() {
         />
       </div>
 
-      <section className="shop-search-workspace" aria-label="Search and refine products">
-        <div className="shop-search-panel shop-desktop-search-panel glass-surface">
-          <label className="shop-search-field">
-            <span>Search</span>
-            <span className="shop-search-input">
-              <Search aria-hidden="true" size={18} strokeWidth={1.75} />
-              <input
-                autoComplete="off"
-                onChange={(event) => setQuery(event.target.value)}
-                placeholder="Try ‘coral’, ‘oversized’, or ‘trouser’"
-                type="search"
-                value={query}
-              />
-            </span>
-          </label>
-          <ShopFilterControls onChange={setFilters} products={products} values={filters} />
-        </div>
-
+      <section className="shop-search-workspace" aria-label="Search products">
         <div className="shop-search-results">
           <div className="shop-results-heading">
             <div aria-atomic="true" aria-live="polite" role="status">

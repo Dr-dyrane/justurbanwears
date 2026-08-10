@@ -2506,7 +2506,7 @@ button.product-card-action {
   color: var(--shop-muted);
   font-size: 9px;
   font-weight: 680;
-  min-height: 42px;
+  min-height: 44px;
   padding: 0 12px;
   transition: background var(--motion-fast) ease, box-shadow var(--motion-fast) ease, color var(--motion-fast) ease, transform var(--motion-fast) ease;
 }
@@ -2554,7 +2554,7 @@ button.product-card-action {
 
 .shop-price-filter input {
   accent-color: var(--coral);
-  min-height: 30px;
+  min-height: 44px;
   width: 100%;
 }
 
@@ -7582,5 +7582,186 @@ html[data-theme="dark"] .shop-shell .shop-bag-link:hover {
 
   .studio-shell .shop-dock-lens {
     background: var(--studio-panel-strong) !important;
+  }
+}
+
+/* Responsive filtering surfaces ----------------------------------------- */
+
+.shop-discovery-bar {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.shop-filter-control {
+  display: block;
+}
+
+.shop-search-toolbar {
+  align-items: stretch;
+  border-radius: 22px;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  margin-bottom: 32px;
+  padding: 8px;
+  position: sticky;
+  top: 102px;
+  z-index: 30;
+}
+
+.shop-search-toolbar > .shop-search-input {
+  background: var(--shop-layer);
+  min-width: 0;
+}
+
+.shop-filter-control .shop-filter-trigger {
+  min-width: 118px;
+}
+
+.shop-search-workspace {
+  display: block;
+}
+
+.shop-filter-sheet {
+  border-radius: 30px 0 0 30px;
+  box-shadow: -24px 0 70px color-mix(in srgb, var(--shop-ink) 20%, transparent);
+  height: 100dvh;
+  inset: 0 0 0 auto;
+  margin: 0;
+  max-height: 100dvh;
+  transform: translateX(24px);
+  width: min(520px, calc(100vw - 32px));
+}
+
+.shop-filter-sheet[open] {
+  transform: translateX(0);
+}
+
+.shop-filter-sheet .shop-sheet-handle {
+  display: none;
+}
+
+.shop-filter-sheet-header {
+  padding: 24px 28px 14px;
+}
+
+.shop-filter-sheet-body {
+  padding: 8px 28px 34px;
+}
+
+.shop-filter-sheet-actions {
+  padding: 14px 28px calc(16px + env(safe-area-inset-bottom, 0px));
+}
+
+@media (min-width: 681px) and (max-width: 1024px) {
+  .shop-filter-sheet {
+    border-radius: 28px;
+    box-shadow: 0 28px 90px color-mix(in srgb, var(--shop-ink) 22%, transparent);
+    height: min(760px, calc(100dvh - 48px));
+    inset: 24px;
+    margin: auto;
+    max-height: calc(100dvh - 48px);
+    transform: scale(0.985) translateY(12px);
+    width: min(680px, calc(100vw - 48px));
+  }
+
+  .shop-filter-sheet[open] {
+    transform: scale(1) translateY(0);
+  }
+
+  .shop-filter-sheet-body {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .shop-filter-sheet-body > .shop-refine-group:first-child,
+  .shop-filter-sheet-body > .shop-refine-selects {
+    grid-column: 1 / -1;
+  }
+
+  .shop-filter-sheet-body .shop-refine-selects {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .shop-filter-sheet-body .shop-refine-selects > label:last-child {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 920px) {
+  .shop-search-toolbar {
+    position: relative;
+    top: auto;
+  }
+}
+
+@media (max-width: 680px) {
+  .shop-filter-sheet {
+    border-radius: 30px 30px 0 0;
+    box-shadow: 0 -24px 70px color-mix(in srgb, var(--shop-ink) 20%, transparent);
+    height: auto;
+    inset: auto 0 0;
+    margin: 0;
+    max-height: min(88dvh, 780px);
+    transform: translateY(18px);
+    width: 100%;
+  }
+
+  .shop-filter-sheet[open] {
+    transform: translateY(0);
+  }
+
+  .shop-filter-sheet .shop-sheet-handle {
+    display: block;
+  }
+
+  .shop-filter-sheet-header {
+    padding: 13px 20px 10px;
+  }
+
+  .shop-filter-sheet-body {
+    display: grid;
+    grid-template-columns: 1fr;
+    padding: 2px 20px 26px;
+  }
+
+  .shop-filter-sheet-body .shop-refine-selects {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .shop-filter-sheet-body .shop-refine-selects > label:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .shop-filter-sheet-actions {
+    padding: 12px 20px calc(14px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .shop-search-toolbar {
+    margin-bottom: 22px;
+  }
+
+  .shop-filter-control .shop-filter-trigger {
+    min-width: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shop-filter-sheet,
+  .shop-filter-sheet[open] {
+    transform: none !important;
+    transition: none !important;
+  }
+}
+
+@media (forced-colors: active) {
+  .shop-search-toolbar > .shop-search-input,
+  .shop-filter-sheet .shop-refine-chips button,
+  .shop-filter-sheet .shop-refine-selects > label {
+    border: 1px solid CanvasText;
+  }
+
+  .shop-search:focus-within,
+  .shop-search-input:focus-within {
+    outline: 3px solid Highlight;
+    outline-offset: 2px;
   }
 }

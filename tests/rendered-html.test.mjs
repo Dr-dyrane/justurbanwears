@@ -66,7 +66,9 @@ test("publishes one product-led hero and one concise Drop 01 discovery grid", as
   assert.match(visibleBody, /Featured piece/);
   assert.match(visibleBody, /Coral Drift Dress/);
   assert.doesNotMatch(visibleBody, /Approved studio identity|not shop merchandise/);
-  assert.match(visibleBody, /aria-pressed="true"[^>]*class="availability-filter is-active"/);
+  assert.match(visibleBody, /aria-haspopup="dialog"/);
+  assert.match(visibleBody, /class="[^"]*shop-filter-sheet/);
+  assert.doesNotMatch(visibleBody, /shop-filter-row|availability-filter|shop-desktop-search-panel/);
 
   const releasedProducts = [
     ["Coral Drift Dress", "coral-drift-dress"],
@@ -198,7 +200,12 @@ test("server-renders the public commerce route grammar", async () => {
     assert.equal(response.status, 200);
   }
 
-  assert.match(await search.text(), /Search the whole rail/);
+  const searchHtml = await search.text();
+  const visibleSearch = visibleMarkup(searchHtml);
+  assert.match(visibleSearch, /Search the whole rail/);
+  assert.match(visibleSearch, /aria-haspopup="dialog"/);
+  assert.match(visibleSearch, /class="[^"]*shop-filter-sheet/);
+  assert.doesNotMatch(visibleSearch, /shop-desktop-search-panel|shop-search-panel/);
   assert.match(await checkout.text(), /Opening checkout/);
   assert.match(await orders.text(), /Opening saved checkouts/);
   assert.match(await status.text(), /Opening checkout status/);

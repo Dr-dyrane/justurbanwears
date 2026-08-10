@@ -2,36 +2,54 @@
 
 import { Search } from "lucide-react";
 import { useMemo, useState } from "react";
-import { formatNaira, shopCategories, shopModelAnchors } from "../../lib/shop/catalog";
+import { formatNaira, shopModelAnchors } from "../../lib/shop/catalog";
 import { resolveApprovedModelTryout } from "../../lib/shop/model-tryout";
 import { ShopLink as Link } from "./atoms/shop-link";
 import { ProductCard } from "./product-card";
 import { ProductVisual } from "./product-visual";
+import {
+  countActiveShopFilters,
+  defaultShopFilters,
+  ShopFilterSheet,
+  type ShopFilterValues,
+} from "./shop-filter-sheet";
 import { useShop } from "./shop-provider";
 
-type Category = (typeof shopCategories)[number];
+const homeShopFilters: ShopFilterValues = {
+  ...defaultShopFilters,
+  availability: "AVAILABLE",
+};
 
 export function ShopHome() {
   const { products } = useShop();
   const [query, setQuery] = useState("");
-  const [category, setCategory] = useState<Category>("All");
-  const [availableOnly, setAvailableOnly] = useState(true);
+  const [filters, setFilters] = useState<ShopFilterValues>(homeShopFilters);
 
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
-    return products.filter((product) => {
-      const matchesCategory = category === "All" || product.category === category;
-      const matchesAvailability = !availableOnly || product.availability === "AVAILABLE";
+    const matches = products.filter((product) => {
       const haystack = `${product.name} ${product.category} ${product.colour} ${product.fit}`.toLowerCase();
-      return matchesCategory && matchesAvailability && (!needle || haystack.includes(needle));
+      return (!needle || haystack.includes(needle))
+        && (filters.category === "All" || product.category === filters.category)
+        && (filters.size === "All" || product.taggedSize === filters.size)
+        && (filters.colour === "All" || product.colour === filters.colour)
+        && (filters.availability === "ALL" || product.availability === filters.availability)
+        && (filters.maximumPrice === null || product.price <= filters.maximumPrice);
     });
-  }, [availableOnly, category, products, query]);
+
+    return [...matches].sort((left, right) => {
+      if (filters.sort === "price-low") return left.price - right.price;
+      if (filters.sort === "price-high") return right.price - left.price;
+      return products.indexOf(left) - products.indexOf(right);
+    });
+  }, [filters, products, query]);
   const dropProducts = products.filter((product) => product.availability === "AVAILABLE");
   const heroProduct = dropProducts.find((product) => resolveApprovedModelTryout(product.modelTryout))
     ?? dropProducts[0]
     ?? products[0];
   const heroModelView = heroProduct ? resolveApprovedModelTryout(heroProduct.modelTryout) : null;
-  const isRefining = query.trim().length > 0 || category !== "All" || !availableOnly;
+  const activeFilterCount = countActiveShopFilters(filters, homeShopFilters);
+  const isRefining = query.trim().length > 0 || activeFilterCount > 0;
   const displayedProducts = !isRefining && heroProduct
     ? filtered.filter((product) => product.slug !== heroProduct.slug)
     : filtered;
@@ -117,27 +135,13 @@ export function ShopHome() {
               value={query}
             />
           </label>
-          <div className="shop-filter-row" aria-label="Filter products">
-            {shopCategories.map((item) => (
-              <button
-                aria-pressed={category === item}
-                className={category === item ? "is-active" : undefined}
-                key={item}
-                onClick={() => setCategory(item)}
-                type="button"
-              >
-                {item}
-              </button>
-            ))}
-          </div>
-          <button
-            aria-pressed={availableOnly}
-            className={`availability-filter${availableOnly ? " is-active" : ""}`}
-            onClick={() => setAvailableOnly((current) => !current)}
-            type="button"
-          >
-            <span aria-hidden="true" /> Available now
-          </button>
+          <ShopFilterSheet
+            activeCount={activeFilterCount}
+            onApply={setFilters}
+            products={products}
+            resetValues={homeShopFilters}
+            values={filters}
+          />
         </div>
 
         <div className={isRefining ? "shop-results-line" : "sr-only"} aria-live="polite" role="status">
@@ -145,7 +149,7 @@ export function ShopHome() {
           <span>
             {query
               ? `Matching “${query}”`
-              : availableOnly ? `${category} · Available now` : `${category} · All statuses`}
+              : `${filters.category} · ${filters.availability === "ALL" ? "All statuses" : filters.availability.toLowerCase()}`}
           </span>
         </div>
 
@@ -164,7 +168,7 @@ export function ShopHome() {
           <div className="shop-no-results">
             <span aria-hidden="true"><Search size={23} strokeWidth={1.75} /></span>
             <div><h3>No piece matches that combination.</h3></div>
-            <button type="button" onClick={() => { setQuery(""); setCategory("All"); setAvailableOnly(true); }}>Reset filters</button>
+            <button type="button" onClick={() => { setQuery(""); setFilters(homeShopFilters); }}>Reset filters</button>
           </div>
         )}
       </section>

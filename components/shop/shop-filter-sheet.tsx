@@ -1,7 +1,7 @@
 "use client";
 
 import { Check, SlidersHorizontal, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import {
   formatNaira,
   shopCategories,
@@ -47,6 +47,20 @@ export const defaultShopFilters: ShopFilterValues = {
   maximumPrice: null,
   sort: "editorial",
 };
+
+export function countActiveShopFilters(
+  values: ShopFilterValues,
+  baseline: ShopFilterValues = defaultShopFilters,
+) {
+  return [
+    values.category !== baseline.category,
+    values.size !== baseline.size,
+    values.colour !== baseline.colour,
+    values.availability !== baseline.availability,
+    values.maximumPrice !== baseline.maximumPrice,
+    values.sort !== baseline.sort,
+  ].filter(Boolean).length;
+}
 
 interface ShopFilterControlsProps {
   onChange(filters: ShopFilterValues): void;
@@ -161,6 +175,8 @@ interface ShopFilterSheetProps {
   activeCount: number;
   onApply(filters: ShopFilterValues): void;
   products: readonly ShopProduct[];
+  resetValues?: ShopFilterValues;
+  triggerLabel?: string;
   values: ShopFilterValues;
 }
 
@@ -168,6 +184,8 @@ export function ShopFilterSheet({
   activeCount,
   onApply,
   products,
+  resetValues = defaultShopFilters,
+  triggerLabel = "Refine",
   values,
 }: ShopFilterSheetProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -175,12 +193,13 @@ export function ShopFilterSheet({
   const triggerRef = useRef<HTMLButtonElement>(null);
   const [draft, setDraft] = useState(values);
   const [isOpen, setIsOpen] = useState(false);
+  const dialogId = useId();
+  const titleId = `${dialogId}-title`;
 
   useEffect(() => {
     if (!isOpen) return;
 
     const dialog = dialogRef.current;
-    const mobileViewport = window.matchMedia("(max-width: 680px)");
     const bodyOverflow = document.body.style.overflow;
     const documentOverflow = document.documentElement.style.overflow;
     const closeFromBackdrop = (event: MouseEvent) => {
@@ -195,23 +214,14 @@ export function ShopFilterSheet({
         dialog.close();
       }
     };
-    const closeWhenDesktop = (event: MediaQueryListEvent) => {
-      if (!event.matches) {
-        setIsOpen(false);
-        dialog?.close();
-      }
-    };
-
     document.body.style.overflow = "hidden";
     document.documentElement.style.overflow = "hidden";
     dialog?.addEventListener("click", closeFromBackdrop);
-    mobileViewport.addEventListener("change", closeWhenDesktop);
 
     return () => {
       document.body.style.overflow = bodyOverflow;
       document.documentElement.style.overflow = documentOverflow;
       dialog?.removeEventListener("click", closeFromBackdrop);
-      mobileViewport.removeEventListener("change", closeWhenDesktop);
     };
   }, [isOpen]);
 
@@ -236,9 +246,11 @@ export function ShopFilterSheet({
   }
 
   return (
-    <div className="shop-mobile-filter">
+    <div className="shop-filter-control">
       <button
-        aria-label={activeCount ? `Filters, ${activeCount} active` : "Filters"}
+        aria-label={activeCount ? `${triggerLabel}, ${activeCount} active filters` : triggerLabel}
+        aria-controls={dialogId}
+        aria-expanded={isOpen}
         aria-haspopup="dialog"
         className={`shop-filter-trigger${activeCount ? " has-filters" : ""}`}
         onClick={openSheet}
@@ -246,14 +258,15 @@ export function ShopFilterSheet({
         type="button"
       >
         <SlidersHorizontal aria-hidden="true" size={18} strokeWidth={1.8} />
-        <span>Filters</span>
+        <span>{triggerLabel}</span>
         {activeCount ? <b aria-hidden="true">{activeCount}</b> : null}
       </button>
 
       <ShopSheet
-        aria-labelledby="shop-filter-title"
+        aria-labelledby={titleId}
         aria-modal="true"
         className="shop-filter-sheet"
+        id={dialogId}
         onCancel={(event) => {
           event.preventDefault();
           closeSheet();
@@ -268,7 +281,7 @@ export function ShopFilterSheet({
         <header className="shop-filter-sheet-header">
           <div>
             <p className="shop-kicker">Refine the rail</p>
-            <h2 id="shop-filter-title">Filters</h2>
+            <h2 id={titleId}>Refine</h2>
           </div>
           <ShopSheetCloseButton
             aria-label="Close filters"
@@ -286,8 +299,8 @@ export function ShopFilterSheet({
         </div>
 
         <footer className="shop-filter-sheet-actions">
-          <button onClick={() => setDraft(defaultShopFilters)} type="button">
-            Clear all
+          <button onClick={() => setDraft(resetValues)} type="button">
+            Reset
           </button>
           <button className="shop-filter-apply" onClick={applyFilters} type="button">
             <Check aria-hidden="true" size={17} strokeWidth={2} /> Apply filters
