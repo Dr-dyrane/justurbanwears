@@ -72,6 +72,12 @@ const expectedApprovals = [
   },
 ] as const;
 
+const approvedMultiViewSlugs = new Set([
+  "coral-drift-dress",
+  "moss-square-knit",
+  "cocoa-pleat-trouser",
+]);
+
 test("keeps the public Lulu V2 anchor byte-identical to the approved projection", () => {
   const anchor = shopModelAnchors["lulu-v2"];
   const assetPath = join(process.cwd(), "public", anchor.src.replace(/^\/+/, ""));
@@ -123,7 +129,7 @@ test("appends only approved Lulu views to the main product gallery", () => {
     const modelFrames = gallery.filter((item) => item.presentation === "model");
 
     if (expectedApprovals.some(({ slug }) => slug === product.slug)) {
-      const expectedModelSources = product.slug === "coral-drift-dress"
+      const expectedModelSources = approvedMultiViewSlugs.has(product.slug)
         ? [
             `/shop/products/${product.slug}/04-model-front.webp`,
             `/shop/products/${product.slug}/07-model-left-profile.webp`,

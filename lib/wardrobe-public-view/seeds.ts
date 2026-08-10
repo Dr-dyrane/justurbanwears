@@ -24,6 +24,8 @@ export const WARDROBE_APPROVED_MODEL_FRONT_SLUGS = Object.freeze([
 
 export const WARDROBE_APPROVED_MODEL_MULTI_VIEW_SLUGS = Object.freeze([
   "coral-drift-dress",
+  "moss-square-knit",
+  "cocoa-pleat-trouser",
 ] as const);
 
 const modelFrontSlugs = new Set<string>(WARDROBE_APPROVED_MODEL_FRONT_SLUGS);

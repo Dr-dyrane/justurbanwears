@@ -12,9 +12,10 @@ import {
 } from "../seeds";
 import type { WardrobePublicViewRepository } from "../services/contracts";
 
-export const WARDROBE_PUBLIC_VIEW_STORAGE_KEY = "justurban-wears:wardrobe-public-view:v5";
+export const WARDROBE_PUBLIC_VIEW_STORAGE_KEY = "justurban-wears:wardrobe-public-view:v6";
 export const WARDROBE_PUBLIC_VIEW_CHANGE_EVENT = "justurban-wears:wardrobe-public-view:changed";
-export const PREVIOUS_WARDROBE_PUBLIC_VIEW_STORAGE_KEY = "justurban-wears:wardrobe-public-view:v4";
+export const PREVIOUS_WARDROBE_PUBLIC_VIEW_STORAGE_KEY = "justurban-wears:wardrobe-public-view:v5";
+export const OLDER_WARDROBE_PUBLIC_VIEW_STORAGE_KEY = "justurban-wears:wardrobe-public-view:v4";
 export const LEGACY_PUBLIC_CATALOG_STORAGE_KEY = "justurban-wears:catalog-projections:v2";
 
 type UnknownRecord = Record<string, unknown>;
@@ -216,18 +217,20 @@ export function parseStoredWardrobePublicView(raw: string | null): WardrobePubli
     const migrateVersion2 = envelope.version === 2;
     const migrateVersion3 = envelope.version === 3;
     const migrateVersion4 = envelope.version === 4;
+    const migrateVersion5 = envelope.version === 5;
     if (
       envelope.version !== WARDROBE_PUBLIC_VIEW_SCHEMA_VERSION
       && !migrateVersion2
       && !migrateVersion3
       && !migrateVersion4
+      && !migrateVersion5
     ) {
       return { products: [], managedSlugs: [] };
     }
     const parsed = envelope.data.flatMap((candidate) => {
       const product = parseProduct(candidate, {
         stripLegacyModelBack: migrateVersion2,
-        addApprovedModelViews: migrateVersion2 || migrateVersion3 || migrateVersion4,
+        addApprovedModelViews: migrateVersion2 || migrateVersion3 || migrateVersion4 || migrateVersion5,
       });
       return product ? [product] : [];
     });
@@ -260,11 +263,16 @@ export function createBrowserWardrobePublicViewRepository(): WardrobePublicViewR
       const storage = browserStorage();
       const current = storage.getItem(WARDROBE_PUBLIC_VIEW_STORAGE_KEY);
       if (current !== null) return parseStoredWardrobePublicView(current);
-      const previous = storage.getItem(PREVIOUS_WARDROBE_PUBLIC_VIEW_STORAGE_KEY);
-      if (previous !== null) {
-        const migrated = parseStoredWardrobePublicView(previous);
-        await this.write(migrated);
-        return migrated;
+      for (const previousKey of [
+        PREVIOUS_WARDROBE_PUBLIC_VIEW_STORAGE_KEY,
+        OLDER_WARDROBE_PUBLIC_VIEW_STORAGE_KEY,
+      ]) {
+        const previous = storage.getItem(previousKey);
+        if (previous !== null) {
+          const migrated = parseStoredWardrobePublicView(previous);
+          await this.write(migrated);
+          return migrated;
+        }
       }
       const legacy = parseStoredWardrobePublicView(storage.getItem(LEGACY_PUBLIC_CATALOG_STORAGE_KEY));
       if (!legacy.products.length && !legacy.managedSlugs.length) return legacy;

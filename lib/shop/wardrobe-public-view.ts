@@ -38,7 +38,7 @@ const mediaLabel: Record<WardrobePublicMedia["slot"], string> = {
   MANNEQUIN_FRONT: "On mannequin",
   MODEL_FRONT: "On Lulu · front",
   MODEL_LEFT_PROFILE: "On Lulu · left profile",
-  MODEL_REAR_THREE_QUARTER: "On Lulu · rear three-quarter",
+  MODEL_REAR_THREE_QUARTER: "On Lulu · right rear three-quarter",
   FABRIC_DETAIL: "Fabric detail",
 };
 

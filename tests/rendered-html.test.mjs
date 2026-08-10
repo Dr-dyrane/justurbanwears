@@ -163,6 +163,11 @@ test("server-renders product studies plus only identity-cleared model fronts", a
     "silver-off-shoulder-mermaid-dress",
     "multicolor-abstract-strapless-mini-dress",
   ]);
+  const approvedMultiViewSlugs = new Set([
+    "coral-drift-dress",
+    "moss-square-knit",
+    "cocoa-pleat-trouser",
+  ]);
 
   for (const [index, response] of responses.entries()) {
     assert.equal(response.status, 200);
@@ -183,6 +188,15 @@ test("server-renders product studies plus only identity-cleared model fronts", a
     } else {
       assert.doesNotMatch(visibleBody, /data-model-anchor="lulu-v2"/);
       assert.doesNotMatch(visibleBody, /class="shop-media-frame is-model/);
+    }
+    if (approvedMultiViewSlugs.has(slugs[index])) {
+      assert.match(visibleBody, new RegExp(`${base}/07-model-left-profile\\.webp`));
+      assert.match(visibleBody, new RegExp(`${base}/05-model-rear-three-quarter\\.webp`));
+      assert.match(visibleBody, /On Lulu · left profile/);
+      assert.match(visibleBody, /On Lulu · right rear three-quarter/);
+    } else {
+      assert.doesNotMatch(visibleBody, /07-model-left-profile\.webp/);
+      assert.doesNotMatch(visibleBody, /05-model-rear-three-quarter\.webp/);
     }
   }
 });
