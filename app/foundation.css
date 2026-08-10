@@ -7224,8 +7224,10 @@ html[data-theme="dark"] .shop-wardrobe-preview-frame {
 
 .shop-detail-utility-row {
   display: flex;
+  flex-wrap: nowrap;
   gap: 8px;
   margin-bottom: 10px;
+  width: 100%;
 }
 
 .shop-detail-utility {
@@ -7291,7 +7293,16 @@ html[data-theme="dark"] .shop-wardrobe-preview-frame {
 }
 
 .shop-detail-copy .shop-purchase-actions {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   margin-top: 10px;
+  width: 100%;
+}
+
+.shop-detail-copy .shop-purchase-actions > .shop-action {
+  min-width: 0;
+  width: 100%;
 }
 
 .shop-detail-copy .shop-delivery-note {
