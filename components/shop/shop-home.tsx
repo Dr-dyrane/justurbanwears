@@ -2,18 +2,20 @@
 
 import { ArrowUpRight, Search } from "lucide-react";
 import { useMemo, useState } from "react";
-import { shopCategories, shopProducts } from "../../lib/shop/catalog";
+import { shopCategories, shopModelAnchors, shopProducts } from "../../lib/shop/catalog";
 import { ShopLink as Link } from "./atoms/shop-link";
 import { ProductCard } from "./product-card";
 import { ProductVisual } from "./product-visual";
 
 type Category = (typeof shopCategories)[number];
 
+const dropProducts = shopProducts.filter((product) => product.availability === "AVAILABLE");
+const approvedIdentity = shopModelAnchors["lulu-v2"];
+
 export function ShopHome() {
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<Category>("All");
-  const [availableOnly, setAvailableOnly] = useState(false);
-  const featured = shopProducts[0];
+  const [availableOnly, setAvailableOnly] = useState(true);
 
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
@@ -29,32 +31,62 @@ export function ShopHome() {
     <div className="shop-home">
       <section className="shop-hero" aria-labelledby="shop-hero-title">
         <div className="shop-hero-copy">
-          <p className="shop-kicker">Urban ladies’ wear · August 2026</p>
-          <h1 id="shop-hero-title">Clothes with a second first impression.</h1>
+          <p className="shop-kicker">Drop 01 · Live now</p>
+          <h1 id="shop-hero-title">Four pieces. One clean release.</h1>
           <p className="shop-hero-lede">
-            A sharp Lagos edit of pre-loved urban womenswear, measured and described so you can choose with less guesswork.
+            A tightly held edit of one-off urban womenswear—measured, condition-checked, and ready to move. The live rail shows only what you can buy now.
           </p>
           <div className="shop-hero-actions">
-            <Link className="shop-action shop-action-primary" href="#discover">Shop the edit</Link>
-            <Link className="shop-text-action" href="/shop/search">Search every piece <ArrowUpRight aria-hidden="true" size={14} strokeWidth={1.8} /></Link>
+            <Link className="shop-action shop-action-primary" href="#discover">Shop Drop 01</Link>
+            <Link className="shop-text-action" href="/shop/search">See the full rail <ArrowUpRight aria-hidden="true" size={14} strokeWidth={1.8} /></Link>
           </div>
         </div>
-        <Link className="shop-hero-stage" href={`/shop/products/${featured.slug}`} aria-label={`View ${featured.name}`}>
-          <ProductVisual product={featured} />
+        <div className="shop-hero-stage shop-hero-identity">
+          <div
+            aria-label="Lulu, approved studio identity reference. Her clothing is not part of Drop 01."
+            className="shop-product-visual is-photo"
+            data-model-anchor={approvedIdentity.id}
+            role="img"
+          >
+            {/* The labelled wrapper keeps the image's role explicit without presenting it as product media. */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              alt=""
+              aria-hidden="true"
+              fetchPriority="high"
+              height={1619}
+              src={approvedIdentity.src}
+              width={972}
+            />
+          </div>
           <span className="hero-product-caption glass-surface">
-            <span><small>Featured find</small><strong>{featured.name}</strong></span>
-            <b aria-hidden="true"><ArrowUpRight size={18} strokeWidth={1.8} /></b>
+            <span><small>Approved studio identity · not shop merchandise</small><strong>Lulu</strong></span>
+            <b aria-hidden="true">01</b>
           </span>
-        </Link>
-        <p className="shop-hero-aside">Curated slowly<br />worn freely</p>
+        </div>
+        <p className="shop-hero-aside">Four pieces<br />one of each</p>
       </section>
 
       <section className="shop-discovery" id="discover" aria-labelledby="discover-title">
         <div className="shop-section-title">
           <div>
-            <p className="shop-kicker">Browse the rail</p>
-            <h2 id="discover-title">Find your next repeat wear.</h2>
+            <p className="shop-kicker">Drop 01 · Available now</p>
+            <h2 id="discover-title">Released to the rail.</h2>
           </div>
+          <nav className="shop-release-index" aria-label="Drop 01 release index">
+            <span className="shop-release-count">Drop 01 · 4 live pieces</span>
+            {dropProducts.map((product, index) => (
+              <Link
+                className="shop-release-link"
+                data-sku={product.sku}
+                href={`/shop/products/${product.slug}`}
+                key={product.slug}
+              >
+                <span aria-hidden="true">0{index + 1}</span>
+                <span>{product.name}</span>
+              </Link>
+            ))}
+          </nav>
         </div>
 
         <div className="shop-discovery-bar glass-surface">
@@ -93,7 +125,13 @@ export function ShopHome() {
 
         <div className="shop-results-line" aria-live="polite" role="status">
           <span>{filtered.length} {filtered.length === 1 ? "find" : "finds"}</span>
-          <span>{query ? `Matching “${query}”` : "Showing the complete edit"}</span>
+          <span>
+            {query
+              ? `Matching “${query}”`
+              : availableOnly
+                ? "Drop 01 · Available now"
+                : "All statuses · Reserved and sold included"}
+          </span>
         </div>
 
         {filtered.length ? (
@@ -104,17 +142,17 @@ export function ShopHome() {
           <div className="shop-no-results">
             <span aria-hidden="true"><Search size={23} strokeWidth={1.75} /></span>
             <div><h3>No piece matches that combination.</h3></div>
-            <button type="button" onClick={() => { setQuery(""); setCategory("All"); setAvailableOnly(false); }}>Reset filters</button>
+            <button type="button" onClick={() => { setQuery(""); setCategory("All"); setAvailableOnly(true); }}>Reset filters</button>
           </div>
         )}
       </section>
 
       <section className="shop-editorial-rail" aria-labelledby="editorial-title">
         <div>
-          <p className="shop-kicker">The city edit</p>
-          <h2 id="editorial-title">Warm colour. Easy movement. No costume.</h2>
-          <p>Coral for impact, cocoa for repeat wear, and soft shirts for Lagos heat.</p>
-          <Link className="shop-action shop-action-secondary" href="/shop/search">Refine the full edit</Link>
+          <p className="shop-kicker">The Drop 01 palette</p>
+          <h2 id="editorial-title">Warm colour. Clean movement.</h2>
+          <p>Coral impact, moss restraint, cocoa depth, and salmon lightness—each piece released once.</p>
+          <Link className="shop-action shop-action-secondary" href="#discover">Shop what is live</Link>
         </div>
         <div className="shop-editorial-products">
           {shopProducts.filter((product) => ["coral", "cocoa", "salmon"].includes(product.tone)).slice(0, 3).map((product) => (

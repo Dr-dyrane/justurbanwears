@@ -35,11 +35,39 @@ test("server-renders the public shop foundation", async () => {
 
   const html = await response.text();
   assert.match(html, /justurban wears/);
-  assert.match(html, /Urban ladies/);
-  assert.match(html, /Clothes with a second first impression/);
+  assert.match(html, /Drop 01/);
+  assert.match(html, /Four pieces\. One clean release/);
   assert.match(html, /Search the edit/);
   assert.match(html, /Quick add/);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/i);
+});
+
+test("publishes the approved identity hero and the four-piece Drop 01 rail", async () => {
+  const response = await render("/shop");
+  assert.equal(response.status, 200);
+
+  const html = await response.text();
+  const visibleBody = visibleMarkup(html);
+  assert.match(visibleBody, /\/shop\/model\/lulu-v2-approved\.png/);
+  assert.match(visibleBody, /data-model-anchor="lulu-v2"/);
+  assert.match(visibleBody, /Approved studio identity/);
+  assert.match(visibleBody, /not shop merchandise/);
+  assert.match(visibleBody, /aria-pressed="true"[^>]*class="availability-filter is-active"/);
+
+  const releasedProducts = [
+    ["DYN-081", "Coral Drift Dress", "coral-drift-dress"],
+    ["DYN-083", "Moss Square Knit", "moss-square-knit"],
+    ["DYN-085", "Cocoa Pleat Trouser", "cocoa-pleat-trouser"],
+    ["DYN-086", "Salmon Camp Shirt", "salmon-camp-shirt"],
+  ];
+
+  for (const [sku, name, slug] of releasedProducts) {
+    assert.match(visibleBody, new RegExp(`data-sku="${sku}"`));
+    assert.match(visibleBody, new RegExp(`href="/shop/products/${slug}"`));
+    assert.match(visibleBody, new RegExp(name));
+  }
+
+  assert.doesNotMatch(visibleBody, /Indigo Workshirt|Ivory Tie Skirt/);
 });
 
 test("keeps the private Studio and public shop visibly distinct", async () => {
@@ -51,7 +79,7 @@ test("keeps the private Studio and public shop visibly distinct", async () => {
   assert.match(html, /Operator surface/);
   assert.match(html, /From source truth to final frame/);
   assert.match(html, /Private references stay local/);
-  assert.doesNotMatch(visibleBody, /Clothes with a second first impression/);
+  assert.doesNotMatch(visibleBody, /Four pieces\. One clean release/);
 });
 
 test("server-renders a navigable public product detail", async () => {
