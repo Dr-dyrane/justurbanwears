@@ -6,7 +6,7 @@ import { ThemeProvider } from "../components/theme/theme-provider";
 import "./globals.css";
 import "./foundation.css";
 
-const siteUrl = new URL("https://justurbanwears.com");
+const siteUrl = new URL("https://www.justurbanwears.com");
 const socialImage = new URL("/og.png", siteUrl).toString();
 
 export const viewport: Viewport = {

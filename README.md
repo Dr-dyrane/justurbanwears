@@ -2,7 +2,7 @@
 
 The product repository for **justurban wears**: a public urban ladies’ wear shop and a separate operator Studio. It runs on the App Router API implemented by [vinext](https://github.com/cloudflare/vinext), Vite 8, React 19, and TypeScript.
 
-The canonical production origin is `https://justurbanwears.com`.
+The canonical production origin is `https://www.justurbanwears.com`.
 
 ## Local setup
 
@@ -125,8 +125,8 @@ Before promoting the custom domain:
 
 1. Verify App Router SSR, redirects, dynamic product/order routes, metadata routes, and static assets through the selected adapter.
 2. Protect every operator route and any future customer-data route at the server boundary.
-3. Confirm `https://justurbanwears.com/manifest.webmanifest`, `/sw.js`, `/offline.html`, and every icon return successfully over HTTPS. Serve `/sw.js` with revalidation-friendly caching so browser update checks are not pinned to an old worker.
-4. Set `justurbanwears.com` as primary and redirect any `www` hostname to it.
+3. Confirm `https://www.justurbanwears.com/manifest.webmanifest`, `/sw.js`, `/offline.html`, and every icon return successfully over HTTPS. Serve `/sw.js` with revalidation-friendly caching so browser update checks are not pinned to an old worker.
+4. Set `www.justurbanwears.com` as primary and redirect the apex hostname to it.
 5. Run one production-mode install/offline smoke test on the deployed origin. Confirm Studio and account/data routes remain network-only.
 
 Deployment, DNS changes, and Vercel project creation are intentionally outside this PWA package change.

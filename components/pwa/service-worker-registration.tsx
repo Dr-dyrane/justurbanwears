@@ -25,6 +25,21 @@ export function ServiceWorkerRegistration() {
       window.isSecureContext &&
       "serviceWorker" in navigator
     ) {
+      let hasSeenController = Boolean(navigator.serviceWorker.controller);
+      let reloadStarted = false;
+      const handleControllerChange = () => {
+        if (!hasSeenController) {
+          // A first install may claim the current page without forcing a
+          // redundant reload. Later worker takeovers must cross a clean page
+          // boundary so old HTML never runs under a new worker indefinitely.
+          hasSeenController = true;
+          return;
+        }
+
+        if (reloadStarted) return;
+        reloadStarted = true;
+        window.location.reload();
+      };
       const registerServiceWorker = () => {
         void navigator.serviceWorker
           .register("/sw.js", {
@@ -36,6 +51,11 @@ export function ServiceWorkerRegistration() {
           });
       };
 
+      navigator.serviceWorker.addEventListener(
+        "controllerchange",
+        handleControllerChange,
+      );
+
       if (document.readyState === "complete") {
         registerServiceWorker();
       } else {
@@ -44,6 +64,15 @@ export function ServiceWorkerRegistration() {
           window.removeEventListener("load", registerServiceWorker);
         };
       }
+
+      const previousRemoveLoadListener = removeLoadListener;
+      removeLoadListener = () => {
+        previousRemoveLoadListener?.();
+        navigator.serviceWorker.removeEventListener(
+          "controllerchange",
+          handleControllerChange,
+        );
+      };
     }
 
     return () => {
