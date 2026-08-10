@@ -99,6 +99,35 @@ export function useCommerceMachine(service: CommerceService) {
     return true;
   }, [service]);
 
+  const prepareCheckout = useCallback(async (candidate: BagItem) => {
+    const item = service.normalizeBagItem(candidate);
+    const current = stateRef.current;
+    if (!item || current.connectivity === "offline") return false;
+
+    const command = {
+      type: "BAG_ITEM_ADDED" as const,
+      item,
+      availability: service.getProductAvailability(item.slug),
+    };
+    const next = current.bag.some((entry) => entry.slug === item.slug)
+      ? current
+      : commerceReducer(current, command);
+
+    try {
+      await service.persist(selectCommerceSnapshot(next));
+    } catch {
+      dispatch({ type: "PERSISTENCE_FAILED" });
+      return false;
+    }
+
+    if (next !== current) {
+      stateRef.current = next;
+      persistedRevisionRef.current = next.persistenceRevision;
+      dispatch(command);
+    }
+    return true;
+  }, [service]);
+
   const removeFromBag = useCallback((slug: string) => {
     dispatch({ type: "BAG_ITEM_REMOVED", slug });
   }, []);
@@ -111,16 +140,29 @@ export function useCommerceMachine(service: CommerceService) {
     dispatch({ type: "CHECKOUT_CLOSED" });
   }, []);
 
-  const placeOrder = useCallback((deliveryId: ShopDeliveryId) => {
+  const placeOrder = useCallback(async (deliveryId: ShopDeliveryId) => {
     const current = stateRef.current;
-    dispatch({ type: "ORDER_PLACEMENT_REQUESTED" });
     if (current.connectivity === "offline" || !current.bag.length) return "";
 
+    const requested = commerceReducer(current, { type: "ORDER_PLACEMENT_REQUESTED" });
+    dispatch({ type: "ORDER_PLACEMENT_REQUESTED" });
     const order = service.createOrder(selectCommerceSnapshot(current), deliveryId);
     if (!order) {
       dispatch({ type: "ORDER_PLACEMENT_FAILED" });
       return "";
     }
+
+    const placed = commerceReducer(requested, { type: "ORDER_PLACEMENT_SUCCEEDED", order });
+    try {
+      await service.persist(selectCommerceSnapshot(placed));
+    } catch {
+      dispatch({ type: "ORDER_PLACEMENT_FAILED" });
+      dispatch({ type: "PERSISTENCE_FAILED" });
+      return "";
+    }
+
+    stateRef.current = placed;
+    persistedRevisionRef.current = placed.persistenceRevision;
     dispatch({ type: "ORDER_PLACEMENT_SUCCEEDED", order });
     return order.id;
   }, [service]);
@@ -134,6 +176,7 @@ export function useCommerceMachine(service: CommerceService) {
     toggleFollowing,
     toggleNotificationPreference,
     addToBag,
+    prepareCheckout,
     removeFromBag,
     beginCheckout,
     closeCheckout,
@@ -144,6 +187,7 @@ export function useCommerceMachine(service: CommerceService) {
     beginCheckout,
     closeCheckout,
     placeOrder,
+    prepareCheckout,
     removeFromBag,
     toggleFollowing,
     toggleNotificationPreference,

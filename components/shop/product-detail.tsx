@@ -1,24 +1,24 @@
 "use client";
 
-import { ArrowLeft, Heart, Share2, Store } from "lucide-react";
-import Link from "next/link";
-import { useParams, useRouter } from "next/navigation";
+import { ArrowLeft, ChevronDown, Heart, Share2, Store } from "lucide-react";
+import { useParams } from "next/navigation";
 import { useState } from "react";
 import { formatNaira, getShopProduct, shopProducts } from "../../lib/shop/catalog";
 import { ShopActionButton, ShopActionLink } from "./atoms/action";
+import { ShopLink as Link } from "./atoms/shop-link";
 import { ProductCard } from "./product-card";
-import { ProductVisual } from "./product-visual";
+import { ProductMediaGallery } from "./product-media-gallery";
 import { useShop } from "./shop-provider";
 
 export function ProductDetail() {
   const params = useParams<{ slug: string }>();
-  const router = useRouter();
   const product = getShopProduct(params.slug);
   const {
     addToBag,
     bag,
     following,
     isOnline,
+    prepareCheckout,
     saved,
     toggleFollowing,
     toggleSaved,
@@ -48,16 +48,23 @@ export function ProductDetail() {
       return;
     }
     addToBag({ slug: product!.slug, size: product!.taggedSize });
-    setNotice(`${product!.name} is in your bag. No order has been created.`);
+    setNotice(`${product!.name} is in your bag.`);
   }
 
-  function buyProduct() {
+  async function buyProduct() {
     if (!isOnline) {
       setNotice("Reconnect to continue to checkout.");
       return;
     }
-    if (!isInBag) addToBag({ slug: product!.slug, size: product!.taggedSize });
-    router.push("/shop/checkout");
+    const isReady = await prepareCheckout({
+      slug: product!.slug,
+      size: product!.taggedSize,
+    });
+    if (!isReady) {
+      setNotice("Your bag could not be prepared. Try again.");
+      return;
+    }
+    window.location.assign("/shop/checkout");
   }
 
   async function shareProduct() {
@@ -91,29 +98,31 @@ export function ProductDetail() {
       </div>
       <section className="shop-detail-hero">
         <div className="shop-detail-stage">
-          <ProductVisual product={product} />
-          <button
-            aria-label={`${isSaved ? "Remove" : "Save"} ${product.name}`}
-            aria-pressed={isSaved}
-            className={`detail-save glass-surface${isSaved ? " is-saved" : ""}`}
-            onClick={() => toggleSaved(product.slug)}
-            type="button"
-          >
-            <Heart aria-hidden="true" fill={isSaved ? "currentColor" : "none"} size={18} strokeWidth={1.8} />
-            {isSaved ? "Saved" : "Save"}
-          </button>
+          <ProductMediaGallery product={product} />
         </div>
         <div className="shop-detail-copy">
           <p className="shop-kicker">{product.category} · {product.condition}</p>
+          <div className="shop-detail-heading">
+            <h1>{product.name}</h1>
+            <button
+              aria-label={`${isSaved ? "Remove" : "Save"} ${product.name}`}
+              aria-pressed={isSaved}
+              className={`detail-save glass-surface${isSaved ? " is-saved" : ""}`}
+              onClick={() => toggleSaved(product.slug)}
+              type="button"
+            >
+              <Heart aria-hidden="true" fill={isSaved ? "currentColor" : "none"} size={18} strokeWidth={1.8} />
+              {isSaved ? "Saved" : "Save"}
+            </button>
+          </div>
+          <p className="shop-detail-price">{formatNaira(product.price)}</p>
+          <p className="shop-detail-note">{product.note}</p>
           <div className="shop-merchant-row">
             <span aria-hidden="true"><Store size={18} strokeWidth={1.7} /></span>
             <div><small>Sold by</small><strong>justurban wears</strong><p>Curated in Lagos</p></div>
             <button aria-pressed={following} onClick={toggleFollowing} type="button">{following ? "Following" : "Follow"}</button>
             <button aria-label={`Share ${product.name}`} onClick={shareProduct} type="button"><Share2 aria-hidden="true" size={17} strokeWidth={1.8} /></button>
           </div>
-          <h1>{product.name}</h1>
-          <p className="shop-detail-price">{formatNaira(product.price)}</p>
-          <p className="shop-detail-note">{product.note}</p>
 
           <div className="shop-availability-panel" data-state={product.availability.toLowerCase()}>
             <span aria-hidden="true" />
@@ -145,6 +154,35 @@ export function ProductDetail() {
           )}
           <p className="shop-delivery-note"><strong>Lagos delivery:</strong> 1–3 working days from ₦2,500.</p>
           <p className="shop-action-note" aria-live="polite" role="status">{notice}</p>
+
+          <div className="shop-detail-disclosures">
+            <details open>
+              <summary>
+                <span>Measurements</span>
+                <ChevronDown aria-hidden="true" size={17} strokeWidth={1.7} />
+              </summary>
+              <dl>
+                {product.measurements.map((item) => (
+                  <div key={item.label}><dt>{item.label}</dt><dd>{item.value}</dd></div>
+                ))}
+              </dl>
+            </details>
+            <details>
+              <summary>
+                <span>Details & care</span>
+                <ChevronDown aria-hidden="true" size={17} strokeWidth={1.7} />
+              </summary>
+              <ul>{product.details.map((detail) => <li key={detail}>{detail}</li>)}</ul>
+              <p>{product.condition}. Gently launder cold and air dry.</p>
+            </details>
+            <details>
+              <summary>
+                <span>Delivery</span>
+                <ChevronDown aria-hidden="true" size={17} strokeWidth={1.7} />
+              </summary>
+              <p>Lagos delivery takes 1–3 working days. Pickup and nationwide delivery are selected at checkout.</p>
+            </details>
+          </div>
         </div>
       </section>
 
@@ -154,21 +192,6 @@ export function ProductDetail() {
           <h2>Easy to understand. Better in motion.</h2>
         </div>
         <p>{product.story}</p>
-      </section>
-
-      <section className="shop-product-facts" aria-label="Product details and measurements">
-        <div>
-          <p className="shop-kicker">Details</p>
-          <ul>{product.details.map((detail) => <li key={detail}>{detail}</li>)}</ul>
-        </div>
-        <div>
-          <p className="shop-kicker">Garment measurements</p>
-          <dl>{product.measurements.map((item) => <div key={item.label}><dt>{item.label}</dt><dd>{item.value}</dd></div>)}</dl>
-        </div>
-        <div>
-          <p className="shop-kicker">Care & condition</p>
-          <p>{product.condition}. Gently launder cold and air dry.</p>
-        </div>
       </section>
 
       <section className="shop-related">

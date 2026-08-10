@@ -38,10 +38,11 @@ interface ShopContextValue {
   toggleFollowing(): void;
   toggleNotificationPreference(preference: ShopNotificationPreference): void;
   addToBag(item: BagItem): boolean;
+  prepareCheckout(item: BagItem): Promise<boolean>;
   removeFromBag(slug: string): void;
   beginCheckout(): void;
   closeCheckout(): void;
-  placeOrder(deliveryId: ShopDeliveryId): string;
+  placeOrder(deliveryId: ShopDeliveryId): Promise<string>;
   viewOrder(id: string): void;
 }
 

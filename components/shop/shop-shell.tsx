@@ -10,10 +10,11 @@ import {
   ShoppingBag,
   type LucideIcon,
 } from "lucide-react";
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useMemo } from "react";
 import { createBrowserCommerceService } from "../../lib/shop/services/commerce-service";
+import { ThemeToggle } from "../theme/theme-toggle";
+import { ShopLink as Link } from "./atoms/shop-link";
 import { ShopProvider, useShop } from "./shop-provider";
 
 const nav: Array<{ href: string; label: string; icon: LucideIcon }> = [
@@ -74,6 +75,7 @@ function ShopChrome({ children }: { children: React.ReactNode }) {
             })}
           </div>
           <div className="shop-header-actions">
+            <ThemeToggle className="shop-theme-toggle" />
             <Link
               aria-current={pathname === "/shop/account" ? "page" : undefined}
               aria-label="Account and app"

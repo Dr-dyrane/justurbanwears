@@ -1,17 +1,16 @@
 "use client";
 
 import { ShoppingBag } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 import { formatNaira, getShopProduct } from "../../lib/shop/catalog";
 import { shopDeliveryOptions, type ShopDeliveryId } from "../../lib/shop/commerce";
 import { ShopActionButton, ShopActionLink } from "./atoms/action";
 import { LocalCommerceDisclosure } from "./atoms/status";
+import { ShopDeliveryLocation } from "./location/shop-delivery-location";
 import { ProductVisual } from "./product-visual";
 import { useShop } from "./shop-provider";
 
-export function ShopCheckout() {
-  const router = useRouter();
+export function ShopCheckout({ mapboxAccessToken }: { mapboxAccessToken: string }) {
   const { bag, beginCheckout, closeCheckout, isOnline, placeOrder } = useShop();
   const [deliveryId, setDeliveryId] = useState<ShopDeliveryId>("lagos");
   const [formNotice, setFormNotice] = useState("");
@@ -27,15 +26,15 @@ export function ShopCheckout() {
     return closeCheckout;
   }, [beginCheckout, closeCheckout]);
 
-  function submitOrder(event: FormEvent<HTMLFormElement>) {
+  async function submitOrder(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!lines.length) return;
-    const orderId = placeOrder(deliveryId);
+    const orderId = await placeOrder(deliveryId);
     if (!orderId) {
       setFormNotice("Reconnect before placing this order.");
       return;
     }
-    router.push(`/shop/orders/${orderId}`);
+    window.location.assign(`/shop/orders/${orderId}`);
   }
 
   if (!lines.length) {
@@ -78,19 +77,8 @@ export function ShopCheckout() {
                 <span>Phone</span>
                 <input autoComplete="tel" inputMode="tel" name="phone" required type="tel" />
               </label>
-              <label className="shop-form-wide">
-                <span>Street address</span>
-                <input autoComplete="street-address" name="address" required />
-              </label>
-              <label>
-                <span>Area or city</span>
-                <input autoComplete="address-level2" name="area" required />
-              </label>
-              <label>
-                <span>State</span>
-                <input autoComplete="address-level1" name="state" required />
-              </label>
             </div>
+            <ShopDeliveryLocation accessToken={mapboxAccessToken} />
           </section>
 
           <section aria-labelledby="delivery-title">

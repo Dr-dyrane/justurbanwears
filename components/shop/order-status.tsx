@@ -1,7 +1,6 @@
 "use client";
 
 import { ArrowLeft, Check, PackageSearch } from "lucide-react";
-import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect } from "react";
 import { formatNaira, getShopProduct } from "../../lib/shop/catalog";
@@ -12,6 +11,7 @@ import {
   orderTimeline,
 } from "../../lib/shop/commerce";
 import { ShopActionLink } from "./atoms/action";
+import { ShopLink as Link } from "./atoms/shop-link";
 import { ShopStatusIndicator } from "./atoms/status";
 import { ProductVisual } from "./product-visual";
 import { useShop } from "./shop-provider";

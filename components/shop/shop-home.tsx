@@ -1,9 +1,9 @@
 "use client";
 
 import { ArrowUpRight, Search } from "lucide-react";
-import Link from "next/link";
 import { useMemo, useState } from "react";
 import { shopCategories, shopProducts } from "../../lib/shop/catalog";
+import { ShopLink as Link } from "./atoms/shop-link";
 import { ProductCard } from "./product-card";
 import { ProductVisual } from "./product-visual";
 

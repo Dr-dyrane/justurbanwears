@@ -7,6 +7,37 @@ export function ProductVisual({
   product: ShopProduct;
   compact?: boolean;
 }) {
+  const featured = product.media?.[0];
+
+  if (featured) {
+    return (
+      <div
+        aria-label={featured.alt}
+        className={`shop-product-visual is-photo${compact ? " is-compact" : ""}`}
+        data-silhouette={product.silhouette}
+        data-tone={product.tone}
+        role="img"
+      >
+        {/* The labelled wrapper owns the accessible name across card and order contexts. */}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          alt=""
+          aria-hidden="true"
+          fetchPriority={compact ? "auto" : "high"}
+          height={featured.height}
+          loading={compact ? "lazy" : "eager"}
+          src={featured.src}
+          style={{ objectPosition: featured.objectPosition ?? "50% 50%" }}
+          width={featured.width}
+        />
+        <span className="product-study-mark" aria-hidden="true">
+          <small>justurban wears / GARMENT STUDY</small>
+          <span>{product.sku}</span>
+        </span>
+      </div>
+    );
+  }
+
   return (
     <div
       aria-label={`${product.name}. Stylized garment study.`}

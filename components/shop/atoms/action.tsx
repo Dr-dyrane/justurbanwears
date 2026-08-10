@@ -1,8 +1,8 @@
-import Link from "next/link";
 import type {
+  AnchorHTMLAttributes,
   ButtonHTMLAttributes,
-  ComponentPropsWithoutRef,
 } from "react";
+import { ShopLink } from "./shop-link";
 
 type ShopActionTone = "primary" | "secondary" | "muted";
 
@@ -29,7 +29,8 @@ export function ShopActionButton({
   );
 }
 
-type ShopActionLinkProps = ComponentPropsWithoutRef<typeof Link> & {
+type ShopActionLinkProps = Omit<AnchorHTMLAttributes<HTMLAnchorElement>, "href"> & {
+  href: string;
   tone?: Exclude<ShopActionTone, "muted">;
 };
 
@@ -38,5 +39,5 @@ export function ShopActionLink({
   tone = "primary",
   ...props
 }: ShopActionLinkProps) {
-  return <Link className={actionClassName(tone, className)} {...props} />;
+  return <ShopLink className={actionClassName(tone, className)} {...props} />;
 }

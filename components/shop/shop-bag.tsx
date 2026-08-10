@@ -1,9 +1,9 @@
 "use client";
 
 import { ShoppingBag } from "lucide-react";
-import Link from "next/link";
 import { formatNaira, getShopProduct } from "../../lib/shop/catalog";
 import { ShopActionLink } from "./atoms/action";
+import { ShopLink as Link } from "./atoms/shop-link";
 import { ProductVisual } from "./product-visual";
 import { useShop } from "./shop-provider";
 

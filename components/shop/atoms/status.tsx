@@ -28,7 +28,7 @@ export function ShopStatusIndicator({
 }
 
 export const localCommerceDisclosure =
-  "Shopping activity stays on this device. Checkout fields are discarded; payment, fulfilment, and live carrier updates are not connected.";
+  "No payment is taken. Placing the order saves it on this device.";
 
 export function LocalCommerceDisclosure({ className }: { className?: string }) {
   return (

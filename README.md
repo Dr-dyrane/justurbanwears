@@ -21,6 +21,14 @@ npm run build
 npm run build:vercel
 ```
 
+Copy `.env.example` to `.env.local` to enable Mapbox delivery-location search:
+
+```bash
+NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN=pk.your_url_restricted_public_token
+```
+
+Use a public `pk` token restricted to the production origin, with a separate restricted token for localhost. Checkout keeps the native address fields available when the token, network, or WebGL is unavailable. Mapbox search results and coordinates remain ephemeral: they are not written to the local commerce snapshot, order history, or Postgres contract.
+
 The current Vite configuration includes the project’s Sites and Cloudflare Worker integration. `.openai/hosting.json` has no D1 or R2 binding enabled, so no hosted database or object storage is provisioned by this snapshot.
 
 ## Commerce architecture

@@ -2,12 +2,110 @@ import type { ShopProduct } from "./domain/entities";
 
 export type {
   ProductSilhouette,
+  ProductMediaPresentation,
+  ProductMediaView,
   ProductTone,
+  ShopProductMedia,
+  ShopModelAnchorId,
   ShopAvailability,
   ShopProduct,
 } from "./domain/entities";
 
-// Public, synthetic catalogue data. This module never imports Studio state or identity sources.
+export const shopModelAnchors = {
+  "lulu-v2": {
+    id: "lulu-v2",
+    src: "/shop/model/lulu-v2-approved.png",
+  },
+} as const;
+
+const catalogueMediaTemplate = [
+  {
+    id: "garment-front",
+    filename: "01-garment-front.webp",
+    label: "Garment front",
+    presentation: "garment",
+    view: "front",
+    width: 1122,
+    height: 1402,
+    modelAnchorId: undefined,
+    describe: (name: string) => `${name} shown alone from the front against a warm neutral studio background.`,
+  },
+  {
+    id: "garment-back",
+    filename: "02-garment-back.webp",
+    label: "Garment back",
+    presentation: "garment",
+    view: "back",
+    width: 1122,
+    height: 1402,
+    modelAnchorId: undefined,
+    describe: (name: string) => `${name} shown alone from the back against a warm neutral studio background.`,
+  },
+  {
+    id: "mannequin-front",
+    filename: "03-mannequin-front.webp",
+    label: "On mannequin",
+    presentation: "mannequin",
+    view: "front",
+    width: 1122,
+    height: 1402,
+    modelAnchorId: undefined,
+    describe: (name: string) => `${name} shown from the front on a neutral studio mannequin.`,
+  },
+  {
+    id: "model-front",
+    filename: "04-model-front.webp",
+    label: "Lulu front",
+    presentation: "model",
+    view: "front",
+    width: 972,
+    height: 1619,
+    modelAnchorId: "lulu-v2",
+    describe: (name: string) => `Full-length front view of Lulu wearing ${name}.`,
+  },
+  {
+    id: "model-back",
+    filename: "05-model-back.webp",
+    label: "Lulu back",
+    presentation: "model",
+    view: "three-quarter",
+    width: 972,
+    height: 1619,
+    modelAnchorId: "lulu-v2",
+    describe: (name: string) => `Three-quarter back view of Lulu wearing ${name}.`,
+  },
+  {
+    id: "fabric-detail",
+    filename: "06-fabric-detail.webp",
+    label: "Fabric detail",
+    presentation: "garment",
+    view: "detail",
+    width: 1122,
+    height: 1402,
+    modelAnchorId: undefined,
+    describe: (name: string) => `Close view of ${name} fabric and construction details.`,
+  },
+] as const;
+
+function createCatalogueMedia(
+  slug: string,
+  name: string,
+  modelBackWidth = 972,
+): NonNullable<ShopProduct["media"]> {
+  return catalogueMediaTemplate.map((item) => ({
+    id: item.id,
+    src: `/shop/products/${slug}/${item.filename}`,
+    alt: item.describe(name),
+    label: item.label,
+    presentation: item.presentation,
+    view: item.view,
+    width: item.id === "model-back" ? modelBackWidth : item.width,
+    height: item.height,
+    modelAnchorId: item.modelAnchorId,
+  }));
+}
+
+// Public, shopper-safe catalogue data. This module never imports Studio state or private identity sources.
 export const shopProducts: ShopProduct[] = [
   {
     slug: "coral-drift-dress",
@@ -26,6 +124,7 @@ export const shopProducts: ShopProduct[] = [
     note: "A softly gathered midi that moves without feeling precious.",
     story:
       "Chosen for the easy drape and warm, sun-faded colour. The waist sits gently rather than tightly, with enough movement for everyday plans and evening light.",
+    media: createCatalogueMedia("coral-drift-dress", "Coral Drift Dress"),
     details: ["Soft woven hand", "Side zip", "Midi length", "Unlined"],
     measurements: [
       { label: "Bust", value: "88 cm" },
@@ -47,6 +146,7 @@ export const shopProducts: ShopProduct[] = [
     drop: "August edit",
     tone: "indigo",
     silhouette: "shirt",
+    media: createCatalogueMedia("indigo-workshirt", "Indigo Workshirt", 971),
     note: "Soft denim structure with the ease of a light jacket.",
     story:
       "A useful in-between layer with softened seams and a lived-in wash. Wear it open over a tank or buttoned with sleeves rolled once.",
@@ -71,6 +171,7 @@ export const shopProducts: ShopProduct[] = [
     drop: "August edit",
     tone: "moss",
     silhouette: "knit",
+    media: createCatalogueMedia("moss-square-knit", "Moss Square Knit"),
     note: "Fine rib, square neck, and a close fit that layers cleanly.",
     story:
       "The quiet colour does the work here. A clean neckline and fine rib make it useful under tailoring, while the stretch keeps it easy on its own.",
@@ -95,6 +196,7 @@ export const shopProducts: ShopProduct[] = [
     drop: "Archive",
     tone: "ivory",
     silhouette: "skirt",
+    media: createCatalogueMedia("ivory-tie-skirt", "Ivory Tie Skirt"),
     note: "An asymmetric wrap with a clean waist tie and soft movement.",
     story:
       "A simple wrap shape with a little asymmetry. This one has found a home, but remains in the edit as a reference for the pieces we look for.",
@@ -119,6 +221,7 @@ export const shopProducts: ShopProduct[] = [
     drop: "August edit",
     tone: "cocoa",
     silhouette: "trouser",
+    media: createCatalogueMedia("cocoa-pleat-trouser", "Cocoa Pleat Trouser"),
     note: "A long, fluid line with a single front pleat and gentle taper.",
     story:
       "The fabric falls with weight but stays breathable. A high waist and subtle taper make this pair equally good with a compact knit or oversized shirt.",
@@ -143,6 +246,7 @@ export const shopProducts: ShopProduct[] = [
     drop: "August edit",
     tone: "salmon",
     silhouette: "shirt",
+    media: createCatalogueMedia("salmon-camp-shirt", "Salmon Camp Shirt", 971),
     note: "Airy, boxy, and cut with an open collar for warm days.",
     story:
       "An unfussy shirt in the exact shade that makes denim and cocoa neutrals feel considered. The boxy cut is intended to sit away from the body.",

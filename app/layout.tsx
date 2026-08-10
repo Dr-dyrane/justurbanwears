@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "@fontsource-variable/bodoni-moda";
 import "@fontsource-variable/manrope";
 import { ServiceWorkerRegistration } from "../components/pwa/service-worker-registration";
+import { ThemeProvider } from "../components/theme/theme-provider";
 import "./globals.css";
 import "./foundation.css";
 
@@ -11,9 +12,32 @@ const socialImage = new URL("/og.png", siteUrl).toString();
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  colorScheme: "light",
-  themeColor: "#dd6042",
+  colorScheme: "light dark",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#dd6042" },
+    { media: "(prefers-color-scheme: dark)", color: "#050303" },
+  ],
 };
+
+const themeBootScript = `(() => {
+  try {
+    const key = "justurban-wears.theme";
+    const stored = localStorage.getItem(key);
+    const preference = stored === "light" || stored === "dark" || stored === "system" ? stored : "system";
+    const resolved = preference === "system"
+      ? (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
+      : preference;
+    const root = document.documentElement;
+    root.dataset.theme = resolved;
+    root.dataset.themePreference = preference;
+    root.style.colorScheme = resolved;
+  } catch (_) {
+    const resolved = matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    document.documentElement.dataset.theme = resolved;
+    document.documentElement.dataset.themePreference = "system";
+    document.documentElement.style.colorScheme = resolved;
+  }
+})();`;
 
 export const metadata: Metadata = {
   metadataBase: siteUrl,
@@ -80,10 +104,15 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en-NG">
+    <html lang="en-NG" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
+      </head>
       <body className="antialiased">
-        <ServiceWorkerRegistration />
-        {children}
+        <ThemeProvider>
+          <ServiceWorkerRegistration />
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   );

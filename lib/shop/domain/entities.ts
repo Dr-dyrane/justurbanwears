@@ -5,6 +5,22 @@ export type NairaAmount = number;
 export type ShopAvailability = "AVAILABLE" | "RESERVED" | "SOLD";
 export type ProductTone = "coral" | "indigo" | "moss" | "ivory" | "cocoa" | "salmon";
 export type ProductSilhouette = "dress" | "shirt" | "knit" | "skirt" | "trouser";
+export type ProductMediaPresentation = "garment" | "mannequin" | "model";
+export type ProductMediaView = "front" | "back" | "side" | "three-quarter" | "detail";
+export type ShopModelAnchorId = "lulu-v2";
+
+export interface ShopProductMedia {
+  id: string;
+  src: string;
+  alt: string;
+  label: string;
+  presentation: ProductMediaPresentation;
+  view: ProductMediaView;
+  width: number;
+  height: number;
+  objectPosition?: string;
+  modelAnchorId?: ShopModelAnchorId;
+}
 
 export interface ShopProduct {
   slug: ShopProductSlug;
@@ -20,6 +36,7 @@ export interface ShopProduct {
   drop: string;
   tone: ProductTone;
   silhouette: ProductSilhouette;
+  media?: readonly ShopProductMedia[];
   note: string;
   story: string;
   details: string[];

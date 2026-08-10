@@ -7,5 +7,9 @@ export const metadata: Metadata = {
 };
 
 export default function CheckoutPage() {
-  return <ShopCheckout />;
+  return (
+    <ShopCheckout
+      mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN ?? ""}
+    />
+  );
 }

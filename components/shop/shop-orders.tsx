@@ -1,7 +1,6 @@
 "use client";
 
 import { ArrowUpRight } from "lucide-react";
-import Link from "next/link";
 import { formatNaira, getShopProduct } from "../../lib/shop/catalog";
 import {
   formatOrderDate,
@@ -9,6 +8,7 @@ import {
   type ShopOrder,
 } from "../../lib/shop/commerce";
 import { ShopActionLink } from "./atoms/action";
+import { ShopLink as Link } from "./atoms/shop-link";
 import { ShopStatusIndicator } from "./atoms/status";
 import { ProductVisual } from "./product-visual";
 import { useShop } from "./shop-provider";

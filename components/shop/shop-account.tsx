@@ -7,11 +7,13 @@ import {
   Heart,
   Package,
   Store,
+  SunMoon,
   UserRound,
   Wifi,
 } from "lucide-react";
-import Link from "next/link";
 import { PwaInstallControl } from "../pwa/pwa-install-control";
+import { ThemeSettings } from "../theme/theme-settings";
+import { ShopLink as Link } from "./atoms/shop-link";
 import {
   type ShopNotificationPreference,
   useShop,
@@ -116,6 +118,14 @@ export function ShopAccount() {
               />
             ))}
           </div>
+        </section>
+
+        <section className="shop-account-section" aria-labelledby="appearance-title">
+          <div className="shop-account-section-heading">
+            <span aria-hidden="true"><SunMoon size={19} strokeWidth={1.75} /></span>
+            <div><p className="shop-kicker">Appearance</p><h2 id="appearance-title">Set the atmosphere</h2></div>
+          </div>
+          <ThemeSettings />
         </section>
 
         <section className="shop-account-section shop-install-section" aria-labelledby="install-title">

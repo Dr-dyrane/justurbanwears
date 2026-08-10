@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "mapbox-gl/dist/mapbox-gl.css";
 
 :root {
   /* justurban wears Studio — pastel orange / nude semantic theme */
@@ -36,6 +37,7 @@
   --radius-lg: 28px;
   --radius-pill: 999px;
   --rail-width: 176px;
+  color-scheme: light dark;
 }
 
 * {
@@ -46,6 +48,14 @@ html {
   background: var(--canvas);
   color: var(--text);
   scroll-behavior: smooth;
+}
+
+html[data-theme="dark"] body:has(.shop-shell) {
+  background: #050303;
+}
+
+html[data-theme="dark"] {
+  background: #050303;
 }
 
 body {
