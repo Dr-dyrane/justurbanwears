@@ -27,7 +27,6 @@ const catalogueMediaTemplate = [
     view: "front",
     width: 1122,
     height: 1402,
-    modelAnchorId: undefined,
     describe: (name: string) => `${name} shown alone from the front against a warm neutral studio background.`,
   },
   {
@@ -38,7 +37,6 @@ const catalogueMediaTemplate = [
     view: "back",
     width: 1122,
     height: 1402,
-    modelAnchorId: undefined,
     describe: (name: string) => `${name} shown alone from the back against a warm neutral studio background.`,
   },
   {
@@ -49,30 +47,7 @@ const catalogueMediaTemplate = [
     view: "front",
     width: 1122,
     height: 1402,
-    modelAnchorId: undefined,
     describe: (name: string) => `${name} shown from the front on a neutral studio mannequin.`,
-  },
-  {
-    id: "model-front",
-    filename: "04-model-front.webp",
-    label: "Lulu front",
-    presentation: "model",
-    view: "front",
-    width: 972,
-    height: 1619,
-    modelAnchorId: "lulu-v2",
-    describe: (name: string) => `Full-length front view of Lulu wearing ${name}.`,
-  },
-  {
-    id: "model-back",
-    filename: "05-model-back.webp",
-    label: "Lulu back",
-    presentation: "model",
-    view: "three-quarter",
-    width: 972,
-    height: 1619,
-    modelAnchorId: "lulu-v2",
-    describe: (name: string) => `Three-quarter back view of Lulu wearing ${name}.`,
   },
   {
     id: "fabric-detail",
@@ -82,16 +57,11 @@ const catalogueMediaTemplate = [
     view: "detail",
     width: 1122,
     height: 1402,
-    modelAnchorId: undefined,
     describe: (name: string) => `Close view of ${name} fabric and construction details.`,
   },
 ] as const;
 
-function createCatalogueMedia(
-  slug: string,
-  name: string,
-  modelBackWidth = 972,
-): NonNullable<ShopProduct["media"]> {
+function createCatalogueMedia(slug: string, name: string): NonNullable<ShopProduct["media"]> {
   return catalogueMediaTemplate.map((item) => ({
     id: item.id,
     src: `/shop/products/${slug}/${item.filename}`,
@@ -99,9 +69,8 @@ function createCatalogueMedia(
     label: item.label,
     presentation: item.presentation,
     view: item.view,
-    width: item.id === "model-back" ? modelBackWidth : item.width,
+    width: item.width,
     height: item.height,
-    modelAnchorId: item.modelAnchorId,
   }));
 }
 
@@ -146,7 +115,7 @@ export const shopProducts: ShopProduct[] = [
     drop: "August edit",
     tone: "indigo",
     silhouette: "shirt",
-    media: createCatalogueMedia("indigo-workshirt", "Indigo Workshirt", 971),
+    media: createCatalogueMedia("indigo-workshirt", "Indigo Workshirt"),
     note: "Soft denim structure with the ease of a light jacket.",
     story:
       "A useful in-between layer with softened seams and a lived-in wash. Wear it open over a tank or buttoned with sleeves rolled once.",
@@ -246,7 +215,7 @@ export const shopProducts: ShopProduct[] = [
     drop: "August edit",
     tone: "salmon",
     silhouette: "shirt",
-    media: createCatalogueMedia("salmon-camp-shirt", "Salmon Camp Shirt", 971),
+    media: createCatalogueMedia("salmon-camp-shirt", "Salmon Camp Shirt"),
     note: "Airy, boxy, and cut with an open collar for warm days.",
     story:
       "An unfussy shirt in the exact shade that makes denim and cocoa neutrals feel considered. The boxy cut is intended to sit away from the body.",

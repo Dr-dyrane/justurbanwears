@@ -64,15 +64,14 @@ test("server-renders a navigable public product detail", async () => {
   assert.match(html, /Buy now/);
   assert.match(html, /Add to bag/);
   assert.match(html, /Garment front/);
+  assert.match(html, /Garment back/);
   assert.match(html, /On mannequin/);
-  assert.match(html, /Lulu front/);
-  assert.match(html, /Lulu back/);
   assert.match(html, /Fabric detail/);
   assert.match(html, /01-garment-front\.webp/);
   assert.match(html, /application\/ld\+json/);
 });
 
-test("server-renders a complete Lulu V2 media study for every catalogue piece", async () => {
+test("server-renders a complete product-only media study for every catalogue piece", async () => {
   const slugs = [
     "coral-drift-dress",
     "indigo-workshirt",
@@ -90,13 +89,12 @@ test("server-renders a complete Lulu V2 media study for every catalogue piece", 
     const html = await response.text();
     const base = `/shop/products/${slugs[index]}`;
     assert.match(html, new RegExp(`${base}/01-garment-front\\.webp`));
+    assert.match(html, new RegExp(`${base}/02-garment-back\\.webp`));
     assert.match(html, new RegExp(`${base}/03-mannequin-front\\.webp`));
-    assert.match(html, new RegExp(`${base}/04-model-front\\.webp`));
-    assert.match(html, new RegExp(`${base}/05-model-back\\.webp`));
     assert.match(html, new RegExp(`${base}/06-fabric-detail\\.webp`));
-    assert.match(html, /Lulu front/);
-    assert.match(html, /Lulu back/);
-    assert.match(html, /data-model-anchor="lulu-v2"/);
+    assert.doesNotMatch(html, /04-model-front\.webp/);
+    assert.doesNotMatch(html, /05-model-back\.webp/);
+    assert.doesNotMatch(html, /data-model-anchor="lulu-v2"/);
   }
 });
 
