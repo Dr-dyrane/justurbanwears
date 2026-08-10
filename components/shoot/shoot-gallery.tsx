@@ -18,7 +18,7 @@ export function ShootGallery() {
   }), [filter, shoots]);
 
   return (
-    <div>
+    <div id="shoot-gallery">
       <PageHeading
         eyebrow="Visual history"
         title="Every frame stays accountable."

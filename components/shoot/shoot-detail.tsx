@@ -60,7 +60,7 @@ export function ShootDetail() {
               <div><span>Garment match</span><strong>{selected.garmentMatch}</strong><span className="score-track"><i style={{ width: `${selected.garmentMatch}%` }} /></span></div>
             </div>
             <div className="compare-pair">
-              <div><VisualAsset kind="identity" variant="plum" label="Konan canon" ratio="square" quiet /><span>Identity authority</span></div>
+              <div><VisualAsset kind="identity" variant="plum" label="Lulu model" ratio="square" quiet /><span>Identity authority</span></div>
               <div><VisualAsset kind="garment" variant={garment.visual} label={garment.sku} ratio="square" quiet /><span>Garment authority</span></div>
             </div>
             <fieldset className="decision-group">

@@ -4,6 +4,7 @@ import { FormEvent, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useStudio } from "../studio/studio-provider";
 import { PageHeading } from "../ui/page-heading";
+import type { GarmentCategory } from "../../lib/data/types";
 
 type FileKey = "front" | "back" | "detail";
 
@@ -30,7 +31,7 @@ export function GarmentIntake() {
     const garment = addGarment({
       sku: String(form.get("sku")),
       title: String(form.get("title")),
-      category: String(form.get("category")),
+      category: String(form.get("category")) as GarmentCategory,
       sizeLabel: String(form.get("size")),
       estimatedFit: String(form.get("fit")),
       color: String(form.get("color")),

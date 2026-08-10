@@ -51,7 +51,7 @@ export function ShootComposer() {
             <div className="intake-section-head"><div><span>01</span><h2>Authorities</h2></div><p>Both must be approved for production.</p></div>
             <div className="authority-grid">
               <div className="authority-card">
-                <VisualAsset kind="identity" variant="plum" label="Konan identity references" ratio="square" quiet />
+                <VisualAsset kind="identity" variant="plum" label="Lulu model readiness" ratio="square" quiet />
                 <div><span><small>Identity</small><StatusPill status={identity.status} /></span><strong>{identity.version}</strong><p>{identity.completeness}% complete</p></div>
               </div>
               <label className="authority-card select-authority">
@@ -59,7 +59,7 @@ export function ShootComposer() {
                 <div><span><small>Garment</small>{garment ? <StatusPill status={garment.canonState} /> : null}</span><select value={input.garmentId} onChange={(event) => setInput((current) => ({ ...current, garmentId: event.target.value }))} aria-label="Approved garment">{approved.map((item) => <option value={item.id} key={item.id}>{item.sku} · {item.title}</option>)}</select><p>{garment?.color ?? "No approved garment"}</p></div>
               </label>
             </div>
-            {!gateReady ? <div className="warning-banner"><strong>Production gate closed</strong><span>Konan still needs a primary identity set. The button below creates a clearly marked mock only.</span></div> : null}
+            {!gateReady ? <div className="warning-banner"><strong>Production gate closed</strong><span>The selected model and garment must be ready. The button below creates a clearly marked mock only.</span></div> : null}
           </section>
 
           <section className="composer-section">

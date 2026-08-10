@@ -1,165 +1,163 @@
 "use client";
 
 import Link from "next/link";
+import {
+  ArrowRight,
+  CheckCircle2,
+  PackageCheck,
+  RotateCcw,
+  Shirt,
+  Sparkles,
+  Users,
+} from "lucide-react";
+import { LifecycleBadge } from "./atoms/lifecycle-badge";
 import { useStudio } from "./studio-provider";
-import { VisualAsset } from "./visual-asset";
-import { StatusPill } from "../ui/status-pill";
 
 export function StudioHome() {
-  const { identity, garments, shoots } = useStudio();
-  const awaiting = garments.filter((garment) => garment.canonState === "REVIEW");
-  const retryCount = shoots.flatMap((shoot) => shoot.generations).filter(
-    (generation) => generation.review.decision === "NEEDS RETRY",
-  ).length;
-  const pendingCount = shoots.flatMap((shoot) => shoot.generations).filter(
-    (generation) => generation.review.decision === "PENDING",
-  ).length;
-  const approvedFrames = shoots.flatMap((shoot) => shoot.generations).filter(
-    (generation) => generation.review.decision === "APPROVED",
-  ).length;
-  const exportReady = shoots.filter((shoot) =>
-    shoot.generations.some(
-      (generation) => generation.isHero && generation.review.decision === "APPROVED",
-    ),
-  ).length;
-  const featuredShoot = shoots[0];
-  const featuredGarment = garments.find((garment) => garment.id === featuredShoot?.garmentId);
-  const queuedShoots = shoots.filter((shoot) => shoot.generations.length > 0).slice(0, 3);
+  const {
+    models,
+    garments,
+    listings,
+    inventory,
+    orders,
+    returns,
+    hydration,
+    persistence,
+  } = useStudio();
+
+  if (hydration === "idle" || hydration === "restoring") {
+    return <div className="studio-loading" role="status">Opening Lulu Studio…</div>;
+  }
+
+  const modelDrafts = models.filter((model) => model.state === "DRAFT").length;
+  const garmentDrafts = garments.filter((garment) => garment.state === "DRAFT").length;
+  const listingWork = listings.filter((listing) => ["DRAFT", "READY"].includes(listing.state)).length;
+  const orderWork = orders.filter((order) => order.state === "RESERVED").length;
+  const returnWork = returns.filter((returnCase) => returnCase.state === "DRAFT").length;
+  const workCount = modelDrafts + garmentDrafts + listingWork + orderWork + returnWork;
+  const liveListings = listings.filter((listing) => ["PUBLISHED", "RESERVED"].includes(listing.state)).length;
+  const availableUnits = inventory.reduce((total, record) => total + Math.max(0, record.onHand - record.reserved), 0);
+
+  const queues = [
+    {
+      href: "/studio/models",
+      label: "Models",
+      count: modelDrafts,
+      detail: modelDrafts ? "Finish identity and styling readiness" : `${models.length} model${models.length === 1 ? "" : "s"} ready or tracked`,
+      icon: Users,
+    },
+    {
+      href: "/studio/wardrobe",
+      label: "Wardrobe",
+      count: garmentDrafts,
+      detail: garmentDrafts ? "Complete intake and move to wardrobe" : `${garments.length} garment${garments.length === 1 ? "" : "s"} recorded`,
+      icon: Shirt,
+    },
+    {
+      href: "/studio/wardrobe#publishing",
+      label: "Publishing",
+      count: listingWork,
+      detail: listingWork ? "Clear gates and put items up for sale" : `${liveListings} listing${liveListings === 1 ? "" : "s"} in catalogue state`,
+      icon: Sparkles,
+    },
+    {
+      href: "/studio/operations",
+      label: "Orders & returns",
+      count: orderWork + returnWork,
+      detail: orderWork || returnWork ? `${orderWork} order · ${returnWork} return` : "No fulfilment decisions waiting",
+      icon: PackageCheck,
+    },
+  ];
 
   return (
-    <div className="studio-page">
-      <header className="studio-masthead">
-        <div className="masthead-copy">
-          <p className="eyebrow">Operator workspace · <time dateTime="2026-08-09">09 August 2026</time></p>
-          <h1>From source truth to final frame.</h1>
-          <p>
-            Intake, canon, direction, review, and export stay connected without letting private identity sources cross into the public shop.
-          </p>
+    <div className="studio-ops-page studio-business-home">
+      <header className="studio-ops-hero">
+        <div>
+          <p className="eyebrow">Business home</p>
+          <h1>{workCount ? `${workCount} decision${workCount === 1 ? "" : "s"} for Lulu.` : "Lulu, the studio is clear."}</h1>
+          <p>Every garment, listing, order, and return follows one stock-aware lifecycle.</p>
         </div>
-        <div className="masthead-actions">
-          <Link className="button button-secondary" href="/garments/new">New garment</Link>
-          <Link className="button button-primary" href="/shoots/new">
-            <span aria-hidden="true">＋</span> Direct a shoot
-          </Link>
+        <div className="studio-hero-actions">
+          <Link className="button button-secondary" href="/studio/models">Model atelier</Link>
+          <Link className="button button-primary" href="/studio/wardrobe?intake=1">Intake garment</Link>
         </div>
-        <span className="masthead-depth-mark" aria-hidden="true">
-          <span>JW</span>
-          <small>PRIVATE EDITION</small>
-        </span>
       </header>
 
-      <section className="readiness-strip" aria-label="Studio pipeline readiness">
-        <Link href="/konan" className="readiness-item">
-          <span className="mini-orb"><span>{identity.completeness}</span>%</span>
-          <span><small>01 · Identity canon</small><strong>{identity.status === "APPROVED" ? "Ready" : "Needs primary set"}</strong></span>
-        </Link>
-        <Link href="/garments" className="readiness-item">
-          <span className="readiness-number">{garments.filter((g) => g.canonState === "APPROVED").length}</span>
-          <span><small>02 · Garment canon</small><strong>{awaiting.length} awaiting approval</strong></span>
-        </Link>
-        <Link href={featuredShoot ? `/shoots/${featuredShoot.id}` : "/shoots"} className="readiness-item">
-          <span className="readiness-number">{pendingCount}</span>
-          <span><small>03 · Human review</small><strong>{retryCount} in retry queue</strong></span>
-        </Link>
-        <Link href="/shoots" className="readiness-item">
-          <span className="readiness-number">{exportReady}</span>
-          <span><small>04 · Export desk</small><strong>{approvedFrames} approved frames</strong></span>
-        </Link>
-      </section>
+      <div className={`studio-save-state ${persistence === "available" ? "is-saved" : "is-memory"}`} role="status">
+        {persistence === "available"
+          ? <><CheckCircle2 aria-hidden="true" size={16} />Saved on this device</>
+          : <><RotateCcw aria-hidden="true" size={16} />Memory only for this session</>}
+      </div>
 
-      <section className="section-block">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">Review stage</p>
-            <h2>On the decision table</h2>
-          </div>
-          <Link className="text-link" href="/shoots">View all shoots <span>↗</span></Link>
+      <section className="studio-queue-section" id="work" aria-labelledby="studio-next-work">
+        <div className="studio-section-title">
+          <div><p className="eyebrow">Now</p><h2 id="studio-next-work">Actionable work</h2></div>
+          <span>{workCount ? `${workCount} open` : "Nothing blocked"}</span>
         </div>
-
-        {featuredShoot ? (
-          <div className="light-table" aria-label="Current shoot contact sheet">
-            <Link href={`/shoots/${featuredShoot.id}`} className="featured-frame">
-              <span className="frame-register" aria-hidden="true">
-                <span>CONTACT 01</span>
-                <span>HERO SELECT</span>
-              </span>
-              <VisualAsset kind="generation" variant="studio" label={`${featuredGarment?.sku ?? "Unassigned garment"} front`} ratio="landscape" />
-              <div className="frame-overlay">
-                <StatusPill status="MOCK" />
-                <div>
-                  <p>{featuredShoot.id} · {featuredShoot.preset}</p>
-                  <h3>{featuredGarment?.title ?? "Unassigned garment"}</h3>
-                </div>
-                <span className="open-mark" aria-hidden="true">↗</span>
-              </div>
-            </Link>
-
-            <aside className="queue-panel" aria-label="Approval queue">
-              <span className="sheet-tape" aria-hidden="true" />
-              <div className="queue-head">
-                <div>
-                  <small>CONTACTS 02—04</small>
-                  <h3>Approval queue</h3>
-                </div>
-                <span>{pendingCount + retryCount}</span>
-              </div>
-              {queuedShoots.map((shoot, index) => {
-                const garment = garments.find((item) => item.id === shoot.garmentId);
-                const pending = shoot.generations.filter((generation) =>
-                  ["PENDING", "NEEDS RETRY"].includes(generation.review.decision),
-                ).length;
-                return (
-                  <Link className="queue-row" href={`/shoots/${shoot.id}`} key={shoot.id}>
-                    <span className="queue-index" aria-hidden="true">0{index + 2}</span>
-                    <VisualAsset kind="generation" variant={shoot.generations[0].visual} label={shoot.id} ratio="square" quiet />
-                    <span className="queue-copy">
-                      <small>{garment?.sku ?? "NO SKU"} · {shoot.preset}</small>
-                      <strong>{garment?.title ?? "Unassigned garment"}</strong>
-                      <span>{pending ? `${pending} decisions open` : "Review complete"}</span>
-                    </span>
-                    <span className="row-arrow" aria-hidden="true">›</span>
-                  </Link>
-                );
-              })}
-              {queuedShoots.length === 0 ? (
-                <p className="queue-empty">No generated frames are waiting for review.</p>
-              ) : null}
-            </aside>
-          </div>
-        ) : (
-          <div className="studio-empty-state">
-            <span aria-hidden="true">JW / 00</span>
-            <div>
-              <p className="eyebrow">The table is clear</p>
-              <h3>Stage your first private shoot.</h3>
-              <p>Add a verified garment, choose a direction, and the contact sheet will begin here.</p>
-            </div>
-            <Link className="button button-primary" href="/shoots/new">Create shoot</Link>
-          </div>
-        )}
-      </section>
-
-      <section className="section-block">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">Product intake</p>
-            <h2>Recent garments</h2>
-          </div>
-          <Link className="text-link" href="/garments">Open library <span>↗</span></Link>
-        </div>
-        <div className="garment-row" aria-label="Recent garment contact sheet">
-          {garments.slice(0, 4).map((garment, index) => (
-            <Link className="garment-tile" data-contact={String(index + 1).padStart(2, "0")} href={`/garments/${garment.id}`} key={garment.id}>
-              <span className="tile-register" aria-hidden="true">JW / {String(index + 1).padStart(2, "0")}</span>
-              <VisualAsset kind="garment" variant={garment.visual} label={garment.title} />
-              <div className="garment-tile-copy">
-                <span><small>{garment.sku}</small><StatusPill status={garment.canonState} /></span>
-                <h3>{garment.title}</h3>
-                <p>{garment.sizeLabel} · ₦{garment.price.toLocaleString("en-NG")}</p>
-              </div>
+        <div className="studio-queue-grid">
+          {queues.map(({ href, label, count, detail, icon: Icon }) => (
+            <Link className={count ? "studio-queue-card has-work" : "studio-queue-card"} href={href} key={label}>
+              <span className="studio-queue-icon" aria-hidden="true"><Icon size={20} strokeWidth={1.7} /></span>
+              <span className="studio-queue-count">{count}</span>
+              <strong>{label}</strong>
+              <p>{detail}</p>
+              <span className="studio-card-link">Open <ArrowRight aria-hidden="true" size={15} /></span>
             </Link>
           ))}
         </div>
+      </section>
+
+      <section className="studio-lifecycle-section" id="lifecycle" aria-labelledby="studio-lifecycle-title">
+        <div className="studio-section-title">
+          <div><p className="eyebrow">Live state</p><h2 id="studio-lifecycle-title">Commerce lifecycle</h2></div>
+          <span>{availableUnits} unit{availableUnits === 1 ? "" : "s"} available</span>
+        </div>
+        <div className="studio-lifecycle-track" role="list">
+          {[
+            ["Draft", garments.filter((item) => item.state === "DRAFT").length],
+            ["Ready", garments.filter((item) => item.state === "READY").length],
+            ["Published", listings.filter((item) => item.state === "PUBLISHED").length],
+            ["Reserved", orders.filter((item) => item.state === "RESERVED").length],
+            ["Sold", orders.filter((item) => item.state === "SOLD").length],
+            ["Returned", returns.filter((item) => item.state === "RETURNED").length],
+          ].map(([label, count], index) => (
+            <div className="studio-lifecycle-step" role="listitem" key={String(label)}>
+              <span>{String(index + 1).padStart(2, "0")}</span>
+              <strong>{count}</strong>
+              <small>{label}</small>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="studio-record-section" id="records" aria-labelledby="studio-record-title">
+        <div className="studio-section-title">
+          <div><p className="eyebrow">Records</p><h2 id="studio-record-title">Latest garment state</h2></div>
+          <Link className="text-link" href="/studio/wardrobe">Open wardrobe <ArrowRight aria-hidden="true" size={14} /></Link>
+        </div>
+        {garments.length ? (
+          <div className="studio-record-list">
+            {garments.slice(0, 5).map((garment) => {
+              const listing = listings.find((candidate) => candidate.garmentId === garment.id);
+              const stock = inventory.find((candidate) => candidate.garmentId === garment.id);
+              return (
+                <Link className="studio-record-row" href="/studio/wardrobe" key={garment.id}>
+                  <span className="studio-record-swatch" data-variant={garment.visual} aria-hidden="true" />
+                  <span><small>{garment.sku}</small><strong>{garment.title}</strong></span>
+                  <span>{stock ? `${Math.max(0, stock.onHand - stock.reserved)} available` : "No stock record"}</span>
+                  <LifecycleBadge state={listing?.state ?? garment.state} />
+                  <ArrowRight aria-hidden="true" size={17} />
+                </Link>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="studio-quiet-empty">
+            <Shirt aria-hidden="true" size={24} strokeWidth={1.6} />
+            <div><strong>No garments yet</strong><p>Intake one piece to establish the full lifecycle.</p></div>
+            <Link className="button button-primary" href="/studio/wardrobe?intake=1">Intake garment</Link>
+          </div>
+        )}
       </section>
     </div>
   );
