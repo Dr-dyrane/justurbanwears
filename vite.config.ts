@@ -3,6 +3,7 @@ import { fileURLToPath } from "node:url";
 import { defineConfig } from "vite";
 import hostingConfig from "./.openai/hosting.json";
 import { sites } from "./build/sites-vite-plugin";
+import { vercelSkewProtection } from "./build/vercel-skew-protection";
 
 const SITE_CREATOR_PLACEHOLDER_DATABASE_ID =
   "00000000-0000-4000-8000-000000000000";
@@ -39,6 +40,7 @@ const localBindingConfig = {
 
 export default defineConfig(async () => {
   const useNitroPlatform = Boolean(process.env.VERCEL || process.env.NITRO_PRESET);
+  const deploymentId = process.env.VERCEL_DEPLOYMENT_ID;
 
   if (useNitroPlatform) {
     const { nitro } = await import("nitro/vite");
@@ -52,7 +54,7 @@ export default defineConfig(async () => {
       server: isCodexSeatbeltSandbox
         ? { watch: { useFsEvents: false, usePolling: true } }
         : undefined,
-      plugins: [vinext(), nitro()],
+      plugins: [vinext(), vercelSkewProtection(deploymentId), nitro()],
     };
   }
 
