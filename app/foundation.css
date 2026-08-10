@@ -18,6 +18,14 @@
   --motion-fast: 160ms;
   --motion-base: 260ms;
   --rail-width: 196px;
+  /* Cross-surface authored layers. Native modal dialogs stay in the browser top layer. */
+  --z-content: 1;
+  --z-route-sticky: 30;
+  --z-studio-subnav: 42;
+  --z-status: 88;
+  --z-header: 90;
+  --z-mobile-chrome: 95;
+  --z-skip-link: 120;
 }
 
 .sr-only {
@@ -395,21 +403,21 @@
 }
 
 html[data-theme="dark"] .shop-shell {
-  --shop-canvas: #060404;
-  --shop-paper: #100a08;
-  --shop-ink: #fff8f4;
-  --shop-muted: #d5c1b7;
-  --shop-faint: #bda39a;
-  --shop-layer-low: rgba(35, 22, 18, 0.68);
-  --shop-layer: rgba(24, 15, 13, 0.86);
-  --shop-layer-strong: rgba(49, 29, 23, 0.96);
-  --shop-layer-hover: rgba(75, 41, 31, 0.98);
+  --shop-canvas: var(--dyrane-dark-canvas);
+  --shop-paper: var(--dyrane-dark-surface);
+  --shop-ink: var(--dyrane-dark-ink);
+  --shop-muted: var(--dyrane-dark-muted);
+  --shop-faint: var(--dyrane-dark-faint);
+  --shop-layer-low: rgba(23, 19, 16, 0.72);
+  --shop-layer: rgba(29, 24, 21, 0.86);
+  --shop-layer-strong: rgba(41, 34, 30, 0.94);
+  --shop-layer-hover: var(--dyrane-dark-surface-hover);
   --shop-selection: linear-gradient(145deg, rgba(221, 96, 66, 0.28), rgba(245, 152, 134, 0.12));
-  --shop-save-surface: rgba(83, 39, 29, 0.96);
+  --shop-save-surface: rgba(74, 44, 36, 0.96);
   --shop-save-ink: #ffd1c5;
   --shop-badge-surface: #f5c4b5;
   --shop-badge-ink: #2b1d18;
-  --shop-footer-surface: #050303;
+  --shop-footer-surface: var(--dyrane-dark-floor);
   --shop-editorial-surface:
     radial-gradient(circle at 86% -4%, rgba(245, 152, 134, 0.32), transparent 27rem),
     radial-gradient(circle at 8% 100%, rgba(221, 96, 66, 0.14), transparent 24rem),
@@ -417,18 +425,18 @@ html[data-theme="dark"] .shop-shell {
   --shop-editorial-ink: #fff8f4;
   --shop-editorial-muted: #e0c9bf;
   --shop-nav-surface: rgba(23, 19, 16, 0.86);
-  --shop-nav-surface-solid: #171310;
-  --shop-nav-surface-muted: #29221e;
-  --shop-nav-hover: #342a25;
-  --shop-nav-ink: #f4eee9;
-  --shop-nav-muted: #c8bdb6;
-  --shop-nav-faint: #a69991;
-  --shop-nav-accent: #e28369;
-  --shop-nav-selection: color-mix(in srgb, #4a2c24 76%, #171310);
+  --shop-nav-surface-solid: var(--dyrane-dark-surface);
+  --shop-nav-surface-muted: var(--dyrane-dark-surface-muted);
+  --shop-nav-hover: var(--dyrane-dark-surface-hover);
+  --shop-nav-ink: var(--dyrane-dark-ink);
+  --shop-nav-muted: var(--dyrane-dark-muted);
+  --shop-nav-faint: var(--dyrane-dark-faint);
+  --shop-nav-accent: var(--dyrane-dark-accent);
+  --shop-nav-selection: color-mix(in srgb, var(--dyrane-dark-accent-soft) 76%, var(--dyrane-dark-surface));
   --shop-nav-selection-ink: #fff1eb;
-  --shop-nav-action: #f0d8cd;
-  --shop-nav-action-hover: #fff6f1;
-  --shop-nav-action-ink: #1d1512;
+  --shop-nav-action: var(--dyrane-dark-action);
+  --shop-nav-action-hover: var(--dyrane-dark-action-hover);
+  --shop-nav-action-ink: var(--dyrane-dark-action-ink);
   --shop-nav-shadow: 0 24px 70px rgba(0, 0, 0, 0.36);
   --shop-nav-edge: rgba(255, 232, 220, 0.12);
   --shop-dock-surface:
@@ -439,13 +447,12 @@ html[data-theme="dark"] .shop-shell {
   --shop-dock-shadow: 0 18px 48px rgba(0, 0, 0, 0.38);
   --accent-text: #ff9d86;
   --focus: #ffab97;
-  --glass-light: rgba(15, 9, 8, 0.76);
-  --glass-edge: rgba(255, 222, 210, 0.15);
+  --glass-light: var(--dyrane-dark-glass);
+  --glass-edge: var(--dyrane-dark-glass-edge);
   background:
-    radial-gradient(ellipse at 78% -8%, rgba(221, 96, 66, 0.26), transparent 34rem),
-    radial-gradient(circle at 6% 34%, rgba(245, 196, 181, 0.09), transparent 29rem),
-    radial-gradient(circle at 70% 72%, rgba(245, 152, 134, 0.065), transparent 36rem),
-    linear-gradient(160deg, #050303 0%, #0b0605 42%, #100807 72%, #050303 100%);
+    radial-gradient(circle at 84% -2%, rgba(183, 83, 58, 0.16), transparent 33rem),
+    radial-gradient(circle at 12% 86%, rgba(95, 77, 68, 0.1), transparent 30rem),
+    linear-gradient(150deg, var(--dyrane-dark-canvas), var(--dyrane-dark-canvas-deep) 54%, var(--dyrane-dark-floor));
 }
 
 html[data-theme="dark"] .shop-shell::before {
@@ -506,7 +513,7 @@ html[data-theme="dark"] .shop-shell::after {
   top: 0;
   transform: translateY(-130%);
   transition: transform var(--motion-fast) ease;
-  z-index: 120;
+  z-index: var(--z-skip-link);
 }
 
 .shop-skip-link:focus {
@@ -519,7 +526,7 @@ html[data-theme="dark"] .shop-shell::after {
   position: fixed;
   right: 0;
   top: 0;
-  z-index: 90;
+  z-index: var(--z-header);
 }
 
 .shop-floating-nav {
@@ -721,19 +728,20 @@ html[data-theme="dark"] .shop-shell::after {
   left: 50%;
   max-width: calc(100vw - 32px);
   padding: 10px 16px;
+  pointer-events: none;
   position: fixed;
   text-align: center;
   top: 98px;
   transform: translateX(-50%);
   width: max-content;
-  z-index: 88;
+  z-index: var(--z-status);
 }
 
 .shop-shell main {
   min-height: 70vh;
   padding-top: 104px;
   position: relative;
-  z-index: 1;
+  z-index: var(--z-content);
 }
 
 .shop-home,
@@ -1223,7 +1231,7 @@ html[data-theme="dark"] .shop-shell::after {
   padding: 10px;
   position: sticky;
   top: 102px;
-  z-index: 30;
+  z-index: var(--z-route-sticky);
 }
 
 .shop-search {
@@ -3875,12 +3883,12 @@ html[data-theme="dark"] .shop-account-status > p.is-online {
 
 html[data-theme="dark"] .shop-location-caption.glass-surface,
 html[data-theme="dark"] .availability-tag {
-  background: rgba(42, 31, 27, 0.82);
+  background: var(--shop-layer-strong);
   color: var(--shop-ink);
 }
 
 html[data-theme="dark"] .product-save:not(:hover):not(.is-saved) {
-  background: rgba(42, 31, 27, 0.82);
+  background: var(--shop-layer-strong);
   color: var(--shop-ink);
 }
 
@@ -4356,7 +4364,7 @@ html[data-theme="dark"] .shop-shell .shop-dock-lens::before {
     pointer-events: none;
     position: fixed;
     right: 0;
-    z-index: 95;
+    z-index: var(--z-mobile-chrome);
   }
   .shop-mobile-context,
   .shop-mobile-row {
@@ -4620,21 +4628,21 @@ html[data-theme="dark"] .shop-shell .shop-dock-lens::before {
   html[data-theme="dark"] .shop-filter-sheet-actions,
   html[data-theme="dark"] .shop-dock-lens,
   html[data-theme="dark"] .pwa-install-control {
-    background: #2b201c !important;
+    background: var(--shop-nav-surface-solid) !important;
   }
 
   html[data-theme="dark"] .product-card-action:hover,
   html[data-theme="dark"] .shop-filter-trigger:hover,
   html[data-theme="dark"] .shop-filter-close:hover {
-    background: #4b291f !important;
+    background: var(--shop-nav-hover) !important;
   }
 
   html[data-theme="dark"] .product-save:hover,
   html[data-theme="dark"] .product-save.is-saved,
   html[data-theme="dark"] .detail-save:hover,
   html[data-theme="dark"] .detail-save.is-saved {
-    background: #53271d !important;
-    color: #ffd1c5 !important;
+    background: var(--shop-save-surface) !important;
+    color: var(--shop-save-ink) !important;
   }
 
   .studio-shell .rail-link.active { background: #463b36 !important; }
@@ -4858,9 +4866,9 @@ html[data-theme="dark"] .shop-shell .shop-dock-lens::before {
 }
 
 html[data-theme="dark"] .shop-shell {
-  --shop-nude-veil: rgba(45, 27, 22, 0.72);
-  --shop-nude-surface: rgba(35, 22, 18, 0.88);
-  --shop-nude-surface-strong: rgba(49, 29, 23, 0.96);
+  --shop-nude-veil: rgba(23, 19, 16, 0.72);
+  --shop-nude-surface: rgba(29, 24, 21, 0.88);
+  --shop-nude-surface-strong: rgba(41, 34, 30, 0.96);
   --shop-nude-ink: #e0c4b9;
   --shop-release-ink: #ff9d86;
   --shop-depth-portrait: 0 40px 104px rgba(0, 0, 0, 0.42), 0 14px 32px rgba(0, 0, 0, 0.28);
@@ -5242,25 +5250,25 @@ html[data-theme="dark"] .shop-shell {
 }
 
 html[data-theme="dark"] .studio-shell {
-  --studio-canvas: #0b0908;
-  --studio-canvas-deep: #100d0b;
-  --studio-panel: #171310;
-  --studio-panel-strong: #1d1815;
-  --studio-panel-muted: #29221e;
-  --studio-ink: #f4eee9;
-  --studio-muted: #c8bdb6;
-  --studio-faint: #a69991;
-  --studio-cocoa: #f0d8cd;
-  --studio-cocoa-hover: #fff6f1;
-  --studio-accent: #e28369;
-  --studio-accent-soft: #4a2c24;
+  --studio-canvas: var(--dyrane-dark-canvas);
+  --studio-canvas-deep: var(--dyrane-dark-canvas-deep);
+  --studio-panel: var(--dyrane-dark-surface);
+  --studio-panel-strong: var(--dyrane-dark-surface-strong);
+  --studio-panel-muted: var(--dyrane-dark-surface-muted);
+  --studio-ink: var(--dyrane-dark-ink);
+  --studio-muted: var(--dyrane-dark-muted);
+  --studio-faint: var(--dyrane-dark-faint);
+  --studio-cocoa: var(--dyrane-dark-action);
+  --studio-cocoa-hover: var(--dyrane-dark-action-hover);
+  --studio-accent: var(--dyrane-dark-accent);
+  --studio-accent-soft: var(--dyrane-dark-accent-soft);
   --studio-positive: #9bac8b;
   --studio-caution: #d29a67;
   --studio-critical: #e18b7e;
-  --studio-line: rgba(255, 232, 220, 0.1);
+  --studio-line: var(--dyrane-dark-line);
   --studio-shadow: 0 24px 70px rgba(0, 0, 0, 0.34);
-  --glass-light: rgba(23, 19, 16, 0.82);
-  --glass-edge: rgba(255, 232, 220, 0.11);
+  --glass-light: var(--dyrane-dark-glass);
+  --glass-edge: var(--dyrane-dark-glass-edge);
   --shop-selection: linear-gradient(145deg, rgba(221, 96, 66, 0.28), rgba(245, 152, 134, 0.12));
   --shop-save-ink: #ffd1c5;
   --focus: #ffab97;
@@ -5382,7 +5390,7 @@ html[data-theme="dark"] .studio-shell .studio-public-action:hover {
   pointer-events: none;
   position: sticky;
   top: 96px;
-  z-index: 42;
+  z-index: var(--z-studio-subnav);
 }
 
 .studio-view-navigation {
@@ -5523,7 +5531,7 @@ html[data-theme="dark"] .studio-shell .workspace {
   background:
     radial-gradient(circle at 84% -2%, rgba(183, 83, 58, 0.13), transparent 33rem),
     radial-gradient(circle at 12% 86%, rgba(95, 77, 68, 0.1), transparent 30rem),
-    linear-gradient(150deg, #0b0908, #100d0b 54%, #090706);
+    linear-gradient(150deg, var(--dyrane-dark-canvas), var(--dyrane-dark-canvas-deep) 54%, var(--dyrane-dark-floor));
 }
 
 html[data-theme="dark"] .studio-shell .rail {
@@ -7087,7 +7095,7 @@ html[data-theme="dark"] .studio-shell .studio-listing-preview { color: #1d1512; 
 html[data-theme="dark"] .shop-model-tryout-sheet {
   background:
     radial-gradient(circle at 92% 2%, rgba(230, 112, 93, 0.18), transparent 24rem),
-    #211917;
+    var(--shop-paper);
 }
 html[data-theme="dark"] .shop-model-tryout-frame figcaption { background: rgba(19, 14, 13, 0.72); }
 
@@ -7238,7 +7246,7 @@ html[data-theme="dark"] .shop-model-tryout-frame figcaption { background: rgba(1
 html[data-theme="dark"] .shop-wardrobe-preview {
   background:
     radial-gradient(circle at 8% 4%, rgba(230, 112, 93, 0.16), transparent 24rem),
-    linear-gradient(145deg, rgba(49, 29, 23, 0.72), var(--shop-layer-low));
+    linear-gradient(145deg, var(--shop-layer-strong), var(--shop-layer-low));
 }
 
 html[data-theme="dark"] .shop-wardrobe-preview-frame {
@@ -7605,7 +7613,7 @@ html[data-theme="dark"] .shop-shell .shop-bag-link:hover {
   padding: 8px;
   position: sticky;
   top: 102px;
-  z-index: 30;
+  z-index: var(--z-route-sticky);
 }
 
 .shop-search-toolbar > .shop-search-input {

@@ -51,11 +51,29 @@ html {
 }
 
 html[data-theme="dark"] body:has(.shop-shell) {
-  background: #050303;
+  background: var(--dyrane-dark-canvas);
 }
 
 html[data-theme="dark"] {
-  background: #050303;
+  --dyrane-dark-canvas: #0b0908;
+  --dyrane-dark-canvas-deep: #100d0b;
+  --dyrane-dark-floor: #090706;
+  --dyrane-dark-surface: #171310;
+  --dyrane-dark-surface-strong: #1d1815;
+  --dyrane-dark-surface-muted: #29221e;
+  --dyrane-dark-surface-hover: #342a25;
+  --dyrane-dark-ink: #f4eee9;
+  --dyrane-dark-muted: #c8bdb6;
+  --dyrane-dark-faint: #a69991;
+  --dyrane-dark-accent: #e28369;
+  --dyrane-dark-accent-soft: #4a2c24;
+  --dyrane-dark-action: #f0d8cd;
+  --dyrane-dark-action-hover: #fff6f1;
+  --dyrane-dark-action-ink: #1d1512;
+  --dyrane-dark-line: rgba(255, 232, 220, 0.1);
+  --dyrane-dark-glass: rgba(23, 19, 16, 0.82);
+  --dyrane-dark-glass-edge: rgba(255, 232, 220, 0.11);
+  background: var(--dyrane-dark-canvas);
 }
 
 body {
@@ -294,7 +312,7 @@ a {
   margin-left: var(--rail-width);
   min-height: 100vh;
   position: relative;
-  z-index: 1;
+  z-index: var(--z-content);
 }
 
 .demo-ribbon {
