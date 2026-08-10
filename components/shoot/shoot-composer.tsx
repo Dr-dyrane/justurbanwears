@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { PRESET_DETAILS, type NewShootInput, type ShootPreset } from "../../lib/data/types";
 import { composeGenerationBrief } from "../../lib/generation/prompt";
@@ -26,7 +26,7 @@ export function ShootComposer() {
   });
   const [busy, setBusy] = useState(false);
   const garment = approved.find((item) => item.id === input.garmentId);
-  const brief = useMemo(() => garment ? composeGenerationBrief(identity, garment, input) : "Select an approved garment.", [garment, identity, input]);
+  const brief = garment ? composeGenerationBrief(identity, garment, input) : "Select an approved garment.";
   const gateReady = identity.status === "APPROVED" && Boolean(garment);
 
   function submit(event: FormEvent) {
