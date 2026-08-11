@@ -5,7 +5,9 @@
 /docs/
 /storage/
 /.codex/
-/design/
+/design/identity-2026/**
+!/design/identity-2026/justurban-app-icon.svg
+!/design/identity-2026/justurban-wordmark.svg
 /.env*
 /.wrangler/
 /.vinext/
