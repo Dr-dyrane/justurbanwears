@@ -32,6 +32,11 @@ import {
   getApprovedPublicListingContract,
   publicMediaLabel,
 } from "../../lib/studio/projections/approved-catalogue";
+import {
+  getPendingWardrobeProductContract,
+  pendingWardrobeMediaLabel,
+  type PendingWardrobeProductContract,
+} from "../../lib/studio/seeds/private-wardrobe-products";
 import { LifecycleBadge } from "./atoms/lifecycle-badge";
 import { ReadinessList } from "./atoms/readiness-list";
 import { useStudio } from "./studio-provider";
@@ -179,13 +184,73 @@ function MissingMedia({ garment }: { garment: Garment }) {
   );
 }
 
+function PendingProductMedia({
+  contract,
+  title,
+}: {
+  contract: PendingWardrobeProductContract;
+  title: string;
+}) {
+  const hasReadyMedia = contract.publicSafeMedia.length > 0;
+  return (
+    <section className="studio-pending-product-media" aria-label={`${title} media readiness`}>
+      <div className={`studio-pending-media-heading${hasReadyMedia ? " is-ready" : ""}`}>
+        <span>
+          {hasReadyMedia
+            ? <Check aria-hidden="true" size={14} />
+            : <ImagePlus aria-hidden="true" size={14} />}
+        </span>
+        <div>
+          <strong>{hasReadyMedia ? "Ready" : "Capture needed"}</strong>
+          <small>
+            {hasReadyMedia
+              ? `${contract.publicSafeMedia.length} customer-ready view${contract.publicSafeMedia.length === 1 ? "" : "s"}`
+              : "Customer view not ready yet"}
+          </small>
+        </div>
+      </div>
+
+      {contract.publicSafeMedia.length ? (
+        <div className="studio-pending-media-strip" aria-label={`${title} customer-ready views`}>
+          {contract.publicSafeMedia.map((media) => {
+            const label = pendingWardrobeMediaLabel(media.view);
+            return (
+              <figure key={media.view}>
+                <img
+                  alt={`${title}: ${label.toLowerCase()}`}
+                  height={media.height}
+                  loading="lazy"
+                  src={media.src}
+                  width={media.width}
+                />
+                <figcaption>{label}</figcaption>
+              </figure>
+            );
+          })}
+        </div>
+      ) : null}
+
+      <div className="studio-capture-next">
+        <small>Capture next</small>
+        <div>
+          {contract.missingViews.map((view) => (
+            <span key={view}>{pendingWardrobeMediaLabel(view)}</span>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function GarmentCard({ garment }: { garment: Garment }) {
   const { listings, moveGarmentToWardrobe, prepareListing } = useStudio();
   const listing = listings.find((candidate) => candidate.garmentId === garment.id);
+  const pendingContract = getPendingWardrobeProductContract(garment.sku);
   const approvedContract = listing
     ? getApprovedPublicListingContract(garment.sku, listing.slug)
     : undefined;
   const approvedCover = approvedContract?.media.find((frame) => frame.slot === "GARMENT_FRONT");
+  const pendingCover = pendingContract?.publicSafeMedia[0];
   const cover = approvedCover
     ? {
       src: approvedCover.src,
@@ -193,7 +258,14 @@ function GarmentCard({ garment }: { garment: Garment }) {
       width: 1122,
       height: 1402,
     }
-    : garment.reviewCover;
+    : pendingCover
+      ? {
+        src: pendingCover.src,
+        alt: `${garment.title}, ${pendingWardrobeMediaLabel(pendingCover.view).toLowerCase()}`,
+        width: pendingCover.width,
+        height: pendingCover.height,
+      }
+      : garment.reviewCover;
   const gates = garmentReadiness(garment);
   const ready = everyGateReady(gates);
   return (
@@ -212,8 +284,9 @@ function GarmentCard({ garment }: { garment: Garment }) {
           <span>{garment.quantity} unit{garment.quantity === 1 ? "" : "s"}</span>
           <span>{garment.measurements.length > 0 ? `${garment.measurements.length} measurements` : "Measurements pending"}</span>
         </div>
+        {pendingContract ? <PendingProductMedia contract={pendingContract} title={garment.title} /> : null}
         <ReadinessList gates={gates} compact />
-        <MissingMedia garment={garment} />
+        {pendingContract ? null : <MissingMedia garment={garment} />}
         <div className="studio-card-actions">
           {garment.state === "DRAFT" ? <button className="button button-primary" disabled={!ready} onClick={() => moveGarmentToWardrobe(garment.id)} type="button">Move to wardrobe</button> : null}
           {["READY", "RETURNED"].includes(garment.state) && !listing ? <button className="button button-primary" onClick={() => prepareListing(garment.id)} type="button">Prepare listing</button> : null}

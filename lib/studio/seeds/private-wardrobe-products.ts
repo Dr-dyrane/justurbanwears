@@ -20,12 +20,20 @@ export type PendingWardrobeMediaView =
   | "FABRIC_DETAIL"
   | "CONSTRUCTION_DETAIL";
 
+export interface PendingWardrobePublicMedia {
+  readonly view: PendingWardrobeMediaView;
+  readonly src: `/shop/products/${string}/${string}.webp`;
+  readonly width: number;
+  readonly height: number;
+}
+
 export interface PendingWardrobeProductContract {
   readonly sku: `JUW-${string}`;
   readonly legacySkus: readonly string[];
   readonly slug: string;
   readonly approvedViews: readonly PendingWardrobeMediaView[];
   readonly missingViews: readonly PendingWardrobeMediaView[];
+  readonly publicSafeMedia: readonly PendingWardrobePublicMedia[];
   readonly garment: Garment;
   readonly inventory: InventoryRecord;
 }
@@ -43,6 +51,7 @@ interface PendingWardrobeProductSpec {
   readonly visual: VisualVariant;
   readonly approvedViews: readonly PendingWardrobeMediaView[];
   readonly missingViews: readonly PendingWardrobeMediaView[];
+  readonly publicSafeMedia?: readonly PendingWardrobePublicMedia[];
 }
 
 function pendingProduct(spec: PendingWardrobeProductSpec): PendingWardrobeProductContract {
@@ -61,6 +70,7 @@ function pendingProduct(spec: PendingWardrobeProductSpec): PendingWardrobeProduc
     slug: spec.slug,
     approvedViews: spec.approvedViews,
     missingViews: spec.missingViews,
+    publicSafeMedia: spec.publicSafeMedia ?? [],
     garment: {
       id: garmentId,
       sku: spec.sku,
@@ -106,9 +116,10 @@ function pendingProduct(spec: PendingWardrobeProductSpec): PendingWardrobeProduc
 }
 
 /**
- * Sanitized Studio intake rows. They carry approved customer-facing facts and
- * view labels only; no source locations, hashes, prompts, or identity evidence.
- * A missing public contract keeps each row out of Shop until its captures land.
+ * Sanitized Studio intake rows. Media may reference only fixed public product
+ * paths that have passed the packaging gate; private source locations, hashes,
+ * prompts, and identity evidence never enter this contract. A missing public
+ * listing contract keeps each row out of Shop until its captures land.
  */
 export const PENDING_WARDROBE_PRODUCT_CONTRACTS: readonly PendingWardrobeProductContract[] = Object.freeze([
   pendingProduct({
@@ -124,6 +135,20 @@ export const PENDING_WARDROBE_PRODUCT_CONTRACTS: readonly PendingWardrobeProduct
     visual: "indigo",
     approvedViews: ["GARMENT_FRONT", "MODEL_FRONT", "MODEL_REAR_MIRROR"],
     missingViews: ["GARMENT_BACK", "FABRIC_DETAIL"],
+    publicSafeMedia: [
+      {
+        view: "MODEL_FRONT",
+        src: "/shop/products/teal-draped-mini-set/04-model-front.webp",
+        width: 972,
+        height: 1619,
+      },
+      {
+        view: "MODEL_REAR_MIRROR",
+        src: "/shop/products/teal-draped-mini-set/09-model-rear-mirror.webp",
+        width: 972,
+        height: 1619,
+      },
+    ],
   }),
   pendingProduct({
     sku: "JUW-015",
@@ -138,6 +163,20 @@ export const PENDING_WARDROBE_PRODUCT_CONTRACTS: readonly PendingWardrobeProduct
     visual: "umber",
     approvedViews: ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
     missingViews: ["GARMENT_FRONT", "GARMENT_BACK", "FABRIC_DETAIL"],
+    publicSafeMedia: [
+      {
+        view: "MODEL_LEFT_PROFILE",
+        src: "/shop/products/cocoa-cowl-gathered-midi-dress/07-model-left-profile.webp",
+        width: 972,
+        height: 1728,
+      },
+      {
+        view: "MODEL_REAR_THREE_QUARTER",
+        src: "/shop/products/cocoa-cowl-gathered-midi-dress/05-model-rear-three-quarter.webp",
+        width: 972,
+        height: 1728,
+      },
+    ],
   }),
   pendingProduct({
     sku: "JUW-017",
@@ -152,6 +191,14 @@ export const PENDING_WARDROBE_PRODUCT_CONTRACTS: readonly PendingWardrobeProduct
     visual: "chalk",
     approvedViews: ["MODEL_FRONT"],
     missingViews: ["GARMENT_FRONT", "GARMENT_BACK", "FABRIC_DETAIL"],
+    publicSafeMedia: [
+      {
+        view: "MODEL_FRONT",
+        src: "/shop/products/white-tailored-vest-mini-set/04-model-front.webp",
+        width: 1122,
+        height: 1402,
+      },
+    ],
   }),
   pendingProduct({
     sku: "JUW-018",
@@ -166,6 +213,14 @@ export const PENDING_WARDROBE_PRODUCT_CONTRACTS: readonly PendingWardrobeProduct
     visual: "plum",
     approvedViews: ["MANNEQUIN_UPPER_FRONT", "MODEL_DETAIL"],
     missingViews: ["GARMENT_FRONT", "GARMENT_BACK"],
+    publicSafeMedia: [
+      {
+        view: "MODEL_DETAIL",
+        src: "/shop/products/plum-ruched-sleeve-fitted-dress/08-model-detail.webp",
+        width: 1122,
+        height: 1402,
+      },
+    ],
   }),
   pendingProduct({
     sku: "JUW-019",
@@ -198,11 +253,44 @@ export const PENDING_WARDROBE_PRODUCT_CONTRACTS: readonly PendingWardrobeProduct
       "CONSTRUCTION_DETAIL",
     ],
     missingViews: ["GARMENT_FRONT", "GARMENT_BACK"],
+    publicSafeMedia: [
+      {
+        view: "MODEL_REAR_THREE_QUARTER",
+        src: "/shop/products/coral-gathered-crop-mini-set/05-model-rear-three-quarter.webp",
+        width: 1122,
+        height: 1402,
+      },
+    ],
   }),
 ]);
 
 function normalizedSku(value: string) {
   return value.trim().toUpperCase();
+}
+
+export function pendingWardrobeMediaLabel(view: PendingWardrobeMediaView) {
+  const labels: Record<PendingWardrobeMediaView, string> = {
+    GARMENT_FRONT: "Product front",
+    GARMENT_BACK: "Product back",
+    MANNEQUIN_UPPER_FRONT: "Upper front",
+    MANNEQUIN_RIGHT_REAR_THREE_QUARTER: "Right rear view",
+    MODEL_FRONT: "On Lulu · front",
+    MODEL_LEFT_PROFILE: "On Lulu · left profile",
+    MODEL_REAR_THREE_QUARTER: "On Lulu · rear three-quarter",
+    MODEL_REAR_MIRROR: "On Lulu · rear mirror",
+    MODEL_DETAIL: "On Lulu · detail",
+    FABRIC_DETAIL: "Fabric detail",
+    CONSTRUCTION_DETAIL: "Construction detail",
+  };
+  return labels[view];
+}
+
+export function getPendingWardrobeProductContract(sku: string) {
+  const normalized = normalizedSku(sku);
+  return PENDING_WARDROBE_PRODUCT_CONTRACTS.find((contract) =>
+    normalizedSku(contract.sku) === normalized
+    || contract.legacySkus.includes(normalized),
+  );
 }
 
 function cloneGarment(garment: Garment): Garment {
