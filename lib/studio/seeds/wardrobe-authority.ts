@@ -9,6 +9,7 @@ import {
   WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS,
 } from "../../wardrobe-public-view/seeds";
 import { canonicalCatalogueSku } from "../../wardrobe-public-view/sku";
+import { mergePendingWardrobeProducts } from "./private-wardrobe-products";
 
 const MIGRATION_CREATED_AT = "2026-08-10T00:00:00.000Z";
 
@@ -27,6 +28,7 @@ const LEGACY_AUTHORITY = new Map<
 
 function studioCategory(category: (typeof WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS)[number]["category"]): GarmentCategory {
   if (category === "Dresses") return "Dress";
+  if (category === "Sets") return "Set";
   if (category === "Shirts") return "Shirt";
   if (category === "Knitwear") return "Knitwear";
   if (category === "Skirts") return "Skirt";
@@ -246,5 +248,11 @@ export function mergeWardrobeAuthoritySeeds(snapshot: StudioSnapshot): StudioSna
     });
   }
 
-  return { ...snapshot, garments, inventory, listings };
+  const pending = mergePendingWardrobeProducts(garments, inventory);
+  return {
+    ...snapshot,
+    garments: pending.garments,
+    inventory: pending.inventory,
+    listings,
+  };
 }

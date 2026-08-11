@@ -34,6 +34,7 @@ export type VisualVariant =
 export type GarmentCategory =
   | "Dress"
   | "Shirt"
+  | "Set"
   | "Knitwear"
   | "Skirt"
   | "Trousers";

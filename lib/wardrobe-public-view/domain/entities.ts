@@ -5,6 +5,7 @@ export type WardrobePublicMediaSlot =
   | "MODEL_FRONT"
   | "MODEL_LEFT_PROFILE"
   | "MODEL_REAR_THREE_QUARTER"
+  | "MODEL_REAR_MIRROR"
   | "MODEL_DETAIL"
   | "CONSTRUCTION_DETAIL"
   | "FABRIC_DETAIL";
@@ -31,7 +32,7 @@ export interface WardrobePublicProduct {
   slug: string;
   sku: string;
   name: string;
-  category: "Dresses" | "Shirts" | "Knitwear" | "Skirts" | "Trousers";
+  category: "Dresses" | "Sets" | "Shirts" | "Knitwear" | "Skirts" | "Trousers";
   price: number;
   taggedSize: string;
   fit: string;
@@ -40,7 +41,7 @@ export interface WardrobePublicProduct {
   availability: "AVAILABLE" | "RESERVED" | "SOLD";
   drop: string;
   tone: "coral" | "indigo" | "moss" | "ivory" | "cocoa" | "salmon";
-  silhouette: "dress" | "shirt" | "knit" | "skirt" | "trouser";
+  silhouette: "dress" | "set" | "shirt" | "knit" | "skirt" | "trouser";
   note: string;
   story: string;
   details: string[];

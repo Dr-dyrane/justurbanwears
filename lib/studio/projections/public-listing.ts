@@ -22,6 +22,7 @@ function slugify(value: string) {
 
 function publicCategory(category: Garment["category"]): PublicListingProjection["category"] {
   if (category === "Dress") return "Dresses";
+  if (category === "Set") return "Sets";
   if (category === "Shirt") return "Shirts";
   if (category === "Knitwear") return "Knitwear";
   if (category === "Skirt") return "Skirts";
@@ -30,6 +31,7 @@ function publicCategory(category: Garment["category"]): PublicListingProjection[
 
 function publicSilhouette(category: Garment["category"]): PublicListingProjection["silhouette"] {
   if (category === "Dress") return "dress";
+  if (category === "Set") return "set";
   if (category === "Shirt") return "shirt";
   if (category === "Knitwear") return "knit";
   if (category === "Skirt") return "skirt";

@@ -24,9 +24,9 @@ import type {
 
 const CACHE_TTL_MS = 30_000;
 const DATABASE_TIMEOUT_MS = 5_000;
-const categories = new Set(["Dresses", "Shirts", "Knitwear", "Skirts", "Trousers"]);
+const categories = new Set(["Dresses", "Sets", "Shirts", "Knitwear", "Skirts", "Trousers"]);
 const tones = new Set(["coral", "indigo", "moss", "ivory", "cocoa", "salmon"]);
-const silhouettes = new Set(["dress", "shirt", "knit", "skirt", "trouser"]);
+const silhouettes = new Set(["dress", "set", "shirt", "knit", "skirt", "trouser"]);
 const mediaSlots = new Set([
   "GARMENT_FRONT",
   "GARMENT_BACK",
@@ -34,6 +34,7 @@ const mediaSlots = new Set([
   "MODEL_FRONT",
   "MODEL_LEFT_PROFILE",
   "MODEL_REAR_THREE_QUARTER",
+  "MODEL_REAR_MIRROR",
   "MODEL_DETAIL",
   "FABRIC_DETAIL",
   "CONSTRUCTION_DETAIL",
@@ -42,6 +43,7 @@ const modelSlots = new Set([
   "MODEL_FRONT",
   "MODEL_LEFT_PROFILE",
   "MODEL_REAR_THREE_QUARTER",
+  "MODEL_REAR_MIRROR",
   "MODEL_DETAIL",
 ]);
 

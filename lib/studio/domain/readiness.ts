@@ -19,10 +19,14 @@ export function modelReadiness(model: StudioModel): ReadinessGate[] {
 }
 
 export function garmentReadiness(garment: Garment): ReadinessGate[] {
+  const fitConfirmationReady = garment.measurements.length > 0 || (
+    garment.sizeLabel === "Size on request"
+    && garment.estimatedFit === "Measurements confirmed before payment"
+  );
   return [
     { id: "classification", label: "Classified", ready: garment.classificationState === "READY" },
     { id: "media", label: "Front, back & detail", ready: garment.mediaState === "READY" },
-    { id: "measurements", label: "Measurements captured", ready: garment.measurements.length > 0 },
+    { id: "measurements", label: "Fit confirmation ready", ready: fitConfirmationReady },
     { id: "quantity", label: "Stock on hand", ready: garment.quantity > 0 },
     { id: "eligibility", label: "Sale eligible", ready: garment.saleEligible },
   ];

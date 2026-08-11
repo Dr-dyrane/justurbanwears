@@ -46,6 +46,7 @@ export function publicMediaLabel(slot: PublicListingMediaSlot) {
   if (slot === "MODEL_FRONT") return "Model front";
   if (slot === "MODEL_LEFT_PROFILE") return "Model left profile";
   if (slot === "MODEL_REAR_THREE_QUARTER") return "Model right rear three-quarter";
+  if (slot === "MODEL_REAR_MIRROR") return "Model rear mirror";
   if (slot === "MODEL_DETAIL") return "Model styled detail";
   if (slot === "CONSTRUCTION_DETAIL") return "Construction detail";
   return "Fabric detail";

@@ -19,6 +19,7 @@ const MODEL_MEDIA_SLOTS = new Set([
   "MODEL_FRONT",
   "MODEL_LEFT_PROFILE",
   "MODEL_REAR_THREE_QUARTER",
+  "MODEL_REAR_MIRROR",
   "MODEL_DETAIL",
 ]);
 
@@ -28,6 +29,7 @@ const mediaFileForSlot = Object.freeze({
   MANNEQUIN_FRONT: "03-mannequin-front.webp",
   MODEL_FRONT: "04-model-front.webp",
   MODEL_REAR_THREE_QUARTER: "05-model-rear-three-quarter.webp",
+  MODEL_REAR_MIRROR: "09-model-rear-mirror.webp",
   FABRIC_DETAIL: "06-fabric-detail.webp",
   MODEL_LEFT_PROFILE: "07-model-left-profile.webp",
   MODEL_DETAIL: "08-model-detail.webp",

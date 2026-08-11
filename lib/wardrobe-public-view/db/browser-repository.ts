@@ -29,10 +29,10 @@ export const LEGACY_PUBLIC_CATALOG_STORAGE_KEY = "justurban-wears:catalog-projec
 
 type UnknownRecord = Record<string, unknown>;
 
-const categories = new Set(["Dresses", "Shirts", "Knitwear", "Skirts", "Trousers"]);
+const categories = new Set(["Dresses", "Sets", "Shirts", "Knitwear", "Skirts", "Trousers"]);
 const availabilities = new Set(["AVAILABLE", "RESERVED", "SOLD"]);
 const tones = new Set(["coral", "indigo", "moss", "ivory", "cocoa", "salmon"]);
-const silhouettes = new Set(["dress", "shirt", "knit", "skirt", "trouser"]);
+const silhouettes = new Set(["dress", "set", "shirt", "knit", "skirt", "trouser"]);
 const requiredMediaSlots: WardrobePublicMediaSlot[] = [
   "GARMENT_FRONT",
   "GARMENT_BACK",
@@ -45,6 +45,7 @@ const mediaFiles: Record<WardrobePublicMediaSlot, string> = {
   MODEL_FRONT: "04-model-front.webp",
   MODEL_LEFT_PROFILE: "07-model-left-profile.webp",
   MODEL_REAR_THREE_QUARTER: "05-model-rear-three-quarter.webp",
+  MODEL_REAR_MIRROR: "09-model-rear-mirror.webp",
   MODEL_DETAIL: "08-model-detail.webp",
   CONSTRUCTION_DETAIL: "08-construction-detail.webp",
   FABRIC_DETAIL: "06-fabric-detail.webp",
@@ -57,6 +58,7 @@ const revokedModelFrontSlugs = new Set([
 const supplementalModelSlots = [
   "MODEL_LEFT_PROFILE",
   "MODEL_REAR_THREE_QUARTER",
+  "MODEL_REAR_MIRROR",
   "MODEL_DETAIL",
 ] as const satisfies readonly WardrobePublicMediaSlot[];
 

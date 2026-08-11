@@ -43,7 +43,7 @@ export const WARDROBE_APPROVED_MODEL_FRONT_SLUGS = Object.freeze([
 
 type WardrobeSupplementalModelSlot = Extract<
   WardrobePublicMediaSlot,
-  "MODEL_LEFT_PROFILE" | "MODEL_REAR_THREE_QUARTER" | "MODEL_DETAIL"
+  "MODEL_LEFT_PROFILE" | "MODEL_REAR_THREE_QUARTER" | "MODEL_REAR_MIRROR" | "MODEL_DETAIL"
 >;
 
 export const WARDROBE_APPROVED_MODEL_SUPPLEMENTAL_SLOTS = Object.freeze({
@@ -75,12 +75,14 @@ const modelMediaSlots = new Set<WardrobePublicMediaSlot>([
   "MODEL_FRONT",
   "MODEL_LEFT_PROFILE",
   "MODEL_REAR_THREE_QUARTER",
+  "MODEL_REAR_MIRROR",
   "MODEL_DETAIL",
 ]);
 
 const supplementalModelFiles: Record<WardrobeSupplementalModelSlot, string> = {
   MODEL_LEFT_PROFILE: "07-model-left-profile.webp",
   MODEL_REAR_THREE_QUARTER: "05-model-rear-three-quarter.webp",
+  MODEL_REAR_MIRROR: "09-model-rear-mirror.webp",
   MODEL_DETAIL: "08-model-detail.webp",
 };
 

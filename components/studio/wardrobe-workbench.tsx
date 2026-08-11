@@ -126,7 +126,7 @@ function GarmentIntakeDialog({
           <div className="studio-form-grid">
             <label className="studio-field"><span>SKU</span><input name="sku" placeholder="JUW-101" required /></label>
             <label className="studio-field"><span>Garment name</span><input name="title" placeholder="Cocoa bias dress" required /></label>
-            <label className="studio-field"><span>Category</span><select name="category" defaultValue="Dress"><option>Dress</option><option>Shirt</option><option>Knitwear</option><option>Skirt</option><option>Trousers</option></select></label>
+            <label className="studio-field"><span>Category</span><select name="category" defaultValue="Dress"><option>Dress</option><option>Set</option><option>Shirt</option><option>Knitwear</option><option>Skirt</option><option>Trousers</option></select></label>
             <label className="studio-field"><span>Colour</span><input name="colour" placeholder="Cocoa" required /></label>
             <label className="studio-field"><span>Tagged size</span><input name="size" placeholder="UK 12" required /></label>
             <label className="studio-field"><span>Fit</span><input name="fit" placeholder="Relaxed 10–12" required /></label>
