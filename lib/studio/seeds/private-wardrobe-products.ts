@@ -303,6 +303,28 @@ export const PENDING_WARDROBE_PRODUCT_CONTRACTS: readonly PendingWardrobeProduct
     ],
   }),
   pendingProduct({
+    sku: "JUW-021",
+    legacySkus: ["DYN-101"],
+    slug: "cropped-denim-jacket-black-legging-look",
+    title: "Cropped Denim Jacket and Black Legging Look",
+    category: "Set",
+    color: "Blue and black",
+    price: 24500,
+    description: "A casual two-piece look pairing a cropped blue denim jacket with black leggings.",
+    note: "The authentic Lulu rear-mirror view is ready. Capture the product front, product back and one construction detail before publishing.",
+    visual: "indigo",
+    approvedViews: ["MODEL_REAR_MIRROR"],
+    missingViews: ["GARMENT_FRONT", "GARMENT_BACK", "FABRIC_DETAIL"],
+    publicSafeMedia: [
+      {
+        view: "MODEL_REAR_MIRROR",
+        src: "/shop/products/cropped-denim-jacket-black-legging-look/09-model-rear-mirror.webp",
+        width: 1122,
+        height: 1402,
+      },
+    ],
+  }),
+  pendingProduct({
     sku: "JUW-022",
     legacySkus: ["DYN-102"],
     slug: "hot-pink-strapless-dress",
