@@ -83,7 +83,6 @@ const approvedSupplementalSources = new Map<string, readonly string[]>([
     "coral-drift-dress",
     "moss-square-knit",
     "cocoa-pleat-trouser",
-    "magenta-plunge-ruched-mini-dress",
   ].map((slug) => [
     slug,
     [
@@ -91,6 +90,14 @@ const approvedSupplementalSources = new Map<string, readonly string[]>([
       `/shop/products/${slug}/05-model-rear-three-quarter.webp`,
     ],
   ] as const),
+  [
+    "magenta-plunge-ruched-mini-dress",
+    [
+      "/shop/products/magenta-plunge-ruched-mini-dress/07-model-left-profile.webp",
+      "/shop/products/magenta-plunge-ruched-mini-dress/05-model-rear-three-quarter.webp",
+      "/shop/products/magenta-plunge-ruched-mini-dress/08-model-detail.webp",
+    ],
+  ],
   [
     "silver-off-shoulder-mermaid-dress",
     ["/shop/products/silver-off-shoulder-mermaid-dress/05-model-rear-three-quarter.webp"],

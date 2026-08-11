@@ -24,7 +24,7 @@ import {
 } from "../scripts/shop-db/release-core.mjs";
 
 const repositoryRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
-const expectedChecksum = "c7e8d47034bb8a619961a8d1302b170bcccd089b02a1c0a982094e0e68de0909";
+const expectedChecksum = "7844c8a7ccdab8b5b6a446085dc0f39c958ad9315964542ff8c78483b04291e3";
 const legacySkuRenames = Object.fromEntries(
   Array.from({ length: 12 }, (_, index) => [
     `DYN-${String(index + 81).padStart(3, "0")}`,
@@ -90,6 +90,40 @@ test("the checked-in manifest validates all 16 public products and immutable SKU
       modelAnchorId: "lulu-v3",
     }],
   );
+  const magenta = SHOP_CATALOGUE_MANIFEST.products.find((product) => product.sku === "JUW-010");
+  assert.ok(magenta);
+  assert.deepEqual(magenta.modelAnchor, {
+    id: "lulu-v2",
+    src: "/shop/model/lulu-v2-approved.png",
+  });
+  assert.deepEqual(
+    magenta.media.filter((media) => media.slot.startsWith("MODEL_")),
+    [
+      {
+        slot: "MODEL_LEFT_PROFILE",
+        src: "/shop/products/magenta-plunge-ruched-mini-dress/07-model-left-profile.webp",
+        modelAnchorId: "lulu-v2",
+      },
+      {
+        slot: "MODEL_REAR_THREE_QUARTER",
+        src: "/shop/products/magenta-plunge-ruched-mini-dress/05-model-rear-three-quarter.webp",
+        modelAnchorId: "lulu-v2",
+      },
+      {
+        slot: "MODEL_DETAIL",
+        src: "/shop/products/magenta-plunge-ruched-mini-dress/08-model-detail.webp",
+        modelAnchorId: "lulu-v2",
+      },
+    ],
+  );
+  assert.deepEqual(magenta.initialInventory, {
+    availability: "AVAILABLE",
+    onHand: 1,
+    reserved: 0,
+    sold: 0,
+    returned: 0,
+    writeOff: 0,
+  });
 });
 
 test("the release manifest exactly matches the approved browser presentation seeds", () => {

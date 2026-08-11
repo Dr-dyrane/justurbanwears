@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "catalogueRevision": "2026-08-11-catalogue-09",
-  "catalogueChecksum": "c7e8d47034bb8a619961a8d1302b170bcccd089b02a1c0a982094e0e68de0909",
-  "cataloguePresentationChecksum": "0a6d55ad41c444bb6290ecd71fe9b3c3bb884fc25c6bf3d4a7a4588db914b774",
+  "catalogueRevision": "2026-08-11-catalogue-10",
+  "catalogueChecksum": "7844c8a7ccdab8b5b6a446085dc0f39c958ad9315964542ff8c78483b04291e3",
+  "cataloguePresentationChecksum": "4f4c0c29f79ab30c7221f337baf1923138fb562cac2b278ca6ecb5a83e054a3b",
   "assets": [
     {
       "sourcePath": "/shop/products/cocoa-cowl-gathered-midi-dress/01-garment-front.webp",
@@ -99,6 +99,15 @@
       "pathname": "shop/catalogue/401747a01c6cb15772cc594368440465c370f6dcbf655ec1ad04b53e5dbcf6b0/products/ivory-rib-knit-fitted-midi-dress/07-model-left-profile.webp",
       "sha256": "401747a01c6cb15772cc594368440465c370f6dcbf655ec1ad04b53e5dbcf6b0",
       "size": 186464,
+      "contentType": "image/webp",
+      "width": 972,
+      "height": 1619
+    },
+    {
+      "sourcePath": "/shop/products/magenta-plunge-ruched-mini-dress/08-model-detail.webp",
+      "pathname": "shop/catalogue/5b60a54faf31a7964f6f839b8be7842a7a8206ba2ff88ebf5fd0af30d14a36ea/products/magenta-plunge-ruched-mini-dress/08-model-detail.webp",
+      "sha256": "5b60a54faf31a7964f6f839b8be7842a7a8206ba2ff88ebf5fd0af30d14a36ea",
+      "size": 72746,
       "contentType": "image/webp",
       "width": 972,
       "height": 1619

@@ -111,6 +111,11 @@ const approvedProducts: readonly ApprovedProductMedia[] = [
         src: "/shop/products/magenta-plunge-ruched-mini-dress/05-model-rear-three-quarter.webp",
         sha256: "5cb0e4ad5d444cb4ad7d1d4f510cb1f978fc88cb26f1d688865468640905fb05",
       },
+      {
+        slot: "MODEL_DETAIL",
+        src: "/shop/products/magenta-plunge-ruched-mini-dress/08-model-detail.webp",
+        sha256: "5b60a54faf31a7964f6f839b8be7842a7a8206ba2ff88ebf5fd0af30d14a36ea",
+      },
     ],
   },
   {
@@ -309,7 +314,7 @@ test("orders product media, an approved front when present, then supplemental Lu
 });
 
 test("migrates stored v5 supplemental views without resetting operator edits", () => {
-  assert.equal(WARDROBE_PUBLIC_VIEW_SCHEMA_VERSION, 15);
+  assert.equal(WARDROBE_PUBLIC_VIEW_SCHEMA_VERSION, 16);
 
   for (const [index, approved] of approvedProducts.filter(
     (product) => product.views.length > 0,
@@ -355,20 +360,20 @@ test("migrates stored v5 supplemental views without resetting operator edits", (
   }
 });
 
-test("migrates an existing v6 Magenta row to approved supplemental views", () => {
+test("migrates an existing v15 Magenta row by appending only the approved detail", () => {
   const magenta = WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS.find(
     (product) => product.slug === "magenta-plunge-ruched-mini-dress",
   );
   assert.ok(magenta);
-  const productOnlyMedia = magenta.media.filter((item) => !item.slot.startsWith("MODEL_"));
+  const catalogue09Media = magenta.media.filter((item) => item.slot !== "MODEL_DETAIL");
   const parsed = parseStoredWardrobePublicView(JSON.stringify({
-    version: 6,
+    version: 15,
     data: [{
       ...magenta,
       name: "Operator Magenta",
       price: 22800,
       note: "Operator-authored Magenta note.",
-      media: productOnlyMedia,
+      media: catalogue09Media,
     }],
     managedSlugs: [magenta.slug],
   }));
@@ -381,7 +386,7 @@ test("migrates an existing v6 Magenta row to approved supplemental views", () =>
   const approvedMagenta = approvedProducts.find((product) => product.slug === magenta.slug);
   assert.ok(approvedMagenta);
   assert.deepEqual(
-    parsed.products[0].media.slice(-2),
+    parsed.products[0].media.slice(-approvedMagenta.views.length),
     approvedMagenta.views.map(({ slot, src }) => ({ slot, src, modelAnchorId: "lulu-v2" })),
   );
   const shopProduct = shopProducts.find((product) => product.slug === magenta.slug);

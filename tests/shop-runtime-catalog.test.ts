@@ -23,6 +23,7 @@ import {
   SHOP_PUBLIC_MEDIA_CATALOGUE_CHECKSUM,
   SHOP_PUBLIC_MEDIA_PRESENTATION_CHECKSUM,
   SHOP_PUBLIC_MEDIA_REVISION,
+  SHOP_PUBLIC_MEDIA_SOURCE_ASSETS,
   isSafeShopProductMediaUrl,
   resolveShopPublicMediaUrl,
 } from "../lib/shop/public-media";
@@ -89,11 +90,25 @@ test("the public Blob release contains only exact manifest media and verifies lo
     SHOP_PUBLIC_MEDIA_PRESENTATION_CHECKSUM,
     cataloguePresentationChecksum(SHOP_CATALOGUE_MANIFEST),
   );
-  assert.equal(plan.length, 91);
+  assert.equal(plan.length, 92);
   assert.equal(SHOP_PUBLIC_MEDIA_ASSETS.length, plan.length);
   assert.equal(
     plan.filter((asset) => asset.sourcePath.startsWith("/shop/products/")).length,
-    90,
+    91,
+  );
+  assert.deepEqual(
+    SHOP_PUBLIC_MEDIA_SOURCE_ASSETS.find(({ sourcePath }) =>
+      sourcePath === "/shop/products/magenta-plunge-ruched-mini-dress/08-model-detail.webp"
+    ),
+    {
+      sourcePath: "/shop/products/magenta-plunge-ruched-mini-dress/08-model-detail.webp",
+      pathname: "shop/catalogue/5b60a54faf31a7964f6f839b8be7842a7a8206ba2ff88ebf5fd0af30d14a36ea/products/magenta-plunge-ruched-mini-dress/08-model-detail.webp",
+      sha256: "5b60a54faf31a7964f6f839b8be7842a7a8206ba2ff88ebf5fd0af30d14a36ea",
+      size: 72746,
+      contentType: "image/webp",
+      width: 972,
+      height: 1619,
+    },
   );
   assert.equal(
     plan.some((asset) => asset.sourcePath.endsWith("silver-off-shoulder-mermaid-dress/04-model-front.webp")),

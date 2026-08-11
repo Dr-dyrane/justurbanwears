@@ -87,7 +87,7 @@ function presentation(product) {
  */
 export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
   schemaVersion: 2,
-  revision: "2026-08-11-catalogue-09",
+  revision: "2026-08-11-catalogue-10",
   products: Object.freeze([
     presentation({
       slug: "coral-drift-dress",
@@ -311,7 +311,7 @@ export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
       story: "Magenta carries the impact while the gathered construction holds the silhouette close. Built for a direct, uncomplicated night look.",
       details: ["Plunge neckline", "Ruched body", "Mini length", "Vivid magenta finish"],
       measurements: [],
-      mediaSlots: ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
+      mediaSlots: ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER", "MODEL_DETAIL"],
     }),
     presentation({
       slug: "silver-off-shoulder-mermaid-dress",

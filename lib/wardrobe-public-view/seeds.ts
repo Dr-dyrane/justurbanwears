@@ -51,7 +51,11 @@ export const WARDROBE_APPROVED_MODEL_SUPPLEMENTAL_SLOTS = Object.freeze({
   "coral-drift-dress": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "moss-square-knit": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "cocoa-pleat-trouser": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
-  "magenta-plunge-ruched-mini-dress": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
+  "magenta-plunge-ruched-mini-dress": [
+    "MODEL_LEFT_PROFILE",
+    "MODEL_REAR_THREE_QUARTER",
+    "MODEL_DETAIL",
+  ],
   "silver-off-shoulder-mermaid-dress": ["MODEL_REAR_THREE_QUARTER"],
   "orchid-beaded-column-gown": ["MODEL_DETAIL"],
   "sage-open-back-high-slit-maxi-dress": ["MODEL_REAR_THREE_QUARTER"],
