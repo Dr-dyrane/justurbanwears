@@ -8,19 +8,27 @@ import type {
   ShopCheckoutFailureReason,
   ShopCheckoutRequest,
 } from "../../lib/shop/domain/entities";
+import { createWhatsAppOrderUrl } from "../../lib/shop/whatsapp-order";
 import { ShopActionButton, ShopActionLink } from "./atoms/action";
 import { LocalCommerceDisclosure } from "./atoms/status";
 import { ShopDeliveryLocation } from "./location/shop-delivery-location";
 import { ProductVisual } from "./product-visual";
 import { useShop } from "./shop-provider";
 
-export function ShopCheckout({ mapboxAccessToken }: { mapboxAccessToken: string }) {
+export function ShopCheckout({
+  mapboxAccessToken,
+  whatsappOrderNumber,
+}: {
+  mapboxAccessToken: string;
+  whatsappOrderNumber: string | null;
+}) {
   const {
     bag,
     beginCheckout,
     closeCheckout,
     getProduct,
     hydration,
+    isOnline,
     lifecycle,
     saveCheckout,
   } = useShop();
@@ -34,6 +42,7 @@ export function ShopCheckout({ mapboxAccessToken }: { mapboxAccessToken: string 
   const delivery = shopDeliveryOptions.find((item) => item.id === deliveryId) ?? shopDeliveryOptions[0];
   const subtotal = lines.reduce((sum, line) => sum + line.product.price, 0);
   const isSaving = lifecycle === "saving-checkout";
+  const shouldOfferWhatsApp = Boolean(whatsappOrderNumber && isOnline);
 
   useEffect(() => {
     beginCheckout();
@@ -54,6 +63,11 @@ export function ShopCheckout({ mapboxAccessToken }: { mapboxAccessToken: string 
     setFormNotice("");
     const form = new FormData(event.currentTarget);
     const field = (name: string) => String(form.get(name) ?? "");
+    const contact: ShopCheckoutRequest["contact"] = {
+      name: field("name"),
+      email: field("email"),
+      phone: field("phone"),
+    };
     const fulfillment: ShopCheckoutRequest["fulfillment"] = deliveryId === "pickup"
       ? { kind: "PICKUP", optionId: "pickup" }
       : {
@@ -66,19 +80,38 @@ export function ShopCheckout({ mapboxAccessToken }: { mapboxAccessToken: string 
             country: "Nigeria",
           },
         };
-    const result = await saveCheckout({
-      contact: {
-        name: field("name"),
-        email: field("email"),
-        phone: field("phone"),
-      },
-      fulfillment,
-    });
+    const result = await saveCheckout({ contact, fulfillment });
     if (result.ok === false) {
       setFormNotice(checkoutNotice(result.reason));
       return;
     }
-    window.location.assign(`/shop/orders/${result.orderId}`);
+    const whatsappUrl = createWhatsAppOrderUrl(shouldOfferWhatsApp ? whatsappOrderNumber : null, {
+      reference: result.orderId,
+      contact,
+      fulfillment: fulfillment.kind === "PICKUP"
+        ? {
+            kind: "PICKUP",
+            label: delivery.label,
+            estimate: delivery.estimate,
+          }
+        : {
+            kind: "DELIVERY",
+            label: delivery.label,
+            estimate: delivery.estimate,
+            address: fulfillment.address,
+          },
+      lines: lines.map(({ product }) => ({
+        name: product.name,
+        sku: product.sku,
+        taggedSize: product.taggedSize,
+        unitPrice: product.price,
+        quantity: 1,
+      })),
+      subtotal,
+      deliveryFee: delivery.fee,
+      total: subtotal + delivery.fee,
+    });
+    window.location.assign(whatsappUrl ?? `/shop/orders/${result.orderId}`);
   }
 
   if (hydration === "idle" || hydration === "restoring") {
@@ -214,9 +247,15 @@ export function ShopCheckout({ mapboxAccessToken }: { mapboxAccessToken: string 
             <div className="shop-summary-total"><dt>Total</dt><dd>{formatNaira(subtotal + delivery.fee)}</dd></div>
           </dl>
           <ShopActionButton disabled={isSaving} type="submit">
-            {isSaving ? "Saving…" : "Save checkout"}
+            {isSaving ? "Saving…" : shouldOfferWhatsApp ? "Continue on WhatsApp" : "Save checkout"}
           </ShopActionButton>
-          <LocalCommerceDisclosure className="shop-order-boundary-disclosure" />
+          {shouldOfferWhatsApp ? (
+            <p className="shop-local-disclosure shop-order-boundary-disclosure">
+              Payment is required. Your checkout is saved on this device, then WhatsApp opens with an order for you to review and send.
+            </p>
+          ) : (
+            <LocalCommerceDisclosure className="shop-order-boundary-disclosure" />
+          )}
           <p className="shop-action-note" aria-live="polite" role="status">{formNotice}</p>
         </aside>
       </form>
