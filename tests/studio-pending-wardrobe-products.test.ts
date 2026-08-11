@@ -1,5 +1,8 @@
 import assert from "node:assert/strict";
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import test from "node:test";
+import sharp from "sharp";
 import { validateManifest } from "../scripts/shop-db/release-core.mjs";
 import { shopCategories } from "../lib/shop/catalog";
 import { wardrobePublicProductToShopProduct } from "../lib/shop/wardrobe-public-view";
@@ -20,6 +23,7 @@ const expected = new Map<string, {
 }>([
   ["JUW-013", { price: 24500, category: "Set", missing: ["GARMENT_BACK", "FABRIC_DETAIL"] }],
   ["JUW-015", { price: 24500, category: "Dress", missing: ["GARMENT_FRONT", "GARMENT_BACK", "FABRIC_DETAIL"] }],
+  ["JUW-017", { price: 24500, category: "Set", missing: ["GARMENT_FRONT", "GARMENT_BACK", "FABRIC_DETAIL"] }],
   ["JUW-018", { price: 22000, category: "Dress", missing: ["GARMENT_FRONT", "GARMENT_BACK"] }],
   ["JUW-019", { price: 24500, category: "Dress", missing: ["GARMENT_FRONT", "GARMENT_BACK"] }],
   ["JUW-020", { price: 24500, category: "Set", missing: ["GARMENT_FRONT", "GARMENT_BACK"] }],
@@ -89,6 +93,37 @@ test("keeps JUW-015 approved model angles distinct from missing product captures
   assert.ok(garment);
   assert.equal(seeded.listings.some(({ garmentId }) => garmentId === garment.id), false);
   assert.equal(selectWardrobePublicView(seeded).some(({ sku }) => sku === "JUW-015"), false);
+});
+
+test("admits JUW-017's real Lulu front while unresolved product construction stays explicit", async () => {
+  const contract = PENDING_WARDROBE_PRODUCT_CONTRACTS.find(({ sku }) => sku === "JUW-017");
+  assert.ok(contract);
+  assert.deepEqual(contract.approvedViews, ["MODEL_FRONT"]);
+  assert.deepEqual(contract.missingViews, ["GARMENT_FRONT", "GARMENT_BACK", "FABRIC_DETAIL"]);
+  assert.deepEqual(contract.garment.references, []);
+  assert.equal(contract.garment.mediaState, "DRAFT");
+  assert.doesNotMatch(contract.garment.publicDescription, /skirt|shorts/iu);
+
+  const assetPath = join(
+    process.cwd(),
+    "public/shop/products/white-tailored-vest-mini-set/04-model-front.webp",
+  );
+  assert.equal(existsSync(assetPath), true);
+  const metadata = await sharp(readFileSync(assetPath)).metadata();
+  assert.equal(metadata.format, "webp");
+  assert.equal(metadata.width, 1122);
+  assert.equal(metadata.height, 1402);
+  assert.equal(metadata.channels, 3);
+  assert.equal(metadata.exif, undefined);
+  assert.equal(metadata.icc, undefined);
+  assert.equal(metadata.xmp, undefined);
+  assert.equal(metadata.iptc, undefined);
+
+  const seeded = mergeWardrobeAuthoritySeeds(createEmptyStudioSnapshot());
+  const garment = seeded.garments.find(({ sku }) => sku === "JUW-017");
+  assert.ok(garment);
+  assert.equal(seeded.listings.some(({ garmentId }) => garmentId === garment.id), false);
+  assert.equal(selectWardrobePublicView(seeded).some(({ sku }) => sku === "JUW-017"), false);
 });
 
 test("keeps JUW-019 approved upper views distinct from missing full product captures", () => {
