@@ -346,6 +346,28 @@ export const PENDING_WARDROBE_PRODUCT_CONTRACTS: readonly PendingWardrobeProduct
       },
     ],
   }),
+  pendingProduct({
+    sku: "JUW-024",
+    legacySkus: ["DYN-104"],
+    slug: "pale-bandeau-car-look",
+    title: "Pale Gathered Bandeau Top",
+    category: "Shirt",
+    color: "Pale tone · exact colour to confirm",
+    price: 16500,
+    description: "A gathered strapless bandeau top.",
+    note: "The Lulu upper-front detail is ready. Capture the full product front, product back and one fabric detail before publishing; confirm the exact colour at intake.",
+    visual: "ivory",
+    approvedViews: ["MODEL_DETAIL"],
+    missingViews: ["GARMENT_FRONT", "GARMENT_BACK", "FABRIC_DETAIL"],
+    publicSafeMedia: [
+      {
+        view: "MODEL_DETAIL",
+        src: "/shop/products/pale-bandeau-car-look/08-model-detail.webp",
+        width: 972,
+        height: 1619,
+      },
+    ],
+  }),
 ]);
 
 function normalizedSku(value: string) {

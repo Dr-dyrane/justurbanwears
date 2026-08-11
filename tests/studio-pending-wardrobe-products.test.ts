@@ -18,7 +18,7 @@ import type { WardrobePublicProduct } from "../lib/wardrobe-public-view/domain/e
 
 const expected = new Map<string, {
   price: number;
-  category: "Set" | "Dress";
+  category: "Set" | "Dress" | "Shirt";
   missing: readonly string[];
 }>([
   ["JUW-013", { price: 24500, category: "Set", missing: [] }],
@@ -29,6 +29,7 @@ const expected = new Map<string, {
   ["JUW-020", { price: 24500, category: "Set", missing: ["GARMENT_FRONT", "GARMENT_BACK"] }],
   ["JUW-021", { price: 24500, category: "Set", missing: ["GARMENT_FRONT", "GARMENT_BACK", "FABRIC_DETAIL"] }],
   ["JUW-022", { price: 24500, category: "Dress", missing: ["GARMENT_FRONT", "GARMENT_BACK", "FABRIC_DETAIL"] }],
+  ["JUW-024", { price: 16500, category: "Shirt", missing: ["GARMENT_FRONT", "GARMENT_BACK", "FABRIC_DETAIL"] }],
 ] as const);
 
 test("seeds approved business facts while media remains the only readiness gap", () => {

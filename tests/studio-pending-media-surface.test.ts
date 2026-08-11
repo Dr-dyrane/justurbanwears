@@ -28,6 +28,7 @@ const expectedMedia = new Map<string, readonly string[]>([
   ["JUW-020", ["MODEL_REAR_THREE_QUARTER"]],
   ["JUW-021", ["MODEL_REAR_MIRROR"]],
   ["JUW-022", ["MODEL_DETAIL"]],
+  ["JUW-024", ["MODEL_DETAIL"]],
 ] as const);
 
 const readImage = sharp as unknown as (input: Buffer) => {
