@@ -6,6 +6,7 @@ export type WardrobePublicMediaSlot =
   | "MODEL_LEFT_PROFILE"
   | "MODEL_REAR_THREE_QUARTER"
   | "MODEL_DETAIL"
+  | "CONSTRUCTION_DETAIL"
   | "FABRIC_DETAIL";
 
 export type WardrobePublicModelAnchorId = "lulu-v2" | "lulu-v3";
@@ -48,7 +49,7 @@ export interface WardrobePublicProduct {
   media: WardrobePublicMedia[];
 }
 
-export const WARDROBE_PUBLIC_VIEW_SCHEMA_VERSION = 11 as const;
+export const WARDROBE_PUBLIC_VIEW_SCHEMA_VERSION = 12 as const;
 
 export interface WardrobePublicViewSnapshot {
   products: WardrobePublicProduct[];

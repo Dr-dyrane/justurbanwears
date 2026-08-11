@@ -20,6 +20,7 @@ const mediaPresentation: Record<WardrobePublicMedia["slot"], ProductMediaPresent
   MODEL_LEFT_PROFILE: "model",
   MODEL_REAR_THREE_QUARTER: "model",
   MODEL_DETAIL: "model",
+  CONSTRUCTION_DETAIL: "garment",
   FABRIC_DETAIL: "garment",
 };
 
@@ -31,6 +32,7 @@ const mediaView: Record<WardrobePublicMedia["slot"], ProductMediaView> = {
   MODEL_LEFT_PROFILE: "side",
   MODEL_REAR_THREE_QUARTER: "three-quarter",
   MODEL_DETAIL: "detail",
+  CONSTRUCTION_DETAIL: "detail",
   FABRIC_DETAIL: "detail",
 };
 
@@ -42,6 +44,7 @@ const mediaLabel: Record<WardrobePublicMedia["slot"], string> = {
   MODEL_LEFT_PROFILE: "On Lulu · left profile",
   MODEL_REAR_THREE_QUARTER: "On Lulu · right rear three-quarter",
   MODEL_DETAIL: "On Lulu · styled detail",
+  CONSTRUCTION_DETAIL: "Construction detail",
   FABRIC_DETAIL: "Fabric detail",
 };
 
@@ -50,6 +53,10 @@ function publicMedia(product: WardrobePublicProduct, item: WardrobePublicMedia):
   const view = mediaView[item.slot];
   const label = mediaLabel[item.slot];
   const isModel = item.slot.startsWith("MODEL_");
+  const dimensions = {
+    width: isModel && product.slug === "ivory-tie-skirt" ? 971 : isModel ? 972 : 1122,
+    height: isModel ? 1619 : 1402,
+  };
   return {
     id: item.slot.toLowerCase().replaceAll("_", "-"),
     src: item.src,
@@ -57,8 +64,7 @@ function publicMedia(product: WardrobePublicProduct, item: WardrobePublicMedia):
     label,
     presentation,
     view,
-    width: isModel && product.slug === "ivory-tie-skirt" ? 971 : isModel ? 972 : 1122,
-    height: isModel ? 1619 : 1402,
+    ...dimensions,
     modelAnchorId: isModel ? item.modelAnchorId : undefined,
   };
 }

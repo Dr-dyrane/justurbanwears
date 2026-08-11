@@ -121,6 +121,25 @@ export const WARDROBE_DROP_01_PRODUCTS = [
     details: ["Strapless neckline", "Fitted mini length", "Gathered hip", "Abstract multicolor print"],
     measurements: [],
   },
+  {
+    slug: "sage-open-back-high-slit-maxi-dress",
+    sku: "JUW-014",
+    name: "Sage Open-Back High-Slit Maxi Dress",
+    category: "Dresses",
+    price: 28500,
+    taggedSize: "Size on request",
+    fit: "Measurements confirmed before payment",
+    condition: "Excellent · real-worn wardrobe piece",
+    colour: "Soft sage",
+    availability: "AVAILABLE",
+    drop: "Drop 01",
+    tone: "moss",
+    silhouette: "dress",
+    note: "A sage long-sleeve maxi shaped with side ruching, a tied open back, and a high slit.",
+    story: "The restrained sage colour holds a dramatic back: an oval opening secured with ties, balanced by a fitted ruched line and high side slit.",
+    details: ["Round neckline", "Tied oval open back", "Side ruching", "High side slit"],
+    measurements: [],
+  },
 ] as const satisfies readonly WardrobeDrop01Product[];
 
 /** Only identity-gated frames that actually exist may cross into Shop. */
@@ -128,4 +147,5 @@ export const WARDROBE_DROP_01_APPROVED_MODEL_FRONT_SLUGS = Object.freeze([
   "blush-scoop-mini-dress",
   "orchid-beaded-column-gown",
   "multicolor-abstract-strapless-mini-dress",
+  "sage-open-back-high-slit-maxi-dress",
 ] as const);

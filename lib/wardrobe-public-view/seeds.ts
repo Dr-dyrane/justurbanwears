@@ -28,6 +28,7 @@ export const WARDROBE_APPROVED_V3_MODEL_FRONT_SLUGS = Object.freeze([
   "moss-square-knit",
   "cocoa-pleat-trouser",
   "salmon-camp-shirt",
+  "sage-open-back-high-slit-maxi-dress",
 ] as const);
 
 export const WARDROBE_APPROVED_MODEL_FRONT_SLUGS = Object.freeze([
@@ -52,6 +53,7 @@ export const WARDROBE_APPROVED_MODEL_SUPPLEMENTAL_SLOTS = Object.freeze({
   "magenta-plunge-ruched-mini-dress": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "silver-off-shoulder-mermaid-dress": ["MODEL_REAR_THREE_QUARTER"],
   "orchid-beaded-column-gown": ["MODEL_DETAIL"],
+  "sage-open-back-high-slit-maxi-dress": ["MODEL_REAR_THREE_QUARTER"],
 } as const satisfies Record<string, readonly WardrobeSupplementalModelSlot[]>);
 
 export function getApprovedModelSupplementalSlots(
@@ -66,6 +68,8 @@ export function getApprovedModelSupplementalSlots(
 
 const modelFrontSlugs = new Set<string>(WARDROBE_APPROVED_MODEL_FRONT_SLUGS);
 const v3ModelFrontSlugs = new Set<string>(WARDROBE_APPROVED_V3_MODEL_FRONT_SLUGS);
+const v3SupplementalModelSlugs = new Set(["sage-open-back-high-slit-maxi-dress"]);
+const constructionDetailSlugs = new Set(["sage-open-back-high-slit-maxi-dress"]);
 
 const modelMediaSlots = new Set<WardrobePublicMediaSlot>([
   "MODEL_FRONT",
@@ -85,7 +89,10 @@ export function getApprovedModelAnchorId(
   slot: WardrobePublicMediaSlot,
 ): WardrobePublicModelAnchorId | undefined {
   if (!modelMediaSlots.has(slot)) return undefined;
-  return slot === "MODEL_FRONT" && v3ModelFrontSlugs.has(slug) ? "lulu-v3" : "lulu-v2";
+  return (
+    (slot === "MODEL_FRONT" && v3ModelFrontSlugs.has(slug))
+    || (slot !== "MODEL_FRONT" && v3SupplementalModelSlugs.has(slug))
+  ) ? "lulu-v3" : "lulu-v2";
 }
 
 export function getWardrobePublicModelAnchor(slug: string): WardrobePublicModelAnchor {
@@ -115,7 +122,9 @@ function migrationMedia(slug: string): WardrobePublicMedia[] {
     ...(modelFrontSlugs.has(slug)
       ? [migrationFrame(slug, "MODEL_FRONT", "04-model-front.webp")]
       : []),
-    migrationFrame(slug, "FABRIC_DETAIL", "06-fabric-detail.webp"),
+    constructionDetailSlugs.has(slug)
+      ? migrationFrame(slug, "CONSTRUCTION_DETAIL", "08-construction-detail.webp")
+      : migrationFrame(slug, "FABRIC_DETAIL", "06-fabric-detail.webp"),
     ...getApprovedModelSupplementalSlots(slug).map((slot) => ({
       ...migrationFrame(slug, slot, supplementalModelFiles[slot]),
     })),

@@ -22,6 +22,7 @@ const LEGACY_AUTHORITY = new Map<
   ["JUW-010", { id: "wardrobe-reviewed-draft-004", skus: ["DYN-090", "REVIEW-MAGENTA-PLUNGE-004"] }],
   ["JUW-011", { id: "wardrobe-reviewed-draft-005", skus: ["DYN-091", "REVIEW-SILVER-MERMAID-005"] }],
   ["JUW-012", { id: "wardrobe-reviewed-draft-006", skus: ["DYN-092", "REVIEW-ABSTRACT-STRAPLESS-006"] }],
+  ["JUW-014", { id: "wardrobe-private-draft-juw-014", skus: ["DYN-094"] }],
 ] as const);
 
 function studioCategory(category: (typeof WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS)[number]["category"]): GarmentCategory {
@@ -174,16 +175,24 @@ export function mergeWardrobeAuthoritySeeds(snapshot: StudioSnapshot): StudioSna
     if (existing) {
       garmentIdMap.set(seed.id, existing.id);
       if (
+        isLegacyAuthorityMatch(existing, seed)
+        && (
+          !existing.saleEligible
+          || existing.classificationState !== "READY"
+          || existing.mediaState !== "READY"
+          || existing.state === "DRAFT"
+        )
+      ) {
+        const index = garments.indexOf(existing);
+        garments[index] = promoteDrop01WardrobeRow(existing, seed);
+        promotedGarments.add(seed.id);
+      } else if (
         canonicalCatalogueSku(existing.sku) === canonicalCatalogueSku(seed.sku)
         && normalizedSku(existing.sku) !== normalizedSku(seed.sku)
       ) {
         const index = garments.indexOf(existing);
         garments[index] = { ...existing, sku: seed.sku };
         renamedGarments.add(seed.id);
-      } else if (isLegacyAuthorityMatch(existing, seed) && normalizedSku(existing.sku) !== normalizedSku(seed.sku)) {
-        const index = garments.indexOf(existing);
-        garments[index] = promoteDrop01WardrobeRow(existing, seed);
-        promotedGarments.add(seed.id);
       }
       continue;
     }

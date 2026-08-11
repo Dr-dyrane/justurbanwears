@@ -24,7 +24,7 @@ import {
 } from "../scripts/shop-db/release-core.mjs";
 
 const repositoryRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
-const expectedChecksum = "ebecdc5298335399d99573a57e6936f175a73f81f7db6133701f62e4a89b501a";
+const expectedChecksum = "6885bc1635e936cd4fb9a91ce195a3aab73d07d48e4dfca41077d7853a94ce3a";
 const legacySkuRenames = Object.fromEntries(
   Array.from({ length: 12 }, (_, index) => [
     `DYN-${String(index + 81).padStart(3, "0")}`,
@@ -70,14 +70,14 @@ function databaseCatalogueRows(manifest = SHOP_CATALOGUE_MANIFEST) {
   }));
 }
 
-test("the checked-in manifest validates all 12 public assets and immutable SKUs", () => {
+test("the checked-in manifest validates all 13 public products and immutable SKUs", () => {
   assert.deepEqual(validateManifest(SHOP_CATALOGUE_MANIFEST, { assetRoot: join(repositoryRoot, "public") }), {
     checksum: expectedChecksum,
-    productCount: 12,
+    productCount: 13,
   });
   assert.deepEqual(
     SHOP_CATALOGUE_MANIFEST.products.map((product) => product.sku),
-    Array.from({ length: 12 }, (_, index) => `JUW-${String(index + 1).padStart(3, "0")}`),
+    [...Array.from({ length: 12 }, (_, index) => `JUW-${String(index + 1).padStart(3, "0")}`), "JUW-014"],
   );
   const salmon = SHOP_CATALOGUE_MANIFEST.products.find((product) => product.sku === "JUW-006");
   assert.ok(salmon);
@@ -182,7 +182,7 @@ test("seed and descriptive sync never update operational inventory", () => {
   const options = { target: "preview", gitSha: "a".repeat(40) };
   const seed = buildCatalogueMutationPlan(SHOP_CATALOGUE_MANIFEST, { ...options, mode: "seed" });
   const sync = buildCatalogueMutationPlan(SHOP_CATALOGUE_MANIFEST, { ...options, mode: "descriptive-sync" });
-  assert.equal(seed.inventory.length, 12);
+  assert.equal(seed.inventory.length, 13);
   assert.ok(seed.inventory.every((query: { text: string }) => /on conflict \("sku"\) do nothing$/.test(query.text)));
   assert.ok(sync.inventory.every((query: { text: string }) => /on conflict \("sku"\) do nothing$/.test(query.text)));
   const updateClause = sync.catalogue[0].text.split("do update set ")[1];
@@ -196,7 +196,7 @@ test("the full release refreshes renamed legacy rows without changing inventory"
   const currentToLegacySku = new Map(
     Object.entries(legacySkuRenames).map(([legacySku, currentSku]) => [currentSku, legacySku]),
   );
-  const catalogueRows = new Map(databaseCatalogueRows().map((sourceRow) => {
+  const catalogueRows = new Map(databaseCatalogueRows().slice(0, 12).map((sourceRow) => {
     const row = clone(sourceRow);
     const legacySku = currentToLegacySku.get(row.sku);
     assert.ok(legacySku);
@@ -236,7 +236,9 @@ test("the full release refreshes renamed legacy rows without changing inventory"
     catalogueRows.set(currentSku, { ...catalogue, sku: currentSku });
     inventoryRows.set(currentSku, { ...inventory, sku: currentSku });
   }
-  const inventoryBeforePresentation = clone([...inventoryRows.values()]);
+  const inventoryBeforePresentation = new Map(
+    clone([...inventoryRows.values()]).map((row: { sku: string }) => [row.sku, row]),
+  );
 
   const plan = buildCatalogueMutationPlan(SHOP_CATALOGUE_MANIFEST, {
     mode: "descriptive-sync",
@@ -300,7 +302,18 @@ test("the full release refreshes renamed legacy rows without changing inventory"
     ),
     [],
   );
-  assert.deepEqual([...inventoryRows.values()], inventoryBeforePresentation);
+  for (const [sku, row] of inventoryBeforePresentation) {
+    assert.deepEqual(inventoryRows.get(sku), row);
+  }
+  assert.deepEqual(inventoryRows.get("JUW-014"), {
+    sku: "JUW-014",
+    availability: "AVAILABLE",
+    on_hand: 1,
+    reserved: 0,
+    sold: 0,
+    returned: 0,
+    write_off: 0,
+  });
   assert.equal(ledgerWrites.length, 1);
   assert.equal(ledgerWrites[0].at(-1), "descriptive-sync");
 });

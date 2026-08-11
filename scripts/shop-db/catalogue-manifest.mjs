@@ -12,7 +12,9 @@ const V3_MODEL_FRONT_SLUGS = new Set([
   "moss-square-knit",
   "cocoa-pleat-trouser",
   "salmon-camp-shirt",
+  "sage-open-back-high-slit-maxi-dress",
 ]);
+const V3_MODEL_SUPPLEMENTAL_SLUGS = new Set(["sage-open-back-high-slit-maxi-dress"]);
 const MODEL_MEDIA_SLOTS = new Set([
   "MODEL_FRONT",
   "MODEL_LEFT_PROFILE",
@@ -29,6 +31,7 @@ const mediaFileForSlot = Object.freeze({
   FABRIC_DETAIL: "06-fabric-detail.webp",
   MODEL_LEFT_PROFILE: "07-model-left-profile.webp",
   MODEL_DETAIL: "08-model-detail.webp",
+  CONSTRUCTION_DETAIL: "08-construction-detail.webp",
 });
 
 const baseMedia = ["GARMENT_FRONT", "GARMENT_BACK", "MANNEQUIN_FRONT"];
@@ -38,9 +41,9 @@ function presentation(product) {
   const mediaSlots = [
     ...baseMedia,
     ...(presentationMediaSlots.includes("MODEL_FRONT") ? ["MODEL_FRONT"] : []),
-    "FABRIC_DETAIL",
+    presentationMediaSlots.includes("CONSTRUCTION_DETAIL") ? "CONSTRUCTION_DETAIL" : "FABRIC_DETAIL",
     ...presentationMediaSlots.filter((slot) => slot !== "MODEL_FRONT"),
-  ];
+  ].filter((slot, index, slots) => slots.indexOf(slot) === index);
   const initialInventory = product.availability === "SOLD"
     ? { availability: "SOLD", onHand: 0, reserved: 0, sold: 1, returned: 0, writeOff: 0 }
     : product.availability === "RESERVED"
@@ -57,7 +60,10 @@ function presentation(product) {
       src: `/shop/products/${product.slug}/${mediaFileForSlot[slot]}`,
       ...(MODEL_MEDIA_SLOTS.has(slot)
         ? {
-            modelAnchorId: slot === "MODEL_FRONT" && V3_MODEL_FRONT_SLUGS.has(product.slug)
+            modelAnchorId: (
+              (slot === "MODEL_FRONT" && V3_MODEL_FRONT_SLUGS.has(product.slug))
+              || (slot !== "MODEL_FRONT" && V3_MODEL_SUPPLEMENTAL_SLUGS.has(product.slug))
+            )
               ? "lulu-v3"
               : "lulu-v2",
           }
@@ -73,7 +79,7 @@ function presentation(product) {
  */
 export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
   schemaVersion: 2,
-  revision: "2026-08-11-catalogue-05",
+  revision: "2026-08-11-catalogue-06",
   products: Object.freeze([
     presentation({
       slug: "coral-drift-dress",
@@ -338,6 +344,26 @@ export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
       details: ["Strapless neckline", "Fitted mini length", "Gathered hip", "Abstract multicolor print"],
       measurements: [],
       mediaSlots: ["MODEL_FRONT"],
+    }),
+    presentation({
+      slug: "sage-open-back-high-slit-maxi-dress",
+      sku: "JUW-014",
+      name: "Sage Open-Back High-Slit Maxi Dress",
+      category: "Dresses",
+      price: 28500,
+      taggedSize: "Size on request",
+      fit: "Measurements confirmed before payment",
+      condition: "Excellent · real-worn wardrobe piece",
+      colour: "Soft sage",
+      availability: "AVAILABLE",
+      drop: "Drop 01",
+      tone: "moss",
+      silhouette: "dress",
+      note: "A sage long-sleeve maxi shaped with side ruching, a tied open back, and a high slit.",
+      story: "The restrained sage colour holds a dramatic back: an oval opening secured with ties, balanced by a fitted ruched line and high side slit.",
+      details: ["Round neckline", "Tied oval open back", "Side ruching", "High side slit"],
+      measurements: [],
+      mediaSlots: ["MODEL_FRONT", "CONSTRUCTION_DETAIL", "MODEL_REAR_THREE_QUARTER"],
     }),
   ]),
 });

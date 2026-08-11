@@ -3,7 +3,13 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import test from "node:test";
 import { WARDROBE_DROP_01_PRODUCTS } from "../lib/wardrobe-public-view/drop-01";
-import { WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS } from "../lib/wardrobe-public-view/seeds";
+import {
+  getApprovedModelSupplementalSlots,
+  WARDROBE_APPROVED_MODEL_FRONT_SLUGS,
+  WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS,
+} from "../lib/wardrobe-public-view/seeds";
+
+const approvedModelFrontSlugs = new Set<string>(WARDROBE_APPROVED_MODEL_FRONT_SLUGS);
 
 const expectedNames = [
   "Blush Scoop Mini Dress",
@@ -12,9 +18,10 @@ const expectedNames = [
   "Magenta Plunge Ruched Mini Dress",
   "Silver Off-Shoulder Mermaid Dress",
   "Multicolor Abstract Strapless Mini Dress",
+  "Sage Open-Back High-Slit Maxi Dress",
 ];
 
-test("the six wardrobe dresses are saleable Drop 01 rows, not a separate preview catalogue", () => {
+test("the seven wardrobe dresses are saleable Drop 01 rows, not a separate preview catalogue", () => {
   assert.deepEqual(WARDROBE_DROP_01_PRODUCTS.map((product) => product.name), expectedNames);
   for (const product of WARDROBE_DROP_01_PRODUCTS) {
     assert.equal(product.drop, "Drop 01");
@@ -26,15 +33,18 @@ test("the six wardrobe dresses are saleable Drop 01 rows, not a separate preview
 
   const releaseSlugs = new Set<string>(WARDROBE_DROP_01_PRODUCTS.map((product) => product.slug));
   const saleRows = WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS.filter((product) => releaseSlugs.has(product.slug));
-  assert.equal(saleRows.length, 6);
+  assert.equal(saleRows.length, 7);
   assert.deepEqual(saleRows.map((product) => product.slug), WARDROBE_DROP_01_PRODUCTS.map((product) => product.slug));
   for (const product of saleRows) {
     const expectedMedia = [
       "GARMENT_FRONT",
       "GARMENT_BACK",
       "MANNEQUIN_FRONT",
-      ...(product.slug === "magenta-plunge-ruched-mini-dress" ? [] : ["MODEL_FRONT"]),
-      "FABRIC_DETAIL",
+      ...(approvedModelFrontSlugs.has(product.slug) ? ["MODEL_FRONT"] : []),
+      ...(product.slug === "sage-open-back-high-slit-maxi-dress"
+        ? ["CONSTRUCTION_DETAIL"]
+        : ["FABRIC_DETAIL"]),
+      ...getApprovedModelSupplementalSlots(product.slug),
     ];
     assert.deepEqual(product.media.map((item) => item.slot), expectedMedia);
     assert.doesNotMatch(JSON.stringify(product), /storage\/models|source\/instagram|privateNote|references/i);

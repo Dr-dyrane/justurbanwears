@@ -15,14 +15,15 @@ import {
 import { canonicalCatalogueSku } from "../sku";
 import type { WardrobePublicViewRepository } from "../services/contracts";
 
-export const WARDROBE_PUBLIC_VIEW_STORAGE_KEY = "justurban-wears:wardrobe-public-view:v11";
+export const WARDROBE_PUBLIC_VIEW_STORAGE_KEY = "justurban-wears:wardrobe-public-view:v12";
 export const WARDROBE_PUBLIC_VIEW_CHANGE_EVENT = "justurban-wears:wardrobe-public-view:changed";
-export const PREVIOUS_WARDROBE_PUBLIC_VIEW_STORAGE_KEY = "justurban-wears:wardrobe-public-view:v10";
-export const OLDER_WARDROBE_PUBLIC_VIEW_STORAGE_KEY = "justurban-wears:wardrobe-public-view:v9";
-export const THIRD_OLDER_WARDROBE_PUBLIC_VIEW_STORAGE_KEY = "justurban-wears:wardrobe-public-view:v8";
-export const FOURTH_OLDER_WARDROBE_PUBLIC_VIEW_STORAGE_KEY = "justurban-wears:wardrobe-public-view:v7";
-export const FIFTH_OLDER_WARDROBE_PUBLIC_VIEW_STORAGE_KEY = "justurban-wears:wardrobe-public-view:v6";
-export const SIXTH_OLDER_WARDROBE_PUBLIC_VIEW_STORAGE_KEY = "justurban-wears:wardrobe-public-view:v5";
+export const PREVIOUS_WARDROBE_PUBLIC_VIEW_STORAGE_KEY = "justurban-wears:wardrobe-public-view:v11";
+export const OLDER_WARDROBE_PUBLIC_VIEW_STORAGE_KEY = "justurban-wears:wardrobe-public-view:v10";
+export const THIRD_OLDER_WARDROBE_PUBLIC_VIEW_STORAGE_KEY = "justurban-wears:wardrobe-public-view:v9";
+export const FOURTH_OLDER_WARDROBE_PUBLIC_VIEW_STORAGE_KEY = "justurban-wears:wardrobe-public-view:v8";
+export const FIFTH_OLDER_WARDROBE_PUBLIC_VIEW_STORAGE_KEY = "justurban-wears:wardrobe-public-view:v7";
+export const SIXTH_OLDER_WARDROBE_PUBLIC_VIEW_STORAGE_KEY = "justurban-wears:wardrobe-public-view:v6";
+export const SEVENTH_OLDER_WARDROBE_PUBLIC_VIEW_STORAGE_KEY = "justurban-wears:wardrobe-public-view:v5";
 export const EARLIEST_WARDROBE_PUBLIC_VIEW_STORAGE_KEY = "justurban-wears:wardrobe-public-view:v4";
 export const LEGACY_PUBLIC_CATALOG_STORAGE_KEY = "justurban-wears:catalog-projections:v2";
 
@@ -36,7 +37,6 @@ const requiredMediaSlots: WardrobePublicMediaSlot[] = [
   "GARMENT_FRONT",
   "GARMENT_BACK",
   "MANNEQUIN_FRONT",
-  "FABRIC_DETAIL",
 ];
 const mediaFiles: Record<WardrobePublicMediaSlot, string> = {
   GARMENT_FRONT: "01-garment-front.webp",
@@ -46,6 +46,7 @@ const mediaFiles: Record<WardrobePublicMediaSlot, string> = {
   MODEL_LEFT_PROFILE: "07-model-left-profile.webp",
   MODEL_REAR_THREE_QUARTER: "05-model-rear-three-quarter.webp",
   MODEL_DETAIL: "08-model-detail.webp",
+  CONSTRUCTION_DETAIL: "08-construction-detail.webp",
   FABRIC_DETAIL: "06-fabric-detail.webp",
 };
 const approvedModelFrontSlugs = new Set<string>(WARDROBE_APPROVED_MODEL_FRONT_SLUGS);
@@ -122,7 +123,7 @@ function migrateApprovedModelContract(media: unknown[], slug: string) {
       modelAnchorId: getApprovedModelAnchorId(slug, "MODEL_FRONT"),
     };
     const detailIndex = migrated.findIndex(
-      (item) => isRecord(item) && item.slot === "FABRIC_DETAIL",
+      (item) => isRecord(item) && ["FABRIC_DETAIL", "CONSTRUCTION_DETAIL"].includes(String(item.slot)),
     );
     migrated.splice(detailIndex < 0 ? migrated.length : detailIndex, 0, front);
   }
@@ -230,15 +231,17 @@ function parseProduct(
   if (media.length !== mediaCandidates.length) return null;
   const uniqueSlots = new Set(media.map((item) => item.slot));
   const hasRequiredFrames = requiredMediaSlots.every((slot) => uniqueSlots.has(slot));
+  const hasTruthfulDetail = uniqueSlots.has("FABRIC_DETAIL") !== uniqueSlots.has("CONSTRUCTION_DETAIL");
   const approvedSupplementalSlots = getApprovedModelSupplementalSlots(slug);
   const hasApprovedSupplementalViews = approvedSupplementalSlots.every((slot) =>
     uniqueSlots.has(slot)
   );
-  const expectedCount = requiredMediaSlots.length
+  const expectedCount = requiredMediaSlots.length + 1
     + (uniqueSlots.has("MODEL_FRONT") ? 1 : 0)
     + approvedSupplementalSlots.length;
   if (
     !hasRequiredFrames
+    || !hasTruthfulDetail
     || !hasApprovedSupplementalViews
     || media.length !== expectedCount
     || uniqueSlots.size !== expectedCount
@@ -283,6 +286,7 @@ export function parseStoredWardrobePublicView(raw: string | null): WardrobePubli
     const migrateVersion8 = envelope.version === 8;
     const migrateVersion9 = envelope.version === 9;
     const migrateVersion10 = envelope.version === 10;
+    const migrateVersion11 = envelope.version === 11;
     if (
       envelope.version !== WARDROBE_PUBLIC_VIEW_SCHEMA_VERSION
       && !migrateVersion2
@@ -294,6 +298,7 @@ export function parseStoredWardrobePublicView(raw: string | null): WardrobePubli
       && !migrateVersion8
       && !migrateVersion9
       && !migrateVersion10
+      && !migrateVersion11
     ) {
       return { products: [], managedSlugs: [] };
     }
@@ -340,6 +345,7 @@ export function createBrowserWardrobePublicViewRepository(): WardrobePublicViewR
         FOURTH_OLDER_WARDROBE_PUBLIC_VIEW_STORAGE_KEY,
         FIFTH_OLDER_WARDROBE_PUBLIC_VIEW_STORAGE_KEY,
         SIXTH_OLDER_WARDROBE_PUBLIC_VIEW_STORAGE_KEY,
+        SEVENTH_OLDER_WARDROBE_PUBLIC_VIEW_STORAGE_KEY,
         EARLIEST_WARDROBE_PUBLIC_VIEW_STORAGE_KEY,
       ]) {
         const previous = storage.getItem(previousKey);

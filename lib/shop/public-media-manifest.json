@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "catalogueRevision": "2026-08-11-catalogue-04",
-  "catalogueChecksum": "88e13f201d6e7d638ef4102bbc0e97de7d60267ff35fc30437564b898aeac266",
-  "cataloguePresentationChecksum": "5944b235a17d4ab1d30670ade5f3c6e0b1cc87390e48652a1fdd9401f5f0cc1f",
+  "catalogueRevision": "2026-08-11-catalogue-06",
+  "catalogueChecksum": "6885bc1635e936cd4fb9a91ce195a3aab73d07d48e4dfca41077d7853a94ce3a",
+  "cataloguePresentationChecksum": "287800ff7e29d451027b21f352905d209a7df9116985cb0babd2bdb62e33033a",
   "legacyAssets": [
     {
       "sourcePath": "/shop/products/coral-drift-dress/04-model-front.webp",
@@ -10,6 +10,14 @@
       "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/114122193834a4bf31686e2df0ac8a8a3709febd39575b559123cf9bc3f3911a/products/coral-drift-dress/04-model-front.webp",
       "sha256": "114122193834a4bf31686e2df0ac8a8a3709febd39575b559123cf9bc3f3911a",
       "size": 114716,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/salmon-camp-shirt/04-model-front.webp",
+      "pathname": "shop/catalogue/048fba20e31e6fd092315bd042b161ba559a011ae4b12b72be88ac547325e1ac/products/salmon-camp-shirt/04-model-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/048fba20e31e6fd092315bd042b161ba559a011ae4b12b72be88ac547325e1ac/products/salmon-camp-shirt/04-model-front.webp",
+      "sha256": "048fba20e31e6fd092315bd042b161ba559a011ae4b12b72be88ac547325e1ac",
+      "size": 90032,
       "contentType": "image/webp"
     }
   ],
@@ -479,6 +487,54 @@
       "contentType": "image/webp"
     },
     {
+      "sourcePath": "/shop/products/sage-open-back-high-slit-maxi-dress/01-garment-front.webp",
+      "pathname": "shop/catalogue/186fad74601ceb79a600cb92e0e0fb85ed50b540dd1ab6bde380f0cbcd71122a/products/sage-open-back-high-slit-maxi-dress/01-garment-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/186fad74601ceb79a600cb92e0e0fb85ed50b540dd1ab6bde380f0cbcd71122a/products/sage-open-back-high-slit-maxi-dress/01-garment-front.webp",
+      "sha256": "186fad74601ceb79a600cb92e0e0fb85ed50b540dd1ab6bde380f0cbcd71122a",
+      "size": 54390,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/sage-open-back-high-slit-maxi-dress/02-garment-back.webp",
+      "pathname": "shop/catalogue/c302771d9a361cab264dbb8b5d3db903c66b9b795d32c441319b575fa6e32d02/products/sage-open-back-high-slit-maxi-dress/02-garment-back.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/c302771d9a361cab264dbb8b5d3db903c66b9b795d32c441319b575fa6e32d02/products/sage-open-back-high-slit-maxi-dress/02-garment-back.webp",
+      "sha256": "c302771d9a361cab264dbb8b5d3db903c66b9b795d32c441319b575fa6e32d02",
+      "size": 44030,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/sage-open-back-high-slit-maxi-dress/03-mannequin-front.webp",
+      "pathname": "shop/catalogue/83383af64766d0d1f39e8ed14f7d1e5d724fe55f3c5520457ec930c54fa0f5eb/products/sage-open-back-high-slit-maxi-dress/03-mannequin-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/83383af64766d0d1f39e8ed14f7d1e5d724fe55f3c5520457ec930c54fa0f5eb/products/sage-open-back-high-slit-maxi-dress/03-mannequin-front.webp",
+      "sha256": "83383af64766d0d1f39e8ed14f7d1e5d724fe55f3c5520457ec930c54fa0f5eb",
+      "size": 50360,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/sage-open-back-high-slit-maxi-dress/04-model-front.webp",
+      "pathname": "shop/catalogue/bb8e3576ab3b9679d19a5181e6999ff817057587c2a1fb12588e50957bb067a3/products/sage-open-back-high-slit-maxi-dress/04-model-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/bb8e3576ab3b9679d19a5181e6999ff817057587c2a1fb12588e50957bb067a3/products/sage-open-back-high-slit-maxi-dress/04-model-front.webp",
+      "sha256": "bb8e3576ab3b9679d19a5181e6999ff817057587c2a1fb12588e50957bb067a3",
+      "size": 66644,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/sage-open-back-high-slit-maxi-dress/05-model-rear-three-quarter.webp",
+      "pathname": "shop/catalogue/bece9263b8c0b9e4284af699ad01fd033928edff4019dfb9db822c1ca793830d/products/sage-open-back-high-slit-maxi-dress/05-model-rear-three-quarter.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/bece9263b8c0b9e4284af699ad01fd033928edff4019dfb9db822c1ca793830d/products/sage-open-back-high-slit-maxi-dress/05-model-rear-three-quarter.webp",
+      "sha256": "bece9263b8c0b9e4284af699ad01fd033928edff4019dfb9db822c1ca793830d",
+      "size": 237942,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/sage-open-back-high-slit-maxi-dress/08-construction-detail.webp",
+      "pathname": "shop/catalogue/50f106a9dbc2d77c87c0e447297975388fc4b97cb98f70f92793cccfe98ab3f9/products/sage-open-back-high-slit-maxi-dress/08-construction-detail.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/50f106a9dbc2d77c87c0e447297975388fc4b97cb98f70f92793cccfe98ab3f9/products/sage-open-back-high-slit-maxi-dress/08-construction-detail.webp",
+      "sha256": "50f106a9dbc2d77c87c0e447297975388fc4b97cb98f70f92793cccfe98ab3f9",
+      "size": 43788,
+      "contentType": "image/webp"
+    },
+    {
       "sourcePath": "/shop/products/salmon-camp-shirt/01-garment-front.webp",
       "pathname": "shop/catalogue/e86ea7cc0324a9658ee6440066d96a5651c7ebc83cfbc271c7494d1c829b9835/products/salmon-camp-shirt/01-garment-front.webp",
       "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/e86ea7cc0324a9658ee6440066d96a5651c7ebc83cfbc271c7494d1c829b9835/products/salmon-camp-shirt/01-garment-front.webp",
@@ -504,10 +560,10 @@
     },
     {
       "sourcePath": "/shop/products/salmon-camp-shirt/04-model-front.webp",
-      "pathname": "shop/catalogue/048fba20e31e6fd092315bd042b161ba559a011ae4b12b72be88ac547325e1ac/products/salmon-camp-shirt/04-model-front.webp",
-      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/048fba20e31e6fd092315bd042b161ba559a011ae4b12b72be88ac547325e1ac/products/salmon-camp-shirt/04-model-front.webp",
-      "sha256": "048fba20e31e6fd092315bd042b161ba559a011ae4b12b72be88ac547325e1ac",
-      "size": 90032,
+      "pathname": "shop/catalogue/afb3e4c0e804799a58ed11d87d46b3dd0fcca26c2cdd0323b577d8d3d25e0bda/products/salmon-camp-shirt/04-model-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/afb3e4c0e804799a58ed11d87d46b3dd0fcca26c2cdd0323b577d8d3d25e0bda/products/salmon-camp-shirt/04-model-front.webp",
+      "sha256": "afb3e4c0e804799a58ed11d87d46b3dd0fcca26c2cdd0323b577d8d3d25e0bda",
+      "size": 115908,
       "contentType": "image/webp"
     },
     {

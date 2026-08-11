@@ -3,9 +3,9 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 export const CATALOGUE_NAMESPACE = "justurbanwears.shop.catalogue";
-export const EXPECTED_CATALOGUE_ROWS = 12;
+export const EXPECTED_CATALOGUE_ROWS = 13;
 export const LEGACY_CATALOGUE_SKUS = Object.freeze(
-  Array.from({ length: EXPECTED_CATALOGUE_ROWS }, (_, index) => `DYN-${String(index + 81).padStart(3, "0")}`),
+  Array.from({ length: 12 }, (_, index) => `DYN-${String(index + 81).padStart(3, "0")}`),
 );
 export const PRODUCTION_CONFIRMATION = "APPLY_JUSTURBANWEARS_PRODUCTION";
 export const ADMIN_LOCK_SQL = "select pg_advisory_xact_lock(hashtextextended('justurban-wears:shop-db-admin', 0))";
@@ -29,6 +29,7 @@ const MEDIA_SLOTS = new Set([
   "MODEL_LEFT_PROFILE",
   "MODEL_REAR_THREE_QUARTER",
   "MODEL_DETAIL",
+  "CONSTRUCTION_DETAIL",
   "FABRIC_DETAIL",
 ]);
 const MODEL_MEDIA_SLOTS = new Set([
@@ -38,7 +39,7 @@ const MODEL_MEDIA_SLOTS = new Set([
   "MODEL_DETAIL",
 ]);
 const MODEL_ANCHOR_IDS = new Set(["lulu-v2", "lulu-v3"]);
-const REQUIRED_MEDIA_SLOTS = ["GARMENT_FRONT", "GARMENT_BACK", "MANNEQUIN_FRONT", "FABRIC_DETAIL"];
+const REQUIRED_MEDIA_SLOTS = ["GARMENT_FRONT", "GARMENT_BACK", "MANNEQUIN_FRONT"];
 
 function invariant(condition, message) {
   if (!condition) throw new Error(message);
@@ -135,6 +136,10 @@ export function validateManifest(manifest, { assetRoot, expectedRows = EXPECTED_
       assetPaths.push(media.src);
     }
     for (const slot of REQUIRED_MEDIA_SLOTS) invariant(slots.has(slot), `${label} is missing ${slot}.`);
+    invariant(
+      slots.has("FABRIC_DETAIL") !== slots.has("CONSTRUCTION_DETAIL"),
+      `${label} must contain exactly one truthful detail slot.`,
+    );
     const modelFront = product.media.find((media) => media.slot === "MODEL_FRONT");
     if (modelFront) {
       invariant(

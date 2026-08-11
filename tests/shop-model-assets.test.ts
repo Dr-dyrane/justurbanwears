@@ -64,6 +64,12 @@ const expectedApprovals = [
     height: 1619,
     sha256: "575b3341f455e69e99988b16969261575f5a0543fb4c9afc7b21117d41201f1c",
   },
+  {
+    slug: "sage-open-back-high-slit-maxi-dress",
+    width: 972,
+    height: 1619,
+    sha256: "bb8e3576ab3b9679d19a5181e6999ff817057587c2a1fb12588e50957bb067a3",
+  },
 ] as const;
 
 const approvedSupplementalSources = new Map<string, readonly string[]>([
@@ -86,6 +92,10 @@ const approvedSupplementalSources = new Map<string, readonly string[]>([
   [
     "orchid-beaded-column-gown",
     ["/shop/products/orchid-beaded-column-gown/08-model-detail.webp"],
+  ],
+  [
+    "sage-open-back-high-slit-maxi-dress",
+    ["/shop/products/sage-open-back-high-slit-maxi-dress/05-model-rear-three-quarter.webp"],
   ],
 ]);
 
@@ -122,8 +132,9 @@ test("publishes only identity-cleared model fronts with their reviewed bytes", (
         "indigo-workshirt",
         "moss-square-knit",
         "cocoa-pleat-trouser",
-        "salmon-camp-shirt",
-      ].includes(expected.slug)
+          "salmon-camp-shirt",
+          "sage-open-back-high-slit-maxi-dress",
+        ].includes(expected.slug)
         ? "lulu-v3"
         : "lulu-v2",
     );
@@ -168,11 +179,15 @@ test("appends only approved Lulu views to the main product gallery", () => {
           "moss-square-knit",
           "cocoa-pleat-trouser",
           "salmon-camp-shirt",
+          "sage-open-back-high-slit-maxi-dress",
         ].includes(product.slug)
           ? "lulu-v3"
           : "lulu-v2",
       }] : []),
-      ...supplementalSources.map((src) => ({ src, modelAnchorId: "lulu-v2" })),
+      ...supplementalSources.map((src) => ({
+        src,
+        modelAnchorId: product.slug === "sage-open-back-high-slit-maxi-dress" ? "lulu-v3" : "lulu-v2",
+      })),
     ];
 
     if (expectedModelFrames.length) {

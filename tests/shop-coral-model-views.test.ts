@@ -133,6 +133,18 @@ const approvedProducts: readonly ApprovedProductMedia[] = [
       },
     ],
   },
+  {
+    slug: "sage-open-back-high-slit-maxi-dress",
+    hasFront: true,
+    frontSha256: "bb8e3576ab3b9679d19a5181e6999ff817057587c2a1fb12588e50957bb067a3",
+    views: [
+      {
+        slot: "MODEL_REAR_THREE_QUARTER",
+        src: "/shop/products/sage-open-back-high-slit-maxi-dress/05-model-rear-three-quarter.webp",
+        sha256: "bece9263b8c0b9e4284af699ad01fd033928edff4019dfb9db822c1ca793830d",
+      },
+    ],
+  },
 ] as const;
 
 test("publishes cleared supplemental views as metadata-free 972 × 1619 WebPs", async () => {
@@ -185,7 +197,9 @@ test("orders product media, an approved front when present, then supplemental Lu
         `/shop/products/${approved.slug}/01-garment-front.webp`,
         `/shop/products/${approved.slug}/02-garment-back.webp`,
         `/shop/products/${approved.slug}/03-mannequin-front.webp`,
-        `/shop/products/${approved.slug}/06-fabric-detail.webp`,
+        approved.slug === "sage-open-back-high-slit-maxi-dress"
+          ? `/shop/products/${approved.slug}/08-construction-detail.webp`
+          : `/shop/products/${approved.slug}/06-fabric-detail.webp`,
         ...(approved.hasFront ? [`/shop/products/${approved.slug}/04-model-front.webp`] : []),
         ...approved.views.map((view) => view.src),
       ],
@@ -206,6 +220,7 @@ test("orders product media, an approved front when present, then supplemental Lu
                 "moss-square-knit",
                 "cocoa-pleat-trouser",
                 "salmon-camp-shirt",
+                "sage-open-back-high-slit-maxi-dress",
               ].includes(approved.slug)
                 ? "lulu-v3"
                 : "lulu-v2",
@@ -219,7 +234,7 @@ test("orders product media, an approved front when present, then supplemental Lu
           if (view.slot === "MODEL_REAR_THREE_QUARTER") {
             return {
               view: "three-quarter",
-              anchor: "lulu-v2",
+              anchor: approved.slug === "sage-open-back-high-slit-maxi-dress" ? "lulu-v3" : "lulu-v2",
               label: "On Lulu · right rear three-quarter",
             };
           }
@@ -235,7 +250,7 @@ test("orders product media, an approved front when present, then supplemental Lu
 });
 
 test("migrates stored v5 supplemental views without resetting operator edits", () => {
-  assert.equal(WARDROBE_PUBLIC_VIEW_SCHEMA_VERSION, 11);
+  assert.equal(WARDROBE_PUBLIC_VIEW_SCHEMA_VERSION, 12);
 
   for (const [index, approved] of approvedProducts.filter(
     (product) => product.views.length > 0,
@@ -265,7 +280,13 @@ test("migrates stored v5 supplemental views without resetting operator edits", (
     assert.equal(parsed.products[0].note, `Operator-authored ${approved.slug} note.`);
     assert.deepEqual(
       parsed.products[0].media.slice(-approved.views.length),
-      approved.views.map(({ slot, src }) => ({ slot, src, modelAnchorId: "lulu-v2" })),
+      approved.views.map(({ slot, src }) => ({
+        slot,
+        src,
+        modelAnchorId: approved.slug === "sage-open-back-high-slit-maxi-dress"
+          ? "lulu-v3"
+          : "lulu-v2",
+      })),
     );
   }
 });

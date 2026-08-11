@@ -287,12 +287,12 @@ test("v10 promotes the Salmon real-source front to V3 without inventing a back",
   );
 });
 
-test("Studio holds the twelve saleable wardrobe rows and promotes the six former drafts in place", () => {
+test("Studio holds thirteen saleable wardrobe rows and promotes legacy drafts in place", () => {
   const seeded = mergeWardrobeAuthoritySeeds(createEmptyStudioSnapshot());
-  assert.equal(seeded.garments.length, 12);
-  assert.equal(seeded.listings.length, 12);
-  assert.equal(seeded.inventory.length, 12);
-  assert.equal(WARDROBE_AUTHORITY_MANAGED_SLUGS.length, 12);
+  assert.equal(seeded.garments.length, 13);
+  assert.equal(seeded.listings.length, 13);
+  assert.equal(seeded.inventory.length, 13);
+  assert.equal(WARDROBE_AUTHORITY_MANAGED_SLUGS.length, 13);
 
   const drop = seeded.garments.filter((garment) => /^JUW-0(?:07|08|09|10|11|12)$/.test(garment.sku));
   assert.equal(drop.length, 6);
@@ -391,7 +391,7 @@ test("Studio renames legacy catalogue SKUs in place without resetting inventory"
   const garment = migrated.garments.find((candidate) => candidate.id === legacyGarmentId)!;
   const listing = migrated.listings.find((candidate) => candidate.id === "wardrobe-listing-dyn-081")!;
   const inventory = migrated.inventory.find((candidate) => candidate.id === "wardrobe-stock-dyn-081")!;
-  assert.equal(migrated.garments.length, 12);
+  assert.equal(migrated.garments.length, 13);
   assert.equal(garment.sku, "JUW-001");
   assert.equal(listing.garmentId, legacyGarmentId);
   assert.equal(listing.publicProjection?.sku, "JUW-001");
