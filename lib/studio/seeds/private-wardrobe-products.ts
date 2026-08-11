@@ -235,6 +235,14 @@ export const PENDING_WARDROBE_PRODUCT_CONTRACTS: readonly PendingWardrobeProduct
     visual: "plum",
     approvedViews: ["MANNEQUIN_UPPER_FRONT", "MODEL_FRONT", "CONSTRUCTION_DETAIL"],
     missingViews: ["GARMENT_FRONT", "GARMENT_BACK"],
+    publicSafeMedia: [
+      {
+        view: "MODEL_FRONT",
+        src: "/shop/products/black-floral-lace-long-sleeve-dress/04-model-front.webp",
+        width: 972,
+        height: 1619,
+      },
+    ],
   }),
   pendingProduct({
     sku: "JUW-020",
