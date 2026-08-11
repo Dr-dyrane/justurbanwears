@@ -180,6 +180,16 @@ test("a complete Neon row becomes a confirmed Shop product with Blob media", () 
   );
 });
 
+test("the server accepts JUW-014's truthful construction detail", () => {
+  const source = SHOP_CATALOGUE_MANIFEST.products.find((product) => product.sku === "JUW-014");
+  assert.ok(source);
+  const product = databaseCatalogueRowToShopProduct(databaseRow(source));
+  assert.ok(product);
+  const construction = product.media?.find((item) => item.id === "construction-detail");
+  assert.ok(construction);
+  assert.match(construction.src, /^https:\/\//);
+});
+
 test("checkout performs a fresh fail-closed availability confirmation", async () => {
   const product = databaseCatalogueRowToShopProduct(databaseRow());
   assert.ok(product);

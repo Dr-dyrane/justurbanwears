@@ -36,6 +36,7 @@ const mediaSlots = new Set([
   "MODEL_REAR_THREE_QUARTER",
   "MODEL_DETAIL",
   "FABRIC_DETAIL",
+  "CONSTRUCTION_DETAIL",
 ]);
 const modelSlots = new Set([
   "MODEL_FRONT",
