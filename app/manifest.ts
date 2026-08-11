@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { BRAND_ASSETS } from "../lib/brand/assets";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
@@ -23,19 +24,19 @@ export default function manifest(): MetadataRoute.Manifest {
     },
     icons: [
       {
-        src: "/brand/icon-192.png",
+        src: BRAND_ASSETS.icon.runtimeApp192,
         sizes: "192x192",
         type: "image/png",
         purpose: "any",
       },
       {
-        src: "/brand/icon-512.png",
+        src: BRAND_ASSETS.icon.runtimeApp512,
         sizes: "512x512",
         type: "image/png",
         purpose: "any",
       },
       {
-        src: "/brand/icon-maskable-512.png",
+        src: BRAND_ASSETS.icon.runtimeMaskable512,
         sizes: "512x512",
         type: "image/png",
         purpose: "maskable",

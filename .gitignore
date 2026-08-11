@@ -29,6 +29,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+*.inspect.ndjson
 
 # env files (can opt-in for committing if needed)
 .env*
@@ -41,6 +42,13 @@ yarn-error.log*
 /.wrangler/
 /outputs/
 /work/
+/.tmp/
+
+# Local duplicate exports created by macOS Save As; canonical flow PNGs omit the suffix.
+/docs/order-flows/* 2.png
+
+# Local Codex task state and private workspace topology.
+/.codex/
 
 # Private identity and garment source material. Never commit or deploy.
 /storage/

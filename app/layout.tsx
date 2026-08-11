@@ -3,6 +3,7 @@ import "@fontsource-variable/bodoni-moda";
 import "@fontsource-variable/manrope";
 import { ServiceWorkerRegistration } from "../components/pwa/service-worker-registration";
 import { ThemeProvider } from "../components/theme/theme-provider";
+import { BRAND_ASSETS } from "../lib/brand/assets";
 import "./globals.css";
 import "./foundation.css";
 
@@ -51,14 +52,19 @@ export const metadata: Metadata = {
   manifest: "/manifest.webmanifest",
   icons: {
     icon: [
-      { url: "/favicon.ico", sizes: "any" },
-      { url: "/brand/icon-192.png", sizes: "192x192", type: "image/png" },
-      { url: "/brand/icon-512.png", sizes: "512x512", type: "image/png" },
+      { url: BRAND_ASSETS.favicon.runtimeSvg, sizes: "any", type: "image/svg+xml" },
+      { url: BRAND_ASSETS.favicon.runtimeIco, sizes: "16x16 32x32 48x48", type: "image/x-icon" },
+      { url: BRAND_ASSETS.icon.runtimeApp192, sizes: "192x192", type: "image/png" },
+      { url: BRAND_ASSETS.icon.runtimeApp512, sizes: "512x512", type: "image/png" },
     ],
-    shortcut: "/favicon.ico",
+    shortcut: {
+      url: BRAND_ASSETS.favicon.runtimeIco,
+      sizes: "16x16 32x32 48x48",
+      type: "image/x-icon",
+    },
     apple: [
       {
-        url: "/brand/apple-touch-icon.png",
+        url: BRAND_ASSETS.icon.runtimeAppleTouch,
         sizes: "180x180",
         type: "image/png",
       },

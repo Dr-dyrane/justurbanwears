@@ -242,7 +242,9 @@ function ApprovedPublicMedia({ sku, slug, title }: {
   return (
     <div className="studio-public-contract">
       <div className="studio-public-anchor">
-        <img alt="" height={42} src={contract.modelAnchor.src} width={42} />
+        {contract.modelAnchor.src
+          ? <img alt="" height={42} src={contract.modelAnchor.src} width={42} />
+          : <ShieldCheck aria-hidden="true" size={22} strokeWidth={1.7} />}
         <span><small>Approved model anchor</small><strong>{contract.modelAnchor.id}</strong></span>
         <ShieldCheck aria-hidden="true" size={17} strokeWidth={1.8} />
       </div>

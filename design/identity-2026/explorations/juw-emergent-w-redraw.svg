@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" color="#2a1710" role="img" aria-labelledby="title description">
+  <title id="title">Justurban JU monogram with an emergent W</title>
+  <desc id="description">Two angular forms read as J and U while their combined outer silhouette resolves into a W.</desc>
+  <!-- Approval study only. Faithfully redrawn from the supplied sketch; not yet a production asset. -->
+  <g fill="currentColor">
+    <path d="M48 88H296L176 424 80 168h56l40 96 40-116H72Z"/>
+    <path d="M464 88h-72l-56 160-30-114-40 98 70 192Z"/>
+  </g>
+</svg>

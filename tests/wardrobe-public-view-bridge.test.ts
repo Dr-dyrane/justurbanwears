@@ -83,6 +83,54 @@ test("the wardrobe public view strips private fields and admits only approved an
   assert.deepEqual(wrongAnchor.products, []);
 });
 
+test("v7 migrates Moss to a V3 front while retaining V2 supplemental views", () => {
+  const moss = WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS.find(
+    (product) => product.slug === "moss-square-knit",
+  );
+  assert.ok(moss);
+  const legacy = {
+    ...moss,
+    name: "Operator Moss title",
+    price: 13900,
+    note: "Operator Moss note.",
+    modelAnchor: { id: "lulu-v2", src: "/shop/model/lulu-v2-approved.png" },
+    media: moss.media.map(({ slot, src }) => ({ slot, src })),
+  };
+  const parsed = parseStoredWardrobePublicView(JSON.stringify({
+    version: 7,
+    data: [legacy],
+    managedSlugs: [moss.slug],
+  }));
+
+  assert.equal(parsed.products.length, 1);
+  assert.equal(parsed.products[0].name, "Operator Moss title");
+  assert.equal(parsed.products[0].price, 13900);
+  assert.equal(parsed.products[0].note, "Operator Moss note.");
+  assert.deepEqual(parsed.products[0].modelAnchor, { id: "lulu-v3" });
+  assert.deepEqual(
+    parsed.products[0].media
+      .filter((frame) => frame.slot.startsWith("MODEL_"))
+      .map(({ slot, modelAnchorId }) => ({ slot, modelAnchorId })),
+    [
+      { slot: "MODEL_FRONT", modelAnchorId: "lulu-v3" },
+      { slot: "MODEL_LEFT_PROFILE", modelAnchorId: "lulu-v2" },
+      { slot: "MODEL_REAR_THREE_QUARTER", modelAnchorId: "lulu-v2" },
+    ],
+  );
+
+  const wrongCurrent = parseStoredWardrobePublicView(JSON.stringify({
+    version: WARDROBE_PUBLIC_VIEW_SCHEMA_VERSION,
+    data: [{
+      ...moss,
+      media: moss.media.map((frame) => frame.slot === "MODEL_FRONT"
+        ? { ...frame, modelAnchorId: "lulu-v2" }
+        : frame),
+    }],
+    managedSlugs: [moss.slug],
+  }));
+  assert.deepEqual(wrongCurrent.products, []);
+});
+
 test("Studio holds the twelve saleable wardrobe rows and promotes the six former drafts in place", () => {
   const seeded = mergeWardrobeAuthoritySeeds(createEmptyStudioSnapshot());
   assert.equal(seeded.garments.length, 12);
@@ -291,4 +339,53 @@ test("the sanitizer cannot promote an Indigo model front", () => {
 
   assert.deepEqual(parsed.products, []);
   assert.deepEqual(parsed.managedSlugs, [indigo.slug]);
+});
+
+test("revoking model fronts preserves truthful wardrobe rows", () => {
+  for (const slug of [
+    "sage-asymmetric-ruched-maxi-dress",
+    "silver-off-shoulder-mermaid-dress",
+  ]) {
+    const wardrobeProduct = createWardrobePublicViewMigrationSnapshot().products.find(
+      (product) => product.slug === slug,
+    )!;
+    const legacyMedia = wardrobeProduct.media.filter(
+      (item) => item.slot !== "MODEL_REAR_THREE_QUARTER",
+    );
+    const parsed = parseStoredWardrobePublicView(JSON.stringify({
+      version: 6,
+      data: [{
+        ...wardrobeProduct,
+        name: `Operator ${slug}`,
+        price: 31900,
+        note: `Operator note for ${slug}.`,
+        media: [
+          ...legacyMedia,
+          {
+            slot: "MODEL_FRONT",
+            src: `/shop/products/${slug}/04-model-front.webp`,
+          },
+        ],
+      }],
+      managedSlugs: [slug],
+    }));
+
+    assert.equal(parsed.products.length, 1);
+    assert.deepEqual(parsed.managedSlugs, [slug]);
+    assert.equal(parsed.products[0].name, `Operator ${slug}`);
+    assert.equal(parsed.products[0].price, 31900);
+    assert.equal(parsed.products[0].note, `Operator note for ${slug}.`);
+    const product = wardrobePublicProductToShopProduct(parsed.products[0]);
+    assert.deepEqual(product.modelTryout, { modelStatus: "PENDING" });
+    if (slug === "silver-off-shoulder-mermaid-dress") {
+      const modelMedia = product.media?.filter((item) => item.presentation === "model") ?? [];
+      assert.equal(product.media?.length, 5);
+      assert.deepEqual(modelMedia.map((item) => item.src), [
+        "/shop/products/silver-off-shoulder-mermaid-dress/05-model-rear-three-quarter.webp",
+      ]);
+    } else {
+      assert.equal(product.media?.length, 4);
+      assert.equal(product.media?.some((item) => item.presentation === "model"), false);
+    }
+  }
 });

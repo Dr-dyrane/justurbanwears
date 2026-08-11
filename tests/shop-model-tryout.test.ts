@@ -8,6 +8,7 @@ import {
   initialModelTryoutState,
   modelTryoutReducer,
   resolveApprovedModelTryout,
+  selectProductGalleryMedia,
 } from "../lib/shop/model-tryout.ts";
 
 function approvedFront(): ShopApprovedModelMedia {
@@ -90,4 +91,37 @@ test("surfaces a load failure and ignores events from an earlier retry", () => {
     attempt: 2,
   });
   assert.equal(ready.phase, "ready");
+});
+
+test("keeps independently approved V2 supplemental views beside a V3 front", () => {
+  const front = {
+    ...approvedFront(),
+    src: "/shop/products/moss-square-knit/04-model-front.webp",
+    modelAnchorId: "lulu-v3" as const,
+  };
+  const gallery = selectProductGalleryMedia({
+    modelTryout: {
+      modelStatus: "APPROVED",
+      modelAnchorId: "lulu-v3",
+      frame: front,
+    },
+    media: [{
+      ...approvedFront(),
+      id: "model-left-profile",
+      src: "/shop/products/moss-square-knit/07-model-left-profile.webp",
+      view: "side",
+      modelAnchorId: "lulu-v2",
+    }],
+  });
+
+  assert.deepEqual(
+    gallery.map(({ src, modelAnchorId }) => ({ src, modelAnchorId })),
+    [
+      { src: front.src, modelAnchorId: "lulu-v3" },
+      {
+        src: "/shop/products/moss-square-knit/07-model-left-profile.webp",
+        modelAnchorId: "lulu-v2",
+      },
+    ],
+  );
 });

@@ -137,7 +137,7 @@ test("server-renders a navigable public product detail", async () => {
   assert.match(html, /application\/ld\+json/);
 });
 
-test("server-renders product studies plus only identity-cleared model fronts", async () => {
+test("server-renders product studies plus only identity-cleared model views", async () => {
   const slugs = [
     "coral-drift-dress",
     "indigo-workshirt",
@@ -163,14 +163,17 @@ test("server-renders product studies plus only identity-cleared model fronts", a
     "salmon-camp-shirt",
     "blush-scoop-mini-dress",
     "orchid-beaded-column-gown",
-    "sage-asymmetric-ruched-maxi-dress",
-    "silver-off-shoulder-mermaid-dress",
     "multicolor-abstract-strapless-mini-dress",
   ]);
-  const approvedMultiViewSlugs = new Set([
+  const approvedLeftProfileSlugs = new Set([
     "coral-drift-dress",
     "moss-square-knit",
     "cocoa-pleat-trouser",
+    "magenta-plunge-ruched-mini-dress",
+  ]);
+  const approvedRearThreeQuarterSlugs = new Set([
+    ...approvedLeftProfileSlugs,
+    "silver-off-shoulder-mermaid-dress",
   ]);
 
   for (const [index, response] of responses.entries()) {
@@ -183,23 +186,35 @@ test("server-renders product studies plus only identity-cleared model fronts", a
     assert.match(html, new RegExp(`${base}/03-mannequin-front\\.webp`));
     assert.match(html, new RegExp(`${base}/06-fabric-detail\\.webp`));
     assert.doesNotMatch(html, /05-model-back\.webp/);
-    if (approvedModelSlugs.has(slugs[index])) {
-      assert.match(visibleBody, /data-model-anchor="lulu-v2"/);
+    const hasApprovedFront = approvedModelSlugs.has(slugs[index]);
+    const expectedFrontAnchor = slugs[index] === "moss-square-knit" ? "lulu-v3" : "lulu-v2";
+    const hasApprovedLeftProfile = approvedLeftProfileSlugs.has(slugs[index]);
+    const hasApprovedRearThreeQuarter = approvedRearThreeQuarterSlugs.has(slugs[index]);
+    const hasApprovedSupplementalViews = hasApprovedLeftProfile || hasApprovedRearThreeQuarter;
+    if (hasApprovedFront) {
+      assert.match(visibleBody, new RegExp(`data-model-anchor="${expectedFrontAnchor}"`));
       assert.match(
         visibleBody,
-        /class="shop-media-frame is-model is-front"[^>]*data-model-anchor="lulu-v2"/,
+        new RegExp(`class="shop-media-frame is-model is-front"[^>]*data-model-anchor="${expectedFrontAnchor}"`),
       );
     } else {
-      assert.doesNotMatch(visibleBody, /data-model-anchor="lulu-v2"/);
-      assert.doesNotMatch(visibleBody, /class="shop-media-frame is-model/);
+      assert.doesNotMatch(visibleBody, /class="shop-media-frame is-model is-front"/);
+      assert.doesNotMatch(visibleBody, new RegExp(`${base}/04-model-front\\.webp`));
+      if (!hasApprovedSupplementalViews) {
+        assert.doesNotMatch(visibleBody, /data-model-anchor="lulu-v2"/);
+        assert.doesNotMatch(visibleBody, /class="shop-media-frame is-model/);
+      }
     }
-    if (approvedMultiViewSlugs.has(slugs[index])) {
+    if (hasApprovedLeftProfile) {
       assert.match(visibleBody, new RegExp(`${base}/07-model-left-profile\\.webp`));
-      assert.match(visibleBody, new RegExp(`${base}/05-model-rear-three-quarter\\.webp`));
       assert.match(visibleBody, /On Lulu · left profile/);
-      assert.match(visibleBody, /On Lulu · right rear three-quarter/);
     } else {
       assert.doesNotMatch(visibleBody, /07-model-left-profile\.webp/);
+    }
+    if (hasApprovedRearThreeQuarter) {
+      assert.match(visibleBody, new RegExp(`${base}/05-model-rear-three-quarter\\.webp`));
+      assert.match(visibleBody, /On Lulu · right rear three-quarter/);
+    } else {
       assert.doesNotMatch(visibleBody, /05-model-rear-three-quarter\.webp/);
     }
   }
@@ -260,5 +275,5 @@ test("publishes the canonical shop PWA manifest", async () => {
   assert.equal(manifest.id, "/shop");
   assert.equal(manifest.start_url, "/shop");
   assert.equal(manifest.scope, "/shop");
-  assert.ok(manifest.icons.some((icon) => icon.src === "/brand/icon-maskable-512.png"));
+  assert.ok(manifest.icons.some((icon) => icon.src === "/brand/icon-maskable-512.png?v=2026.1-juw"));
 });

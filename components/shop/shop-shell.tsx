@@ -14,6 +14,7 @@ import { usePathname } from "next/navigation";
 import { useMemo } from "react";
 import { useMobileChrome } from "../../hooks/use-mobile-chrome";
 import { createBrowserCommerceService } from "../../lib/shop/services/commerce-service";
+import { BrandWordmark } from "../brand/brand-wordmark";
 import { ThemeToggle } from "../theme/theme-toggle";
 import { ShopLink as Link } from "./atoms/shop-link";
 import { ShopProvider, useShop } from "./shop-provider";
@@ -93,10 +94,7 @@ function ShopChrome({ children }: { children: React.ReactNode }) {
       >
         <nav className="shop-floating-nav glass-surface" aria-label="Shop navigation">
           <Link className="shop-wordmark" href="/shop" aria-label="justurban wears shop home">
-            <span className="shop-wordmark-lockup" aria-hidden="true">
-              <span>justurban</span>
-              <em>wears</em>
-            </span>
+            <BrandWordmark className="shop-wordmark-lockup" />
           </Link>
           <div className="shop-nav-links">
             {nav.map((item) => {
@@ -148,7 +146,7 @@ function ShopChrome({ children }: { children: React.ReactNode }) {
       <main id="shop-content">{children}</main>
       <footer className="shop-footer">
         <Link className="shop-footer-mark" href="/shop" aria-label="justurban wears shop home">
-          <span>justurban</span><em>wears</em>
+          <BrandWordmark className="shop-footer-wordmark" />
         </Link>
         <p>Urban ladies’ wear, clearly described.</p>
         <span>Curated in Lagos · 2026</span>

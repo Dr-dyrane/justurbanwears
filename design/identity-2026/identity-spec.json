@@ -1,0 +1,112 @@
+{
+  "name": "justurban identity",
+  "version": "2026.1",
+  "status": "approved-production-digital",
+  "roles": {
+    "logo": "Exact lowercase justurban wears wordmark for public navigation, editorial signatures, and horizontal spaces.",
+    "icon": "JU/W mark for browser, installed-app, avatar, compact mobile/Studio, and square surfaces.",
+    "desktopCombination": "wordmark-only"
+  },
+  "verbalIdentity": {
+    "headline": "Clothes with a second first impression.",
+    "descriptor": "One-off urban womenswear from Lulu’s wardrobe, ready to move through the city."
+  },
+  "canonical": {
+    "wordmark": "justurban-wordmark.svg",
+    "markStandard": "justurban-mark.svg",
+    "markMicro": "justurban-micro.svg",
+    "favicon": "justurban-favicon.svg",
+    "appIcon": "justurban-app-icon.svg",
+    "adaptiveForeground": "justurban-app-foreground.svg",
+    "adaptiveBackground": "justurban-app-background.svg",
+    "monochromeForeground": "justurban-app-monochrome.svg"
+  },
+  "public": {
+    "shareLogo": "/logo",
+    "shareIcon": "/icon",
+    "shareLogoPng": "/logo.png",
+    "shareIconPng": "/icon.png",
+    "logoSvg": "/brand/logo.svg",
+    "logoReverseSvg": "/brand/logo-white.svg",
+    "iconSvg": "/brand/icon.svg",
+    "logoPng": "/logo.png",
+    "iconPng": "/icon.png",
+    "faviconSvg": "/favicon.svg",
+    "faviconIco": "/favicon.ico",
+    "appleTouchIcon": "/brand/apple-touch-icon.png",
+    "icon192": "/brand/icon-192.png",
+    "icon512": "/brand/icon-512.png",
+    "iconMaskable512": "/brand/icon-maskable-512.png",
+    "iconMaster1024": "/brand/icon-master-1024.png"
+  },
+  "readyExports": {
+    "wordmarkOneColour": [
+      "exports/wordmark-cocoa.svg",
+      "exports/wordmark-black.svg",
+      "exports/wordmark-white.svg"
+    ],
+    "markOneColour": [
+      "exports/mark-cocoa.svg",
+      "exports/mark-black.svg",
+      "exports/mark-white.svg"
+    ],
+    "markBrandColour": "exports/mark-coral.svg"
+  },
+  "geometry": {
+    "viewBox": [0, 0, 512, 512],
+    "visibleBoundsStandard": [48, 88, 464, 424],
+    "standardPaths": [
+      "M48 88H296L176 424 80 168h56l40 96 40-116H72Z",
+      "M464 88h-72l-56 160-30-114-40 98 70 192Z"
+    ],
+    "microPaths": [
+      "M48 88H292L176 424 76 176h56l44 100 42-132H70Z",
+      "M464 88h-72l-56 160-22-116-40 104 62 188Z"
+    ],
+    "clearSpaceUnits": 40,
+    "wordmarkClearSpaceUnits": 6,
+    "standardAppTransform": "translate(46.08 46.08) scale(.82)",
+    "adaptiveTransform": "translate(64 64) scale(.75)",
+    "adaptiveSafeRadiusPx": 204.8,
+    "adaptiveMaximumArtworkRadiusPx": 200.66
+  },
+  "minimumSize": {
+    "wordmarkWidthPx": 140,
+    "standardMarkPx": 32,
+    "microMarkMinimumPx": 16,
+    "microMarkMaximumPx": 24,
+    "intermediateRule": "Snap to 24px micro or 32px standard; do not interpolate 25–31px."
+  },
+  "palette": {
+    "cocoa": "#2A1710",
+    "coral": "#F28A62",
+    "warmPaper": "#FFF8F4",
+    "wordmarkPrimary": "#2D211D",
+    "wordmarkSecondary": "#67534C",
+    "oneColourBlack": "#000000",
+    "oneColourWhite": "#FFFFFF"
+  },
+  "contrast": {
+    "cocoaOnCoral": 6.99,
+    "cocoaOnWarmPaper": 16.27
+  },
+  "typography": {
+    "wordmarkPrimary": "Bodoni Moda Variable 500, 29px source, -0.075em tracking",
+    "wordmarkSecondary": "Manrope Variable 600, 10px source, +0.12em tracking",
+    "supportingDisplay": "Bodoni Moda Variable",
+    "supportingUiBody": "Manrope Variable"
+  },
+  "platform": {
+    "standardAppScale": 0.82,
+    "adaptiveArtworkScale": 0.75,
+    "faviconSizesPx": [16, 32, 48],
+    "faviconGeometryBySize": {
+      "16": "micro",
+      "32": "standard",
+      "48": "standard",
+      "scalableSvg": "micro-small-tab-priority"
+    },
+    "appleTouchIconPx": 180,
+    "doNotBakePlatformMasks": true
+  }
+}

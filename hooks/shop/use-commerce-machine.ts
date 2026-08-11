@@ -192,6 +192,37 @@ export function useCommerceMachine(service: CommerceService) {
       stateRef.current = saved;
       persistedRevisionRef.current = saved.persistenceRevision;
       dispatch({ type: "CHECKOUT_SAVE_SUCCEEDED", order: creation.order });
+
+      if (current.connectivity === "online") {
+        try {
+          const submission = await service.submitCheckout(creation.order);
+          if (submission.ok) {
+            const submitted = commerceReducer(saved, {
+              type: "CHECKOUT_SUBMISSION_SUCCEEDED",
+              localOrderId: creation.order.id,
+              order: submission.order,
+            });
+            if (submitted !== saved) {
+              stateRef.current = submitted;
+              persistedRevisionRef.current = submitted.persistenceRevision;
+              dispatch({
+                type: "CHECKOUT_SUBMISSION_SUCCEEDED",
+                localOrderId: creation.order.id,
+                order: submission.order,
+              });
+              try {
+                await service.persist(selectCommerceSnapshot(submitted));
+              } catch {
+                dispatch({ type: "PERSISTENCE_FAILED" });
+              }
+              return { ok: true, orderId: submission.order.id };
+            }
+          }
+        } catch {
+          // The truthful local checkout remains available and retryable.
+        }
+      }
+
       return { ok: true, orderId: creation.order.id };
     };
 

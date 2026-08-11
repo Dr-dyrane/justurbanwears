@@ -15,6 +15,7 @@ import { WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS } from "../lib/wardrobe-public-vie
 const approvedProducts = [
   {
     slug: "coral-drift-dress",
+    hasFront: true,
     views: [
       {
         slot: "MODEL_LEFT_PROFILE",
@@ -30,6 +31,7 @@ const approvedProducts = [
   },
   {
     slug: "moss-square-knit",
+    hasFront: true,
     views: [
       {
         slot: "MODEL_LEFT_PROFILE",
@@ -45,6 +47,7 @@ const approvedProducts = [
   },
   {
     slug: "cocoa-pleat-trouser",
+    hasFront: true,
     views: [
       {
         slot: "MODEL_LEFT_PROFILE",
@@ -55,6 +58,44 @@ const approvedProducts = [
         slot: "MODEL_REAR_THREE_QUARTER",
         src: "/shop/products/cocoa-pleat-trouser/05-model-rear-three-quarter.webp",
         sha256: "ca2cbcb7332f35ad513887fbf665e32c11cbcd5ecc0d2b7d9263cdf99b7fae1c",
+      },
+    ],
+  },
+  {
+    slug: "magenta-plunge-ruched-mini-dress",
+    hasFront: false,
+    views: [
+      {
+        slot: "MODEL_LEFT_PROFILE",
+        src: "/shop/products/magenta-plunge-ruched-mini-dress/07-model-left-profile.webp",
+        sha256: "0ed7ada9453902956ca96abd2ed53a9627f99ad54607777b23f69461bef2ece2",
+      },
+      {
+        slot: "MODEL_REAR_THREE_QUARTER",
+        src: "/shop/products/magenta-plunge-ruched-mini-dress/05-model-rear-three-quarter.webp",
+        sha256: "5cb0e4ad5d444cb4ad7d1d4f510cb1f978fc88cb26f1d688865468640905fb05",
+      },
+    ],
+  },
+  {
+    slug: "orchid-beaded-column-gown",
+    hasFront: true,
+    views: [
+      {
+        slot: "MODEL_DETAIL",
+        src: "/shop/products/orchid-beaded-column-gown/08-model-detail.webp",
+        sha256: "40008573a597745f621c71ce3826d2f23fc72609ed8c01d253ffe42ff4990fd3",
+      },
+    ],
+  },
+  {
+    slug: "silver-off-shoulder-mermaid-dress",
+    hasFront: false,
+    views: [
+      {
+        slot: "MODEL_REAR_THREE_QUARTER",
+        src: "/shop/products/silver-off-shoulder-mermaid-dress/05-model-rear-three-quarter.webp",
+        sha256: "f6258ad165c3e6005b079502489571324718076bc453a727c5e9c275bc06dab9",
       },
     ],
   },
@@ -77,7 +118,7 @@ test("publishes cleared supplemental views as metadata-free 972 × 1619 WebPs", 
   }
 });
 
-test("orders product media, then Lulu front, left profile, and right rear three-quarter", () => {
+test("orders product media, an approved front when present, then supplemental Lulu views", () => {
   for (const approved of approvedProducts) {
     const product = shopProducts.find((candidate) => candidate.slug === approved.slug);
     assert.ok(product);
@@ -90,7 +131,7 @@ test("orders product media, then Lulu front, left profile, and right rear three-
         `/shop/products/${approved.slug}/02-garment-back.webp`,
         `/shop/products/${approved.slug}/03-mannequin-front.webp`,
         `/shop/products/${approved.slug}/06-fabric-detail.webp`,
-        `/shop/products/${approved.slug}/04-model-front.webp`,
+        ...(approved.hasFront ? [`/shop/products/${approved.slug}/04-model-front.webp`] : []),
         ...approved.views.map((view) => view.src),
       ],
     );
@@ -101,21 +142,37 @@ test("orders product media, then Lulu front, left profile, and right rear three-
         label: item.label,
       })),
       [
-        { view: "front", anchor: "lulu-v2", label: "On Lulu · front" },
-        { view: "side", anchor: "lulu-v2", label: "On Lulu · left profile" },
-        {
-          view: "three-quarter",
-          anchor: "lulu-v2",
-          label: "On Lulu · right rear three-quarter",
-        },
+        ...(approved.hasFront
+          ? [{
+              view: "front",
+              anchor: approved.slug === "moss-square-knit" ? "lulu-v3" : "lulu-v2",
+              label: "On Lulu · front",
+            }]
+          : []),
+        ...approved.views.map((view) => {
+          if (view.slot === "MODEL_LEFT_PROFILE") {
+            return { view: "side", anchor: "lulu-v2", label: "On Lulu · left profile" };
+          }
+          if (view.slot === "MODEL_REAR_THREE_QUARTER") {
+            return {
+              view: "three-quarter",
+              anchor: "lulu-v2",
+              label: "On Lulu · right rear three-quarter",
+            };
+          }
+          return { view: "detail", anchor: "lulu-v2", label: "On Lulu · styled detail" };
+        }),
       ],
     );
     assert.doesNotMatch(JSON.stringify(gallery), /square back|right profile|05-model-back/iu);
+    if (!approved.hasFront) {
+      assert.deepEqual(product.modelTryout, { modelStatus: "PENDING" });
+    }
   }
 });
 
-test("migrates stored v5 Moss and Cocoa data without resetting operator edits", () => {
-  assert.equal(WARDROBE_PUBLIC_VIEW_SCHEMA_VERSION, 6);
+test("migrates stored v5 supplemental views without resetting operator edits", () => {
+  assert.equal(WARDROBE_PUBLIC_VIEW_SCHEMA_VERSION, 8);
 
   for (const [index, approved] of approvedProducts.slice(1).entries()) {
     const product = WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS.find(
@@ -142,13 +199,47 @@ test("migrates stored v5 Moss and Cocoa data without resetting operator edits", 
     assert.equal(parsed.products[0].price, 27100 + index);
     assert.equal(parsed.products[0].note, `Operator-authored ${approved.slug} note.`);
     assert.deepEqual(
-      parsed.products[0].media.slice(-2),
-      approved.views.map(({ slot, src }) => ({ slot, src })),
+      parsed.products[0].media.slice(-approved.views.length),
+      approved.views.map(({ slot, src }) => ({ slot, src, modelAnchorId: "lulu-v2" })),
     );
   }
 });
 
-test("rejects supplemental model claims outside the approved multi-view contract", () => {
+test("migrates an existing v6 Magenta row to approved supplemental views", () => {
+  const magenta = WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS.find(
+    (product) => product.slug === "magenta-plunge-ruched-mini-dress",
+  );
+  assert.ok(magenta);
+  const productOnlyMedia = magenta.media.filter((item) => !item.slot.startsWith("MODEL_"));
+  const parsed = parseStoredWardrobePublicView(JSON.stringify({
+    version: 6,
+    data: [{
+      ...magenta,
+      name: "Operator Magenta",
+      price: 22800,
+      note: "Operator-authored Magenta note.",
+      media: productOnlyMedia,
+    }],
+    managedSlugs: [magenta.slug],
+  }));
+
+  assert.equal(parsed.products.length, 1);
+  assert.deepEqual(parsed.managedSlugs, [magenta.slug]);
+  assert.equal(parsed.products[0].name, "Operator Magenta");
+  assert.equal(parsed.products[0].price, 22800);
+  assert.equal(parsed.products[0].note, "Operator-authored Magenta note.");
+  const approvedMagenta = approvedProducts.find((product) => product.slug === magenta.slug);
+  assert.ok(approvedMagenta);
+  assert.deepEqual(
+    parsed.products[0].media.slice(-2),
+    approvedMagenta.views.map(({ slot, src }) => ({ slot, src, modelAnchorId: "lulu-v2" })),
+  );
+  const shopProduct = shopProducts.find((product) => product.slug === magenta.slug);
+  assert.ok(shopProduct);
+  assert.deepEqual(shopProduct.modelTryout, { modelStatus: "PENDING" });
+});
+
+test("rejects supplemental model claims outside the approved slot contract", () => {
   const salmon = WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS.find(
     (product) => product.slug === "salmon-camp-shirt",
   );
@@ -170,4 +261,46 @@ test("rejects supplemental model claims outside the approved multi-view contract
 
   assert.deepEqual(parsed.products, []);
   assert.deepEqual(parsed.managedSlugs, [salmon.slug]);
+
+  const silver = WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS.find(
+    (product) => product.slug === "silver-off-shoulder-mermaid-dress",
+  );
+  assert.ok(silver);
+  const silverWithUnapprovedLeft = parseStoredWardrobePublicView(JSON.stringify({
+    version: WARDROBE_PUBLIC_VIEW_SCHEMA_VERSION,
+    data: [{
+      ...silver,
+      media: [
+        ...silver.media,
+        {
+          slot: "MODEL_LEFT_PROFILE",
+          src: "/shop/products/silver-off-shoulder-mermaid-dress/07-model-left-profile.webp",
+        },
+      ],
+    }],
+    managedSlugs: [silver.slug],
+  }));
+  assert.deepEqual(silverWithUnapprovedLeft.products, []);
+  assert.deepEqual(silverWithUnapprovedLeft.managedSlugs, [silver.slug]);
+
+  const multicolor = WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS.find(
+    (product) => product.slug === "multicolor-abstract-strapless-mini-dress",
+  );
+  assert.ok(multicolor);
+  const multicolorWithUnapprovedDetail = parseStoredWardrobePublicView(JSON.stringify({
+    version: WARDROBE_PUBLIC_VIEW_SCHEMA_VERSION,
+    data: [{
+      ...multicolor,
+      media: [
+        ...multicolor.media,
+        {
+          slot: "MODEL_DETAIL",
+          src: "/shop/products/multicolor-abstract-strapless-mini-dress/08-model-detail.webp",
+        },
+      ],
+    }],
+    managedSlugs: [multicolor.slug],
+  }));
+  assert.deepEqual(multicolorWithUnapprovedDetail.products, []);
+  assert.deepEqual(multicolorWithUnapprovedDetail.managedSlugs, [multicolor.slug]);
 });

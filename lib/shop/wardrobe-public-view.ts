@@ -19,6 +19,7 @@ const mediaPresentation: Record<WardrobePublicMedia["slot"], ProductMediaPresent
   MODEL_FRONT: "model",
   MODEL_LEFT_PROFILE: "model",
   MODEL_REAR_THREE_QUARTER: "model",
+  MODEL_DETAIL: "model",
   FABRIC_DETAIL: "garment",
 };
 
@@ -29,6 +30,7 @@ const mediaView: Record<WardrobePublicMedia["slot"], ProductMediaView> = {
   MODEL_FRONT: "front",
   MODEL_LEFT_PROFILE: "side",
   MODEL_REAR_THREE_QUARTER: "three-quarter",
+  MODEL_DETAIL: "detail",
   FABRIC_DETAIL: "detail",
 };
 
@@ -39,6 +41,7 @@ const mediaLabel: Record<WardrobePublicMedia["slot"], string> = {
   MODEL_FRONT: "On Lulu · front",
   MODEL_LEFT_PROFILE: "On Lulu · left profile",
   MODEL_REAR_THREE_QUARTER: "On Lulu · right rear three-quarter",
+  MODEL_DETAIL: "On Lulu · styled detail",
   FABRIC_DETAIL: "Fabric detail",
 };
 
@@ -56,7 +59,7 @@ function publicMedia(product: WardrobePublicProduct, item: WardrobePublicMedia):
     view,
     width: isModel && product.slug === "ivory-tie-skirt" ? 971 : isModel ? 972 : 1122,
     height: isModel ? 1619 : 1402,
-    modelAnchorId: isModel ? product.modelAnchor.id : undefined,
+    modelAnchorId: isModel ? item.modelAnchorId : undefined,
   };
 }
 

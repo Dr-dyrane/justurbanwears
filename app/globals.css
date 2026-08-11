@@ -194,34 +194,6 @@ a {
   width: 1px;
 }
 
-.brand {
-  align-items: center;
-  display: flex;
-  gap: 11px;
-  letter-spacing: -0.04em;
-  padding: 0 8px;
-}
-
-.brand-mark {
-  align-items: center;
-  background: linear-gradient(145deg, var(--surface-emphasis), var(--accent-orange));
-  border-radius: 50% 50% 48% 52% / 53% 47% 55% 45%;
-  color: var(--surface-inverse);
-  display: inline-flex;
-  font-family: Georgia, serif;
-  font-size: 18px;
-  height: 38px;
-  justify-content: center;
-  transform: rotate(-4deg);
-  width: 38px;
-  box-shadow: 0 10px 26px rgba(221, 96, 66, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.45);
-}
-
-.brand-word {
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 22px;
-}
-
 .rail-nav {
   display: grid;
   gap: 8px;
@@ -2751,10 +2723,8 @@ a {
 
 @media (max-width: 1180px) {
   :root { --rail-width: 84px; }
-  .brand-word,
   .rail-link > span:last-child,
   .rail-foot { display: none; }
-  .brand { justify-content: center; padding: 0; }
   .rail-nav { margin-top: 60px; }
   .rail-link { justify-content: center; padding: 10px; }
   .nav-mark { height: 29px; width: 29px; }

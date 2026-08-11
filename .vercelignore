@@ -1,0 +1,15 @@
+# Database administration is an explicit operator workflow, never build input.
+/drizzle/
+/scripts/shop-db/
+/tests/
+/docs/
+/storage/
+/.codex/
+/design/
+/.env*
+/.wrangler/
+/.vinext/
+/.output/
+/.next/
+/work/
+/outputs/

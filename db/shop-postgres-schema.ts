@@ -16,6 +16,103 @@ import {
   varchar,
 } from "drizzle-orm/pg-core";
 
+export const shopCatalogueAvailability = pgEnum("shop_catalogue_availability", [
+  "AVAILABLE",
+  "RESERVED",
+  "SOLD",
+  "ARCHIVED",
+]);
+
+export const shopCatalogueItems = pgTable("shop_catalogue_items", {
+  sku: varchar("sku", { length: 40 }).primaryKey(),
+  slug: text("slug").notNull(),
+  name: text("name").notNull(),
+  category: text("category").notNull(),
+  price: integer("price").notNull(),
+  taggedSize: text("tagged_size").notNull(),
+  fit: text("fit").notNull(),
+  condition: text("condition").notNull(),
+  colour: text("colour").notNull(),
+  dropLabel: text("drop_label").notNull(),
+  tone: text("tone").notNull(),
+  silhouette: text("silhouette").notNull(),
+  note: text("note").notNull(),
+  story: text("story").notNull(),
+  details: jsonb("details").$type<string[]>().notNull(),
+  measurements: jsonb("measurements").$type<Array<{
+    label: string;
+    value: string;
+  }>>().notNull(),
+  modelAnchor: jsonb("model_anchor").$type<{
+    id: "lulu-v2" | "lulu-v3";
+    src?: string;
+  }>().notNull(),
+  media: jsonb("media").$type<Array<{
+    slot: string;
+    src: string;
+    modelAnchorId?: "lulu-v2" | "lulu-v3";
+  }>>().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("shop_catalogue_items_slug_unique").on(table.slug),
+  check("shop_catalogue_items_price_nonnegative", sql`${table.price} >= 0`),
+  check("shop_catalogue_items_details_array", sql`jsonb_typeof(${table.details}) = 'array'`),
+  check("shop_catalogue_items_measurements_array", sql`jsonb_typeof(${table.measurements}) = 'array'`),
+  check("shop_catalogue_items_model_anchor_object", sql`jsonb_typeof(${table.modelAnchor}) = 'object'`),
+  check("shop_catalogue_items_media_array", sql`jsonb_typeof(${table.media}) = 'array'`),
+]);
+
+export const shopInventory = pgTable("shop_inventory", {
+  sku: varchar("sku", { length: 40 })
+    .primaryKey()
+    .references(() => shopCatalogueItems.sku, { onDelete: "restrict" }),
+  availability: shopCatalogueAvailability("availability").notNull(),
+  onHand: integer("on_hand").notNull(),
+  reserved: integer("reserved").notNull(),
+  sold: integer("sold").notNull(),
+  returned: integer("returned").notNull(),
+  writeOff: integer("write_off").notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  check("shop_inventory_counts_nonnegative", sql`
+    ${table.onHand} >= 0
+    and ${table.reserved} >= 0
+    and ${table.sold} >= 0
+    and ${table.returned} >= 0
+    and ${table.writeOff} >= 0
+  `),
+  check("shop_inventory_reserved_within_on_hand", sql`${table.reserved} <= ${table.onHand}`),
+  check("shop_inventory_returns_within_sales", sql`${table.returned} <= ${table.sold}`),
+  check("shop_inventory_one_off_conservation", sql`
+    ${table.onHand} + ${table.sold} - ${table.returned} + ${table.writeOff} = 1
+  `),
+  check("shop_inventory_availability_consistent", sql`
+    (${table.availability} = 'AVAILABLE' and ${table.onHand} = 1 and ${table.reserved} = 0)
+    or (${table.availability} = 'RESERVED' and ${table.onHand} = 1 and ${table.reserved} = 1)
+    or (${table.availability} = 'SOLD' and ${table.onHand} = 0 and ${table.reserved} = 0 and ${table.sold} > ${table.returned})
+    or (${table.availability} = 'ARCHIVED' and ${table.reserved} = 0)
+  `),
+]);
+
+export const shopSeedLedger = pgTable("shop_seed_ledger", {
+  namespace: varchar("namespace", { length: 120 }).notNull(),
+  revision: varchar("revision", { length: 120 }).notNull(),
+  target: varchar("target", { length: 24 }).notNull(),
+  gitSha: varchar("git_sha", { length: 64 }).notNull(),
+  checksum: varchar("checksum", { length: 64 }).notNull(),
+  rowCount: integer("row_count").notNull(),
+  operation: varchar("operation", { length: 24 }).notNull(),
+  appliedAt: timestamp("applied_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  primaryKey({ columns: [table.namespace, table.revision] }),
+  check("shop_seed_ledger_checksum_sha256", sql`${table.checksum} ~ '^[0-9a-f]{64}$'`),
+  check("shop_seed_ledger_git_sha", sql`${table.gitSha} ~ '^[0-9a-f]{7,64}$'`),
+  check("shop_seed_ledger_row_count_positive", sql`${table.rowCount} > 0`),
+  check("shop_seed_ledger_target_known", sql`${table.target} in ('local', 'preview', 'production')`),
+  check("shop_seed_ledger_operation_known", sql`${table.operation} in ('seed', 'descriptive-sync')`),
+]);
+
 export const shopCartStatus = pgEnum("shop_cart_status", [
   "ACTIVE",
   "CONVERTED",

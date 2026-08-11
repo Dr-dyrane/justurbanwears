@@ -1,7 +1,6 @@
 import type { Garment, StudioListing, StudioModel } from "./entities";
 import type { StudioSnapshot } from "./state";
 import {
-  APPROVED_PUBLIC_MODEL_ANCHOR,
   getApprovedPublicListingContract,
 } from "../projections/approved-catalogue";
 
@@ -56,13 +55,15 @@ export function listingReadiness(
     },
     {
       id: "model",
-      label: "Lulu V2 public anchor",
+      label: approvedContract
+        ? `Lulu ${approvedContract.modelAnchor.id === "lulu-v3" ? "V3" : "V2"} public model`
+        : "Approved Lulu public model",
       ready: Boolean(
         model
         && model.id === snapshot.defaultModelId
         && model.state === "READY"
         && everyGateReady(modelReadiness(model))
-        && approvedContract?.modelAnchor.id === APPROVED_PUBLIC_MODEL_ANCHOR.id
+        && approvedContract?.modelAnchor.id
       ),
     },
     {

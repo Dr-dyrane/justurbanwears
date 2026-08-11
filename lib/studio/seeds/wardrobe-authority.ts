@@ -11,7 +11,10 @@ import {
 
 const MIGRATION_CREATED_AT = "2026-08-10T00:00:00.000Z";
 
-const DROP_01_LEGACY_AUTHORITY = new Map([
+const DROP_01_LEGACY_AUTHORITY = new Map<
+  string,
+  { readonly id: string; readonly skus: readonly string[] }
+>([
   ["DYN-087", { id: "wardrobe-reviewed-nude-ruched-sundress", skus: ["REVIEW-BLUSH-MINI-001", "REVIEW-NUDE-RUCHED-001"] }],
   ["DYN-088", { id: "wardrobe-reviewed-purple-beaded-evening-gown", skus: ["REVIEW-PURPLE-BEADED-002"] }],
   ["DYN-089", { id: "wardrobe-reviewed-draft-003", skus: ["REVIEW-SAGE-RUCHED-003"] }],

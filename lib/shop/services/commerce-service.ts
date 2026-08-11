@@ -7,13 +7,22 @@ import type {
   ShopCheckoutContact,
   ShopCheckoutFulfillment,
   ShopCheckoutRequest,
+  ShopCheckoutSubmissionIntent,
+  ShopCheckoutSubmissionResult,
+  ShopOrder,
 } from "../domain/entities";
 import type { CommerceSnapshot } from "../domain/state";
-import type { CommerceService, ShopCatalogPort, ShopStateRepository } from "./contracts";
+import type {
+  AuthenticatedCheckoutCommandPort,
+  CommerceService,
+  ShopCatalogPort,
+  ShopStateRepository,
+} from "./contracts";
 
 interface CommerceServiceDependencies {
   repository: ShopStateRepository;
   catalog?: ShopCatalogPort;
+  checkoutCommand?: AuthenticatedCheckoutCommandPort;
   now?: () => Date;
   createReference?: (date: Date) => string;
 }
@@ -76,13 +85,42 @@ function normalizeFulfillment(
   };
 }
 
+function createCheckoutSubmissionIntent(order: ShopOrder): ShopCheckoutSubmissionIntent | null {
+  if (
+    order.transmission !== "LOCAL_ONLY"
+    || !order.contact
+    || order.fulfillment.kind === "LEGACY"
+    || order.lines.some((line) => line.snapshot !== "PRODUCT")
+  ) return null;
+
+  return {
+    version: 1,
+    idempotencyKey: `checkout:${order.id}`,
+    lines: order.lines.map((line) => ({
+      slug: line.slug,
+      taggedSize: line.snapshot === "PRODUCT" ? line.taggedSize : "",
+      quantity: 1,
+    })),
+    contact: { ...order.contact },
+    fulfillment: order.fulfillment.kind === "PICKUP"
+      ? { kind: "PICKUP", optionId: "pickup" }
+      : {
+          kind: "DELIVERY",
+          optionId: order.fulfillment.optionId,
+          address: { ...order.fulfillment.address },
+        },
+  };
+}
+
 export function createCommerceService({
   repository,
   catalog = createStaticMigrationCatalogPort(),
+  checkoutCommand,
   now = () => new Date(),
   createReference = createLocalOrderReference,
 }: CommerceServiceDependencies): CommerceService {
   let catalogHydration: ReturnType<ShopCatalogPort["hydrate"]> | null = null;
+  const submittedCheckouts = new Map<string, Promise<ShopCheckoutSubmissionResult>>();
   const hydrateCatalog = () => {
     catalogHydration ??= catalog.hydrate();
     return catalogHydration;
@@ -175,6 +213,27 @@ export function createCommerceService({
           transmission: "LOCAL_ONLY",
         },
       };
+    },
+    async submitCheckout(order: ShopOrder) {
+      if (!checkoutCommand) return { ok: false, reason: "UNAVAILABLE" };
+      if (!checkoutCommand.isAuthenticated()) {
+        return { ok: false, reason: "UNAUTHENTICATED" };
+      }
+      const intent = createCheckoutSubmissionIntent(order);
+      if (!intent) return { ok: false, reason: "REJECTED" };
+
+      const existing = submittedCheckouts.get(intent.idempotencyKey);
+      if (existing) return existing;
+
+      const operation = checkoutCommand.submit(intent).then((result) => {
+        if (!result.ok) submittedCheckouts.delete(intent.idempotencyKey);
+        return result;
+      }, (error: unknown) => {
+        submittedCheckouts.delete(intent.idempotencyKey);
+        throw error;
+      });
+      submittedCheckouts.set(intent.idempotencyKey, operation);
+      return operation;
     },
   };
 }

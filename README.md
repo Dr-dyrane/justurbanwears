@@ -101,11 +101,20 @@ The manifest and document metadata depend on these exact public files. The ident
 
 | File | Required output |
 | --- | --- |
+| `public/brand/logo.svg` | Exact path-outlined storefront wordmark; transparent, scalable, and free of runtime font dependencies. |
+| `public/brand/logo-white.svg` | Exact white outlined wordmark for dark surfaces. |
+| `public/brand/icon.svg` | Scalable coral-on-cocoa `JU/W` app icon. |
+| `public/logo.png` | Exactly 1620×370 px, transparent sRGB PNG; direct-share wordmark at `/logo.png`. |
+| `public/icon.png` | Exactly 1024×1024 px, opaque sRGB PNG; direct-share JU/W icon at `/icon.png`. |
+| `public/favicon.svg` | Scalable browser favicon using the approved optical micro mark. |
 | `public/favicon.ico` | Multi-size browser favicon; include at least 16×16 and 32×32. |
 | `public/brand/icon-192.png` | Exactly 192×192 px, sRGB PNG, standard app icon. |
 | `public/brand/icon-512.png` | Exactly 512×512 px, sRGB PNG, standard app icon. |
 | `public/brand/icon-maskable-512.png` | Exactly 512×512 px, sRGB PNG; keep all essential artwork inside the central maskable safe zone. |
 | `public/brand/apple-touch-icon.png` | Exactly 180×180 px, opaque sRGB PNG; do not bake in rounded corners. |
+| `public/brand/icon-master-1024.png` | Exactly 1024×1024 px, opaque sRGB PNG; canonical raster master for downstream platform exports. |
+
+The convenience URLs `/logo` and `/icon` serve the two approved SVG masters directly. `/logo.png` and `/icon.png` provide direct PNG versions. App code imports every path from `lib/brand/assets.ts`; Shop and Studio render the shared wordmark/icon components rather than maintaining separate logo drawings.
 
 Use the approved public logo only. Do not substitute private identity references, Studio assets, mock model outputs, screenshots, or an invented mark. Preserve these filenames unless the metadata and manifest are updated in the same change. After the final drop, verify every file returns `200` with the correct image content type, inspect maskable crops on multiple shapes, and rerun PWA install checks on Android/Chromium and iOS Safari.
 

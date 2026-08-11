@@ -1,8 +1,11 @@
 import type {
   BagItem,
+  ShopCheckoutSubmissionIntent,
+  ShopCheckoutSubmissionResult,
   ShopAvailability,
   ShopCheckoutCreationResult,
   ShopCheckoutRequest,
+  ShopOrder,
   ShopProduct,
 } from "../domain/entities";
 import type { CommerceSnapshot, ConnectivityState } from "../domain/state";
@@ -20,6 +23,16 @@ export interface ShopCatalogPort {
   subscribe(listener: (products: ShopProduct[]) => void): () => void;
 }
 
+/**
+ * Future server capability. Authentication is derived from the validated
+ * server session; the intent deliberately carries no customer id, price,
+ * totals, status, transmission, or private Studio data.
+ */
+export interface AuthenticatedCheckoutCommandPort {
+  isAuthenticated(): boolean;
+  submit(intent: ShopCheckoutSubmissionIntent): Promise<ShopCheckoutSubmissionResult>;
+}
+
 export interface CommerceService {
   hydrateCatalog(): Promise<ShopProduct[]>;
   listProducts(): readonly ShopProduct[];
@@ -35,5 +48,6 @@ export interface CommerceService {
     snapshot: CommerceSnapshot,
     request: ShopCheckoutRequest,
   ): ShopCheckoutCreationResult;
+  submitCheckout(order: ShopOrder): Promise<ShopCheckoutSubmissionResult>;
   normalizeBagItem(item: BagItem): BagItem | null;
 }

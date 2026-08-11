@@ -1,5 +1,8 @@
 import type {
   WardrobePublicMedia,
+  WardrobePublicMediaSlot,
+  WardrobePublicModelAnchor,
+  WardrobePublicModelAnchorId,
   WardrobePublicProduct,
   WardrobePublicViewSnapshot,
 } from "./domain/entities";
@@ -8,10 +11,20 @@ import {
   WARDROBE_DROP_01_PRODUCTS,
 } from "./drop-01";
 
-export const WARDROBE_PUBLIC_MODEL_ANCHOR = Object.freeze({
-  id: "lulu-v2" as const,
-  src: "/shop/model/lulu-v2-approved.png" as const,
+export const WARDROBE_PUBLIC_MODEL_ANCHORS = Object.freeze({
+  "lulu-v2": Object.freeze({
+    id: "lulu-v2" as const,
+    src: "/shop/model/lulu-v2-approved.png" as const,
+  }),
+  "lulu-v3": Object.freeze({ id: "lulu-v3" as const }),
 });
+
+/** The public V2 identity reference remains the default and is never replaced by a private master. */
+export const WARDROBE_PUBLIC_MODEL_ANCHOR = WARDROBE_PUBLIC_MODEL_ANCHORS["lulu-v2"];
+
+export const WARDROBE_APPROVED_V3_MODEL_FRONT_SLUGS = Object.freeze([
+  "moss-square-knit",
+] as const);
 
 export const WARDROBE_APPROVED_MODEL_FRONT_SLUGS = Object.freeze([
   "coral-drift-dress",
@@ -22,36 +35,85 @@ export const WARDROBE_APPROVED_MODEL_FRONT_SLUGS = Object.freeze([
   ...WARDROBE_DROP_01_APPROVED_MODEL_FRONT_SLUGS,
 ] as const);
 
-export const WARDROBE_APPROVED_MODEL_MULTI_VIEW_SLUGS = Object.freeze([
-  "coral-drift-dress",
-  "moss-square-knit",
-  "cocoa-pleat-trouser",
-] as const);
+type WardrobeSupplementalModelSlot = Extract<
+  WardrobePublicMediaSlot,
+  "MODEL_LEFT_PROFILE" | "MODEL_REAR_THREE_QUARTER" | "MODEL_DETAIL"
+>;
+
+export const WARDROBE_APPROVED_MODEL_SUPPLEMENTAL_SLOTS = Object.freeze({
+  "coral-drift-dress": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
+  "moss-square-knit": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
+  "cocoa-pleat-trouser": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
+  "magenta-plunge-ruched-mini-dress": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
+  "silver-off-shoulder-mermaid-dress": ["MODEL_REAR_THREE_QUARTER"],
+  "orchid-beaded-column-gown": ["MODEL_DETAIL"],
+} as const satisfies Record<string, readonly WardrobeSupplementalModelSlot[]>);
+
+export function getApprovedModelSupplementalSlots(
+  slug: string,
+): readonly WardrobeSupplementalModelSlot[] {
+  return Object.hasOwn(WARDROBE_APPROVED_MODEL_SUPPLEMENTAL_SLOTS, slug)
+    ? WARDROBE_APPROVED_MODEL_SUPPLEMENTAL_SLOTS[
+        slug as keyof typeof WARDROBE_APPROVED_MODEL_SUPPLEMENTAL_SLOTS
+      ]
+    : [];
+}
 
 const modelFrontSlugs = new Set<string>(WARDROBE_APPROVED_MODEL_FRONT_SLUGS);
-const modelMultiViewSlugs = new Set<string>(WARDROBE_APPROVED_MODEL_MULTI_VIEW_SLUGS);
+const v3ModelFrontSlugs = new Set<string>(WARDROBE_APPROVED_V3_MODEL_FRONT_SLUGS);
+
+const modelMediaSlots = new Set<WardrobePublicMediaSlot>([
+  "MODEL_FRONT",
+  "MODEL_LEFT_PROFILE",
+  "MODEL_REAR_THREE_QUARTER",
+  "MODEL_DETAIL",
+]);
+
+const supplementalModelFiles: Record<WardrobeSupplementalModelSlot, string> = {
+  MODEL_LEFT_PROFILE: "07-model-left-profile.webp",
+  MODEL_REAR_THREE_QUARTER: "05-model-rear-three-quarter.webp",
+  MODEL_DETAIL: "08-model-detail.webp",
+};
+
+export function getApprovedModelAnchorId(
+  slug: string,
+  slot: WardrobePublicMediaSlot,
+): WardrobePublicModelAnchorId | undefined {
+  if (!modelMediaSlots.has(slot)) return undefined;
+  return slot === "MODEL_FRONT" && v3ModelFrontSlugs.has(slug) ? "lulu-v3" : "lulu-v2";
+}
+
+export function getWardrobePublicModelAnchor(slug: string): WardrobePublicModelAnchor {
+  return v3ModelFrontSlugs.has(slug)
+    ? { ...WARDROBE_PUBLIC_MODEL_ANCHORS["lulu-v3"] }
+    : { ...WARDROBE_PUBLIC_MODEL_ANCHORS["lulu-v2"] };
+}
+
+function migrationFrame(
+  slug: string,
+  slot: WardrobePublicMediaSlot,
+  fileName: string,
+): WardrobePublicMedia {
+  const modelAnchorId = getApprovedModelAnchorId(slug, slot);
+  return {
+    slot,
+    src: `/shop/products/${slug}/${fileName}`,
+    ...(modelAnchorId ? { modelAnchorId } : {}),
+  };
+}
 
 function migrationMedia(slug: string): WardrobePublicMedia[] {
   return [
-    { slot: "GARMENT_FRONT", src: `/shop/products/${slug}/01-garment-front.webp` },
-    { slot: "GARMENT_BACK", src: `/shop/products/${slug}/02-garment-back.webp` },
-    { slot: "MANNEQUIN_FRONT", src: `/shop/products/${slug}/03-mannequin-front.webp` },
+    migrationFrame(slug, "GARMENT_FRONT", "01-garment-front.webp"),
+    migrationFrame(slug, "GARMENT_BACK", "02-garment-back.webp"),
+    migrationFrame(slug, "MANNEQUIN_FRONT", "03-mannequin-front.webp"),
     ...(modelFrontSlugs.has(slug)
-      ? [{ slot: "MODEL_FRONT" as const, src: `/shop/products/${slug}/04-model-front.webp` }]
+      ? [migrationFrame(slug, "MODEL_FRONT", "04-model-front.webp")]
       : []),
-    { slot: "FABRIC_DETAIL", src: `/shop/products/${slug}/06-fabric-detail.webp` },
-    ...(modelMultiViewSlugs.has(slug)
-      ? [
-          {
-            slot: "MODEL_LEFT_PROFILE" as const,
-            src: `/shop/products/${slug}/07-model-left-profile.webp`,
-          },
-          {
-            slot: "MODEL_REAR_THREE_QUARTER" as const,
-            src: `/shop/products/${slug}/05-model-rear-three-quarter.webp`,
-          },
-        ]
-      : []),
+    migrationFrame(slug, "FABRIC_DETAIL", "06-fabric-detail.webp"),
+    ...getApprovedModelSupplementalSlots(slug).map((slot) => ({
+      ...migrationFrame(slug, slot, supplementalModelFiles[slot]),
+    })),
   ];
 }
 
@@ -60,7 +122,7 @@ function migrationSeed(
 ): WardrobePublicProduct {
   return {
     ...product,
-    modelAnchor: { ...WARDROBE_PUBLIC_MODEL_ANCHOR },
+    modelAnchor: getWardrobePublicModelAnchor(product.slug),
     media: migrationMedia(product.slug),
   };
 }
@@ -211,7 +273,9 @@ export const WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS: readonly WardrobePublicProduc
   ...WARDROBE_DROP_01_PRODUCTS.map((product) => migrationSeed({
     ...product,
     details: [...product.details],
-    measurements: product.measurements.map((measurement) => ({ ...measurement })),
+    measurements: product.measurements.map((
+      measurement: WardrobePublicProduct["measurements"][number],
+    ) => ({ ...measurement })),
   })),
 ]);
 

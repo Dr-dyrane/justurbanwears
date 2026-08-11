@@ -30,6 +30,8 @@ export const initialModelTryoutState: ModelTryoutState = {
   attempt: 0,
 };
 
+const supportedModelAnchorIds = new Set<ShopModelAnchorId>(["lulu-v2", "lulu-v3"]);
+
 function freshLoadingState(attempt: number): ModelTryoutState {
   return {
     phase: "loading",
@@ -89,8 +91,9 @@ export function resolveApprovedModelTryout(
 }
 
 /**
- * The main product gallery shows product-only frames first, then the approved
- * front tryout and any additional views tied to that same model anchor.
+ * The main product gallery shows product-only frames first, then an approved
+ * front when one exists, followed by independently approved supplemental
+ * views. Supplemental views never promote a pending front tryout.
  */
 export function selectProductGalleryMedia(
   product: Pick<ShopProduct, "media" | "modelTryout">,
@@ -98,14 +101,14 @@ export function selectProductGalleryMedia(
   const productMedia = product.media ?? [];
   const approved = resolveApprovedModelTryout(product.modelTryout);
   const productOnly = productMedia.filter((item) => item.presentation !== "model");
-
-  if (!approved) return productOnly;
-
   const additionalViews = productMedia.filter((item) =>
     item.presentation === "model"
     && item.view !== "front"
-    && item.modelAnchorId === approved.modelAnchorId,
+    && item.modelAnchorId !== undefined
+    && supportedModelAnchorIds.has(item.modelAnchorId),
   );
 
-  return [...productOnly, approved.frame, ...additionalViews];
+  return approved
+    ? [...productOnly, approved.frame, ...additionalViews]
+    : [...productOnly, ...additionalViews];
 }

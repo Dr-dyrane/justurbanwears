@@ -7,7 +7,7 @@ export type ProductTone = "coral" | "indigo" | "moss" | "ivory" | "cocoa" | "sal
 export type ProductSilhouette = "dress" | "shirt" | "knit" | "skirt" | "trouser";
 export type ProductMediaPresentation = "garment" | "mannequin" | "model";
 export type ProductMediaView = "front" | "back" | "side" | "three-quarter" | "detail";
-export type ShopModelAnchorId = "lulu-v2";
+export type ShopModelAnchorId = "lulu-v2" | "lulu-v3";
 
 export interface ShopProductMedia {
   id: string;
@@ -171,3 +171,23 @@ export type ShopCheckoutCreationResult =
 export type ShopCheckoutSaveResult =
   | { ok: true; orderId: ShopOrderReference }
   | { ok: false; reason: ShopCheckoutFailureReason };
+
+export interface ShopCheckoutSubmissionIntent {
+  version: 1;
+  idempotencyKey: string;
+  lines: Array<{
+    slug: ShopProductSlug;
+    taggedSize: string;
+    quantity: 1;
+  }>;
+  contact: ShopCheckoutContact;
+  fulfillment: ShopCheckoutFulfillment;
+}
+
+export type ShopSubmittedOrder = Omit<ShopOrder, "transmission"> & {
+  transmission: "SUBMITTED";
+};
+
+export type ShopCheckoutSubmissionResult =
+  | { ok: true; order: ShopSubmittedOrder }
+  | { ok: false; reason: "UNAVAILABLE" | "UNAUTHENTICATED" | "REJECTED" };

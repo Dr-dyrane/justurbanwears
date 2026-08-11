@@ -20,7 +20,7 @@ const expectedApprovals = [
     slug: "moss-square-knit",
     width: 972,
     height: 1619,
-    sha256: "6cc0921a1263fc8b5514421be739c6eb6262fdb1bb9a229c010a2f0e0ebb388d",
+    sha256: "2ea912595c82c9b4b1a0c8f0f608e6242332cc41ee2f337c5da53a489262e03c",
   },
   {
     slug: "ivory-tie-skirt",
@@ -44,38 +44,43 @@ const expectedApprovals = [
     slug: "blush-scoop-mini-dress",
     width: 972,
     height: 1619,
-    sha256: "3556692f2e60c202c44b449d5aa3fa54242212a5afb4ac220028cc6d361925ad",
+    sha256: "6e56d78e84f11bbf872b551dc06e57fb6ab75649faeb8a30ba84a4ff22fb8aa4",
   },
   {
     slug: "orchid-beaded-column-gown",
     width: 972,
     height: 1619,
-    sha256: "b39a75718c9ab77057325c7549f7b749b56aead8f06634465718e3a971ba6ea8",
-  },
-  {
-    slug: "sage-asymmetric-ruched-maxi-dress",
-    width: 972,
-    height: 1619,
-    sha256: "c7fe429f33d463325924dc321bd2f8dc573f32fc975df379fe9977fe19b1dd51",
-  },
-  {
-    slug: "silver-off-shoulder-mermaid-dress",
-    width: 972,
-    height: 1619,
-    sha256: "e41334fe9952d9a2c5fb84fe3e6730099b9936f2fd5f44fc8896ee55a9ec907e",
+    sha256: "21f11f3f1146080ebb3c2fe1a5affb40872f545d66ab996d594263409cd2e6b3",
   },
   {
     slug: "multicolor-abstract-strapless-mini-dress",
     width: 972,
     height: 1619,
-    sha256: "32cb8b1c831708f0e347e8069639fe552dc95d842cc7a0a408f51b6dd272daee",
+    sha256: "575b3341f455e69e99988b16969261575f5a0543fb4c9afc7b21117d41201f1c",
   },
 ] as const;
 
-const approvedMultiViewSlugs = new Set([
-  "coral-drift-dress",
-  "moss-square-knit",
-  "cocoa-pleat-trouser",
+const approvedSupplementalSources = new Map<string, readonly string[]>([
+  ...[
+    "coral-drift-dress",
+    "moss-square-knit",
+    "cocoa-pleat-trouser",
+    "magenta-plunge-ruched-mini-dress",
+  ].map((slug) => [
+    slug,
+    [
+      `/shop/products/${slug}/07-model-left-profile.webp`,
+      `/shop/products/${slug}/05-model-rear-three-quarter.webp`,
+    ],
+  ] as const),
+  [
+    "silver-off-shoulder-mermaid-dress",
+    ["/shop/products/silver-off-shoulder-mermaid-dress/05-model-rear-three-quarter.webp"],
+  ],
+  [
+    "orchid-beaded-column-gown",
+    ["/shop/products/orchid-beaded-column-gown/08-model-detail.webp"],
+  ],
 ]);
 
 test("keeps the public Lulu V2 anchor byte-identical to the approved projection", () => {
@@ -104,7 +109,10 @@ test("publishes only identity-cleared model fronts with their reviewed bytes", (
     assert.ok(entry);
     assert.equal(entry.tryout.frame.view, "front");
     assert.equal(entry.tryout.frame.presentation, "model");
-    assert.equal(entry.tryout.modelAnchorId, "lulu-v2");
+    assert.equal(
+      entry.tryout.modelAnchorId,
+      expected.slug === "moss-square-knit" ? "lulu-v3" : "lulu-v2",
+    );
     assert.equal(entry.tryout.frame.width, expected.width);
     assert.equal(entry.tryout.frame.height, expected.height);
 
@@ -127,21 +135,29 @@ test("appends only approved Lulu views to the main product gallery", () => {
   for (const product of shopProducts) {
     const gallery = selectProductGalleryMedia(product);
     const modelFrames = gallery.filter((item) => item.presentation === "model");
+    const hasApprovedFront = expectedApprovals.some(({ slug }) => slug === product.slug);
+    const supplementalSources = approvedSupplementalSources.get(product.slug) ?? [];
+    const expectedModelFrames = [
+      ...(hasApprovedFront ? [{
+        src: `/shop/products/${product.slug}/04-model-front.webp`,
+        modelAnchorId: product.slug === "moss-square-knit" ? "lulu-v3" : "lulu-v2",
+      }] : []),
+      ...supplementalSources.map((src) => ({ src, modelAnchorId: "lulu-v2" })),
+    ];
 
-    if (expectedApprovals.some(({ slug }) => slug === product.slug)) {
-      const expectedModelSources = approvedMultiViewSlugs.has(product.slug)
-        ? [
-            `/shop/products/${product.slug}/04-model-front.webp`,
-            `/shop/products/${product.slug}/07-model-left-profile.webp`,
-            `/shop/products/${product.slug}/05-model-rear-three-quarter.webp`,
-          ]
-        : [`/shop/products/${product.slug}/04-model-front.webp`];
-      assert.equal(gallery.length, 4 + expectedModelSources.length);
-      assert.deepEqual(modelFrames.map((item) => item.src), expectedModelSources);
-      assert.ok(modelFrames.every((item) => item.modelAnchorId === "lulu-v2"));
+    if (expectedModelFrames.length) {
+      assert.equal(gallery.length, 4 + expectedModelFrames.length);
+      assert.deepEqual(
+        modelFrames.map(({ src, modelAnchorId }) => ({ src, modelAnchorId })),
+        expectedModelFrames,
+      );
     } else {
       assert.equal(gallery.length, 4);
       assert.equal(modelFrames.length, 0);
     }
   }
+
+  const magenta = shopProducts.find((product) => product.slug === "magenta-plunge-ruched-mini-dress");
+  assert.ok(magenta);
+  assert.deepEqual(magenta.modelTryout, { modelStatus: "PENDING" });
 });

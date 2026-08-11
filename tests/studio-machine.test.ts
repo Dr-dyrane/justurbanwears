@@ -25,8 +25,9 @@ import {
   migrateLegacyStudioState,
 } from "../lib/studio/db/browser-local-repository";
 import {
+  getApprovedModelSupplementalSlots,
   WARDROBE_APPROVED_MODEL_FRONT_SLUGS,
-  WARDROBE_APPROVED_MODEL_MULTI_VIEW_SLUGS,
+  WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS,
 } from "../lib/wardrobe-public-view/seeds";
 
 const garment: Garment = {
@@ -211,14 +212,17 @@ test("writing off a returned sold unit preserves other sellable units", () => {
 });
 
 test("approved wardrobe public-view contracts expose only cleared Lulu views", () => {
-  assert.equal(WARDROBE_PUBLIC_VIEW_PROJECTION_SCHEMA_VERSION, 6);
-  assert.equal(WARDROBE_PUBLIC_VIEW_STORAGE_KEY, "justurban-wears:wardrobe-public-view:v6");
+  assert.equal(WARDROBE_PUBLIC_VIEW_PROJECTION_SCHEMA_VERSION, 8);
+  assert.equal(WARDROBE_PUBLIC_VIEW_STORAGE_KEY, "justurban-wears:wardrobe-public-view:v8");
   const approvedModelFrontSlugs = new Set<string>(WARDROBE_APPROVED_MODEL_FRONT_SLUGS);
-  const approvedMultiViewSlugs = new Set<string>(WARDROBE_APPROVED_MODEL_MULTI_VIEW_SLUGS);
   for (const listing of APPROVED_PUBLIC_LISTINGS) {
     const contract = getApprovedPublicListingContract(listing.sku, listing.slug);
     assert.ok(contract);
-    assert.deepEqual(contract.modelAnchor, APPROVED_PUBLIC_MODEL_ANCHOR);
+    const seed = WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS.find(
+      (product) => product.sku === listing.sku && product.slug === listing.slug,
+    );
+    assert.ok(seed);
+    assert.deepEqual(contract.modelAnchor, seed.modelAnchor);
     const hasApprovedModelFront = approvedModelFrontSlugs.has(listing.slug);
     const expected = [
       `/shop/products/${listing.slug}/01-garment-front.webp`,
@@ -228,12 +232,14 @@ test("approved wardrobe public-view contracts expose only cleared Lulu views", (
         ? [`/shop/products/${listing.slug}/04-model-front.webp`]
         : []),
       `/shop/products/${listing.slug}/06-fabric-detail.webp`,
-      ...(approvedMultiViewSlugs.has(listing.slug)
-        ? [
-            `/shop/products/${listing.slug}/07-model-left-profile.webp`,
-            `/shop/products/${listing.slug}/05-model-rear-three-quarter.webp`,
-          ]
-        : []),
+      ...getApprovedModelSupplementalSlots(listing.slug).map((slot) => {
+        const file = slot === "MODEL_LEFT_PROFILE"
+          ? "07-model-left-profile.webp"
+          : slot === "MODEL_REAR_THREE_QUARTER"
+            ? "05-model-rear-three-quarter.webp"
+            : "08-model-detail.webp";
+        return `/shop/products/${listing.slug}/${file}`;
+      }),
     ];
     assert.deepEqual(
       contract.media.map((frame) => frame.src),

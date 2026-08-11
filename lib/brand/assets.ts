@@ -1,0 +1,31 @@
+export const BRAND_ASSETS = {
+  version: "2026.1-juw",
+  wordmark: {
+    svg: "/brand/logo.svg",
+    reverseSvg: "/brand/logo-white.svg",
+    png: "/logo.png",
+    share: "/logo",
+    runtimeSvg: "/brand/logo.svg?v=2026.1-juw",
+    runtimeReverseSvg: "/brand/logo-white.svg?v=2026.1-juw",
+  },
+  icon: {
+    svg: "/brand/icon.svg",
+    png: "/icon.png",
+    share: "/icon",
+    runtimeSvg: "/brand/icon.svg?v=2026.1-juw",
+    app192: "/brand/icon-192.png",
+    app512: "/brand/icon-512.png",
+    maskable512: "/brand/icon-maskable-512.png",
+    appleTouch: "/brand/apple-touch-icon.png",
+    runtimeApp192: "/brand/icon-192.png?v=2026.1-juw",
+    runtimeApp512: "/brand/icon-512.png?v=2026.1-juw",
+    runtimeMaskable512: "/brand/icon-maskable-512.png?v=2026.1-juw",
+    runtimeAppleTouch: "/brand/apple-touch-icon.png?v=2026.1-juw",
+  },
+  favicon: {
+    svg: "/favicon.svg",
+    ico: "/favicon.ico",
+    runtimeSvg: "/favicon.svg?v=2026.1-juw",
+    runtimeIco: "/favicon.ico?v=2026.1-juw",
+  },
+} as const;

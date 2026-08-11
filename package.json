@@ -14,7 +14,16 @@
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "drizzle-kit generate",
     "db:generate:shop": "drizzle-kit generate --config=drizzle.shop.config.ts",
-    "db:migrate:shop": "drizzle-kit migrate --config=drizzle.shop.config.ts"
+    "db:release:shop": "node scripts/shop-db/shop-release.mjs",
+    "db:seed:shop": "node scripts/shop-db/catalogue.mjs seed",
+    "db:verify:shop": "node scripts/shop-db/catalogue.mjs verify",
+    "db:sync:catalog": "node scripts/shop-db/catalogue.mjs descriptive-sync",
+    "db:shop:release:check": "node scripts/shop-db/release.mjs check",
+    "db:shop:release:apply": "node scripts/shop-db/shop-release.mjs",
+    "db:shop:seed": "node scripts/shop-db/catalogue.mjs seed",
+    "db:shop:verify": "node scripts/shop-db/catalogue.mjs verify",
+    "db:shop:sync:descriptive": "node scripts/shop-db/catalogue.mjs descriptive-sync",
+    "test:shop-db-release": "node --test tests/shop-db-release.test.ts"
   },
   "dependencies": {
     "@fontsource-variable/bodoni-moda": "^5.3.0",

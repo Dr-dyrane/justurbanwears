@@ -33,7 +33,7 @@ export function getApprovedPublicListingContract(sku: string, slug: string) {
   return {
     sku: approved.sku,
     slug: approved.slug,
-    modelAnchor: { ...APPROVED_PUBLIC_MODEL_ANCHOR },
+    modelAnchor: { ...approved.modelAnchor },
     media: approved.media.map<PublicListingMediaProjection>((frame) => ({ ...frame })),
   };
 }
@@ -45,5 +45,6 @@ export function publicMediaLabel(slot: PublicListingMediaSlot) {
   if (slot === "MODEL_FRONT") return "Model front";
   if (slot === "MODEL_LEFT_PROFILE") return "Model left profile";
   if (slot === "MODEL_REAR_THREE_QUARTER") return "Model right rear three-quarter";
+  if (slot === "MODEL_DETAIL") return "Model styled detail";
   return "Fabric detail";
 }

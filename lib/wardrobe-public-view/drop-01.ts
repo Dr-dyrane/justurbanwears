@@ -127,7 +127,5 @@ export const WARDROBE_DROP_01_PRODUCTS = [
 export const WARDROBE_DROP_01_APPROVED_MODEL_FRONT_SLUGS = Object.freeze([
   "blush-scoop-mini-dress",
   "orchid-beaded-column-gown",
-  "sage-asymmetric-ruched-maxi-dress",
-  "silver-off-shoulder-mermaid-dress",
   "multicolor-abstract-strapless-mini-dress",
 ] as const);

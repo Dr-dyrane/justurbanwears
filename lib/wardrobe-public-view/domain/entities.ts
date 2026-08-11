@@ -5,17 +5,26 @@ export type WardrobePublicMediaSlot =
   | "MODEL_FRONT"
   | "MODEL_LEFT_PROFILE"
   | "MODEL_REAR_THREE_QUARTER"
+  | "MODEL_DETAIL"
   | "FABRIC_DETAIL";
+
+export type WardrobePublicModelAnchorId = "lulu-v2" | "lulu-v3";
 
 export interface WardrobePublicMedia {
   slot: WardrobePublicMediaSlot;
   src: string;
+  modelAnchorId?: WardrobePublicModelAnchorId;
 }
 
-export interface WardrobePublicModelAnchor {
-  id: "lulu-v2";
-  src: "/shop/model/lulu-v2-approved.png";
-}
+export type WardrobePublicModelAnchor =
+  | {
+      id: "lulu-v2";
+      src: "/shop/model/lulu-v2-approved.png";
+    }
+  | {
+      id: "lulu-v3";
+      src?: never;
+    };
 
 export interface WardrobePublicProduct {
   slug: string;
@@ -39,7 +48,7 @@ export interface WardrobePublicProduct {
   media: WardrobePublicMedia[];
 }
 
-export const WARDROBE_PUBLIC_VIEW_SCHEMA_VERSION = 6 as const;
+export const WARDROBE_PUBLIC_VIEW_SCHEMA_VERSION = 8 as const;
 
 export interface WardrobePublicViewSnapshot {
   products: WardrobePublicProduct[];

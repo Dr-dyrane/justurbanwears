@@ -5,6 +5,7 @@ import type {
   ShopOrder,
   ShopProduct,
   ShopProductSlug,
+  ShopSubmittedOrder,
 } from "../domain/entities";
 import {
   type CommerceLifecycle,
@@ -31,6 +32,11 @@ export type CommerceCommand =
   | { type: "CHECKOUT_SAVE_REQUESTED" }
   | { type: "CHECKOUT_SAVE_SUCCEEDED"; order: ShopOrder }
   | { type: "CHECKOUT_SAVE_FAILED" }
+  | {
+      type: "CHECKOUT_SUBMISSION_SUCCEEDED";
+      localOrderId: string;
+      order: ShopSubmittedOrder;
+    }
   | { type: "ORDER_VIEWED"; id: string }
   | { type: "PERSISTENCE_FAILED" };
 
@@ -173,6 +179,30 @@ export function commerceReducer(
         ...state,
         checkout: state.bag.length ? "reviewing" : "idle",
       };
+    case "CHECKOUT_SUBMISSION_SUCCEEDED": {
+      const localOrder = state.orders.find((order) => order.id === command.localOrderId);
+      if (!localOrder || localOrder.transmission !== "LOCAL_ONLY") return state;
+      if (
+        command.order.transmission !== "SUBMITTED"
+        || state.orders.some((order) =>
+          order.id === command.order.id && order.id !== command.localOrderId
+        )
+      ) return state;
+      const localLines = localOrder.lines.map((line) => line.slug).sort();
+      const submittedLines = command.order.lines.map((line) => line.slug).sort();
+      if (
+        localLines.length !== submittedLines.length
+        || localLines.some((slug, index) => slug !== submittedLines[index])
+      ) return state;
+      return {
+        ...persistentUpdate(state, {
+          orders: state.orders.map((order) =>
+            order.id === command.localOrderId ? command.order : order
+          ),
+        }),
+        order: "saved",
+      };
+    }
     case "ORDER_VIEWED":
       return state.orders.some((order) => order.id === command.id)
         ? { ...state, order: "history" }

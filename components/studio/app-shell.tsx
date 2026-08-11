@@ -14,6 +14,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useMobileChrome } from "../../hooks/use-mobile-chrome";
+import { BrandIcon } from "../brand/brand-icon";
+import { BrandWordmark } from "../brand/brand-wordmark";
 import { ThemeToggle } from "../theme/theme-toggle";
 import { StudioProvider } from "./studio-provider";
 
@@ -149,13 +151,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     const navigation = getViewNavigation(pathname);
     if (!navigation) return;
 
-    const routeTab = navigation.tabs.find((tab) => !tab.targetId && tab.href === pathname);
+    const navigationTabs = navigation.tabs;
+    const routeTab = navigationTabs.find((tab) => !tab.targetId && tab.href === pathname);
     let lastScrolledHash = "";
     let hashLockedView = "";
     function syncActiveSection() {
-      const targetTabs = navigation.tabs.filter((tab): tab is ViewTab & { targetId: string } => Boolean(tab.targetId));
+      const targetTabs = navigationTabs.filter((tab): tab is ViewTab & { targetId: string } => Boolean(tab.targetId));
       if (!targetTabs.length) {
-        setActiveView(routeTab?.key ?? navigation.tabs[0]?.key ?? "");
+        setActiveView(routeTab?.key ?? navigationTabs[0]?.key ?? "");
         return;
       }
 
@@ -260,14 +263,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <nav className="shop-floating-nav studio-floating-nav glass-surface" aria-label="Studio navigation">
             <Link className="shop-wordmark studio-wordmark" href="/studio" aria-label="justurban wears Studio home">
               <span className="studio-brand-mark" aria-hidden="true">
-                {/* The installed app icon is the proven local brand asset. */}
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img className="studio-brand-icon" src="/brand/icon-192.png" alt="" width={38} height={38} />
+                <BrandIcon className="studio-brand-icon" size={38} />
               </span>
-              <span className="shop-wordmark-lockup" aria-hidden="true">
-                <span>justurban</span>
-                <em>wears</em>
-              </span>
+              <BrandWordmark className="shop-wordmark-lockup" />
               <small>Studio · Lulu</small>
             </Link>
             <div className="shop-nav-links studio-nav-links">
@@ -394,9 +392,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 className="shop-mobile-fab shop-dock-lens studio-mobile-fab"
                 href="/shop"
               >
-                {/* Keep the proven app mark byte-for-byte identical to the installed icon. */}
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img className="studio-mobile-app-icon" src="/brand/icon-192.png" alt="" width={44} height={44} />
+                <BrandIcon className="studio-mobile-app-icon" size={44} />
                 <ExternalLink className="studio-mobile-exit-mark" aria-hidden="true" size={18} strokeWidth={2.1} />
               </Link>
             </div>

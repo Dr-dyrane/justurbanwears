@@ -1,97 +1,94 @@
-# Just Urban Wears order flows
+# justurban wears order flows
 
-This handoff documents the customer and Lulu workflows for the current WhatsApp checkout bridge, plus the planned connected Neon and Studio workflow.
+This handoff records the customer and Lulu workflows that are live today, then separates the planned connected workflow that has not shipped.
 
-## Shareable images
+## Shareable guides
 
-- [Customer order flow](./just-urban-wears-customer-order-flow.png)
-- [Lulu order flow](./just-urban-wears-lulu-order-flow.png)
+- [Customer order guide](./just-urban-wears-customer-order-flow.png)
+- [Lulu order checklist](./just-urban-wears-lulu-order-flow.png)
 
-Editable SVG versions live beside the PNG files.
+Accessible, editable SVG masters live beside the PNG files.
 
-## 1. Customer flow — live now
+## Customer flow — live now
 
-1. The customer arrives from Instagram, WhatsApp, search, a shared product link, or the installed PWA.
-2. They browse or search the wardrobe and open a product to review its photographs, condition, measurements, tagged size, price, and availability.
-3. They add the one-off piece to their bag. Adding it to the bag does **not** reserve it.
-4. At checkout they enter their name, email, and phone number.
-5. They choose one of the current handoff options:
-   - Lagos delivery — ₦2,500 — 1–3 working days.
-   - Studio pickup — free — after payment, by appointment.
-   - Nationwide delivery — ₦4,500 — 3–7 working days.
-6. They review the item, delivery fee, and total, then select **Continue on WhatsApp**.
-7. The website saves a `PAYMENT_REQUIRED`, `LOCAL_ONLY` checkout on that browser/device.
-8. When online, WhatsApp opens with a prepared message containing the reference, items, size, pricing, customer details, and handoff information.
-9. The customer reviews the message and taps **Send**.
-10. Lulu manually confirms that the piece is still available and sends payment instructions.
-11. The customer pays outside the website and sends the payment reference or evidence through WhatsApp.
-12. Lulu verifies payment, prepares the piece, and coordinates delivery or pickup through WhatsApp.
+1. The customer browses or searches the wardrobe and reviews the piece’s photographs, condition, measurements, tagged size, price, and availability.
+2. They add the one-off piece to their bag. The bag does **not** reserve it.
+3. At checkout they enter their name, email, and phone number. For delivery, they also enter the destination address.
+4. They choose a current handoff:
+   - Lagos delivery — ₦2,500 — estimated 1–3 working days.
+   - Studio pickup — free — by appointment after payment.
+   - Nationwide delivery — ₦4,500 — estimated 3–7 working days.
+5. They review the piece, handoff fee, and total.
+6. The website saves a `PAYMENT_REQUIRED`, `LOCAL_ONLY` checkout on that browser and device.
+7. When the customer is online and the WhatsApp handoff is available, **Continue on WhatsApp** opens a prepared message for review. Opening the draft does not send it.
+8. The customer reviews the message and taps **Send** in WhatsApp.
+9. Lulu manually checks the physical piece, confirms availability, and sends payment instructions.
+10. The customer pays outside the website and shares the reference through WhatsApp.
+11. Lulu verifies the actual payment, prepares the piece, and manually coordinates delivery or pickup.
 
-### Customer truth points
+### Customer truth
 
-- A saved checkout is not the same as a submitted order.
+- Saved checkout ≠ sent request ≠ confirmed order.
 - Lulu receives nothing until the customer taps **Send** in WhatsApp.
-- The website cannot currently detect the WhatsApp send, payment, dispatch, or delivery.
-- If the customer is offline, checkout remains saved locally and they must reconnect to continue.
-- Saved checkout history is limited to the browser/device that created it.
+- The website cannot detect a WhatsApp send, payment, preparation, dispatch, pickup, or delivery.
+- If WhatsApp does not open, the checkout remains only on that device. It is not queued or sent automatically, and there is no current in-app resume action from the saved-checkout page.
+- The customer must contact Lulu manually or start again after connectivity is restored.
 - Payment details are never collected by the website.
-- Delivery estimates are guidance, not live carrier tracking.
+- Delivery estimates are guidance, not carrier tracking.
 
-## 2. Lulu flow — live now
+## Lulu flow — live now
 
-1. A prepared order request arrives in Lulu’s WhatsApp.
-2. Lulu checks the order reference, piece, SKU, tagged size, total, customer contact, and delivery or pickup choice.
-3. She verifies that the published listing and physical piece are still available.
-4. She manually selects **Reserve sale** in Studio, which creates a separate local Studio order in `RESERVED`, increments reserved stock, and changes the listing to `RESERVED`.
-5. She confirms availability and sends the payment instructions and reference through WhatsApp.
-6. She verifies the payment against the actual payment account—not only a screenshot.
-7. She quality-checks, prepares, and packs the piece.
+1. Lulu waits until the customer’s sent message appears in WhatsApp.
+2. She checks the checkout reference, piece, SKU, tagged size, total, customer contact, and delivery or pickup choice.
+3. She matches the message to the published listing and physical piece.
+4. She manually selects **Reserve sale** on that listing in Studio. This creates a separate device-local Studio stock order in `RESERVED` and changes the listing to `RESERVED`.
+5. She confirms availability and manually sends the amount, payment instructions, reference, and timing through WhatsApp.
+6. She verifies the actual payment account and amount—not only a screenshot—then acknowledges payment in WhatsApp.
+7. She quality-checks, prepares, and packs the exact piece.
 8. She arranges delivery and shares dispatch details, or agrees a Studio pickup appointment.
-9. She selects **Mark sold** in Studio at the business-defined completion point.
-10. For a return, she opens a return case and chooses **Restock to review** or **Write off** after inspection.
+9. She keeps the customer updated manually in WhatsApp.
+10. She selects **Mark sold** in Studio at the business-defined completion point.
+11. For a return, she inspects the piece and chooses **Restock to review** or **Write off**.
 
-### Lulu truth points
+### Lulu truth
 
 - WhatsApp and Studio are not connected today.
-- Studio does not automatically receive customer checkouts.
-- Lulu must manually match the WhatsApp request to a published listing.
-- **Mark sold** changes the local stock lifecycle; it does not notify the customer or prove courier delivery.
-- Studio currently stores no customer contact, checkout reference, payment evidence, address, quality-check, dispatch, or delivery state.
-- Studio data is currently device-local.
+- WhatsApp does not create a Studio order; Lulu must match and reserve the listing manually.
+- **Reserve sale** and **Mark sold** change only the local stock lifecycle. They do not message the customer or prove payment, dispatch, pickup, or delivery.
+- Studio stores no customer contact, checkout reference, payment evidence, address, quality-check, dispatch, or delivery state.
+- Studio data is device-local.
+- Studio currently has no cancellation or release-reservation action. Do not represent cancellation as an available operator step.
 
-## 3. Current status systems
+## Current status truth
 
-Do not conflate the customer checkout record and the Studio inventory order.
+Do not conflate the customer checkout record with the Studio stock order.
 
 | Surface | Live states | Meaning |
 | --- | --- | --- |
-| Customer checkout | `PAYMENT_REQUIRED` | Checkout saved on the originating device; payment and submission are not confirmed. |
-| Studio order | `RESERVED` → `SOLD` → optional `RETURNED` | Lulu’s manual inventory lifecycle. |
+| Customer saved checkout | `PAYMENT_REQUIRED` | Saved on the originating device; sending, acceptance, and payment are not confirmed. |
+| Studio stock order | `RESERVED` → `SOLD` → optional `RETURNED` | Lulu’s separate, manual, device-local stock lifecycle. |
 
-The following connected statuses exist in the Postgres schema but are **not yet live customer synchronization**:
+The shared domain vocabulary also includes `ORDER_RECEIVED`, `QUALITY_CHECK`, `READY_FOR_HANDOFF`, `IN_TRANSIT`, `DELIVERED`, and `CANCELLED`. Those labels are not evidence of live customer synchronization. In particular, opening WhatsApp or saving a checkout must never be interpreted as `ORDER_RECEIVED`.
 
-`PAYMENT_REQUIRED → ORDER_RECEIVED → QUALITY_CHECK → READY_FOR_HANDOFF → IN_TRANSIT → DELIVERED`
+## Future connected workflow — not live
 
-An order may also become `CANCELLED`. The precise business meaning of `ORDER_RECEIVED` versus payment confirmation must be finalized before that transition is enabled.
+The target server-backed workflow is intentionally separate from the live guides above:
 
-## 4. Planned connected flow
+1. The customer selects **Place order**.
+2. The server validates the live product, price, handoff fee, and stock.
+3. Neon becomes the authoritative order store only after the connection, migration, credentials, and release checks are complete.
+4. Inventory is reserved transactionally so two customers cannot buy the same one-off piece.
+5. Lulu receives the order in a secured Studio inbox.
+6. Lulu verifies payment and advances the order in Studio.
+7. The customer sees a private synchronized status page.
+8. Cancellation releases the reservation; completed handoff closes the order.
 
-The final server-backed workflow will replace the local/manual gap:
+WhatsApp may remain the customer conversation channel, but opening a prepared draft still does not prove it was sent. Automated WhatsApp messages require a separate, approved messaging integration and are not part of the live workflow documented here.
 
-1. Customer selects **Place order**.
-2. The server validates the live product, price, delivery fee, and stock.
-3. Neon creates the authoritative order and item snapshots.
-4. Inventory is reserved transactionally so two customers cannot buy the same piece.
-5. Lulu receives the detailed order in a secured Studio inbox.
-6. WhatsApp opens as the customer conversation channel, without being the only order record.
-7. Lulu verifies payment and advances the order status in Studio.
-8. The customer sees a synchronized, private status page and receives relevant WhatsApp updates.
-9. Cancellation releases the reservation; completed delivery closes the order.
+Until the connected workflow is deployed and verified:
 
-Until this connected workflow ships, use this rule:
+> WhatsApp is the manual customer conversation and payment-coordination channel. Studio is the separate local stock lifecycle. They are not synchronized.
 
-> WhatsApp is the customer communication and payment-coordination channel. Studio is the manual stock lifecycle. They are not synchronized yet.
+## Configuration
 
-## 5. Configuration
-
-The temporary handoff destination is configured in Vercel as the protected environment variable `SHOP_WHATSAPP_ORDER_NUMBER`. Do not hardcode the number in application code, documentation, screenshots, or tests.
+The temporary WhatsApp destination is provided through the protected Vercel environment variable `SHOP_WHATSAPP_ORDER_NUMBER`. Never hardcode or expose the number in application code, documentation, images, or tests.
