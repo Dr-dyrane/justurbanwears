@@ -7504,6 +7504,11 @@ html[data-theme="dark"] .shop-shell .shop-bag-link:hover {
   color: var(--shop-nav-action-ink);
 }
 
+html[data-theme="dark"] .shop-shell .shop-bag-link > b {
+  background: var(--shop-nav-action-ink);
+  color: var(--shop-nav-action);
+}
+
 .shop-shell .shop-dock-lens {
   background: var(--shop-dock-surface);
   box-shadow: var(--shop-dock-shadow);
