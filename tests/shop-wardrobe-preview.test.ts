@@ -23,6 +23,7 @@ const expectedNames = [
   "Cocoa Cowl Gathered Midi Dress",
   "Ivory Rib-Knit Fitted Midi Dress",
   "Coral Gathered Crop-Top and Mini-Skirt Set",
+  "Cropped Denim Jacket and Black Legging Look",
 ];
 
 test("the wardrobe pieces are saleable Drop 01 rows, not a separate preview catalogue", () => {
@@ -30,7 +31,7 @@ test("the wardrobe pieces are saleable Drop 01 rows, not a separate preview cata
   for (const product of WARDROBE_DROP_01_PRODUCTS) {
     assert.equal(product.drop, "Drop 01");
     assert.equal(product.availability, "AVAILABLE");
-    assert.equal(product.category, ["JUW-013", "JUW-020"].includes(product.sku) ? "Sets" : "Dresses");
+    assert.equal(product.category, ["JUW-013", "JUW-020", "JUW-021"].includes(product.sku) ? "Sets" : "Dresses");
     assert.ok(product.price > 0);
     assert.equal(product.taggedSize, "Size on request");
   }

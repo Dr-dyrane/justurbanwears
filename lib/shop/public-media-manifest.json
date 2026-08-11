@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "catalogueRevision": "2026-08-11-catalogue-12",
-  "catalogueChecksum": "220779647082701c63caea782d78e901591729e14b7d987c5f10535cdd6d94cf",
-  "cataloguePresentationChecksum": "862775b47032d1155b382808feb867dfdc5303f9b2c9faff8228a569d74f32c8",
+  "catalogueRevision": "2026-08-11-catalogue-13",
+  "catalogueChecksum": "7ee66d52ddf08f9c76d82cb289fd9292069fa6d3e1177f2e9fc25cdde8967f92",
+  "cataloguePresentationChecksum": "9b0e2d3edb69661febe0bfdbdbacd6e7dc369174aad93d6bd9d5a2655f255913",
   "legacyAssets": [
     {
       "sourcePath": "/shop/products/coral-drift-dress/04-model-front.webp",
@@ -268,6 +268,46 @@
       "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/914e7db3ff8d49f2316edf08c6412ced893e501d1b19a2d60de2e3d1d9636c89/products/coral-gathered-crop-mini-set/08-construction-detail.webp",
       "sha256": "914e7db3ff8d49f2316edf08c6412ced893e501d1b19a2d60de2e3d1d9636c89",
       "size": 203778,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/cropped-denim-jacket-black-legging-look/01-garment-front.webp",
+      "pathname": "shop/catalogue/cbfbfc1a069efd6f6a1b3d0f4d2e6c537d1156ab89487331f535173b6b5f4a1b/products/cropped-denim-jacket-black-legging-look/01-garment-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/cbfbfc1a069efd6f6a1b3d0f4d2e6c537d1156ab89487331f535173b6b5f4a1b/products/cropped-denim-jacket-black-legging-look/01-garment-front.webp",
+      "sha256": "cbfbfc1a069efd6f6a1b3d0f4d2e6c537d1156ab89487331f535173b6b5f4a1b",
+      "size": 128058,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/cropped-denim-jacket-black-legging-look/02-garment-back.webp",
+      "pathname": "shop/catalogue/8ed8d3c4ba1ed841a5a1b0479cfd6b76777bee3658fe8029224ce10e99a6ef46/products/cropped-denim-jacket-black-legging-look/02-garment-back.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/8ed8d3c4ba1ed841a5a1b0479cfd6b76777bee3658fe8029224ce10e99a6ef46/products/cropped-denim-jacket-black-legging-look/02-garment-back.webp",
+      "sha256": "8ed8d3c4ba1ed841a5a1b0479cfd6b76777bee3658fe8029224ce10e99a6ef46",
+      "size": 116710,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/cropped-denim-jacket-black-legging-look/03-mannequin-front.webp",
+      "pathname": "shop/catalogue/a677f9777f0bf070a2bd8aa96cc06e615ba3f335f576dd6fc88e2eff18c3cf69/products/cropped-denim-jacket-black-legging-look/03-mannequin-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/a677f9777f0bf070a2bd8aa96cc06e615ba3f335f576dd6fc88e2eff18c3cf69/products/cropped-denim-jacket-black-legging-look/03-mannequin-front.webp",
+      "sha256": "a677f9777f0bf070a2bd8aa96cc06e615ba3f335f576dd6fc88e2eff18c3cf69",
+      "size": 105388,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/cropped-denim-jacket-black-legging-look/06-fabric-detail.webp",
+      "pathname": "shop/catalogue/41629166da3edc77a614be7bdef4e4207b08e546f59a4ae4d718f974ffb96323/products/cropped-denim-jacket-black-legging-look/06-fabric-detail.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/41629166da3edc77a614be7bdef4e4207b08e546f59a4ae4d718f974ffb96323/products/cropped-denim-jacket-black-legging-look/06-fabric-detail.webp",
+      "sha256": "41629166da3edc77a614be7bdef4e4207b08e546f59a4ae4d718f974ffb96323",
+      "size": 673514,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/cropped-denim-jacket-black-legging-look/09-model-rear-mirror.webp",
+      "pathname": "shop/catalogue/7c253f4b8b1d8207630f969d87a35bd6a4862323715f05d46b7f8d2cfa01bdfd/products/cropped-denim-jacket-black-legging-look/09-model-rear-mirror.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/7c253f4b8b1d8207630f969d87a35bd6a4862323715f05d46b7f8d2cfa01bdfd/products/cropped-denim-jacket-black-legging-look/09-model-rear-mirror.webp",
+      "sha256": "7c253f4b8b1d8207630f969d87a35bd6a4862323715f05d46b7f8d2cfa01bdfd",
+      "size": 248760,
       "contentType": "image/webp"
     },
     {

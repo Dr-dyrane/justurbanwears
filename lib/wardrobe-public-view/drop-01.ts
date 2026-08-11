@@ -216,6 +216,25 @@ export const WARDROBE_DROP_01_PRODUCTS = [
     details: ["Gathered crop top", "Slim shoulder straps", "High-waisted mini skirt", "Smooth stretch finish"],
     measurements: [],
   },
+  {
+    slug: "cropped-denim-jacket-black-legging-look",
+    sku: "JUW-021",
+    name: "Cropped Denim Jacket and Black Legging Look",
+    category: "Sets",
+    price: 24500,
+    taggedSize: "Size on request",
+    fit: "Measurements confirmed before payment",
+    condition: "Excellent · real-worn wardrobe piece",
+    colour: "Washed blue and black",
+    availability: "AVAILABLE",
+    drop: "Drop 01",
+    tone: "indigo",
+    silhouette: "set",
+    note: "A cropped washed-denim jacket paired with full-length black leggings.",
+    story: "Light washed denim and clean black stretch make an easy two-piece line, finished with buttoned flap pockets and a sharply cropped jacket hem.",
+    details: ["Cropped denim jacket", "Buttoned flap chest pockets", "Long sleeves with button cuffs", "Full-length black leggings"],
+    measurements: [],
+  },
 ] as const satisfies readonly WardrobeDrop01Product[];
 
 /** Only identity-gated frames that actually exist may cross into Shop. */

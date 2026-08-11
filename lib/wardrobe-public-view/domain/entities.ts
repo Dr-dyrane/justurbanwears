@@ -50,7 +50,7 @@ export interface WardrobePublicProduct {
   media: WardrobePublicMedia[];
 }
 
-export const WARDROBE_PUBLIC_VIEW_SCHEMA_VERSION = 18 as const;
+export const WARDROBE_PUBLIC_VIEW_SCHEMA_VERSION = 19 as const;
 
 export interface WardrobePublicViewSnapshot {
   products: WardrobePublicProduct[];

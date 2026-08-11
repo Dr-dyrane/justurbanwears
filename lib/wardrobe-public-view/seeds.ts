@@ -63,6 +63,7 @@ export const WARDROBE_APPROVED_MODEL_SUPPLEMENTAL_SLOTS = Object.freeze({
   "ivory-rib-knit-fitted-midi-dress": ["MODEL_LEFT_PROFILE"],
   "teal-draped-mini-set": ["MODEL_REAR_MIRROR"],
   "coral-gathered-crop-mini-set": ["MODEL_REAR_THREE_QUARTER"],
+  "cropped-denim-jacket-black-legging-look": ["MODEL_REAR_MIRROR"],
 } as const satisfies Record<string, readonly WardrobeSupplementalModelSlot[]>);
 
 export function getApprovedModelSupplementalSlots(
@@ -83,6 +84,7 @@ const v3SupplementalModelSlugs = new Set([
   "cocoa-cowl-gathered-midi-dress",
   "ivory-rib-knit-fitted-midi-dress",
   "coral-gathered-crop-mini-set",
+  "cropped-denim-jacket-black-legging-look",
 ]);
 const constructionDetailSlugs = new Set([
   "sage-open-back-high-slit-maxi-dress",

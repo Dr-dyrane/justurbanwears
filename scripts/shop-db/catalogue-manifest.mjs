@@ -21,6 +21,7 @@ const V3_MODEL_SUPPLEMENTAL_SLUGS = new Set([
   "cocoa-cowl-gathered-midi-dress",
   "ivory-rib-knit-fitted-midi-dress",
   "coral-gathered-crop-mini-set",
+  "cropped-denim-jacket-black-legging-look",
 ]);
 const MODEL_MEDIA_SLOTS = new Set([
   "MODEL_FRONT",
@@ -88,7 +89,7 @@ function presentation(product) {
  */
 export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
   schemaVersion: 2,
-  revision: "2026-08-11-catalogue-12",
+  revision: "2026-08-11-catalogue-13",
   products: Object.freeze([
     presentation({
       slug: "coral-drift-dress",
@@ -453,6 +454,26 @@ export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
       details: ["Gathered crop top", "Slim shoulder straps", "High-waisted mini skirt", "Smooth stretch finish"],
       measurements: [],
       mediaSlots: ["CONSTRUCTION_DETAIL", "MODEL_REAR_THREE_QUARTER"],
+    }),
+    presentation({
+      slug: "cropped-denim-jacket-black-legging-look",
+      sku: "JUW-021",
+      name: "Cropped Denim Jacket and Black Legging Look",
+      category: "Sets",
+      price: 24500,
+      taggedSize: "Size on request",
+      fit: "Measurements confirmed before payment",
+      condition: "Excellent · real-worn wardrobe piece",
+      colour: "Washed blue and black",
+      availability: "AVAILABLE",
+      drop: "Drop 01",
+      tone: "indigo",
+      silhouette: "set",
+      note: "A cropped washed-denim jacket paired with full-length black leggings.",
+      story: "Light washed denim and clean black stretch make an easy two-piece line, finished with buttoned flap pockets and a sharply cropped jacket hem.",
+      details: ["Cropped denim jacket", "Buttoned flap chest pockets", "Long sleeves with button cuffs", "Full-length black leggings"],
+      measurements: [],
+      mediaSlots: ["MODEL_REAR_MIRROR"],
     }),
   ]),
 });

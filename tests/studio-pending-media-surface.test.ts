@@ -44,7 +44,13 @@ const expectedMedia = new Map<string, readonly string[]>([
     "CONSTRUCTION_DETAIL",
     "MODEL_REAR_THREE_QUARTER",
   ]],
-  ["JUW-021", ["MODEL_REAR_MIRROR"]],
+  ["JUW-021", [
+    "GARMENT_FRONT",
+    "GARMENT_BACK",
+    "MANNEQUIN_FRONT",
+    "FABRIC_DETAIL",
+    "MODEL_REAR_MIRROR",
+  ]],
   ["JUW-022", ["MODEL_DETAIL"]],
   ["JUW-024", ["MODEL_DETAIL"]],
 ] as const);
