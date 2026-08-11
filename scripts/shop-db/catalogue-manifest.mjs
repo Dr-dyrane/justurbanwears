@@ -20,6 +20,7 @@ const V3_MODEL_SUPPLEMENTAL_SLUGS = new Set([
   "sage-open-back-high-slit-maxi-dress",
   "cocoa-cowl-gathered-midi-dress",
   "ivory-rib-knit-fitted-midi-dress",
+  "coral-gathered-crop-mini-set",
 ]);
 const MODEL_MEDIA_SLOTS = new Set([
   "MODEL_FRONT",
@@ -87,7 +88,7 @@ function presentation(product) {
  */
 export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
   schemaVersion: 2,
-  revision: "2026-08-11-catalogue-11",
+  revision: "2026-08-11-catalogue-12",
   products: Object.freeze([
     presentation({
       slug: "coral-drift-dress",
@@ -432,6 +433,26 @@ export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
       details: ["Fine vertical rib knit", "Shallow wide neckline", "Cap sleeves", "Adjustable side ruching"],
       measurements: [],
       mediaSlots: ["MODEL_LEFT_PROFILE"],
+    }),
+    presentation({
+      slug: "coral-gathered-crop-mini-set",
+      sku: "JUW-020",
+      name: "Coral Gathered Crop-Top and Mini-Skirt Set",
+      category: "Sets",
+      price: 24500,
+      taggedSize: "Size on request",
+      fit: "Measurements confirmed before payment",
+      condition: "Excellent · real-worn wardrobe piece",
+      colour: "Vivid coral",
+      availability: "AVAILABLE",
+      drop: "Drop 01",
+      tone: "coral",
+      silhouette: "set",
+      note: "A coral two-piece pairing a gathered crop top with a close mini skirt.",
+      story: "A softly gathered bust and slim straps balance the clean high-waisted mini skirt for one compact coral line.",
+      details: ["Gathered crop top", "Slim shoulder straps", "High-waisted mini skirt", "Smooth stretch finish"],
+      measurements: [],
+      mediaSlots: ["CONSTRUCTION_DETAIL", "MODEL_REAR_THREE_QUARTER"],
     }),
   ]),
 });

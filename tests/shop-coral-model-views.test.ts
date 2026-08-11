@@ -200,6 +200,19 @@ const approvedProducts: readonly ApprovedProductMedia[] = [
       },
     ],
   },
+  {
+    slug: "coral-gathered-crop-mini-set",
+    hasFront: false,
+    views: [
+      {
+        slot: "MODEL_REAR_THREE_QUARTER",
+        src: "/shop/products/coral-gathered-crop-mini-set/05-model-rear-three-quarter.webp",
+        sha256: "77cd523ec75ced285347aa4992e35f2719a6706feec8d9e5bb28c202164e0304",
+        width: 1122,
+        height: 1402,
+      },
+    ],
+  },
 ] as const;
 
 test("publishes cleared supplemental views as metadata-free exact WebPs", async () => {
@@ -252,7 +265,7 @@ test("orders product media, an approved front when present, then supplemental Lu
         `/shop/products/${approved.slug}/01-garment-front.webp`,
         `/shop/products/${approved.slug}/02-garment-back.webp`,
         `/shop/products/${approved.slug}/03-mannequin-front.webp`,
-        approved.slug === "sage-open-back-high-slit-maxi-dress"
+        ["sage-open-back-high-slit-maxi-dress", "coral-gathered-crop-mini-set"].includes(approved.slug)
           ? `/shop/products/${approved.slug}/08-construction-detail.webp`
           : `/shop/products/${approved.slug}/06-fabric-detail.webp`,
         ...(approved.hasFront ? [`/shop/products/${approved.slug}/04-model-front.webp`] : []),
@@ -301,6 +314,7 @@ test("orders product media, an approved front when present, then supplemental Lu
               anchor: [
                 "cocoa-cowl-gathered-midi-dress",
                 "sage-open-back-high-slit-maxi-dress",
+                "coral-gathered-crop-mini-set",
               ].includes(approved.slug) ? "lulu-v3" : "lulu-v2",
               label: "On Lulu · right rear three-quarter",
             };
@@ -320,7 +334,7 @@ test("orders product media, an approved front when present, then supplemental Lu
 });
 
 test("migrates stored v5 supplemental views without resetting operator edits", () => {
-  assert.equal(WARDROBE_PUBLIC_VIEW_SCHEMA_VERSION, 17);
+  assert.equal(WARDROBE_PUBLIC_VIEW_SCHEMA_VERSION, 18);
 
   for (const [index, approved] of approvedProducts.filter(
     (product) => product.views.length > 0,
@@ -358,6 +372,7 @@ test("migrates stored v5 supplemental views without resetting operator edits", (
           "cocoa-cowl-gathered-midi-dress",
           "ivory-rib-knit-fitted-midi-dress",
           "teal-draped-mini-set",
+          "coral-gathered-crop-mini-set",
         ].includes(approved.slug)
           ? "lulu-v3"
           : "lulu-v2",
@@ -394,6 +409,29 @@ test("migrates a stored v16 Sage row to the approved left profile without resett
       { slot: "MODEL_REAR_THREE_QUARTER", modelAnchorId: "lulu-v3" },
     ],
   );
+});
+
+test("migrates a stored v17 envelope without resetting operator edits", () => {
+  const sage = WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS.find(
+    (product) => product.slug === "sage-open-back-high-slit-maxi-dress",
+  );
+  assert.ok(sage);
+  const parsed = parseStoredWardrobePublicView(JSON.stringify({
+    version: 17,
+    data: [{
+      ...sage,
+      name: "Operator Sage v17 title",
+      price: 29100,
+      note: "Operator-authored Sage v17 note.",
+    }],
+    managedSlugs: [sage.slug],
+  }));
+
+  assert.equal(parsed.products.length, 1);
+  assert.equal(parsed.products[0].name, "Operator Sage v17 title");
+  assert.equal(parsed.products[0].price, 29100);
+  assert.equal(parsed.products[0].note, "Operator-authored Sage v17 note.");
+  assert.deepEqual(parsed.managedSlugs, [sage.slug]);
 });
 
 test("migrates an existing v15 Magenta row by appending only the approved detail", () => {

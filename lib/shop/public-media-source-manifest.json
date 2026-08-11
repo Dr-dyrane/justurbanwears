@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "catalogueRevision": "2026-08-11-catalogue-11",
-  "catalogueChecksum": "9064e58fd4e94305f3d06b9e6dbfb30d88b0c99380c7570ad1e203139a4f7677",
-  "cataloguePresentationChecksum": "cc926ea992b7047c80f32557065086c495db4a18f8c9a18e39861a5125efb88a",
+  "catalogueRevision": "2026-08-11-catalogue-12",
+  "catalogueChecksum": "220779647082701c63caea782d78e901591729e14b7d987c5f10535cdd6d94cf",
+  "cataloguePresentationChecksum": "862775b47032d1155b382808feb867dfdc5303f9b2c9faff8228a569d74f32c8",
   "assets": [
     {
       "sourcePath": "/shop/products/cocoa-cowl-gathered-midi-dress/01-garment-front.webp",
@@ -57,6 +57,51 @@
       "contentType": "image/webp",
       "width": 972,
       "height": 1728
+    },
+    {
+      "sourcePath": "/shop/products/coral-gathered-crop-mini-set/01-garment-front.webp",
+      "pathname": "shop/catalogue/5ac60f0b4af8f909e01cbf7a41889fa545b28cf8ad746fabcd9d568773da21c8/products/coral-gathered-crop-mini-set/01-garment-front.webp",
+      "sha256": "5ac60f0b4af8f909e01cbf7a41889fa545b28cf8ad746fabcd9d568773da21c8",
+      "size": 62262,
+      "contentType": "image/webp",
+      "width": 1122,
+      "height": 1402
+    },
+    {
+      "sourcePath": "/shop/products/coral-gathered-crop-mini-set/02-garment-back.webp",
+      "pathname": "shop/catalogue/b22227ff63b7bbaa6b34f98a68c3fa5334d4d3eceabe5d65f2b600562ef5d855/products/coral-gathered-crop-mini-set/02-garment-back.webp",
+      "sha256": "b22227ff63b7bbaa6b34f98a68c3fa5334d4d3eceabe5d65f2b600562ef5d855",
+      "size": 60842,
+      "contentType": "image/webp",
+      "width": 1122,
+      "height": 1402
+    },
+    {
+      "sourcePath": "/shop/products/coral-gathered-crop-mini-set/03-mannequin-front.webp",
+      "pathname": "shop/catalogue/9ec9f37faf4c246d7a55717abfd499cd994c2c9eb675e97175b6f9ff8ae17abb/products/coral-gathered-crop-mini-set/03-mannequin-front.webp",
+      "sha256": "9ec9f37faf4c246d7a55717abfd499cd994c2c9eb675e97175b6f9ff8ae17abb",
+      "size": 76284,
+      "contentType": "image/webp",
+      "width": 1122,
+      "height": 1402
+    },
+    {
+      "sourcePath": "/shop/products/coral-gathered-crop-mini-set/05-model-rear-three-quarter.webp",
+      "pathname": "shop/catalogue/77cd523ec75ced285347aa4992e35f2719a6706feec8d9e5bb28c202164e0304/products/coral-gathered-crop-mini-set/05-model-rear-three-quarter.webp",
+      "sha256": "77cd523ec75ced285347aa4992e35f2719a6706feec8d9e5bb28c202164e0304",
+      "size": 220026,
+      "contentType": "image/webp",
+      "width": 1122,
+      "height": 1402
+    },
+    {
+      "sourcePath": "/shop/products/coral-gathered-crop-mini-set/08-construction-detail.webp",
+      "pathname": "shop/catalogue/914e7db3ff8d49f2316edf08c6412ced893e501d1b19a2d60de2e3d1d9636c89/products/coral-gathered-crop-mini-set/08-construction-detail.webp",
+      "sha256": "914e7db3ff8d49f2316edf08c6412ced893e501d1b19a2d60de2e3d1d9636c89",
+      "size": 203778,
+      "contentType": "image/webp",
+      "width": 1122,
+      "height": 1402
     },
     {
       "sourcePath": "/shop/products/ivory-rib-knit-fitted-midi-dress/01-garment-front.webp",

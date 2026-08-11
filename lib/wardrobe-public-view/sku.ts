@@ -15,6 +15,7 @@ const LEGACY_CATALOGUE_SKU_ENTRIES = [
   ["DYN-094", "JUW-014"],
   ["DYN-095", "JUW-015"],
   ["DYN-096", "JUW-016"],
+  ["DYN-100", "JUW-020"],
 ] as const;
 
 export const LEGACY_CATALOGUE_SKU_RENAMES = Object.freeze(

@@ -90,11 +90,11 @@ test("the public Blob release contains only exact manifest media and verifies lo
     SHOP_PUBLIC_MEDIA_PRESENTATION_CHECKSUM,
     cataloguePresentationChecksum(SHOP_CATALOGUE_MANIFEST),
   );
-  assert.equal(plan.length, 93);
+  assert.equal(plan.length, 98);
   assert.equal(SHOP_PUBLIC_MEDIA_ASSETS.length, plan.length);
   assert.equal(
     plan.filter((asset) => asset.sourcePath.startsWith("/shop/products/")).length,
-    92,
+    97,
   );
   assert.deepEqual(
     SHOP_PUBLIC_MEDIA_SOURCE_ASSETS.find(({ sourcePath }) =>
@@ -254,7 +254,7 @@ test("an invalid or unavailable Neon snapshot falls back with purchase actions f
   const fallback = await withoutExpectedCatalogueError(() => loadServerShopProducts(async () => {
     throw new Error("synthetic outage");
   }));
-  assert.equal(fallback.length, 16);
+  assert.equal(fallback.length, 17);
   assert.ok(fallback.every((product) => product.availabilityConfirmed === false));
   assert.ok(fallback.flatMap((product) => product.media ?? []).every((item) =>
     isSafeShopProductMediaUrl(item.src, item.src.split("/products/")[1]?.split("/")[0] ?? ""),
@@ -275,7 +275,7 @@ test("an invalid or unavailable Neon snapshot falls back with purchase actions f
     databaseRow(),
     { ...databaseRow(SHOP_CATALOGUE_MANIFEST.products[1]), availability: null },
   ]));
-  assert.equal(partial.length, 16);
+  assert.equal(partial.length, 17);
   assert.ok(partial.every((product) => product.availabilityConfirmed === false));
 });
 

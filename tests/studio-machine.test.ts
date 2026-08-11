@@ -216,8 +216,8 @@ test("writing off a returned sold unit preserves other sellable units", () => {
 });
 
 test("approved wardrobe public-view contracts expose only cleared Lulu views", () => {
-  assert.equal(WARDROBE_PUBLIC_VIEW_PROJECTION_SCHEMA_VERSION, 17);
-  assert.equal(WARDROBE_PUBLIC_VIEW_STORAGE_KEY, "justurban-wears:wardrobe-public-view:v17");
+  assert.equal(WARDROBE_PUBLIC_VIEW_PROJECTION_SCHEMA_VERSION, 18);
+  assert.equal(WARDROBE_PUBLIC_VIEW_STORAGE_KEY, "justurban-wears:wardrobe-public-view:v18");
   const approvedModelFrontSlugs = new Set<string>(WARDROBE_APPROVED_MODEL_FRONT_SLUGS);
   for (const listing of APPROVED_PUBLIC_LISTINGS) {
     const contract = getApprovedPublicListingContract(listing.sku, listing.slug);
@@ -235,7 +235,7 @@ test("approved wardrobe public-view contracts expose only cleared Lulu views", (
       ...(hasApprovedModelFront
         ? [`/shop/products/${listing.slug}/04-model-front.webp`]
         : []),
-      listing.slug === "sage-open-back-high-slit-maxi-dress"
+      ["sage-open-back-high-slit-maxi-dress", "coral-gathered-crop-mini-set"].includes(listing.slug)
         ? `/shop/products/${listing.slug}/08-construction-detail.webp`
         : `/shop/products/${listing.slug}/06-fabric-detail.webp`,
       ...getApprovedModelSupplementalSlots(listing.slug).map((slot) => {

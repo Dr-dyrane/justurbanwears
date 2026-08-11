@@ -20,7 +20,9 @@ const expectedNames = [
   "Multicolor Abstract Strapless Mini Dress",
   "Teal Draped Mini Set",
   "Sage Open-Back High-Slit Maxi Dress",
+  "Cocoa Cowl Gathered Midi Dress",
   "Ivory Rib-Knit Fitted Midi Dress",
+  "Coral Gathered Crop-Top and Mini-Skirt Set",
 ];
 
 test("the wardrobe pieces are saleable Drop 01 rows, not a separate preview catalogue", () => {
@@ -28,7 +30,7 @@ test("the wardrobe pieces are saleable Drop 01 rows, not a separate preview cata
   for (const product of WARDROBE_DROP_01_PRODUCTS) {
     assert.equal(product.drop, "Drop 01");
     assert.equal(product.availability, "AVAILABLE");
-    assert.equal(product.category, product.sku === "JUW-013" ? "Sets" : "Dresses");
+    assert.equal(product.category, ["JUW-013", "JUW-020"].includes(product.sku) ? "Sets" : "Dresses");
     assert.ok(product.price > 0);
     assert.equal(product.taggedSize, "Size on request");
   }
@@ -43,7 +45,7 @@ test("the wardrobe pieces are saleable Drop 01 rows, not a separate preview cata
       "GARMENT_BACK",
       "MANNEQUIN_FRONT",
       ...(approvedModelFrontSlugs.has(product.slug) ? ["MODEL_FRONT"] : []),
-      ...(product.slug === "sage-open-back-high-slit-maxi-dress"
+      ...(["sage-open-back-high-slit-maxi-dress", "coral-gathered-crop-mini-set"].includes(product.slug)
         ? ["CONSTRUCTION_DETAIL"]
         : ["FABRIC_DETAIL"]),
       ...getApprovedModelSupplementalSlots(product.slug),

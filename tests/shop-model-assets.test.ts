@@ -128,6 +128,10 @@ const approvedSupplementalSources = new Map<string, readonly string[]>([
     "ivory-rib-knit-fitted-midi-dress",
     ["/shop/products/ivory-rib-knit-fitted-midi-dress/07-model-left-profile.webp"],
   ],
+  [
+    "coral-gathered-crop-mini-set",
+    ["/shop/products/coral-gathered-crop-mini-set/05-model-rear-three-quarter.webp"],
+  ],
 ]);
 
 test("keeps the public Lulu V2 anchor byte-identical to the approved projection", () => {
@@ -224,6 +228,7 @@ test("appends only approved Lulu views to the main product gallery", () => {
           "cocoa-cowl-gathered-midi-dress",
           "ivory-rib-knit-fitted-midi-dress",
           "teal-draped-mini-set",
+          "coral-gathered-crop-mini-set",
         ].includes(product.slug) ? "lulu-v3" : "lulu-v2",
       })),
     ];

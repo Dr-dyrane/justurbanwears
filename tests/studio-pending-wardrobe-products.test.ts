@@ -26,7 +26,7 @@ const expected = new Map<string, {
   ["JUW-017", { price: 24500, category: "Set", missing: ["GARMENT_FRONT", "GARMENT_BACK", "FABRIC_DETAIL"] }],
   ["JUW-018", { price: 22000, category: "Dress", missing: ["GARMENT_FRONT", "GARMENT_BACK", "FABRIC_DETAIL"] }],
   ["JUW-019", { price: 24500, category: "Dress", missing: ["GARMENT_FRONT", "GARMENT_BACK"] }],
-  ["JUW-020", { price: 24500, category: "Set", missing: ["GARMENT_FRONT", "GARMENT_BACK"] }],
+  ["JUW-020", { price: 24500, category: "Set", missing: [] }],
   ["JUW-021", { price: 24500, category: "Set", missing: ["GARMENT_FRONT", "GARMENT_BACK", "FABRIC_DETAIL"] }],
   ["JUW-022", { price: 24500, category: "Dress", missing: ["GARMENT_FRONT", "GARMENT_BACK", "FABRIC_DETAIL"] }],
   ["JUW-024", { price: 16500, category: "Shirt", missing: ["GARMENT_FRONT", "GARMENT_BACK", "FABRIC_DETAIL"] }],
@@ -171,23 +171,25 @@ test("keeps JUW-019 approved upper views distinct from missing full product capt
   assert.equal(selectWardrobePublicView(seeded).some(({ sku }) => sku === "JUW-019"), false);
 });
 
-test("preserves JUW-020 approved rear-three-quarter views while direct product views remain pending", () => {
+test("promotes JUW-020 only after its exact product and Lulu views are complete", () => {
   const contract = PENDING_WARDROBE_PRODUCT_CONTRACTS.find(({ sku }) => sku === "JUW-020");
   assert.ok(contract);
   assert.deepEqual(contract.approvedViews, [
-    "MANNEQUIN_RIGHT_REAR_THREE_QUARTER",
-    "MODEL_REAR_THREE_QUARTER",
+    "GARMENT_FRONT",
+    "GARMENT_BACK",
+    "MANNEQUIN_FRONT",
     "CONSTRUCTION_DETAIL",
+    "MODEL_REAR_THREE_QUARTER",
   ]);
-  assert.deepEqual(contract.missingViews, ["GARMENT_FRONT", "GARMENT_BACK"]);
-  assert.deepEqual(contract.garment.references.map(({ view }) => view), ["DETAIL"]);
-  assert.equal(contract.garment.mediaState, "DRAFT");
+  assert.deepEqual(contract.missingViews, []);
+  assert.deepEqual(contract.garment.references.map(({ view }) => view), ["FRONT", "BACK", "DETAIL"]);
+  assert.equal(contract.garment.mediaState, "READY");
 
   const seeded = mergeWardrobeAuthoritySeeds(createEmptyStudioSnapshot());
   const garment = seeded.garments.find(({ sku }) => sku === "JUW-020");
   assert.ok(garment);
-  assert.equal(seeded.listings.some(({ garmentId }) => garmentId === garment.id), false);
-  assert.equal(selectWardrobePublicView(seeded).some(({ sku }) => sku === "JUW-020"), false);
+  assert.equal(seeded.listings.some(({ garmentId }) => garmentId === garment.id), true);
+  assert.equal(selectWardrobePublicView(seeded).some(({ sku }) => sku === "JUW-020"), true);
 });
 
 test("adding only the declared missing captures completes each media gate", () => {

@@ -197,6 +197,25 @@ export const WARDROBE_DROP_01_PRODUCTS = [
     details: ["Fine vertical rib knit", "Shallow wide neckline", "Cap sleeves", "Adjustable side ruching"],
     measurements: [],
   },
+  {
+    slug: "coral-gathered-crop-mini-set",
+    sku: "JUW-020",
+    name: "Coral Gathered Crop-Top and Mini-Skirt Set",
+    category: "Sets",
+    price: 24500,
+    taggedSize: "Size on request",
+    fit: "Measurements confirmed before payment",
+    condition: "Excellent · real-worn wardrobe piece",
+    colour: "Vivid coral",
+    availability: "AVAILABLE",
+    drop: "Drop 01",
+    tone: "coral",
+    silhouette: "set",
+    note: "A coral two-piece pairing a gathered crop top with a close mini skirt.",
+    story: "A softly gathered bust and slim straps balance the clean high-waisted mini skirt for one compact coral line.",
+    details: ["Gathered crop top", "Slim shoulder straps", "High-waisted mini skirt", "Smooth stretch finish"],
+    measurements: [],
+  },
 ] as const satisfies readonly WardrobeDrop01Product[];
 
 /** Only identity-gated frames that actually exist may cross into Shop. */
