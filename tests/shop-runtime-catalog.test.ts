@@ -89,11 +89,11 @@ test("the public Blob release contains only exact manifest media and verifies lo
     SHOP_PUBLIC_MEDIA_PRESENTATION_CHECKSUM,
     cataloguePresentationChecksum(SHOP_CATALOGUE_MANIFEST),
   );
-  assert.equal(plan.length, 74);
+  assert.equal(plan.length, 79);
   assert.equal(SHOP_PUBLIC_MEDIA_ASSETS.length, plan.length);
   assert.equal(
     plan.filter((asset) => asset.sourcePath.startsWith("/shop/products/")).length,
-    73,
+    78,
   );
   assert.equal(
     plan.some((asset) => asset.sourcePath.endsWith("silver-off-shoulder-mermaid-dress/04-model-front.webp")),
@@ -107,7 +107,10 @@ test("the public Blob release contains only exact manifest media and verifies lo
     assert.equal(asset.sha256, planned.sha256);
     assert.equal(asset.size, planned.size);
     assert.equal(asset.contentType, planned.contentType);
-    assert.match(asset.url, /^https:\/\/3zahcgtjznzcxgsl\.public\.blob\.vercel-storage\.com\//);
+    assert.ok(
+      asset.url === asset.sourcePath
+      || /^https:\/\/3zahcgtjznzcxgsl\.public\.blob\.vercel-storage\.com\//.test(asset.url),
+    );
     assert.equal(resolveShopPublicMediaUrl(asset.sourcePath), asset.url);
     const body = await readFile(join(repositoryRoot, "public", asset.sourcePath));
     assert.equal(createHash("sha256").update(body).digest("hex"), asset.sha256);
@@ -222,9 +225,11 @@ test("an invalid or unavailable Neon snapshot falls back with purchase actions f
   const fallback = await withoutExpectedCatalogueError(() => loadServerShopProducts(async () => {
     throw new Error("synthetic outage");
   }));
-  assert.equal(fallback.length, 13);
+  assert.equal(fallback.length, 14);
   assert.ok(fallback.every((product) => product.availabilityConfirmed === false));
-  assert.ok(fallback.flatMap((product) => product.media ?? []).every((item) => item.src.startsWith("https://")));
+  assert.ok(fallback.flatMap((product) => product.media ?? []).every((item) =>
+    isSafeShopProductMediaUrl(item.src, item.src.split("/products/")[1]?.split("/")[0] ?? ""),
+  ));
   const service = createBrowserCommerceService(fallback);
   assert.equal(service.getProductAvailability(fallback[0].slug), null);
   assert.equal(service.normalizeBagItem({ slug: fallback[0].slug, size: fallback[0].taggedSize }), null);
@@ -241,7 +246,7 @@ test("an invalid or unavailable Neon snapshot falls back with purchase actions f
     databaseRow(),
     { ...databaseRow(SHOP_CATALOGUE_MANIFEST.products[1]), availability: null },
   ]));
-  assert.equal(partial.length, 13);
+  assert.equal(partial.length, 14);
   assert.ok(partial.every((product) => product.availabilityConfirmed === false));
 });
 

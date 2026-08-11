@@ -1,0 +1,53 @@
+{
+  "schemaVersion": 1,
+  "catalogueRevision": "2026-08-11-catalogue-07",
+  "catalogueChecksum": "6ea433b7d761df987ddbb9f0dd02899994277c671404931594e5af6404b112d7",
+  "cataloguePresentationChecksum": "94bc70c309088ac4a5feeb5fa135047e60c3eba428329203234f41e6e6212b7a",
+  "assets": [
+    {
+      "sourcePath": "/shop/products/ivory-rib-knit-fitted-midi-dress/01-garment-front.webp",
+      "pathname": "shop/catalogue/a974591f391a103cfc91a561d0455bd3aaa3d84f9e66296d2f0c32ec35cc04f3/products/ivory-rib-knit-fitted-midi-dress/01-garment-front.webp",
+      "sha256": "a974591f391a103cfc91a561d0455bd3aaa3d84f9e66296d2f0c32ec35cc04f3",
+      "size": 56222,
+      "contentType": "image/webp",
+      "width": 1122,
+      "height": 1402
+    },
+    {
+      "sourcePath": "/shop/products/ivory-rib-knit-fitted-midi-dress/02-garment-back.webp",
+      "pathname": "shop/catalogue/6f8c8b56eed57e3a21ab2be1227b27cdbc43c7111d596069ac3555639faa7565/products/ivory-rib-knit-fitted-midi-dress/02-garment-back.webp",
+      "sha256": "6f8c8b56eed57e3a21ab2be1227b27cdbc43c7111d596069ac3555639faa7565",
+      "size": 60852,
+      "contentType": "image/webp",
+      "width": 1122,
+      "height": 1402
+    },
+    {
+      "sourcePath": "/shop/products/ivory-rib-knit-fitted-midi-dress/03-mannequin-front.webp",
+      "pathname": "shop/catalogue/1361e0bec17a9ab892ef84a2cc9499f856380df379350df004e61cc4c5bf5793/products/ivory-rib-knit-fitted-midi-dress/03-mannequin-front.webp",
+      "sha256": "1361e0bec17a9ab892ef84a2cc9499f856380df379350df004e61cc4c5bf5793",
+      "size": 59986,
+      "contentType": "image/webp",
+      "width": 1122,
+      "height": 1402
+    },
+    {
+      "sourcePath": "/shop/products/ivory-rib-knit-fitted-midi-dress/06-fabric-detail.webp",
+      "pathname": "shop/catalogue/b240aba47cf655b6dc5d4763ff6de9d3578a4bc105fcc87c64e5f5289c0f8a2c/products/ivory-rib-knit-fitted-midi-dress/06-fabric-detail.webp",
+      "sha256": "b240aba47cf655b6dc5d4763ff6de9d3578a4bc105fcc87c64e5f5289c0f8a2c",
+      "size": 190224,
+      "contentType": "image/webp",
+      "width": 1122,
+      "height": 1402
+    },
+    {
+      "sourcePath": "/shop/products/ivory-rib-knit-fitted-midi-dress/07-model-left-profile.webp",
+      "pathname": "shop/catalogue/401747a01c6cb15772cc594368440465c370f6dcbf655ec1ad04b53e5dbcf6b0/products/ivory-rib-knit-fitted-midi-dress/07-model-left-profile.webp",
+      "sha256": "401747a01c6cb15772cc594368440465c370f6dcbf655ec1ad04b53e5dbcf6b0",
+      "size": 186464,
+      "contentType": "image/webp",
+      "width": 972,
+      "height": 1619
+    }
+  ]
+}

@@ -24,6 +24,7 @@ const LEGACY_AUTHORITY = new Map<
   ["JUW-011", { id: "wardrobe-reviewed-draft-005", skus: ["DYN-091", "REVIEW-SILVER-MERMAID-005"] }],
   ["JUW-012", { id: "wardrobe-reviewed-draft-006", skus: ["DYN-092", "REVIEW-ABSTRACT-STRAPLESS-006"] }],
   ["JUW-014", { id: "wardrobe-private-draft-juw-014", skus: ["DYN-094"] }],
+  ["JUW-016", { id: "wardrobe-private-draft-juw-016", skus: ["DYN-096"] }],
 ] as const);
 
 function studioCategory(category: (typeof WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS)[number]["category"]): GarmentCategory {

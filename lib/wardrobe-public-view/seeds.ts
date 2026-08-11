@@ -54,6 +54,7 @@ export const WARDROBE_APPROVED_MODEL_SUPPLEMENTAL_SLOTS = Object.freeze({
   "silver-off-shoulder-mermaid-dress": ["MODEL_REAR_THREE_QUARTER"],
   "orchid-beaded-column-gown": ["MODEL_DETAIL"],
   "sage-open-back-high-slit-maxi-dress": ["MODEL_REAR_THREE_QUARTER"],
+  "ivory-rib-knit-fitted-midi-dress": ["MODEL_LEFT_PROFILE"],
 } as const satisfies Record<string, readonly WardrobeSupplementalModelSlot[]>);
 
 export function getApprovedModelSupplementalSlots(
@@ -68,7 +69,10 @@ export function getApprovedModelSupplementalSlots(
 
 const modelFrontSlugs = new Set<string>(WARDROBE_APPROVED_MODEL_FRONT_SLUGS);
 const v3ModelFrontSlugs = new Set<string>(WARDROBE_APPROVED_V3_MODEL_FRONT_SLUGS);
-const v3SupplementalModelSlugs = new Set(["sage-open-back-high-slit-maxi-dress"]);
+const v3SupplementalModelSlugs = new Set([
+  "sage-open-back-high-slit-maxi-dress",
+  "ivory-rib-knit-fitted-midi-dress",
+]);
 const constructionDetailSlugs = new Set(["sage-open-back-high-slit-maxi-dress"]);
 
 const modelMediaSlots = new Set<WardrobePublicMediaSlot>([
@@ -98,7 +102,7 @@ export function getApprovedModelAnchorId(
 }
 
 export function getWardrobePublicModelAnchor(slug: string): WardrobePublicModelAnchor {
-  return v3ModelFrontSlugs.has(slug)
+  return v3ModelFrontSlugs.has(slug) || v3SupplementalModelSlugs.has(slug)
     ? { ...WARDROBE_PUBLIC_MODEL_ANCHORS["lulu-v3"] }
     : { ...WARDROBE_PUBLIC_MODEL_ANCHORS["lulu-v2"] };
 }

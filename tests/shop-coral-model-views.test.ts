@@ -145,6 +145,17 @@ const approvedProducts: readonly ApprovedProductMedia[] = [
       },
     ],
   },
+  {
+    slug: "ivory-rib-knit-fitted-midi-dress",
+    hasFront: false,
+    views: [
+      {
+        slot: "MODEL_LEFT_PROFILE",
+        src: "/shop/products/ivory-rib-knit-fitted-midi-dress/07-model-left-profile.webp",
+        sha256: "401747a01c6cb15772cc594368440465c370f6dcbf655ec1ad04b53e5dbcf6b0",
+      },
+    ],
+  },
 ] as const;
 
 test("publishes cleared supplemental views as metadata-free 972 × 1619 WebPs", async () => {
@@ -229,7 +240,11 @@ test("orders product media, an approved front when present, then supplemental Lu
           : []),
         ...approved.views.map((view) => {
           if (view.slot === "MODEL_LEFT_PROFILE") {
-            return { view: "side", anchor: "lulu-v2", label: "On Lulu · left profile" };
+            return {
+              view: "side",
+              anchor: approved.slug === "ivory-rib-knit-fitted-midi-dress" ? "lulu-v3" : "lulu-v2",
+              label: "On Lulu · left profile",
+            };
           }
           if (view.slot === "MODEL_REAR_THREE_QUARTER") {
             return {
@@ -250,7 +265,7 @@ test("orders product media, an approved front when present, then supplemental Lu
 });
 
 test("migrates stored v5 supplemental views without resetting operator edits", () => {
-  assert.equal(WARDROBE_PUBLIC_VIEW_SCHEMA_VERSION, 12);
+  assert.equal(WARDROBE_PUBLIC_VIEW_SCHEMA_VERSION, 13);
 
   for (const [index, approved] of approvedProducts.filter(
     (product) => product.views.length > 0,
@@ -283,7 +298,10 @@ test("migrates stored v5 supplemental views without resetting operator edits", (
       approved.views.map(({ slot, src }) => ({
         slot,
         src,
-        modelAnchorId: approved.slug === "sage-open-back-high-slit-maxi-dress"
+        modelAnchorId: [
+          "sage-open-back-high-slit-maxi-dress",
+          "ivory-rib-knit-fitted-midi-dress",
+        ].includes(approved.slug)
           ? "lulu-v3"
           : "lulu-v2",
       })),

@@ -14,7 +14,10 @@ const V3_MODEL_FRONT_SLUGS = new Set([
   "salmon-camp-shirt",
   "sage-open-back-high-slit-maxi-dress",
 ]);
-const V3_MODEL_SUPPLEMENTAL_SLUGS = new Set(["sage-open-back-high-slit-maxi-dress"]);
+const V3_MODEL_SUPPLEMENTAL_SLUGS = new Set([
+  "sage-open-back-high-slit-maxi-dress",
+  "ivory-rib-knit-fitted-midi-dress",
+]);
 const MODEL_MEDIA_SLOTS = new Set([
   "MODEL_FRONT",
   "MODEL_LEFT_PROFILE",
@@ -54,7 +57,7 @@ function presentation(product) {
 
   return Object.freeze({
     ...descriptive,
-    modelAnchor: V3_MODEL_FRONT_SLUGS.has(product.slug)
+    modelAnchor: V3_MODEL_FRONT_SLUGS.has(product.slug) || V3_MODEL_SUPPLEMENTAL_SLUGS.has(product.slug)
       ? MODEL_ANCHORS["lulu-v3"]
       : MODEL_ANCHORS["lulu-v2"],
     media: Object.freeze(mediaSlots.map((slot) => Object.freeze({
@@ -81,7 +84,7 @@ function presentation(product) {
  */
 export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
   schemaVersion: 2,
-  revision: "2026-08-11-catalogue-06",
+  revision: "2026-08-11-catalogue-07",
   products: Object.freeze([
     presentation({
       slug: "coral-drift-dress",
@@ -366,6 +369,26 @@ export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
       details: ["Round neckline", "Tied oval open back", "Side ruching", "High side slit"],
       measurements: [],
       mediaSlots: ["MODEL_FRONT", "CONSTRUCTION_DETAIL", "MODEL_REAR_THREE_QUARTER"],
+    }),
+    presentation({
+      slug: "ivory-rib-knit-fitted-midi-dress",
+      sku: "JUW-016",
+      name: "Ivory Rib-Knit Fitted Midi Dress",
+      category: "Dresses",
+      price: 24500,
+      taggedSize: "Size on request",
+      fit: "Measurements confirmed before payment",
+      condition: "Excellent · real-worn wardrobe piece",
+      colour: "Warm ivory",
+      availability: "AVAILABLE",
+      drop: "Drop 01",
+      tone: "ivory",
+      silhouette: "dress",
+      note: "A warm-ivory rib-knit midi drawn close with adjustable side ruching.",
+      story: "Fine vertical ribbing keeps the fitted line clean, while the wearer-left drawstring gathers the side without interrupting the plain back.",
+      details: ["Fine vertical rib knit", "Shallow wide neckline", "Cap sleeves", "Adjustable side ruching"],
+      measurements: [],
+      mediaSlots: ["MODEL_LEFT_PROFILE"],
     }),
   ]),
 });

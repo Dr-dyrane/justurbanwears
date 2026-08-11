@@ -140,6 +140,25 @@ export const WARDROBE_DROP_01_PRODUCTS = [
     details: ["Round neckline", "Tied oval open back", "Side ruching", "High side slit"],
     measurements: [],
   },
+  {
+    slug: "ivory-rib-knit-fitted-midi-dress",
+    sku: "JUW-016",
+    name: "Ivory Rib-Knit Fitted Midi Dress",
+    category: "Dresses",
+    price: 24500,
+    taggedSize: "Size on request",
+    fit: "Measurements confirmed before payment",
+    condition: "Excellent · real-worn wardrobe piece",
+    colour: "Warm ivory",
+    availability: "AVAILABLE",
+    drop: "Drop 01",
+    tone: "ivory",
+    silhouette: "dress",
+    note: "A warm-ivory rib-knit midi drawn close with adjustable side ruching.",
+    story: "Fine vertical ribbing keeps the fitted line clean, while the wearer-left drawstring gathers the side without interrupting the plain back.",
+    details: ["Fine vertical rib knit", "Shallow wide neckline", "Cap sleeves", "Adjustable side ruching"],
+    measurements: [],
+  },
 ] as const satisfies readonly WardrobeDrop01Product[];
 
 /** Only identity-gated frames that actually exist may cross into Shop. */

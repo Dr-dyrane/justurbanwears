@@ -97,6 +97,10 @@ const approvedSupplementalSources = new Map<string, readonly string[]>([
     "sage-open-back-high-slit-maxi-dress",
     ["/shop/products/sage-open-back-high-slit-maxi-dress/05-model-rear-three-quarter.webp"],
   ],
+  [
+    "ivory-rib-knit-fitted-midi-dress",
+    ["/shop/products/ivory-rib-knit-fitted-midi-dress/07-model-left-profile.webp"],
+  ],
 ]);
 
 test("keeps the public Lulu V2 anchor byte-identical to the approved projection", () => {
@@ -186,7 +190,10 @@ test("appends only approved Lulu views to the main product gallery", () => {
       }] : []),
       ...supplementalSources.map((src) => ({
         src,
-        modelAnchorId: product.slug === "sage-open-back-high-slit-maxi-dress" ? "lulu-v3" : "lulu-v2",
+        modelAnchorId: [
+          "sage-open-back-high-slit-maxi-dress",
+          "ivory-rib-knit-fitted-midi-dress",
+        ].includes(product.slug) ? "lulu-v3" : "lulu-v2",
       })),
     ];
 
