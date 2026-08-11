@@ -12,7 +12,33 @@ import {
 import { parseStoredWardrobePublicView } from "../lib/wardrobe-public-view/db/browser-repository";
 import { WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS } from "../lib/wardrobe-public-view/seeds";
 
-const approvedProducts = [
+const readImage = sharp as unknown as (input: Uint8Array) => {
+  metadata(): Promise<{
+    format?: string;
+    width?: number;
+    height?: number;
+    channels?: number;
+    exif?: Uint8Array;
+    icc?: Uint8Array;
+    xmp?: Uint8Array;
+    iptc?: Uint8Array;
+  }>;
+};
+
+interface ApprovedProductView {
+  readonly slot: "MODEL_LEFT_PROFILE" | "MODEL_REAR_THREE_QUARTER" | "MODEL_DETAIL";
+  readonly src: string;
+  readonly sha256: string;
+}
+
+interface ApprovedProductMedia {
+  readonly slug: string;
+  readonly hasFront: boolean;
+  readonly frontSha256?: string;
+  readonly views: readonly ApprovedProductView[];
+}
+
+const approvedProducts: readonly ApprovedProductMedia[] = [
   {
     slug: "coral-drift-dress",
     hasFront: true,
@@ -48,6 +74,7 @@ const approvedProducts = [
   {
     slug: "cocoa-pleat-trouser",
     hasFront: true,
+    frontSha256: "f4586c9f87405ede93f927ac145090cd7723b98984f3610accce6ef1f43d5ad3",
     views: [
       {
         slot: "MODEL_LEFT_PROFILE",
@@ -105,7 +132,7 @@ test("publishes cleared supplemental views as metadata-free 972 × 1619 WebPs", 
   for (const view of approvedProducts.flatMap((product) => product.views)) {
     const path = join(process.cwd(), "public", view.src.replace(/^\/+/, ""));
     const bytes = readFileSync(path);
-    const metadata = await sharp(bytes).metadata();
+    const metadata = await readImage(bytes).metadata();
 
     assert.equal(metadata.format, "webp");
     assert.equal(metadata.width, 972);
@@ -116,6 +143,24 @@ test("publishes cleared supplemental views as metadata-free 972 × 1619 WebPs", 
     assert.equal(metadata.iptc, undefined);
     assert.equal(createHash("sha256").update(bytes).digest("hex"), view.sha256);
   }
+});
+
+test("publishes the approved Cocoa V3 front as a sanitized exact derivative", async () => {
+  const cocoa = approvedProducts.find((product) => product.slug === "cocoa-pleat-trouser");
+  assert.ok(cocoa?.frontSha256);
+  const path = join(process.cwd(), "public/shop/products/cocoa-pleat-trouser/04-model-front.webp");
+  const bytes = readFileSync(path);
+  const metadata = await readImage(bytes).metadata();
+
+  assert.equal(metadata.format, "webp");
+  assert.equal(metadata.width, 972);
+  assert.equal(metadata.height, 1619);
+  assert.equal(metadata.channels, 3);
+  assert.equal(metadata.exif, undefined);
+  assert.equal(metadata.icc, undefined);
+  assert.equal(metadata.xmp, undefined);
+  assert.equal(metadata.iptc, undefined);
+  assert.equal(createHash("sha256").update(bytes).digest("hex"), cocoa.frontSha256);
 });
 
 test("orders product media, an approved front when present, then supplemental Lulu views", () => {
@@ -145,7 +190,9 @@ test("orders product media, an approved front when present, then supplemental Lu
         ...(approved.hasFront
           ? [{
               view: "front",
-              anchor: approved.slug === "moss-square-knit" ? "lulu-v3" : "lulu-v2",
+              anchor: ["moss-square-knit", "cocoa-pleat-trouser"].includes(approved.slug)
+                ? "lulu-v3"
+                : "lulu-v2",
               label: "On Lulu · front",
             }]
           : []),
@@ -172,7 +219,7 @@ test("orders product media, an approved front when present, then supplemental Lu
 });
 
 test("migrates stored v5 supplemental views without resetting operator edits", () => {
-  assert.equal(WARDROBE_PUBLIC_VIEW_SCHEMA_VERSION, 8);
+  assert.equal(WARDROBE_PUBLIC_VIEW_SCHEMA_VERSION, 9);
 
   for (const [index, approved] of approvedProducts.slice(1).entries()) {
     const product = WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS.find(

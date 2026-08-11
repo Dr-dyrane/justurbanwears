@@ -8,19 +8,20 @@ import type { StudioSnapshot } from "../domain/state";
 import {
   WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS,
 } from "../../wardrobe-public-view/seeds";
+import { canonicalCatalogueSku } from "../../wardrobe-public-view/sku";
 
 const MIGRATION_CREATED_AT = "2026-08-10T00:00:00.000Z";
 
-const DROP_01_LEGACY_AUTHORITY = new Map<
+const LEGACY_AUTHORITY = new Map<
   string,
   { readonly id: string; readonly skus: readonly string[] }
 >([
-  ["DYN-087", { id: "wardrobe-reviewed-nude-ruched-sundress", skus: ["REVIEW-BLUSH-MINI-001", "REVIEW-NUDE-RUCHED-001"] }],
-  ["DYN-088", { id: "wardrobe-reviewed-purple-beaded-evening-gown", skus: ["REVIEW-PURPLE-BEADED-002"] }],
-  ["DYN-089", { id: "wardrobe-reviewed-draft-003", skus: ["REVIEW-SAGE-RUCHED-003"] }],
-  ["DYN-090", { id: "wardrobe-reviewed-draft-004", skus: ["REVIEW-MAGENTA-PLUNGE-004"] }],
-  ["DYN-091", { id: "wardrobe-reviewed-draft-005", skus: ["REVIEW-SILVER-MERMAID-005"] }],
-  ["DYN-092", { id: "wardrobe-reviewed-draft-006", skus: ["REVIEW-ABSTRACT-STRAPLESS-006"] }],
+  ["JUW-007", { id: "wardrobe-reviewed-nude-ruched-sundress", skus: ["DYN-087", "REVIEW-BLUSH-MINI-001", "REVIEW-NUDE-RUCHED-001"] }],
+  ["JUW-008", { id: "wardrobe-reviewed-purple-beaded-evening-gown", skus: ["DYN-088", "REVIEW-PURPLE-BEADED-002"] }],
+  ["JUW-009", { id: "wardrobe-reviewed-draft-003", skus: ["DYN-089", "REVIEW-SAGE-RUCHED-003"] }],
+  ["JUW-010", { id: "wardrobe-reviewed-draft-004", skus: ["DYN-090", "REVIEW-MAGENTA-PLUNGE-004"] }],
+  ["JUW-011", { id: "wardrobe-reviewed-draft-005", skus: ["DYN-091", "REVIEW-SILVER-MERMAID-005"] }],
+  ["JUW-012", { id: "wardrobe-reviewed-draft-006", skus: ["DYN-092", "REVIEW-ABSTRACT-STRAPLESS-006"] }],
 ] as const);
 
 function studioCategory(category: (typeof WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS)[number]["category"]): GarmentCategory {
@@ -41,7 +42,7 @@ function visualForTone(tone: (typeof WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS)[numbe
 
 const migrationRows = WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS.map((product) => {
   const token = product.sku.toLowerCase();
-  const legacyAuthority = DROP_01_LEGACY_AUTHORITY.get(product.sku);
+  const legacyAuthority = LEGACY_AUTHORITY.get(product.sku);
   const garmentId = legacyAuthority?.id ?? `wardrobe-seed-${token}`;
   const listingId = `wardrobe-listing-${token}`;
   const inventoryId = `wardrobe-stock-${token}`;
@@ -119,7 +120,7 @@ function normalizedSku(value: string) {
 }
 
 function legacyAuthorityForSeed(seed: Garment) {
-  return DROP_01_LEGACY_AUTHORITY.get(normalizedSku(seed.sku));
+  return LEGACY_AUTHORITY.get(canonicalCatalogueSku(seed.sku));
 }
 
 function isLegacyAuthorityMatch(existing: Garment, seed: Garment) {
@@ -161,17 +162,25 @@ export function mergeWardrobeAuthoritySeeds(snapshot: StudioSnapshot): StudioSna
   const garmentIdMap = new Map<string, string>();
   const newlyAddedGarments = new Set<string>();
   const promotedGarments = new Set<string>();
+  const renamedGarments = new Set<string>();
   const seeds = migrationRows.map(({ garment }) => garment);
 
   for (const seed of seeds) {
     const existing = garments.find((garment) =>
       garment.id === seed.id
-      || normalizedSku(garment.sku) === normalizedSku(seed.sku)
+      || canonicalCatalogueSku(garment.sku) === canonicalCatalogueSku(seed.sku)
       || isLegacyAuthorityMatch(garment, seed),
     );
     if (existing) {
       garmentIdMap.set(seed.id, existing.id);
-      if (isLegacyAuthorityMatch(existing, seed) && normalizedSku(existing.sku) !== normalizedSku(seed.sku)) {
+      if (
+        canonicalCatalogueSku(existing.sku) === canonicalCatalogueSku(seed.sku)
+        && normalizedSku(existing.sku) !== normalizedSku(seed.sku)
+      ) {
+        const index = garments.indexOf(existing);
+        garments[index] = { ...existing, sku: seed.sku };
+        renamedGarments.add(seed.id);
+      } else if (isLegacyAuthorityMatch(existing, seed) && normalizedSku(existing.sku) !== normalizedSku(seed.sku)) {
         const index = garments.indexOf(existing);
         garments[index] = promoteDrop01WardrobeRow(existing, seed);
         promotedGarments.add(seed.id);
@@ -188,7 +197,20 @@ export function mergeWardrobeAuthoritySeeds(snapshot: StudioSnapshot): StudioSna
     const existing = listings.find((listing) =>
       listing.id === seed.id || listing.slug === seed.slug || listing.garmentId === garmentId,
     );
-    if (existing || (!newlyAddedGarments.has(seed.garmentId) && !promotedGarments.has(seed.garmentId))) continue;
+    if (existing) {
+      if (renamedGarments.has(seed.garmentId) && seed.publicProjection) {
+        const index = listings.indexOf(existing);
+        listings[index] = {
+          ...existing,
+          garmentId,
+          publicProjection: existing.publicProjection
+            ? { ...existing.publicProjection, sku: seed.publicProjection.sku }
+            : { ...seed.publicProjection },
+        };
+      }
+      continue;
+    }
+    if (!newlyAddedGarments.has(seed.garmentId) && !promotedGarments.has(seed.garmentId)) continue;
     listings.push({ ...seed, garmentId });
   }
 

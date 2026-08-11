@@ -89,7 +89,7 @@ test("publishes one product-led hero and one concise Drop 01 discovery grid", as
   }
 
   assert.doesNotMatch(visibleBody, /shop-release-index|shop-wardrobe-preview|shop-editorial-rail|shop-values/);
-  assert.doesNotMatch(visibleBody, /GARMENT STUDY|DYN-0(?:8[1-9]|9[0-2])|Six dresses from Lulu’s wardrobe|Warm colour\. Clean movement/);
+  assert.doesNotMatch(visibleBody, /GARMENT STUDY|(?:DYN-0(?:8[1-9]|9[0-2])|JUW-0(?:0[1-9]|1[0-2]))|Six dresses from Lulu’s wardrobe|Warm colour\. Clean movement/);
   assert.doesNotMatch(visibleBody, /Indigo Workshirt|Ivory Tie Skirt/);
 });
 
@@ -187,7 +187,9 @@ test("server-renders product studies plus only identity-cleared model views", as
     assert.match(html, new RegExp(`${base}/06-fabric-detail\\.webp`));
     assert.doesNotMatch(html, /05-model-back\.webp/);
     const hasApprovedFront = approvedModelSlugs.has(slugs[index]);
-    const expectedFrontAnchor = slugs[index] === "moss-square-knit" ? "lulu-v3" : "lulu-v2";
+    const expectedFrontAnchor = ["moss-square-knit", "cocoa-pleat-trouser"].includes(slugs[index])
+      ? "lulu-v3"
+      : "lulu-v2";
     const hasApprovedLeftProfile = approvedLeftProfileSlugs.has(slugs[index]);
     const hasApprovedRearThreeQuarter = approvedRearThreeQuarterSlugs.has(slugs[index]);
     const hasApprovedSupplementalViews = hasApprovedLeftProfile || hasApprovedRearThreeQuarter;

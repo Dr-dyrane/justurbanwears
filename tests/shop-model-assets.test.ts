@@ -3,11 +3,11 @@ import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import test from "node:test";
-import { shopModelAnchors, shopProducts } from "../lib/shop/catalog.ts";
+import { shopModelAnchors, shopProducts } from "../lib/shop/catalog";
 import {
   resolveApprovedModelTryout,
   selectProductGalleryMedia,
-} from "../lib/shop/model-tryout.ts";
+} from "../lib/shop/model-tryout";
 
 const expectedApprovals = [
   {
@@ -32,7 +32,7 @@ const expectedApprovals = [
     slug: "cocoa-pleat-trouser",
     width: 972,
     height: 1619,
-    sha256: "388845a92134af3accda47f6ee1b5aa7d98bb14483df82999ba1d913f1dcfdc5",
+    sha256: "f4586c9f87405ede93f927ac145090cd7723b98984f3610accce6ef1f43d5ad3",
   },
   {
     slug: "salmon-camp-shirt",
@@ -111,7 +111,9 @@ test("publishes only identity-cleared model fronts with their reviewed bytes", (
     assert.equal(entry.tryout.frame.presentation, "model");
     assert.equal(
       entry.tryout.modelAnchorId,
-      expected.slug === "moss-square-knit" ? "lulu-v3" : "lulu-v2",
+      ["moss-square-knit", "cocoa-pleat-trouser"].includes(expected.slug)
+        ? "lulu-v3"
+        : "lulu-v2",
     );
     assert.equal(entry.tryout.frame.width, expected.width);
     assert.equal(entry.tryout.frame.height, expected.height);
@@ -140,7 +142,9 @@ test("appends only approved Lulu views to the main product gallery", () => {
     const expectedModelFrames = [
       ...(hasApprovedFront ? [{
         src: `/shop/products/${product.slug}/04-model-front.webp`,
-        modelAnchorId: product.slug === "moss-square-knit" ? "lulu-v3" : "lulu-v2",
+        modelAnchorId: ["moss-square-knit", "cocoa-pleat-trouser"].includes(product.slug)
+          ? "lulu-v3"
+          : "lulu-v2",
       }] : []),
       ...supplementalSources.map((src) => ({ src, modelAnchorId: "lulu-v2" })),
     ];

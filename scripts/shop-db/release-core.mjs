@@ -4,6 +4,9 @@ import { join } from "node:path";
 
 export const CATALOGUE_NAMESPACE = "justurbanwears.shop.catalogue";
 export const EXPECTED_CATALOGUE_ROWS = 12;
+export const LEGACY_CATALOGUE_SKUS = Object.freeze(
+  Array.from({ length: EXPECTED_CATALOGUE_ROWS }, (_, index) => `DYN-${String(index + 81).padStart(3, "0")}`),
+);
 export const PRODUCTION_CONFIRMATION = "APPLY_JUSTURBANWEARS_PRODUCTION";
 export const ADMIN_LOCK_SQL = "select pg_advisory_xact_lock(hashtextextended('justurban-wears:shop-db-admin', 0))";
 export const INVENTORY_PROTECTED_COLUMNS = Object.freeze([
@@ -99,7 +102,7 @@ export function validateManifest(manifest, { assetRoot, expectedRows = EXPECTED_
     for (const field of ["sku", "slug", "name", "category", "taggedSize", "fit", "condition", "colour", "drop", "tone", "silhouette", "note", "story"]) {
       nonEmptyString(product[field], `${label}.${field}`);
     }
-    invariant(/^DYN-\d{3}$/.test(product.sku), `${label}.sku must use the immutable DYN-NNN form.`);
+    invariant(/^JUW-\d{3}$/.test(product.sku), `${label}.sku must use the immutable JUW-NNN form.`);
     invariant(/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(product.slug), `${label}.slug must be kebab-case.`);
     invariant(!seenSkus.has(product.sku), `Duplicate catalogue SKU: ${product.sku}.`);
     invariant(!seenSlugs.has(product.slug), `Duplicate catalogue slug: ${product.slug}.`);
@@ -322,6 +325,12 @@ export function compareCatalogueRows(manifest, catalogueRows, inventoryRows) {
   const actualCatalogue = new Map(catalogueRows.map((row) => [row.sku, row]));
   const actualInventory = new Set(inventoryRows.map((row) => row.sku));
   const issues = [];
+  for (const row of catalogueRows) {
+    if (!expected.has(row.sku)) issues.push(`Unexpected legacy catalogue row ${row.sku}.`);
+  }
+  for (const row of inventoryRows) {
+    if (!expected.has(row.sku)) issues.push(`Unexpected legacy inventory row ${row.sku}.`);
+  }
   for (const [sku, product] of expected) {
     const row = actualCatalogue.get(sku);
     if (!row) {

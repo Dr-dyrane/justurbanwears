@@ -24,7 +24,13 @@ import {
 } from "../scripts/shop-db/release-core.mjs";
 
 const repositoryRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
-const expectedChecksum = "af80305ff292d03171957d7138610621de37fb8ab0be44222f6ff4e431c6a7e0";
+const expectedChecksum = "2a0bbd773e30209251b43114bb7cff89b19c71333da8ce7968eda5a24dd01a32";
+const legacySkuRenames = Object.fromEntries(
+  Array.from({ length: 12 }, (_, index) => [
+    `DYN-${String(index + 81).padStart(3, "0")}`,
+    `JUW-${String(index + 1).padStart(3, "0")}`,
+  ]),
+);
 
 function clone<T>(value: T): T {
   return JSON.parse(JSON.stringify(value));
@@ -71,7 +77,7 @@ test("the checked-in manifest validates all 12 public assets and immutable SKUs"
   });
   assert.deepEqual(
     SHOP_CATALOGUE_MANIFEST.products.map((product) => product.sku),
-    Array.from({ length: 12 }, (_, index) => `DYN-${String(index + 81).padStart(3, "0")}`),
+    Array.from({ length: 12 }, (_, index) => `JUW-${String(index + 1).padStart(3, "0")}`),
   );
 });
 
@@ -238,6 +244,24 @@ test("migration planning verifies every applied hash and only permits a journal 
   }
 });
 
+test("the forward SKU migration covers every retired alias and preserves inventory through cascade", () => {
+  const migration = readFileSync(
+    join(repositoryRoot, "drizzle/shop-postgres/0002_deep_steel_serpent.sql"),
+    "utf8",
+  );
+  assert.match(migration, /ON UPDATE cascade/);
+  assert.match(migration, /SKU migration changed operational inventory state/);
+  assert.match(migration, /UPDATE "shop_order_items"/);
+  const browserMigration = readFileSync(
+    join(repositoryRoot, "lib/wardrobe-public-view/sku.ts"),
+    "utf8",
+  );
+  for (const [legacySku, currentSku] of Object.entries(legacySkuRenames)) {
+    assert.ok(migration.split(`'${legacySku}', '${currentSku}'`).length >= 2);
+    assert.match(browserMigration, new RegExp(`\\["${legacySku}", "${currentSku}"\\]`));
+  }
+});
+
 test("verification compares presentation but ignores mutable inventory counters", () => {
   const catalogueRows = databaseCatalogueRows();
   const inventoryRows = SHOP_CATALOGUE_MANIFEST.products.map((product) => ({
@@ -248,7 +272,15 @@ test("verification compares presentation but ignores mutable inventory counters"
   }));
   assert.deepEqual(compareCatalogueRows(SHOP_CATALOGUE_MANIFEST, catalogueRows, inventoryRows), []);
   catalogueRows[0].story = "drift";
-  assert.deepEqual(compareCatalogueRows(SHOP_CATALOGUE_MANIFEST, catalogueRows, inventoryRows), ["DYN-081.story differs from the manifest."]);
+  assert.deepEqual(compareCatalogueRows(SHOP_CATALOGUE_MANIFEST, catalogueRows, inventoryRows), ["JUW-001.story differs from the manifest."]);
+  assert.deepEqual(
+    compareCatalogueRows(
+      SHOP_CATALOGUE_MANIFEST,
+      [...databaseCatalogueRows(), { ...databaseCatalogueRows()[0], sku: "DYN-081" }],
+      inventoryRows,
+    ),
+    ["Unexpected legacy catalogue row DYN-081."],
+  );
 });
 
 test("build and deployment remain free of database administration side effects", () => {
@@ -262,7 +294,9 @@ test("build and deployment remain free of database administration side effects",
   assert.match(vercelIgnore, /^\/drizzle\/$/m);
   assert.match(vercelIgnore, /^\/scripts\/shop-db\/$/m);
   assert.match(vercelIgnore, /^\/\.codex\/$/m);
-  assert.match(vercelIgnore, /^\/design\/$/m);
+  assert.match(vercelIgnore, /^\/design\/identity-2026\/\*\*$/m);
+  assert.match(vercelIgnore, /^!\/design\/identity-2026\/justurban-app-icon\.svg$/m);
+  assert.match(vercelIgnore, /^!\/design\/identity-2026\/justurban-wordmark\.svg$/m);
   const gitIgnore = readFileSync(join(repositoryRoot, ".gitignore"), "utf8");
   assert.match(gitIgnore, /^\/\.codex\/$/m);
 });

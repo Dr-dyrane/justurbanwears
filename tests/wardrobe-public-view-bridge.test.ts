@@ -83,6 +83,17 @@ test("the wardrobe public view strips private fields and admits only approved an
   assert.deepEqual(wrongAnchor.products, []);
 });
 
+test("the wardrobe public view migrates the retired synthetic SKU namespace", () => {
+  const parsed = parseStoredWardrobePublicView(stored({
+    ...coral,
+    sku: "DYN-081",
+  }));
+
+  assert.equal(parsed.products.length, 1);
+  assert.equal(parsed.products[0].sku, "JUW-001");
+  assert.doesNotMatch(JSON.stringify(parsed), /DYN-081/);
+});
+
 test("v7 migrates Moss to a V3 front while retaining V2 supplemental views", () => {
   const moss = WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS.find(
     (product) => product.slug === "moss-square-knit",
@@ -131,6 +142,42 @@ test("v7 migrates Moss to a V3 front while retaining V2 supplemental views", () 
   assert.deepEqual(wrongCurrent.products, []);
 });
 
+test("v8 migrates Cocoa to JUW and a V3 front while retaining V2 supplemental views", () => {
+  const cocoa = WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS.find(
+    (product) => product.slug === "cocoa-pleat-trouser",
+  );
+  assert.ok(cocoa);
+  const legacy = {
+    ...cocoa,
+    sku: "DYN-085",
+    modelAnchor: { id: "lulu-v2", src: "/shop/model/lulu-v2-approved.png" },
+    media: cocoa.media.map(({ slot, src }) => ({
+      slot,
+      src,
+      ...(slot.startsWith("MODEL_") ? { modelAnchorId: "lulu-v2" } : {}),
+    })),
+  };
+  const parsed = parseStoredWardrobePublicView(JSON.stringify({
+    version: 8,
+    data: [legacy],
+    managedSlugs: [cocoa.slug],
+  }));
+
+  assert.equal(parsed.products.length, 1);
+  assert.equal(parsed.products[0].sku, "JUW-005");
+  assert.deepEqual(parsed.products[0].modelAnchor, { id: "lulu-v3" });
+  assert.deepEqual(
+    parsed.products[0].media
+      .filter((frame) => frame.slot.startsWith("MODEL_"))
+      .map(({ slot, modelAnchorId }) => ({ slot, modelAnchorId })),
+    [
+      { slot: "MODEL_FRONT", modelAnchorId: "lulu-v3" },
+      { slot: "MODEL_LEFT_PROFILE", modelAnchorId: "lulu-v2" },
+      { slot: "MODEL_REAR_THREE_QUARTER", modelAnchorId: "lulu-v2" },
+    ],
+  );
+});
+
 test("Studio holds the twelve saleable wardrobe rows and promotes the six former drafts in place", () => {
   const seeded = mergeWardrobeAuthoritySeeds(createEmptyStudioSnapshot());
   assert.equal(seeded.garments.length, 12);
@@ -138,7 +185,7 @@ test("Studio holds the twelve saleable wardrobe rows and promotes the six former
   assert.equal(seeded.inventory.length, 12);
   assert.equal(WARDROBE_AUTHORITY_MANAGED_SLUGS.length, 12);
 
-  const drop = seeded.garments.filter((garment) => /^DYN-0(?:87|88|89|90|91|92)$/.test(garment.sku));
+  const drop = seeded.garments.filter((garment) => /^JUW-0(?:07|08|09|10|11|12)$/.test(garment.sku));
   assert.equal(drop.length, 6);
   for (const garment of drop) {
     assert.equal(garment.state, "PUBLISHED");
@@ -155,7 +202,7 @@ test("Studio holds the twelve saleable wardrobe rows and promotes the six former
   const reseeded = mergeWardrobeAuthoritySeeds(seeded);
   assert.deepEqual(reseeded, seeded);
 
-  const blush = drop.find((garment) => garment.sku === "DYN-087")!;
+  const blush = drop.find((garment) => garment.sku === "JUW-007")!;
   const legacy = createEmptyStudioSnapshot();
   legacy.garments.push({
     ...blush,
@@ -188,7 +235,7 @@ test("Studio holds the twelve saleable wardrobe rows and promotes the six former
   });
   const upgraded = mergeWardrobeAuthoritySeeds(legacy);
   const promoted = upgraded.garments.find((garment) => garment.id === blush.id)!;
-  assert.equal(promoted.sku, "DYN-087");
+  assert.equal(promoted.sku, "JUW-007");
   assert.equal(promoted.title, "Operator blush title");
   assert.equal(promoted.price, 21000);
   assert.equal(promoted.privateNote, "Keep operator note");
@@ -198,6 +245,49 @@ test("Studio holds the twelve saleable wardrobe rows and promotes the six former
   const promotedStock = upgraded.inventory.find((record) => record.garmentId === blush.id);
   assert.equal(promotedStock?.state, "PUBLISHED");
   assert.ok(promotedStock?.listingId);
+});
+
+test("Studio renames legacy catalogue SKUs in place without resetting inventory", () => {
+  const seeded = mergeWardrobeAuthoritySeeds(createEmptyStudioSnapshot());
+  const coralGarment = seeded.garments.find((garment) => garment.sku === "JUW-001")!;
+  const coralListing = seeded.listings.find((listing) => listing.garmentId === coralGarment.id)!;
+  const coralInventory = seeded.inventory.find((record) => record.garmentId === coralGarment.id)!;
+  const legacyGarmentId = "wardrobe-seed-dyn-081";
+  const legacy = {
+    ...seeded,
+    garments: seeded.garments.map((garment) => garment.id === coralGarment.id
+      ? { ...garment, id: legacyGarmentId, sku: "DYN-081" }
+      : garment),
+    listings: seeded.listings.map((listing) => listing.id === coralListing.id
+      ? {
+          ...listing,
+          id: "wardrobe-listing-dyn-081",
+          garmentId: legacyGarmentId,
+          publicProjection: { ...listing.publicProjection!, sku: "DYN-081" },
+        }
+      : listing),
+    inventory: seeded.inventory.map((record) => record.id === coralInventory.id
+      ? {
+          ...record,
+          id: "wardrobe-stock-dyn-081",
+          garmentId: legacyGarmentId,
+          listingId: "wardrobe-listing-dyn-081",
+          reserved: 1,
+          state: "RESERVED" as const,
+        }
+      : record),
+  };
+
+  const migrated = mergeWardrobeAuthoritySeeds(legacy);
+  const garment = migrated.garments.find((candidate) => candidate.id === legacyGarmentId)!;
+  const listing = migrated.listings.find((candidate) => candidate.id === "wardrobe-listing-dyn-081")!;
+  const inventory = migrated.inventory.find((candidate) => candidate.id === "wardrobe-stock-dyn-081")!;
+  assert.equal(migrated.garments.length, 12);
+  assert.equal(garment.sku, "JUW-001");
+  assert.equal(listing.garmentId, legacyGarmentId);
+  assert.equal(listing.publicProjection?.sku, "JUW-001");
+  assert.equal(inventory.reserved, 1);
+  assert.equal(inventory.state, "RESERVED");
 });
 
 test("Studio preserves the authored Drop 01 product study when materializing the public wardrobe view", () => {

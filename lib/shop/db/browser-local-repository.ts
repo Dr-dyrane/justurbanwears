@@ -18,6 +18,7 @@ import {
   defaultNotificationPreferences,
 } from "../domain/state";
 import type { ShopStateRepository } from "../services/contracts";
+import { canonicalCatalogueSku } from "../../wardrobe-public-view/sku";
 
 const CURRENT_STORAGE_KEY = "justurban-wears:shop:v3";
 const PREVIOUS_STORAGE_KEY = "justurban-wears:shop:v2";
@@ -132,7 +133,8 @@ function parseOrderLine(value: unknown): ShopOrderLine | null {
     return { snapshot: "LEGACY", slug: value.slug, quantity: 1 };
   }
   if (value.snapshot !== "PRODUCT") return null;
-  const sku = safeText(value.sku, 80);
+  const rawSku = safeText(value.sku, 80);
+  const sku = rawSku ? canonicalCatalogueSku(rawSku) : null;
   const name = safeText(value.name, 140);
   const taggedSize = safeText(value.taggedSize, 60);
   if (!sku || !name || !taggedSize || !isSafeAmount(value.unitPrice)) return null;

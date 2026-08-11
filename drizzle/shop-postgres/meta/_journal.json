@@ -15,6 +15,13 @@
       "when": 1786436117456,
       "tag": "0001_magenta_deadpool",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1786455218567,
+      "tag": "0002_deep_steel_serpent",
+      "breakpoints": true
     }
   ]
 }

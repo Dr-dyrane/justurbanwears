@@ -66,7 +66,7 @@ export const shopCatalogueItems = pgTable("shop_catalogue_items", {
 export const shopInventory = pgTable("shop_inventory", {
   sku: varchar("sku", { length: 40 })
     .primaryKey()
-    .references(() => shopCatalogueItems.sku, { onDelete: "restrict" }),
+    .references(() => shopCatalogueItems.sku, { onDelete: "restrict", onUpdate: "cascade" }),
   availability: shopCatalogueAvailability("availability").notNull(),
   onHand: integer("on_hand").notNull(),
   reserved: integer("reserved").notNull(),

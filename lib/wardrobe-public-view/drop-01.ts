@@ -9,7 +9,7 @@ export type WardrobeDrop01Product = Omit<WardrobePublicProduct, "media" | "model
 export const WARDROBE_DROP_01_PRODUCTS = [
   {
     slug: "blush-scoop-mini-dress",
-    sku: "DYN-087",
+    sku: "JUW-007",
     name: "Blush Scoop Mini Dress",
     category: "Dresses",
     price: 18500,
@@ -28,7 +28,7 @@ export const WARDROBE_DROP_01_PRODUCTS = [
   },
   {
     slug: "orchid-beaded-column-gown",
-    sku: "DYN-088",
+    sku: "JUW-008",
     name: "Orchid Beaded Column Gown",
     category: "Dresses",
     price: 32000,
@@ -47,7 +47,7 @@ export const WARDROBE_DROP_01_PRODUCTS = [
   },
   {
     slug: "sage-asymmetric-ruched-maxi-dress",
-    sku: "DYN-089",
+    sku: "JUW-009",
     name: "Sage Asymmetric Ruched Maxi Dress",
     category: "Dresses",
     price: 28500,
@@ -66,7 +66,7 @@ export const WARDROBE_DROP_01_PRODUCTS = [
   },
   {
     slug: "magenta-plunge-ruched-mini-dress",
-    sku: "DYN-090",
+    sku: "JUW-010",
     name: "Magenta Plunge Ruched Mini Dress",
     category: "Dresses",
     price: 22000,
@@ -85,7 +85,7 @@ export const WARDROBE_DROP_01_PRODUCTS = [
   },
   {
     slug: "silver-off-shoulder-mermaid-dress",
-    sku: "DYN-091",
+    sku: "JUW-011",
     name: "Silver Off-Shoulder Mermaid Dress",
     category: "Dresses",
     price: 34500,
@@ -104,7 +104,7 @@ export const WARDROBE_DROP_01_PRODUCTS = [
   },
   {
     slug: "multicolor-abstract-strapless-mini-dress",
-    sku: "DYN-092",
+    sku: "JUW-012",
     name: "Multicolor Abstract Strapless Mini Dress",
     category: "Dresses",
     price: 19500,

@@ -6,7 +6,7 @@ const MODEL_ANCHORS = Object.freeze({
   "lulu-v3": Object.freeze({ id: "lulu-v3" }),
 });
 
-const V3_MODEL_FRONT_SLUGS = new Set(["moss-square-knit"]);
+const V3_MODEL_FRONT_SLUGS = new Set(["moss-square-knit", "cocoa-pleat-trouser"]);
 const MODEL_MEDIA_SLOTS = new Set([
   "MODEL_FRONT",
   "MODEL_LEFT_PROFILE",
@@ -67,11 +67,11 @@ function presentation(product) {
  */
 export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
   schemaVersion: 2,
-  revision: "2026-08-11-catalogue-02",
+  revision: "2026-08-11-catalogue-03",
   products: Object.freeze([
     presentation({
       slug: "coral-drift-dress",
-      sku: "DYN-081",
+      sku: "JUW-001",
       name: "Coral Drift Dress",
       category: "Dresses",
       price: 24500,
@@ -95,7 +95,7 @@ export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
     }),
     presentation({
       slug: "indigo-workshirt",
-      sku: "DYN-082",
+      sku: "JUW-002",
       name: "Indigo Workshirt",
       category: "Shirts",
       price: 18000,
@@ -119,7 +119,7 @@ export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
     }),
     presentation({
       slug: "moss-square-knit",
-      sku: "DYN-083",
+      sku: "JUW-003",
       name: "Moss Square Knit",
       category: "Knitwear",
       price: 12500,
@@ -143,7 +143,7 @@ export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
     }),
     presentation({
       slug: "ivory-tie-skirt",
-      sku: "DYN-084",
+      sku: "JUW-004",
       name: "Ivory Tie Skirt",
       category: "Skirts",
       price: 15500,
@@ -167,7 +167,7 @@ export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
     }),
     presentation({
       slug: "cocoa-pleat-trouser",
-      sku: "DYN-085",
+      sku: "JUW-005",
       name: "Cocoa Pleat Trouser",
       category: "Trousers",
       price: 22000,
@@ -191,7 +191,7 @@ export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
     }),
     presentation({
       slug: "salmon-camp-shirt",
-      sku: "DYN-086",
+      sku: "JUW-006",
       name: "Salmon Camp Shirt",
       category: "Shirts",
       price: 16500,
@@ -215,7 +215,7 @@ export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
     }),
     presentation({
       slug: "blush-scoop-mini-dress",
-      sku: "DYN-087",
+      sku: "JUW-007",
       name: "Blush Scoop Mini Dress",
       category: "Dresses",
       price: 18500,
@@ -235,7 +235,7 @@ export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
     }),
     presentation({
       slug: "orchid-beaded-column-gown",
-      sku: "DYN-088",
+      sku: "JUW-008",
       name: "Orchid Beaded Column Gown",
       category: "Dresses",
       price: 32000,
@@ -255,7 +255,7 @@ export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
     }),
     presentation({
       slug: "sage-asymmetric-ruched-maxi-dress",
-      sku: "DYN-089",
+      sku: "JUW-009",
       name: "Sage Asymmetric Ruched Maxi Dress",
       category: "Dresses",
       price: 28500,
@@ -275,7 +275,7 @@ export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
     }),
     presentation({
       slug: "magenta-plunge-ruched-mini-dress",
-      sku: "DYN-090",
+      sku: "JUW-010",
       name: "Magenta Plunge Ruched Mini Dress",
       category: "Dresses",
       price: 22000,
@@ -295,7 +295,7 @@ export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
     }),
     presentation({
       slug: "silver-off-shoulder-mermaid-dress",
-      sku: "DYN-091",
+      sku: "JUW-011",
       name: "Silver Off-Shoulder Mermaid Dress",
       category: "Dresses",
       price: 34500,
@@ -315,7 +315,7 @@ export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
     }),
     presentation({
       slug: "multicolor-abstract-strapless-mini-dress",
-      sku: "DYN-092",
+      sku: "JUW-012",
       name: "Multicolor Abstract Strapless Mini Dress",
       category: "Dresses",
       price: 19500,

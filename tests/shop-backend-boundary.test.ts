@@ -129,7 +129,7 @@ test("submits only intent and deduplicates concurrent authenticated commands", a
     serialized,
     /unitPrice|subtotal|deliveryFee|total|status|transmission|customerId|authSubject|private|studio/iu,
   );
-  assert.doesNotMatch(serialized, /DYN-093|teal-draped-mini-set/iu);
+  assert.doesNotMatch(serialized, /JUW-013|DYN-093|teal-draped-mini-set/iu);
 });
 
 test("only replaces a matching local checkout with an authoritative submitted order", () => {
@@ -158,7 +158,7 @@ test("only replaces a matching local checkout with an authoritative submitted or
     lines: [{
       snapshot: "PRODUCT",
       slug: "another-piece",
-      sku: "DYN-999",
+      sku: "JUW-999",
       name: "Another piece",
       taggedSize: "M",
       unitPrice: 1,

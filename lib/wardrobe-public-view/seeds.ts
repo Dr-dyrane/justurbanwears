@@ -24,6 +24,7 @@ export const WARDROBE_PUBLIC_MODEL_ANCHOR = WARDROBE_PUBLIC_MODEL_ANCHORS["lulu-
 
 export const WARDROBE_APPROVED_V3_MODEL_FRONT_SLUGS = Object.freeze([
   "moss-square-knit",
+  "cocoa-pleat-trouser",
 ] as const);
 
 export const WARDROBE_APPROVED_MODEL_FRONT_SLUGS = Object.freeze([
@@ -134,7 +135,7 @@ function migrationSeed(
 export const WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS: readonly WardrobePublicProduct[] = Object.freeze([
   migrationSeed({
     slug: "coral-drift-dress",
-    sku: "DYN-081",
+    sku: "JUW-001",
     name: "Coral Drift Dress",
     category: "Dresses",
     price: 24500,
@@ -157,7 +158,7 @@ export const WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS: readonly WardrobePublicProduc
   }),
   migrationSeed({
     slug: "indigo-workshirt",
-    sku: "DYN-082",
+    sku: "JUW-002",
     name: "Indigo Workshirt",
     category: "Shirts",
     price: 18000,
@@ -180,7 +181,7 @@ export const WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS: readonly WardrobePublicProduc
   }),
   migrationSeed({
     slug: "moss-square-knit",
-    sku: "DYN-083",
+    sku: "JUW-003",
     name: "Moss Square Knit",
     category: "Knitwear",
     price: 12500,
@@ -203,7 +204,7 @@ export const WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS: readonly WardrobePublicProduc
   }),
   migrationSeed({
     slug: "ivory-tie-skirt",
-    sku: "DYN-084",
+    sku: "JUW-004",
     name: "Ivory Tie Skirt",
     category: "Skirts",
     price: 15500,
@@ -226,7 +227,7 @@ export const WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS: readonly WardrobePublicProduc
   }),
   migrationSeed({
     slug: "cocoa-pleat-trouser",
-    sku: "DYN-085",
+    sku: "JUW-005",
     name: "Cocoa Pleat Trouser",
     category: "Trousers",
     price: 22000,
@@ -249,7 +250,7 @@ export const WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS: readonly WardrobePublicProduc
   }),
   migrationSeed({
     slug: "salmon-camp-shirt",
-    sku: "DYN-086",
+    sku: "JUW-006",
     name: "Salmon Camp Shirt",
     category: "Shirts",
     price: 16500,

@@ -1,6 +1,6 @@
 # Shop database operations
 
-Postgres is authoritative for server catalogue rows and operational inventory after release. The checked-in `scripts/shop-db/catalogue-manifest.mjs` is the reviewed presentation input; it is not runtime state. SKU is immutable identity. Slugs and descriptive presentation fields may change through a new descriptive-sync revision. Availability and stock counters are operational fields and are initialized once only; neither seed nor descriptive sync overwrites them.
+Postgres is authoritative for server catalogue rows and operational inventory after release. The checked-in `scripts/shop-db/catalogue-manifest.mjs` is the reviewed presentation input; it is not runtime state. The current immutable SKU format is `JUW-NNN`. Migration `0002_deep_steel_serpent` retires the synthetic `DYN-081`–`DYN-092` namespace as `JUW-001`–`JUW-012`, guarded by exact SKU/slug preconditions; the inventory foreign key cascades only the identifier and the migration verifies that every stock counter and timestamp remains unchanged. Slugs and descriptive presentation fields may change through a new descriptive-sync revision. Availability and stock counters are operational fields and are initialized once only; neither seed nor descriptive sync overwrites them.
 
 ## Required environment
 
@@ -23,7 +23,7 @@ A preview command must use `SHOP_DB_TARGET=preview` and the dedicated preview br
 | Verify ledger, catalogue presentation, and inventory-row presence | `npm run db:verify:shop` | No |
 | Apply a new revision's descriptive catalogue changes | `npm run db:sync:catalog` | Yes |
 
-Run check, then `db:release:shop`; the release performs migrate → seed → verify atomically. Use descriptive sync only for a later presentation revision, and optionally run the standalone verifier afterward. The older `db:shop:*` names remain aliases, but there is no standalone migration-only write command. Every write runs in one transaction under the shared Postgres advisory lock. The ledger treats the same namespace/revision/checksum as a no-op and rejects a reused revision with different content. Production writes additionally require a clean git worktree, so the recorded git SHA and manifest checksum identify the exact release artifact.
+Run check, then `db:release:shop`; the release performs migrate → seed → verify atomically. The `2026-08-11-catalogue-03` release must use manifest checksum `2a0bbd773e30209251b43114bb7cff89b19c71333da8ce7968eda5a24dd01a32`. Do not apply it through standalone descriptive sync on a database that still contains `DYN` rows: the guarded forward migration must run first inside the full release transaction. Use descriptive sync only for a later presentation revision, and optionally run the standalone verifier afterward. The older `db:shop:*` names remain aliases, but there is no standalone migration-only write command. Every write runs in one transaction under the shared Postgres advisory lock. The ledger treats the same namespace/revision/checksum as a no-op and rejects a reused revision with different content. Production writes additionally require a clean git worktree, so the recorded git SHA and manifest checksum identify the exact release artifact.
 
 ## Revision and recovery policy
 

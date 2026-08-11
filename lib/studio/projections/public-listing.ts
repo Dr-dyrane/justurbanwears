@@ -10,6 +10,7 @@ import {
   getApprovedPublicListingContract,
 } from "./approved-catalogue";
 import { WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS } from "../../wardrobe-public-view/seeds";
+import { canonicalCatalogueSku } from "../../wardrobe-public-view/sku";
 
 function slugify(value: string) {
   return value
@@ -53,10 +54,11 @@ export function createWardrobePublicProduct(
   listing: StudioListing,
   garment: Garment,
 ): PublicListingProjection | undefined {
-  const approved = getApprovedPublicListingContract(garment.sku, listing.slug);
+  const sku = canonicalCatalogueSku(garment.sku);
+  const approved = getApprovedPublicListingContract(sku, listing.slug);
   if (!approved) return undefined;
   const wardrobeSeed = WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS.find((product) =>
-    product.sku === garment.sku.trim().toUpperCase() && product.slug === listing.slug,
+    product.sku === sku && product.slug === listing.slug,
   );
   const availability = listing.state === "RESERVED"
     ? "RESERVED"
@@ -66,7 +68,7 @@ export function createWardrobePublicProduct(
 
   return {
     slug: listing.slug,
-    sku: garment.sku,
+    sku,
     name: listing.title,
     category: publicCategory(garment.category),
     price: listing.price,

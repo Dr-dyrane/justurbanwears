@@ -7,6 +7,7 @@ import {
   WARDROBE_PUBLIC_MODEL_ANCHOR,
   WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS,
 } from "../../wardrobe-public-view/seeds";
+import { canonicalCatalogueSku } from "../../wardrobe-public-view/sku";
 
 export const APPROVED_PUBLIC_MODEL_ANCHOR: PublicModelAnchorProjection = Object.freeze({
   ...WARDROBE_PUBLIC_MODEL_ANCHOR,
@@ -17,7 +18,7 @@ export const APPROVED_PUBLIC_LISTINGS = Object.freeze(
 );
 
 function normalizeSku(sku: string) {
-  return sku.trim().toUpperCase();
+  return canonicalCatalogueSku(sku);
 }
 
 export function approvedSlugForSku(sku: string) {

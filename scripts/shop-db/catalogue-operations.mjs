@@ -2,6 +2,7 @@ import {
   CATALOGUE_NAMESPACE,
   compareCatalogueRows,
   decideRevision,
+  LEGACY_CATALOGUE_SKUS,
   queryRows,
 } from "./release-core.mjs";
 
@@ -21,13 +22,14 @@ async function readLedger(transaction, revision, target) {
 
 async function compareStoredRows(transaction, manifest) {
   const skus = manifest.products.map((product) => product.sku);
+  const verificationSkus = [...skus, ...LEGACY_CATALOGUE_SKUS];
   const catalogueRows = queryRows(await transaction.query(
     'select * from "shop_catalogue_items" where "sku" = any($1::varchar[])',
-    [skus],
+    [verificationSkus],
   ));
   const inventoryRows = queryRows(await transaction.query(
     'select "sku" from "shop_inventory" where "sku" = any($1::varchar[])',
-    [skus],
+    [verificationSkus],
   ));
   const issues = compareCatalogueRows(manifest, catalogueRows, inventoryRows);
   if (issues.length) throw new Error(`Catalogue verification failed:\n- ${issues.join("\n- ")}`);

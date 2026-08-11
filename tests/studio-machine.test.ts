@@ -102,6 +102,8 @@ test("the linked Studio lifecycle reaches return-to-readiness without leaking pr
   const publicView = selectWardrobePublicView(state);
   assert.equal(publicView.length, 1);
   assert.equal(publicView[0].name, garment.title);
+  assert.equal(publicView[0].sku, "JUW-001");
+  assert.notEqual(publicView[0].sku, garment.sku);
   assert.equal("privateNote" in publicView[0], false);
   assert.equal("source" in publicView[0], false);
   assert.equal("references" in publicView[0], false);
@@ -212,8 +214,8 @@ test("writing off a returned sold unit preserves other sellable units", () => {
 });
 
 test("approved wardrobe public-view contracts expose only cleared Lulu views", () => {
-  assert.equal(WARDROBE_PUBLIC_VIEW_PROJECTION_SCHEMA_VERSION, 8);
-  assert.equal(WARDROBE_PUBLIC_VIEW_STORAGE_KEY, "justurban-wears:wardrobe-public-view:v8");
+  assert.equal(WARDROBE_PUBLIC_VIEW_PROJECTION_SCHEMA_VERSION, 9);
+  assert.equal(WARDROBE_PUBLIC_VIEW_STORAGE_KEY, "justurban-wears:wardrobe-public-view:v9");
   const approvedModelFrontSlugs = new Set<string>(WARDROBE_APPROVED_MODEL_FRONT_SLUGS);
   for (const listing of APPROVED_PUBLIC_LISTINGS) {
     const contract = getApprovedPublicListingContract(listing.sku, listing.slug);

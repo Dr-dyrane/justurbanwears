@@ -110,7 +110,7 @@ test("keeps checkout snapshot media stable when the live wardrobe image changes"
   const line = result.order.lines[0];
   const changedProduct = {
     ...product,
-    media: product.media.map((frame, index) => index === 0
+    media: (product.media ?? []).map((frame, index) => index === 0
       ? { ...frame, src: "/shop/products/changed/current-frame.webp" }
       : frame),
   };
@@ -194,6 +194,26 @@ test("drops a tampered v3 checkout whose totals no longer reconcile", () => {
     },
   }));
   assert.deepEqual(parsed?.orders, []);
+});
+
+test("migrates legacy SKU snapshots in saved local orders", () => {
+  const result = createService().createCheckout(snapshot(), deliveryRequest);
+  assert.equal(result.ok, true);
+  if (!result.ok) return;
+  const legacyOrder = {
+    ...result.order,
+    lines: result.order.lines.map((line) => ({ ...line, sku: "DYN-081" })),
+  };
+  const parsed = parseStoredShopState(JSON.stringify({
+    version: 3,
+    data: { ...createEmptyCommerceSnapshot(), orders: [legacyOrder] },
+  }));
+
+  const line = parsed?.orders[0]?.lines[0];
+  assert.equal(line?.snapshot, "PRODUCT");
+  if (!line || line.snapshot !== "PRODUCT") return;
+  assert.equal(line.sku, "JUW-001");
+  assert.doesNotMatch(JSON.stringify(parsed), /DYN-081/);
 });
 
 test("rejects forged submitted statuses and mixed legacy/product lines from browser storage", () => {
