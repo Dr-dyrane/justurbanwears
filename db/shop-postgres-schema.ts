@@ -1,4 +1,4 @@
-// Server-only Postgres contract for a future Neon or Supabase adapter.
+// Server-only Postgres contract for the Neon-backed shop adapter.
 // Keep this module out of public shop imports; it does not initialize a client or read credentials.
 import { sql } from "drizzle-orm";
 import {
@@ -44,12 +44,14 @@ export const shopFulfillmentKind = pgEnum("shop_fulfillment_kind", [
 
 export const shopCustomers = pgTable("shop_customers", {
   id: uuid("id").defaultRandom().primaryKey(),
+  authSubject: text("auth_subject").notNull(),
   email: text("email"),
   phone: text("phone"),
   displayName: text("display_name"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 }, (table) => [
+  uniqueIndex("shop_customers_auth_subject_unique").on(table.authSubject),
   uniqueIndex("shop_customers_email_unique").on(table.email),
 ]);
 
@@ -104,7 +106,10 @@ export const shopCartItems = pgTable("shop_cart_items", {
 export const shopOrders = pgTable("shop_orders", {
   id: uuid("id").defaultRandom().primaryKey(),
   reference: varchar("reference", { length: 40 }).notNull(),
-  customerId: uuid("customer_id").references(() => shopCustomers.id, { onDelete: "set null" }),
+  idempotencyKey: varchar("idempotency_key", { length: 160 }).notNull(),
+  customerId: uuid("customer_id")
+    .notNull()
+    .references(() => shopCustomers.id, { onDelete: "restrict" }),
   sourceCartId: uuid("source_cart_id").references(() => shopCarts.id, { onDelete: "set null" }),
   status: shopOrderStatus("status").default("PAYMENT_REQUIRED").notNull(),
   transmission: shopOrderTransmission("transmission").default("SUBMITTED").notNull(),
@@ -129,7 +134,15 @@ export const shopOrders = pgTable("shop_orders", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 }, (table) => [
   uniqueIndex("shop_orders_reference_unique").on(table.reference),
+  uniqueIndex("shop_orders_customer_idempotency_unique").on(
+    table.customerId,
+    table.idempotencyKey,
+  ),
   index("shop_orders_customer_saved_idx").on(table.customerId, table.savedAt),
+  check("shop_orders_fulfillment_address_matches", sql`
+    (${table.fulfillmentKind} = 'PICKUP' and ${table.deliveryAddress} is null)
+    or (${table.fulfillmentKind} = 'DELIVERY' and ${table.deliveryAddress} is not null)
+  `),
   check("shop_orders_amounts_nonnegative", sql`
     ${table.subtotal} >= 0
     and ${table.deliveryFee} >= 0
@@ -152,6 +165,7 @@ export const shopOrderItems = pgTable("shop_order_items", {
 }, (table) => [
   uniqueIndex("shop_order_items_piece_unique").on(table.orderId, table.productSlug),
   check("shop_order_items_quantity_one", sql`${table.quantity} = 1`),
+  check("shop_order_items_price_nonnegative", sql`${table.unitPrice} >= 0`),
   check("shop_order_items_total_matches", sql`${table.lineTotal} = ${table.unitPrice}`),
 ]);
 
