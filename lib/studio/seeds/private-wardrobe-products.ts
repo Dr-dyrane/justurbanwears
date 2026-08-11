@@ -12,9 +12,12 @@ export type PendingWardrobeMediaView =
   | "GARMENT_BACK"
   | "MANNEQUIN_UPPER_FRONT"
   | "MODEL_FRONT"
+  | "MODEL_LEFT_PROFILE"
+  | "MODEL_REAR_THREE_QUARTER"
   | "MODEL_REAR_MIRROR"
   | "MODEL_DETAIL"
-  | "FABRIC_DETAIL";
+  | "FABRIC_DETAIL"
+  | "CONSTRUCTION_DETAIL";
 
 export interface PendingWardrobeProductContract {
   readonly sku: `JUW-${string}`;
@@ -45,7 +48,11 @@ function pendingProduct(spec: PendingWardrobeProductSpec): PendingWardrobeProduc
   const garmentId = `wardrobe-private-product-${spec.sku.toLowerCase()}`;
   const readinessViews = [
     ...(spec.approvedViews.includes("GARMENT_FRONT") ? ["FRONT" as const] : []),
-    ...(spec.approvedViews.includes("MODEL_DETAIL") ? ["DETAIL" as const] : []),
+    ...(spec.approvedViews.includes("MODEL_DETAIL")
+      || spec.approvedViews.includes("FABRIC_DETAIL")
+      || spec.approvedViews.includes("CONSTRUCTION_DETAIL")
+      ? ["DETAIL" as const]
+      : []),
   ];
   return {
     sku: spec.sku,
@@ -118,6 +125,20 @@ export const PENDING_WARDROBE_PRODUCT_CONTRACTS: readonly PendingWardrobeProduct
     missingViews: ["GARMENT_BACK", "FABRIC_DETAIL"],
   }),
   pendingProduct({
+    sku: "JUW-015",
+    legacySkus: ["DYN-095"],
+    slug: "cocoa-cowl-gathered-midi-dress",
+    title: "Cocoa Cowl Gathered Midi Dress",
+    category: "Dress",
+    color: "Cocoa taupe",
+    price: 24500,
+    description: "A cocoa-taupe midi dress with a softly draped cowl front and gathered waist.",
+    note: "The Lulu side and rear views are ready. Capture the product front, product back and one construction detail before publishing.",
+    visual: "umber",
+    approvedViews: ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
+    missingViews: ["GARMENT_FRONT", "GARMENT_BACK", "FABRIC_DETAIL"],
+  }),
+  pendingProduct({
     sku: "JUW-018",
     legacySkus: ["DYN-098"],
     slug: "plum-ruched-sleeve-fitted-dress",
@@ -129,6 +150,20 @@ export const PENDING_WARDROBE_PRODUCT_CONTRACTS: readonly PendingWardrobeProduct
     note: "The Lulu detail is ready. Capture the full length and product back before publishing.",
     visual: "plum",
     approvedViews: ["MANNEQUIN_UPPER_FRONT", "MODEL_DETAIL"],
+    missingViews: ["GARMENT_FRONT", "GARMENT_BACK"],
+  }),
+  pendingProduct({
+    sku: "JUW-019",
+    legacySkus: ["DYN-099"],
+    slug: "black-floral-lace-long-sleeve-dress",
+    title: "Black Floral-Lace Long-Sleeve Fitted Dress",
+    category: "Dress",
+    color: "Black",
+    price: 24500,
+    description: "A fitted black floral-lace dress with a high round neckline, lined bodice, sheer long sleeves and flared cuffs.",
+    note: "The upper front, Lulu front and lace construction detail are ready. Capture the full-length product front and product back before publishing.",
+    visual: "plum",
+    approvedViews: ["MANNEQUIN_UPPER_FRONT", "MODEL_FRONT", "CONSTRUCTION_DETAIL"],
     missingViews: ["GARMENT_FRONT", "GARMENT_BACK"],
   }),
 ]);

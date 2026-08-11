@@ -19,7 +19,9 @@ const expected = new Map<string, {
   missing: readonly string[];
 }>([
   ["JUW-013", { price: 24500, category: "Set", missing: ["GARMENT_BACK", "FABRIC_DETAIL"] }],
+  ["JUW-015", { price: 24500, category: "Dress", missing: ["GARMENT_FRONT", "GARMENT_BACK", "FABRIC_DETAIL"] }],
   ["JUW-018", { price: 22000, category: "Dress", missing: ["GARMENT_FRONT", "GARMENT_BACK"] }],
+  ["JUW-019", { price: 24500, category: "Dress", missing: ["GARMENT_FRONT", "GARMENT_BACK"] }],
 ] as const);
 
 test("seeds approved business facts while media remains the only readiness gap", () => {
@@ -71,6 +73,40 @@ test("seeds approved business facts while media remains the only readiness gap",
 
   const serialized = JSON.stringify(PENDING_WARDROBE_PRODUCT_CONTRACTS);
   assert.doesNotMatch(serialized, /storage\/|sha-?256|prompt|provider|canon\/|evidence|identity metric/iu);
+});
+
+test("keeps JUW-015 approved model angles distinct from missing product captures", () => {
+  const contract = PENDING_WARDROBE_PRODUCT_CONTRACTS.find(({ sku }) => sku === "JUW-015");
+  assert.ok(contract);
+  assert.deepEqual(contract.approvedViews, ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"]);
+  assert.deepEqual(contract.missingViews, ["GARMENT_FRONT", "GARMENT_BACK", "FABRIC_DETAIL"]);
+  assert.deepEqual(contract.garment.references, []);
+  assert.equal(contract.garment.mediaState, "DRAFT");
+
+  const seeded = mergeWardrobeAuthoritySeeds(createEmptyStudioSnapshot());
+  const garment = seeded.garments.find(({ sku }) => sku === "JUW-015");
+  assert.ok(garment);
+  assert.equal(seeded.listings.some(({ garmentId }) => garmentId === garment.id), false);
+  assert.equal(selectWardrobePublicView(seeded).some(({ sku }) => sku === "JUW-015"), false);
+});
+
+test("keeps JUW-019 approved upper views distinct from missing full product captures", () => {
+  const contract = PENDING_WARDROBE_PRODUCT_CONTRACTS.find(({ sku }) => sku === "JUW-019");
+  assert.ok(contract);
+  assert.deepEqual(contract.approvedViews, [
+    "MANNEQUIN_UPPER_FRONT",
+    "MODEL_FRONT",
+    "CONSTRUCTION_DETAIL",
+  ]);
+  assert.deepEqual(contract.missingViews, ["GARMENT_FRONT", "GARMENT_BACK"]);
+  assert.deepEqual(contract.garment.references.map(({ view }) => view), ["DETAIL"]);
+  assert.equal(contract.garment.mediaState, "DRAFT");
+
+  const seeded = mergeWardrobeAuthoritySeeds(createEmptyStudioSnapshot());
+  const garment = seeded.garments.find(({ sku }) => sku === "JUW-019");
+  assert.ok(garment);
+  assert.equal(seeded.listings.some(({ garmentId }) => garmentId === garment.id), false);
+  assert.equal(selectWardrobePublicView(seeded).some(({ sku }) => sku === "JUW-019"), false);
 });
 
 test("adding only the declared missing captures completes each media gate", () => {
