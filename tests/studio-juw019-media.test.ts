@@ -13,6 +13,13 @@ import { mergeWardrobeAuthoritySeeds } from "../lib/studio/seeds/wardrobe-author
 const slug = "black-floral-lace-long-sleeve-dress";
 const publicMedia = [
   {
+    view: "MANNEQUIN_UPPER_FRONT",
+    src: `/shop/products/${slug}/03-mannequin-upper-front.webp`,
+    width: 1024,
+    height: 1536,
+    sha256: "ee4a78c090bdde9fada984ebc5ba1903dd3ffa22f3c55d4581fa6c2b6941452a",
+  },
+  {
     view: "MODEL_FRONT",
     src: `/shop/products/${slug}/04-model-front.webp`,
     width: 972,
@@ -25,6 +32,13 @@ const publicMedia = [
     width: 972,
     height: 1619,
     sha256: "46dffec2dcae912077befbc50a23c2a2426ed86a664931b735601accf68cce72",
+  },
+  {
+    view: "CONSTRUCTION_DETAIL",
+    src: `/shop/products/${slug}/08-construction-detail.webp`,
+    width: 1024,
+    height: 1536,
+    sha256: "9a0a4b3a45415134a1fe587b67c746bb0cf0f71167b2d064e8b2235f04d89b3d",
   },
 ] as const;
 const readImage = sharp as unknown as (input: Buffer) => {
@@ -40,7 +54,7 @@ const readImage = sharp as unknown as (input: Buffer) => {
   }>;
 };
 
-test("packages JUW-019's exact approved Lulu angles while direct product captures stay pending", async () => {
+test("packages JUW-019's four approved views while direct product captures stay pending", async () => {
   const contract = PENDING_WARDROBE_PRODUCT_CONTRACTS.find(({ sku }) => sku === "JUW-019");
   assert.ok(contract);
   assert.equal(contract.slug, slug);
@@ -50,6 +64,7 @@ test("packages JUW-019's exact approved Lulu angles while direct product capture
   );
   assert.deepEqual(contract.missingViews, ["GARMENT_FRONT", "GARMENT_BACK"]);
   assert.equal(contract.garment.mediaState, "DRAFT");
+  assert.match(contract.garment.notes, /four|upper-front mannequin|cuff construction/iu);
 
   for (const media of publicMedia) {
     const assetPath = join(process.cwd(), "public", media.src);
