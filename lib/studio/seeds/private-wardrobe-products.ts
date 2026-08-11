@@ -11,6 +11,7 @@ export type PendingWardrobeMediaView =
   | "GARMENT_FRONT"
   | "GARMENT_BACK"
   | "MANNEQUIN_UPPER_FRONT"
+  | "MANNEQUIN_RIGHT_REAR_THREE_QUARTER"
   | "MODEL_FRONT"
   | "MODEL_LEFT_PROFILE"
   | "MODEL_REAR_THREE_QUARTER"
@@ -164,6 +165,20 @@ export const PENDING_WARDROBE_PRODUCT_CONTRACTS: readonly PendingWardrobeProduct
     note: "The upper front, Lulu front and lace construction detail are ready. Capture the full-length product front and product back before publishing.",
     visual: "plum",
     approvedViews: ["MANNEQUIN_UPPER_FRONT", "MODEL_FRONT", "CONSTRUCTION_DETAIL"],
+    missingViews: ["GARMENT_FRONT", "GARMENT_BACK"],
+  }),
+  pendingProduct({
+    sku: "JUW-020",
+    legacySkus: ["DYN-100"],
+    slug: "coral-gathered-crop-mini-set",
+    title: "Coral Gathered Crop-Top and Mini-Skirt Set",
+    category: "Set",
+    color: "Coral",
+    price: 24500,
+    description: "A coral two-piece pairing a gathered crop top with a close mini skirt.",
+    note: "The right rear-three-quarter and construction detail are ready. Capture the direct product front and product back before publishing.",
+    visual: "umber",
+    approvedViews: ["MANNEQUIN_RIGHT_REAR_THREE_QUARTER", "CONSTRUCTION_DETAIL"],
     missingViews: ["GARMENT_FRONT", "GARMENT_BACK"],
   }),
 ]);
