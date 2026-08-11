@@ -1,7 +1,7 @@
 import { shopProducts } from "../catalog";
 import { shopDeliveryOptions } from "../commerce";
-import { createBrowserShopCatalogPort } from "../db/browser-wardrobe-public-view";
 import { createBrowserLocalShopRepository } from "../db/browser-local-repository";
+import { createBrowserCheckoutAvailabilityPort } from "../db/browser-checkout-availability";
 import type {
   BagItem,
   ShopCheckoutContact,
@@ -10,10 +10,12 @@ import type {
   ShopCheckoutSubmissionIntent,
   ShopCheckoutSubmissionResult,
   ShopOrder,
+  ShopProduct,
 } from "../domain/entities";
 import type { CommerceSnapshot } from "../domain/state";
 import type {
   AuthenticatedCheckoutCommandPort,
+  CheckoutAvailabilityPort,
   CommerceService,
   ShopCatalogPort,
   ShopStateRepository,
@@ -23,12 +25,13 @@ interface CommerceServiceDependencies {
   repository: ShopStateRepository;
   catalog?: ShopCatalogPort;
   checkoutCommand?: AuthenticatedCheckoutCommandPort;
+  checkoutAvailability?: CheckoutAvailabilityPort;
   now?: () => Date;
   createReference?: (date: Date) => string;
 }
 
-function createStaticMigrationCatalogPort(): ShopCatalogPort {
-  const products = [...shopProducts];
+function createImmutableCatalogPort(initialProducts: readonly ShopProduct[]): ShopCatalogPort {
+  const products = [...initialProducts];
   return {
     hydrate: async () => products,
     list: () => products,
@@ -114,8 +117,9 @@ function createCheckoutSubmissionIntent(order: ShopOrder): ShopCheckoutSubmissio
 
 export function createCommerceService({
   repository,
-  catalog = createStaticMigrationCatalogPort(),
+  catalog = createImmutableCatalogPort(shopProducts),
   checkoutCommand,
+  checkoutAvailability,
   now = () => new Date(),
   createReference = createLocalOrderReference,
 }: CommerceServiceDependencies): CommerceService {
@@ -150,12 +154,21 @@ export function createCommerceService({
         window.removeEventListener("offline", notify);
       };
     },
+    confirmCheckoutAvailability(snapshot) {
+      if (!checkoutAvailability) return Promise.resolve("UNAVAILABLE");
+      return checkoutAvailability.confirm(snapshot.bag);
+    },
     getProductAvailability(slug) {
-      return catalog.getProduct(slug)?.availability ?? null;
+      const product = catalog.getProduct(slug);
+      return product?.availabilityConfirmed ? product.availability : null;
     },
     normalizeBagItem(item: BagItem) {
       const product = catalog.getProduct(item.slug);
-      if (!product || product.availability !== "AVAILABLE") return null;
+      if (
+        !product
+        || !product.availabilityConfirmed
+        || product.availability !== "AVAILABLE"
+      ) return null;
       return { slug: product.slug, size: product.taggedSize };
     },
     createCheckout(snapshot: CommerceSnapshot, request: ShopCheckoutRequest) {
@@ -169,6 +182,7 @@ export function createCommerceService({
         const product = catalog.getProduct(item.slug);
         if (
           !product
+          || !product.availabilityConfirmed
           || product.availability !== "AVAILABLE"
           || item.size !== product.taggedSize
           || seen.has(product.slug)
@@ -238,10 +252,11 @@ export function createCommerceService({
   };
 }
 
-export function createBrowserCommerceService() {
-  const catalog = createBrowserShopCatalogPort();
+export function createBrowserCommerceService(initialProducts: readonly ShopProduct[] = shopProducts) {
+  const catalog = createImmutableCatalogPort(initialProducts);
   return createCommerceService({
     catalog,
+    checkoutAvailability: createBrowserCheckoutAvailabilityPort(),
     repository: createBrowserLocalShopRepository((slug) => catalog.getProduct(slug)),
   });
 }

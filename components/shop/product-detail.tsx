@@ -235,11 +235,14 @@ export function ProductDetail() {
           </div>
 
           <div className="shop-product-choice-row">
-            <div className="shop-availability-panel" data-state={product.availability.toLowerCase()}>
+            <div
+              className="shop-availability-panel"
+              data-state={product.availabilityConfirmed ? product.availability.toLowerCase() : "unconfirmed"}
+            >
               <span aria-hidden="true" />
               <div>
-                <strong>{product.availability === "AVAILABLE" ? "Available now" : product.availability === "RESERVED" ? "Reserved for another shopper" : "Sold — kept as an archive reference"}</strong>
-                <small>{product.availability === "AVAILABLE" ? "One piece · bag does not reserve" : product.availability === "RESERVED" ? "Primary actions are paused" : "Archive only"}</small>
+                <strong>{!product.availabilityConfirmed ? "Checking current availability" : product.availability === "AVAILABLE" ? "Available now" : product.availability === "RESERVED" ? "Reserved for another shopper" : "Sold — kept as an archive reference"}</strong>
+                <small>{!product.availabilityConfirmed ? "Purchase actions are paused safely" : product.availability === "AVAILABLE" ? "One piece · bag does not reserve" : product.availability === "RESERVED" ? "Primary actions are paused" : "Archive only"}</small>
               </div>
             </div>
             <fieldset className="shop-size-fieldset">
@@ -249,7 +252,7 @@ export function ProductDetail() {
             </fieldset>
           </div>
 
-          {product.availability === "AVAILABLE" ? (
+          {product.availabilityConfirmed && product.availability === "AVAILABLE" ? (
             <div className="shop-purchase-actions">
               <ShopActionButton
                 aria-busy={isPreparingCheckout}
@@ -268,7 +271,11 @@ export function ProductDetail() {
             </div>
           ) : (
             <ShopActionButton disabled tone="muted">
-              {product.availability === "RESERVED" ? "Currently reserved" : "Sold"}
+              {!product.availabilityConfirmed
+                ? "Availability temporarily unavailable"
+                : product.availability === "RESERVED"
+                  ? "Currently reserved"
+                  : "Sold"}
             </ShopActionButton>
           )}
           <p className="shop-action-note" aria-live="polite" role="status">{notice}</p>
@@ -298,6 +305,7 @@ export function ProductDetail() {
       {approvedModelTryout ? (
         <ProductModelTryout
           availability={product.availability}
+          availabilityConfirmed={product.availabilityConfirmed}
           hydration={hydration}
           isInBag={isInBag}
           isOnline={isOnline}

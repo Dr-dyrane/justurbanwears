@@ -51,6 +51,7 @@ export function ShopCheckout({
 
   function checkoutNotice(reason: ShopCheckoutFailureReason) {
     if (reason === "BAG_CHANGED") return "A piece changed availability. Review your bag.";
+    if (reason === "AVAILABILITY_UNCONFIRMED") return "We could not confirm current availability. Please try again.";
     if (reason === "INVALID_CHECKOUT") return "Check your contact and handoff details.";
     if (reason === "PERSISTENCE_FAILED") return "This browser could not save the checkout.";
     if (reason === "IN_PROGRESS") return "Checkout is already saving.";

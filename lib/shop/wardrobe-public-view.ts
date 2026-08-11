@@ -81,6 +81,7 @@ export function wardrobePublicProductToShopProduct(product: WardrobePublicProduc
     condition: product.condition,
     colour: product.colour,
     availability: product.availability,
+    availabilityConfirmed: true,
     drop: product.drop,
     tone: product.tone,
     silhouette: product.silhouette,

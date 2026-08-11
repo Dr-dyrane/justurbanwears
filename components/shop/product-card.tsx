@@ -29,7 +29,10 @@ export function ProductCard({
   const [notice, setNotice] = useState("");
   const isSaved = saved.includes(product.slug);
   const isInBag = bag.some((item) => item.slug === product.slug);
-  const isAvailable = product.availability === "AVAILABLE";
+  const isAvailable = product.availabilityConfirmed && product.availability === "AVAILABLE";
+  const availabilityLabel = product.availabilityConfirmed
+    ? availabilityCopy[product.availability]
+    : "Checking availability";
   const approvedModelTryout = product.modelTryout.modelStatus === "APPROVED"
     ? resolveApprovedModelTryout(product.modelTryout)
     : null;
@@ -64,8 +67,8 @@ export function ProductCard({
           <ProductVisual product={product} compact showStudyMark={showStudyMark} />
         </Link>
         {!isAvailable ? (
-          <span className={`availability-tag availability-${product.availability.toLowerCase()}`}>
-            {availabilityCopy[product.availability]}
+          <span className={`availability-tag availability-${product.availabilityConfirmed ? product.availability.toLowerCase() : "unconfirmed"}`}>
+            {availabilityLabel}
           </span>
         ) : null}
         <button
@@ -131,11 +134,11 @@ export function ProductCard({
         ) : (
           <span
             className="product-card-action is-unavailable"
-            data-state={product.availability.toLowerCase()}
+            data-state={product.availabilityConfirmed ? product.availability.toLowerCase() : "unconfirmed"}
           >
             <i aria-hidden="true" />
             <span>
-              <strong>{availabilityCopy[product.availability]}</strong>
+              <strong>{availabilityLabel}</strong>
               <small>{product.taggedSize}</small>
             </span>
           </span>

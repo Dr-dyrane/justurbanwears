@@ -39,6 +39,7 @@ import {
 
 interface ProductModelTryoutProps {
   availability: ShopAvailability;
+  availabilityConfirmed: boolean;
   hydration: HydrationState;
   isInBag: boolean;
   isOnline: boolean;
@@ -56,6 +57,7 @@ interface ProductModelTryoutProps {
 
 export function ProductModelTryout({
   availability,
+  availabilityConfirmed,
   hydration,
   isInBag,
   isOnline,
@@ -278,7 +280,7 @@ export function ProductModelTryout({
               {saveIsRestoring ? "Restoring saves" : isSaved ? "Saved" : "Save piece"}
             </ShopActionButton>
 
-            {availability === "AVAILABLE" ? (
+            {availabilityConfirmed && availability === "AVAILABLE" ? (
               isInBag ? (
                 <ShopActionLink href="/shop/bag">
                   <Check aria-hidden="true" size={17} strokeWidth={2} /> Review bag

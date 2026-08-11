@@ -9,6 +9,7 @@ import type {
   ShopOrderLine,
   ShopProduct,
 } from "../domain/entities";
+import { isSafeShopProductMediaUrl } from "../public-media";
 import {
   MAX_LOCAL_ORDERS,
   SHOP_STATE_SCHEMA_VERSION,
@@ -63,7 +64,11 @@ function parseBag(value: unknown, resolveProduct: ProductResolver): BagItem[] {
   return value.flatMap((candidate) => {
     if (!isRecord(candidate) || typeof candidate.slug !== "string") return [];
     const product = resolveProduct(candidate.slug);
-    if (!product || product.availability !== "AVAILABLE" || seen.has(product.slug)) return [];
+    if (
+      !product
+      || (product.availabilityConfirmed && product.availability !== "AVAILABLE")
+      || seen.has(product.slug)
+    ) return [];
     seen.add(product.slug);
     return [{ slug: product.slug, size: product.taggedSize }];
   });
@@ -124,7 +129,7 @@ function parseFulfillment(value: unknown): ShopOrderFulfillment | null {
 }
 
 function isSafeProductImage(value: string, slug: string) {
-  return new RegExp(`^/shop/products/${slug}/[a-z0-9-]+\\.webp$`).test(value);
+  return isSafeShopProductMediaUrl(value, slug);
 }
 
 function parseOrderLine(value: unknown): ShopOrderLine | null {

@@ -167,6 +167,28 @@ export function useCommerceMachine(service: CommerceService) {
       stateRef.current = requested;
       dispatch({ type: "CHECKOUT_SAVE_REQUESTED" });
 
+      let availability: Awaited<ReturnType<typeof service.confirmCheckoutAvailability>>;
+      try {
+        availability = await service.confirmCheckoutAvailability(selectCommerceSnapshot(current));
+      } catch {
+        availability = "UNAVAILABLE";
+      }
+      const currentBag = stateRef.current.bag;
+      const bagChanged = currentBag.length !== current.bag.length
+        || currentBag.some((item, index) =>
+          item.slug !== current.bag[index]?.slug || item.size !== current.bag[index]?.size);
+      if (availability !== "CONFIRMED" || bagChanged) {
+        const failed = commerceReducer(stateRef.current, { type: "CHECKOUT_SAVE_FAILED" });
+        stateRef.current = failed;
+        dispatch({ type: "CHECKOUT_SAVE_FAILED" });
+        return {
+          ok: false,
+          reason: availability === "UNAVAILABLE"
+            ? "AVAILABILITY_UNCONFIRMED"
+            : "BAG_CHANGED",
+        };
+      }
+
       const creation = service.createCheckout(selectCommerceSnapshot(current), request);
       if (creation.ok === false) {
         const failed = commerceReducer(requested, { type: "CHECKOUT_SAVE_FAILED" });

@@ -47,6 +47,8 @@ export interface ShopProduct {
   condition: string;
   colour: string;
   availability: ShopAvailability;
+  /** False only when the server catalogue could not confirm current stock. */
+  availabilityConfirmed: boolean;
   drop: string;
   tone: ProductTone;
   silhouette: ProductSilhouette;
@@ -160,6 +162,7 @@ export interface ShopOrder {
 export type ShopCheckoutFailureReason =
   | "EMPTY_BAG"
   | "BAG_CHANGED"
+  | "AVAILABILITY_UNCONFIRMED"
   | "INVALID_CHECKOUT"
   | "IN_PROGRESS"
   | "PERSISTENCE_FAILED";
@@ -191,3 +194,8 @@ export type ShopSubmittedOrder = Omit<ShopOrder, "transmission"> & {
 export type ShopCheckoutSubmissionResult =
   | { ok: true; order: ShopSubmittedOrder }
   | { ok: false; reason: "UNAVAILABLE" | "UNAUTHENTICATED" | "REJECTED" };
+
+export type ShopCheckoutAvailabilityConfirmation =
+  | "CONFIRMED"
+  | "CHANGED"
+  | "UNAVAILABLE";

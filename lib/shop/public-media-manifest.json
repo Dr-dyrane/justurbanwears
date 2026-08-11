@@ -1,0 +1,562 @@
+{
+  "schemaVersion": 1,
+  "catalogueRevision": "2026-08-11-catalogue-04",
+  "catalogueChecksum": "88e13f201d6e7d638ef4102bbc0e97de7d60267ff35fc30437564b898aeac266",
+  "cataloguePresentationChecksum": "5944b235a17d4ab1d30670ade5f3c6e0b1cc87390e48652a1fdd9401f5f0cc1f",
+  "legacyAssets": [
+    {
+      "sourcePath": "/shop/products/coral-drift-dress/04-model-front.webp",
+      "pathname": "shop/catalogue/114122193834a4bf31686e2df0ac8a8a3709febd39575b559123cf9bc3f3911a/products/coral-drift-dress/04-model-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/114122193834a4bf31686e2df0ac8a8a3709febd39575b559123cf9bc3f3911a/products/coral-drift-dress/04-model-front.webp",
+      "sha256": "114122193834a4bf31686e2df0ac8a8a3709febd39575b559123cf9bc3f3911a",
+      "size": 114716,
+      "contentType": "image/webp"
+    }
+  ],
+  "assets": [
+    {
+      "sourcePath": "/shop/model/lulu-v2-approved.png",
+      "pathname": "shop/catalogue/35ad162ba8a9b3e50a8288ddc03dda350926dc95b93e7541a08405f711a5347c/model/lulu-v2-approved.png",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/35ad162ba8a9b3e50a8288ddc03dda350926dc95b93e7541a08405f711a5347c/model/lulu-v2-approved.png",
+      "sha256": "35ad162ba8a9b3e50a8288ddc03dda350926dc95b93e7541a08405f711a5347c",
+      "size": 1802736,
+      "contentType": "image/png"
+    },
+    {
+      "sourcePath": "/shop/products/blush-scoop-mini-dress/01-garment-front.webp",
+      "pathname": "shop/catalogue/0c9b4f5a8226b1fde6b1cb5cb9e01ac351d95549834923df9c1de8a90ce16770/products/blush-scoop-mini-dress/01-garment-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/0c9b4f5a8226b1fde6b1cb5cb9e01ac351d95549834923df9c1de8a90ce16770/products/blush-scoop-mini-dress/01-garment-front.webp",
+      "sha256": "0c9b4f5a8226b1fde6b1cb5cb9e01ac351d95549834923df9c1de8a90ce16770",
+      "size": 28468,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/blush-scoop-mini-dress/02-garment-back.webp",
+      "pathname": "shop/catalogue/dccac45f91137ab41469c129751714ca4279678cc8b0328a3ce4fc186b3d0c36/products/blush-scoop-mini-dress/02-garment-back.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/dccac45f91137ab41469c129751714ca4279678cc8b0328a3ce4fc186b3d0c36/products/blush-scoop-mini-dress/02-garment-back.webp",
+      "sha256": "dccac45f91137ab41469c129751714ca4279678cc8b0328a3ce4fc186b3d0c36",
+      "size": 41720,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/blush-scoop-mini-dress/03-mannequin-front.webp",
+      "pathname": "shop/catalogue/00533b3cdab9d8d39f96c267f51e47dc867687635a98ecad864c718f9c8ff43e/products/blush-scoop-mini-dress/03-mannequin-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/00533b3cdab9d8d39f96c267f51e47dc867687635a98ecad864c718f9c8ff43e/products/blush-scoop-mini-dress/03-mannequin-front.webp",
+      "sha256": "00533b3cdab9d8d39f96c267f51e47dc867687635a98ecad864c718f9c8ff43e",
+      "size": 42848,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/blush-scoop-mini-dress/04-model-front.webp",
+      "pathname": "shop/catalogue/6e56d78e84f11bbf872b551dc06e57fb6ab75649faeb8a30ba84a4ff22fb8aa4/products/blush-scoop-mini-dress/04-model-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/6e56d78e84f11bbf872b551dc06e57fb6ab75649faeb8a30ba84a4ff22fb8aa4/products/blush-scoop-mini-dress/04-model-front.webp",
+      "sha256": "6e56d78e84f11bbf872b551dc06e57fb6ab75649faeb8a30ba84a4ff22fb8aa4",
+      "size": 140166,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/blush-scoop-mini-dress/06-fabric-detail.webp",
+      "pathname": "shop/catalogue/823a348bd5c4f50a80d2039ceb104b695ea9a3cb88b150dc64c7d1ac72fc0163/products/blush-scoop-mini-dress/06-fabric-detail.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/823a348bd5c4f50a80d2039ceb104b695ea9a3cb88b150dc64c7d1ac72fc0163/products/blush-scoop-mini-dress/06-fabric-detail.webp",
+      "sha256": "823a348bd5c4f50a80d2039ceb104b695ea9a3cb88b150dc64c7d1ac72fc0163",
+      "size": 345214,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/cocoa-pleat-trouser/01-garment-front.webp",
+      "pathname": "shop/catalogue/d5fd2fe51e2c93d447111e9931f69c22676eb5c0331ef3f31bb63ea881ba5cc6/products/cocoa-pleat-trouser/01-garment-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/d5fd2fe51e2c93d447111e9931f69c22676eb5c0331ef3f31bb63ea881ba5cc6/products/cocoa-pleat-trouser/01-garment-front.webp",
+      "sha256": "d5fd2fe51e2c93d447111e9931f69c22676eb5c0331ef3f31bb63ea881ba5cc6",
+      "size": 65050,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/cocoa-pleat-trouser/02-garment-back.webp",
+      "pathname": "shop/catalogue/053916294d83a76d247e3c4a04ac2e4aff06c6dd145fdcb3bd1bb1634d366aac/products/cocoa-pleat-trouser/02-garment-back.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/053916294d83a76d247e3c4a04ac2e4aff06c6dd145fdcb3bd1bb1634d366aac/products/cocoa-pleat-trouser/02-garment-back.webp",
+      "sha256": "053916294d83a76d247e3c4a04ac2e4aff06c6dd145fdcb3bd1bb1634d366aac",
+      "size": 57596,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/cocoa-pleat-trouser/03-mannequin-front.webp",
+      "pathname": "shop/catalogue/71ad918415cc8c91421f9fe8af16c84a56791d84e27cd534a5779d156a021b43/products/cocoa-pleat-trouser/03-mannequin-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/71ad918415cc8c91421f9fe8af16c84a56791d84e27cd534a5779d156a021b43/products/cocoa-pleat-trouser/03-mannequin-front.webp",
+      "sha256": "71ad918415cc8c91421f9fe8af16c84a56791d84e27cd534a5779d156a021b43",
+      "size": 47926,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/cocoa-pleat-trouser/04-model-front.webp",
+      "pathname": "shop/catalogue/f4586c9f87405ede93f927ac145090cd7723b98984f3610accce6ef1f43d5ad3/products/cocoa-pleat-trouser/04-model-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/f4586c9f87405ede93f927ac145090cd7723b98984f3610accce6ef1f43d5ad3/products/cocoa-pleat-trouser/04-model-front.webp",
+      "sha256": "f4586c9f87405ede93f927ac145090cd7723b98984f3610accce6ef1f43d5ad3",
+      "size": 70724,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/cocoa-pleat-trouser/05-model-rear-three-quarter.webp",
+      "pathname": "shop/catalogue/ca2cbcb7332f35ad513887fbf665e32c11cbcd5ecc0d2b7d9263cdf99b7fae1c/products/cocoa-pleat-trouser/05-model-rear-three-quarter.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/ca2cbcb7332f35ad513887fbf665e32c11cbcd5ecc0d2b7d9263cdf99b7fae1c/products/cocoa-pleat-trouser/05-model-rear-three-quarter.webp",
+      "sha256": "ca2cbcb7332f35ad513887fbf665e32c11cbcd5ecc0d2b7d9263cdf99b7fae1c",
+      "size": 58250,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/cocoa-pleat-trouser/06-fabric-detail.webp",
+      "pathname": "shop/catalogue/6cc57d3f6e0d490b439f97b8adc45e7488b70507d1b9d7cb4c8c65a3e7416948/products/cocoa-pleat-trouser/06-fabric-detail.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/6cc57d3f6e0d490b439f97b8adc45e7488b70507d1b9d7cb4c8c65a3e7416948/products/cocoa-pleat-trouser/06-fabric-detail.webp",
+      "sha256": "6cc57d3f6e0d490b439f97b8adc45e7488b70507d1b9d7cb4c8c65a3e7416948",
+      "size": 363246,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/cocoa-pleat-trouser/07-model-left-profile.webp",
+      "pathname": "shop/catalogue/c61e04f4b0131cf5b8a520e090896269f6d85a2db96ad2d6c3cc7379ec183721/products/cocoa-pleat-trouser/07-model-left-profile.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/c61e04f4b0131cf5b8a520e090896269f6d85a2db96ad2d6c3cc7379ec183721/products/cocoa-pleat-trouser/07-model-left-profile.webp",
+      "sha256": "c61e04f4b0131cf5b8a520e090896269f6d85a2db96ad2d6c3cc7379ec183721",
+      "size": 54474,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/coral-drift-dress/01-garment-front.webp",
+      "pathname": "shop/catalogue/858ef05e2294079955c802ce48727d354fd010c3184b105f8b35e592f9cd4c7e/products/coral-drift-dress/01-garment-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/858ef05e2294079955c802ce48727d354fd010c3184b105f8b35e592f9cd4c7e/products/coral-drift-dress/01-garment-front.webp",
+      "sha256": "858ef05e2294079955c802ce48727d354fd010c3184b105f8b35e592f9cd4c7e",
+      "size": 51314,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/coral-drift-dress/02-garment-back.webp",
+      "pathname": "shop/catalogue/366613a9eb592c7dce40df23707e4644370d33908865ce608f42af710b7e2b24/products/coral-drift-dress/02-garment-back.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/366613a9eb592c7dce40df23707e4644370d33908865ce608f42af710b7e2b24/products/coral-drift-dress/02-garment-back.webp",
+      "sha256": "366613a9eb592c7dce40df23707e4644370d33908865ce608f42af710b7e2b24",
+      "size": 46412,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/coral-drift-dress/03-mannequin-front.webp",
+      "pathname": "shop/catalogue/e4404b6c7251328898a806f5cc0ce52f6d2b69c9eaf8d1083b0ac30e8e75808a/products/coral-drift-dress/03-mannequin-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/e4404b6c7251328898a806f5cc0ce52f6d2b69c9eaf8d1083b0ac30e8e75808a/products/coral-drift-dress/03-mannequin-front.webp",
+      "sha256": "e4404b6c7251328898a806f5cc0ce52f6d2b69c9eaf8d1083b0ac30e8e75808a",
+      "size": 52222,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/coral-drift-dress/04-model-front.webp",
+      "pathname": "shop/catalogue/b6a7bbed8e487caf97a9620ba3d8c16e1be529f45bcf1bc8999d57644e57e2f6/products/coral-drift-dress/04-model-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/b6a7bbed8e487caf97a9620ba3d8c16e1be529f45bcf1bc8999d57644e57e2f6/products/coral-drift-dress/04-model-front.webp",
+      "sha256": "b6a7bbed8e487caf97a9620ba3d8c16e1be529f45bcf1bc8999d57644e57e2f6",
+      "size": 94340,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/coral-drift-dress/05-model-rear-three-quarter.webp",
+      "pathname": "shop/catalogue/40f4c304a96375451fb7c8693456f959c60d0876ffbd1c563fa3c3e3b1257b73/products/coral-drift-dress/05-model-rear-three-quarter.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/40f4c304a96375451fb7c8693456f959c60d0876ffbd1c563fa3c3e3b1257b73/products/coral-drift-dress/05-model-rear-three-quarter.webp",
+      "sha256": "40f4c304a96375451fb7c8693456f959c60d0876ffbd1c563fa3c3e3b1257b73",
+      "size": 87036,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/coral-drift-dress/06-fabric-detail.webp",
+      "pathname": "shop/catalogue/9ebdd55fc2d65cf0bdc01734d063a7ca40e119a7d9bfe4ba6bf81240b43d2b67/products/coral-drift-dress/06-fabric-detail.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/9ebdd55fc2d65cf0bdc01734d063a7ca40e119a7d9bfe4ba6bf81240b43d2b67/products/coral-drift-dress/06-fabric-detail.webp",
+      "sha256": "9ebdd55fc2d65cf0bdc01734d063a7ca40e119a7d9bfe4ba6bf81240b43d2b67",
+      "size": 369238,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/coral-drift-dress/07-model-left-profile.webp",
+      "pathname": "shop/catalogue/1957c0782264dd5e3016a3af7f2c2b71a2b8d35086736e1d617e557f8af32e8a/products/coral-drift-dress/07-model-left-profile.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/1957c0782264dd5e3016a3af7f2c2b71a2b8d35086736e1d617e557f8af32e8a/products/coral-drift-dress/07-model-left-profile.webp",
+      "sha256": "1957c0782264dd5e3016a3af7f2c2b71a2b8d35086736e1d617e557f8af32e8a",
+      "size": 93072,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/indigo-workshirt/01-garment-front.webp",
+      "pathname": "shop/catalogue/184a7fe9e4fff05730c84622b59bbd87faa039884f73d816ba041bed93af0f6c/products/indigo-workshirt/01-garment-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/184a7fe9e4fff05730c84622b59bbd87faa039884f73d816ba041bed93af0f6c/products/indigo-workshirt/01-garment-front.webp",
+      "sha256": "184a7fe9e4fff05730c84622b59bbd87faa039884f73d816ba041bed93af0f6c",
+      "size": 195160,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/indigo-workshirt/02-garment-back.webp",
+      "pathname": "shop/catalogue/0ff7bc91ebd0b983fb0ca15b8aee8826abc5681b89bb25b13c7a5f997ef23474/products/indigo-workshirt/02-garment-back.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/0ff7bc91ebd0b983fb0ca15b8aee8826abc5681b89bb25b13c7a5f997ef23474/products/indigo-workshirt/02-garment-back.webp",
+      "sha256": "0ff7bc91ebd0b983fb0ca15b8aee8826abc5681b89bb25b13c7a5f997ef23474",
+      "size": 186462,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/indigo-workshirt/03-mannequin-front.webp",
+      "pathname": "shop/catalogue/130dabe581b14a54610be7ff31dda121944becaeda80de85fc3d9e9ef6ba93e8/products/indigo-workshirt/03-mannequin-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/130dabe581b14a54610be7ff31dda121944becaeda80de85fc3d9e9ef6ba93e8/products/indigo-workshirt/03-mannequin-front.webp",
+      "sha256": "130dabe581b14a54610be7ff31dda121944becaeda80de85fc3d9e9ef6ba93e8",
+      "size": 180140,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/indigo-workshirt/04-model-front.webp",
+      "pathname": "shop/catalogue/0dc8f552c9e25f17d261495d39bdc77c1601b4cf1985e44757f415c5976665e0/products/indigo-workshirt/04-model-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/0dc8f552c9e25f17d261495d39bdc77c1601b4cf1985e44757f415c5976665e0/products/indigo-workshirt/04-model-front.webp",
+      "sha256": "0dc8f552c9e25f17d261495d39bdc77c1601b4cf1985e44757f415c5976665e0",
+      "size": 93998,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/indigo-workshirt/06-fabric-detail.webp",
+      "pathname": "shop/catalogue/c859bb235e3e81100a2a071caf27032b2e2851638e6cf17585b9a261dcef3fc2/products/indigo-workshirt/06-fabric-detail.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/c859bb235e3e81100a2a071caf27032b2e2851638e6cf17585b9a261dcef3fc2/products/indigo-workshirt/06-fabric-detail.webp",
+      "sha256": "c859bb235e3e81100a2a071caf27032b2e2851638e6cf17585b9a261dcef3fc2",
+      "size": 456604,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/ivory-tie-skirt/01-garment-front.webp",
+      "pathname": "shop/catalogue/4f158027f318abec59932cd3252ebd34a137f128b4e0ed8e851f6c63009fd4df/products/ivory-tie-skirt/01-garment-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/4f158027f318abec59932cd3252ebd34a137f128b4e0ed8e851f6c63009fd4df/products/ivory-tie-skirt/01-garment-front.webp",
+      "sha256": "4f158027f318abec59932cd3252ebd34a137f128b4e0ed8e851f6c63009fd4df",
+      "size": 29806,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/ivory-tie-skirt/02-garment-back.webp",
+      "pathname": "shop/catalogue/6569e6fd4cfe7abe6a5ba305e495c88439da58209219ee626493836c204e2019/products/ivory-tie-skirt/02-garment-back.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/6569e6fd4cfe7abe6a5ba305e495c88439da58209219ee626493836c204e2019/products/ivory-tie-skirt/02-garment-back.webp",
+      "sha256": "6569e6fd4cfe7abe6a5ba305e495c88439da58209219ee626493836c204e2019",
+      "size": 25894,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/ivory-tie-skirt/03-mannequin-front.webp",
+      "pathname": "shop/catalogue/1dc9d70013b6cc3989c859eafef7e26e21427f39d2bb14f0e754f53e71076cad/products/ivory-tie-skirt/03-mannequin-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/1dc9d70013b6cc3989c859eafef7e26e21427f39d2bb14f0e754f53e71076cad/products/ivory-tie-skirt/03-mannequin-front.webp",
+      "sha256": "1dc9d70013b6cc3989c859eafef7e26e21427f39d2bb14f0e754f53e71076cad",
+      "size": 28456,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/ivory-tie-skirt/04-model-front.webp",
+      "pathname": "shop/catalogue/2ec9586b6f050ab0e9e9486866b08633b7e89b2ee1fda49f79d80c1db8e1a06d/products/ivory-tie-skirt/04-model-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/2ec9586b6f050ab0e9e9486866b08633b7e89b2ee1fda49f79d80c1db8e1a06d/products/ivory-tie-skirt/04-model-front.webp",
+      "sha256": "2ec9586b6f050ab0e9e9486866b08633b7e89b2ee1fda49f79d80c1db8e1a06d",
+      "size": 91866,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/ivory-tie-skirt/06-fabric-detail.webp",
+      "pathname": "shop/catalogue/d530a8a8eca8c32d5b406a6a7dc8faebf7b836105b7ee3cf9c8fd7986c81be55/products/ivory-tie-skirt/06-fabric-detail.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/d530a8a8eca8c32d5b406a6a7dc8faebf7b836105b7ee3cf9c8fd7986c81be55/products/ivory-tie-skirt/06-fabric-detail.webp",
+      "sha256": "d530a8a8eca8c32d5b406a6a7dc8faebf7b836105b7ee3cf9c8fd7986c81be55",
+      "size": 159618,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/magenta-plunge-ruched-mini-dress/01-garment-front.webp",
+      "pathname": "shop/catalogue/5283d3dbfdbc154b5208c821e2830e02fffd518810c33f0416a488b33a304b56/products/magenta-plunge-ruched-mini-dress/01-garment-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/5283d3dbfdbc154b5208c821e2830e02fffd518810c33f0416a488b33a304b56/products/magenta-plunge-ruched-mini-dress/01-garment-front.webp",
+      "sha256": "5283d3dbfdbc154b5208c821e2830e02fffd518810c33f0416a488b33a304b56",
+      "size": 97066,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/magenta-plunge-ruched-mini-dress/02-garment-back.webp",
+      "pathname": "shop/catalogue/44f84c58b111386c8a8008c1163d3784ee36ea2e9085fe42b0236c3c8ac31ae8/products/magenta-plunge-ruched-mini-dress/02-garment-back.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/44f84c58b111386c8a8008c1163d3784ee36ea2e9085fe42b0236c3c8ac31ae8/products/magenta-plunge-ruched-mini-dress/02-garment-back.webp",
+      "sha256": "44f84c58b111386c8a8008c1163d3784ee36ea2e9085fe42b0236c3c8ac31ae8",
+      "size": 117804,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/magenta-plunge-ruched-mini-dress/03-mannequin-front.webp",
+      "pathname": "shop/catalogue/02e708a51fea33130e0cca3ef9d67577d93884646a675f4fc1d85f243e6298d2/products/magenta-plunge-ruched-mini-dress/03-mannequin-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/02e708a51fea33130e0cca3ef9d67577d93884646a675f4fc1d85f243e6298d2/products/magenta-plunge-ruched-mini-dress/03-mannequin-front.webp",
+      "sha256": "02e708a51fea33130e0cca3ef9d67577d93884646a675f4fc1d85f243e6298d2",
+      "size": 131506,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/magenta-plunge-ruched-mini-dress/05-model-rear-three-quarter.webp",
+      "pathname": "shop/catalogue/5cb0e4ad5d444cb4ad7d1d4f510cb1f978fc88cb26f1d688865468640905fb05/products/magenta-plunge-ruched-mini-dress/05-model-rear-three-quarter.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/5cb0e4ad5d444cb4ad7d1d4f510cb1f978fc88cb26f1d688865468640905fb05/products/magenta-plunge-ruched-mini-dress/05-model-rear-three-quarter.webp",
+      "sha256": "5cb0e4ad5d444cb4ad7d1d4f510cb1f978fc88cb26f1d688865468640905fb05",
+      "size": 137344,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/magenta-plunge-ruched-mini-dress/06-fabric-detail.webp",
+      "pathname": "shop/catalogue/1c025e39e9f823c6928534006eb99dd111ae3878aca7588da502afde8c42bb33/products/magenta-plunge-ruched-mini-dress/06-fabric-detail.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/1c025e39e9f823c6928534006eb99dd111ae3878aca7588da502afde8c42bb33/products/magenta-plunge-ruched-mini-dress/06-fabric-detail.webp",
+      "sha256": "1c025e39e9f823c6928534006eb99dd111ae3878aca7588da502afde8c42bb33",
+      "size": 444872,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/magenta-plunge-ruched-mini-dress/07-model-left-profile.webp",
+      "pathname": "shop/catalogue/0ed7ada9453902956ca96abd2ed53a9627f99ad54607777b23f69461bef2ece2/products/magenta-plunge-ruched-mini-dress/07-model-left-profile.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/0ed7ada9453902956ca96abd2ed53a9627f99ad54607777b23f69461bef2ece2/products/magenta-plunge-ruched-mini-dress/07-model-left-profile.webp",
+      "sha256": "0ed7ada9453902956ca96abd2ed53a9627f99ad54607777b23f69461bef2ece2",
+      "size": 142642,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/moss-square-knit/01-garment-front.webp",
+      "pathname": "shop/catalogue/c8c768400850bb2551ee2cb020b909cf199093c7b70f306dd158886a7516685e/products/moss-square-knit/01-garment-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/c8c768400850bb2551ee2cb020b909cf199093c7b70f306dd158886a7516685e/products/moss-square-knit/01-garment-front.webp",
+      "sha256": "c8c768400850bb2551ee2cb020b909cf199093c7b70f306dd158886a7516685e",
+      "size": 160950,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/moss-square-knit/02-garment-back.webp",
+      "pathname": "shop/catalogue/c481969c33b6a9c82386ec39bb177a837b71cdc3b24b67127af2d5f2618ea732/products/moss-square-knit/02-garment-back.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/c481969c33b6a9c82386ec39bb177a837b71cdc3b24b67127af2d5f2618ea732/products/moss-square-knit/02-garment-back.webp",
+      "sha256": "c481969c33b6a9c82386ec39bb177a837b71cdc3b24b67127af2d5f2618ea732",
+      "size": 141254,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/moss-square-knit/03-mannequin-front.webp",
+      "pathname": "shop/catalogue/733afa4c9c118eadda1b89ba56f75d735b2b8b9f8e9782dd8eafd41e75557286/products/moss-square-knit/03-mannequin-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/733afa4c9c118eadda1b89ba56f75d735b2b8b9f8e9782dd8eafd41e75557286/products/moss-square-knit/03-mannequin-front.webp",
+      "sha256": "733afa4c9c118eadda1b89ba56f75d735b2b8b9f8e9782dd8eafd41e75557286",
+      "size": 115096,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/moss-square-knit/04-model-front.webp",
+      "pathname": "shop/catalogue/2ea912595c82c9b4b1a0c8f0f608e6242332cc41ee2f337c5da53a489262e03c/products/moss-square-knit/04-model-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/2ea912595c82c9b4b1a0c8f0f608e6242332cc41ee2f337c5da53a489262e03c/products/moss-square-knit/04-model-front.webp",
+      "sha256": "2ea912595c82c9b4b1a0c8f0f608e6242332cc41ee2f337c5da53a489262e03c",
+      "size": 93026,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/moss-square-knit/05-model-rear-three-quarter.webp",
+      "pathname": "shop/catalogue/5da01a3c81ebfc68210628a2151109bec967ee80619d1576af47bc3887fcb559/products/moss-square-knit/05-model-rear-three-quarter.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/5da01a3c81ebfc68210628a2151109bec967ee80619d1576af47bc3887fcb559/products/moss-square-knit/05-model-rear-three-quarter.webp",
+      "sha256": "5da01a3c81ebfc68210628a2151109bec967ee80619d1576af47bc3887fcb559",
+      "size": 72484,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/moss-square-knit/06-fabric-detail.webp",
+      "pathname": "shop/catalogue/0cf1fbf4af79d28c20df08d357438c6df163813d4b8d410aa2b038b17e67a86f/products/moss-square-knit/06-fabric-detail.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/0cf1fbf4af79d28c20df08d357438c6df163813d4b8d410aa2b038b17e67a86f/products/moss-square-knit/06-fabric-detail.webp",
+      "sha256": "0cf1fbf4af79d28c20df08d357438c6df163813d4b8d410aa2b038b17e67a86f",
+      "size": 429356,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/moss-square-knit/07-model-left-profile.webp",
+      "pathname": "shop/catalogue/0464a09314a92d09a374667c7ce127c7e9cd043495535f30f0edbf1813aae257/products/moss-square-knit/07-model-left-profile.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/0464a09314a92d09a374667c7ce127c7e9cd043495535f30f0edbf1813aae257/products/moss-square-knit/07-model-left-profile.webp",
+      "sha256": "0464a09314a92d09a374667c7ce127c7e9cd043495535f30f0edbf1813aae257",
+      "size": 82070,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/multicolor-abstract-strapless-mini-dress/01-garment-front.webp",
+      "pathname": "shop/catalogue/2bd0ead44a3fc0c665b8b39d835460a293f0f94f802612c49e61155cc76453a8/products/multicolor-abstract-strapless-mini-dress/01-garment-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/2bd0ead44a3fc0c665b8b39d835460a293f0f94f802612c49e61155cc76453a8/products/multicolor-abstract-strapless-mini-dress/01-garment-front.webp",
+      "sha256": "2bd0ead44a3fc0c665b8b39d835460a293f0f94f802612c49e61155cc76453a8",
+      "size": 234834,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/multicolor-abstract-strapless-mini-dress/02-garment-back.webp",
+      "pathname": "shop/catalogue/b141cc705fccf278fdfc60807a7186b6413ba2271235d7e91358eda539eb4500/products/multicolor-abstract-strapless-mini-dress/02-garment-back.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/b141cc705fccf278fdfc60807a7186b6413ba2271235d7e91358eda539eb4500/products/multicolor-abstract-strapless-mini-dress/02-garment-back.webp",
+      "sha256": "b141cc705fccf278fdfc60807a7186b6413ba2271235d7e91358eda539eb4500",
+      "size": 227110,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/multicolor-abstract-strapless-mini-dress/03-mannequin-front.webp",
+      "pathname": "shop/catalogue/863b96eba8f25528b26f2f7e6dc1497ac95ca14c2381aa95a60673b46293ff24/products/multicolor-abstract-strapless-mini-dress/03-mannequin-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/863b96eba8f25528b26f2f7e6dc1497ac95ca14c2381aa95a60673b46293ff24/products/multicolor-abstract-strapless-mini-dress/03-mannequin-front.webp",
+      "sha256": "863b96eba8f25528b26f2f7e6dc1497ac95ca14c2381aa95a60673b46293ff24",
+      "size": 209782,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/multicolor-abstract-strapless-mini-dress/04-model-front.webp",
+      "pathname": "shop/catalogue/575b3341f455e69e99988b16969261575f5a0543fb4c9afc7b21117d41201f1c/products/multicolor-abstract-strapless-mini-dress/04-model-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/575b3341f455e69e99988b16969261575f5a0543fb4c9afc7b21117d41201f1c/products/multicolor-abstract-strapless-mini-dress/04-model-front.webp",
+      "sha256": "575b3341f455e69e99988b16969261575f5a0543fb4c9afc7b21117d41201f1c",
+      "size": 154268,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/multicolor-abstract-strapless-mini-dress/06-fabric-detail.webp",
+      "pathname": "shop/catalogue/8230d0c7d95218f1b7d8fe57f439e2a29a17cbe104530f74eae9339c57813e5c/products/multicolor-abstract-strapless-mini-dress/06-fabric-detail.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/8230d0c7d95218f1b7d8fe57f439e2a29a17cbe104530f74eae9339c57813e5c/products/multicolor-abstract-strapless-mini-dress/06-fabric-detail.webp",
+      "sha256": "8230d0c7d95218f1b7d8fe57f439e2a29a17cbe104530f74eae9339c57813e5c",
+      "size": 399114,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/orchid-beaded-column-gown/01-garment-front.webp",
+      "pathname": "shop/catalogue/09d67ad711cc35017ec269a7429995dc44f283ba00d07dd0dcd041e62cccfa6b/products/orchid-beaded-column-gown/01-garment-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/09d67ad711cc35017ec269a7429995dc44f283ba00d07dd0dcd041e62cccfa6b/products/orchid-beaded-column-gown/01-garment-front.webp",
+      "sha256": "09d67ad711cc35017ec269a7429995dc44f283ba00d07dd0dcd041e62cccfa6b",
+      "size": 150356,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/orchid-beaded-column-gown/02-garment-back.webp",
+      "pathname": "shop/catalogue/8459f8b9d3ba6079fdf4e60e78392f15228589857f631dec7268273db259ffcf/products/orchid-beaded-column-gown/02-garment-back.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/8459f8b9d3ba6079fdf4e60e78392f15228589857f631dec7268273db259ffcf/products/orchid-beaded-column-gown/02-garment-back.webp",
+      "sha256": "8459f8b9d3ba6079fdf4e60e78392f15228589857f631dec7268273db259ffcf",
+      "size": 147974,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/orchid-beaded-column-gown/03-mannequin-front.webp",
+      "pathname": "shop/catalogue/474c717a1b638e0f1c06a9324fc122c07ade08d8679b90fa921cadb75cd3e193/products/orchid-beaded-column-gown/03-mannequin-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/474c717a1b638e0f1c06a9324fc122c07ade08d8679b90fa921cadb75cd3e193/products/orchid-beaded-column-gown/03-mannequin-front.webp",
+      "sha256": "474c717a1b638e0f1c06a9324fc122c07ade08d8679b90fa921cadb75cd3e193",
+      "size": 155616,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/orchid-beaded-column-gown/04-model-front.webp",
+      "pathname": "shop/catalogue/21f11f3f1146080ebb3c2fe1a5affb40872f545d66ab996d594263409cd2e6b3/products/orchid-beaded-column-gown/04-model-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/21f11f3f1146080ebb3c2fe1a5affb40872f545d66ab996d594263409cd2e6b3/products/orchid-beaded-column-gown/04-model-front.webp",
+      "sha256": "21f11f3f1146080ebb3c2fe1a5affb40872f545d66ab996d594263409cd2e6b3",
+      "size": 350982,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/orchid-beaded-column-gown/06-fabric-detail.webp",
+      "pathname": "shop/catalogue/467f81dbcc32641b663302463ddfb22c3f8a274fd0b55d0f37a9dc491f96772e/products/orchid-beaded-column-gown/06-fabric-detail.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/467f81dbcc32641b663302463ddfb22c3f8a274fd0b55d0f37a9dc491f96772e/products/orchid-beaded-column-gown/06-fabric-detail.webp",
+      "sha256": "467f81dbcc32641b663302463ddfb22c3f8a274fd0b55d0f37a9dc491f96772e",
+      "size": 528566,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/orchid-beaded-column-gown/08-model-detail.webp",
+      "pathname": "shop/catalogue/40008573a597745f621c71ce3826d2f23fc72609ed8c01d253ffe42ff4990fd3/products/orchid-beaded-column-gown/08-model-detail.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/40008573a597745f621c71ce3826d2f23fc72609ed8c01d253ffe42ff4990fd3/products/orchid-beaded-column-gown/08-model-detail.webp",
+      "sha256": "40008573a597745f621c71ce3826d2f23fc72609ed8c01d253ffe42ff4990fd3",
+      "size": 447194,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/sage-asymmetric-ruched-maxi-dress/01-garment-front.webp",
+      "pathname": "shop/catalogue/26fb91232b24955d0f696a6e08efc37df81f28b2d863838faf7ec581947bc37d/products/sage-asymmetric-ruched-maxi-dress/01-garment-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/26fb91232b24955d0f696a6e08efc37df81f28b2d863838faf7ec581947bc37d/products/sage-asymmetric-ruched-maxi-dress/01-garment-front.webp",
+      "sha256": "26fb91232b24955d0f696a6e08efc37df81f28b2d863838faf7ec581947bc37d",
+      "size": 59480,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/sage-asymmetric-ruched-maxi-dress/02-garment-back.webp",
+      "pathname": "shop/catalogue/d08eef35c66b8ae2f71f68fe577e192b15a1a17f33d6f560109716c11b6ed195/products/sage-asymmetric-ruched-maxi-dress/02-garment-back.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/d08eef35c66b8ae2f71f68fe577e192b15a1a17f33d6f560109716c11b6ed195/products/sage-asymmetric-ruched-maxi-dress/02-garment-back.webp",
+      "sha256": "d08eef35c66b8ae2f71f68fe577e192b15a1a17f33d6f560109716c11b6ed195",
+      "size": 115122,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/sage-asymmetric-ruched-maxi-dress/03-mannequin-front.webp",
+      "pathname": "shop/catalogue/855389fd3c2beaf80052521e385bb5534180cb816ca4fd280cde3e0ec2fcba2d/products/sage-asymmetric-ruched-maxi-dress/03-mannequin-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/855389fd3c2beaf80052521e385bb5534180cb816ca4fd280cde3e0ec2fcba2d/products/sage-asymmetric-ruched-maxi-dress/03-mannequin-front.webp",
+      "sha256": "855389fd3c2beaf80052521e385bb5534180cb816ca4fd280cde3e0ec2fcba2d",
+      "size": 81706,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/sage-asymmetric-ruched-maxi-dress/06-fabric-detail.webp",
+      "pathname": "shop/catalogue/9c21a41b9b8b9236b8ec2f2da72042b42eaf0aaacd4d26ac4c0ff86315503908/products/sage-asymmetric-ruched-maxi-dress/06-fabric-detail.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/9c21a41b9b8b9236b8ec2f2da72042b42eaf0aaacd4d26ac4c0ff86315503908/products/sage-asymmetric-ruched-maxi-dress/06-fabric-detail.webp",
+      "sha256": "9c21a41b9b8b9236b8ec2f2da72042b42eaf0aaacd4d26ac4c0ff86315503908",
+      "size": 497766,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/salmon-camp-shirt/01-garment-front.webp",
+      "pathname": "shop/catalogue/e86ea7cc0324a9658ee6440066d96a5651c7ebc83cfbc271c7494d1c829b9835/products/salmon-camp-shirt/01-garment-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/e86ea7cc0324a9658ee6440066d96a5651c7ebc83cfbc271c7494d1c829b9835/products/salmon-camp-shirt/01-garment-front.webp",
+      "sha256": "e86ea7cc0324a9658ee6440066d96a5651c7ebc83cfbc271c7494d1c829b9835",
+      "size": 147454,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/salmon-camp-shirt/02-garment-back.webp",
+      "pathname": "shop/catalogue/28e744f5be0482fdd7d4bfeb82e85318f37b783ec0c1f03c5a9e419ca6741614/products/salmon-camp-shirt/02-garment-back.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/28e744f5be0482fdd7d4bfeb82e85318f37b783ec0c1f03c5a9e419ca6741614/products/salmon-camp-shirt/02-garment-back.webp",
+      "sha256": "28e744f5be0482fdd7d4bfeb82e85318f37b783ec0c1f03c5a9e419ca6741614",
+      "size": 108334,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/salmon-camp-shirt/03-mannequin-front.webp",
+      "pathname": "shop/catalogue/b8573ce0c16356b4fa41cd62eb757c6ec072f509d28d5a74c603ded1dfa8a7e8/products/salmon-camp-shirt/03-mannequin-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/b8573ce0c16356b4fa41cd62eb757c6ec072f509d28d5a74c603ded1dfa8a7e8/products/salmon-camp-shirt/03-mannequin-front.webp",
+      "sha256": "b8573ce0c16356b4fa41cd62eb757c6ec072f509d28d5a74c603ded1dfa8a7e8",
+      "size": 102554,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/salmon-camp-shirt/04-model-front.webp",
+      "pathname": "shop/catalogue/048fba20e31e6fd092315bd042b161ba559a011ae4b12b72be88ac547325e1ac/products/salmon-camp-shirt/04-model-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/048fba20e31e6fd092315bd042b161ba559a011ae4b12b72be88ac547325e1ac/products/salmon-camp-shirt/04-model-front.webp",
+      "sha256": "048fba20e31e6fd092315bd042b161ba559a011ae4b12b72be88ac547325e1ac",
+      "size": 90032,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/salmon-camp-shirt/06-fabric-detail.webp",
+      "pathname": "shop/catalogue/72e5122f654d87c13dce4024ee9da3b1f61e2f23085696bc4b25446125acfa32/products/salmon-camp-shirt/06-fabric-detail.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/72e5122f654d87c13dce4024ee9da3b1f61e2f23085696bc4b25446125acfa32/products/salmon-camp-shirt/06-fabric-detail.webp",
+      "sha256": "72e5122f654d87c13dce4024ee9da3b1f61e2f23085696bc4b25446125acfa32",
+      "size": 471870,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/silver-off-shoulder-mermaid-dress/01-garment-front.webp",
+      "pathname": "shop/catalogue/8dfd775220e8141db56d8f259c7b5051ca31a19976a159a50dd426743379a0a2/products/silver-off-shoulder-mermaid-dress/01-garment-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/8dfd775220e8141db56d8f259c7b5051ca31a19976a159a50dd426743379a0a2/products/silver-off-shoulder-mermaid-dress/01-garment-front.webp",
+      "sha256": "8dfd775220e8141db56d8f259c7b5051ca31a19976a159a50dd426743379a0a2",
+      "size": 146482,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/silver-off-shoulder-mermaid-dress/02-garment-back.webp",
+      "pathname": "shop/catalogue/ee9d8f3e40b04af9511cdf54db6ad3bb482cd585456abe0ea8c549a7f84ce2ba/products/silver-off-shoulder-mermaid-dress/02-garment-back.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/ee9d8f3e40b04af9511cdf54db6ad3bb482cd585456abe0ea8c549a7f84ce2ba/products/silver-off-shoulder-mermaid-dress/02-garment-back.webp",
+      "sha256": "ee9d8f3e40b04af9511cdf54db6ad3bb482cd585456abe0ea8c549a7f84ce2ba",
+      "size": 158516,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/silver-off-shoulder-mermaid-dress/03-mannequin-front.webp",
+      "pathname": "shop/catalogue/b2cfc2b844731a273d7840dc4a9ff676685ad3aef43d94556c198c5166b69e67/products/silver-off-shoulder-mermaid-dress/03-mannequin-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/b2cfc2b844731a273d7840dc4a9ff676685ad3aef43d94556c198c5166b69e67/products/silver-off-shoulder-mermaid-dress/03-mannequin-front.webp",
+      "sha256": "b2cfc2b844731a273d7840dc4a9ff676685ad3aef43d94556c198c5166b69e67",
+      "size": 159860,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/silver-off-shoulder-mermaid-dress/05-model-rear-three-quarter.webp",
+      "pathname": "shop/catalogue/f6258ad165c3e6005b079502489571324718076bc453a727c5e9c275bc06dab9/products/silver-off-shoulder-mermaid-dress/05-model-rear-three-quarter.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/f6258ad165c3e6005b079502489571324718076bc453a727c5e9c275bc06dab9/products/silver-off-shoulder-mermaid-dress/05-model-rear-three-quarter.webp",
+      "sha256": "f6258ad165c3e6005b079502489571324718076bc453a727c5e9c275bc06dab9",
+      "size": 266976,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/silver-off-shoulder-mermaid-dress/06-fabric-detail.webp",
+      "pathname": "shop/catalogue/a6c771abb800e510a3b5d89b99f70c89d05a316fe21917adc9a14d9bd0503351/products/silver-off-shoulder-mermaid-dress/06-fabric-detail.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/a6c771abb800e510a3b5d89b99f70c89d05a316fe21917adc9a14d9bd0503351/products/silver-off-shoulder-mermaid-dress/06-fabric-detail.webp",
+      "sha256": "a6c771abb800e510a3b5d89b99f70c89d05a316fe21917adc9a14d9bd0503351",
+      "size": 446570,
+      "contentType": "image/webp"
+    }
+  ]
+}

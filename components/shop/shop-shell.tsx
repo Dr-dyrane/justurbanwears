@@ -14,6 +14,7 @@ import { usePathname } from "next/navigation";
 import { useMemo } from "react";
 import { useMobileChrome } from "../../hooks/use-mobile-chrome";
 import { createBrowserCommerceService } from "../../lib/shop/services/commerce-service";
+import type { ShopProduct } from "../../lib/shop/domain/entities";
 import { BrandWordmark } from "../brand/brand-wordmark";
 import { ThemeToggle } from "../theme/theme-toggle";
 import { ShopLink as Link } from "./atoms/shop-link";
@@ -226,8 +227,17 @@ function ShopChrome({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function ShopShell({ children }: { children: React.ReactNode }) {
-  const service = useMemo(() => createBrowserCommerceService(), []);
+export function ShopShell({
+  children,
+  initialProducts,
+}: {
+  children: React.ReactNode;
+  initialProducts: readonly ShopProduct[];
+}) {
+  const service = useMemo(
+    () => createBrowserCommerceService(initialProducts),
+    [initialProducts],
+  );
   return (
     <ShopProvider service={service}>
       <ShopChrome>{children}</ShopChrome>

@@ -1351,6 +1351,7 @@ html[data-theme="dark"] .brand-wordmark-image-reverse {
 
 .availability-reserved { color: #865025; }
 .availability-sold { color: #8b3c33; }
+.availability-unconfirmed { color: #67534c; }
 
 .product-save,
 .detail-save {
@@ -1497,6 +1498,10 @@ button.product-card-action {
 
 .product-card-action.is-unavailable[data-state="sold"] > i {
   background: #9e635a;
+}
+
+.product-card-action.is-unavailable[data-state="unconfirmed"] > i {
+  background: #8c7b74;
 }
 
 .shop-no-results {
@@ -1701,6 +1706,11 @@ button.product-card-action {
 .shop-availability-panel[data-state="sold"] > span {
   background: #9b453b;
   box-shadow: 0 0 0 5px rgba(155, 69, 59, 0.1);
+}
+
+.shop-availability-panel[data-state="unconfirmed"] > span {
+  background: #8c7b74;
+  box-shadow: 0 0 0 5px rgba(140, 123, 116, 0.1);
 }
 
 .shop-availability-panel > div {

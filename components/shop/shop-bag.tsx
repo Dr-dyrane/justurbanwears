@@ -3,7 +3,7 @@
 import { ShoppingBag } from "lucide-react";
 import { useRef, useState } from "react";
 import { formatNaira } from "../../lib/shop/catalog";
-import { ShopActionLink } from "./atoms/action";
+import { ShopActionButton, ShopActionLink } from "./atoms/action";
 import { ShopLink as Link } from "./atoms/shop-link";
 import { ProductVisual } from "./product-visual";
 import { useShop } from "./shop-provider";
@@ -17,6 +17,9 @@ export function ShopBag() {
     return product ? [{ ...item, product }] : [];
   });
   const subtotal = lines.reduce((sum, line) => sum + line.product.price, 0);
+  const checkoutAvailable = lines.every(
+    (line) => line.product.availabilityConfirmed && line.product.availability === "AVAILABLE",
+  );
   const isRestoring = hydration === "idle" || hydration === "restoring";
 
   function removeLine(slug: string, name: string) {
@@ -64,7 +67,13 @@ export function ShopBag() {
               <div><dt>Subtotal</dt><dd>{formatNaira(subtotal)}</dd></div>
               <div><dt>Delivery</dt><dd>Chosen at checkout</dd></div>
             </dl>
-            <ShopActionLink href="/shop/checkout">Continue to checkout</ShopActionLink>
+            {checkoutAvailable ? (
+              <ShopActionLink href="/shop/checkout">Continue to checkout</ShopActionLink>
+            ) : (
+              <ShopActionButton disabled tone="muted">
+                Availability temporarily unavailable
+              </ShopActionButton>
+            )}
           </aside>
         </div>
       ) : (

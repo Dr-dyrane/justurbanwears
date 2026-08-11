@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { ProductDetail } from "../../../../components/shop/product-detail";
-import { getShopProduct } from "../../../../lib/shop/catalog";
+import { absoluteShopMediaUrl } from "../../../../lib/shop/public-media";
+import { getServerShopProduct } from "../../../../lib/shop/server-catalog";
 
 export async function generateMetadata({
   params,
@@ -8,7 +9,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const product = getShopProduct(slug);
+  const product = await getServerShopProduct(slug);
 
   if (!product) {
     return {
@@ -21,7 +22,7 @@ export async function generateMetadata({
   const featured = product.media?.[0];
   const images = featured
     ? [{
-        url: featured.src,
+        url: absoluteShopMediaUrl(featured.src),
         width: featured.width,
         height: featured.height,
         alt: featured.alt,
@@ -42,7 +43,7 @@ export async function generateMetadata({
       card: "summary_large_image",
       title: `${product.name} · justurban wears`,
       description,
-      images: featured ? [featured.src] : undefined,
+      images: featured ? [absoluteShopMediaUrl(featured.src)] : undefined,
     },
   };
 }
@@ -53,10 +54,10 @@ export default async function ShopProductPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const product = getShopProduct(slug);
-  const availability = product?.availability === "AVAILABLE"
+  const product = await getServerShopProduct(slug);
+  const availability = product?.availabilityConfirmed && product.availability === "AVAILABLE"
     ? "https://schema.org/InStock"
-    : product?.availability === "RESERVED"
+    : product?.availabilityConfirmed && product.availability === "RESERVED"
       ? "https://schema.org/LimitedAvailability"
       : "https://schema.org/OutOfStock";
   const productJsonLd = product
@@ -68,14 +69,14 @@ export default async function ShopProductPage({
         sku: product.sku,
         color: product.colour,
         size: product.taggedSize,
-        image: product.media?.map((item) => `https://justurbanwears.com${item.src}`),
+        image: product.media?.map((item) => absoluteShopMediaUrl(item.src)),
         itemCondition: "https://schema.org/UsedCondition",
         offers: {
           "@type": "Offer",
           price: product.price,
           priceCurrency: "NGN",
           availability,
-          url: `https://justurbanwears.com/shop/products/${product.slug}`,
+          url: `https://www.justurbanwears.com/shop/products/${product.slug}`,
           seller: {
             "@type": "Organization",
             name: "justurban wears",

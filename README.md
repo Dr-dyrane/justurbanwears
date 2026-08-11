@@ -29,7 +29,7 @@ NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN=pk.your_url_restricted_public_token
 
 Use a public `pk` token restricted to the production origin, with a separate restricted token for localhost. Checkout keeps the native address fields available when the token, network, or WebGL is unavailable. Mapbox search results and coordinates remain ephemeral: they are not written to the local commerce snapshot, order history, or Postgres contract.
 
-The current Vite configuration includes the project’s Sites and Cloudflare Worker integration. `.openai/hosting.json` has no D1 or R2 binding enabled, so no hosted database or object storage is provisioned by this snapshot.
+The current Vite configuration includes the project’s Sites and Cloudflare Worker integration. `.openai/hosting.json` has no D1 or R2 binding; the Vercel production project instead connects Neon Postgres and separate public/private Vercel Blob stores through server-only environment variables.
 
 ## Commerce architecture
 
@@ -39,11 +39,20 @@ The shopper app is local-first without coupling the UI to browser storage:
 2. `lib/shop/machines` owns the pure commerce reducer and lifecycle states.
 3. `lib/shop/services` defines repository ports and commerce operations.
 4. `lib/shop/db/browser-local-repository.ts` implements versioned local storage, validation, migration, and cross-tab sync.
-5. `hooks/shop` and `components/shop/shop-provider.tsx` connect the machine to React.
-6. `components/shop/atoms` supplies the shared actions, sheets, switches, and status primitives.
-7. `db/shop-postgres-schema.ts` is the server-only Drizzle contract for a future Neon or Supabase Postgres adapter.
+5. `lib/shop/server-catalog.ts` reads the descriptive catalogue and current inventory from Neon on the server, validates the complete snapshot, and injects it into the first render.
+6. `hooks/shop` and `components/shop/shop-provider.tsx` connect that immutable server snapshot and the local commerce machine to React.
+7. `components/shop/atoms` supplies the shared actions, sheets, switches, and status primitives.
+8. `db/shop-postgres-schema.ts` is the server-only Drizzle contract for the connected Neon database.
 
-The UI and machine do not import `localStorage` directly. A connected release can replace the browser repository with a server-backed implementation of the same port, then add authentication, authorization, inventory transactions, payment, and fulfilment services at their respective boundaries. Generate the future Postgres migration package with `npm run db:generate:shop`; this does not connect to a database or read credentials.
+The public catalogue is server-authoritative, while saves, bag contents, and the current WhatsApp checkout handoff remain device-local. If Neon cannot confirm inventory, descriptive release data still renders but every purchase action fails closed until stock is confirmed again. Studio mutations, authenticated checkout writes, payments, and fulfilment automation are not connected yet.
+
+Approved public catalogue media is mirrored to the public Blob store with immutable, content-addressed pathnames. The checked-in media manifest maps canonical `/shop/**` release keys to the exact verified Blob URL and SHA-256; private source/evidence media is never enumerated by this workflow. From a clean, reviewed release run:
+
+```bash
+npx vercel env run -e production --project justurbanwears -- npm run blob:sync:shop
+```
+
+The command uploads only media referenced by the checked-in catalogue manifest, refuses overwrites, downloads every result for checksum verification, and leaves superseded Blob objects available for older deployments. It never uses the private Blob token. Database migrations and catalogue releases remain a separate guarded command (`npm run db:release:shop`) and never run from the Vercel build.
 
 ## Route map
 

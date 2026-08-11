@@ -23,6 +23,8 @@
     "db:shop:seed": "node scripts/shop-db/catalogue.mjs seed",
     "db:shop:verify": "node scripts/shop-db/catalogue.mjs verify",
     "db:shop:sync:descriptive": "node scripts/shop-db/catalogue.mjs descriptive-sync",
+    "blob:sync:shop": "node scripts/shop-media/blob-sync.mjs --summary",
+    "test:shop-runtime": "tsx --test tests/shop-runtime-catalog.test.ts",
     "test:shop-db-release": "node --test tests/shop-db-release.test.ts"
   },
   "dependencies": {

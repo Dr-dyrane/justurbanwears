@@ -2,6 +2,7 @@ import type {
   BagItem,
   ShopCheckoutSubmissionIntent,
   ShopCheckoutSubmissionResult,
+  ShopCheckoutAvailabilityConfirmation,
   ShopAvailability,
   ShopCheckoutCreationResult,
   ShopCheckoutRequest,
@@ -33,6 +34,10 @@ export interface AuthenticatedCheckoutCommandPort {
   submit(intent: ShopCheckoutSubmissionIntent): Promise<ShopCheckoutSubmissionResult>;
 }
 
+export interface CheckoutAvailabilityPort {
+  confirm(lines: readonly BagItem[]): Promise<ShopCheckoutAvailabilityConfirmation>;
+}
+
 export interface CommerceService {
   hydrateCatalog(): Promise<ShopProduct[]>;
   listProducts(): readonly ShopProduct[];
@@ -43,6 +48,9 @@ export interface CommerceService {
   subscribe(listener: (snapshot: CommerceSnapshot) => void): () => void;
   readConnectivity(): ConnectivityState;
   subscribeConnectivity(listener: (state: ConnectivityState) => void): () => void;
+  confirmCheckoutAvailability(
+    snapshot: CommerceSnapshot,
+  ): Promise<ShopCheckoutAvailabilityConfirmation>;
   getProductAvailability(slug: string): ShopAvailability | null;
   createCheckout(
     snapshot: CommerceSnapshot,
