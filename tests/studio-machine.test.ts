@@ -16,7 +16,6 @@ import {
 } from "../lib/studio/projections/public-listing";
 import {
   APPROVED_PUBLIC_LISTINGS,
-  APPROVED_PUBLIC_MODEL_ANCHOR,
   getApprovedPublicListingContract,
 } from "../lib/studio/projections/approved-catalogue";
 import {
@@ -108,7 +107,10 @@ test("the linked Studio lifecycle reaches return-to-readiness without leaking pr
   assert.equal("source" in publicView[0], false);
   assert.equal("references" in publicView[0], false);
   assert.equal("modelId" in publicView[0], false);
-  assert.deepEqual(publicView[0].modelAnchor, APPROVED_PUBLIC_MODEL_ANCHOR);
+  assert.deepEqual(
+    publicView[0].modelAnchor,
+    getApprovedPublicListingContract(garment.sku, listing.slug)?.modelAnchor,
+  );
   assert.equal(publicView[0].media.length, 7);
   assert.equal(publicView[0].media[0].src, "/shop/products/coral-drift-dress/01-garment-front.webp");
   assert.equal(publicView[0].media[3].src, "/shop/products/coral-drift-dress/04-model-front.webp");
@@ -214,8 +216,8 @@ test("writing off a returned sold unit preserves other sellable units", () => {
 });
 
 test("approved wardrobe public-view contracts expose only cleared Lulu views", () => {
-  assert.equal(WARDROBE_PUBLIC_VIEW_PROJECTION_SCHEMA_VERSION, 9);
-  assert.equal(WARDROBE_PUBLIC_VIEW_STORAGE_KEY, "justurban-wears:wardrobe-public-view:v9");
+  assert.equal(WARDROBE_PUBLIC_VIEW_PROJECTION_SCHEMA_VERSION, 10);
+  assert.equal(WARDROBE_PUBLIC_VIEW_STORAGE_KEY, "justurban-wears:wardrobe-public-view:v10");
   const approvedModelFrontSlugs = new Set<string>(WARDROBE_APPROVED_MODEL_FRONT_SLUGS);
   for (const listing of APPROVED_PUBLIC_LISTINGS) {
     const contract = getApprovedPublicListingContract(listing.sku, listing.slug);

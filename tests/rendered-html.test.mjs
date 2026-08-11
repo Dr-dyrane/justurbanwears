@@ -157,6 +157,7 @@ test("server-renders product studies plus only identity-cleared model views", as
   );
   const approvedModelSlugs = new Set([
     "coral-drift-dress",
+    "indigo-workshirt",
     "moss-square-knit",
     "ivory-tie-skirt",
     "cocoa-pleat-trouser",
@@ -187,7 +188,12 @@ test("server-renders product studies plus only identity-cleared model views", as
     assert.match(html, new RegExp(`${base}/06-fabric-detail\\.webp`));
     assert.doesNotMatch(html, /05-model-back\.webp/);
     const hasApprovedFront = approvedModelSlugs.has(slugs[index]);
-    const expectedFrontAnchor = ["moss-square-knit", "cocoa-pleat-trouser"].includes(slugs[index])
+    const expectedFrontAnchor = [
+      "coral-drift-dress",
+      "indigo-workshirt",
+      "moss-square-knit",
+      "cocoa-pleat-trouser",
+    ].includes(slugs[index])
       ? "lulu-v3"
       : "lulu-v2";
     const hasApprovedLeftProfile = approvedLeftProfileSlugs.has(slugs[index]);

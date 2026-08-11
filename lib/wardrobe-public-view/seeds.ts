@@ -23,12 +23,15 @@ export const WARDROBE_PUBLIC_MODEL_ANCHORS = Object.freeze({
 export const WARDROBE_PUBLIC_MODEL_ANCHOR = WARDROBE_PUBLIC_MODEL_ANCHORS["lulu-v2"];
 
 export const WARDROBE_APPROVED_V3_MODEL_FRONT_SLUGS = Object.freeze([
+  "coral-drift-dress",
+  "indigo-workshirt",
   "moss-square-knit",
   "cocoa-pleat-trouser",
 ] as const);
 
 export const WARDROBE_APPROVED_MODEL_FRONT_SLUGS = Object.freeze([
   "coral-drift-dress",
+  "indigo-workshirt",
   "moss-square-knit",
   "ivory-tie-skirt",
   "cocoa-pleat-trouser",

@@ -14,7 +14,13 @@ const expectedApprovals = [
     slug: "coral-drift-dress",
     width: 972,
     height: 1619,
-    sha256: "114122193834a4bf31686e2df0ac8a8a3709febd39575b559123cf9bc3f3911a",
+    sha256: "b6a7bbed8e487caf97a9620ba3d8c16e1be529f45bcf1bc8999d57644e57e2f6",
+  },
+  {
+    slug: "indigo-workshirt",
+    width: 972,
+    height: 1619,
+    sha256: "0dc8f552c9e25f17d261495d39bdc77c1601b4cf1985e44757f415c5976665e0",
   },
   {
     slug: "moss-square-knit",
@@ -111,7 +117,12 @@ test("publishes only identity-cleared model fronts with their reviewed bytes", (
     assert.equal(entry.tryout.frame.presentation, "model");
     assert.equal(
       entry.tryout.modelAnchorId,
-      ["moss-square-knit", "cocoa-pleat-trouser"].includes(expected.slug)
+      [
+        "coral-drift-dress",
+        "indigo-workshirt",
+        "moss-square-knit",
+        "cocoa-pleat-trouser",
+      ].includes(expected.slug)
         ? "lulu-v3"
         : "lulu-v2",
     );
@@ -142,7 +153,12 @@ test("appends only approved Lulu views to the main product gallery", () => {
     const expectedModelFrames = [
       ...(hasApprovedFront ? [{
         src: `/shop/products/${product.slug}/04-model-front.webp`,
-        modelAnchorId: ["moss-square-knit", "cocoa-pleat-trouser"].includes(product.slug)
+        modelAnchorId: [
+          "coral-drift-dress",
+          "indigo-workshirt",
+          "moss-square-knit",
+          "cocoa-pleat-trouser",
+        ].includes(product.slug)
           ? "lulu-v3"
           : "lulu-v2",
       }] : []),

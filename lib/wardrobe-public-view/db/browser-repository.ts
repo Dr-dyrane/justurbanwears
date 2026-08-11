@@ -15,12 +15,13 @@ import {
 import { canonicalCatalogueSku } from "../sku";
 import type { WardrobePublicViewRepository } from "../services/contracts";
 
-export const WARDROBE_PUBLIC_VIEW_STORAGE_KEY = "justurban-wears:wardrobe-public-view:v9";
+export const WARDROBE_PUBLIC_VIEW_STORAGE_KEY = "justurban-wears:wardrobe-public-view:v10";
 export const WARDROBE_PUBLIC_VIEW_CHANGE_EVENT = "justurban-wears:wardrobe-public-view:changed";
-export const PREVIOUS_WARDROBE_PUBLIC_VIEW_STORAGE_KEY = "justurban-wears:wardrobe-public-view:v8";
-export const OLDER_WARDROBE_PUBLIC_VIEW_STORAGE_KEY = "justurban-wears:wardrobe-public-view:v7";
-export const THIRD_OLDER_WARDROBE_PUBLIC_VIEW_STORAGE_KEY = "justurban-wears:wardrobe-public-view:v6";
-export const FOURTH_OLDER_WARDROBE_PUBLIC_VIEW_STORAGE_KEY = "justurban-wears:wardrobe-public-view:v5";
+export const PREVIOUS_WARDROBE_PUBLIC_VIEW_STORAGE_KEY = "justurban-wears:wardrobe-public-view:v9";
+export const OLDER_WARDROBE_PUBLIC_VIEW_STORAGE_KEY = "justurban-wears:wardrobe-public-view:v8";
+export const THIRD_OLDER_WARDROBE_PUBLIC_VIEW_STORAGE_KEY = "justurban-wears:wardrobe-public-view:v7";
+export const FOURTH_OLDER_WARDROBE_PUBLIC_VIEW_STORAGE_KEY = "justurban-wears:wardrobe-public-view:v6";
+export const FIFTH_OLDER_WARDROBE_PUBLIC_VIEW_STORAGE_KEY = "justurban-wears:wardrobe-public-view:v5";
 export const EARLIEST_WARDROBE_PUBLIC_VIEW_STORAGE_KEY = "justurban-wears:wardrobe-public-view:v4";
 export const LEGACY_PUBLIC_CATALOG_STORAGE_KEY = "justurban-wears:catalog-projections:v2";
 
@@ -110,6 +111,20 @@ function migrateApprovedModelContract(media: unknown[], slug: string) {
     );
     return modelAnchorId ? { ...rest, modelAnchorId } : rest;
   });
+  if (
+    approvedModelFrontSlugs.has(slug)
+    && !migrated.some((item) => isRecord(item) && item.slot === "MODEL_FRONT")
+  ) {
+    const front = {
+      slot: "MODEL_FRONT",
+      src: `/shop/products/${slug}/${mediaFiles.MODEL_FRONT}`,
+      modelAnchorId: getApprovedModelAnchorId(slug, "MODEL_FRONT"),
+    };
+    const detailIndex = migrated.findIndex(
+      (item) => isRecord(item) && item.slot === "FABRIC_DETAIL",
+    );
+    migrated.splice(detailIndex < 0 ? migrated.length : detailIndex, 0, front);
+  }
   for (const slot of getApprovedModelSupplementalSlots(slug)) {
     if (migrated.some((item) => isRecord(item) && item.slot === slot)) continue;
     migrated.push({
@@ -265,6 +280,7 @@ export function parseStoredWardrobePublicView(raw: string | null): WardrobePubli
     const migrateVersion6 = envelope.version === 6;
     const migrateVersion7 = envelope.version === 7;
     const migrateVersion8 = envelope.version === 8;
+    const migrateVersion9 = envelope.version === 9;
     if (
       envelope.version !== WARDROBE_PUBLIC_VIEW_SCHEMA_VERSION
       && !migrateVersion2
@@ -274,6 +290,7 @@ export function parseStoredWardrobePublicView(raw: string | null): WardrobePubli
       && !migrateVersion6
       && !migrateVersion7
       && !migrateVersion8
+      && !migrateVersion9
     ) {
       return { products: [], managedSlugs: [] };
     }
@@ -318,6 +335,7 @@ export function createBrowserWardrobePublicViewRepository(): WardrobePublicViewR
         OLDER_WARDROBE_PUBLIC_VIEW_STORAGE_KEY,
         THIRD_OLDER_WARDROBE_PUBLIC_VIEW_STORAGE_KEY,
         FOURTH_OLDER_WARDROBE_PUBLIC_VIEW_STORAGE_KEY,
+        FIFTH_OLDER_WARDROBE_PUBLIC_VIEW_STORAGE_KEY,
         EARLIEST_WARDROBE_PUBLIC_VIEW_STORAGE_KEY,
       ]) {
         const previous = storage.getItem(previousKey);

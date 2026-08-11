@@ -6,7 +6,12 @@ const MODEL_ANCHORS = Object.freeze({
   "lulu-v3": Object.freeze({ id: "lulu-v3" }),
 });
 
-const V3_MODEL_FRONT_SLUGS = new Set(["moss-square-knit", "cocoa-pleat-trouser"]);
+const V3_MODEL_FRONT_SLUGS = new Set([
+  "coral-drift-dress",
+  "indigo-workshirt",
+  "moss-square-knit",
+  "cocoa-pleat-trouser",
+]);
 const MODEL_MEDIA_SLOTS = new Set([
   "MODEL_FRONT",
   "MODEL_LEFT_PROFILE",
@@ -67,7 +72,7 @@ function presentation(product) {
  */
 export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
   schemaVersion: 2,
-  revision: "2026-08-11-catalogue-03",
+  revision: "2026-08-11-catalogue-04",
   products: Object.freeze([
     presentation({
       slug: "coral-drift-dress",
@@ -115,7 +120,7 @@ export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
         { label: "Shoulder", value: "48 cm" },
         { label: "Length", value: "73 cm" },
       ],
-      mediaSlots: [],
+      mediaSlots: ["MODEL_FRONT"],
     }),
     presentation({
       slug: "moss-square-knit",

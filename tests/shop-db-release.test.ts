@@ -24,7 +24,7 @@ import {
 } from "../scripts/shop-db/release-core.mjs";
 
 const repositoryRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
-const expectedChecksum = "2a0bbd773e30209251b43114bb7cff89b19c71333da8ce7968eda5a24dd01a32";
+const expectedChecksum = "88e13f201d6e7d638ef4102bbc0e97de7d60267ff35fc30437564b898aeac266";
 const legacySkuRenames = Object.fromEntries(
   Array.from({ length: 12 }, (_, index) => [
     `DYN-${String(index + 81).padStart(3, "0")}`,
@@ -190,11 +190,15 @@ test("the full release refreshes renamed legacy rows without changing inventory"
     const legacySku = currentToLegacySku.get(row.sku);
     assert.ok(legacySku);
     row.sku = legacySku;
-    if (legacySku === "DYN-085") {
+    if (legacySku === "DYN-081" || legacySku === "DYN-085") {
       row.model_anchor = { id: "lulu-v2", src: "/shop/model/lulu-v2-approved.png" };
       row.media = row.media.map((media: { slot: string; modelAnchorId?: string }) => (
         media.slot === "MODEL_FRONT" ? { ...media, modelAnchorId: "lulu-v2" } : media
       ));
+    }
+    if (legacySku === "DYN-082") {
+      row.model_anchor = { id: "lulu-v2", src: "/shop/model/lulu-v2-approved.png" };
+      row.media = row.media.filter((media: { slot: string }) => media.slot !== "MODEL_FRONT");
     }
     return [legacySku, row] as const;
   }));

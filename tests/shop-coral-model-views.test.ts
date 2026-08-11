@@ -42,6 +42,7 @@ const approvedProducts: readonly ApprovedProductMedia[] = [
   {
     slug: "coral-drift-dress",
     hasFront: true,
+    frontSha256: "b6a7bbed8e487caf97a9620ba3d8c16e1be529f45bcf1bc8999d57644e57e2f6",
     views: [
       {
         slot: "MODEL_LEFT_PROFILE",
@@ -54,6 +55,12 @@ const approvedProducts: readonly ApprovedProductMedia[] = [
         sha256: "40f4c304a96375451fb7c8693456f959c60d0876ffbd1c563fa3c3e3b1257b73",
       },
     ],
+  },
+  {
+    slug: "indigo-workshirt",
+    hasFront: true,
+    frontSha256: "0dc8f552c9e25f17d261495d39bdc77c1601b4cf1985e44757f415c5976665e0",
+    views: [],
   },
   {
     slug: "moss-square-knit",
@@ -145,22 +152,25 @@ test("publishes cleared supplemental views as metadata-free 972 × 1619 WebPs", 
   }
 });
 
-test("publishes the approved Cocoa V3 front as a sanitized exact derivative", async () => {
-  const cocoa = approvedProducts.find((product) => product.slug === "cocoa-pleat-trouser");
-  assert.ok(cocoa?.frontSha256);
-  const path = join(process.cwd(), "public/shop/products/cocoa-pleat-trouser/04-model-front.webp");
-  const bytes = readFileSync(path);
-  const metadata = await readImage(bytes).metadata();
+test("publishes approved V3 fronts as sanitized exact derivatives", async () => {
+  for (const product of approvedProducts.filter((candidate) => candidate.frontSha256)) {
+    const path = join(
+      process.cwd(),
+      `public/shop/products/${product.slug}/04-model-front.webp`,
+    );
+    const bytes = readFileSync(path);
+    const metadata = await readImage(bytes).metadata();
 
-  assert.equal(metadata.format, "webp");
-  assert.equal(metadata.width, 972);
-  assert.equal(metadata.height, 1619);
-  assert.equal(metadata.channels, 3);
-  assert.equal(metadata.exif, undefined);
-  assert.equal(metadata.icc, undefined);
-  assert.equal(metadata.xmp, undefined);
-  assert.equal(metadata.iptc, undefined);
-  assert.equal(createHash("sha256").update(bytes).digest("hex"), cocoa.frontSha256);
+    assert.equal(metadata.format, "webp");
+    assert.equal(metadata.width, 972);
+    assert.equal(metadata.height, 1619);
+    assert.equal(metadata.channels, 3);
+    assert.equal(metadata.exif, undefined);
+    assert.equal(metadata.icc, undefined);
+    assert.equal(metadata.xmp, undefined);
+    assert.equal(metadata.iptc, undefined);
+    assert.equal(createHash("sha256").update(bytes).digest("hex"), product.frontSha256);
+  }
 });
 
 test("orders product media, an approved front when present, then supplemental Lulu views", () => {
@@ -190,7 +200,12 @@ test("orders product media, an approved front when present, then supplemental Lu
         ...(approved.hasFront
           ? [{
               view: "front",
-              anchor: ["moss-square-knit", "cocoa-pleat-trouser"].includes(approved.slug)
+              anchor: [
+                "coral-drift-dress",
+                "indigo-workshirt",
+                "moss-square-knit",
+                "cocoa-pleat-trouser",
+              ].includes(approved.slug)
                 ? "lulu-v3"
                 : "lulu-v2",
               label: "On Lulu · front",
@@ -219,9 +234,11 @@ test("orders product media, an approved front when present, then supplemental Lu
 });
 
 test("migrates stored v5 supplemental views without resetting operator edits", () => {
-  assert.equal(WARDROBE_PUBLIC_VIEW_SCHEMA_VERSION, 9);
+  assert.equal(WARDROBE_PUBLIC_VIEW_SCHEMA_VERSION, 10);
 
-  for (const [index, approved] of approvedProducts.slice(1).entries()) {
+  for (const [index, approved] of approvedProducts.filter(
+    (product) => product.views.length > 0,
+  ).slice(1).entries()) {
     const product = WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS.find(
       (candidate) => candidate.slug === approved.slug,
     );

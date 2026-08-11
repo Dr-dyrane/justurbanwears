@@ -178,6 +178,77 @@ test("v8 migrates Cocoa to JUW and a V3 front while retaining V2 supplemental vi
   );
 });
 
+test("v9 promotes Coral and Indigo fronts to V3 without resetting operator edits", () => {
+  const indigo = WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS.find(
+    (product) => product.slug === "indigo-workshirt",
+  );
+  assert.ok(indigo);
+  const legacyCoral = {
+    ...coral,
+    name: "Operator Coral title",
+    price: 24900,
+    note: "Operator Coral note.",
+    modelAnchor: { id: "lulu-v2", src: "/shop/model/lulu-v2-approved.png" },
+    media: coral.media.map(({ slot, src }) => ({
+      slot,
+      src,
+      ...(slot.startsWith("MODEL_") ? { modelAnchorId: "lulu-v2" } : {}),
+    })),
+  };
+  const legacyIndigo = {
+    ...indigo,
+    name: "Operator Indigo title",
+    price: 18600,
+    note: "Operator Indigo note.",
+    modelAnchor: { id: "lulu-v2", src: "/shop/model/lulu-v2-approved.png" },
+    media: indigo.media
+      .filter((frame) => frame.slot !== "MODEL_FRONT")
+      .map(({ slot, src }) => ({ slot, src })),
+  };
+  const parsed = parseStoredWardrobePublicView(JSON.stringify({
+    version: 9,
+    data: [legacyCoral, legacyIndigo],
+    managedSlugs: [coral.slug, indigo.slug],
+  }));
+
+  assert.equal(parsed.products.length, 2);
+  assert.deepEqual(parsed.managedSlugs, [coral.slug, indigo.slug]);
+
+  const migratedCoral = parsed.products.find((product) => product.slug === coral.slug);
+  assert.ok(migratedCoral);
+  assert.equal(migratedCoral.name, "Operator Coral title");
+  assert.equal(migratedCoral.price, 24900);
+  assert.equal(migratedCoral.note, "Operator Coral note.");
+  assert.deepEqual(migratedCoral.modelAnchor, { id: "lulu-v3" });
+  assert.deepEqual(
+    migratedCoral.media
+      .filter((frame) => frame.slot.startsWith("MODEL_"))
+      .map(({ slot, modelAnchorId }) => ({ slot, modelAnchorId })),
+    [
+      { slot: "MODEL_FRONT", modelAnchorId: "lulu-v3" },
+      { slot: "MODEL_LEFT_PROFILE", modelAnchorId: "lulu-v2" },
+      { slot: "MODEL_REAR_THREE_QUARTER", modelAnchorId: "lulu-v2" },
+    ],
+  );
+
+  const migratedIndigo = parsed.products.find((product) => product.slug === indigo.slug);
+  assert.ok(migratedIndigo);
+  assert.equal(migratedIndigo.name, "Operator Indigo title");
+  assert.equal(migratedIndigo.price, 18600);
+  assert.equal(migratedIndigo.note, "Operator Indigo note.");
+  assert.deepEqual(migratedIndigo.modelAnchor, { id: "lulu-v3" });
+  assert.deepEqual(
+    migratedIndigo.media.map(({ slot, modelAnchorId }) => ({ slot, modelAnchorId })),
+    [
+      { slot: "GARMENT_FRONT", modelAnchorId: undefined },
+      { slot: "GARMENT_BACK", modelAnchorId: undefined },
+      { slot: "MANNEQUIN_FRONT", modelAnchorId: undefined },
+      { slot: "MODEL_FRONT", modelAnchorId: "lulu-v3" },
+      { slot: "FABRIC_DETAIL", modelAnchorId: undefined },
+    ],
+  );
+});
+
 test("Studio holds the twelve saleable wardrobe rows and promotes the six former drafts in place", () => {
   const seeded = mergeWardrobeAuthoritySeeds(createEmptyStudioSnapshot());
   assert.equal(seeded.garments.length, 12);
@@ -397,18 +468,22 @@ test("Shop derives model availability only from sanitized approved Lulu views", 
   );
   assert.equal(withFront.modelTryout.modelStatus, "APPROVED");
   if (withFront.modelTryout.modelStatus === "APPROVED") {
-    assert.equal(withFront.modelTryout.modelAnchorId, "lulu-v2");
+    assert.equal(withFront.modelTryout.modelAnchorId, "lulu-v3");
     assert.match(withFront.modelTryout.frame.src, /04-model-front\.webp$/);
   }
 
-  const withoutFront = wardrobePublicProductToShopProduct(
+  const indigo = wardrobePublicProductToShopProduct(
     createWardrobePublicViewMigrationSnapshot().products.find((product) => product.slug === "indigo-workshirt")!,
   );
-  assert.equal(withoutFront.media?.length, 4);
-  assert.deepEqual(withoutFront.modelTryout, { modelStatus: "PENDING" });
+  assert.equal(indigo.media?.length, 4);
+  assert.equal(indigo.modelTryout.modelStatus, "APPROVED");
+  if (indigo.modelTryout.modelStatus === "APPROVED") {
+    assert.equal(indigo.modelTryout.modelAnchorId, "lulu-v3");
+    assert.match(indigo.modelTryout.frame.src, /04-model-front\.webp$/);
+  }
 });
 
-test("the sanitizer cannot promote an Indigo model front", () => {
+test("the current sanitizer rejects a V2-labeled Indigo model front", () => {
   const indigo = createWardrobePublicViewMigrationSnapshot().products.find(
     (product) => product.slug === "indigo-workshirt",
   )!;
@@ -416,13 +491,9 @@ test("the sanitizer cannot promote an Indigo model front", () => {
     version: WARDROBE_PUBLIC_VIEW_SCHEMA_VERSION,
     data: [{
       ...indigo,
-      media: [
-        ...indigo.media,
-        {
-          slot: "MODEL_FRONT",
-          src: "/shop/products/indigo-workshirt/04-model-front.webp",
-        },
-      ],
+      media: indigo.media.map((frame) => frame.slot === "MODEL_FRONT"
+        ? { ...frame, modelAnchorId: "lulu-v2" }
+        : frame),
     }],
     managedSlugs: [indigo.slug],
   }));
