@@ -24,7 +24,7 @@ import {
 } from "../scripts/shop-db/release-core.mjs";
 
 const repositoryRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
-const expectedChecksum = "7844c8a7ccdab8b5b6a446085dc0f39c958ad9315964542ff8c78483b04291e3";
+const expectedChecksum = "9064e58fd4e94305f3d06b9e6dbfb30d88b0c99380c7570ad1e203139a4f7677";
 const legacySkuRenames = Object.fromEntries(
   Array.from({ length: 12 }, (_, index) => [
     `DYN-${String(index + 81).padStart(3, "0")}`,

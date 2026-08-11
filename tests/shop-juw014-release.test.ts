@@ -13,6 +13,7 @@ const expectedAssets = [
   ["02-garment-back.webp", "c302771d9a361cab264dbb8b5d3db903c66b9b795d32c441319b575fa6e32d02", 1122, 1402],
   ["03-mannequin-front.webp", "83383af64766d0d1f39e8ed14f7d1e5d724fe55f3c5520457ec930c54fa0f5eb", 1122, 1402],
   ["04-model-front.webp", "bb8e3576ab3b9679d19a5181e6999ff817057587c2a1fb12588e50957bb067a3", 972, 1619],
+  ["07-model-left-profile.webp", "35b1196542e5e4836ff82a6b1954fb281d553ce5fe1f9ec76d88beede626efa1", 972, 1619],
   ["05-model-rear-three-quarter.webp", "bece9263b8c0b9e4284af699ad01fd033928edff4019dfb9db822c1ca793830d", 972, 1619],
   ["08-construction-detail.webp", "50f106a9dbc2d77c87c0e447297975388fc4b97cb98f70f92793cccfe98ab3f9", 1122, 1402],
 ] as const;
@@ -42,6 +43,7 @@ test("packages JUW-014 with the approved facts, truthful slots, and initial stoc
       { slot: "MANNEQUIN_FRONT", modelAnchorId: undefined },
       { slot: "MODEL_FRONT", modelAnchorId: "lulu-v3" },
       { slot: "CONSTRUCTION_DETAIL", modelAnchorId: undefined },
+      { slot: "MODEL_LEFT_PROFILE", modelAnchorId: "lulu-v3" },
       { slot: "MODEL_REAR_THREE_QUARTER", modelAnchorId: "lulu-v3" },
     ],
   );

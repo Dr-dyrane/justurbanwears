@@ -112,7 +112,10 @@ const approvedSupplementalSources = new Map<string, readonly string[]>([
   ],
   [
     "sage-open-back-high-slit-maxi-dress",
-    ["/shop/products/sage-open-back-high-slit-maxi-dress/05-model-rear-three-quarter.webp"],
+    [
+      "/shop/products/sage-open-back-high-slit-maxi-dress/07-model-left-profile.webp",
+      "/shop/products/sage-open-back-high-slit-maxi-dress/05-model-rear-three-quarter.webp",
+    ],
   ],
   [
     "cocoa-cowl-gathered-midi-dress",

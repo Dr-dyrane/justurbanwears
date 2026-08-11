@@ -87,7 +87,7 @@ function presentation(product) {
  */
 export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
   schemaVersion: 2,
-  revision: "2026-08-11-catalogue-10",
+  revision: "2026-08-11-catalogue-11",
   products: Object.freeze([
     presentation({
       slug: "coral-drift-dress",
@@ -391,7 +391,7 @@ export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
       story: "The restrained sage colour holds a dramatic back: an oval opening secured with ties, balanced by a fitted ruched line and high side slit.",
       details: ["Round neckline", "Tied oval open back", "Side ruching", "High side slit"],
       measurements: [],
-      mediaSlots: ["MODEL_FRONT", "CONSTRUCTION_DETAIL", "MODEL_REAR_THREE_QUARTER"],
+      mediaSlots: ["MODEL_FRONT", "CONSTRUCTION_DETAIL", "MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
     }),
     presentation({
       slug: "cocoa-cowl-gathered-midi-dress",

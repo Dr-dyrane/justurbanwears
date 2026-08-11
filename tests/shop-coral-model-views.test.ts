@@ -158,6 +158,11 @@ const approvedProducts: readonly ApprovedProductMedia[] = [
     frontSha256: "bb8e3576ab3b9679d19a5181e6999ff817057587c2a1fb12588e50957bb067a3",
     views: [
       {
+        slot: "MODEL_LEFT_PROFILE",
+        src: "/shop/products/sage-open-back-high-slit-maxi-dress/07-model-left-profile.webp",
+        sha256: "35b1196542e5e4836ff82a6b1954fb281d553ce5fe1f9ec76d88beede626efa1",
+      },
+      {
         slot: "MODEL_REAR_THREE_QUARTER",
         src: "/shop/products/sage-open-back-high-slit-maxi-dress/05-model-rear-three-quarter.webp",
         sha256: "bece9263b8c0b9e4284af699ad01fd033928edff4019dfb9db822c1ca793830d",
@@ -283,6 +288,7 @@ test("orders product media, an approved front when present, then supplemental Lu
             return {
               view: "side",
               anchor: [
+                "sage-open-back-high-slit-maxi-dress",
                 "cocoa-cowl-gathered-midi-dress",
                 "ivory-rib-knit-fitted-midi-dress",
               ].includes(approved.slug) ? "lulu-v3" : "lulu-v2",
@@ -314,7 +320,7 @@ test("orders product media, an approved front when present, then supplemental Lu
 });
 
 test("migrates stored v5 supplemental views without resetting operator edits", () => {
-  assert.equal(WARDROBE_PUBLIC_VIEW_SCHEMA_VERSION, 16);
+  assert.equal(WARDROBE_PUBLIC_VIEW_SCHEMA_VERSION, 17);
 
   for (const [index, approved] of approvedProducts.filter(
     (product) => product.views.length > 0,
@@ -358,6 +364,36 @@ test("migrates stored v5 supplemental views without resetting operator edits", (
       })),
     );
   }
+});
+
+test("migrates a stored v16 Sage row to the approved left profile without resetting operator edits", () => {
+  const sage = WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS.find(
+    (product) => product.slug === "sage-open-back-high-slit-maxi-dress",
+  );
+  assert.ok(sage);
+  const parsed = parseStoredWardrobePublicView(JSON.stringify({
+    version: 16,
+    data: [{
+      ...sage,
+      name: "Operator Sage title",
+      price: 28900,
+      note: "Operator-authored Sage note.",
+      media: sage.media.filter((item) => item.slot !== "MODEL_LEFT_PROFILE"),
+    }],
+    managedSlugs: [sage.slug],
+  }));
+
+  assert.equal(parsed.products.length, 1);
+  assert.equal(parsed.products[0].name, "Operator Sage title");
+  assert.equal(parsed.products[0].price, 28900);
+  assert.equal(parsed.products[0].note, "Operator-authored Sage note.");
+  assert.deepEqual(
+    parsed.products[0].media.slice(-2).map(({ slot, modelAnchorId }) => ({ slot, modelAnchorId })),
+    [
+      { slot: "MODEL_LEFT_PROFILE", modelAnchorId: "lulu-v3" },
+      { slot: "MODEL_REAR_THREE_QUARTER", modelAnchorId: "lulu-v3" },
+    ],
+  );
 });
 
 test("migrates an existing v15 Magenta row by appending only the approved detail", () => {

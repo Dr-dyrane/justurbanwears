@@ -90,11 +90,11 @@ test("the public Blob release contains only exact manifest media and verifies lo
     SHOP_PUBLIC_MEDIA_PRESENTATION_CHECKSUM,
     cataloguePresentationChecksum(SHOP_CATALOGUE_MANIFEST),
   );
-  assert.equal(plan.length, 92);
+  assert.equal(plan.length, 93);
   assert.equal(SHOP_PUBLIC_MEDIA_ASSETS.length, plan.length);
   assert.equal(
     plan.filter((asset) => asset.sourcePath.startsWith("/shop/products/")).length,
-    91,
+    92,
   );
   assert.deepEqual(
     SHOP_PUBLIC_MEDIA_SOURCE_ASSETS.find(({ sourcePath }) =>
@@ -105,6 +105,20 @@ test("the public Blob release contains only exact manifest media and verifies lo
       pathname: "shop/catalogue/5b60a54faf31a7964f6f839b8be7842a7a8206ba2ff88ebf5fd0af30d14a36ea/products/magenta-plunge-ruched-mini-dress/08-model-detail.webp",
       sha256: "5b60a54faf31a7964f6f839b8be7842a7a8206ba2ff88ebf5fd0af30d14a36ea",
       size: 72746,
+      contentType: "image/webp",
+      width: 972,
+      height: 1619,
+    },
+  );
+  assert.deepEqual(
+    SHOP_PUBLIC_MEDIA_SOURCE_ASSETS.find(({ sourcePath }) =>
+      sourcePath === "/shop/products/sage-open-back-high-slit-maxi-dress/07-model-left-profile.webp"
+    ),
+    {
+      sourcePath: "/shop/products/sage-open-back-high-slit-maxi-dress/07-model-left-profile.webp",
+      pathname: "shop/catalogue/35b1196542e5e4836ff82a6b1954fb281d553ce5fe1f9ec76d88beede626efa1/products/sage-open-back-high-slit-maxi-dress/07-model-left-profile.webp",
+      sha256: "35b1196542e5e4836ff82a6b1954fb281d553ce5fe1f9ec76d88beede626efa1",
+      size: 149916,
       contentType: "image/webp",
       width: 972,
       height: 1619,

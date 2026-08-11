@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "catalogueRevision": "2026-08-11-catalogue-10",
-  "catalogueChecksum": "7844c8a7ccdab8b5b6a446085dc0f39c958ad9315964542ff8c78483b04291e3",
-  "cataloguePresentationChecksum": "4f4c0c29f79ab30c7221f337baf1923138fb562cac2b278ca6ecb5a83e054a3b",
+  "catalogueRevision": "2026-08-11-catalogue-11",
+  "catalogueChecksum": "9064e58fd4e94305f3d06b9e6dbfb30d88b0c99380c7570ad1e203139a4f7677",
+  "cataloguePresentationChecksum": "cc926ea992b7047c80f32557065086c495db4a18f8c9a18e39861a5125efb88a",
   "legacyAssets": [
     {
       "sourcePath": "/shop/products/coral-drift-dress/04-model-front.webp",
@@ -620,6 +620,14 @@
       "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/bece9263b8c0b9e4284af699ad01fd033928edff4019dfb9db822c1ca793830d/products/sage-open-back-high-slit-maxi-dress/05-model-rear-three-quarter.webp",
       "sha256": "bece9263b8c0b9e4284af699ad01fd033928edff4019dfb9db822c1ca793830d",
       "size": 237942,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/sage-open-back-high-slit-maxi-dress/07-model-left-profile.webp",
+      "pathname": "shop/catalogue/35b1196542e5e4836ff82a6b1954fb281d553ce5fe1f9ec76d88beede626efa1/products/sage-open-back-high-slit-maxi-dress/07-model-left-profile.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/35b1196542e5e4836ff82a6b1954fb281d553ce5fe1f9ec76d88beede626efa1/products/sage-open-back-high-slit-maxi-dress/07-model-left-profile.webp",
+      "sha256": "35b1196542e5e4836ff82a6b1954fb281d553ce5fe1f9ec76d88beede626efa1",
+      "size": 149916,
       "contentType": "image/webp"
     },
     {
