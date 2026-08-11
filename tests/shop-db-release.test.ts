@@ -181,6 +181,115 @@ test("seed and descriptive sync never update operational inventory", () => {
   assert.equal(sync.ledger.values.at(-1), "descriptive-sync");
 });
 
+test("the full release refreshes renamed legacy rows without changing inventory", async () => {
+  const currentToLegacySku = new Map(
+    Object.entries(legacySkuRenames).map(([legacySku, currentSku]) => [currentSku, legacySku]),
+  );
+  const catalogueRows = new Map(databaseCatalogueRows().map((sourceRow) => {
+    const row = clone(sourceRow);
+    const legacySku = currentToLegacySku.get(row.sku);
+    assert.ok(legacySku);
+    row.sku = legacySku;
+    if (legacySku === "DYN-085") {
+      row.model_anchor = { id: "lulu-v2", src: "/shop/model/lulu-v2-approved.png" };
+      row.media = row.media.map((media: { slot: string; modelAnchorId?: string }) => (
+        media.slot === "MODEL_FRONT" ? { ...media, modelAnchorId: "lulu-v2" } : media
+      ));
+    }
+    return [legacySku, row] as const;
+  }));
+  const inventoryRows = new Map([...catalogueRows.keys()].map((sku, index) => [sku, {
+    sku,
+    availability: index % 3 === 0 ? "RESERVED" : "AVAILABLE",
+    on_hand: 7 + index,
+    reserved: index % 3,
+    sold: 20 + index,
+    returned: 2 + index,
+    write_off: index % 2,
+    updated_at: `2026-08-11T12:${String(index).padStart(2, "0")}:00.000Z`,
+  }]));
+
+  // Migration 0002 runs first in the same release transaction. Its catalogue
+  // PK updates cascade to inventory before the reviewed presentation upsert.
+  for (const [legacySku, currentSku] of Object.entries(legacySkuRenames)) {
+    const catalogue = catalogueRows.get(legacySku);
+    const inventory = inventoryRows.get(legacySku);
+    assert.ok(catalogue);
+    assert.ok(inventory);
+    catalogueRows.delete(legacySku);
+    inventoryRows.delete(legacySku);
+    catalogueRows.set(currentSku, { ...catalogue, sku: currentSku });
+    inventoryRows.set(currentSku, { ...inventory, sku: currentSku });
+  }
+  const inventoryBeforePresentation = clone([...inventoryRows.values()]);
+
+  const plan = buildCatalogueMutationPlan(SHOP_CATALOGUE_MANIFEST, {
+    mode: "descriptive-sync",
+    target: "preview",
+    gitSha: "a".repeat(40),
+  });
+  const catalogueValueFields = [
+    "sku", "slug", "name", "category", "price", "tagged_size", "fit", "condition", "colour",
+    "drop_label", "tone", "silhouette", "note", "story", "details", "measurements", "model_anchor", "media",
+  ];
+  const ledgerWrites: unknown[][] = [];
+  const transaction = { query: async (text: string, values: unknown[] = []) => {
+    if (text.startsWith('select "namespace"')) return { rows: [] };
+    if (text.startsWith('insert into "shop_catalogue_items"')) {
+      const jsonFields = new Set(["details", "measurements", "model_anchor", "media"]);
+      const next = Object.fromEntries(catalogueValueFields.map((field, index) => [
+        field,
+        jsonFields.has(field) ? JSON.parse(String(values[index])) : values[index],
+      ]));
+      const sku = String(next.sku);
+      const existing = catalogueRows.get(sku);
+      catalogueRows.set(sku, { ...existing, ...next });
+      return { rows: [] };
+    }
+    if (text.startsWith('insert into "shop_inventory"')) {
+      const sku = String(values[0]);
+      if (!inventoryRows.has(sku)) {
+        inventoryRows.set(sku, {
+          sku,
+          availability: values[1],
+          on_hand: values[2],
+          reserved: values[3],
+          sold: values[4],
+          returned: values[5],
+          write_off: values[6],
+        });
+      }
+      return { rows: [] };
+    }
+    if (text.startsWith('select * from "shop_catalogue_items"')) {
+      const requested = new Set(values[0] as string[]);
+      return { rows: [...catalogueRows.values()].filter((row) => requested.has(row.sku)) };
+    }
+    if (text.startsWith('select "sku" from "shop_inventory"')) {
+      const requested = new Set(values[0] as string[]);
+      return { rows: [...inventoryRows.values()].filter((row) => requested.has(row.sku)).map(({ sku }) => ({ sku })) };
+    }
+    if (text.startsWith('insert into "shop_seed_ledger"')) ledgerWrites.push(values);
+    return { rows: [] };
+  } };
+
+  assert.equal(
+    await applyCatalogueInTransaction(transaction, SHOP_CATALOGUE_MANIFEST, plan, "preview"),
+    "apply",
+  );
+  assert.deepEqual(
+    compareCatalogueRows(
+      SHOP_CATALOGUE_MANIFEST,
+      [...catalogueRows.values()],
+      [...inventoryRows.values()],
+    ),
+    [],
+  );
+  assert.deepEqual([...inventoryRows.values()], inventoryBeforePresentation);
+  assert.equal(ledgerWrites.length, 1);
+  assert.equal(ledgerWrites[0].at(-1), "descriptive-sync");
+});
+
 test("the transaction wrapper locks before work, commits success, and rolls back failure", async () => {
   type FakeClient = { query: (text: string, values?: unknown[]) => Promise<{ rows: unknown[] }> };
   const successQueries: Array<[string, unknown[] | undefined]> = [];
@@ -299,4 +408,13 @@ test("build and deployment remain free of database administration side effects",
   assert.match(vercelIgnore, /^!\/design\/identity-2026\/justurban-wordmark\.svg$/m);
   const gitIgnore = readFileSync(join(repositoryRoot, ".gitignore"), "utf8");
   assert.match(gitIgnore, /^\/\.codex\/$/m);
+});
+
+test("the full release refreshes presentation after guarded SKU migration", () => {
+  const releaseSource = readFileSync(
+    join(repositoryRoot, "scripts/shop-db/shop-release.mjs"),
+    "utf8",
+  );
+  assert.match(releaseSource, /mode:\s*"descriptive-sync"/);
+  assert.doesNotMatch(releaseSource, /mode:\s*"seed"/);
 });

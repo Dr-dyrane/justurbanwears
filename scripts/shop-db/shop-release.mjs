@@ -30,7 +30,11 @@ if (process.argv.length !== 2) {
     if (guardedAccess.target === "production") assertCleanGit(repositoryRoot);
     const migrations = loadMigrations(join(repositoryRoot, "drizzle/shop-postgres"));
     const plan = buildCatalogueMutationPlan(SHOP_CATALOGUE_MANIFEST, {
-      mode: "seed",
+      // The full release must also refresh reviewed presentation fields after
+      // migrations rename existing catalogue primary keys. The upsert still
+      // leaves operational inventory untouched; its inventory statements are
+      // insert-only for genuinely new rows.
+      mode: "descriptive-sync",
       target: guardedAccess.target,
       gitSha: resolveGitSha(process.env, repositoryRoot),
     });
