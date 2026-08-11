@@ -157,6 +157,7 @@ test("keeps JUW-019 approved upper views distinct from missing full product capt
   assert.deepEqual(contract.approvedViews, [
     "MANNEQUIN_UPPER_FRONT",
     "MODEL_FRONT",
+    "MODEL_REAR_THREE_QUARTER",
     "CONSTRUCTION_DETAIL",
   ]);
   assert.deepEqual(contract.missingViews, ["GARMENT_FRONT", "GARMENT_BACK"]);

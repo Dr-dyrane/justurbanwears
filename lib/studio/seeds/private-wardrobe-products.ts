@@ -294,14 +294,25 @@ export const PENDING_WARDROBE_PRODUCT_CONTRACTS: readonly PendingWardrobeProduct
     color: "Black",
     price: 24500,
     description: "A fitted black floral-lace dress with a high round neckline, lined bodice, sheer long sleeves and flared cuffs.",
-    note: "The upper front, Lulu front and lace construction detail are ready. Capture the full-length product front and product back before publishing.",
+    note: "The Lulu front and rear-three-quarter views are ready. Capture the direct product front and product back before publishing.",
     visual: "plum",
-    approvedViews: ["MANNEQUIN_UPPER_FRONT", "MODEL_FRONT", "CONSTRUCTION_DETAIL"],
+    approvedViews: [
+      "MANNEQUIN_UPPER_FRONT",
+      "MODEL_FRONT",
+      "MODEL_REAR_THREE_QUARTER",
+      "CONSTRUCTION_DETAIL",
+    ],
     missingViews: ["GARMENT_FRONT", "GARMENT_BACK"],
     publicSafeMedia: [
       {
         view: "MODEL_FRONT",
         src: "/shop/products/black-floral-lace-long-sleeve-dress/04-model-front.webp",
+        width: 972,
+        height: 1619,
+      },
+      {
+        view: "MODEL_REAR_THREE_QUARTER",
+        src: "/shop/products/black-floral-lace-long-sleeve-dress/05-model-rear-three-quarter.webp",
         width: 972,
         height: 1619,
       },
