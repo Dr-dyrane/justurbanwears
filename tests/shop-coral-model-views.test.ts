@@ -205,6 +205,7 @@ test("orders product media, an approved front when present, then supplemental Lu
                 "indigo-workshirt",
                 "moss-square-knit",
                 "cocoa-pleat-trouser",
+                "salmon-camp-shirt",
               ].includes(approved.slug)
                 ? "lulu-v3"
                 : "lulu-v2",
@@ -234,7 +235,7 @@ test("orders product media, an approved front when present, then supplemental Lu
 });
 
 test("migrates stored v5 supplemental views without resetting operator edits", () => {
-  assert.equal(WARDROBE_PUBLIC_VIEW_SCHEMA_VERSION, 10);
+  assert.equal(WARDROBE_PUBLIC_VIEW_SCHEMA_VERSION, 11);
 
   for (const [index, approved] of approvedProducts.filter(
     (product) => product.views.length > 0,

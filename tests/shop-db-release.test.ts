@@ -24,7 +24,7 @@ import {
 } from "../scripts/shop-db/release-core.mjs";
 
 const repositoryRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
-const expectedChecksum = "88e13f201d6e7d638ef4102bbc0e97de7d60267ff35fc30437564b898aeac266";
+const expectedChecksum = "ebecdc5298335399d99573a57e6936f175a73f81f7db6133701f62e4a89b501a";
 const legacySkuRenames = Object.fromEntries(
   Array.from({ length: 12 }, (_, index) => [
     `DYN-${String(index + 81).padStart(3, "0")}`,
@@ -78,6 +78,17 @@ test("the checked-in manifest validates all 12 public assets and immutable SKUs"
   assert.deepEqual(
     SHOP_CATALOGUE_MANIFEST.products.map((product) => product.sku),
     Array.from({ length: 12 }, (_, index) => `JUW-${String(index + 1).padStart(3, "0")}`),
+  );
+  const salmon = SHOP_CATALOGUE_MANIFEST.products.find((product) => product.sku === "JUW-006");
+  assert.ok(salmon);
+  assert.deepEqual(salmon.modelAnchor, { id: "lulu-v3" });
+  assert.deepEqual(
+    salmon.media.filter((media) => media.slot.startsWith("MODEL_")),
+    [{
+      slot: "MODEL_FRONT",
+      src: "/shop/products/salmon-camp-shirt/04-model-front.webp",
+      modelAnchorId: "lulu-v3",
+    }],
   );
 });
 

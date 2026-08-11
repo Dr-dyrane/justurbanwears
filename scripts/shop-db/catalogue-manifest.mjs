@@ -11,6 +11,7 @@ const V3_MODEL_FRONT_SLUGS = new Set([
   "indigo-workshirt",
   "moss-square-knit",
   "cocoa-pleat-trouser",
+  "salmon-camp-shirt",
 ]);
 const MODEL_MEDIA_SLOTS = new Set([
   "MODEL_FRONT",
@@ -72,7 +73,7 @@ function presentation(product) {
  */
 export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
   schemaVersion: 2,
-  revision: "2026-08-11-catalogue-04",
+  revision: "2026-08-11-catalogue-05",
   products: Object.freeze([
     presentation({
       slug: "coral-drift-dress",

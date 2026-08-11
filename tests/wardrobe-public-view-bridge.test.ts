@@ -249,6 +249,44 @@ test("v9 promotes Coral and Indigo fronts to V3 without resetting operator edits
   );
 });
 
+test("v10 promotes the Salmon real-source front to V3 without inventing a back", () => {
+  const salmon = WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS.find(
+    (product) => product.slug === "salmon-camp-shirt",
+  );
+  assert.ok(salmon);
+  const legacy = {
+    ...salmon,
+    name: "Operator Salmon title",
+    price: 17100,
+    note: "Operator Salmon note.",
+    modelAnchor: { id: "lulu-v2", src: "/shop/model/lulu-v2-approved.png" },
+    media: salmon.media.map(({ slot, src }) => ({
+      slot,
+      src,
+      ...(slot === "MODEL_FRONT" ? { modelAnchorId: "lulu-v2" } : {}),
+    })),
+  };
+  const parsed = parseStoredWardrobePublicView(JSON.stringify({
+    version: 10,
+    data: [legacy],
+    managedSlugs: [salmon.slug],
+  }));
+
+  assert.equal(parsed.products.length, 1);
+  assert.equal(parsed.products[0].name, "Operator Salmon title");
+  assert.equal(parsed.products[0].price, 17100);
+  assert.equal(parsed.products[0].note, "Operator Salmon note.");
+  assert.deepEqual(parsed.products[0].modelAnchor, { id: "lulu-v3" });
+  assert.deepEqual(
+    parsed.products[0].media.filter((frame) => frame.slot.startsWith("MODEL_")),
+    [{
+      slot: "MODEL_FRONT",
+      src: "/shop/products/salmon-camp-shirt/04-model-front.webp",
+      modelAnchorId: "lulu-v3",
+    }],
+  );
+});
+
 test("Studio holds the twelve saleable wardrobe rows and promotes the six former drafts in place", () => {
   const seeded = mergeWardrobeAuthoritySeeds(createEmptyStudioSnapshot());
   assert.equal(seeded.garments.length, 12);

@@ -44,7 +44,7 @@ const expectedApprovals = [
     slug: "salmon-camp-shirt",
     width: 972,
     height: 1619,
-    sha256: "048fba20e31e6fd092315bd042b161ba559a011ae4b12b72be88ac547325e1ac",
+    sha256: "afb3e4c0e804799a58ed11d87d46b3dd0fcca26c2cdd0323b577d8d3d25e0bda",
   },
   {
     slug: "blush-scoop-mini-dress",
@@ -122,6 +122,7 @@ test("publishes only identity-cleared model fronts with their reviewed bytes", (
         "indigo-workshirt",
         "moss-square-knit",
         "cocoa-pleat-trouser",
+        "salmon-camp-shirt",
       ].includes(expected.slug)
         ? "lulu-v3"
         : "lulu-v2",
@@ -131,10 +132,18 @@ test("publishes only identity-cleared model fronts with their reviewed bytes", (
 
     const assetPath = join(process.cwd(), "public", entry.tryout.frame.src.replace(/^\/+/, ""));
     assert.equal(existsSync(assetPath), true, `${entry.tryout.frame.src} must exist`);
+    const body = readFileSync(assetPath);
     assert.equal(
-      createHash("sha256").update(readFileSync(assetPath)).digest("hex"),
+      createHash("sha256").update(body).digest("hex"),
       expected.sha256,
     );
+    for (const metadataChunk of ["EXIF", "XMP ", "ICCP"]) {
+      assert.equal(
+        body.indexOf(Buffer.from(metadataChunk)),
+        -1,
+        `${entry.tryout.frame.src} must not expose ${metadataChunk.trim()} metadata`,
+      );
+    }
   }
 });
 
@@ -158,6 +167,7 @@ test("appends only approved Lulu views to the main product gallery", () => {
           "indigo-workshirt",
           "moss-square-knit",
           "cocoa-pleat-trouser",
+          "salmon-camp-shirt",
         ].includes(product.slug)
           ? "lulu-v3"
           : "lulu-v2",

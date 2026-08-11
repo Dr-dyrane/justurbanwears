@@ -27,6 +27,7 @@ export const WARDROBE_APPROVED_V3_MODEL_FRONT_SLUGS = Object.freeze([
   "indigo-workshirt",
   "moss-square-knit",
   "cocoa-pleat-trouser",
+  "salmon-camp-shirt",
 ] as const);
 
 export const WARDROBE_APPROVED_MODEL_FRONT_SLUGS = Object.freeze([

@@ -193,6 +193,7 @@ test("server-renders product studies plus only identity-cleared model views", as
       "indigo-workshirt",
       "moss-square-knit",
       "cocoa-pleat-trouser",
+      "salmon-camp-shirt",
     ].includes(slugs[index])
       ? "lulu-v3"
       : "lulu-v2";
