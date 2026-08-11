@@ -108,6 +108,13 @@ const approvedSupplementalSources = new Map<string, readonly string[]>([
     ["/shop/products/sage-open-back-high-slit-maxi-dress/05-model-rear-three-quarter.webp"],
   ],
   [
+    "cocoa-cowl-gathered-midi-dress",
+    [
+      "/shop/products/cocoa-cowl-gathered-midi-dress/07-model-left-profile.webp",
+      "/shop/products/cocoa-cowl-gathered-midi-dress/05-model-rear-three-quarter.webp",
+    ],
+  ],
+  [
     "ivory-rib-knit-fitted-midi-dress",
     ["/shop/products/ivory-rib-knit-fitted-midi-dress/07-model-left-profile.webp"],
   ],
@@ -204,6 +211,7 @@ test("appends only approved Lulu views to the main product gallery", () => {
         src,
         modelAnchorId: [
           "sage-open-back-high-slit-maxi-dress",
+          "cocoa-cowl-gathered-midi-dress",
           "ivory-rib-knit-fitted-midi-dress",
           "teal-draped-mini-set",
         ].includes(product.slug) ? "lulu-v3" : "lulu-v2",

@@ -1,9 +1,63 @@
 {
   "schemaVersion": 1,
-  "catalogueRevision": "2026-08-11-catalogue-08",
-  "catalogueChecksum": "909a3209574cddaccafa89c29a1770698786772c996476dafb0ff3c975673d61",
-  "cataloguePresentationChecksum": "47d4917ef88cc43d49cfc62aa7c32b8bac1042cc08391a9b619ff693e2b33f61",
+  "catalogueRevision": "2026-08-11-catalogue-09",
+  "catalogueChecksum": "c7e8d47034bb8a619961a8d1302b170bcccd089b02a1c0a982094e0e68de0909",
+  "cataloguePresentationChecksum": "0a6d55ad41c444bb6290ecd71fe9b3c3bb884fc25c6bf3d4a7a4588db914b774",
   "assets": [
+    {
+      "sourcePath": "/shop/products/cocoa-cowl-gathered-midi-dress/01-garment-front.webp",
+      "pathname": "shop/catalogue/c66e5a9198c16bd64dc572ae3efdc65d6063de5781a74d4ab681586cf3bea2ae/products/cocoa-cowl-gathered-midi-dress/01-garment-front.webp",
+      "sha256": "c66e5a9198c16bd64dc572ae3efdc65d6063de5781a74d4ab681586cf3bea2ae",
+      "size": 43756,
+      "contentType": "image/webp",
+      "width": 1122,
+      "height": 1402
+    },
+    {
+      "sourcePath": "/shop/products/cocoa-cowl-gathered-midi-dress/02-garment-back.webp",
+      "pathname": "shop/catalogue/3970f8e8b1069824afced84a047f23fff594ad65bed83f92dd54a17b5cebb4ae/products/cocoa-cowl-gathered-midi-dress/02-garment-back.webp",
+      "sha256": "3970f8e8b1069824afced84a047f23fff594ad65bed83f92dd54a17b5cebb4ae",
+      "size": 39500,
+      "contentType": "image/webp",
+      "width": 1122,
+      "height": 1402
+    },
+    {
+      "sourcePath": "/shop/products/cocoa-cowl-gathered-midi-dress/03-mannequin-front.webp",
+      "pathname": "shop/catalogue/22290498a41548c730465782f6b414c53c2db15e82c3c51b7d43a6f5a7528166/products/cocoa-cowl-gathered-midi-dress/03-mannequin-front.webp",
+      "sha256": "22290498a41548c730465782f6b414c53c2db15e82c3c51b7d43a6f5a7528166",
+      "size": 38814,
+      "contentType": "image/webp",
+      "width": 1122,
+      "height": 1402
+    },
+    {
+      "sourcePath": "/shop/products/cocoa-cowl-gathered-midi-dress/05-model-rear-three-quarter.webp",
+      "pathname": "shop/catalogue/438d45b6eb6c10ba43e5db611cb1dd4eb45ba34b0cfe2423f3a30727db0f968b/products/cocoa-cowl-gathered-midi-dress/05-model-rear-three-quarter.webp",
+      "sha256": "438d45b6eb6c10ba43e5db611cb1dd4eb45ba34b0cfe2423f3a30727db0f968b",
+      "size": 65228,
+      "contentType": "image/webp",
+      "width": 972,
+      "height": 1728
+    },
+    {
+      "sourcePath": "/shop/products/cocoa-cowl-gathered-midi-dress/06-fabric-detail.webp",
+      "pathname": "shop/catalogue/6100fa65258b13aaded3e60441bb75c238523250a52ba1c76fa847f033f394e4/products/cocoa-cowl-gathered-midi-dress/06-fabric-detail.webp",
+      "sha256": "6100fa65258b13aaded3e60441bb75c238523250a52ba1c76fa847f033f394e4",
+      "size": 50980,
+      "contentType": "image/webp",
+      "width": 1122,
+      "height": 1402
+    },
+    {
+      "sourcePath": "/shop/products/cocoa-cowl-gathered-midi-dress/07-model-left-profile.webp",
+      "pathname": "shop/catalogue/2030950a16cc5f193f7fe127157744a9f1a11a56ddb2c5ee49387bcffc8a161b/products/cocoa-cowl-gathered-midi-dress/07-model-left-profile.webp",
+      "sha256": "2030950a16cc5f193f7fe127157744a9f1a11a56ddb2c5ee49387bcffc8a161b",
+      "size": 68346,
+      "contentType": "image/webp",
+      "width": 972,
+      "height": 1728
+    },
     {
       "sourcePath": "/shop/products/ivory-rib-knit-fitted-midi-dress/01-garment-front.webp",
       "pathname": "shop/catalogue/a974591f391a103cfc91a561d0455bd3aaa3d84f9e66296d2f0c32ec35cc04f3/products/ivory-rib-knit-fitted-midi-dress/01-garment-front.webp",

@@ -18,6 +18,7 @@ const V3_MODEL_FRONT_SLUGS = new Set([
 const V3_MODEL_SUPPLEMENTAL_SLUGS = new Set([
   "teal-draped-mini-set",
   "sage-open-back-high-slit-maxi-dress",
+  "cocoa-cowl-gathered-midi-dress",
   "ivory-rib-knit-fitted-midi-dress",
 ]);
 const MODEL_MEDIA_SLOTS = new Set([
@@ -86,7 +87,7 @@ function presentation(product) {
  */
 export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
   schemaVersion: 2,
-  revision: "2026-08-11-catalogue-08",
+  revision: "2026-08-11-catalogue-09",
   products: Object.freeze([
     presentation({
       slug: "coral-drift-dress",
@@ -391,6 +392,26 @@ export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
       details: ["Round neckline", "Tied oval open back", "Side ruching", "High side slit"],
       measurements: [],
       mediaSlots: ["MODEL_FRONT", "CONSTRUCTION_DETAIL", "MODEL_REAR_THREE_QUARTER"],
+    }),
+    presentation({
+      slug: "cocoa-cowl-gathered-midi-dress",
+      sku: "JUW-015",
+      name: "Cocoa Cowl Gathered Midi Dress",
+      category: "Dresses",
+      price: 24500,
+      taggedSize: "Size on request",
+      fit: "Measurements confirmed before payment",
+      condition: "Excellent · real-worn wardrobe piece",
+      colour: "Cocoa taupe",
+      availability: "AVAILABLE",
+      drop: "Drop 01",
+      tone: "cocoa",
+      silhouette: "dress",
+      note: "A cocoa-taupe midi dress with a softly draped cowl front and gathered waist.",
+      story: "A quiet cocoa stretch line softened by a draped neckline and subtle right-waist gathering.",
+      details: ["Softly draped cowl neckline", "Subtle right-waist gathering", "Close long silhouette", "Smooth stretch jersey"],
+      measurements: [],
+      mediaSlots: ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
     }),
     presentation({
       slug: "ivory-rib-knit-fitted-midi-dress",

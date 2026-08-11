@@ -29,6 +29,8 @@ interface ApprovedProductView {
   readonly slot: "MODEL_LEFT_PROFILE" | "MODEL_REAR_THREE_QUARTER" | "MODEL_REAR_MIRROR" | "MODEL_DETAIL";
   readonly src: string;
   readonly sha256: string;
+  readonly width?: number;
+  readonly height?: number;
 }
 
 interface ApprovedProductMedia {
@@ -158,6 +160,26 @@ const approvedProducts: readonly ApprovedProductMedia[] = [
     ],
   },
   {
+    slug: "cocoa-cowl-gathered-midi-dress",
+    hasFront: false,
+    views: [
+      {
+        slot: "MODEL_LEFT_PROFILE",
+        src: "/shop/products/cocoa-cowl-gathered-midi-dress/07-model-left-profile.webp",
+        sha256: "2030950a16cc5f193f7fe127157744a9f1a11a56ddb2c5ee49387bcffc8a161b",
+        width: 972,
+        height: 1728,
+      },
+      {
+        slot: "MODEL_REAR_THREE_QUARTER",
+        src: "/shop/products/cocoa-cowl-gathered-midi-dress/05-model-rear-three-quarter.webp",
+        sha256: "438d45b6eb6c10ba43e5db611cb1dd4eb45ba34b0cfe2423f3a30727db0f968b",
+        width: 972,
+        height: 1728,
+      },
+    ],
+  },
+  {
     slug: "ivory-rib-knit-fitted-midi-dress",
     hasFront: false,
     views: [
@@ -170,15 +192,15 @@ const approvedProducts: readonly ApprovedProductMedia[] = [
   },
 ] as const;
 
-test("publishes cleared supplemental views as metadata-free 972 × 1619 WebPs", async () => {
+test("publishes cleared supplemental views as metadata-free exact WebPs", async () => {
   for (const view of approvedProducts.flatMap((product) => product.views)) {
     const path = join(process.cwd(), "public", view.src.replace(/^\/+/, ""));
     const bytes = readFileSync(path);
     const metadata = await readImage(bytes).metadata();
 
     assert.equal(metadata.format, "webp");
-    assert.equal(metadata.width, 972);
-    assert.equal(metadata.height, 1619);
+    assert.equal(metadata.width, view.width ?? 972);
+    assert.equal(metadata.height, view.height ?? 1619);
     assert.equal(metadata.exif, undefined);
     assert.equal(metadata.icc, undefined);
     assert.equal(metadata.xmp, undefined);
@@ -255,14 +277,20 @@ test("orders product media, an approved front when present, then supplemental Lu
           if (view.slot === "MODEL_LEFT_PROFILE") {
             return {
               view: "side",
-              anchor: approved.slug === "ivory-rib-knit-fitted-midi-dress" ? "lulu-v3" : "lulu-v2",
+              anchor: [
+                "cocoa-cowl-gathered-midi-dress",
+                "ivory-rib-knit-fitted-midi-dress",
+              ].includes(approved.slug) ? "lulu-v3" : "lulu-v2",
               label: "On Lulu · left profile",
             };
           }
           if (view.slot === "MODEL_REAR_THREE_QUARTER") {
             return {
               view: "three-quarter",
-              anchor: approved.slug === "sage-open-back-high-slit-maxi-dress" ? "lulu-v3" : "lulu-v2",
+              anchor: [
+                "cocoa-cowl-gathered-midi-dress",
+                "sage-open-back-high-slit-maxi-dress",
+              ].includes(approved.slug) ? "lulu-v3" : "lulu-v2",
               label: "On Lulu · right rear three-quarter",
             };
           }
@@ -281,7 +309,7 @@ test("orders product media, an approved front when present, then supplemental Lu
 });
 
 test("migrates stored v5 supplemental views without resetting operator edits", () => {
-  assert.equal(WARDROBE_PUBLIC_VIEW_SCHEMA_VERSION, 14);
+  assert.equal(WARDROBE_PUBLIC_VIEW_SCHEMA_VERSION, 15);
 
   for (const [index, approved] of approvedProducts.filter(
     (product) => product.views.length > 0,
@@ -316,6 +344,7 @@ test("migrates stored v5 supplemental views without resetting operator edits", (
         src,
         modelAnchorId: [
           "sage-open-back-high-slit-maxi-dress",
+          "cocoa-cowl-gathered-midi-dress",
           "ivory-rib-knit-fitted-midi-dress",
           "teal-draped-mini-set",
         ].includes(approved.slug)

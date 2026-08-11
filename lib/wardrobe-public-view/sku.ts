@@ -13,6 +13,7 @@ const LEGACY_CATALOGUE_SKU_ENTRIES = [
   ["DYN-092", "JUW-012"],
   ["DYN-093", "JUW-013"],
   ["DYN-094", "JUW-014"],
+  ["DYN-095", "JUW-015"],
   ["DYN-096", "JUW-016"],
 ] as const;
 

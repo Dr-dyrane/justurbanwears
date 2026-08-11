@@ -25,6 +25,7 @@ const LEGACY_AUTHORITY = new Map<
   ["JUW-012", { id: "wardrobe-reviewed-draft-006", skus: ["DYN-092", "REVIEW-ABSTRACT-STRAPLESS-006"] }],
   ["JUW-013", { id: "wardrobe-private-product-juw-013", skus: ["DYN-093"] }],
   ["JUW-014", { id: "wardrobe-private-draft-juw-014", skus: ["DYN-094"] }],
+  ["JUW-015", { id: "wardrobe-private-product-juw-015", skus: ["DYN-095"] }],
   ["JUW-016", { id: "wardrobe-private-draft-juw-016", skus: ["DYN-096"] }],
 ] as const);
 

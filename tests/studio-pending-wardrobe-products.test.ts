@@ -22,7 +22,7 @@ const expected = new Map<string, {
   missing: readonly string[];
 }>([
   ["JUW-013", { price: 24500, category: "Set", missing: [] }],
-  ["JUW-015", { price: 24500, category: "Dress", missing: ["GARMENT_FRONT", "GARMENT_BACK", "FABRIC_DETAIL"] }],
+  ["JUW-015", { price: 24500, category: "Dress", missing: [] }],
   ["JUW-017", { price: 24500, category: "Set", missing: ["GARMENT_FRONT", "GARMENT_BACK", "FABRIC_DETAIL"] }],
   ["JUW-018", { price: 22000, category: "Dress", missing: ["GARMENT_FRONT", "GARMENT_BACK", "FABRIC_DETAIL"] }],
   ["JUW-019", { price: 24500, category: "Dress", missing: ["GARMENT_FRONT", "GARMENT_BACK"] }],
@@ -98,19 +98,26 @@ test("seeds approved business facts while media remains the only readiness gap",
   assert.doesNotMatch(serialized, /storage\/|sha-?256|prompt|provider|canon\/|evidence|identity metric/iu);
 });
 
-test("keeps JUW-015 approved model angles distinct from missing product captures", () => {
+test("promotes JUW-015 only after product captures and approved model angles are complete", () => {
   const contract = PENDING_WARDROBE_PRODUCT_CONTRACTS.find(({ sku }) => sku === "JUW-015");
   assert.ok(contract);
-  assert.deepEqual(contract.approvedViews, ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"]);
-  assert.deepEqual(contract.missingViews, ["GARMENT_FRONT", "GARMENT_BACK", "FABRIC_DETAIL"]);
-  assert.deepEqual(contract.garment.references, []);
-  assert.equal(contract.garment.mediaState, "DRAFT");
+  assert.deepEqual(contract.approvedViews, [
+    "GARMENT_FRONT",
+    "GARMENT_BACK",
+    "MANNEQUIN_FRONT",
+    "FABRIC_DETAIL",
+    "MODEL_LEFT_PROFILE",
+    "MODEL_REAR_THREE_QUARTER",
+  ]);
+  assert.deepEqual(contract.missingViews, []);
+  assert.deepEqual(contract.garment.references.map(({ view }) => view), ["FRONT", "BACK", "DETAIL"]);
+  assert.equal(contract.garment.mediaState, "READY");
 
   const seeded = mergeWardrobeAuthoritySeeds(createEmptyStudioSnapshot());
   const garment = seeded.garments.find(({ sku }) => sku === "JUW-015");
   assert.ok(garment);
-  assert.equal(seeded.listings.some(({ garmentId }) => garmentId === garment.id), false);
-  assert.equal(selectWardrobePublicView(seeded).some(({ sku }) => sku === "JUW-015"), false);
+  assert.equal(seeded.listings.some(({ garmentId }) => garmentId === garment.id), true);
+  assert.equal(selectWardrobePublicView(seeded).some(({ sku }) => sku === "JUW-015"), true);
 });
 
 test("admits JUW-017's real Lulu front while unresolved product construction stays explicit", async () => {
