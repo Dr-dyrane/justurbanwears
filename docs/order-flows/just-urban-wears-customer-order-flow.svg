@@ -1,0 +1,135 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="2200" viewBox="0 0 1600 2200" role="img" aria-labelledby="title description">
+  <title id="title">Just Urban Wears customer order flow</title>
+  <desc id="description">Eight-step customer journey from discovering a piece to delivery or Studio pickup, using the current manual WhatsApp handoff.</desc>
+  <defs>
+    <linearGradient id="customer-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#fffaf6"/>
+      <stop offset="0.58" stop-color="#f7efea"/>
+      <stop offset="1" stop-color="#efe9e3"/>
+    </linearGradient>
+    <linearGradient id="customer-accent" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f59886"/>
+      <stop offset="1" stop-color="#dd6042"/>
+    </linearGradient>
+    <filter id="customer-shadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="14" stdDeviation="18" flood-color="#5a3225" flood-opacity="0.10"/>
+    </filter>
+    <style>
+      .customer-brand { font: 700 24px Arial, Helvetica, sans-serif; letter-spacing: 5px; fill: #a33e2b; }
+      .customer-title { font: 700 78px Arial, Helvetica, sans-serif; letter-spacing: -2px; fill: #211713; }
+      .customer-subtitle { font: 400 30px Arial, Helvetica, sans-serif; fill: #6f5a50; }
+      .customer-step-title { font: 700 34px Arial, Helvetica, sans-serif; fill: #211713; }
+      .customer-step-copy { font: 400 24px Arial, Helvetica, sans-serif; fill: #6f5a50; }
+      .customer-number { font: 700 28px Arial, Helvetica, sans-serif; fill: #fffaf6; text-anchor: middle; dominant-baseline: middle; }
+      .customer-tag { font: 700 17px Arial, Helvetica, sans-serif; letter-spacing: 1.6px; fill: #a33e2b; text-anchor: middle; }
+      .customer-note-title { font: 700 25px Arial, Helvetica, sans-serif; fill: #fffaf6; }
+      .customer-note-copy { font: 400 22px Arial, Helvetica, sans-serif; fill: #f8ddd4; }
+    </style>
+  </defs>
+
+  <rect width="1600" height="2200" fill="url(#customer-bg)"/>
+  <circle cx="1470" cy="95" r="260" fill="#f5c4b5" opacity="0.32"/>
+  <circle cx="1380" cy="185" r="115" fill="#f59886" opacity="0.16"/>
+
+  <rect x="100" y="82" width="348" height="58" rx="29" fill="#f6d2c6"/>
+  <text x="132" y="120" class="customer-brand">JUST URBAN WEARS</text>
+  <text x="100" y="225" class="customer-title">How your order works</text>
+  <text x="100" y="278" class="customer-subtitle">From finding a one-off piece to delivery or Studio pickup.</text>
+  <line x1="100" y1="322" x2="1500" y2="322" stroke="#decfc6" stroke-width="2"/>
+
+  <line x1="166" y1="426" x2="166" y2="1836" stroke="#dd6042" stroke-width="6" stroke-linecap="round" opacity="0.42"/>
+
+  <g filter="url(#customer-shadow)">
+    <rect x="246" y="354" width="1254" height="164" rx="34" fill="#fffdfb"/>
+    <rect x="1212" y="382" width="238" height="42" rx="21" fill="#fae4dc"/>
+  </g>
+  <circle cx="166" cy="436" r="49" fill="url(#customer-accent)"/>
+  <text x="166" y="438" class="customer-number">01</text>
+  <text x="298" y="412" class="customer-step-title">Find a piece you love</text>
+  <text x="298" y="458" class="customer-step-copy">Browse the drop or search. Check photos, condition,</text>
+  <text x="298" y="491" class="customer-step-copy">measurements, tagged size, price and availability.</text>
+  <text x="1331" y="409" class="customer-tag">DISCOVER</text>
+
+  <g filter="url(#customer-shadow)">
+    <rect x="246" y="554" width="1254" height="164" rx="34" fill="#fffdfb"/>
+    <rect x="1192" y="582" width="258" height="42" rx="21" fill="#fae4dc"/>
+  </g>
+  <circle cx="166" cy="636" r="49" fill="url(#customer-accent)"/>
+  <text x="166" y="638" class="customer-number">02</text>
+  <text x="298" y="612" class="customer-step-title">Add it to your bag</text>
+  <text x="298" y="658" class="customer-step-copy">Each piece is one-of-one. Adding it to your bag keeps</text>
+  <text x="298" y="691" class="customer-step-copy">your choice together, but does not reserve the piece.</text>
+  <text x="1321" y="609" class="customer-tag">NOT RESERVED</text>
+
+  <g filter="url(#customer-shadow)">
+    <rect x="246" y="754" width="1254" height="164" rx="34" fill="#fffdfb"/>
+    <rect x="1212" y="782" width="238" height="42" rx="21" fill="#fae4dc"/>
+  </g>
+  <circle cx="166" cy="836" r="49" fill="url(#customer-accent)"/>
+  <text x="166" y="838" class="customer-number">03</text>
+  <text x="298" y="812" class="customer-step-title">Complete checkout</text>
+  <text x="298" y="858" class="customer-step-copy">Add your contact details, choose Lagos delivery,</text>
+  <text x="298" y="891" class="customer-step-copy">nationwide delivery or Studio pickup, then review the total.</text>
+  <text x="1331" y="809" class="customer-tag">DETAILS</text>
+
+  <g filter="url(#customer-shadow)">
+    <rect x="246" y="954" width="1254" height="164" rx="34" fill="#fffdfb"/>
+    <rect x="1165" y="982" width="285" height="42" rx="21" fill="#fae4dc"/>
+  </g>
+  <circle cx="166" cy="1036" r="49" fill="url(#customer-accent)"/>
+  <text x="166" y="1038" class="customer-number">04</text>
+  <text x="298" y="1012" class="customer-step-title">Continue on WhatsApp</text>
+  <text x="298" y="1058" class="customer-step-copy">Your checkout is saved on this device and WhatsApp opens</text>
+  <text x="298" y="1091" class="customer-step-copy">with your complete order message ready for review.</text>
+  <text x="1307" y="1009" class="customer-tag">SAVED LOCALLY</text>
+
+  <g filter="url(#customer-shadow)">
+    <rect x="246" y="1154" width="1254" height="164" rx="34" fill="#fff7f3" stroke="#e78351" stroke-width="3"/>
+    <rect x="1176" y="1182" width="274" height="42" rx="21" fill="#dd6042"/>
+  </g>
+  <circle cx="166" cy="1236" r="49" fill="#dd6042"/>
+  <text x="166" y="1238" class="customer-number">05</text>
+  <text x="298" y="1212" class="customer-step-title">Review, then tap Send</text>
+  <text x="298" y="1258" class="customer-step-copy">Check the items, total and delivery details. Lulu receives</text>
+  <text x="298" y="1291" class="customer-step-copy">nothing until you tap Send inside WhatsApp.</text>
+  <text x="1313" y="1209" style="font:700 17px Arial;letter-spacing:1.6px;fill:#fffaf6;text-anchor:middle">IMPORTANT</text>
+
+  <g filter="url(#customer-shadow)">
+    <rect x="246" y="1354" width="1254" height="164" rx="34" fill="#fffdfb"/>
+    <rect x="1134" y="1382" width="316" height="42" rx="21" fill="#fae4dc"/>
+  </g>
+  <circle cx="166" cy="1436" r="49" fill="url(#customer-accent)"/>
+  <text x="166" y="1438" class="customer-number">06</text>
+  <text x="298" y="1412" class="customer-step-title">Confirm availability and pay</text>
+  <text x="298" y="1458" class="customer-step-copy">Lulu confirms the piece and sends payment instructions.</text>
+  <text x="298" y="1491" class="customer-step-copy">Pay outside the website and send the reference in WhatsApp.</text>
+  <text x="1292" y="1409" class="customer-tag">PAYMENT REQUIRED</text>
+
+  <g filter="url(#customer-shadow)">
+    <rect x="246" y="1554" width="1254" height="164" rx="34" fill="#fffdfb"/>
+    <rect x="1197" y="1582" width="253" height="42" rx="21" fill="#fae4dc"/>
+  </g>
+  <circle cx="166" cy="1636" r="49" fill="url(#customer-accent)"/>
+  <text x="166" y="1638" class="customer-number">07</text>
+  <text x="298" y="1612" class="customer-step-title">Your piece is prepared</text>
+  <text x="298" y="1658" class="customer-step-copy">After payment is verified, Lulu quality-checks, prepares</text>
+  <text x="298" y="1691" class="customer-step-copy">and packs your piece for its handoff.</text>
+  <text x="1323" y="1609" class="customer-tag">PREPARING</text>
+
+  <g filter="url(#customer-shadow)">
+    <rect x="246" y="1754" width="1254" height="164" rx="34" fill="#fffdfb"/>
+    <rect x="1225" y="1782" width="225" height="42" rx="21" fill="#fae4dc"/>
+  </g>
+  <circle cx="166" cy="1836" r="49" fill="url(#customer-accent)"/>
+  <text x="166" y="1838" class="customer-number">08</text>
+  <text x="298" y="1812" class="customer-step-title">Delivery or Studio pickup</text>
+  <text x="298" y="1858" class="customer-step-copy">Receive dispatch updates in WhatsApp or agree a pickup</text>
+  <text x="298" y="1891" class="customer-step-copy">appointment. Your order is complete after handoff.</text>
+  <text x="1337" y="1809" class="customer-tag">COMPLETE</text>
+
+  <rect x="100" y="1992" width="1400" height="132" rx="32" fill="#34231d"/>
+  <circle cx="158" cy="2058" r="27" fill="#dd6042"/>
+  <text x="158" y="2060" class="customer-number" style="font-size:22px">!</text>
+  <text x="211" y="2044" class="customer-note-title">The honest handoff</text>
+  <text x="211" y="2082" class="customer-note-copy">Saved checkout ≠ sent order. Lulu receives your request only after you tap Send in WhatsApp.</text>
+</svg>

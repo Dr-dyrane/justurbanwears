@@ -1,0 +1,144 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="2400" viewBox="0 0 1600 2400" role="img" aria-labelledby="title description">
+  <title id="title">Lulu order operations flow</title>
+  <desc id="description">Nine-step manual operator workflow from receiving a WhatsApp order request to closing delivery, cancellation, or return.</desc>
+  <defs>
+    <linearGradient id="lulu-bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#f4f1ed"/>
+      <stop offset="0.65" stop-color="#efede8"/>
+      <stop offset="1" stop-color="#f7f3ef"/>
+    </linearGradient>
+    <linearGradient id="lulu-accent" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#73887c"/>
+      <stop offset="1" stop-color="#4e665a"/>
+    </linearGradient>
+    <filter id="lulu-shadow" x="-20%" y="-20%" width="140%" height="150%">
+      <feDropShadow dx="0" dy="14" stdDeviation="18" flood-color="#211713" flood-opacity="0.10"/>
+    </filter>
+    <style>
+      .lulu-brand { font: 700 24px Arial, Helvetica, sans-serif; letter-spacing: 5px; fill: #a33e2b; }
+      .lulu-title { font: 700 78px Arial, Helvetica, sans-serif; letter-spacing: -2px; fill: #211713; }
+      .lulu-subtitle { font: 400 30px Arial, Helvetica, sans-serif; fill: #625b56; }
+      .lulu-step-title { font: 700 33px Arial, Helvetica, sans-serif; fill: #211713; }
+      .lulu-step-copy { font: 400 23px Arial, Helvetica, sans-serif; fill: #625b56; }
+      .lulu-number { font: 700 27px Arial, Helvetica, sans-serif; fill: #fffaf6; text-anchor: middle; dominant-baseline: middle; }
+      .lulu-tag { font: 700 16px Arial, Helvetica, sans-serif; letter-spacing: 1.5px; fill: #405449; text-anchor: middle; }
+      .lulu-note-title { font: 700 25px Arial, Helvetica, sans-serif; fill: #fffaf6; }
+      .lulu-note-copy { font: 400 21px Arial, Helvetica, sans-serif; fill: #e7ded7; }
+    </style>
+  </defs>
+
+  <rect width="1600" height="2400" fill="url(#lulu-bg)"/>
+  <circle cx="1472" cy="88" r="268" fill="#f5c4b5" opacity="0.28"/>
+  <circle cx="1395" cy="185" r="112" fill="#73887c" opacity="0.13"/>
+
+  <rect x="100" y="82" width="348" height="58" rx="29" fill="#f6d2c6"/>
+  <text x="132" y="120" class="lulu-brand">JUST URBAN WEARS</text>
+  <text x="100" y="225" class="lulu-title">Lulu’s order flow</text>
+  <text x="100" y="278" class="lulu-subtitle">What to do from a new WhatsApp request to a completed handoff.</text>
+  <line x1="100" y1="322" x2="1500" y2="322" stroke="#d4cec8" stroke-width="2"/>
+
+  <line x1="166" y1="419" x2="166" y2="2099" stroke="#5e756a" stroke-width="6" stroke-linecap="round" opacity="0.42"/>
+
+  <g filter="url(#lulu-shadow)">
+    <rect x="246" y="350" width="1254" height="150" rx="32" fill="#fffdfb"/>
+    <rect x="1250" y="378" width="200" height="40" rx="20" fill="#e5ece8"/>
+  </g>
+  <circle cx="166" cy="425" r="48" fill="url(#lulu-accent)"/>
+  <text x="166" y="427" class="lulu-number">01</text>
+  <text x="298" y="405" class="lulu-step-title">Receive the WhatsApp request</text>
+  <text x="298" y="449" class="lulu-step-copy">Check the reference, item, SKU, size, total, customer</text>
+  <text x="298" y="480" class="lulu-step-copy">contact and delivery or pickup choice.</text>
+  <text x="1350" y="405" class="lulu-tag">NEW</text>
+
+  <g filter="url(#lulu-shadow)">
+    <rect x="246" y="560" width="1254" height="150" rx="32" fill="#fffdfb"/>
+    <rect x="1230" y="588" width="220" height="40" rx="20" fill="#e5ece8"/>
+  </g>
+  <circle cx="166" cy="635" r="48" fill="url(#lulu-accent)"/>
+  <text x="166" y="637" class="lulu-number">02</text>
+  <text x="298" y="615" class="lulu-step-title">Verify the piece</text>
+  <text x="298" y="659" class="lulu-step-copy">Match the message to the published listing and physical piece.</text>
+  <text x="298" y="690" class="lulu-step-copy">If unavailable, reply before requesting payment.</text>
+  <text x="1340" y="615" class="lulu-tag">VERIFY</text>
+
+  <g filter="url(#lulu-shadow)">
+    <rect x="246" y="770" width="1254" height="150" rx="32" fill="#fffdfb"/>
+    <rect x="1208" y="798" width="242" height="40" rx="20" fill="#e5ece8"/>
+  </g>
+  <circle cx="166" cy="845" r="48" fill="url(#lulu-accent)"/>
+  <text x="166" y="847" class="lulu-number">03</text>
+  <text x="298" y="825" class="lulu-step-title">Reserve the sale in Studio</text>
+  <text x="298" y="869" class="lulu-step-copy">Select Reserve sale. Confirm the listing changes to RESERVED</text>
+  <text x="298" y="900" class="lulu-step-copy">so another buyer is not promised the same one-off piece.</text>
+  <text x="1329" y="825" class="lulu-tag">RESERVED</text>
+
+  <g filter="url(#lulu-shadow)">
+    <rect x="246" y="980" width="1254" height="150" rx="32" fill="#fffdfb"/>
+    <rect x="1132" y="1008" width="318" height="40" rx="20" fill="#f9e1d8"/>
+  </g>
+  <circle cx="166" cy="1055" r="48" fill="#dd6042"/>
+  <text x="166" y="1057" class="lulu-number">04</text>
+  <text x="298" y="1035" class="lulu-step-title">Send payment instructions</text>
+  <text x="298" y="1079" class="lulu-step-copy">Confirm availability, amount, payment method, order reference</text>
+  <text x="298" y="1110" class="lulu-step-copy">and the time allowed to complete payment.</text>
+  <text x="1291" y="1035" style="font:700 16px Arial;letter-spacing:1.5px;fill:#a33e2b;text-anchor:middle">AWAITING PAYMENT</text>
+
+  <g filter="url(#lulu-shadow)">
+    <rect x="246" y="1190" width="1254" height="150" rx="32" fill="#fffdfb"/>
+    <rect x="1240" y="1218" width="210" height="40" rx="20" fill="#e5ece8"/>
+  </g>
+  <circle cx="166" cy="1265" r="48" fill="url(#lulu-accent)"/>
+  <text x="166" y="1267" class="lulu-number">05</text>
+  <text x="298" y="1245" class="lulu-step-title">Verify and confirm payment</text>
+  <text x="298" y="1289" class="lulu-step-copy">Verify the actual payment account and amount—not only a</text>
+  <text x="298" y="1320" class="lulu-step-copy">screenshot—then acknowledge payment in WhatsApp.</text>
+  <text x="1345" y="1245" class="lulu-tag">PAID</text>
+
+  <g filter="url(#lulu-shadow)">
+    <rect x="246" y="1400" width="1254" height="150" rx="32" fill="#fffdfb"/>
+    <rect x="1206" y="1428" width="244" height="40" rx="20" fill="#e5ece8"/>
+  </g>
+  <circle cx="166" cy="1475" r="48" fill="url(#lulu-accent)"/>
+  <text x="166" y="1477" class="lulu-number">06</text>
+  <text x="298" y="1455" class="lulu-step-title">Quality-check and pack</text>
+  <text x="298" y="1499" class="lulu-step-copy">Inspect condition, complete any approved preparation, then</text>
+  <text x="298" y="1530" class="lulu-step-copy">pack the exact piece securely for handoff.</text>
+  <text x="1328" y="1455" class="lulu-tag">PREPARING</text>
+
+  <g filter="url(#lulu-shadow)">
+    <rect x="246" y="1610" width="1254" height="150" rx="32" fill="#fffdfb"/>
+    <rect x="1220" y="1638" width="230" height="40" rx="20" fill="#e5ece8"/>
+  </g>
+  <circle cx="166" cy="1685" r="48" fill="url(#lulu-accent)"/>
+  <text x="166" y="1687" class="lulu-number">07</text>
+  <text x="298" y="1665" class="lulu-step-title">Arrange the handoff</text>
+  <text x="298" y="1709" class="lulu-step-copy">Dispatch and share delivery details, or agree a clear Studio</text>
+  <text x="298" y="1740" class="lulu-step-copy">pickup appointment after payment.</text>
+  <text x="1335" y="1665" class="lulu-tag">READY</text>
+
+  <g filter="url(#lulu-shadow)">
+    <rect x="246" y="1820" width="1254" height="150" rx="32" fill="#fffdfb"/>
+    <rect x="1168" y="1848" width="282" height="40" rx="20" fill="#e5ece8"/>
+  </g>
+  <circle cx="166" cy="1895" r="48" fill="url(#lulu-accent)"/>
+  <text x="166" y="1897" class="lulu-number">08</text>
+  <text x="298" y="1875" class="lulu-step-title">Keep the customer updated</text>
+  <text x="298" y="1919" class="lulu-step-copy">Tell them when payment is confirmed, the piece is ready,</text>
+  <text x="298" y="1950" class="lulu-step-copy">it is dispatched, or pickup timing changes.</text>
+  <text x="1309" y="1875" class="lulu-tag">COMMUNICATE</text>
+
+  <g filter="url(#lulu-shadow)">
+    <rect x="246" y="2030" width="1254" height="150" rx="32" fill="#fffdfb"/>
+    <rect x="1216" y="2058" width="234" height="40" rx="20" fill="#e5ece8"/>
+  </g>
+  <circle cx="166" cy="2105" r="48" fill="url(#lulu-accent)"/>
+  <text x="166" y="2107" class="lulu-number">09</text>
+  <text x="298" y="2085" class="lulu-step-title">Close or resolve the order</text>
+  <text x="298" y="2129" class="lulu-step-copy">Mark sold at the agreed completion point. If cancelled, release</text>
+  <text x="298" y="2160" class="lulu-step-copy">the piece. For returns, inspect and restock to review or write off.</text>
+  <text x="1333" y="2085" class="lulu-tag">COMPLETE</text>
+
+  <rect x="100" y="2250" width="1400" height="118" rx="30" fill="#34231d"/>
+  <text x="150" y="2297" class="lulu-note-title">Today’s operating truth</text>
+  <text x="150" y="2333" class="lulu-note-copy">WhatsApp = customer communication. Studio = manual stock lifecycle. They are not synchronized yet.</text>
+</svg>
