@@ -272,11 +272,17 @@ export const PENDING_WARDROBE_PRODUCT_CONTRACTS: readonly PendingWardrobeProduct
     color: "Plum",
     price: 22000,
     description: "A fitted plum dress with a high round neckline and ruched drawstring sleeves.",
-    note: "The Lulu detail is ready. Capture the full length, product back and one fabric detail before publishing.",
+    note: "The upper-front mannequin view and Lulu detail are ready. Capture the full length, product back and one fabric detail before publishing.",
     visual: "plum",
     approvedViews: ["MANNEQUIN_UPPER_FRONT", "MODEL_DETAIL"],
     missingViews: ["GARMENT_FRONT", "GARMENT_BACK", "FABRIC_DETAIL"],
     publicSafeMedia: [
+      {
+        view: "MANNEQUIN_UPPER_FRONT",
+        src: "/shop/products/plum-ruched-sleeve-fitted-dress/03-mannequin-upper-front.webp",
+        width: 1122,
+        height: 1402,
+      },
       {
         view: "MODEL_DETAIL",
         src: "/shop/products/plum-ruched-sleeve-fitted-dress/08-model-detail.webp",
