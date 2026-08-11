@@ -178,7 +178,11 @@ export const PENDING_WARDROBE_PRODUCT_CONTRACTS: readonly PendingWardrobeProduct
     description: "A coral two-piece pairing a gathered crop top with a close mini skirt.",
     note: "The right rear-three-quarter and construction detail are ready. Capture the direct product front and product back before publishing.",
     visual: "umber",
-    approvedViews: ["MANNEQUIN_RIGHT_REAR_THREE_QUARTER", "CONSTRUCTION_DETAIL"],
+    approvedViews: [
+      "MANNEQUIN_RIGHT_REAR_THREE_QUARTER",
+      "MODEL_REAR_THREE_QUARTER",
+      "CONSTRUCTION_DETAIL",
+    ],
     missingViews: ["GARMENT_FRONT", "GARMENT_BACK"],
   }),
 ]);

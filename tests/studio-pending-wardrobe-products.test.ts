@@ -110,11 +110,12 @@ test("keeps JUW-019 approved upper views distinct from missing full product capt
   assert.equal(selectWardrobePublicView(seeded).some(({ sku }) => sku === "JUW-019"), false);
 });
 
-test("preserves JUW-020 right-rear mannequin truth while direct product views remain pending", () => {
+test("preserves JUW-020 approved rear-three-quarter views while direct product views remain pending", () => {
   const contract = PENDING_WARDROBE_PRODUCT_CONTRACTS.find(({ sku }) => sku === "JUW-020");
   assert.ok(contract);
   assert.deepEqual(contract.approvedViews, [
     "MANNEQUIN_RIGHT_REAR_THREE_QUARTER",
+    "MODEL_REAR_THREE_QUARTER",
     "CONSTRUCTION_DETAIL",
   ]);
   assert.deepEqual(contract.missingViews, ["GARMENT_FRONT", "GARMENT_BACK"]);
