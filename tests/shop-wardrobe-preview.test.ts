@@ -18,22 +18,24 @@ const expectedNames = [
   "Magenta Plunge Ruched Mini Dress",
   "Silver Off-Shoulder Mermaid Dress",
   "Multicolor Abstract Strapless Mini Dress",
+  "Teal Draped Mini Set",
   "Sage Open-Back High-Slit Maxi Dress",
+  "Ivory Rib-Knit Fitted Midi Dress",
 ];
 
-test("the seven wardrobe dresses are saleable Drop 01 rows, not a separate preview catalogue", () => {
+test("the wardrobe pieces are saleable Drop 01 rows, not a separate preview catalogue", () => {
   assert.deepEqual(WARDROBE_DROP_01_PRODUCTS.map((product) => product.name), expectedNames);
   for (const product of WARDROBE_DROP_01_PRODUCTS) {
     assert.equal(product.drop, "Drop 01");
     assert.equal(product.availability, "AVAILABLE");
-    assert.equal(product.category, "Dresses");
+    assert.equal(product.category, product.sku === "JUW-013" ? "Sets" : "Dresses");
     assert.ok(product.price > 0);
     assert.equal(product.taggedSize, "Size on request");
   }
 
   const releaseSlugs = new Set<string>(WARDROBE_DROP_01_PRODUCTS.map((product) => product.slug));
   const saleRows = WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS.filter((product) => releaseSlugs.has(product.slug));
-  assert.equal(saleRows.length, 7);
+  assert.equal(saleRows.length, expectedNames.length);
   assert.deepEqual(saleRows.map((product) => product.slug), WARDROBE_DROP_01_PRODUCTS.map((product) => product.slug));
   for (const product of saleRows) {
     const expectedMedia = [

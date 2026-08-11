@@ -216,8 +216,8 @@ test("writing off a returned sold unit preserves other sellable units", () => {
 });
 
 test("approved wardrobe public-view contracts expose only cleared Lulu views", () => {
-  assert.equal(WARDROBE_PUBLIC_VIEW_PROJECTION_SCHEMA_VERSION, 13);
-  assert.equal(WARDROBE_PUBLIC_VIEW_STORAGE_KEY, "justurban-wears:wardrobe-public-view:v13");
+  assert.equal(WARDROBE_PUBLIC_VIEW_PROJECTION_SCHEMA_VERSION, 14);
+  assert.equal(WARDROBE_PUBLIC_VIEW_STORAGE_KEY, "justurban-wears:wardrobe-public-view:v14");
   const approvedModelFrontSlugs = new Set<string>(WARDROBE_APPROVED_MODEL_FRONT_SLUGS);
   for (const listing of APPROVED_PUBLIC_LISTINGS) {
     const contract = getApprovedPublicListingContract(listing.sku, listing.slug);
@@ -243,7 +243,9 @@ test("approved wardrobe public-view contracts expose only cleared Lulu views", (
           ? "07-model-left-profile.webp"
           : slot === "MODEL_REAR_THREE_QUARTER"
             ? "05-model-rear-three-quarter.webp"
-            : "08-model-detail.webp";
+            : slot === "MODEL_REAR_MIRROR"
+              ? "09-model-rear-mirror.webp"
+              : "08-model-detail.webp";
         return `/shop/products/${listing.slug}/${file}`;
       }),
     ];

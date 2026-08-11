@@ -89,11 +89,11 @@ test("the public Blob release contains only exact manifest media and verifies lo
     SHOP_PUBLIC_MEDIA_PRESENTATION_CHECKSUM,
     cataloguePresentationChecksum(SHOP_CATALOGUE_MANIFEST),
   );
-  assert.equal(plan.length, 79);
+  assert.equal(plan.length, 85);
   assert.equal(SHOP_PUBLIC_MEDIA_ASSETS.length, plan.length);
   assert.equal(
     plan.filter((asset) => asset.sourcePath.startsWith("/shop/products/")).length,
-    78,
+    84,
   );
   assert.equal(
     plan.some((asset) => asset.sourcePath.endsWith("silver-off-shoulder-mermaid-dress/04-model-front.webp")),
@@ -225,7 +225,7 @@ test("an invalid or unavailable Neon snapshot falls back with purchase actions f
   const fallback = await withoutExpectedCatalogueError(() => loadServerShopProducts(async () => {
     throw new Error("synthetic outage");
   }));
-  assert.equal(fallback.length, 14);
+  assert.equal(fallback.length, 15);
   assert.ok(fallback.every((product) => product.availabilityConfirmed === false));
   assert.ok(fallback.flatMap((product) => product.media ?? []).every((item) =>
     isSafeShopProductMediaUrl(item.src, item.src.split("/products/")[1]?.split("/")[0] ?? ""),
@@ -246,7 +246,7 @@ test("an invalid or unavailable Neon snapshot falls back with purchase actions f
     databaseRow(),
     { ...databaseRow(SHOP_CATALOGUE_MANIFEST.products[1]), availability: null },
   ]));
-  assert.equal(partial.length, 14);
+  assert.equal(partial.length, 15);
   assert.ok(partial.every((product) => product.availabilityConfirmed === false));
 });
 

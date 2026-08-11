@@ -26,7 +26,7 @@ const readImage = sharp as unknown as (input: Uint8Array) => {
 };
 
 interface ApprovedProductView {
-  readonly slot: "MODEL_LEFT_PROFILE" | "MODEL_REAR_THREE_QUARTER" | "MODEL_DETAIL";
+  readonly slot: "MODEL_LEFT_PROFILE" | "MODEL_REAR_THREE_QUARTER" | "MODEL_REAR_MIRROR" | "MODEL_DETAIL";
   readonly src: string;
   readonly sha256: string;
 }
@@ -134,6 +134,18 @@ const approvedProducts: readonly ApprovedProductMedia[] = [
     ],
   },
   {
+    slug: "teal-draped-mini-set",
+    hasFront: true,
+    frontSha256: "b4721e8fb3d0a9e97183c1ade8b68a5bfe150a1360bcd5443715b3089552dc3f",
+    views: [
+      {
+        slot: "MODEL_REAR_MIRROR",
+        src: "/shop/products/teal-draped-mini-set/09-model-rear-mirror.webp",
+        sha256: "1d9fa87b1a8ba9cabff1dab38ffd4bae76e98bb59f07a8a0443332f531ac4448",
+      },
+    ],
+  },
+  {
     slug: "sage-open-back-high-slit-maxi-dress",
     hasFront: true,
     frontSha256: "bb8e3576ab3b9679d19a5181e6999ff817057587c2a1fb12588e50957bb067a3",
@@ -231,6 +243,7 @@ test("orders product media, an approved front when present, then supplemental Lu
                 "moss-square-knit",
                 "cocoa-pleat-trouser",
                 "salmon-camp-shirt",
+                "teal-draped-mini-set",
                 "sage-open-back-high-slit-maxi-dress",
               ].includes(approved.slug)
                 ? "lulu-v3"
@@ -253,6 +266,9 @@ test("orders product media, an approved front when present, then supplemental Lu
               label: "On Lulu · right rear three-quarter",
             };
           }
+          if (view.slot === "MODEL_REAR_MIRROR") {
+            return { view: "rear-mirror", anchor: "lulu-v3", label: "On Lulu · rear mirror" };
+          }
           return { view: "detail", anchor: "lulu-v2", label: "On Lulu · styled detail" };
         }),
       ],
@@ -265,7 +281,7 @@ test("orders product media, an approved front when present, then supplemental Lu
 });
 
 test("migrates stored v5 supplemental views without resetting operator edits", () => {
-  assert.equal(WARDROBE_PUBLIC_VIEW_SCHEMA_VERSION, 13);
+  assert.equal(WARDROBE_PUBLIC_VIEW_SCHEMA_VERSION, 14);
 
   for (const [index, approved] of approvedProducts.filter(
     (product) => product.views.length > 0,
@@ -301,6 +317,7 @@ test("migrates stored v5 supplemental views without resetting operator edits", (
         modelAnchorId: [
           "sage-open-back-high-slit-maxi-dress",
           "ivory-rib-knit-fitted-midi-dress",
+          "teal-draped-mini-set",
         ].includes(approved.slug)
           ? "lulu-v3"
           : "lulu-v2",

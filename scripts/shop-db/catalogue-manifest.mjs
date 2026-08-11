@@ -12,9 +12,11 @@ const V3_MODEL_FRONT_SLUGS = new Set([
   "moss-square-knit",
   "cocoa-pleat-trouser",
   "salmon-camp-shirt",
+  "teal-draped-mini-set",
   "sage-open-back-high-slit-maxi-dress",
 ]);
 const V3_MODEL_SUPPLEMENTAL_SLUGS = new Set([
+  "teal-draped-mini-set",
   "sage-open-back-high-slit-maxi-dress",
   "ivory-rib-knit-fitted-midi-dress",
 ]);
@@ -84,7 +86,7 @@ function presentation(product) {
  */
 export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
   schemaVersion: 2,
-  revision: "2026-08-11-catalogue-07",
+  revision: "2026-08-11-catalogue-08",
   products: Object.freeze([
     presentation({
       slug: "coral-drift-dress",
@@ -349,6 +351,26 @@ export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
       details: ["Strapless neckline", "Fitted mini length", "Gathered hip", "Abstract multicolor print"],
       measurements: [],
       mediaSlots: ["MODEL_FRONT"],
+    }),
+    presentation({
+      slug: "teal-draped-mini-set",
+      sku: "JUW-013",
+      name: "Teal Draped Mini Set",
+      category: "Sets",
+      price: 24500,
+      taggedSize: "Size on request",
+      fit: "Measurements confirmed before payment",
+      condition: "Excellent · real-worn wardrobe piece",
+      colour: "Teal",
+      availability: "AVAILABLE",
+      drop: "Drop 01",
+      tone: "indigo",
+      silhouette: "set",
+      note: "A teal two-piece set.",
+      story: "A draped top paired with a close mini skirt.",
+      details: ["Two-piece set"],
+      measurements: [],
+      mediaSlots: ["MODEL_FRONT", "MODEL_REAR_MIRROR"],
     }),
     presentation({
       slug: "sage-open-back-high-slit-maxi-dress",

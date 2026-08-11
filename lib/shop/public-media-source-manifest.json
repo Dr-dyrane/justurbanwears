@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "catalogueRevision": "2026-08-11-catalogue-07",
-  "catalogueChecksum": "6ea433b7d761df987ddbb9f0dd02899994277c671404931594e5af6404b112d7",
-  "cataloguePresentationChecksum": "94bc70c309088ac4a5feeb5fa135047e60c3eba428329203234f41e6e6212b7a",
+  "catalogueRevision": "2026-08-11-catalogue-08",
+  "catalogueChecksum": "909a3209574cddaccafa89c29a1770698786772c996476dafb0ff3c975673d61",
+  "cataloguePresentationChecksum": "47d4917ef88cc43d49cfc62aa7c32b8bac1042cc08391a9b619ff693e2b33f61",
   "assets": [
     {
       "sourcePath": "/shop/products/ivory-rib-knit-fitted-midi-dress/01-garment-front.webp",
@@ -45,6 +45,60 @@
       "pathname": "shop/catalogue/401747a01c6cb15772cc594368440465c370f6dcbf655ec1ad04b53e5dbcf6b0/products/ivory-rib-knit-fitted-midi-dress/07-model-left-profile.webp",
       "sha256": "401747a01c6cb15772cc594368440465c370f6dcbf655ec1ad04b53e5dbcf6b0",
       "size": 186464,
+      "contentType": "image/webp",
+      "width": 972,
+      "height": 1619
+    },
+    {
+      "sourcePath": "/shop/products/teal-draped-mini-set/01-garment-front.webp",
+      "pathname": "shop/catalogue/69dd4a3dd24e4d66bc0acdac9594fc06bf98173f0fb0b318b51ae3bbd53c8168/products/teal-draped-mini-set/01-garment-front.webp",
+      "sha256": "69dd4a3dd24e4d66bc0acdac9594fc06bf98173f0fb0b318b51ae3bbd53c8168",
+      "size": 131216,
+      "contentType": "image/webp",
+      "width": 1122,
+      "height": 1402
+    },
+    {
+      "sourcePath": "/shop/products/teal-draped-mini-set/02-garment-back.webp",
+      "pathname": "shop/catalogue/ca7fb8ba287d7a59a42dbf857ef7d4fa3e3ed1c5743030df8695fd37495089b3/products/teal-draped-mini-set/02-garment-back.webp",
+      "sha256": "ca7fb8ba287d7a59a42dbf857ef7d4fa3e3ed1c5743030df8695fd37495089b3",
+      "size": 97894,
+      "contentType": "image/webp",
+      "width": 1122,
+      "height": 1402
+    },
+    {
+      "sourcePath": "/shop/products/teal-draped-mini-set/03-mannequin-front.webp",
+      "pathname": "shop/catalogue/912ad8d609ca3175dd55350c1775b694cee4827e94a6ce3d299b8ebd0bcc326f/products/teal-draped-mini-set/03-mannequin-front.webp",
+      "sha256": "912ad8d609ca3175dd55350c1775b694cee4827e94a6ce3d299b8ebd0bcc326f",
+      "size": 87074,
+      "contentType": "image/webp",
+      "width": 1122,
+      "height": 1402
+    },
+    {
+      "sourcePath": "/shop/products/teal-draped-mini-set/04-model-front.webp",
+      "pathname": "shop/catalogue/b4721e8fb3d0a9e97183c1ade8b68a5bfe150a1360bcd5443715b3089552dc3f/products/teal-draped-mini-set/04-model-front.webp",
+      "sha256": "b4721e8fb3d0a9e97183c1ade8b68a5bfe150a1360bcd5443715b3089552dc3f",
+      "size": 291234,
+      "contentType": "image/webp",
+      "width": 972,
+      "height": 1619
+    },
+    {
+      "sourcePath": "/shop/products/teal-draped-mini-set/06-fabric-detail.webp",
+      "pathname": "shop/catalogue/c747b0773aed42fc6db574b69eaae574e4d51ec0370cf8b741a5d674b71da2e1/products/teal-draped-mini-set/06-fabric-detail.webp",
+      "sha256": "c747b0773aed42fc6db574b69eaae574e4d51ec0370cf8b741a5d674b71da2e1",
+      "size": 150746,
+      "contentType": "image/webp",
+      "width": 1122,
+      "height": 1402
+    },
+    {
+      "sourcePath": "/shop/products/teal-draped-mini-set/09-model-rear-mirror.webp",
+      "pathname": "shop/catalogue/1d9fa87b1a8ba9cabff1dab38ffd4bae76e98bb59f07a8a0443332f531ac4448/products/teal-draped-mini-set/09-model-rear-mirror.webp",
+      "sha256": "1d9fa87b1a8ba9cabff1dab38ffd4bae76e98bb59f07a8a0443332f531ac4448",
+      "size": 234130,
       "contentType": "image/webp",
       "width": 972,
       "height": 1619

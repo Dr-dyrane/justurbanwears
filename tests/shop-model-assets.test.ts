@@ -65,6 +65,12 @@ const expectedApprovals = [
     sha256: "575b3341f455e69e99988b16969261575f5a0543fb4c9afc7b21117d41201f1c",
   },
   {
+    slug: "teal-draped-mini-set",
+    width: 972,
+    height: 1619,
+    sha256: "b4721e8fb3d0a9e97183c1ade8b68a5bfe150a1360bcd5443715b3089552dc3f",
+  },
+  {
     slug: "sage-open-back-high-slit-maxi-dress",
     width: 972,
     height: 1619,
@@ -92,6 +98,10 @@ const approvedSupplementalSources = new Map<string, readonly string[]>([
   [
     "orchid-beaded-column-gown",
     ["/shop/products/orchid-beaded-column-gown/08-model-detail.webp"],
+  ],
+  [
+    "teal-draped-mini-set",
+    ["/shop/products/teal-draped-mini-set/09-model-rear-mirror.webp"],
   ],
   [
     "sage-open-back-high-slit-maxi-dress",
@@ -137,6 +147,7 @@ test("publishes only identity-cleared model fronts with their reviewed bytes", (
         "moss-square-knit",
         "cocoa-pleat-trouser",
           "salmon-camp-shirt",
+          "teal-draped-mini-set",
           "sage-open-back-high-slit-maxi-dress",
         ].includes(expected.slug)
         ? "lulu-v3"
@@ -183,6 +194,7 @@ test("appends only approved Lulu views to the main product gallery", () => {
           "moss-square-knit",
           "cocoa-pleat-trouser",
           "salmon-camp-shirt",
+          "teal-draped-mini-set",
           "sage-open-back-high-slit-maxi-dress",
         ].includes(product.slug)
           ? "lulu-v3"
@@ -193,6 +205,7 @@ test("appends only approved Lulu views to the main product gallery", () => {
         modelAnchorId: [
           "sage-open-back-high-slit-maxi-dress",
           "ivory-rib-knit-fitted-midi-dress",
+          "teal-draped-mini-set",
         ].includes(product.slug) ? "lulu-v3" : "lulu-v2",
       })),
     ];

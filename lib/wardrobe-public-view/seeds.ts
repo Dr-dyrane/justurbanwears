@@ -28,6 +28,7 @@ export const WARDROBE_APPROVED_V3_MODEL_FRONT_SLUGS = Object.freeze([
   "moss-square-knit",
   "cocoa-pleat-trouser",
   "salmon-camp-shirt",
+  "teal-draped-mini-set",
   "sage-open-back-high-slit-maxi-dress",
 ] as const);
 
@@ -55,6 +56,7 @@ export const WARDROBE_APPROVED_MODEL_SUPPLEMENTAL_SLOTS = Object.freeze({
   "orchid-beaded-column-gown": ["MODEL_DETAIL"],
   "sage-open-back-high-slit-maxi-dress": ["MODEL_REAR_THREE_QUARTER"],
   "ivory-rib-knit-fitted-midi-dress": ["MODEL_LEFT_PROFILE"],
+  "teal-draped-mini-set": ["MODEL_REAR_MIRROR"],
 } as const satisfies Record<string, readonly WardrobeSupplementalModelSlot[]>);
 
 export function getApprovedModelSupplementalSlots(
@@ -70,6 +72,7 @@ export function getApprovedModelSupplementalSlots(
 const modelFrontSlugs = new Set<string>(WARDROBE_APPROVED_MODEL_FRONT_SLUGS);
 const v3ModelFrontSlugs = new Set<string>(WARDROBE_APPROVED_V3_MODEL_FRONT_SLUGS);
 const v3SupplementalModelSlugs = new Set([
+  "teal-draped-mini-set",
   "sage-open-back-high-slit-maxi-dress",
   "ivory-rib-knit-fitted-midi-dress",
 ]);

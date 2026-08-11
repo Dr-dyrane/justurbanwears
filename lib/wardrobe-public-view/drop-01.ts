@@ -3,7 +3,7 @@ import type { WardrobePublicProduct } from "./domain/entities";
 export type WardrobeDrop01Product = Omit<WardrobePublicProduct, "media" | "modelAnchor">;
 
 /**
- * The six real-worn dresses are saleable wardrobe rows, not a parallel preview
+ * The real-worn pieces are saleable wardrobe rows, not a parallel preview
  * catalogue. Exact tagged size and measurements are confirmed before payment.
  */
 export const WARDROBE_DROP_01_PRODUCTS = [
@@ -122,6 +122,25 @@ export const WARDROBE_DROP_01_PRODUCTS = [
     measurements: [],
   },
   {
+    slug: "teal-draped-mini-set",
+    sku: "JUW-013",
+    name: "Teal Draped Mini Set",
+    category: "Sets",
+    price: 24500,
+    taggedSize: "Size on request",
+    fit: "Measurements confirmed before payment",
+    condition: "Excellent · real-worn wardrobe piece",
+    colour: "Teal",
+    availability: "AVAILABLE",
+    drop: "Drop 01",
+    tone: "indigo",
+    silhouette: "set",
+    note: "A teal two-piece set.",
+    story: "A draped top paired with a close mini skirt.",
+    details: ["Two-piece set"],
+    measurements: [],
+  },
+  {
     slug: "sage-open-back-high-slit-maxi-dress",
     sku: "JUW-014",
     name: "Sage Open-Back High-Slit Maxi Dress",
@@ -166,5 +185,6 @@ export const WARDROBE_DROP_01_APPROVED_MODEL_FRONT_SLUGS = Object.freeze([
   "blush-scoop-mini-dress",
   "orchid-beaded-column-gown",
   "multicolor-abstract-strapless-mini-dress",
+  "teal-draped-mini-set",
   "sage-open-back-high-slit-maxi-dress",
 ] as const);

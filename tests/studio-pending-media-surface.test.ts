@@ -13,7 +13,14 @@ import {
 import { mergeWardrobeAuthoritySeeds } from "../lib/studio/seeds/wardrobe-authority";
 
 const expectedMedia = new Map<string, readonly string[]>([
-  ["JUW-013", ["MODEL_FRONT", "MODEL_REAR_MIRROR"]],
+  ["JUW-013", [
+    "GARMENT_FRONT",
+    "GARMENT_BACK",
+    "MANNEQUIN_FRONT",
+    "MODEL_FRONT",
+    "FABRIC_DETAIL",
+    "MODEL_REAR_MIRROR",
+  ]],
   ["JUW-015", ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"]],
   ["JUW-017", ["MODEL_FRONT"]],
   ["JUW-018", ["MODEL_DETAIL"]],
@@ -69,6 +76,7 @@ test("projects only packaged public-safe media into pending Studio wardrobe card
 test("keeps media labels plain and pending products outside the Shop projection", () => {
   assert.equal(pendingWardrobeMediaLabel("GARMENT_FRONT"), "Product front");
   assert.equal(pendingWardrobeMediaLabel("GARMENT_BACK"), "Product back");
+  assert.equal(pendingWardrobeMediaLabel("MANNEQUIN_FRONT"), "Mannequin front");
   assert.equal(pendingWardrobeMediaLabel("FABRIC_DETAIL"), "Fabric detail");
   assert.equal(pendingWardrobeMediaLabel("MODEL_FRONT"), "On Lulu · front");
   assert.equal(pendingWardrobeMediaLabel("MODEL_REAR_MIRROR"), "On Lulu · rear mirror");
@@ -76,8 +84,11 @@ test("keeps media labels plain and pending products outside the Shop projection"
   const publicView = selectWardrobePublicView(
     mergeWardrobeAuthoritySeeds(createEmptyStudioSnapshot()),
   );
-  for (const sku of expectedMedia.keys()) {
-    assert.equal(publicView.some((product) => product.sku === sku), false);
+  for (const contract of PENDING_WARDROBE_PRODUCT_CONTRACTS) {
+    assert.equal(
+      publicView.some((product) => product.sku === contract.sku),
+      contract.missingViews.length === 0,
+    );
   }
 });
 

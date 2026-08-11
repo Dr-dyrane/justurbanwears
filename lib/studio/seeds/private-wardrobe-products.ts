@@ -10,6 +10,7 @@ const PRIVATE_PRODUCT_CREATED_AT = "2026-08-11T00:00:00.000Z";
 export type PendingWardrobeMediaView =
   | "GARMENT_FRONT"
   | "GARMENT_BACK"
+  | "MANNEQUIN_FRONT"
   | "MANNEQUIN_UPPER_FRONT"
   | "MANNEQUIN_RIGHT_REAR_THREE_QUARTER"
   | "MODEL_FRONT"
@@ -58,6 +59,7 @@ function pendingProduct(spec: PendingWardrobeProductSpec): PendingWardrobeProduc
   const garmentId = `wardrobe-private-product-${spec.sku.toLowerCase()}`;
   const readinessViews = [
     ...(spec.approvedViews.includes("GARMENT_FRONT") ? ["FRONT" as const] : []),
+    ...(spec.approvedViews.includes("GARMENT_BACK") ? ["BACK" as const] : []),
     ...(spec.approvedViews.includes("MODEL_DETAIL")
       || spec.approvedViews.includes("FABRIC_DETAIL")
       || spec.approvedViews.includes("CONSTRUCTION_DETAIL")
@@ -89,7 +91,7 @@ function pendingProduct(spec: PendingWardrobeProductSpec): PendingWardrobeProduc
       saleEligible: true,
       measurements: [],
       classificationState: "READY",
-      mediaState: "DRAFT",
+      mediaState: spec.missingViews.length ? "DRAFT" : "READY",
       state: "DRAFT",
       availability: "AVAILABLE",
       canonState: "REVIEW",
@@ -130,17 +132,48 @@ export const PENDING_WARDROBE_PRODUCT_CONTRACTS: readonly PendingWardrobeProduct
     category: "Set",
     color: "Teal",
     price: 24500,
-    description: "A teal two-piece pairing a draped long-sleeve crop top with a close mini skirt.",
-    note: "Front and Lulu views are ready. Capture the product back and a close construction detail before publishing.",
+    description: "A teal two-piece set.",
+    note: "A draped top paired with a close mini skirt.",
     visual: "indigo",
-    approvedViews: ["GARMENT_FRONT", "MODEL_FRONT", "MODEL_REAR_MIRROR"],
-    missingViews: ["GARMENT_BACK", "FABRIC_DETAIL"],
+    approvedViews: [
+      "GARMENT_FRONT",
+      "GARMENT_BACK",
+      "MANNEQUIN_FRONT",
+      "MODEL_FRONT",
+      "FABRIC_DETAIL",
+      "MODEL_REAR_MIRROR",
+    ],
+    missingViews: [],
     publicSafeMedia: [
+      {
+        view: "GARMENT_FRONT",
+        src: "/shop/products/teal-draped-mini-set/01-garment-front.webp",
+        width: 1122,
+        height: 1402,
+      },
+      {
+        view: "GARMENT_BACK",
+        src: "/shop/products/teal-draped-mini-set/02-garment-back.webp",
+        width: 1122,
+        height: 1402,
+      },
+      {
+        view: "MANNEQUIN_FRONT",
+        src: "/shop/products/teal-draped-mini-set/03-mannequin-front.webp",
+        width: 1122,
+        height: 1402,
+      },
       {
         view: "MODEL_FRONT",
         src: "/shop/products/teal-draped-mini-set/04-model-front.webp",
         width: 972,
         height: 1619,
+      },
+      {
+        view: "FABRIC_DETAIL",
+        src: "/shop/products/teal-draped-mini-set/06-fabric-detail.webp",
+        width: 1122,
+        height: 1402,
       },
       {
         view: "MODEL_REAR_MIRROR",
@@ -280,6 +313,7 @@ export function pendingWardrobeMediaLabel(view: PendingWardrobeMediaView) {
   const labels: Record<PendingWardrobeMediaView, string> = {
     GARMENT_FRONT: "Product front",
     GARMENT_BACK: "Product back",
+    MANNEQUIN_FRONT: "Mannequin front",
     MANNEQUIN_UPPER_FRONT: "Upper front",
     MANNEQUIN_RIGHT_REAR_THREE_QUARTER: "Right rear view",
     MODEL_FRONT: "On Lulu · front",

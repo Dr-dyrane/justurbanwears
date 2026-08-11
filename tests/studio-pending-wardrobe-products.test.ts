@@ -21,7 +21,7 @@ const expected = new Map<string, {
   category: "Set" | "Dress";
   missing: readonly string[];
 }>([
-  ["JUW-013", { price: 24500, category: "Set", missing: ["GARMENT_BACK", "FABRIC_DETAIL"] }],
+  ["JUW-013", { price: 24500, category: "Set", missing: [] }],
   ["JUW-015", { price: 24500, category: "Dress", missing: ["GARMENT_FRONT", "GARMENT_BACK", "FABRIC_DETAIL"] }],
   ["JUW-017", { price: 24500, category: "Set", missing: ["GARMENT_FRONT", "GARMENT_BACK", "FABRIC_DETAIL"] }],
   ["JUW-018", { price: 22000, category: "Dress", missing: ["GARMENT_FRONT", "GARMENT_BACK"] }],
@@ -46,12 +46,22 @@ test("seeds approved business facts while media remains the only readiness gap",
     assert.equal(garment.saleEligible, true);
     assert.deepEqual(garment.measurements, []);
     assert.equal(garment.classificationState, "READY");
-    assert.equal(garment.mediaState, "DRAFT");
-    assert.equal(garment.state, "DRAFT");
     assert.equal(garment.availability, "AVAILABLE");
     assert.deepEqual(contract.missingViews, policy.missing);
 
     const gates = garmentReadiness(garment);
+    if (policy.missing.length === 0) {
+      assert.equal(garment.mediaState, "READY");
+      assert.equal(garment.state, "PUBLISHED");
+      assert.deepEqual(gates.filter((gate) => !gate.ready), []);
+      assert.equal(seeded.listings.some((listing) => listing.garmentId === garment.id), true);
+      const inventory = seeded.inventory.find((record) => record.garmentId === garment.id);
+      assert.equal(inventory?.state, "PUBLISHED");
+      assert.equal(inventory?.onHand, 1);
+      continue;
+    }
+    assert.equal(garment.mediaState, "DRAFT");
+    assert.equal(garment.state, "DRAFT");
     assert.deepEqual(
       gates.filter((gate) => !gate.ready).map((gate) => gate.id),
       ["media"],
@@ -73,7 +83,12 @@ test("seeds approved business facts while media remains the only readiness gap",
     assert.equal(seeded.listings.some((listing) => listing.garmentId === garment.id), false);
   }
 
-  assert.equal(selectWardrobePublicView(seeded).some((product) => expected.has(product.sku)), false);
+  for (const [sku, policy] of expected) {
+    assert.equal(
+      selectWardrobePublicView(seeded).some((product) => product.sku === sku),
+      policy.missing.length === 0,
+    );
+  }
   assert.deepEqual(mergeWardrobeAuthoritySeeds(seeded), seeded);
 
   const serialized = JSON.stringify(PENDING_WARDROBE_PRODUCT_CONTRACTS);
@@ -174,6 +189,10 @@ test("adding only the declared missing captures completes each media gate", () =
   for (const contract of PENDING_WARDROBE_PRODUCT_CONTRACTS) {
     const garment = state.garments.find((candidate) => candidate.sku === contract.sku);
     assert.ok(garment);
+    if (contract.missingViews.length === 0) {
+      assert.equal(garment.mediaState, "READY");
+      continue;
+    }
     const references = contract.missingViews.map((view, index) => ({
       id: `${contract.sku.toLowerCase()}-missing-${index}`,
       view: view === "GARMENT_FRONT"
@@ -197,15 +216,31 @@ test("adding only the declared missing captures completes each media gate", () =
   }
 });
 
-test("renames legacy intake SKUs without replacing operator-authored facts", () => {
-  const contract = PENDING_WARDROBE_PRODUCT_CONTRACTS[0];
+test("promotes the legacy JUW-013 intake without replacing operator-authored facts", () => {
+  const canonical = mergeWardrobeAuthoritySeeds(createEmptyStudioSnapshot())
+    .garments.find((candidate) => candidate.sku === "JUW-013");
+  assert.ok(canonical);
   const snapshot = createEmptyStudioSnapshot();
   snapshot.garments.push({
-    ...contract.garment,
+    ...canonical,
     sku: "DYN-093",
     title: "Operator teal title",
     price: 26000,
     privateNote: "Keep this note",
+    mediaState: "DRAFT",
+    state: "DRAFT",
+    canonState: "REVIEW",
+  });
+  snapshot.inventory.push({
+    id: "wardrobe-private-stock-juw-013",
+    garmentId: canonical.id,
+    onHand: 1,
+    reserved: 0,
+    sold: 0,
+    returned: 0,
+    writeOff: 0,
+    state: "DRAFT",
+    updatedAt: canonical.createdAt,
   });
 
   const merged = mergeWardrobeAuthoritySeeds(snapshot);
@@ -214,7 +249,10 @@ test("renames legacy intake SKUs without replacing operator-authored facts", () 
   assert.equal(garment.title, "Operator teal title");
   assert.equal(garment.price, 26000);
   assert.equal(garment.privateNote, "Keep this note");
+  assert.equal(garment.mediaState, "READY");
+  assert.equal(garment.state, "PUBLISHED");
   assert.equal(merged.garments.filter((candidate) => candidate.sku === "JUW-013").length, 1);
+  assert.equal(merged.listings.some((listing) => listing.garmentId === garment.id), true);
 });
 
 test("preserves Sets and rear-mirror as truthful public vocabulary", () => {
