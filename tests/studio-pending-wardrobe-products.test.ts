@@ -24,9 +24,10 @@ const expected = new Map<string, {
   ["JUW-013", { price: 24500, category: "Set", missing: [] }],
   ["JUW-015", { price: 24500, category: "Dress", missing: ["GARMENT_FRONT", "GARMENT_BACK", "FABRIC_DETAIL"] }],
   ["JUW-017", { price: 24500, category: "Set", missing: ["GARMENT_FRONT", "GARMENT_BACK", "FABRIC_DETAIL"] }],
-  ["JUW-018", { price: 22000, category: "Dress", missing: ["GARMENT_FRONT", "GARMENT_BACK"] }],
+  ["JUW-018", { price: 22000, category: "Dress", missing: ["GARMENT_FRONT", "GARMENT_BACK", "FABRIC_DETAIL"] }],
   ["JUW-019", { price: 24500, category: "Dress", missing: ["GARMENT_FRONT", "GARMENT_BACK"] }],
   ["JUW-020", { price: 24500, category: "Set", missing: ["GARMENT_FRONT", "GARMENT_BACK"] }],
+  ["JUW-022", { price: 24500, category: "Dress", missing: ["GARMENT_FRONT", "GARMENT_BACK", "FABRIC_DETAIL"] }],
 ] as const);
 
 test("seeds approved business facts while media remains the only readiness gap", () => {

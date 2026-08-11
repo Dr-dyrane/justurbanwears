@@ -60,8 +60,7 @@ function pendingProduct(spec: PendingWardrobeProductSpec): PendingWardrobeProduc
   const readinessViews = [
     ...(spec.approvedViews.includes("GARMENT_FRONT") ? ["FRONT" as const] : []),
     ...(spec.approvedViews.includes("GARMENT_BACK") ? ["BACK" as const] : []),
-    ...(spec.approvedViews.includes("MODEL_DETAIL")
-      || spec.approvedViews.includes("FABRIC_DETAIL")
+    ...(spec.approvedViews.includes("FABRIC_DETAIL")
       || spec.approvedViews.includes("CONSTRUCTION_DETAIL")
       ? ["DETAIL" as const]
       : []),
@@ -242,10 +241,10 @@ export const PENDING_WARDROBE_PRODUCT_CONTRACTS: readonly PendingWardrobeProduct
     color: "Plum",
     price: 22000,
     description: "A fitted plum dress with a high round neckline and ruched drawstring sleeves.",
-    note: "The Lulu detail is ready. Capture the full length and product back before publishing.",
+    note: "The Lulu detail is ready. Capture the full length, product back and one fabric detail before publishing.",
     visual: "plum",
     approvedViews: ["MANNEQUIN_UPPER_FRONT", "MODEL_DETAIL"],
-    missingViews: ["GARMENT_FRONT", "GARMENT_BACK"],
+    missingViews: ["GARMENT_FRONT", "GARMENT_BACK", "FABRIC_DETAIL"],
     publicSafeMedia: [
       {
         view: "MODEL_DETAIL",
@@ -300,6 +299,28 @@ export const PENDING_WARDROBE_PRODUCT_CONTRACTS: readonly PendingWardrobeProduct
         src: "/shop/products/coral-gathered-crop-mini-set/05-model-rear-three-quarter.webp",
         width: 1122,
         height: 1402,
+      },
+    ],
+  }),
+  pendingProduct({
+    sku: "JUW-022",
+    legacySkus: ["DYN-102"],
+    slug: "hot-pink-strapless-dress",
+    title: "Hot-Pink Strapless Gathered Dress",
+    category: "Dress",
+    color: "Hot pink",
+    price: 24500,
+    description: "A hot-pink strapless dress with a softly gathered upper bodice.",
+    note: "The Lulu bodice detail is ready. Capture the full-length product front, product back and one fabric detail before publishing.",
+    visual: "plum",
+    approvedViews: ["MODEL_DETAIL"],
+    missingViews: ["GARMENT_FRONT", "GARMENT_BACK", "FABRIC_DETAIL"],
+    publicSafeMedia: [
+      {
+        view: "MODEL_DETAIL",
+        src: "/shop/products/hot-pink-strapless-dress/08-model-detail.webp",
+        width: 972,
+        height: 1619,
       },
     ],
   }),

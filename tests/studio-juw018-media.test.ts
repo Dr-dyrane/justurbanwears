@@ -16,8 +16,8 @@ test("packages JUW-018's public-safe Lulu detail while full product coverage sta
   assert.ok(contract);
   assert.equal(contract.slug, slug);
   assert.deepEqual(contract.approvedViews, ["MANNEQUIN_UPPER_FRONT", "MODEL_DETAIL"]);
-  assert.deepEqual(contract.missingViews, ["GARMENT_FRONT", "GARMENT_BACK"]);
-  assert.deepEqual(contract.garment.references.map(({ view }) => view), ["DETAIL"]);
+  assert.deepEqual(contract.missingViews, ["GARMENT_FRONT", "GARMENT_BACK", "FABRIC_DETAIL"]);
+  assert.deepEqual(contract.garment.references, []);
   assert.equal(contract.garment.mediaState, "DRAFT");
 
   const assetPath = join(
