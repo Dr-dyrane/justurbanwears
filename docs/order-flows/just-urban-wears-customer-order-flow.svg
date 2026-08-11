@@ -34,7 +34,7 @@
   <rect width="1600" height="2200" fill="url(#paper)"/>
   <circle cx="1495" cy="38" r="300" fill="#f5c4b5" opacity="0.28"/>
   <circle cx="1410" cy="125" r="122" fill="#f59886" opacity="0.13"/>
-  <g fill="#2a1710" opacity="0.58" transform="translate(1358.8 73.8) scale(.20)" aria-hidden="true">
+  <g fill="#dd6042" opacity="0.78" transform="translate(1358.8 73.8) scale(.20)" aria-hidden="true">
     <path d="M48 88H296L176 424 80 168h56l40 96 40-116H72Z"/>
     <path d="M464 88h-72l-56 160-30-114-40 98 70 192Z"/>
   </g>
