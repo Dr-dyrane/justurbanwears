@@ -32,7 +32,7 @@ test("garment intake is one progressive mounted sheet with no select controls", 
 });
 
 test("hosts without trusted engine auth retain the existing local intake", () => {
-  assert.match(wardrobePage, /STUDIO_AI_ENGINE_AUTH_MODE === "openai-sites"/);
+  assert.match(wardrobePage, /\["openai-sites", "neon-auth"\]\.includes/);
   assert.match(workbench, /engineEnabled \? \(/);
   assert.match(workbench, /<LocalGarmentIntakeDialog/);
   assert.match(localIntake, /createGarment\(/);

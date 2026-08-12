@@ -3,7 +3,7 @@ import { WardrobeWorkbench } from "../../../../components/studio/wardrobe-workbe
 export const dynamic = "force-dynamic";
 
 export default function StudioWardrobePage() {
-  const engineEnabled = process.env.STUDIO_AI_ENGINE_AUTH_MODE === "openai-sites"
+  const engineEnabled = ["openai-sites", "neon-auth"].includes(process.env.STUDIO_AI_ENGINE_AUTH_MODE || "")
     && Boolean(process.env.STUDIO_OPERATOR_EMAILS?.trim());
   return <WardrobeWorkbench engineEnabled={engineEnabled} />;
 }

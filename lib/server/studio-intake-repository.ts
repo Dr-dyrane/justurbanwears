@@ -6,7 +6,7 @@ import {
   studioIntakes,
   studioWardrobeItems,
 } from "../../db/shop-postgres-schema";
-import { getShopDb } from "../../db/shop-postgres";
+import { getStudioDb } from "../../db/shop-postgres";
 import type {
   IntakeFacts,
   OperatorSafeIntake,
@@ -20,7 +20,7 @@ type AssetRow = typeof studioAssets.$inferSelect;
 type GenerationRow = typeof studioGenerations.$inferSelect;
 
 async function ownedIntake(id: string, subject: string): Promise<IntakeRow> {
-  const [row] = await getShopDb().select().from(studioIntakes).where(and(
+  const [row] = await (await getStudioDb()).select().from(studioIntakes).where(and(
     eq(studioIntakes.id, id),
     eq(studioIntakes.operatorSubject, subject),
   )).limit(1);
@@ -37,7 +37,7 @@ export async function createOrReuseIntake(input: {
   description?: string;
   idempotencyKey: string;
 }): Promise<OperatorSafeIntake> {
-  const db = getShopDb();
+  const db = await getStudioDb();
   await db.insert(studioIntakes).values({
     operatorSubject: input.operator.subject,
     operatorEmail: input.operator.email,
@@ -55,7 +55,7 @@ export async function createOrReuseIntake(input: {
 }
 
 export async function getIntakeSnapshot(id: string, subject: string): Promise<OperatorSafeIntake> {
-  const db = getShopDb();
+  const db = await getStudioDb();
   const intake = await ownedIntake(id, subject);
   const [assets, generations, wardrobe] = await Promise.all([
     db.select().from(studioAssets).where(eq(studioAssets.intakeId, id)).orderBy(studioAssets.createdAt),
@@ -105,7 +105,7 @@ export async function updateIntakeVersioned(input: {
   errorCode?: string | null;
 }): Promise<IntakeRow> {
   const nextVersion = input.expectedVersion + 1;
-  const [updated] = await getShopDb().update(studioIntakes).set({
+  const [updated] = await (await getStudioDb()).update(studioIntakes).set({
     ...(input.state ? { state: input.state } : {}),
     ...(input.facts ? { facts: input.facts } : {}),
     ...(input.description !== undefined ? { description: input.description } : {}),
@@ -138,7 +138,7 @@ export async function addStudioAsset(input: {
   height?: number | null;
   sha256: string;
 }): Promise<AssetRow> {
-  const db = getShopDb();
+  const db = await getStudioDb();
   await db.insert(studioAssets).values(input).onConflictDoNothing();
   const [asset] = await db.select().from(studioAssets).where(and(
     eq(studioAssets.intakeId, input.intakeId),
@@ -155,7 +155,7 @@ export async function getOwnedAsset(input: {
   subject: string;
 }): Promise<AssetRow> {
   await ownedIntake(input.intakeId, input.subject);
-  const [asset] = await getShopDb().select().from(studioAssets).where(and(
+  const [asset] = await (await getStudioDb()).select().from(studioAssets).where(and(
     eq(studioAssets.id, input.assetId),
     eq(studioAssets.intakeId, input.intakeId),
   )).limit(1);
@@ -165,11 +165,11 @@ export async function getOwnedAsset(input: {
 
 export async function listOwnedAssets(intakeId: string, subject: string): Promise<AssetRow[]> {
   await ownedIntake(intakeId, subject);
-  return getShopDb().select().from(studioAssets).where(eq(studioAssets.intakeId, intakeId));
+  return (await getStudioDb()).select().from(studioAssets).where(eq(studioAssets.intakeId, intakeId));
 }
 
 export async function createOrReuseGeneration(input: typeof studioGenerations.$inferInsert): Promise<GenerationRow> {
-  const db = getShopDb();
+  const db = await getStudioDb();
   await db.insert(studioGenerations).values(input).onConflictDoNothing();
   const [row] = await db.select().from(studioGenerations).where(and(
     eq(studioGenerations.intakeId, input.intakeId),
@@ -180,7 +180,7 @@ export async function createOrReuseGeneration(input: typeof studioGenerations.$i
 }
 
 export async function claimGeneration(id: string): Promise<boolean> {
-  const rows = await getShopDb().update(studioGenerations).set({
+  const rows = await (await getStudioDb()).update(studioGenerations).set({
     state: "RUNNING",
     updatedAt: new Date(),
   }).where(and(
@@ -191,7 +191,7 @@ export async function claimGeneration(id: string): Promise<boolean> {
 }
 
 export async function updateGeneration(id: string, update: Partial<typeof studioGenerations.$inferInsert>): Promise<void> {
-  await getShopDb().update(studioGenerations).set({ ...update, updatedAt: new Date() }).where(eq(studioGenerations.id, id));
+  await (await getStudioDb()).update(studioGenerations).set({ ...update, updatedAt: new Date() }).where(eq(studioGenerations.id, id));
 }
 
 export async function appendDecision(input: {
@@ -201,7 +201,7 @@ export async function appendDecision(input: {
   decision: "KEEP" | "EDIT" | "REJECT" | "RETRY";
   note?: string;
 }): Promise<void> {
-  await getShopDb().insert(studioDecisions).values({ ...input, generationId: input.generationId || null });
+  await (await getStudioDb()).insert(studioDecisions).values({ ...input, generationId: input.generationId || null });
 }
 
 export async function commitWardrobeItem(input: {
@@ -210,7 +210,7 @@ export async function commitWardrobeItem(input: {
   facts: IntakeFacts;
   approvedAssetId: string;
 }): Promise<OperatorSafeWardrobeItem> {
-  const db = getShopDb();
+  const db = await getStudioDb();
   await db.insert(studioWardrobeItems).values({
     intakeId: input.intakeId,
     operatorSubject: input.operatorSubject,
@@ -223,7 +223,7 @@ export async function commitWardrobeItem(input: {
 }
 
 export async function listWardrobeItems(subject: string): Promise<OperatorSafeWardrobeItem[]> {
-  const rows = await getShopDb().select().from(studioWardrobeItems).where(
+  const rows = await (await getStudioDb()).select().from(studioWardrobeItems).where(
     eq(studioWardrobeItems.operatorSubject, subject),
   ).orderBy(desc(studioWardrobeItems.updatedAt));
   return rows.map(mapWardrobeItem);
@@ -248,16 +248,16 @@ function mapWardrobeItem(item: typeof studioWardrobeItems.$inferSelect): Operato
 }
 
 export async function latestGenerationForIntake(intakeId: string): Promise<GenerationRow | null> {
-  const [row] = await getShopDb().select().from(studioGenerations).where(eq(studioGenerations.intakeId, intakeId)).orderBy(desc(studioGenerations.createdAt)).limit(1);
+  const [row] = await (await getStudioDb()).select().from(studioGenerations).where(eq(studioGenerations.intakeId, intakeId)).orderBy(desc(studioGenerations.createdAt)).limit(1);
   return row ?? null;
 }
 
 export async function listGenerationsForIntake(intakeId: string): Promise<GenerationRow[]> {
-  return getShopDb().select().from(studioGenerations).where(
+  return (await getStudioDb()).select().from(studioGenerations).where(
     eq(studioGenerations.intakeId, intakeId),
   ).orderBy(studioGenerations.createdAt);
 }
 
 export async function getAssetsByIds(ids: string[]): Promise<AssetRow[]> {
-  return ids.length ? getShopDb().select().from(studioAssets).where(inArray(studioAssets.id, ids)) : [];
+  return ids.length ? (await getStudioDb()).select().from(studioAssets).where(inArray(studioAssets.id, ids)) : [];
 }

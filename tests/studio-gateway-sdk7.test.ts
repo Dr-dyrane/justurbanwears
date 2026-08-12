@@ -12,7 +12,7 @@ test("Studio analysis uses the AI SDK 7 file content part", async () => {
   );
   assert.match(source, /type: "file"/);
   assert.match(source, /mediaType,/);
-  assert.match(source, /data: \{ type: "url", url: new URL\(sourceDataUrl\) \}/);
+  assert.match(source, /data: Uint8Array\.from\(Buffer\.from\(match\[2\], "base64"\)\)/);
   assert.doesNotMatch(source, /type: "image", image:/);
 });
 

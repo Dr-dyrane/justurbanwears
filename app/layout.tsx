@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "@fontsource-variable/bodoni-moda";
 import "@fontsource-variable/manrope";
+import "@neondatabase/auth/ui/css";
 import { Analytics } from "@vercel/analytics/react";
 import { ServiceWorkerRegistration } from "../components/pwa/service-worker-registration";
 import { ThemeProvider } from "../components/theme/theme-provider";

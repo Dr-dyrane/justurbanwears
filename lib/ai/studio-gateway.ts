@@ -3,6 +3,7 @@ import {
   generateImage,
   generateText,
   InvalidPromptError,
+  Output,
   TypeValidationError,
   type FilePart,
 } from "ai";
@@ -10,7 +11,8 @@ import { z } from "zod";
 import { intakeFactsSchema, type IntakeFacts } from "../studio/engine/contracts";
 import { StudioEngineError } from "../studio/engine/errors";
 
-const DEFAULT_TEXT_MODEL = "zai/glm-4.6v-flash";
+const DEFAULT_TEXT_MODEL = "google/gemini-2.5-flash-lite";
+const DEFAULT_TEXT_FALLBACK = "google/gemini-2.5-flash";
 const DEFAULT_IMAGE_MODEL = "bfl/flux-2-klein-4b";
 const APPROVED_IMAGE_MODEL_CEILINGS_USD: Readonly<Record<string, number>> = Object.freeze({
   "bfl/flux-2-klein-4b": 0.02,
@@ -135,8 +137,9 @@ export function sanitizeStudioGatewayFailure(
 }
 
 function analysisSourcePart(sourceDataUrl: string): FilePart {
-  const mediaType = /^data:(image\/(?:jpeg|png|webp));base64,/i.exec(sourceDataUrl)?.[1]?.toLowerCase();
-  if (!mediaType) {
+  const match = /^data:(image\/(?:jpeg|png|webp));base64,([a-zA-Z0-9+/=]+)$/i.exec(sourceDataUrl);
+  const mediaType = match?.[1]?.toLowerCase();
+  if (!mediaType || !match?.[2]) {
     throw new StudioEngineError(
       "INVALID_ASSET",
       415,
@@ -147,7 +150,7 @@ function analysisSourcePart(sourceDataUrl: string): FilePart {
   return {
     type: "file",
     mediaType,
-    data: { type: "url", url: new URL(sourceDataUrl) },
+    data: Uint8Array.from(Buffer.from(match[2], "base64")),
   };
 }
 
@@ -175,26 +178,19 @@ export function buildGarmentFrontPrompt(input: {
   ].filter(Boolean).join(" ");
 }
 
-function extractJson(text: string): unknown {
-  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/i)?.[1];
-  const candidate = fenced ?? text.slice(text.indexOf("{"), text.lastIndexOf("}") + 1);
-  if (!candidate) throw new Error("No JSON object returned.");
-  return JSON.parse(candidate);
-}
-
 export async function analyzeGarmentFacts(input: {
   description: string;
   sourceDataUrl?: string;
 }): Promise<{ facts: IntakeFacts; usage: Record<string, unknown>; model: string }> {
   const instruction = [
-    "Return one minified JSON object only.",
-    "Schema: {title:string,category:one of Dress|Shirt|Set|Knitwear|Skirt|Trousers|Other,colour:string,sizeLabel:string,condition:string,price:integer}.",
+    "Extract the garment facts into the required schema.",
     "Describe only visible or supplied garment truth. Use Size on request when unknown; use Excellent · real-worn wardrobe piece when condition is not supplied; use price 0 when unknown.",
     `Operator description: ${input.description || "No description supplied."}`,
   ].join("\n");
   try {
     const result = await generateText({
       model: studioGatewayPolicy.textModel,
+      output: Output.object({ schema: intakeFactsSchema, name: "garment_facts" }),
       messages: [{
         role: "user",
         content: input.sourceDataUrl
@@ -202,15 +198,19 @@ export async function analyzeGarmentFacts(input: {
           : instruction,
       }],
       maxOutputTokens: 180,
-      maxRetries: 1,
+      maxRetries: 0,
       abortSignal: AbortSignal.timeout(30_000),
       providerOptions: {
-        gateway: { caching: "auto", sort: "cost" },
-        zai: { thinking: { type: "disabled" } },
+        gateway: {
+          caching: "auto",
+          sort: "cost",
+          models: [DEFAULT_TEXT_FALLBACK],
+          tags: ["studio:garment-intake", "stage:analysis"],
+        },
       },
     });
     return {
-      facts: intakeFactsSchema.parse(extractJson(result.text)),
+      facts: result.output,
       usage: result.usage as unknown as Record<string, unknown>,
       model: studioGatewayPolicy.textModel,
     };
