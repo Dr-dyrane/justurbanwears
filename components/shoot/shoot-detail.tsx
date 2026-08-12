@@ -1,9 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
 import { REJECTION_REASONS, type ReviewDecision } from "../../lib/data/types";
+import { StudioLink as Link } from "../studio/atoms/studio-link";
 import { useStudio } from "../studio/studio-provider";
 import { VisualAsset } from "../studio/visual-asset";
 import { StatusPill } from "../ui/status-pill";

@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import {
   ArrowRight,
   Boxes,
@@ -11,6 +10,7 @@ import {
   ShieldAlert,
 } from "lucide-react";
 import { LifecycleBadge } from "./atoms/lifecycle-badge";
+import { StudioLink as Link } from "./atoms/studio-link";
 import { useStudio } from "./studio-provider";
 
 function shortDate(value: string) {

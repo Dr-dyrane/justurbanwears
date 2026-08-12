@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
@@ -17,6 +16,7 @@ import { useMobileChrome } from "../../hooks/use-mobile-chrome";
 import { BrandIcon } from "../brand/brand-icon";
 import { BrandWordmark } from "../brand/brand-wordmark";
 import { ThemeToggle } from "../theme/theme-toggle";
+import { StudioLink as Link } from "./atoms/studio-link";
 import { StudioProvider } from "./studio-provider";
 
 interface NavigationItem {

@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useMemo, useState } from "react";
+import { StudioLink as Link } from "../studio/atoms/studio-link";
 import { useStudio } from "../studio/studio-provider";
 import { VisualAsset } from "../studio/visual-asset";
 import { PageHeading } from "../ui/page-heading";
