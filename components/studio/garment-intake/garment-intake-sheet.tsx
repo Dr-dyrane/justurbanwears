@@ -11,6 +11,7 @@ import {
   CircleDashed,
   ImagePlus,
   LoaderCircle,
+  Maximize2,
   PackageCheck,
   Pencil,
   RotateCcw,
@@ -20,6 +21,7 @@ import {
   Upload,
   UserPlus,
   UserRound,
+  X,
 } from "lucide-react";
 import type { GarmentCategory } from "../../../lib/studio/domain/entities";
 import { LifecycleBadge } from "../atoms/lifecycle-badge";
@@ -96,6 +98,8 @@ function isExplicitlyUnavailable(error: unknown) {
 export function GarmentIntakeSheet({ onDismiss, open, returnFocus }: GarmentIntakeSheetProps) {
   const studio = useStudio();
   const cameraInputRef = useRef<HTMLInputElement>(null);
+  const receiptExpandRef = useRef<HTMLButtonElement>(null);
+  const receiptPreviewCloseRef = useRef<HTMLButtonElement>(null);
   const uploadInputRef = useRef<HTMLInputElement>(null);
   const [step, setStep] = useState<IntakeStep>("start");
   const [sourceMode, setSourceMode] = useState<IntakeSourceMode | null>(null);
@@ -109,6 +113,7 @@ export function GarmentIntakeSheet({ onDismiss, open, returnFocus }: GarmentInta
   const [retryUsed, setRetryUsed] = useState(false);
   const [wardrobeItemId, setWardrobeItemId] = useState<string>();
   const [wearChoice, setWearChoice] = useState<string>();
+  const [receiptPreviewOpen, setReceiptPreviewOpen] = useState(false);
 
   const candidatePreview = intake ? candidateUrl(intake) : undefined;
   const progress = ({ start: 8, source: 24, build: 54, confirm: 70, edit: 70, wear: 88, receipt: 100 } satisfies Record<IntakeStep, number>)[step];
@@ -122,6 +127,32 @@ export function GarmentIntakeSheet({ onDismiss, open, returnFocus }: GarmentInta
     if (preview) URL.revokeObjectURL(preview);
   }, [preview]);
 
+  useEffect(() => {
+    if (!receiptPreviewOpen) return;
+    requestAnimationFrame(() => receiptPreviewCloseRef.current?.focus({ preventScroll: true }));
+  }, [receiptPreviewOpen]);
+
+  useEffect(() => {
+    if (!receiptPreviewOpen) return;
+    function closePreview(event: KeyboardEvent) {
+      if (event.key === "Tab") {
+        event.preventDefault();
+        receiptPreviewCloseRef.current?.focus({ preventScroll: true });
+      } else if (event.key === "Escape") {
+        event.preventDefault();
+        event.stopPropagation();
+        setReceiptPreviewOpen(false);
+      }
+    }
+    window.addEventListener("keydown", closePreview, { capture: true });
+    return () => window.removeEventListener("keydown", closePreview, { capture: true });
+  }, [receiptPreviewOpen]);
+
+  useEffect(() => {
+    if (receiptPreviewOpen || step !== "receipt") return;
+    requestAnimationFrame(() => receiptExpandRef.current?.focus({ preventScroll: true }));
+  }, [receiptPreviewOpen, step]);
+
   function reset() {
     setStep("start");
     setSourceMode(null);
@@ -134,6 +165,7 @@ export function GarmentIntakeSheet({ onDismiss, open, returnFocus }: GarmentInta
     setRetryUsed(false);
     setWardrobeItemId(undefined);
     setWearChoice(undefined);
+    setReceiptPreviewOpen(false);
   }
 
   function dismiss() {
@@ -418,14 +450,40 @@ export function GarmentIntakeSheet({ onDismiss, open, returnFocus }: GarmentInta
       ) : null}
 
       {step === "receipt" ? (
-        <section className="studio-task-receipt" aria-live="polite" role="status">
-          <span><CheckCircle2 aria-hidden="true" size={30} /></span>
-          <p className="eyebrow">Saved</p>
-          <h3>{facts.title} is in Wardrobe.</h3>
-          <p>{wearChoice ? `${wearChoice} selected for the next action.` : "Add a model view any time."}</p>
-          <LifecycleBadge state="DRAFT" />
-          <small className="studio-receipt-id">{wardrobeItemId}</small>
+        <section className="studio-task-receipt">
+          <div className="studio-receipt-visual">
+            {currentImage ? <img alt={`${facts.title} saved garment preview`} src={currentImage} /> : <Shirt aria-hidden="true" size={72} strokeWidth={1.05} />}
+            {currentImage ? (
+              <button aria-label="Expand garment preview" className="studio-lens-action" onClick={() => setReceiptPreviewOpen(true)} ref={receiptExpandRef} type="button">
+                <Maximize2 aria-hidden="true" size={17} />Expand
+              </button>
+            ) : null}
+          </div>
+          <div aria-live="polite" className="studio-receipt-copy">
+            <span><CheckCircle2 aria-hidden="true" size={24} /></span>
+            <p className="eyebrow">Saved</p>
+            <h3>{facts.title} is in Wardrobe.</h3>
+            <p>{wearChoice ? `${wearChoice} selected for the next action.` : "Add a model view any time."}</p>
+            <div className="studio-receipt-state"><LifecycleBadge state="DRAFT" /><small>Private · not for sale</small></div>
+            <small className="studio-receipt-id">{wardrobeItemId}</small>
+          </div>
         </section>
+      ) : null}
+
+      {receiptPreviewOpen && currentImage ? (
+        <div
+          aria-label={`${facts.title} garment preview`}
+          aria-modal="true"
+          className="studio-receipt-preview"
+          role="dialog"
+        >
+          <img alt={`${facts.title} saved garment preview, expanded`} src={currentImage} />
+          <button aria-label="Close expanded garment preview" className="studio-icon-action" onClick={() => {
+            setReceiptPreviewOpen(false);
+          }} ref={receiptPreviewCloseRef} type="button">
+            <X aria-hidden="true" size={19} />
+          </button>
+        </div>
       ) : null}
 
       <span aria-live="polite" className="sr-only">{working ? `${buildStage.toLowerCase()} in progress` : error?.message ?? ""}</span>

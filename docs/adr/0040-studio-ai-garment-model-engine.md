@@ -36,7 +36,10 @@ The sheet stays mounted for the whole task and asks one thing at a time:
   condition and price.
 - Decisions use `Keep`, `Edit`, `Try again`; no dropdowns.
 - Wear offers Mannequin, an existing approved model, or Add model.
-- Receipt shows the accepted image, state and `Open garment`.
+- Receipt shows the accepted image as the primary proof, offers an expanded
+  inspection view, states `Draft · Private · not for sale`, and keeps
+  `Open garment` as the next action. Draft is a lifecycle label, never the
+  visual result.
 
 Optional unknowns save as Draft. The interface never invents confidence or
 blocks a truthful garment because styling work is incomplete.
@@ -202,3 +205,21 @@ The first slice is accepted only when one browser action is visible in Neon,
 one private source/result is addressable in Blob, duplicate clicks reuse the
 same generation, unauthorized requests fail, and a committed garment appears
 in Wardrobe after reload.
+
+## Release queue after the first slice
+
+1. Activate the production operator session, Neon migration, private Blob and
+   AI Gateway environment; keep the local intake fallback until authenticated
+   end-to-end proof passes.
+2. Turn the Wear choice into durable mannequin/model child jobs with visible
+   queued, running, failed and completed states.
+3. Add server update and archive commands; destructive deletion remains a
+   separately authorized action with audit history.
+4. Mount only the selected Garments or Publishing surface, paginate or
+   virtualize long collections, and serve card-sized image derivatives. Target
+   fewer than 1,500 initial DOM nodes and under 2 MB initial transfer while
+   retaining mobile LCP below 2.5 seconds and CLS below 0.1.
+5. Add a working sign-in action and intake telemetry for start, source mode,
+   generation duration/cost, failure stage, completion and abandonment.
+6. Validate real authenticated INP and the full browser → API → Neon → Blob →
+   reload story before calling the engine production-ready.

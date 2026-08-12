@@ -19,6 +19,12 @@ test("garment intake is one progressive mounted sheet with no select controls", 
   assert.match(sheet, /Describe/);
   assert.match(sheet, /Keep/);
   assert.match(sheet, /Try again/);
+  assert.match(sheet, /Expand garment preview/);
+  assert.match(sheet, /Private · not for sale/);
+  assert.match(sheet, /studio-receipt-preview/);
+  assert.match(sheet, /window\.addEventListener\("keydown", closePreview, \{ capture: true \}\)/);
+  assert.match(sheet, /event\.key === "Tab"/);
+  assert.match(sheet, /aria-modal="true"/);
   assert.doesNotMatch(sheet, /<select/);
   assert.doesNotMatch(sheet, /studio\.createGarment/);
   assert.match(workbench, /<GarmentIntakeSheet/);
@@ -48,4 +54,7 @@ test("new sheet material follows the scoped liquid-glass and accessibility contr
   assert.match(css, /@media \(prefers-reduced-transparency: reduce\)/);
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
   assert.match(css, /@media \(forced-colors: active\)/);
+  assert.match(css, /\.studio-receipt-visual/);
+  assert.match(css, /\.studio-receipt-state \.studio-lifecycle-draft \{ color: var\(--studio-ink\); \}/);
+  assert.match(css, /\.studio-receipt-preview::before/);
 });
