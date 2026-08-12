@@ -29,7 +29,7 @@ const expectedMedia = new Map<string, readonly string[]>([
     "MODEL_LEFT_PROFILE",
     "MODEL_REAR_THREE_QUARTER",
   ]],
-  ["JUW-017", ["MODEL_FRONT"]],
+  ["JUW-017", ["GARMENT_UPPER_FRONT", "MODEL_FRONT"]],
   ["JUW-018", ["MANNEQUIN_UPPER_FRONT", "MODEL_DETAIL"]],
   ["JUW-019", [
     "MANNEQUIN_UPPER_FRONT",
@@ -102,6 +102,7 @@ test("projects only packaged public-safe media into pending Studio wardrobe card
 
 test("keeps media labels plain and pending products outside the Shop projection", () => {
   assert.equal(pendingWardrobeMediaLabel("GARMENT_FRONT"), "Product front");
+  assert.equal(pendingWardrobeMediaLabel("GARMENT_UPPER_FRONT"), "Product upper front");
   assert.equal(pendingWardrobeMediaLabel("GARMENT_BACK"), "Product back");
   assert.equal(pendingWardrobeMediaLabel("MANNEQUIN_FRONT"), "Mannequin front");
   assert.equal(pendingWardrobeMediaLabel("FABRIC_DETAIL"), "Fabric detail");

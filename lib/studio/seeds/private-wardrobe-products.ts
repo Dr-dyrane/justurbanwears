@@ -9,6 +9,7 @@ const PRIVATE_PRODUCT_CREATED_AT = "2026-08-11T00:00:00.000Z";
 
 export type PendingWardrobeMediaView =
   | "GARMENT_FRONT"
+  | "GARMENT_UPPER_FRONT"
   | "GARMENT_BACK"
   | "MANNEQUIN_FRONT"
   | "MANNEQUIN_UPPER_FRONT"
@@ -250,11 +251,17 @@ export const PENDING_WARDROBE_PRODUCT_CONTRACTS: readonly PendingWardrobeProduct
     color: "White",
     price: 24500,
     description: "A white two-piece pairing a fitted collared top with a matching mini bottom.",
-    note: "The Lulu front is ready. Capture the product front, product back and one construction detail before publishing.",
+    note: "The product upper front and Lulu front are ready. Capture the complete product front, product back and one construction detail before publishing.",
     visual: "chalk",
-    approvedViews: ["MODEL_FRONT"],
+    approvedViews: ["GARMENT_UPPER_FRONT", "MODEL_FRONT"],
     missingViews: ["GARMENT_FRONT", "GARMENT_BACK", "FABRIC_DETAIL"],
     publicSafeMedia: [
+      {
+        view: "GARMENT_UPPER_FRONT",
+        src: "/shop/products/white-tailored-vest-mini-set/01-garment-upper-front.webp",
+        width: 1086,
+        height: 1448,
+      },
       {
         view: "MODEL_FRONT",
         src: "/shop/products/white-tailored-vest-mini-set/04-model-front.webp",
@@ -493,6 +500,7 @@ function normalizedSku(value: string) {
 export function pendingWardrobeMediaLabel(view: PendingWardrobeMediaView) {
   const labels: Record<PendingWardrobeMediaView, string> = {
     GARMENT_FRONT: "Product front",
+    GARMENT_UPPER_FRONT: "Product upper front",
     GARMENT_BACK: "Product back",
     MANNEQUIN_FRONT: "Mannequin front",
     MANNEQUIN_UPPER_FRONT: "Upper front",

@@ -120,29 +120,32 @@ test("promotes JUW-015 only after product captures and approved model angles are
   assert.equal(selectWardrobePublicView(seeded).some(({ sku }) => sku === "JUW-015"), true);
 });
 
-test("admits JUW-017's real Lulu front while unresolved product construction stays explicit", async () => {
+test("admits JUW-017's product upper front and real Lulu front while unresolved construction stays explicit", async () => {
   const contract = PENDING_WARDROBE_PRODUCT_CONTRACTS.find(({ sku }) => sku === "JUW-017");
   assert.ok(contract);
-  assert.deepEqual(contract.approvedViews, ["MODEL_FRONT"]);
+  assert.deepEqual(contract.approvedViews, ["GARMENT_UPPER_FRONT", "MODEL_FRONT"]);
   assert.deepEqual(contract.missingViews, ["GARMENT_FRONT", "GARMENT_BACK", "FABRIC_DETAIL"]);
+  assert.deepEqual(contract.publicSafeMedia.map(({ view }) => view), [
+    "GARMENT_UPPER_FRONT",
+    "MODEL_FRONT",
+  ]);
   assert.deepEqual(contract.garment.references, []);
   assert.equal(contract.garment.mediaState, "DRAFT");
   assert.doesNotMatch(contract.garment.publicDescription, /skirt|shorts/iu);
 
-  const assetPath = join(
-    process.cwd(),
-    "public/shop/products/white-tailored-vest-mini-set/04-model-front.webp",
-  );
-  assert.equal(existsSync(assetPath), true);
-  const metadata = await sharp(readFileSync(assetPath)).metadata();
-  assert.equal(metadata.format, "webp");
-  assert.equal(metadata.width, 1122);
-  assert.equal(metadata.height, 1402);
-  assert.equal(metadata.channels, 3);
-  assert.equal(metadata.exif, undefined);
-  assert.equal(metadata.icc, undefined);
-  assert.equal(metadata.xmp, undefined);
-  assert.equal(metadata.iptc, undefined);
+  for (const media of contract.publicSafeMedia) {
+    const assetPath = join(process.cwd(), "public", media.src);
+    assert.equal(existsSync(assetPath), true);
+    const metadata = await sharp(readFileSync(assetPath)).metadata();
+    assert.equal(metadata.format, "webp");
+    assert.equal(metadata.width, media.width);
+    assert.equal(metadata.height, media.height);
+    assert.equal(metadata.channels, 3);
+    assert.equal(metadata.exif, undefined);
+    assert.equal(metadata.icc, undefined);
+    assert.equal(metadata.xmp, undefined);
+    assert.equal(metadata.iptc, undefined);
+  }
 
   const seeded = mergeWardrobeAuthoritySeeds(createEmptyStudioSnapshot());
   const garment = seeded.garments.find(({ sku }) => sku === "JUW-017");
