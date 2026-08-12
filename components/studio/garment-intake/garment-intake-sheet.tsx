@@ -303,8 +303,8 @@ export function GarmentIntakeSheet({ onDismiss, open, returnFocus }: GarmentInta
             <StudioDisclosureRow detail="Choose photo" icon={<Upload size={19} />} label="Photos" onClick={() => uploadInputRef.current?.click()} />
             <StudioDisclosureRow detail="Use words" icon={<Pencil size={19} />} label="Describe" onClick={chooseDescription} />
           </div>
-          <input className="studio-visually-hidden-file" ref={cameraInputRef} accept="image/*" capture="environment" onChange={(event) => chooseFile("CAMERA", event.target.files?.[0] ?? null)} type="file" />
-          <input className="studio-visually-hidden-file" ref={uploadInputRef} accept="image/*" onChange={(event) => chooseFile("UPLOAD", event.target.files?.[0] ?? null)} type="file" />
+          <input aria-label="Take garment photo" className="studio-visually-hidden-file" ref={cameraInputRef} accept="image/*" capture="environment" onChange={(event) => chooseFile("CAMERA", event.target.files?.[0] ?? null)} type="file" />
+          <input aria-label="Choose garment photo" className="studio-visually-hidden-file" ref={uploadInputRef} accept="image/*" onChange={(event) => chooseFile("UPLOAD", event.target.files?.[0] ?? null)} type="file" />
         </section>
       ) : null}
 
