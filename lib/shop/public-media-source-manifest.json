@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "catalogueRevision": "2026-08-11-catalogue-13",
-  "catalogueChecksum": "7ee66d52ddf08f9c76d82cb289fd9292069fa6d3e1177f2e9fc25cdde8967f92",
-  "cataloguePresentationChecksum": "9b0e2d3edb69661febe0bfdbdbacd6e7dc369174aad93d6bd9d5a2655f255913",
+  "catalogueRevision": "2026-08-11-catalogue-14",
+  "catalogueChecksum": "cd7b631012c13e3bf84f001e1ebb725af01d1fddf166ce4b1d8e6123aa95a984",
+  "cataloguePresentationChecksum": "086449ec6997bb6bcb4e4751da2b3e9f27f123d0bd6f7b8f9418d8a86c6bebe1",
   "assets": [
     {
       "sourcePath": "/shop/products/cocoa-cowl-gathered-midi-dress/01-garment-front.webp",
@@ -51,12 +51,12 @@
     },
     {
       "sourcePath": "/shop/products/cocoa-cowl-gathered-midi-dress/07-model-left-profile.webp",
-      "pathname": "shop/catalogue/2030950a16cc5f193f7fe127157744a9f1a11a56ddb2c5ee49387bcffc8a161b/products/cocoa-cowl-gathered-midi-dress/07-model-left-profile.webp",
-      "sha256": "2030950a16cc5f193f7fe127157744a9f1a11a56ddb2c5ee49387bcffc8a161b",
-      "size": 68346,
+      "pathname": "shop/catalogue/75e17859901f22c363346ad8256e8f9ab7369f288fc7f98cb19e1183cc5bf270/products/cocoa-cowl-gathered-midi-dress/07-model-left-profile.webp",
+      "sha256": "75e17859901f22c363346ad8256e8f9ab7369f288fc7f98cb19e1183cc5bf270",
+      "size": 84766,
       "contentType": "image/webp",
       "width": 972,
-      "height": 1728
+      "height": 1619
     },
     {
       "sourcePath": "/shop/products/coral-gathered-crop-mini-set/01-garment-front.webp",

@@ -176,9 +176,9 @@ const approvedProducts: readonly ApprovedProductMedia[] = [
       {
         slot: "MODEL_LEFT_PROFILE",
         src: "/shop/products/cocoa-cowl-gathered-midi-dress/07-model-left-profile.webp",
-        sha256: "2030950a16cc5f193f7fe127157744a9f1a11a56ddb2c5ee49387bcffc8a161b",
+        sha256: "75e17859901f22c363346ad8256e8f9ab7369f288fc7f98cb19e1183cc5bf270",
         width: 972,
-        height: 1728,
+        height: 1619,
       },
       {
         slot: "MODEL_REAR_THREE_QUARTER",

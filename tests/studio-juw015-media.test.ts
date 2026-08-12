@@ -17,7 +17,7 @@ const approvedMedia = [
   ["GARMENT_BACK", "02-garment-back.webp", 1122, 1402, "3970f8e8b1069824afced84a047f23fff594ad65bed83f92dd54a17b5cebb4ae"],
   ["MANNEQUIN_FRONT", "03-mannequin-front.webp", 1122, 1402, "22290498a41548c730465782f6b414c53c2db15e82c3c51b7d43a6f5a7528166"],
   ["FABRIC_DETAIL", "06-fabric-detail.webp", 1122, 1402, "6100fa65258b13aaded3e60441bb75c238523250a52ba1c76fa847f033f394e4"],
-  ["MODEL_LEFT_PROFILE", "07-model-left-profile.webp", 972, 1728, "2030950a16cc5f193f7fe127157744a9f1a11a56ddb2c5ee49387bcffc8a161b"],
+  ["MODEL_LEFT_PROFILE", "07-model-left-profile.webp", 972, 1619, "75e17859901f22c363346ad8256e8f9ab7369f288fc7f98cb19e1183cc5bf270"],
   ["MODEL_REAR_THREE_QUARTER", "05-model-rear-three-quarter.webp", 972, 1728, "438d45b6eb6c10ba43e5db611cb1dd4eb45ba34b0cfe2423f3a30727db0f968b"],
 ] as const;
 

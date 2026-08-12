@@ -89,7 +89,7 @@ function presentation(product) {
  */
 export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
   schemaVersion: 2,
-  revision: "2026-08-11-catalogue-13",
+  revision: "2026-08-11-catalogue-14",
   products: Object.freeze([
     presentation({
       slug: "coral-drift-dress",
