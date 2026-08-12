@@ -29,6 +29,7 @@ const expected = new Map<string, {
   ["JUW-020", { price: 24500, category: "Set", missing: [] }],
   ["JUW-021", { price: 24500, category: "Set", missing: [] }],
   ["JUW-022", { price: 24500, category: "Dress", missing: ["GARMENT_FRONT", "GARMENT_BACK", "FABRIC_DETAIL"] }],
+  ["JUW-023", { price: 16500, category: "Shirt", missing: ["GARMENT_FRONT", "GARMENT_BACK", "FABRIC_DETAIL"] }],
   ["JUW-024", { price: 16500, category: "Shirt", missing: ["GARMENT_FRONT", "GARMENT_BACK", "FABRIC_DETAIL"] }],
 ] as const);
 
@@ -193,6 +194,27 @@ test("promotes JUW-020 only after its exact product and Lulu views are complete"
   assert.ok(garment);
   assert.equal(seeded.listings.some(({ garmentId }) => garmentId === garment.id), true);
   assert.equal(selectWardrobePublicView(seeded).some(({ sku }) => sku === "JUW-020"), true);
+});
+
+test("hydrates JUW-023 as a private capture-required garment without Shop state", () => {
+  const contract = PENDING_WARDROBE_PRODUCT_CONTRACTS.find(({ sku }) => sku === "JUW-023");
+  assert.ok(contract);
+  assert.deepEqual(contract.legacySkus, ["DYN-103"]);
+  assert.equal(contract.slug, "pale-blue-uniform-top");
+  assert.deepEqual(contract.approvedViews, []);
+  assert.deepEqual(contract.publicSafeMedia, []);
+  assert.deepEqual(contract.missingViews, ["GARMENT_FRONT", "GARMENT_BACK", "FABRIC_DETAIL"]);
+
+  const seeded = mergeWardrobeAuthoritySeeds(createEmptyStudioSnapshot());
+  const garment = seeded.garments.find(({ sku }) => sku === "JUW-023");
+  assert.ok(garment);
+  assert.equal(garment.state, "DRAFT");
+  assert.equal(garment.mediaState, "DRAFT");
+  assert.equal(garment.quantity, 1);
+  assert.equal(garment.saleEligible, true);
+  assert.equal(seeded.inventory.some(({ garmentId }) => garmentId === garment.id), true);
+  assert.equal(seeded.listings.some(({ garmentId }) => garmentId === garment.id), false);
+  assert.equal(selectWardrobePublicView(seeded).some(({ sku }) => sku === "JUW-023"), false);
 });
 
 test("adding only the declared missing captures completes each media gate", () => {
