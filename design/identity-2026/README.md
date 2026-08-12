@@ -86,17 +86,16 @@ do not trace or redraw production assets casually.
 | `justurban-app-background.svg` | Warm-paper adaptive background. |
 | `justurban-app-monochrome.svg` | One-colour adaptive derivative. |
 | `exports/social-profile-1080.png` | Name-bearing square social identity using the centered logo. |
-| `social/og-wardrobe-background-source.png` | Text-free, generated wardrobe-reveal atmosphere used only behind exact deterministic brand artwork. |
-| `social/og-headline-bodoni-outlined.svg` | Approved headline outlined from Bodoni Moda Variable at weight 500 for identical local and deployment rendering. |
-| `exports/social-og-1200x630.png` | 1200 × 630 website/social preview using the exact centered logo and approved headline. |
+| `references/social-application-2026-08-12/luxury-signage-dark.png` | Exact 1122 × 1402 owner-selected source for the production Open Graph image. |
+| `exports/social-og-1122x1402.png` | Exact owner-selected portrait signage image; no crop or recompression is applied. |
 | `identity-spec.json` | Machine-readable roles, sources, paths, and platform rules. |
 | `exports/` | Ready SVG, PNG, ICO, and social derivatives. |
 
 Run `npm run brand:generate` after an approved source replacement. Run
 `npm run brand:generate:social` to rebuild the centered-logo social profile and
-Open Graph images. The Open Graph build also refreshes the legacy `/og.png`
-mirror. The social generator runs before local development and both production
-build paths.
+Open Graph images. The Open Graph build copies the selected signage source
+byte-for-byte to the production and legacy locations. The social generator runs
+before local development and both production build paths.
 
 Direct share routes remain `/logo`, `/wordmark`, and `/icon`; the production
 Open Graph image is served from `/brand/social-og.png`.

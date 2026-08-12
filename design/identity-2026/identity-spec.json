@@ -47,7 +47,7 @@
     "adaptiveBackground": "justurban-app-background.svg",
     "monochromeForeground": "justurban-app-monochrome.svg",
     "socialProfile": "exports/social-profile-1080.png",
-    "socialOg": "exports/social-og-1200x630.png"
+    "socialOg": "exports/social-og-1122x1402.png"
   },
   "public": {
     "shareLogo": "/logo",
@@ -136,10 +136,10 @@
     },
     "openGraph": {
       "file": "/brand/social-og.png",
-      "dimensionsPx": [1200, 630],
-      "backgroundSource": "social/og-wardrobe-background-source.png",
-      "headlineSource": "social/og-headline-bodoni-outlined.svg",
-      "assetRole": "Exact name-bearing centered logo plus the approved headline on a wardrobe-reveal atmosphere."
+      "dimensionsPx": [1122, 1402],
+      "source": "/brand/presentation/luxury-signage-dark.png",
+      "sourceSha256": "f34338beb5667cc8f98349acf2512b1a9ac51e8051f4d953078b21d04626a36d",
+      "assetRole": "Exact owner-selected portrait signage image, without cropping, recompression, or overlays."
     }
   }
 }

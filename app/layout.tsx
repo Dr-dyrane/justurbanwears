@@ -91,9 +91,9 @@ export const metadata: Metadata = {
     images: [
       {
         url: socialImage,
-        width: 1200,
-        height: 630,
-        alt: "JustUrbanWears centered logo with the line ‘Clothes with a second first impression.’ on a warm wardrobe-inspired background.",
+        width: 1122,
+        height: 1402,
+        alt: "JustUrbanWears by Lulu illuminated boutique wall signage.",
       },
     ],
     type: "website",

@@ -52,18 +52,19 @@ test("the 2026.2 contract assigns logo, wordmark, and icon to different jobs", a
   assert.match(assets, /profile: "\/brand\/social-profile\.png"/);
   assert.match(assets, /og: "\/brand\/social-og\.png"/);
   assert.match(layout, /BRAND_ASSETS\.social\.runtimeOg/);
-  assert.match(layout, /width: 1200/);
-  assert.match(layout, /height: 630/);
+  assert.match(layout, /width: 1122/);
+  assert.match(layout, /height: 1402/);
   assert.match(logoComponent, /BRAND_ASSETS\.logo\.runtimeSvg/);
 });
 
-test("generated social assets use the name-bearing centered logo format", async () => {
-  const [profile, openGraph, legacyOpenGraph, profileExport, openGraphExport] = await Promise.all([
+test("generated social assets use the name-bearing centered logo and exact owner-selected OG", async () => {
+  const [profile, openGraph, legacyOpenGraph, profileExport, openGraphExport, selectedOpenGraph] = await Promise.all([
     readFile(publicFile("brand", "social-profile.png")),
     readFile(publicFile("brand", "social-og.png")),
     readFile(publicFile("og.png")),
     readFile(designFile("exports", "social-profile-1080.png")),
-    readFile(designFile("exports", "social-og-1200x630.png")),
+    readFile(designFile("exports", "social-og-1122x1402.png")),
+    readFile(publicFile("brand", "presentation", "luxury-signage-dark.png")),
   ]);
 
   const profileInfo = pngInfo(profile);
@@ -72,25 +73,19 @@ test("generated social assets use the name-bearing centered logo format", async 
   assert.ok(profileInfo.chunks.includes("iCCP"));
 
   const openGraphInfo = pngInfo(openGraph);
-  assert.deepEqual([openGraphInfo.width, openGraphInfo.height], [1200, 630]);
+  assert.deepEqual([openGraphInfo.width, openGraphInfo.height], [1122, 1402]);
   assert.equal(openGraphInfo.bitDepth, 8);
-  assert.ok(openGraphInfo.chunks.includes("iCCP"));
 
   assert.deepEqual(profile, profileExport);
   assert.deepEqual(openGraph, openGraphExport);
   assert.deepEqual(openGraph, legacyOpenGraph);
+  assert.deepEqual(openGraph, selectedOpenGraph);
 });
 
-test("the social generator builds from the corrected public logo rather than the compact icon", async () => {
-  const [generator, outlinedHeadline] = await Promise.all([
-    readFile(path.join(root, "scripts", "generate-social-brand-assets.mjs"), "utf8"),
-    readFile(designFile("social", "og-headline-bodoni-outlined.svg"), "utf8"),
-  ]);
+test("the social generator uses the corrected public logo and exact selected signage source", async () => {
+  const generator = await readFile(path.join(root, "scripts", "generate-social-brand-assets.mjs"), "utf8");
   assert.match(generator, /publicRoot, "logo\.png"/);
-  assert.match(generator, /og-wardrobe-background-source\.png/);
-  assert.match(generator, /og-headline-bodoni-outlined\.svg/);
-  assert.match(outlinedHeadline, /Clothes with a second first impression\./);
-  assert.match(outlinedHeadline, /Bodoni Moda Variable at weight 500/);
+  assert.match(generator, /presentation", "luxury-signage-dark\.png/);
   assert.match(generator, /social-profile\.png/);
   assert.match(generator, /social-og\.png/);
   assert.doesNotMatch(generator, /icon\.png|justurban-icon-source/);
