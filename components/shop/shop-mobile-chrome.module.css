@@ -1,0 +1,61 @@
+.composition {
+  --edge-action-size: 58px;
+  --edge-action-gap: 10px;
+}
+
+.edgeAction {
+  flex: 0 0 var(--edge-action-size);
+  height: var(--edge-action-size);
+  max-width: var(--edge-action-size);
+  min-width: var(--edge-action-size);
+  width: var(--edge-action-size);
+}
+
+.contextAction {
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.contextAction > span {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.contextAction strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 680px) {
+  :global(.shop-mobile-shell[data-mobile-chrome-mode="compact"]) .composition {
+    align-items: center;
+    column-gap: var(--edge-action-gap);
+    display: grid;
+    grid-template-columns:
+      var(--edge-action-size)
+      minmax(0, 1fr)
+      var(--edge-action-size);
+    width: 100%;
+  }
+
+  :global(.shop-mobile-shell[data-mobile-chrome-mode="compact"]) .contextAction {
+    grid-column: 2;
+    justify-self: stretch;
+    margin: 0;
+    width: 100%;
+  }
+
+  :global(.shop-mobile-shell[data-mobile-chrome-mode="compact"]) .row {
+    display: contents;
+  }
+}
+
+@media (max-width: 379px) {
+  .composition {
+    --edge-action-size: 50px;
+    --edge-action-gap: 6px;
+  }
+}

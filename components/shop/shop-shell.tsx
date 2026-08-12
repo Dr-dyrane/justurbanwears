@@ -19,6 +19,7 @@ import { BrandWordmark } from "../brand/brand-wordmark";
 import { ThemeToggle } from "../theme/theme-toggle";
 import { ShopLink as Link } from "./atoms/shop-link";
 import { ShopProvider, useShop } from "./shop-provider";
+import chromeStyles from "./shop-mobile-chrome.module.css";
 
 const nav: Array<{ href: string; label: string; icon: LucideIcon }> = [
   { href: "/shop", label: "Home", icon: House },
@@ -119,7 +120,7 @@ function ShopChrome({ children }: { children: React.ReactNode }) {
             <ThemeToggle className="shop-theme-toggle" />
             <Link
               aria-current={pathname === "/shop/account" ? "page" : undefined}
-              aria-label="Account and app"
+              aria-label="Account and orders"
               className={`shop-account-link${pathname === "/shop/account" ? " is-active" : ""}`}
               href="/shop/account"
             >
@@ -159,13 +160,13 @@ function ShopChrome({ children }: { children: React.ReactNode }) {
         data-mobile-chrome-mode={mobileChromeMode}
         inert={mobileChromeMode === "suspended" || undefined}
       >
-        <div className="shop-mobile-composition">
+        <div className={`shop-mobile-composition ${chromeStyles.composition}`}>
           <button
             aria-controls="shop-mobile-navigation"
             aria-expanded={mobileChromeMode === "navigation"}
             aria-hidden={mobileChromeMode !== "compact" || undefined}
             aria-label={`Show navigation. ${mobileDestination.label} selected`}
-            className="shop-mobile-nav-reveal shop-dock-lens"
+            className={`shop-mobile-nav-reveal shop-dock-lens ${chromeStyles.edgeAction}`}
             onClick={revealNavigation}
             tabIndex={mobileChromeMode === "compact" ? 0 : -1}
             type="button"
@@ -174,7 +175,7 @@ function ShopChrome({ children }: { children: React.ReactNode }) {
           </button>
           <Link
             aria-hidden={mobileChromeMode === "navigation" || mobileChromeMode === "suspended" || undefined}
-            className="shop-mobile-context shop-dock-lens"
+            className={`shop-mobile-context shop-dock-lens ${chromeStyles.contextAction}`}
             href={contextAction.href}
             tabIndex={mobileChromeMode === "navigation" || mobileChromeMode === "suspended" ? -1 : undefined}
           >
@@ -184,7 +185,7 @@ function ShopChrome({ children }: { children: React.ReactNode }) {
             </span>
             <ArrowRight aria-hidden="true" size={17} strokeWidth={1.9} />
           </Link>
-          <div className="shop-mobile-row">
+          <div className={`shop-mobile-row ${chromeStyles.row}`}>
             <nav
               aria-hidden={mobileChromeMode === "compact" || mobileChromeMode === "suspended" || undefined}
               aria-label="Mobile shop navigation"
@@ -214,7 +215,7 @@ function ShopChrome({ children }: { children: React.ReactNode }) {
             <Link
               aria-current={pathname === "/shop/bag" ? "page" : pathname === "/shop/checkout" ? "location" : undefined}
               aria-label={`Bag, ${bag.length} items`}
-              className={`shop-mobile-fab shop-dock-lens${pathname === "/shop/bag" || pathname === "/shop/checkout" ? " is-active" : ""}`}
+              className={`shop-mobile-fab shop-dock-lens ${chromeStyles.edgeAction}${pathname === "/shop/bag" || pathname === "/shop/checkout" ? " is-active" : ""}`}
               href="/shop/bag"
             >
               <ShoppingBag aria-hidden="true" size={25} strokeWidth={2.05} />
