@@ -492,11 +492,17 @@ export const PENDING_WARDROBE_PRODUCT_CONTRACTS: readonly PendingWardrobeProduct
     color: "Pale tone · exact colour to confirm",
     price: 16500,
     description: "A gathered strapless bandeau top.",
-    note: "The Lulu upper-front detail is ready. Capture the full product front, product back and one fabric detail before publishing; confirm the exact colour at intake.",
+    note: "The product upper-front and Lulu upper-front detail are ready. Capture the full product front, product back and one fabric detail before publishing; confirm the exact colour at intake.",
     visual: "ivory",
-    approvedViews: ["MODEL_DETAIL"],
+    approvedViews: ["GARMENT_UPPER_FRONT", "MODEL_DETAIL"],
     missingViews: ["GARMENT_FRONT", "GARMENT_BACK", "FABRIC_DETAIL"],
     publicSafeMedia: [
+      {
+        view: "GARMENT_UPPER_FRONT",
+        src: "/shop/products/pale-bandeau-car-look/01-garment-upper-front.webp",
+        width: 1023,
+        height: 1537,
+      },
       {
         view: "MODEL_DETAIL",
         src: "/shop/products/pale-bandeau-car-look/08-model-detail.webp",

@@ -13,7 +13,8 @@ import {
 } from "../lib/studio/seeds/wardrobe-authority";
 
 const slug = "pale-bandeau-car-look";
-const publicMedia = `/shop/products/${slug}/08-model-detail.webp` as const;
+const productUpperFront = `/shop/products/${slug}/01-garment-upper-front.webp` as const;
+const modelDetail = `/shop/products/${slug}/08-model-detail.webp` as const;
 
 const readImage = sharp as unknown as (input: Buffer) => {
   metadata(): Promise<{
@@ -28,7 +29,7 @@ const readImage = sharp as unknown as (input: Buffer) => {
   }>;
 };
 
-test("hydrates JUW-024 with only its authentic Lulu upper detail", async () => {
+test("hydrates JUW-024 with its approved product upper front and authentic Lulu upper detail", async () => {
   const contract = PENDING_WARDROBE_PRODUCT_CONTRACTS.find(({ sku }) => sku === "JUW-024");
   assert.ok(contract);
   assert.equal(contract.slug, slug);
@@ -42,29 +43,40 @@ test("hydrates JUW-024 with only its authentic Lulu upper detail", async () => {
   assert.equal(contract.garment.saleEligible, true);
   assert.equal(contract.garment.availability, "AVAILABLE");
   assert.deepEqual(contract.garment.measurements, []);
-  assert.deepEqual(contract.approvedViews, ["MODEL_DETAIL"]);
+  assert.equal(contract.garment.color, "Pale tone · exact colour to confirm");
+  assert.match(contract.garment.notes, /product upper-front and Lulu upper-front detail are ready/iu);
+  assert.match(contract.garment.notes, /confirm the exact colour at intake/iu);
+  assert.deepEqual(contract.approvedViews, ["GARMENT_UPPER_FRONT", "MODEL_DETAIL"]);
   assert.deepEqual(contract.garment.references, []);
   assert.deepEqual(contract.missingViews, ["GARMENT_FRONT", "GARMENT_BACK", "FABRIC_DETAIL"]);
   assert.deepEqual(contract.publicSafeMedia, [
     {
+      view: "GARMENT_UPPER_FRONT",
+      src: productUpperFront,
+      width: 1023,
+      height: 1537,
+    },
+    {
       view: "MODEL_DETAIL",
-      src: publicMedia,
+      src: modelDetail,
       width: 972,
       height: 1619,
     },
   ]);
 
-  const assetPath = join(process.cwd(), "public", publicMedia);
-  assert.equal(existsSync(assetPath), true);
-  const metadata = await readImage(readFileSync(assetPath)).metadata();
-  assert.equal(metadata.format, "webp");
-  assert.equal(metadata.width, 972);
-  assert.equal(metadata.height, 1619);
-  assert.equal(metadata.channels, 3);
-  assert.equal(metadata.exif, undefined);
-  assert.equal(metadata.icc, undefined);
-  assert.equal(metadata.xmp, undefined);
-  assert.equal(metadata.iptc, undefined);
+  for (const media of contract.publicSafeMedia) {
+    const assetPath = join(process.cwd(), "public", media.src);
+    assert.equal(existsSync(assetPath), true);
+    const metadata = await readImage(readFileSync(assetPath)).metadata();
+    assert.equal(metadata.format, "webp");
+    assert.equal(metadata.width, media.width);
+    assert.equal(metadata.height, media.height);
+    assert.equal(metadata.channels, 3);
+    assert.equal(metadata.exif, undefined);
+    assert.equal(metadata.icc, undefined);
+    assert.equal(metadata.xmp, undefined);
+    assert.equal(metadata.iptc, undefined);
+  }
 
   const seeded = mergeWardrobeAuthoritySeeds(createEmptyStudioSnapshot());
   const garment = seeded.garments.find(({ sku }) => sku === "JUW-024");
