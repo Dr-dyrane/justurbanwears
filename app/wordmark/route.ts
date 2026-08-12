@@ -1,7 +1,7 @@
-import logoSvg from "../../design/identity-2026/justurban-logo.svg?raw";
+import wordmarkSvg from "../../design/identity-2026/justurban-wordmark.svg?raw";
 
 export function GET() {
-  return new Response(logoSvg, {
+  return new Response(wordmarkSvg, {
     status: 200,
     headers: {
       "Cache-Control": "public, max-age=3600, s-maxage=86400, stale-while-revalidate=604800",

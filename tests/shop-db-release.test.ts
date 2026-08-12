@@ -517,6 +517,7 @@ test("build and deployment remain free of database administration side effects",
   assert.match(vercelIgnore, /^\/design\/identity-2026\/\*\*$/m);
   assert.match(vercelIgnore, /^!\/design\/identity-2026\/justurban-app-icon\.svg$/m);
   assert.match(vercelIgnore, /^!\/design\/identity-2026\/justurban-wordmark\.svg$/m);
+  assert.match(vercelIgnore, /^!\/design\/identity-2026\/justurban-logo\.svg$/m);
   const gitIgnore = readFileSync(join(repositoryRoot, ".gitignore"), "utf8");
   assert.match(gitIgnore, /^\/\.codex\/$/m);
 });
