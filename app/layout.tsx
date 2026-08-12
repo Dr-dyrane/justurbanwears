@@ -9,7 +9,7 @@ import "./globals.css";
 import "./foundation.css";
 
 const siteUrl = new URL("https://www.justurbanwears.com");
-const socialImage = new URL("/og.png", siteUrl).toString();
+const socialImage = new URL(BRAND_ASSETS.social.runtimeOg, siteUrl).toString();
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -84,15 +84,15 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: "justurban wears · Clothes with a second first impression.",
-    description: "A Lagos edit of clearly described urban ladies’ wear.",
-    siteName: "justurban wears",
+    description: "One-off urban womenswear from Lulu’s wardrobe, ready to move through the city.",
+    siteName: "JustUrbanWears",
     locale: "en_NG",
     images: [
       {
         url: socialImage,
-        width: 1536,
-        height: 1024,
-        alt: "justurban wears urban ladies’ wear editorial image",
+        width: 1200,
+        height: 630,
+        alt: "JustUrbanWears by Lulu centered logo and Clothes with a second first impression.",
       },
     ],
     type: "website",
@@ -100,7 +100,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "justurban wears · Clothes with a second first impression.",
-    description: "A Lagos edit of clearly described urban ladies’ wear.",
+    description: "One-off urban womenswear from Lulu’s wardrobe, ready to move through the city.",
     images: [socialImage],
   },
 };

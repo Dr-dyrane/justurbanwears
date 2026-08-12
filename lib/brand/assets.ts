@@ -34,4 +34,10 @@ export const BRAND_ASSETS = {
     runtimeSvg: "/favicon.svg?v=2026.2-wardrobe",
     runtimeIco: "/favicon.ico?v=2026.2-wardrobe",
   },
+  social: {
+    profile: "/brand/social-profile.png",
+    og: "/brand/social-og.png",
+    runtimeProfile: "/brand/social-profile.png?v=2026.2-role-corrected",
+    runtimeOg: "/brand/social-og.png?v=2026.2-role-corrected",
+  },
 } as const;

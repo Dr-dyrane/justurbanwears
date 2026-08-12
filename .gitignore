@@ -44,6 +44,12 @@ yarn-error.log*
 /work/
 /.tmp/
 
+# Generated centered-logo social derivatives; rebuild with npm run brand:generate:social.
+/public/brand/social-profile.png
+/public/brand/social-og.png
+/design/identity-2026/exports/social-profile-1080.png
+/design/identity-2026/exports/social-og-1200x630.png
+
 # Local duplicate exports created by macOS Save As; canonical flow PNGs omit the suffix.
 /docs/order-flows/* 2.png
 
