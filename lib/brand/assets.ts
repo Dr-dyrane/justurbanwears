@@ -38,6 +38,6 @@ export const BRAND_ASSETS = {
     profile: "/brand/social-profile.png",
     og: "/brand/social-og.png",
     runtimeProfile: "/brand/social-profile.png?v=2026.2-role-corrected",
-    runtimeOg: "/brand/social-og.png?v=2026.2-role-corrected",
+    runtimeOg: "/brand/social-og.png?v=2026.2-wardrobe-reveal",
   },
 } as const;

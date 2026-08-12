@@ -58,9 +58,10 @@ test("the 2026.2 contract assigns logo, wordmark, and icon to different jobs", a
 });
 
 test("generated social assets use the name-bearing centered logo format", async () => {
-  const [profile, openGraph, profileExport, openGraphExport] = await Promise.all([
+  const [profile, openGraph, legacyOpenGraph, profileExport, openGraphExport] = await Promise.all([
     readFile(publicFile("brand", "social-profile.png")),
     readFile(publicFile("brand", "social-og.png")),
+    readFile(publicFile("og.png")),
     readFile(designFile("exports", "social-profile-1080.png")),
     readFile(designFile("exports", "social-og-1200x630.png")),
   ]);
@@ -77,11 +78,19 @@ test("generated social assets use the name-bearing centered logo format", async 
 
   assert.deepEqual(profile, profileExport);
   assert.deepEqual(openGraph, openGraphExport);
+  assert.deepEqual(openGraph, legacyOpenGraph);
 });
 
 test("the social generator builds from the corrected public logo rather than the compact icon", async () => {
-  const generator = await readFile(path.join(root, "scripts", "generate-social-brand-assets.mjs"), "utf8");
+  const [generator, outlinedHeadline] = await Promise.all([
+    readFile(path.join(root, "scripts", "generate-social-brand-assets.mjs"), "utf8"),
+    readFile(designFile("social", "og-headline-bodoni-outlined.svg"), "utf8"),
+  ]);
   assert.match(generator, /publicRoot, "logo\.png"/);
+  assert.match(generator, /og-wardrobe-background-source\.png/);
+  assert.match(generator, /og-headline-bodoni-outlined\.svg/);
+  assert.match(outlinedHeadline, /Clothes with a second first impression\./);
+  assert.match(outlinedHeadline, /Bodoni Moda Variable at weight 500/);
   assert.match(generator, /social-profile\.png/);
   assert.match(generator, /social-og\.png/);
   assert.doesNotMatch(generator, /icon\.png|justurban-icon-source/);

@@ -137,7 +137,9 @@
     "openGraph": {
       "file": "/brand/social-og.png",
       "dimensionsPx": [1200, 630],
-      "assetRole": "Name-bearing centered logo plus the approved headline."
+      "backgroundSource": "social/og-wardrobe-background-source.png",
+      "headlineSource": "social/og-headline-bodoni-outlined.svg",
+      "assetRole": "Exact name-bearing centered logo plus the approved headline on a wardrobe-reveal atmosphere."
     }
   }
 }
