@@ -7,6 +7,7 @@ import {
   ClipboardList,
   ExternalLink,
   House,
+  Plus,
   Shirt,
   Users,
   type LucideIcon,
@@ -83,16 +84,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       : { label: "Studio", icon: House });
   const MobileDestinationIcon = mobileDestination.icon;
   const contextAction = pathname.startsWith("/studio/models")
-    ? { eyebrow: "Model atelier", label: "Add another model", href: "/studio/models?intake=model" }
+    ? { label: "Add model", href: "/studio/models?intake=model", icon: Plus }
     : pathname.startsWith("/studio/wardrobe")
-      ? { eyebrow: "Garment intake", label: "Snap and classify the next piece", href: "/studio/wardrobe?intake=1" }
+      ? { label: "Intake garment", href: "/studio/wardrobe?intake=1", icon: Plus }
       : pathname.startsWith("/studio/operations")
-        ? { eyebrow: "Live operations", label: "Work orders and returns", href: "/studio/operations?view=orders" }
+        ? { label: "Open orders", href: "/studio/operations?view=orders", icon: ClipboardList }
         : pathname === "/shoots/new"
-          ? { eyebrow: "Shoot composer", label: "Return to shoot desk", href: "/shoots" }
+          ? { label: "Shoot gallery", href: "/shoots", icon: Camera }
           : pathname.startsWith("/shoots")
-          ? { eyebrow: "Shoot desk", label: "Open a new private shoot", href: "/shoots/new" }
-          : { eyebrow: "Lulu’s next move", label: "Intake a garment", href: "/studio/wardrobe?intake=1" };
+          ? { label: "New shoot", href: "/shoots/new", icon: Camera }
+          : { label: "Intake garment", href: "/studio/wardrobe?intake=1", icon: Plus };
+  const ContextActionIcon = contextAction.icon;
 
   return (
     <StudioProvider>
@@ -172,18 +174,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             >
               <span><MobileDestinationIcon aria-hidden="true" size={25} strokeWidth={2.2} /></span>
             </button>
-            <Link
-              aria-hidden={mobileChromeMode === "navigation" || mobileChromeMode === "suspended" || undefined}
-              className="shop-mobile-context shop-dock-lens"
-              href={contextAction.href}
-              tabIndex={mobileChromeMode === "navigation" || mobileChromeMode === "suspended" ? -1 : undefined}
-            >
-              <span>
-                <small>{contextAction.eyebrow}</small>
-                <strong>{contextAction.label}</strong>
-              </span>
-              <ArrowRight aria-hidden="true" size={17} strokeWidth={1.9} />
-            </Link>
             <div className="shop-mobile-row">
               <nav
                 aria-hidden={mobileChromeMode === "compact" || mobileChromeMode === "suspended" || undefined}
@@ -212,12 +202,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 })}
               </nav>
               <Link
-                aria-label="Open the justurban wears public shop"
+                aria-label={contextAction.label}
                 className="shop-mobile-fab shop-dock-lens studio-mobile-fab"
-                href="/shop"
+                href={contextAction.href}
               >
-                <BrandIcon className="studio-mobile-app-icon" size={44} />
-                <ExternalLink className="studio-mobile-exit-mark" aria-hidden="true" size={18} strokeWidth={2.1} />
+                <ContextActionIcon aria-hidden="true" size={24} strokeWidth={2.2} />
               </Link>
             </div>
           </div>

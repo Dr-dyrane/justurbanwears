@@ -24,6 +24,12 @@ This is a preview, not a claim that production AI intake is active. The public
 Studio keeps the device intake available until Studio sign-in and the live
 AI-to-Neon-to-private-Blob path pass authenticated end-to-end verification.
 
+## Studio mobile UX reference
+
+The compact operator UI is documented in [ADR 0041](../adr/0041-studio-mobile-ux-and-reference-proof.md).
+Its live local browser evidence uses the approved Lulu + JUW-001 Coral Drift
+Dress reference pair and is stored in [`docs/screenshots/studio-ux/`](../screenshots/studio-ux/README.md).
+
 ## Customer flow — live now
 
 1. The customer browses or searches the wardrobe and reviews the piece’s photographs, condition, measurements, tagged size, price, and availability.

@@ -1,5 +1,8 @@
 "use client";
 
+/* Fixed public catalogue paths and protected Studio previews do not use the Next image optimizer. */
+/* eslint-disable @next/next/no-img-element */
+
 import { useState } from "react";
 import {
   ArrowRight,
@@ -9,10 +12,12 @@ import {
   PackageCheck,
   RotateCcw,
   ShieldAlert,
+  Shirt,
 } from "lucide-react";
 import { LifecycleBadge } from "./atoms/lifecycle-badge";
 import { StudioLink as Link } from "./atoms/studio-link";
 import { StudioPager, StudioSegmentedView, useStudioSegment } from "./atoms/studio-segmented-view";
+import { studioGarmentCover } from "./garment-cover";
 import { useStudio } from "./studio-provider";
 
 function shortDate(value: string) {
@@ -37,7 +42,7 @@ export function OperationsDesk() {
     { key: "orders", label: "Orders", count: studio.orders.length },
     { key: "returns", label: "Returns", count: studio.returns.length },
   ];
-  const { active: activeView, select: selectView } = useStudioSegment(segments, "inventory");
+  const { active: activeView, isPending: viewPending, select: selectView } = useStudioSegment(segments, "inventory");
   const pageSize = 8;
   const safeInventoryPage = Math.min(inventoryPage, Math.max(0, Math.ceil(studio.inventory.length / pageSize) - 1));
   const safeOrdersPage = Math.min(ordersPage, Math.max(0, Math.ceil(studio.orders.length / pageSize) - 1));
@@ -61,25 +66,24 @@ export function OperationsDesk() {
         <div role="listitem"><span><RotateCcw aria-hidden="true" size={18} /></span><strong>{openReturns}</strong><small>returns to dispose</small></div>
       </div>
 
-      <StudioSegmentedView active={activeView} label="Operations workspace" onSelect={selectView} segments={segments} />
+      <StudioSegmentedView active={activeView} label="Operations workspace" onSelect={selectView} pending={viewPending} segments={segments} />
 
       {activeView === "inventory" ? <section className="studio-operation-section studio-stack-panel" id="studio-view-inventory" aria-labelledby="studio-tab-inventory" role="tabpanel">
         <div className="studio-section-title"><div><p className="eyebrow">Inventory</p><h2 id="inventory-title">Listing-linked stock</h2></div><span>{studio.inventory.length} records</span></div>
         {studio.inventory.length ? (
           <div className="studio-table" role="table" aria-label="Inventory records">
-            <div className="studio-table-head" role="row"><span role="columnheader">Piece</span><span role="columnheader">Listing</span><span role="columnheader">On hand</span><span role="columnheader">Reserved</span><span role="columnheader">State</span><span role="columnheader">Action</span></div>
+            <div className="studio-table-head" role="row"><span role="columnheader">Media</span><span role="columnheader">Piece</span><span role="columnheader">Stock</span><span role="columnheader">State and action</span></div>
             {studio.inventory.slice(safeInventoryPage * pageSize, (safeInventoryPage + 1) * pageSize).map((record) => {
               const garment = studio.garments.find((candidate) => candidate.id === record.garmentId);
               const listing = record.listingId ? studio.listings.find((candidate) => candidate.id === record.listingId) : undefined;
               if (!garment) return null;
+              const cover = studioGarmentCover(garment, listing);
               return (
                 <div className="studio-table-row" role="row" key={record.id}>
-                  <span role="cell"><small>{garment.sku}</small><strong>{garment.title}</strong></span>
-                  <span role="cell">{listing ? listing.slug : "Not prepared"}</span>
-                  <span role="cell">{record.onHand}</span>
-                  <span role="cell">{record.reserved}</span>
-                  <span role="cell"><LifecycleBadge state={record.state} /></span>
-                  <span role="cell">{listing?.state === "PUBLISHED" ? <button className="button button-primary" onClick={() => studio.reserveOrder(listing.id)} type="button">Reserve sale</button> : <small>{listing ? listing.state.toLowerCase() : "Wardrobe first"}</small>}</span>
+                  <span className={`studio-inventory-media${cover ? " is-photo" : ""}`} data-variant={garment.visual} role="cell">{cover ? <img alt="" height={cover.height} loading="lazy" src={cover.src} width={cover.width} /> : <Shirt aria-hidden="true" size={22} strokeWidth={1.4} />}</span>
+                  <span className="studio-inventory-copy" role="cell"><small>{garment.sku}</small><strong>{garment.title}</strong><em>{listing ? listing.slug : "Not prepared"}</em></span>
+                  <span className="studio-inventory-stock" role="cell"><strong>{Math.max(0, record.onHand - record.reserved)} available</strong><small>{record.reserved} reserved</small></span>
+                  <span className="studio-inventory-action" role="cell"><LifecycleBadge state={record.state} />{listing?.state === "PUBLISHED" ? <button aria-label={`Reserve ${garment.title}`} className="studio-icon-action" onClick={() => studio.reserveOrder(listing.id)} type="button"><ArrowRight aria-hidden="true" size={17} /></button> : <small>{listing ? listing.state.toLowerCase() : "Wardrobe first"}</small>}</span>
                 </div>
               );
             })}

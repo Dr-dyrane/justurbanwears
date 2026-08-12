@@ -39,8 +39,8 @@ import { ReadinessList } from "./atoms/readiness-list";
 import { StudioPager, StudioSegmentedView, useStudioSegment } from "./atoms/studio-segmented-view";
 import { StudioTaskSheet } from "./atoms/studio-task-sheet";
 import { GarmentIntakeSheet } from "./garment-intake/garment-intake-sheet";
-import { LocalGarmentIntakeDialog } from "./garment-intake/local-garment-intake-dialog";
 import { useStudio } from "./studio-provider";
+import { studioGarmentCover } from "./garment-cover";
 
 const filters: Array<"ALL" | StudioLifecycleState> = [
   "ALL",
@@ -153,23 +153,7 @@ function GarmentCard({ garment, onOpenListing }: { garment: Garment; onOpenListi
   const approvedContract = listing
     ? getApprovedPublicListingContract(garment.sku, listing.slug)
     : undefined;
-  const approvedCover = approvedContract?.media.find((frame) => frame.slot === "GARMENT_FRONT");
-  const pendingCover = pendingContract?.publicSafeMedia[0];
-  const cover = approvedCover
-    ? {
-      src: approvedCover.src,
-      alt: `${garment.title}, approved garment front`,
-      width: 1122,
-      height: 1402,
-    }
-    : pendingCover
-      ? {
-        src: pendingCover.src,
-        alt: `${garment.title}, ${pendingWardrobeMediaLabel(pendingCover.view).toLowerCase()}`,
-        width: pendingCover.width,
-        height: pendingCover.height,
-      }
-      : garment.reviewCover;
+  const cover = studioGarmentCover(garment, listing);
   const gates = garmentReadiness(garment);
   const ready = everyGateReady(gates);
   return (
@@ -192,9 +176,9 @@ function GarmentCard({ garment, onOpenListing }: { garment: Garment; onOpenListi
         <ReadinessList gates={gates} compact />
         {pendingContract || approvedContract ? null : <MissingMedia garment={garment} />}
         <div className="studio-card-actions">
-          {garment.state === "DRAFT" ? <button className="button button-primary" disabled={!ready} onClick={() => moveGarmentToWardrobe(garment.id)} type="button">Move to wardrobe</button> : null}
-          {["READY", "RETURNED"].includes(garment.state) && !listing ? <button className="button button-primary" onClick={() => prepareListing(garment.id)} type="button">Prepare listing</button> : null}
-          {listing ? <button className="button button-secondary" onClick={(event) => onOpenListing(listing, event.currentTarget)} type="button">Open listing <ArrowRight aria-hidden="true" size={14} /></button> : null}
+          {garment.state === "DRAFT" ? <button className="button button-primary" disabled={!ready} onClick={() => moveGarmentToWardrobe(garment.id)} type="button"><span>Move to wardrobe</span><ArrowRight aria-hidden="true" size={14} /></button> : null}
+          {["READY", "RETURNED"].includes(garment.state) && !listing ? <button className="button button-primary" onClick={() => prepareListing(garment.id)} type="button"><span>Prepare listing</span><ArrowRight aria-hidden="true" size={14} /></button> : null}
+          {listing ? <button className="button button-secondary" onClick={(event) => onOpenListing(listing, event.currentTarget)} type="button"><span>Open listing</span><ArrowRight aria-hidden="true" size={14} /></button> : null}
         </div>
       </div>
     </article>
@@ -288,7 +272,7 @@ function ListingEditor({ listing }: { listing: StudioListing }) {
   );
 }
 
-export function WardrobeWorkbench({ engineEnabled = false }: { engineEnabled?: boolean }) {
+export function WardrobeWorkbench() {
   const studio = useStudio();
   const searchParams = useSearchParams();
   const intakeOriginRef = useRef<"query" | "trigger" | null>(null);
@@ -303,7 +287,7 @@ export function WardrobeWorkbench({ engineEnabled = false }: { engineEnabled?: b
     { key: "garments", label: "Garments", count: studio.garments.length },
     { key: "publishing", label: "Publishing", count: studio.listings.length },
   ], [studio.garments.length, studio.listings.length]);
-  const { active: activeView, select: selectView } = useStudioSegment(segments, "garments");
+  const { active: activeView, isPending: viewPending, select: selectView } = useStudioSegment(segments, "garments");
 
   useEffect(() => {
     const queryWantsIntake = searchParams.get("intake") === "1";
@@ -371,7 +355,7 @@ export function WardrobeWorkbench({ engineEnabled = false }: { engineEnabled?: b
         <button className="button button-primary" onClick={(event) => openIntake(event.currentTarget)} type="button"><Plus aria-hidden="true" size={17} />Intake garment</button>
       </header>
 
-      <StudioSegmentedView active={activeView} label="Wardrobe workspace" onSelect={selectView} segments={segments} />
+      <StudioSegmentedView active={activeView} label="Wardrobe workspace" onSelect={selectView} pending={viewPending} segments={segments} />
 
       {activeView === "garments" ? (
         <section aria-labelledby="studio-tab-garments" id="studio-view-garments" role="tabpanel">
@@ -394,19 +378,11 @@ export function WardrobeWorkbench({ engineEnabled = false }: { engineEnabled?: b
         </section>
       )}
 
-      {engineEnabled ? (
-        <GarmentIntakeSheet
-          onDismiss={finishIntake}
-          open={intakeOpen}
-          returnFocus={intakeReturnFocus}
-        />
-      ) : (
-        <LocalGarmentIntakeDialog
-          onDismiss={finishIntake}
-          open={intakeOpen}
-          returnFocus={intakeReturnFocus}
-        />
-      )}
+      <GarmentIntakeSheet
+        onDismiss={finishIntake}
+        open={intakeOpen}
+        returnFocus={intakeReturnFocus}
+      />
 
       <StudioTaskSheet
         eyebrow="Publishing"

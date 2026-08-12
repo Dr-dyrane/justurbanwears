@@ -424,7 +424,7 @@ export function ModelAtelier() {
     { key: "styling", label: "Styling" },
     { key: "readiness", label: "Readiness", count: selected?.completeness },
   ];
-  const { active: activeView, select: selectView } = useStudioSegment(modelSegments, "profile");
+  const { active: activeView, isPending: viewPending, select: selectView } = useStudioSegment(modelSegments, "profile");
 
   useEffect(() => {
     if (searchParams.get("intake") !== "model") {
@@ -433,7 +433,10 @@ export function ModelAtelier() {
     }
     if (intakeHandledRef.current || hydration === "idle" || hydration === "restoring") return;
     intakeHandledRef.current = true;
-    setTask({ mode: "create", draft: modelDraft(), origin: "query", returnFocus: null });
+    const frame = window.requestAnimationFrame(() => {
+      setTask({ mode: "create", draft: modelDraft(), origin: "query", returnFocus: null });
+    });
+    return () => window.cancelAnimationFrame(frame);
   }, [hydration, searchParams]);
 
   function openCreate(returnFocus: HTMLElement | null) {
@@ -465,7 +468,7 @@ export function ModelAtelier() {
         </div>
       </header>
 
-      <StudioSegmentedView active={activeView} label="Model workspace" onSelect={selectView} segments={modelSegments} />
+      <StudioSegmentedView active={activeView} label="Model workspace" onSelect={selectView} pending={viewPending} segments={modelSegments} />
 
       <div className="studio-model-layout">
         <aside className="studio-model-index">
@@ -487,8 +490,8 @@ export function ModelAtelier() {
           </div>
           <button className="studio-model-create" id="new-model" onClick={(event) => openCreate(event.currentTarget)} type="button"><Plus aria-hidden="true" size={18} /><span><strong>Add another model</strong><small>Guided name, styling and readiness</small></span><ChevronRight aria-hidden="true" size={16} /></button>
         </aside>
-        <div className="studio-model-stage">
-          <div className={`studio-model-portrait${selected.isDefault ? " is-approved" : ""}`}>
+        <div className={`studio-model-stage${activeView === "profile" ? "" : " is-panel-only"}`}>
+          {activeView === "profile" ? <div className={`studio-model-portrait${selected.isDefault ? " is-approved" : ""}`}>
             {selected.isDefault ? (
               <>
                 {/* Approved public projection only; no private source image enters this bundle. */}
@@ -517,7 +520,7 @@ export function ModelAtelier() {
                 <small>{selected.version}</small>
               </>
             )}
-          </div>
+          </div> : null}
           <ModelProfile model={selected} onEdit={(event) => openEdit(selected, event.currentTarget)} view={activeView} />
         </div>
       </div>

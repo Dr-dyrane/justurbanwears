@@ -6,8 +6,6 @@ const root = process.cwd();
 const sheet = readFileSync(`${root}/components/studio/garment-intake/garment-intake-sheet.tsx`, "utf8");
 const client = readFileSync(`${root}/components/studio/garment-intake/engine-client.ts`, "utf8");
 const workbench = readFileSync(`${root}/components/studio/wardrobe-workbench.tsx`, "utf8");
-const wardrobePage = readFileSync(`${root}/app/(studio)/studio/wardrobe/page.tsx`, "utf8");
-const localIntake = readFileSync(`${root}/components/studio/garment-intake/local-garment-intake-dialog.tsx`, "utf8");
 const css = readFileSync(`${root}/app/foundation.css`, "utf8");
 
 test("garment intake is one progressive mounted sheet with no select controls", () => {
@@ -31,12 +29,14 @@ test("garment intake is one progressive mounted sheet with no select controls", 
   assert.doesNotMatch(workbench, /function GarmentIntakeDialog/);
 });
 
-test("hosts without trusted engine auth retain the existing local intake", () => {
-  assert.match(wardrobePage, /\["openai-sites", "neon-auth"\]\.includes/);
-  assert.match(workbench, /engineEnabled \? \(/);
-  assert.match(workbench, /<LocalGarmentIntakeDialog/);
-  assert.match(localIntake, /createGarment\(/);
-  assert.match(localIntake, /Saved on this device/);
+test("every host uses the truthful progressive intake surface", () => {
+  assert.match(workbench, /<GarmentIntakeSheet/);
+  assert.doesNotMatch(workbench, /engineEnabled/);
+  assert.doesNotMatch(workbench, /LocalGarmentIntakeDialog/);
+  assert.match(sheet, /isExplicitlyUnavailable/);
+  assert.match(sheet, /ENGINE_DISABLED/);
+  assert.match(sheet, /ENGINE_UNAVAILABLE/);
+  assert.match(sheet, /studio-engine-error/);
 });
 
 test("client keeps providers and private Blob paths behind same-origin engine routes", () => {

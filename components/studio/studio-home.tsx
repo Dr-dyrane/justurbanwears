@@ -1,17 +1,22 @@
 "use client";
 
+/* Fixed public catalogue paths and protected Studio previews do not use the Next image optimizer. */
+/* eslint-disable @next/next/no-img-element */
+
 import {
   ArrowRight,
   CheckCircle2,
   PackageCheck,
   RotateCcw,
   Shirt,
+  SquareArrowOutUpRight,
   Sparkles,
   Users,
 } from "lucide-react";
 import { LifecycleBadge } from "./atoms/lifecycle-badge";
 import { StudioLink as Link } from "./atoms/studio-link";
 import { StudioSegmentedView, useStudioSegment } from "./atoms/studio-segmented-view";
+import { studioGarmentCover } from "./garment-cover";
 import { useStudio } from "./studio-provider";
 
 export function StudioHome() {
@@ -39,7 +44,7 @@ export function StudioHome() {
     { key: "lifecycle", label: "Lifecycle", count: availableUnits },
     { key: "records", label: "Records", count: garments.length },
   ];
-  const { active: activeView, select: selectView } = useStudioSegment(segments, "work");
+  const { active: activeView, isPending: viewPending, select: selectView } = useStudioSegment(segments, "work");
 
   if (hydration === "idle" || hydration === "restoring") {
     return <div className="studio-loading" role="status">Opening Lulu Studio…</div>;
@@ -96,7 +101,7 @@ export function StudioHome() {
           : <><RotateCcw aria-hidden="true" size={16} />Memory only for this session</>}
       </div>
 
-      <StudioSegmentedView active={activeView} label="Business home workspace" onSelect={selectView} segments={segments} />
+      <StudioSegmentedView active={activeView} label="Business home workspace" onSelect={selectView} pending={viewPending} segments={segments} />
 
       {activeView === "work" ? <section className="studio-queue-section studio-stack-panel" id="studio-view-work" aria-labelledby="studio-tab-work" role="tabpanel">
         <div className="studio-section-title">
@@ -110,7 +115,8 @@ export function StudioHome() {
               <span className="studio-queue-count">{count}</span>
               <strong>{label}</strong>
               <p>{detail}</p>
-              <span className="studio-card-link">Open <ArrowRight aria-hidden="true" size={15} /></span>
+              <span className="studio-card-link" aria-hidden="true"><SquareArrowOutUpRight size={16} /></span>
+              <span className="sr-only">Open {label}</span>
             </Link>
           ))}
         </div>
@@ -149,13 +155,14 @@ export function StudioHome() {
             {garments.slice(0, 5).map((garment) => {
               const listing = listings.find((candidate) => candidate.garmentId === garment.id);
               const stock = inventory.find((candidate) => candidate.garmentId === garment.id);
+              const cover = studioGarmentCover(garment, listing);
               return (
                 <Link className="studio-record-row" href="/studio/wardrobe" key={garment.id}>
-                  <span className="studio-record-swatch" data-variant={garment.visual} aria-hidden="true" />
-                  <span><small>{garment.sku}</small><strong>{garment.title}</strong></span>
-                  <span>{stock ? `${Math.max(0, stock.onHand - stock.reserved)} available` : "No stock record"}</span>
-                  <LifecycleBadge state={listing?.state ?? garment.state} />
-                  <ArrowRight aria-hidden="true" size={17} />
+                  <span className="studio-record-copy"><small>{garment.sku}</small><strong>{garment.title}</strong><em>{stock ? `${Math.max(0, stock.onHand - stock.reserved)} available` : "No stock record"}</em></span>
+                  <span className="studio-record-action"><LifecycleBadge state={listing?.state ?? garment.state} /><ArrowRight aria-hidden="true" size={17} /></span>
+                  <span className={`studio-record-media${cover ? " is-photo" : ""}`} data-variant={garment.visual} aria-hidden="true">
+                    {cover ? <img alt="" height={cover.height} loading="lazy" src={cover.src} width={cover.width} /> : <Shirt size={22} strokeWidth={1.4} />}
+                  </span>
                 </Link>
               );
             })}

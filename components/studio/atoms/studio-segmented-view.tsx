@@ -1,7 +1,8 @@
 "use client";
 
+import { useTransition } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, LoaderCircle } from "lucide-react";
 
 export type StudioSegment = { key: string; label: string; count?: number };
 
@@ -9,6 +10,7 @@ export function useStudioSegment(segments: StudioSegment[], fallback: string) {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [isPending, startTransition] = useTransition();
   const requested = searchParams.get("view");
   const active = segments.some((segment) => segment.key === requested) ? requested! : fallback;
 
@@ -17,16 +19,17 @@ export function useStudioSegment(segments: StudioSegment[], fallback: string) {
     if (next === fallback) params.delete("view");
     else params.set("view", next);
     const query = params.toString();
-    router.replace(`${pathname}${query ? `?${query}` : ""}`, { scroll: false });
+    startTransition(() => router.replace(`${pathname}${query ? `?${query}` : ""}`, { scroll: false }));
   }
 
-  return { active, select };
+  return { active, isPending, select };
 }
 
-export function StudioSegmentedView({ active, label, onSelect, segments }: {
+export function StudioSegmentedView({ active, label, onSelect, pending = false, segments }: {
   active: string;
   label: string;
   onSelect(key: string): void;
+  pending?: boolean;
   segments: StudioSegment[];
 }) {
   const panelId = `studio-view-${active}`;
@@ -40,7 +43,7 @@ export function StudioSegmentedView({ active, label, onSelect, segments }: {
   }
 
   return (
-    <div className="studio-segmented-view" role="tablist" aria-label={label}>
+    <div aria-busy={pending || undefined} className="studio-segmented-view" data-pending={pending || undefined} role="tablist" aria-label={label}>
       {segments.map((segment) => (
         <button
           aria-controls={active === segment.key ? panelId : undefined}
@@ -61,6 +64,7 @@ export function StudioSegmentedView({ active, label, onSelect, segments }: {
           type="button"
         >
           <span>{segment.label}</span>
+          {pending && active === segment.key ? <LoaderCircle aria-hidden="true" className="studio-spin" size={13} /> : null}
           {segment.count === undefined ? null : <small>{segment.count}</small>}
         </button>
       ))}
