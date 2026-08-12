@@ -132,3 +132,14 @@ test("renders the image-first ready and capture-next Studio surface", () => {
   assert.match(source, /getPendingWardrobeProductContract\(garment\.sku\)/u);
   assert.doesNotMatch(source, /storage\/|sha-?256|prompt|evidence|identity metric/iu);
 });
+
+test("keeps contracted catalogue cards free of open capture inputs", () => {
+  const source = readFileSync(
+    join(process.cwd(), "components/studio/wardrobe-workbench.tsx"),
+    "utf8",
+  );
+  assert.match(
+    source,
+    /pendingContract \|\| approvedContract \? null : <MissingMedia garment=\{garment\} \/>/u,
+  );
+});

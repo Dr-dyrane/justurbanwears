@@ -286,7 +286,7 @@ function GarmentCard({ garment }: { garment: Garment }) {
         </div>
         {pendingContract ? <PendingProductMedia contract={pendingContract} title={garment.title} /> : null}
         <ReadinessList gates={gates} compact />
-        {pendingContract ? null : <MissingMedia garment={garment} />}
+        {pendingContract || approvedContract ? null : <MissingMedia garment={garment} />}
         <div className="studio-card-actions">
           {garment.state === "DRAFT" ? <button className="button button-primary" disabled={!ready} onClick={() => moveGarmentToWardrobe(garment.id)} type="button">Move to wardrobe</button> : null}
           {["READY", "RETURNED"].includes(garment.state) && !listing ? <button className="button button-primary" onClick={() => prepareListing(garment.id)} type="button">Prepare listing</button> : null}
