@@ -137,6 +137,13 @@ returned one JPEG for $0.016. The Gateway model catalogue currently describes
 that endpoint as text-input only, so the executable release check—not the
 catalogue label—is the capability authority.
 
+A later production-linked recheck on 2026-08-12 corrected the AI SDK 7 vision
+request from the retired `image` content shape to a typed `file` part. The free
+`zai/glm-4.6v-flash` analysis still ended in an upstream retry failure before
+image generation, so the run stopped with $0.00 additional paid spend. AI Build
+remains preview-only until a new bounded recheck identifies a healthy vision
+route and the authenticated persistence path passes end to end.
+
 Paid image fallbacks are disabled by default. Enabling one requires an explicit
 server allowlist and a known per-image ceiling within the environment cap.
 Image calls use zero SDK retries. Provider usage and cost are written to the

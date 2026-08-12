@@ -19,4 +19,6 @@ test("model policy stays server-owned, cost-capped and bounded", () => {
   assert.match(engineSource, /APPROVED_IMAGE_MODEL_CEILINGS_USD/);
   assert.match(engineSource, /maxRetries: 0/);
   assert.match(engineSource, /gateway: \{ caching: "auto", sort: "cost" \}/);
+  assert.match(engineSource, /type: "file"/);
+  assert.doesNotMatch(engineSource, /type: "image", image:/);
 });
