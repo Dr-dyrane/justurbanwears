@@ -1,7 +1,6 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
 import {
   ArrowRight,
   Camera,
@@ -26,16 +25,10 @@ interface NavigationItem {
   icon: LucideIcon;
 }
 
-interface ViewTab {
+interface ShootViewTab {
+  current: boolean;
   href: string;
-  key: string;
   label: string;
-  targetId?: string;
-}
-
-interface ViewNavigation {
-  label: string;
-  tabs: ViewTab[];
 }
 
 const primaryNavigation: NavigationItem[] = [
@@ -49,56 +42,11 @@ function isActive(pathname: string, href: string) {
   return href === "/studio" ? pathname === href : pathname.startsWith(href);
 }
 
-function getViewNavigation(pathname: string): ViewNavigation | undefined {
-  if (pathname === "/studio") {
-    return {
-      label: "Business home",
-      tabs: [
-        { href: "/studio#work", key: "work", label: "Work", targetId: "work" },
-        { href: "/studio#lifecycle", key: "lifecycle", label: "Lifecycle", targetId: "lifecycle" },
-        { href: "/studio#records", key: "records", label: "Records", targetId: "records" },
-      ],
-    };
-  }
-  if (pathname.startsWith("/studio/models")) {
-    return {
-      label: "Model atelier",
-      tabs: [
-        { href: "/studio/models#models", key: "models", label: "Models", targetId: "models" },
-        { href: "/studio/models#model-styling", key: "model-styling", label: "Styling", targetId: "model-styling" },
-        { href: "/studio/models#model-readiness", key: "model-readiness", label: "Readiness", targetId: "model-readiness" },
-      ],
-    };
-  }
-  if (pathname.startsWith("/studio/wardrobe")) {
-    return {
-      label: "Wardrobe",
-      tabs: [
-        { href: "/studio/wardrobe#garments", key: "garments", label: "Garments", targetId: "garments" },
-        { href: "/studio/wardrobe#publishing", key: "publishing", label: "Publishing", targetId: "publishing" },
-      ],
-    };
-  }
-  if (pathname.startsWith("/studio/operations")) {
-    return {
-      label: "Operations",
-      tabs: [
-        { href: "/studio/operations#inventory", key: "inventory", label: "Inventory", targetId: "inventory" },
-        { href: "/studio/operations#orders", key: "orders", label: "Orders", targetId: "orders" },
-        { href: "/studio/operations#returns", key: "returns", label: "Returns", targetId: "returns" },
-      ],
-    };
-  }
-  if (pathname.startsWith("/shoots")) {
-    const tabs: ViewTab[] = [{ href: "/shoots", key: "shoots", label: "Shoot gallery", targetId: pathname === "/shoots" ? "shoot-gallery" : undefined }];
-    if (pathname === "/shoots/new") {
-      tabs.push({ href: pathname, key: "shoot-composer", label: "Composer" });
-    } else if (pathname !== "/shoots") {
-      tabs.push({ href: pathname, key: "shoot-record", label: "Shoot record" });
-    }
-    return { label: "Shoots", tabs };
-  }
-  return undefined;
+function shootViewTabs(pathname: string): ShootViewTab[] {
+  const tabs = [{ current: pathname === "/shoots", href: "/shoots", label: "Shoot gallery" }];
+  if (pathname === "/shoots/new") tabs.push({ current: true, href: pathname, label: "Composer" });
+  else if (pathname.startsWith("/shoots/")) tabs.push({ current: true, href: pathname, label: "Shoot record" });
+  return tabs;
 }
 
 function NavigationLink({ item, pathname }: {
@@ -119,8 +67,7 @@ function NavigationLink({ item, pathname }: {
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const viewNavigation = getViewNavigation(pathname);
-  const [activeView, setActiveView] = useState("");
+  const shootTabs = pathname.startsWith("/shoots") ? shootViewTabs(pathname) : [];
   const {
     chromeHidden,
     closeNavigation,
@@ -140,112 +87,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     : pathname.startsWith("/studio/wardrobe")
       ? { eyebrow: "Garment intake", label: "Snap and classify the next piece", href: "/studio/wardrobe?intake=1" }
       : pathname.startsWith("/studio/operations")
-        ? { eyebrow: "Live operations", label: "Work orders and returns", href: "/studio/operations#orders" }
+        ? { eyebrow: "Live operations", label: "Work orders and returns", href: "/studio/operations?view=orders" }
         : pathname === "/shoots/new"
           ? { eyebrow: "Shoot composer", label: "Return to shoot desk", href: "/shoots" }
           : pathname.startsWith("/shoots")
           ? { eyebrow: "Shoot desk", label: "Open a new private shoot", href: "/shoots/new" }
           : { eyebrow: "Lulu’s next move", label: "Intake a garment", href: "/studio/wardrobe?intake=1" };
-
-  useEffect(() => {
-    const navigation = getViewNavigation(pathname);
-    if (!navigation) return;
-
-    const navigationTabs = navigation.tabs;
-    const routeTab = navigationTabs.find((tab) => !tab.targetId && tab.href === pathname);
-    let lastScrolledHash = "";
-    let hashLockedView = "";
-    function syncActiveSection() {
-      const targetTabs = navigationTabs.filter((tab): tab is ViewTab & { targetId: string } => Boolean(tab.targetId));
-      if (!targetTabs.length) {
-        setActiveView(routeTab?.key ?? navigationTabs[0]?.key ?? "");
-        return;
-      }
-
-      const currentHash = window.location.hash;
-      if (!currentHash) {
-        lastScrolledHash = "";
-        hashLockedView = "";
-      } else if (currentHash !== lastScrolledHash) {
-        hashLockedView = "";
-        const hashTarget = document.getElementById(currentHash.slice(1));
-        if (hashTarget) {
-          hashTarget.scrollIntoView({ block: "start" });
-          lastScrolledHash = currentHash;
-          const hashTab = targetTabs.find((tab) => currentHash === `#${tab.targetId}`);
-          if (hashTab) {
-            hashLockedView = hashTab.key;
-            setActiveView(hashTab.key);
-            return;
-          }
-        }
-      }
-
-      if (hashLockedView) {
-        setActiveView(hashLockedView);
-        return;
-      }
-
-      let next = targetTabs[0]?.key ?? "";
-      const documentScrollable = document.documentElement.scrollHeight > window.innerHeight + 4;
-      if (!documentScrollable) {
-        const hashTarget = targetTabs.find((tab) => window.location.hash === `#${tab.targetId}`);
-        setActiveView(hashTarget?.key ?? next);
-        return;
-      }
-      const atDocumentEnd = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4;
-      if (atDocumentEnd) {
-        setActiveView(targetTabs[targetTabs.length - 1]?.key ?? next);
-        return;
-      }
-      for (const tab of targetTabs) {
-        const target = document.getElementById(tab.targetId);
-        if (target && target.getBoundingClientRect().top <= 220) next = tab.key;
-      }
-      setActiveView(next);
-    }
-
-    let frame = 0;
-    function scheduleSync() {
-      window.cancelAnimationFrame(frame);
-      frame = window.requestAnimationFrame(syncActiveSection);
-    }
-
-    function releaseHashLock() {
-      hashLockedView = "";
-      scheduleSync();
-    }
-
-    function releaseHashLockOnKeydown(event: KeyboardEvent) {
-      if (["ArrowDown", "ArrowUp", "PageDown", "PageUp", "Home", "End", " "].includes(event.key)) {
-        releaseHashLock();
-      }
-    }
-
-    scheduleSync();
-    const contentRoot = document.getElementById("studio-content") ?? document.body;
-    const mutationObserver = new MutationObserver(scheduleSync);
-    mutationObserver.observe(contentRoot, { childList: true, subtree: true });
-    const resizeObserver = new ResizeObserver(scheduleSync);
-    resizeObserver.observe(document.documentElement);
-    window.addEventListener("hashchange", scheduleSync);
-    window.addEventListener("keydown", releaseHashLockOnKeydown);
-    window.addEventListener("scroll", scheduleSync, { passive: true });
-    window.addEventListener("touchstart", releaseHashLock, { passive: true });
-    window.addEventListener("wheel", releaseHashLock, { passive: true });
-    return () => {
-      window.cancelAnimationFrame(frame);
-      mutationObserver.disconnect();
-      resizeObserver.disconnect();
-      window.removeEventListener("hashchange", scheduleSync);
-      window.removeEventListener("keydown", releaseHashLockOnKeydown);
-      window.removeEventListener("scroll", scheduleSync);
-      window.removeEventListener("touchstart", releaseHashLock);
-      window.removeEventListener("wheel", releaseHashLock);
-    };
-  }, [pathname]);
-
-  const activeViewInCurrentNavigation = viewNavigation?.tabs.some((tab) => tab.key === activeView) ?? false;
 
   return (
     <StudioProvider>
@@ -292,37 +139,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </nav>
         </header>
         <div className="workspace">
-          {viewNavigation ? (
+          {shootTabs.length ? (
             <div className="studio-view-nav-wrap">
-              <nav className="studio-view-navigation glass-surface" aria-label={`${viewNavigation.label} views`}>
-                <span className="studio-view-context">
-                  <small>View</small>
-                  <strong>{viewNavigation.label}</strong>
-                </span>
+              <nav className="studio-view-navigation glass-surface" aria-label="Shoots views">
+                <span className="studio-view-context"><small>View</small><strong>Shoots</strong></span>
                 <span className="studio-view-tabs">
-                  {viewNavigation.tabs.map((tab) => {
-                    const current = activeViewInCurrentNavigation
-                      ? activeView === tab.key
-                      : tab.targetId
-                        ? viewNavigation.tabs[0]?.key === tab.key
-                        : tab.href === pathname;
-                    return (
-                      <Link
-                        aria-current={current ? (tab.targetId ? "location" : "page") : undefined}
-                        className={current ? "is-active" : undefined}
-                        href={tab.href}
-                        key={tab.key}
-                        onClick={() => setActiveView(tab.key)}
-                      >
-                        {tab.label}
-                      </Link>
-                    );
-                  })}
+                  {shootTabs.map((tab) => <Link aria-current={tab.current ? "page" : undefined} className={tab.current ? "is-active" : undefined} href={tab.href} key={tab.href}>{tab.label}</Link>)}
                 </span>
-                <Link className="studio-view-action" href={contextAction.href}>
-                  <span>{contextAction.label}</span>
-                  <ArrowRight aria-hidden="true" size={15} strokeWidth={1.9} />
-                </Link>
+                <Link className="studio-view-action" href={contextAction.href}><span>{contextAction.label}</span><ArrowRight aria-hidden="true" size={15} strokeWidth={1.9} /></Link>
               </nav>
             </div>
           ) : null}

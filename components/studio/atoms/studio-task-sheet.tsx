@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useId, useRef } from "react";
 import { ArrowLeft, X } from "lucide-react";
 
 interface StudioTaskSheetProps {
@@ -32,6 +32,7 @@ export function StudioTaskSheet({
 }: StudioTaskSheetProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const titleId = useId();
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -65,7 +66,7 @@ export function StudioTaskSheet({
 
   return (
     <dialog
-      aria-labelledby="studio-task-sheet-title"
+      aria-labelledby={titleId}
       className={`studio-intake-sheet studio-task-sheet ${className}`.trim()}
       onClose={handleClosed}
       ref={dialogRef}
@@ -80,7 +81,7 @@ export function StudioTaskSheet({
             ) : null}
             <div>
               <p className="eyebrow">{eyebrow}</p>
-              <h2 id="studio-task-sheet-title">{title}</h2>
+              <h2 id={titleId}>{title}</h2>
             </div>
           </div>
           <button aria-label="Close" className="studio-icon-action" onClick={close} ref={closeButtonRef} type="button">

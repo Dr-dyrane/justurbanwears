@@ -21,6 +21,7 @@ import { LULU_NEUTRAL_MASTER_PROFILE } from "../../lib/studio/domain/state";
 import { APPROVED_PUBLIC_MODEL_ANCHOR } from "../../lib/studio/projections/approved-catalogue";
 import { LifecycleBadge } from "./atoms/lifecycle-badge";
 import { ReadinessList } from "./atoms/readiness-list";
+import { StudioSegmentedView, useStudioSegment } from "./atoms/studio-segmented-view";
 import { useStudio } from "./studio-provider";
 
 type ModelTaskStep = "name" | "styling" | "readiness" | "review" | "receipt";
@@ -365,10 +366,10 @@ function ModelTaskSheet({
   );
 }
 
-function ModelProfile({ model, onEdit }: { model: StudioModel; onEdit(event: React.MouseEvent<HTMLButtonElement>): void }) {
+function ModelProfile({ model, onEdit, view }: { model: StudioModel; onEdit(event: React.MouseEvent<HTMLButtonElement>): void; view: string }) {
   const gates = modelReadiness(model);
   return (
-    <section className="studio-model-profile" aria-labelledby="studio-model-profile-title">
+    <section className="studio-model-profile studio-stack-panel" id={`studio-view-${view}`} aria-labelledby={`studio-tab-${view}`} role="tabpanel">
       <div className="studio-editor-heading">
         <div>
           <p className="eyebrow">{model.isDefault ? "Approved default" : "Model profile"}</p>
@@ -377,26 +378,26 @@ function ModelProfile({ model, onEdit }: { model: StudioModel; onEdit(event: Rea
         <LifecycleBadge state={model.state} />
       </div>
 
-      {model.isDefault ? (
+      {view === "profile" && model.isDefault ? (
         <div className="studio-approved-prefill" role="note">
           <ShieldCheck aria-hidden="true" size={18} strokeWidth={1.8} />
           <span><strong>Lulu neutral master V2</strong><small>Approved portrait and product-first direction</small></span>
         </div>
       ) : null}
 
-      <section className="studio-model-profile-section" id="model-styling" aria-labelledby="studio-model-styling-title">
+      {view === "styling" ? <section className="studio-model-profile-section" id="model-styling" aria-labelledby="studio-model-styling-title">
         <div className="studio-profile-section-heading"><div><p className="eyebrow">Styling</p><h3 id="studio-model-styling-title">How {model.name} presents the clothes</h3></div>{model.isDefault ? <span><Lock aria-hidden="true" size={14} />Approved profile</span> : null}</div>
         <dl className="studio-model-facts">
           <div><dt>Hair</dt><dd>{model.styling.hair || "Not set"}</dd></div>
           <div><dt>Makeup</dt><dd>{model.styling.makeup || "Not set"}</dd></div>
           <div><dt>Direction</dt><dd>{model.styling.direction || "Not set"}</dd></div>
         </dl>
-      </section>
+      </section> : null}
 
-      <section className="studio-model-profile-section" id="model-readiness" aria-labelledby="studio-model-readiness-title">
+      {view === "readiness" ? <section className="studio-model-profile-section" id="model-readiness" aria-labelledby="studio-model-readiness-title">
         <div className="studio-profile-section-heading"><div><p className="eyebrow">Readiness</p><h3 id="studio-model-readiness-title">{model.state === "READY" ? "Ready for listings" : "What still needs attention"}</h3></div><strong>{model.completeness}%</strong></div>
         <ReadinessList gates={gates} />
-      </section>
+      </section> : null}
 
       <div className="studio-model-profile-actions">
         {model.isDefault ? (
@@ -418,6 +419,12 @@ export function ModelAtelier() {
   const selected = models.find((model) => model.id === selectedId)
     ?? models.find((model) => model.id === defaultModelId)
     ?? models[0];
+  const modelSegments = [
+    { key: "profile", label: "Profile" },
+    { key: "styling", label: "Styling" },
+    { key: "readiness", label: "Readiness", count: selected?.completeness },
+  ];
+  const { active: activeView, select: selectView } = useStudioSegment(modelSegments, "profile");
 
   useEffect(() => {
     if (searchParams.get("intake") !== "model") {
@@ -457,6 +464,8 @@ export function ModelAtelier() {
           <button className="button button-primary" onClick={(event) => openCreate(event.currentTarget)} type="button"><Plus aria-hidden="true" size={17} />Add model</button>
         </div>
       </header>
+
+      <StudioSegmentedView active={activeView} label="Model workspace" onSelect={selectView} segments={modelSegments} />
 
       <div className="studio-model-layout">
         <aside className="studio-model-index">
@@ -509,7 +518,7 @@ export function ModelAtelier() {
               </>
             )}
           </div>
-          <ModelProfile model={selected} onEdit={(event) => openEdit(selected, event.currentTarget)} />
+          <ModelProfile model={selected} onEdit={(event) => openEdit(selected, event.currentTarget)} view={activeView} />
         </div>
       </div>
 

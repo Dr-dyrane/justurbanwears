@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { LifecycleBadge } from "./atoms/lifecycle-badge";
 import { StudioLink as Link } from "./atoms/studio-link";
+import { StudioSegmentedView, useStudioSegment } from "./atoms/studio-segmented-view";
 import { useStudio } from "./studio-provider";
 
 export function StudioHome() {
@@ -25,10 +26,6 @@ export function StudioHome() {
     persistence,
   } = useStudio();
 
-  if (hydration === "idle" || hydration === "restoring") {
-    return <div className="studio-loading" role="status">Opening Lulu Studio…</div>;
-  }
-
   const modelDrafts = models.filter((model) => model.state === "DRAFT").length;
   const garmentDrafts = garments.filter((garment) => garment.state === "DRAFT").length;
   const listingWork = listings.filter((listing) => ["DRAFT", "READY"].includes(listing.state)).length;
@@ -37,6 +34,16 @@ export function StudioHome() {
   const workCount = modelDrafts + garmentDrafts + listingWork + orderWork + returnWork;
   const liveListings = listings.filter((listing) => ["PUBLISHED", "RESERVED"].includes(listing.state)).length;
   const availableUnits = inventory.reduce((total, record) => total + Math.max(0, record.onHand - record.reserved), 0);
+  const segments = [
+    { key: "work", label: "Work", count: workCount },
+    { key: "lifecycle", label: "Lifecycle", count: availableUnits },
+    { key: "records", label: "Records", count: garments.length },
+  ];
+  const { active: activeView, select: selectView } = useStudioSegment(segments, "work");
+
+  if (hydration === "idle" || hydration === "restoring") {
+    return <div className="studio-loading" role="status">Opening Lulu Studio…</div>;
+  }
 
   const queues = [
     {
@@ -54,7 +61,7 @@ export function StudioHome() {
       icon: Shirt,
     },
     {
-      href: "/studio/wardrobe#publishing",
+      href: "/studio/wardrobe?view=publishing",
       label: "Publishing",
       count: listingWork,
       detail: listingWork ? "Clear gates and put items up for sale" : `${liveListings} listing${liveListings === 1 ? "" : "s"} in catalogue state`,
@@ -89,7 +96,9 @@ export function StudioHome() {
           : <><RotateCcw aria-hidden="true" size={16} />Memory only for this session</>}
       </div>
 
-      <section className="studio-queue-section" id="work" aria-labelledby="studio-next-work">
+      <StudioSegmentedView active={activeView} label="Business home workspace" onSelect={selectView} segments={segments} />
+
+      {activeView === "work" ? <section className="studio-queue-section studio-stack-panel" id="studio-view-work" aria-labelledby="studio-tab-work" role="tabpanel">
         <div className="studio-section-title">
           <div><p className="eyebrow">Now</p><h2 id="studio-next-work">Actionable work</h2></div>
           <span>{workCount ? `${workCount} open` : "Nothing blocked"}</span>
@@ -105,9 +114,9 @@ export function StudioHome() {
             </Link>
           ))}
         </div>
-      </section>
+      </section> : null}
 
-      <section className="studio-lifecycle-section" id="lifecycle" aria-labelledby="studio-lifecycle-title">
+      {activeView === "lifecycle" ? <section className="studio-lifecycle-section studio-stack-panel" id="studio-view-lifecycle" aria-labelledby="studio-tab-lifecycle" role="tabpanel">
         <div className="studio-section-title">
           <div><p className="eyebrow">Live state</p><h2 id="studio-lifecycle-title">Commerce lifecycle</h2></div>
           <span>{availableUnits} unit{availableUnits === 1 ? "" : "s"} available</span>
@@ -128,9 +137,9 @@ export function StudioHome() {
             </div>
           ))}
         </div>
-      </section>
+      </section> : null}
 
-      <section className="studio-record-section" id="records" aria-labelledby="studio-record-title">
+      {activeView === "records" ? <section className="studio-record-section studio-stack-panel" id="studio-view-records" aria-labelledby="studio-tab-records" role="tabpanel">
         <div className="studio-section-title">
           <div><p className="eyebrow">Records</p><h2 id="studio-record-title">Latest garment state</h2></div>
           <Link className="text-link" href="/studio/wardrobe">Open wardrobe <ArrowRight aria-hidden="true" size={14} /></Link>
@@ -158,7 +167,7 @@ export function StudioHome() {
             <Link className="button button-primary" href="/studio/wardrobe?intake=1">Intake garment</Link>
           </div>
         )}
-      </section>
+      </section> : null}
     </div>
   );
 }

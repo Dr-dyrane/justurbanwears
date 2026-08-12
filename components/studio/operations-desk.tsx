@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   ArrowRight,
   Boxes,
@@ -11,6 +12,7 @@ import {
 } from "lucide-react";
 import { LifecycleBadge } from "./atoms/lifecycle-badge";
 import { StudioLink as Link } from "./atoms/studio-link";
+import { StudioPager, StudioSegmentedView, useStudioSegment } from "./atoms/studio-segmented-view";
 import { useStudio } from "./studio-provider";
 
 function shortDate(value: string) {
@@ -22,15 +24,28 @@ function shortDate(value: string) {
 
 export function OperationsDesk() {
   const studio = useStudio();
-
-  if (studio.hydration === "idle" || studio.hydration === "restoring") {
-    return <div className="studio-loading" role="status">Opening operations…</div>;
-  }
+  const [inventoryPage, setInventoryPage] = useState(0);
+  const [ordersPage, setOrdersPage] = useState(0);
+  const [returnsPage, setReturnsPage] = useState(0);
 
   const reservedOrders = studio.orders.filter((order) => order.state === "RESERVED").length;
   const soldOrders = studio.orders.filter((order) => order.state === "SOLD").length;
   const openReturns = studio.returns.filter((returnCase) => returnCase.state === "DRAFT").length;
   const availableUnits = studio.inventory.reduce((total, record) => total + Math.max(0, record.onHand - record.reserved), 0);
+  const segments = [
+    { key: "inventory", label: "Inventory", count: studio.inventory.length },
+    { key: "orders", label: "Orders", count: studio.orders.length },
+    { key: "returns", label: "Returns", count: studio.returns.length },
+  ];
+  const { active: activeView, select: selectView } = useStudioSegment(segments, "inventory");
+  const pageSize = 8;
+  const safeInventoryPage = Math.min(inventoryPage, Math.max(0, Math.ceil(studio.inventory.length / pageSize) - 1));
+  const safeOrdersPage = Math.min(ordersPage, Math.max(0, Math.ceil(studio.orders.length / pageSize) - 1));
+  const safeReturnsPage = Math.min(returnsPage, Math.max(0, Math.ceil(studio.returns.length / pageSize) - 1));
+
+  if (studio.hydration === "idle" || studio.hydration === "restoring") {
+    return <div className="studio-loading" role="status">Opening operations…</div>;
+  }
 
   return (
     <div className="studio-ops-page">
@@ -46,12 +61,14 @@ export function OperationsDesk() {
         <div role="listitem"><span><RotateCcw aria-hidden="true" size={18} /></span><strong>{openReturns}</strong><small>returns to dispose</small></div>
       </div>
 
-      <section className="studio-operation-section" id="inventory" aria-labelledby="inventory-title">
+      <StudioSegmentedView active={activeView} label="Operations workspace" onSelect={selectView} segments={segments} />
+
+      {activeView === "inventory" ? <section className="studio-operation-section studio-stack-panel" id="studio-view-inventory" aria-labelledby="studio-tab-inventory" role="tabpanel">
         <div className="studio-section-title"><div><p className="eyebrow">Inventory</p><h2 id="inventory-title">Listing-linked stock</h2></div><span>{studio.inventory.length} records</span></div>
         {studio.inventory.length ? (
           <div className="studio-table" role="table" aria-label="Inventory records">
             <div className="studio-table-head" role="row"><span role="columnheader">Piece</span><span role="columnheader">Listing</span><span role="columnheader">On hand</span><span role="columnheader">Reserved</span><span role="columnheader">State</span><span role="columnheader">Action</span></div>
-            {studio.inventory.map((record) => {
+            {studio.inventory.slice(safeInventoryPage * pageSize, (safeInventoryPage + 1) * pageSize).map((record) => {
               const garment = studio.garments.find((candidate) => candidate.id === record.garmentId);
               const listing = record.listingId ? studio.listings.find((candidate) => candidate.id === record.listingId) : undefined;
               if (!garment) return null;
@@ -68,13 +85,14 @@ export function OperationsDesk() {
             })}
           </div>
         ) : <div className="studio-quiet-empty"><Boxes aria-hidden="true" size={24} /><div><strong>No stock records</strong><p>Inventory begins when a garment is created.</p></div><Link className="button button-primary" href="/studio/wardrobe?intake=1">Intake garment</Link></div>}
-      </section>
+        <StudioPager label="Inventory pages" onPageChange={setInventoryPage} page={safeInventoryPage} pageSize={pageSize} total={studio.inventory.length} />
+      </section> : null}
 
-      <section className="studio-operation-section" id="orders" aria-labelledby="orders-title">
+      {activeView === "orders" ? <section className="studio-operation-section studio-stack-panel" id="studio-view-orders" aria-labelledby="studio-tab-orders" role="tabpanel">
         <div className="studio-section-title"><div><p className="eyebrow">Orders</p><h2 id="orders-title">Reservations to sold</h2></div><span>{studio.orders.length} orders</span></div>
         {studio.orders.length ? (
           <div className="studio-operation-cards">
-            {studio.orders.map((order) => {
+            {studio.orders.slice(safeOrdersPage * pageSize, (safeOrdersPage + 1) * pageSize).map((order) => {
               const listing = studio.listings.find((candidate) => candidate.id === order.listingId);
               const garment = listing ? studio.garments.find((candidate) => candidate.id === listing.garmentId) : undefined;
               const returnCase = studio.returns.find((candidate) => candidate.orderId === order.id);
@@ -85,20 +103,21 @@ export function OperationsDesk() {
                   <div className="studio-card-actions">
                     {order.state === "RESERVED" ? <button className="button button-primary" onClick={() => studio.fulfillOrder(order.id)} type="button"><Check aria-hidden="true" size={15} />Mark sold</button> : null}
                     {order.state === "SOLD" && !returnCase ? <button className="button button-secondary" onClick={() => studio.openReturn(order.id)} type="button"><RotateCcw aria-hidden="true" size={15} />Open return</button> : null}
-                    {returnCase ? <a className="button button-secondary" href={`#${returnCase.id}`}>View return</a> : null}
+                    {returnCase ? <button className="button button-secondary" onClick={() => { setReturnsPage(Math.floor(studio.returns.findIndex((candidate) => candidate.id === returnCase.id) / pageSize)); selectView("returns"); }} type="button">View return</button> : null}
                   </div>
                 </article>
               );
             })}
           </div>
         ) : <div className="studio-quiet-empty"><ClipboardCheck aria-hidden="true" size={24} /><div><strong>No orders</strong><p>Reserve a published listing from Inventory to create one.</p></div></div>}
-      </section>
+        <StudioPager label="Order pages" onPageChange={setOrdersPage} page={safeOrdersPage} pageSize={pageSize} total={studio.orders.length} />
+      </section> : null}
 
-      <section className="studio-operation-section" id="returns" aria-labelledby="returns-title">
+      {activeView === "returns" ? <section className="studio-operation-section studio-stack-panel" id="studio-view-returns" aria-labelledby="studio-tab-returns" role="tabpanel">
         <div className="studio-section-title"><div><p className="eyebrow">Returns</p><h2 id="returns-title">Receive and dispose</h2></div><span>{openReturns} open</span></div>
         {studio.returns.length ? (
           <div className="studio-operation-cards">
-            {studio.returns.map((returnCase) => {
+            {studio.returns.slice(safeReturnsPage * pageSize, (safeReturnsPage + 1) * pageSize).map((returnCase) => {
               const order = studio.orders.find((candidate) => candidate.id === returnCase.orderId);
               const listing = order ? studio.listings.find((candidate) => candidate.id === order.listingId) : undefined;
               const garment = listing ? studio.garments.find((candidate) => candidate.id === listing.garmentId) : undefined;
@@ -112,7 +131,8 @@ export function OperationsDesk() {
             })}
           </div>
         ) : <div className="studio-quiet-empty"><RotateCcw aria-hidden="true" size={24} /><div><strong>No return cases</strong><p>Open a return from a sold order when one arrives.</p></div></div>}
-      </section>
+        <StudioPager label="Return pages" onPageChange={setReturnsPage} page={safeReturnsPage} pageSize={pageSize} total={studio.returns.length} />
+      </section> : null}
     </div>
   );
 }

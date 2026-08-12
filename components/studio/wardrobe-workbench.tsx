@@ -36,6 +36,8 @@ import {
 } from "../../lib/studio/seeds/private-wardrobe-products";
 import { LifecycleBadge } from "./atoms/lifecycle-badge";
 import { ReadinessList } from "./atoms/readiness-list";
+import { StudioPager, StudioSegmentedView, useStudioSegment } from "./atoms/studio-segmented-view";
+import { StudioTaskSheet } from "./atoms/studio-task-sheet";
 import { GarmentIntakeSheet } from "./garment-intake/garment-intake-sheet";
 import { LocalGarmentIntakeDialog } from "./garment-intake/local-garment-intake-dialog";
 import { useStudio } from "./studio-provider";
@@ -49,6 +51,9 @@ const filters: Array<"ALL" | StudioLifecycleState> = [
   "SOLD",
   "RETURNED",
 ];
+
+const garmentPageSize = 9;
+const publishingPageSize = 8;
 
 function formatNaira(value: number) {
   return new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", maximumFractionDigits: 0 }).format(value);
@@ -141,7 +146,7 @@ function PendingProductMedia({
   );
 }
 
-function GarmentCard({ garment }: { garment: Garment }) {
+function GarmentCard({ garment, onOpenListing }: { garment: Garment; onOpenListing(listing: StudioListing, origin: HTMLElement): void }) {
   const { listings, moveGarmentToWardrobe, prepareListing } = useStudio();
   const listing = listings.find((candidate) => candidate.garmentId === garment.id);
   const pendingContract = getPendingWardrobeProductContract(garment.sku);
@@ -189,7 +194,7 @@ function GarmentCard({ garment }: { garment: Garment }) {
         <div className="studio-card-actions">
           {garment.state === "DRAFT" ? <button className="button button-primary" disabled={!ready} onClick={() => moveGarmentToWardrobe(garment.id)} type="button">Move to wardrobe</button> : null}
           {["READY", "RETURNED"].includes(garment.state) && !listing ? <button className="button button-primary" onClick={() => prepareListing(garment.id)} type="button">Prepare listing</button> : null}
-          {listing ? <a className="button button-secondary" href={`#${listing.id}`}>Open listing <ArrowRight aria-hidden="true" size={14} /></a> : null}
+          {listing ? <button className="button button-secondary" onClick={(event) => onOpenListing(listing, event.currentTarget)} type="button">Open listing <ArrowRight aria-hidden="true" size={14} /></button> : null}
         </div>
       </div>
     </article>
@@ -290,6 +295,15 @@ export function WardrobeWorkbench({ engineEnabled = false }: { engineEnabled?: b
   const [intakeReturnFocus, setIntakeReturnFocus] = useState<HTMLElement | null>(null);
   const [intakeOpen, setIntakeOpen] = useState(false);
   const [filter, setFilter] = useState<(typeof filters)[number]>("ALL");
+  const [openListingId, setOpenListingId] = useState<string | null>(null);
+  const [listingReturnFocus, setListingReturnFocus] = useState<HTMLElement | null>(null);
+  const [garmentPage, setGarmentPage] = useState(0);
+  const [publishingPage, setPublishingPage] = useState(0);
+  const segments = useMemo(() => [
+    { key: "garments", label: "Garments", count: studio.garments.length },
+    { key: "publishing", label: "Publishing", count: studio.listings.length },
+  ], [studio.garments.length, studio.listings.length]);
+  const { active: activeView, select: selectView } = useStudioSegment(segments, "garments");
 
   useEffect(() => {
     const queryWantsIntake = searchParams.get("intake") === "1";
@@ -340,6 +354,11 @@ export function WardrobeWorkbench({ engineEnabled = false }: { engineEnabled?: b
     const listing = studio.listings.find((candidate) => candidate.garmentId === garment.id);
     return (listing?.state ?? garment.state) === filter;
   }), [filter, studio.garments, studio.listings]);
+  const safeGarmentPage = Math.min(garmentPage, Math.max(0, Math.ceil(visibleGarments.length / garmentPageSize) - 1));
+  const pagedGarments = visibleGarments.slice(safeGarmentPage * garmentPageSize, (safeGarmentPage + 1) * garmentPageSize);
+  const safePublishingPage = Math.min(publishingPage, Math.max(0, Math.ceil(studio.listings.length / publishingPageSize) - 1));
+  const pagedListings = studio.listings.slice(safePublishingPage * publishingPageSize, (safePublishingPage + 1) * publishingPageSize);
+  const openListing = studio.listings.find((listing) => listing.id === openListingId);
 
   if (studio.hydration === "idle" || studio.hydration === "restoring") {
     return <div className="studio-loading" role="status">Opening wardrobe…</div>;
@@ -352,19 +371,28 @@ export function WardrobeWorkbench({ engineEnabled = false }: { engineEnabled?: b
         <button className="button button-primary" onClick={(event) => openIntake(event.currentTarget)} type="button"><Plus aria-hidden="true" size={17} />Intake garment</button>
       </header>
 
-      <div className="studio-filter-bar" role="group" aria-label="Filter wardrobe">
-        {filters.map((item) => <button aria-pressed={filter === item} className={filter === item ? "is-active" : undefined} onClick={() => setFilter(item)} key={item} type="button">{item.toLowerCase()}</button>)}
-        <span>{visibleGarments.length} shown</span>
-      </div>
+      <StudioSegmentedView active={activeView} label="Wardrobe workspace" onSelect={selectView} segments={segments} />
 
-      {visibleGarments.length ? <div className="studio-garment-grid">{visibleGarments.map((garment) => <GarmentCard garment={garment} key={garment.id} />)}</div> : (
-        <div className="studio-quiet-empty studio-wardrobe-empty"><PackageOpen aria-hidden="true" size={26} strokeWidth={1.5} /><div><strong>{studio.garments.length ? "No garments in this state" : "Your wardrobe is empty"}</strong><p>{studio.garments.length ? "Choose another lifecycle filter." : "Start with one photographed and classified piece."}</p></div>{studio.garments.length ? null : <button className="button button-primary" onClick={(event) => openIntake(event.currentTarget)} type="button">Intake garment</button>}</div>
+      {activeView === "garments" ? (
+        <section aria-labelledby="studio-tab-garments" id="studio-view-garments" role="tabpanel">
+          <div className="studio-filter-bar" role="group" aria-label="Filter wardrobe">
+            {filters.map((item) => <button aria-pressed={filter === item} className={filter === item ? "is-active" : undefined} onClick={() => { setFilter(item); setGarmentPage(0); }} key={item} type="button">{item.toLowerCase()}</button>)}
+            <span>{visibleGarments.length} shown</span>
+          </div>
+          <h2 className="sr-only" id="garments-view-title">Garments</h2>
+          {visibleGarments.length ? <><div className="studio-garment-grid">{pagedGarments.map((garment) => <GarmentCard garment={garment} key={garment.id} onOpenListing={(listing, origin) => { setListingReturnFocus(origin); setOpenListingId(listing.id); }} />)}</div><StudioPager label="Garment pages" onPageChange={setGarmentPage} page={safeGarmentPage} pageSize={garmentPageSize} total={visibleGarments.length} /></> : (
+            <div className="studio-quiet-empty studio-wardrobe-empty"><PackageOpen aria-hidden="true" size={26} strokeWidth={1.5} /><div><strong>{studio.garments.length ? "No garments in this state" : "Your wardrobe is empty"}</strong><p>{studio.garments.length ? "Choose another lifecycle filter." : "Start with one photographed and classified piece."}</p></div>{studio.garments.length ? null : <button className="button button-primary" onClick={(event) => openIntake(event.currentTarget)} type="button">Intake garment</button>}</div>
+          )}
+        </section>
+      ) : (
+        <section className="studio-publishing-section studio-stack-panel" id="studio-view-publishing" aria-labelledby="studio-tab-publishing" role="tabpanel">
+          <div className="studio-section-title"><div><p className="eyebrow">Publishing</p><h2 id="publishing-title">Catalogue gates</h2></div><span>{studio.listings.length} listing{studio.listings.length === 1 ? "" : "s"}</span></div>
+          {studio.listings.length ? <><div className="studio-publishing-queue">{pagedListings.map((listing) => {
+            const garment = studio.garments.find((candidate) => candidate.id === listing.garmentId);
+            return <button className="studio-publishing-row" key={listing.id} onClick={(event) => { setListingReturnFocus(event.currentTarget); setOpenListingId(listing.id); }} type="button"><span><small>{garment?.sku}</small><strong>{listing.title}</strong></span><LifecycleBadge state={listing.state} /><ArrowRight aria-hidden="true" size={17} /></button>;
+          })}</div><StudioPager label="Publishing pages" onPageChange={setPublishingPage} page={safePublishingPage} pageSize={publishingPageSize} total={studio.listings.length} /></> : <div className="studio-quiet-empty"><Send aria-hidden="true" size={24} strokeWidth={1.5} /><div><strong>No listing drafts</strong><p>Move a garment to wardrobe, then prepare its listing.</p></div></div>}
+        </section>
       )}
-
-      <section className="studio-publishing-section" id="publishing" aria-labelledby="publishing-title">
-        <div className="studio-section-title"><div><p className="eyebrow">Publishing</p><h2 id="publishing-title">Catalogue gates</h2></div><span>{studio.listings.length} listing{studio.listings.length === 1 ? "" : "s"}</span></div>
-        {studio.listings.length ? <div className="studio-listing-stack">{studio.listings.map((listing) => <ListingEditor listing={listing} key={listing.id} />)}</div> : <div className="studio-quiet-empty"><Send aria-hidden="true" size={24} strokeWidth={1.5} /><div><strong>No listing drafts</strong><p>Move a garment to wardrobe, then prepare its listing.</p></div></div>}
-      </section>
 
       {engineEnabled ? (
         <GarmentIntakeSheet
@@ -379,6 +407,16 @@ export function WardrobeWorkbench({ engineEnabled = false }: { engineEnabled?: b
           returnFocus={intakeReturnFocus}
         />
       )}
+
+      <StudioTaskSheet
+        eyebrow="Publishing"
+        onDismiss={() => setOpenListingId(null)}
+        open={Boolean(openListing)}
+        returnFocus={listingReturnFocus}
+        title={openListing?.title ?? "Listing"}
+      >
+        {openListing ? <ListingEditor listing={openListing} /> : null}
+      </StudioTaskSheet>
     </div>
   );
 }
