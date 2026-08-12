@@ -2,6 +2,7 @@ import {
   createBrowserLocalStudioRepository,
   createBrowserWardrobePublicViewPort,
 } from "../db/browser-local-repository";
+import { createServerWardrobeOverlayRepository } from "../db/server-wardrobe-overlay";
 import type { StudioSnapshot } from "../domain/state";
 import { selectWardrobePublicView } from "../projections/public-listing";
 import { WARDROBE_AUTHORITY_MANAGED_SLUGS } from "../seeds/wardrobe-authority";
@@ -56,7 +57,7 @@ export function createStudioService({
 
 export function createBrowserStudioService() {
   return createStudioService({
-    repository: createBrowserLocalStudioRepository(),
+    repository: createServerWardrobeOverlayRepository(createBrowserLocalStudioRepository()),
     wardrobePublicView: createBrowserWardrobePublicViewPort(),
   });
 }

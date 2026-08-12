@@ -278,3 +278,157 @@ export const shopOrderEvents = pgTable("shop_order_events", {
 }, (table) => [
   index("shop_order_events_order_time_idx").on(table.orderId, table.occurredAt),
 ]);
+
+// Private Studio AI intake. These records are deliberately separate from the
+// public catalogue: committing an intake creates a Wardrobe draft, never a
+// Shop listing.
+export const studioIntakeKind = pgEnum("studio_intake_kind", ["GARMENT", "MODEL"]);
+export const studioSourceMode = pgEnum("studio_source_mode", [
+  "CAMERA",
+  "UPLOAD",
+  "DESCRIBE",
+]);
+export const studioIntakeState = pgEnum("studio_intake_state", [
+  "DRAFT",
+  "ANALYZING",
+  "REVIEW",
+  "GENERATING",
+  "DECISION",
+  "COMMITTED",
+  "FAILED",
+  "ARCHIVED",
+]);
+export const studioAssetRole = pgEnum("studio_asset_role", [
+  "SOURCE",
+  "GARMENT_FRONT",
+  "MANNEQUIN_FRONT",
+  "MODEL_TRY_ON",
+]);
+export const studioGenerationState = pgEnum("studio_generation_state", [
+  "PENDING",
+  "RUNNING",
+  "COMPLETE",
+  "APPROVED",
+  "REJECTED",
+  "FAILED",
+]);
+export const studioDecisionKind = pgEnum("studio_decision_kind", [
+  "KEEP",
+  "EDIT",
+  "REJECT",
+  "RETRY",
+]);
+
+export const studioIntakes = pgTable("studio_intakes", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  operatorSubject: text("operator_subject").notNull(),
+  operatorEmail: text("operator_email").notNull(),
+  kind: studioIntakeKind("kind").notNull(),
+  sourceMode: studioSourceMode("source_mode").notNull(),
+  description: text("description"),
+  facts: jsonb("facts").$type<Record<string, string | number | null>>().default({}).notNull(),
+  state: studioIntakeState("state").default("DRAFT").notNull(),
+  version: integer("version").default(1).notNull(),
+  idempotencyKey: varchar("idempotency_key", { length: 160 }).notNull(),
+  errorCode: varchar("error_code", { length: 80 }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("studio_intakes_operator_idempotency_unique").on(
+    table.operatorSubject,
+    table.idempotencyKey,
+  ),
+  index("studio_intakes_operator_updated_idx").on(table.operatorSubject, table.updatedAt),
+  check("studio_intakes_version_positive", sql`${table.version} > 0`),
+  check("studio_intakes_facts_object", sql`jsonb_typeof(${table.facts}) = 'object'`),
+]);
+
+export const studioAssets = pgTable("studio_assets", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  intakeId: uuid("intake_id")
+    .notNull()
+    .references(() => studioIntakes.id, { onDelete: "cascade" }),
+  role: studioAssetRole("role").notNull(),
+  blobPathname: text("blob_pathname").notNull(),
+  blobUrl: text("blob_url").notNull(),
+  mimeType: varchar("mime_type", { length: 80 }).notNull(),
+  byteSize: integer("byte_size").notNull(),
+  width: integer("width"),
+  height: integer("height"),
+  sha256: varchar("sha256", { length: 64 }).notNull(),
+  privacy: varchar("privacy", { length: 24 }).default("PRIVATE").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  index("studio_assets_intake_role_idx").on(table.intakeId, table.role),
+  uniqueIndex("studio_assets_intake_sha_role_unique").on(table.intakeId, table.sha256, table.role),
+  check("studio_assets_bytes_positive", sql`${table.byteSize} > 0`),
+  check("studio_assets_sha256", sql`${table.sha256} ~ '^[0-9a-f]{64}$'`),
+  check("studio_assets_private_only", sql`${table.privacy} = 'PRIVATE'`),
+]);
+
+export const studioGenerations = pgTable("studio_generations", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  intakeId: uuid("intake_id")
+    .notNull()
+    .references(() => studioIntakes.id, { onDelete: "cascade" }),
+  operation: varchar("operation", { length: 40 }).notNull(),
+  state: studioGenerationState("state").default("PENDING").notNull(),
+  model: text("model").notNull(),
+  promptVersion: varchar("prompt_version", { length: 40 }).notNull(),
+  promptHash: varchar("prompt_hash", { length: 64 }).notNull(),
+  sourceAssetIds: jsonb("source_asset_ids").$type<string[]>().notNull(),
+  sourceHashes: jsonb("source_hashes").$type<string[]>().notNull(),
+  fingerprint: varchar("fingerprint", { length: 64 }).notNull(),
+  parameters: jsonb("parameters").$type<Record<string, unknown>>().notNull(),
+  outputAssetId: uuid("output_asset_id").references(() => studioAssets.id, { onDelete: "set null" }),
+  usage: jsonb("usage").$type<Record<string, unknown>>(),
+  costUsd: text("cost_usd"),
+  errorCode: varchar("error_code", { length: 80 }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("studio_generations_intake_fingerprint_unique").on(table.intakeId, table.fingerprint),
+  index("studio_generations_intake_created_idx").on(table.intakeId, table.createdAt),
+  check("studio_generations_prompt_hash", sql`${table.promptHash} ~ '^[0-9a-f]{64}$'`),
+  check("studio_generations_fingerprint", sql`${table.fingerprint} ~ '^[0-9a-f]{64}$'`),
+  check("studio_generations_source_ids_array", sql`jsonb_typeof(${table.sourceAssetIds}) = 'array'`),
+  check("studio_generations_source_hashes_array", sql`jsonb_typeof(${table.sourceHashes}) = 'array'`),
+  check("studio_generations_parameters_object", sql`jsonb_typeof(${table.parameters}) = 'object'`),
+]);
+
+export const studioDecisions = pgTable("studio_decisions", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  intakeId: uuid("intake_id")
+    .notNull()
+    .references(() => studioIntakes.id, { onDelete: "cascade" }),
+  generationId: uuid("generation_id").references(() => studioGenerations.id, { onDelete: "set null" }),
+  actorSubject: text("actor_subject").notNull(),
+  decision: studioDecisionKind("decision").notNull(),
+  note: text("note"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [index("studio_decisions_intake_created_idx").on(table.intakeId, table.createdAt)]);
+
+export const studioWardrobeItems = pgTable("studio_wardrobe_items", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  intakeId: uuid("intake_id")
+    .notNull()
+    .references(() => studioIntakes.id, { onDelete: "restrict" }),
+  operatorSubject: text("operator_subject").notNull(),
+  title: text("title").notNull(),
+  category: text("category").notNull(),
+  colour: text("colour").notNull(),
+  sizeLabel: text("size_label").notNull(),
+  condition: text("condition").notNull(),
+  price: integer("price").notNull(),
+  quantity: integer("quantity").default(1).notNull(),
+  state: varchar("state", { length: 24 }).default("DRAFT").notNull(),
+  approvedAssetId: uuid("approved_asset_id").references(() => studioAssets.id, { onDelete: "restrict" }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("studio_wardrobe_items_intake_unique").on(table.intakeId),
+  index("studio_wardrobe_items_operator_updated_idx").on(table.operatorSubject, table.updatedAt),
+  check("studio_wardrobe_items_price_nonnegative", sql`${table.price} >= 0`),
+  check("studio_wardrobe_items_quantity_one", sql`${table.quantity} = 1`),
+  check("studio_wardrobe_items_state_private", sql`${table.state} in ('DRAFT', 'READY', 'ARCHIVED')`),
+]);

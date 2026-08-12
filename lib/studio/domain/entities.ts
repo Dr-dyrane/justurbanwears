@@ -102,7 +102,9 @@ export interface GarmentMeasurement {
 }
 
 export interface GarmentReviewCover {
-  src: `/studio/wardrobe/${string}/01-garment-front.webp`;
+  src:
+    | `/studio/wardrobe/${string}/01-garment-front.webp`
+    | `/api/studio/intakes/${string}/assets/${string}`;
   alt: string;
   width: number;
   height: number;

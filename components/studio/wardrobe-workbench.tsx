@@ -7,7 +7,6 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   ArrowRight,
-  Camera,
   Check,
   ImagePlus,
   PackageOpen,
@@ -15,11 +14,9 @@ import {
   Send,
   ShieldCheck,
   Shirt,
-  X,
 } from "lucide-react";
 import type {
   Garment,
-  GarmentCategory,
   StudioListing,
   StudioLifecycleState,
 } from "../../lib/studio/domain/entities";
@@ -39,9 +36,9 @@ import {
 } from "../../lib/studio/seeds/private-wardrobe-products";
 import { LifecycleBadge } from "./atoms/lifecycle-badge";
 import { ReadinessList } from "./atoms/readiness-list";
+import { GarmentIntakeSheet } from "./garment-intake/garment-intake-sheet";
+import { LocalGarmentIntakeDialog } from "./garment-intake/local-garment-intake-dialog";
 import { useStudio } from "./studio-provider";
-
-type CaptureKey = "front" | "back" | "detail";
 
 const filters: Array<"ALL" | StudioLifecycleState> = [
   "ALL",
@@ -55,104 +52,6 @@ const filters: Array<"ALL" | StudioLifecycleState> = [
 
 function formatNaira(value: number) {
   return new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", maximumFractionDigits: 0 }).format(value);
-}
-
-function GarmentIntakeDialog({
-  dialogRef,
-  onClosed,
-}: {
-  dialogRef: React.RefObject<HTMLDialogElement | null>;
-  onClosed(): void;
-}) {
-  const { createGarment } = useStudio();
-  const [files, setFiles] = useState<Record<CaptureKey, File | null>>({ front: null, back: null, detail: null });
-
-  function close() {
-    dialogRef.current?.close();
-  }
-
-  function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    createGarment({
-      sku: String(form.get("sku")),
-      title: String(form.get("title")),
-      category: String(form.get("category")) as GarmentCategory,
-      sizeLabel: String(form.get("size")),
-      estimatedFit: String(form.get("fit")),
-      color: String(form.get("colour")),
-      price: Number(form.get("price")),
-      condition: String(form.get("condition")),
-      brand: String(form.get("brand") || ""),
-      source: String(form.get("source") || "Studio intake"),
-      notes: String(form.get("description")),
-      privateNote: String(form.get("privateNote") || ""),
-      publicDescription: String(form.get("description")),
-      quantity: Number(form.get("quantity")),
-      saleEligible: form.get("saleEligible") === "on",
-      measurements: [
-        { label: "Bust", value: String(form.get("bust") || "") },
-        { label: "Waist", value: String(form.get("waist") || "") },
-        { label: "Length", value: String(form.get("length") || "") },
-      ],
-      hasFront: Boolean(files.front),
-      hasBack: Boolean(files.back),
-      hasDetail: Boolean(files.detail),
-    });
-    event.currentTarget.reset();
-    setFiles({ front: null, back: null, detail: null });
-    close();
-  }
-
-  return (
-    <dialog className="studio-intake-sheet" ref={dialogRef} aria-labelledby="studio-intake-title" onClose={onClosed}>
-      <form onSubmit={submit}>
-        <header>
-          <div><p className="eyebrow">Garment pipeline</p><h2 id="studio-intake-title">Snap. Classify. Wardrobe.</h2></div>
-          <button aria-label="Close garment intake" className="studio-icon-action" onClick={close} type="button"><X aria-hidden="true" size={20} /></button>
-        </header>
-
-        <section className="studio-intake-step">
-          <div className="studio-step-label"><span>01</span><div><strong>Snap or upload</strong><small>Only readiness metadata is saved.</small></div></div>
-          <div className="studio-capture-grid">
-            {(["front", "back", "detail"] as CaptureKey[]).map((key) => (
-              <label className={files[key] ? "studio-capture-tile has-file" : "studio-capture-tile"} key={key}>
-                <input type="file" accept="image/*" capture="environment" onChange={(event) => setFiles((current) => ({ ...current, [key]: event.target.files?.[0] ?? null }))} />
-                {files[key] ? <Check aria-hidden="true" size={22} /> : <Camera aria-hidden="true" size={22} />}
-                <strong>{key}</strong>
-                <small>{files[key]?.name ?? "Choose image"}</small>
-              </label>
-            ))}
-          </div>
-        </section>
-
-        <section className="studio-intake-step">
-          <div className="studio-step-label"><span>02</span><div><strong>Create & classify</strong><small>Facts drive the readiness gates.</small></div></div>
-          <div className="studio-form-grid">
-            <label className="studio-field"><span>SKU</span><input name="sku" placeholder="JUW-101" required /></label>
-            <label className="studio-field"><span>Garment name</span><input name="title" placeholder="Cocoa bias dress" required /></label>
-            <label className="studio-field"><span>Category</span><select name="category" defaultValue="Dress"><option>Dress</option><option>Set</option><option>Shirt</option><option>Knitwear</option><option>Skirt</option><option>Trousers</option></select></label>
-            <label className="studio-field"><span>Colour</span><input name="colour" placeholder="Cocoa" required /></label>
-            <label className="studio-field"><span>Tagged size</span><input name="size" placeholder="UK 12" required /></label>
-            <label className="studio-field"><span>Fit</span><input name="fit" placeholder="Relaxed 10–12" required /></label>
-            <label className="studio-field"><span>Condition</span><select name="condition" defaultValue="Excellent pre-loved"><option>New with tags</option><option>Excellent pre-loved</option><option>Very good</option><option>Good — disclosed wear</option></select></label>
-            <label className="studio-field"><span>Quantity</span><input name="quantity" type="number" min="1" defaultValue="1" required /></label>
-            <label className="studio-field"><span>Price (₦)</span><input name="price" type="number" min="1" placeholder="18500" required /></label>
-            <label className="studio-field"><span>Brand</span><input name="brand" placeholder="Unlabelled" /></label>
-            <label className="studio-field"><span>Bust</span><input name="bust" placeholder="96 cm" /></label>
-            <label className="studio-field"><span>Waist</span><input name="waist" placeholder="78 cm" /></label>
-            <label className="studio-field"><span>Length</span><input name="length" placeholder="124 cm" required /></label>
-            <label className="studio-field"><span>Acquisition source</span><input name="source" placeholder="Private Studio note" /></label>
-            <label className="studio-field studio-field-wide"><span>Public description</span><textarea name="description" rows={3} placeholder="Bias-cut midi with a softly flared hem." required /></label>
-            <label className="studio-field studio-field-wide"><span>Private condition note</span><textarea name="privateNote" rows={2} placeholder="Operator-only detail" /></label>
-          </div>
-          <label className="studio-check-row"><input aria-label="Eligible for sale" type="checkbox" name="saleEligible" defaultChecked /><span><strong>Eligible for sale</strong><small>No unresolved condition hold</small></span></label>
-        </section>
-
-        <footer><button className="button button-secondary" onClick={close} type="button">Cancel</button><button className="button button-primary" type="submit">Create garment</button></footer>
-      </form>
-    </dialog>
-  );
 }
 
 function MissingMedia({ garment }: { garment: Garment }) {
@@ -384,30 +283,32 @@ function ListingEditor({ listing }: { listing: StudioListing }) {
   );
 }
 
-export function WardrobeWorkbench() {
+export function WardrobeWorkbench({ engineEnabled = false }: { engineEnabled?: boolean }) {
   const studio = useStudio();
   const searchParams = useSearchParams();
-  const dialogRef = useRef<HTMLDialogElement>(null);
   const intakeOriginRef = useRef<"query" | "trigger" | null>(null);
-  const intakeReturnFocusRef = useRef<HTMLElement | null>(null);
+  const [intakeReturnFocus, setIntakeReturnFocus] = useState<HTMLElement | null>(null);
+  const [intakeOpen, setIntakeOpen] = useState(false);
   const [filter, setFilter] = useState<(typeof filters)[number]>("ALL");
 
   useEffect(() => {
     const queryWantsIntake = searchParams.get("intake") === "1";
-    if (queryWantsIntake && !dialogRef.current?.open) {
+    if (queryWantsIntake && !intakeOpen) {
       intakeOriginRef.current = "query";
-      intakeReturnFocusRef.current = null;
-      dialogRef.current?.showModal();
-    } else if (!queryWantsIntake && intakeOriginRef.current === "query" && dialogRef.current?.open) {
-      dialogRef.current.close();
+      window.setTimeout(() => {
+        setIntakeReturnFocus(null);
+        setIntakeOpen(true);
+      }, 0);
+    } else if (!queryWantsIntake && intakeOriginRef.current === "query" && intakeOpen) {
+      window.setTimeout(() => setIntakeOpen(false), 0);
     }
-  }, [searchParams, studio.hydration]);
+  }, [intakeOpen, searchParams, studio.hydration]);
 
   useEffect(() => {
     function syncQueryIntake() {
       const queryWantsIntake = new URLSearchParams(window.location.search).get("intake") === "1";
-      if (!queryWantsIntake && intakeOriginRef.current === "query" && dialogRef.current?.open) {
-        dialogRef.current.close();
+      if (!queryWantsIntake && intakeOriginRef.current === "query") {
+        setIntakeOpen(false);
       }
     }
 
@@ -417,22 +318,20 @@ export function WardrobeWorkbench() {
 
   function openIntake(returnFocus: HTMLElement | null) {
     intakeOriginRef.current = "trigger";
-    intakeReturnFocusRef.current = returnFocus;
-    dialogRef.current?.showModal();
+    setIntakeReturnFocus(returnFocus);
+    setIntakeOpen(true);
   }
 
   function finishIntake() {
     const origin = intakeOriginRef.current;
-    const returnFocus = intakeReturnFocusRef.current;
     intakeOriginRef.current = null;
-    intakeReturnFocusRef.current = null;
+    setIntakeReturnFocus(null);
+    setIntakeOpen(false);
 
     if (origin === "query") {
       const url = new URL(window.location.href);
       url.searchParams.delete("intake");
       window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
-    } else {
-      returnFocus?.focus({ preventScroll: true });
     }
   }
 
@@ -467,7 +366,19 @@ export function WardrobeWorkbench() {
         {studio.listings.length ? <div className="studio-listing-stack">{studio.listings.map((listing) => <ListingEditor listing={listing} key={listing.id} />)}</div> : <div className="studio-quiet-empty"><Send aria-hidden="true" size={24} strokeWidth={1.5} /><div><strong>No listing drafts</strong><p>Move a garment to wardrobe, then prepare its listing.</p></div></div>}
       </section>
 
-      <GarmentIntakeDialog dialogRef={dialogRef} onClosed={finishIntake} />
+      {engineEnabled ? (
+        <GarmentIntakeSheet
+          onDismiss={finishIntake}
+          open={intakeOpen}
+          returnFocus={intakeReturnFocus}
+        />
+      ) : (
+        <LocalGarmentIntakeDialog
+          onDismiss={finishIntake}
+          open={intakeOpen}
+          returnFocus={intakeReturnFocus}
+        />
+      )}
     </div>
   );
 }

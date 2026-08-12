@@ -22,6 +22,13 @@
       "when": 1786455218567,
       "tag": "0002_deep_steel_serpent",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1786533439945,
+      "tag": "0003_quick_gauntlet",
+      "breakpoints": true
     }
   ]
 }
