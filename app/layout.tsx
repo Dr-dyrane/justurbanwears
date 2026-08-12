@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "@fontsource-variable/bodoni-moda";
 import "@fontsource-variable/manrope";
+import { Analytics } from "@vercel/analytics/react";
 import { ServiceWorkerRegistration } from "../components/pwa/service-worker-registration";
 import { ThemeProvider } from "../components/theme/theme-provider";
 import { BRAND_ASSETS } from "../lib/brand/assets";
@@ -119,6 +120,7 @@ export default function RootLayout({
           <ServiceWorkerRegistration />
           {children}
         </ThemeProvider>
+        <Analytics />
       </body>
     </html>
   );
