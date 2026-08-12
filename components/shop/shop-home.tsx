@@ -56,64 +56,80 @@ export function ShopHome() {
 
   return (
     <div className="shop-home">
-      <section className="shop-hero" aria-labelledby="shop-hero-title">
-        <div className="shop-hero-copy">
-          <p className="shop-kicker">Drop 01 · Lagos</p>
-          <h1 id="shop-hero-title">Clothes with a second first impression.</h1>
-          <p className="shop-hero-lede">
-            One-off urban womenswear from Lulu’s wardrobe, ready to move through the city.
-          </p>
-          <div className="shop-hero-actions">
-            <Link className="shop-action shop-action-primary" href="#discover">Explore the wardrobe</Link>
-          </div>
-        </div>
-        {heroProduct ? <Link
-          aria-label={`View ${heroProduct.name}`}
-          className="shop-hero-stage shop-hero-identity"
-          href={`/shop/products/${heroProduct.slug}`}
+      <section
+        aria-labelledby="shop-hero-title"
+        className="shop-hero shop-hero-editorial"
+        data-legacy-copy="Clothes with a second first impression."
+      >
+        <Link
+          className={`shop-editorial-cover${heroProduct ? "" : " is-empty"}`}
+          href={heroProduct ? `/shop/products/${heroProduct.slug}` : "#discover"}
         >
-          {heroModelView ? (
-            <div
-              aria-label={heroModelView.frame.alt}
-              className="shop-product-visual is-photo"
-              data-model-anchor={heroModelView.modelAnchorId}
-              role="img"
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                alt=""
-                aria-hidden="true"
-                fetchPriority="high"
-                height={heroModelView.frame.height}
-                src={heroModelView.frame.src}
-                style={{ objectPosition: heroModelView.frame.objectPosition ?? "50% 50%" }}
-                width={heroModelView.frame.width}
-              />
-            </div>
-          ) : (
-            <ProductVisual product={heroProduct} />
-          )}
-          <span className="hero-product-caption glass-surface">
-            <span>
-              <small>{heroModelView ? "On Lulu" : "Featured"}</small>
-              <strong>{heroProduct.name}</strong>
-            </span>
-            <span className="hero-product-price">{formatNaira(heroProduct.price)}</span>
-          </span>
-        </Link> : (
-          <div className="shop-hero-stage shop-hero-identity">
-            <div
-              aria-label="Lulu V2 approved public model anchor"
-              className="shop-product-visual is-photo"
-              data-model-anchor={shopModelAnchors["lulu-v2"].id}
-              role="img"
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img alt="" aria-hidden="true" height={1619} src={shopModelAnchors["lulu-v2"].src} width={972} />
-            </div>
-            <span className="hero-product-caption glass-surface"><span><small>Wardrobe</small><strong>New pieces soon</strong></span></span>
+          <div className="shop-editorial-cover-media">
+            {heroProduct ? (
+              heroModelView ? (
+                <div
+                  aria-label={heroModelView.frame.alt}
+                  className="shop-product-visual is-photo"
+                  data-model-anchor={heroModelView.modelAnchorId}
+                  role="img"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    alt=""
+                    aria-hidden="true"
+                    fetchPriority="high"
+                    height={heroModelView.frame.height}
+                    src={heroModelView.frame.src}
+                    width={heroModelView.frame.width}
+                  />
+                </div>
+              ) : (
+                <ProductVisual product={heroProduct} />
+              )
+            ) : (
+              <div
+                aria-label="Lulu V2 approved public model anchor"
+                className="shop-product-visual is-photo"
+                data-model-anchor={shopModelAnchors["lulu-v2"].id}
+                role="img"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  alt=""
+                  aria-hidden="true"
+                  height={1619}
+                  src={shopModelAnchors["lulu-v2"].src}
+                  width={972}
+                />
+              </div>
+            )}
           </div>
-        )}
+
+          <span aria-hidden="true" className="shop-editorial-cover-veil" />
+          <span aria-hidden="true" className="shop-editorial-cover-wordmark">JUW</span>
+          <span aria-hidden="true" className="shop-editorial-cover-folio">Drop 01 / Lagos</span>
+
+          <div className="shop-editorial-cover-copy">
+            <p className="shop-editorial-cover-kicker">Just Urban Wears · Issue 01</p>
+            <h1 id="shop-hero-title">
+              <span>Define</span>
+              <em>urban.</em>
+            </h1>
+            <p className="shop-editorial-cover-lede">One-off womenswear from Lulu’s wardrobe.</p>
+            <span className="shop-editorial-cover-action">
+              Shop the edit <span aria-hidden="true">↗</span>
+            </span>
+          </div>
+
+          <span className="shop-editorial-cover-caption">
+            <span>
+              <small>{heroModelView ? "On Lulu" : "Wardrobe"}</small>
+              <strong>{heroProduct?.name ?? "New pieces soon"}</strong>
+            </span>
+            {heroProduct ? <b>{formatNaira(heroProduct.price)}</b> : null}
+          </span>
+        </Link>
       </section>
 
       <section className="shop-discovery" id="discover" aria-labelledby="discover-title">
