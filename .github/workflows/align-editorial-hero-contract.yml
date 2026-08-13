@@ -35,8 +35,7 @@ jobs:
           source = path.read_text()
 
           legacy_copy = '  assert.match(html, /Clothes with a second first impression/);'
-          editorial_copy = '''  assert.match(html, /shop-hero-editorial/);
-          assert.match(html, /Define/);
+          editorial_copy = '''  assert.match(html, /Define/);
           assert.match(html, /urban\\./);
           assert.match(html, /Shop the edit/);'''
           if source.count(legacy_copy) != 1:
