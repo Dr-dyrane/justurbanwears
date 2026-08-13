@@ -147,6 +147,7 @@ export interface StudioActions {
   confirmListingReady(id: string): boolean;
   publishListing(id: string): boolean;
   reserveOrder(listingId: string, quantity?: number): string;
+  cancelOrder(id: string): boolean;
   fulfillOrder(id: string): void;
   openReturn(orderId: string): string;
   disposeReturn(id: string, disposition: Exclude<ReturnDisposition, "PENDING">): void;
@@ -305,6 +306,13 @@ export function useStudioMachine(service: StudioService) {
     dispatch({ type: "ORDER_FULFILLED", id, fulfilledAt: service.now() });
   }, [service]);
 
+  const cancelOrder = useCallback((id: string) => {
+    const order = stateRef.current.orders.find((candidate) => candidate.id === id);
+    if (!order || order.state !== "RESERVED") return false;
+    dispatch({ type: "ORDER_CANCELLED", id, cancelledAt: service.now() });
+    return true;
+  }, [service]);
+
   const openReturn = useCallback((orderId: string) => {
     const current = stateRef.current;
     const order = current.orders.find((candidate) => candidate.id === orderId);
@@ -409,6 +417,7 @@ export function useStudioMachine(service: StudioService) {
     confirmListingReady,
     publishListing,
     reserveOrder,
+    cancelOrder,
     fulfillOrder,
     openReturn,
     disposeReturn,
@@ -422,6 +431,7 @@ export function useStudioMachine(service: StudioService) {
     addIdentityReferences,
     approveGarment,
     confirmListingReady,
+    cancelOrder,
     createGarment,
     createMockShoot,
     createModel,

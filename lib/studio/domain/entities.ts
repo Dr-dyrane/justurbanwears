@@ -5,6 +5,7 @@ export type StudioLifecycleState =
   | "PUBLISHED"
   | "RESERVED"
   | "SOLD"
+  | "CANCELLED"
   | "RETURNED"
   | "ERROR";
 
@@ -180,6 +181,7 @@ export interface StudioOrder {
   quantity: number;
   state: StudioLifecycleState;
   createdAt: string;
+  cancelledAt?: string;
   fulfilledAt?: string;
 }
 

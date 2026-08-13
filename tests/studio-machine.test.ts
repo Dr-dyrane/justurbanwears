@@ -133,13 +133,41 @@ test("the linked Studio lifecycle reaches return-to-readiness without leaking pr
   assert.equal(state.inventory[0].reserved, 1);
   assert.equal(state.listings[0].state, "RESERVED");
 
-  state = studioReducer(state, { type: "ORDER_FULFILLED", id: order.id, fulfilledAt: garment.createdAt });
+  state = studioReducer(state, { type: "ORDER_CANCELLED", id: order.id, cancelledAt: garment.createdAt });
+  assert.equal(state.orders[0].state, "CANCELLED");
+  assert.equal(state.inventory[0].reserved, 0);
+  assert.equal(state.inventory[0].onHand, 1);
+  assert.equal(state.inventory[0].state, "PUBLISHED");
+  assert.equal(state.listings[0].state, "PUBLISHED");
+  assert.equal(state.listings[0].publicProjection?.availability, "AVAILABLE");
+  assert.equal(state.garments[0].availability, "AVAILABLE");
+
+  const releaseSnapshot = state;
+  state = studioReducer(state, { type: "ORDER_CANCELLED", id: order.id, cancelledAt: garment.createdAt });
+  assert.equal(state, releaseSnapshot, "a cancelled order cannot release stock twice");
+
+  const seedOnlyReservation = {
+    ...releaseSnapshot,
+    inventory: releaseSnapshot.inventory.map((record) => ({ ...record, reserved: 1, state: "RESERVED" as const })),
+    listings: releaseSnapshot.listings.map((candidate) => ({ ...candidate, state: "RESERVED" as const })),
+    orders: [],
+  };
+  assert.equal(
+    studioReducer(seedOnlyReservation, { type: "ORDER_CANCELLED", id: "missing-order", cancelledAt: garment.createdAt }),
+    seedOnlyReservation,
+    "seed-only reserved stock cannot be released without a linked order",
+  );
+
+  state = studioReducer(state, { type: "ORDER_RESERVED", order: { ...order, id: "order-test-2" } });
+  assert.equal(state.inventory[0].reserved, 1);
+
+  state = studioReducer(state, { type: "ORDER_FULFILLED", id: "order-test-2", fulfilledAt: garment.createdAt });
   assert.equal(state.inventory[0].onHand, 0);
   assert.equal(state.listings[0].state, "SOLD");
 
   const returnCase: StudioReturn = {
     id: "return-test",
-    orderId: order.id,
+    orderId: "order-test-2",
     inventoryId: inventory.id,
     quantity: 1,
     state: "DRAFT",

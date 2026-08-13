@@ -44,6 +44,7 @@ export type StudioCommand =
   | { type: "LISTING_READY_REQUESTED"; id: string }
   | { type: "LISTING_PUBLISHED"; id: string; publishedAt: string }
   | { type: "ORDER_RESERVED"; order: StudioOrder }
+  | { type: "ORDER_CANCELLED"; id: string; cancelledAt: string }
   | { type: "ORDER_FULFILLED"; id: string; fulfilledAt: string }
   | { type: "RETURN_OPENED"; returnCase: StudioReturn }
   | { type: "RETURN_DISPOSED"; id: string; disposition: ReturnDisposition; resolvedAt: string }
@@ -305,6 +306,42 @@ export function studioReducer(
               updatedAt: command.order.createdAt,
             }
           : record),
+      });
+    }
+    case "ORDER_CANCELLED": {
+      const order = state.orders.find((candidate) => candidate.id === command.id);
+      if (!order || order.state !== "RESERVED") return state;
+      const inventory = state.inventory.find((candidate) => candidate.id === order.inventoryId);
+      const listing = state.listings.find((candidate) => candidate.id === order.listingId);
+      if (!inventory || !listing || inventory.reserved < order.quantity || listing.state !== "RESERVED") return state;
+      const nextReserved = Math.max(0, inventory.reserved - order.quantity);
+      const nextState = nextReserved > 0 ? "RESERVED" : "PUBLISHED";
+      return persistentUpdate(state, {
+        orders: state.orders.map((candidate) => candidate.id === order.id
+          ? { ...candidate, state: "CANCELLED", cancelledAt: command.cancelledAt }
+          : candidate),
+        inventory: state.inventory.map((record) => record.id === inventory.id
+          ? {
+              ...record,
+              reserved: nextReserved,
+              state: nextState,
+              updatedAt: command.cancelledAt,
+            }
+          : record),
+        listings: state.listings.map((candidate) => candidate.id === listing.id
+          ? {
+              ...candidate,
+              state: nextState,
+              publicProjection: updateProjectionAvailability(candidate, nextReserved > 0 ? "RESERVED" : "AVAILABLE"),
+            }
+          : candidate),
+        garments: state.garments.map((candidate) => candidate.id === listing.garmentId
+          ? {
+              ...candidate,
+              state: nextState,
+              availability: nextReserved > 0 ? "RESERVED" : "AVAILABLE",
+            }
+          : candidate),
       });
     }
     case "ORDER_FULFILLED": {
