@@ -33,6 +33,13 @@ test("compact records, garments, and inventory use approved media", () => {
   assert.match(css, /\.studio-table-row \{ background: var\(--studio-panel\);[\s\S]*?grid-template-columns: 58px/);
 });
 
+test("compact garment actions keep specific accessible names when labels collapse", () => {
+  assert.match(wardrobe, /aria-label=\{`Open media for \$\{garment\.title\}`\}/);
+  assert.match(wardrobe, /aria-label=\{`Move \$\{garment\.title\} to wardrobe`\}/);
+  assert.match(wardrobe, /aria-label=\{`Prepare listing for \$\{garment\.title\}`\}/);
+  assert.match(wardrobe, /aria-label=\{`Open listing for \$\{garment\.title\}`\}/);
+});
+
 test("model segmented content can render without the portrait obstruction", () => {
   assert.match(models, /activeView === "profile" \? <div className=/);
   assert.match(models, /is-panel-only/);

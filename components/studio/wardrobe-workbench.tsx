@@ -177,10 +177,10 @@ function GarmentCard({ garment, onOpenListing, onOpenWear }: { garment: Garment;
         <ReadinessList gates={gates} compact />
         {pendingContract || approvedContract ? null : <MissingMedia garment={garment} />}
         <div className="studio-card-actions">
-          {garment.privateWardrobeItemId ? <button className="button button-secondary" onClick={(event) => onOpenWear(garment, event.currentTarget)} type="button"><span>Media</span><ImagePlus aria-hidden="true" size={15} /></button> : null}
-          {garment.state === "DRAFT" ? <button className="button button-primary" disabled={!ready} onClick={() => moveGarmentToWardrobe(garment.id)} type="button"><span>Move to wardrobe</span><ArrowRight aria-hidden="true" size={14} /></button> : null}
-          {["READY", "RETURNED"].includes(garment.state) && !listing ? <button className="button button-primary" onClick={() => prepareListing(garment.id)} type="button"><span>Prepare listing</span><ArrowRight aria-hidden="true" size={14} /></button> : null}
-          {listing ? <button className="button button-secondary" onClick={(event) => onOpenListing(listing, event.currentTarget)} type="button"><span>Open listing</span><ArrowRight aria-hidden="true" size={14} /></button> : null}
+          {garment.privateWardrobeItemId ? <button aria-label={`Open media for ${garment.title}`} className="button button-secondary" onClick={(event) => onOpenWear(garment, event.currentTarget)} type="button"><span>Media</span><ImagePlus aria-hidden="true" size={15} /></button> : null}
+          {garment.state === "DRAFT" ? <button aria-label={`Move ${garment.title} to wardrobe`} className="button button-primary" disabled={!ready} onClick={() => moveGarmentToWardrobe(garment.id)} type="button"><span>Move to wardrobe</span><ArrowRight aria-hidden="true" size={14} /></button> : null}
+          {["READY", "RETURNED"].includes(garment.state) && !listing ? <button aria-label={`Prepare listing for ${garment.title}`} className="button button-primary" onClick={() => prepareListing(garment.id)} type="button"><span>Prepare listing</span><ArrowRight aria-hidden="true" size={14} /></button> : null}
+          {listing ? <button aria-label={`Open listing for ${garment.title}`} className="button button-secondary" onClick={(event) => onOpenListing(listing, event.currentTarget)} type="button"><span>Open listing</span><ArrowRight aria-hidden="true" size={14} /></button> : null}
         </div>
       </div>
     </article>
