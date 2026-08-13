@@ -44,9 +44,72 @@ export const commitIntakeSchema = z.object({
   facts: intakeFactsSchema,
 });
 
+export const wearOperationSchema = z.enum([
+  "MANNEQUIN_FRONT",
+  "MODEL_TRY_ON",
+  "EDITORIAL_MODEL",
+]);
+export type WearOperation = z.infer<typeof wearOperationSchema>;
+
+export const createWearGenerationSchema = z.object({
+  operation: wearOperationSchema,
+  modelProfileId: z.string().uuid().optional(),
+  parentGenerationId: z.string().uuid().optional(),
+  correction: z.string().trim().max(500).optional(),
+}).superRefine((value, context) => {
+  if (value.operation === "MODEL_TRY_ON" && !value.modelProfileId) {
+    context.addIssue({ code: "custom", path: ["modelProfileId"], message: "Choose a model." });
+  }
+  if (value.operation === "EDITORIAL_MODEL" && !value.parentGenerationId) {
+    context.addIssue({ code: "custom", path: ["parentGenerationId"], message: "Choose a model view." });
+  }
+});
+
+export const wearDecisionSchema = z.object({
+  decision: z.enum(["KEEP", "EDIT", "REJECT", "RETRY"]),
+  note: z.string().trim().max(500).optional(),
+});
+
+export const createModelProfileSchema = z.object({
+  name: z.string().trim().min(1).max(80),
+  licenseUrl: z.string().trim().url().max(500),
+  authorityConfirmed: z.literal("true"),
+});
+
+export type OperatorSafeModelProfile = {
+  id: string;
+  name: string;
+  kind: "LULU_V3" | "AUTHORIZED_STOCK";
+  state: "READY";
+  sourceAssetUrl: string;
+};
+
+export type OperatorSafeWearGeneration = {
+  id: string;
+  operation: WearOperation;
+  state: "PENDING" | "RUNNING" | "COMPLETE" | "APPROVED" | "REJECTED" | "FAILED";
+  modelProfileId: string | null;
+  parentGenerationId: string | null;
+  outputAssetId: string | null;
+  outputUrl: string | null;
+  retryAvailable: boolean;
+  createdAt: string;
+};
+
+export type OperatorSafeWearWorkspace = {
+  wardrobeItemId: string;
+  intakeId: string;
+  title: string;
+  garmentAssetUrl: string;
+  models: OperatorSafeModelProfile[];
+  generations: OperatorSafeWearGeneration[];
+  missingViews: ["GARMENT_BACK", "FABRIC_DETAIL"];
+  publicationState: "PRIVATE_DRAFT";
+};
+
 export type OperatorSafeAsset = {
   id: string;
-  role: "SOURCE" | "GARMENT_FRONT" | "MANNEQUIN_FRONT" | "MODEL_TRY_ON";
+  role: "SOURCE" | "GARMENT_FRONT" | "MANNEQUIN_FRONT" | "MODEL_TRY_ON" | "EDITORIAL_MODEL";
   mimeType: string;
   width: number | null;
   height: number | null;

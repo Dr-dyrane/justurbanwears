@@ -10,6 +10,7 @@ import {
 import { z } from "zod";
 import { intakeFactsSchema, type IntakeFacts } from "../studio/engine/contracts";
 import { StudioEngineError } from "../studio/engine/errors";
+import type { WearOperation } from "../studio/engine/contracts";
 
 const DEFAULT_TEXT_MODEL = "google/gemini-2.5-flash-lite";
 const DEFAULT_TEXT_FALLBACK = "google/gemini-2.5-flash";
@@ -29,6 +30,11 @@ export const studioGatewayPolicy = {
     process.env.STUDIO_AI_IMAGE_COST_CAP_USD || String(DEFAULT_IMAGE_COST_CAP_USD),
   ),
   promptVersion: "garment-front-v2",
+  wearPromptVersions: Object.freeze({
+    MANNEQUIN_FRONT: "mannequin-front-v1",
+    MODEL_TRY_ON: "model-try-on-v1",
+    EDITORIAL_MODEL: "editorial-model-v1",
+  }),
 } as const;
 
 export type StudioGatewayFailureMetadata = Readonly<{
@@ -48,9 +54,25 @@ export class StudioGatewayError extends StudioEngineError {
     message: string,
     recovery: string,
     readonly upstream: StudioGatewayFailureMetadata,
+    readonly accounting: Readonly<{ usage: Record<string, number> | null; costUsd: number | null }> = { usage: null, costUsd: null },
   ) {
     super("GENERATION_FAILED", 502, message, recovery);
   }
+}
+
+function failureAccounting(error: unknown): Readonly<{ usage: Record<string, number> | null; costUsd: number | null }> {
+  const records = errorChain(error).filter((item): item is Record<string, unknown> => typeof item === "object" && item !== null);
+  const usageRecord = records.map((record) => record.usage).find((value): value is Record<string, unknown> => typeof value === "object" && value !== null);
+  const usage = usageRecord
+    ? Object.fromEntries(Object.entries(usageRecord).filter((entry): entry is [string, number] => typeof entry[1] === "number" && Number.isFinite(entry[1])))
+    : null;
+  const costValues = records.flatMap((record) => {
+    const metadata = typeof record.providerMetadata === "object" && record.providerMetadata !== null ? record.providerMetadata as Record<string, unknown> : null;
+    const gateway = metadata && typeof metadata.gateway === "object" && metadata.gateway !== null ? metadata.gateway as Record<string, unknown> : null;
+    return [record.cost, record.costUsd, gateway?.cost];
+  });
+  const costUsd = costValues.map(Number).find(Number.isFinite) ?? null;
+  return Object.freeze({ usage: usage && Object.keys(usage).length ? usage : null, costUsd });
 }
 
 const SAFE_REQUEST_ID_HEADERS = [
@@ -277,6 +299,80 @@ export async function generateGarmentFront(input: {
       "The garment image was not created.",
       "Try once more or edit the garment details.",
       sanitizeStudioGatewayFailure("generation", studioGatewayPolicy.imageModel, error),
+    );
+  }
+}
+
+export function buildWearPrompt(input: {
+  operation: WearOperation;
+  facts: Partial<IntakeFacts>;
+  modelName?: string;
+  correction?: string;
+}): string {
+  const truth = [
+    "Treat the supplied approved garment front as the only garment-construction authority.",
+    "Preserve its exact visible front neckline, shoulders, sleeve cut and volume, waist gathering, silhouette, length, hem treatment, surface and drape.",
+    "Do not infer or show a back, closure, lining, pockets, label, brand, fibre or unseen construction.",
+    "Never add text, logo or watermark.",
+  ];
+  const operation = input.operation === "MANNEQUIN_FRONT"
+    ? [
+      "Create one straight-on catalogue front of the exact garment on an anonymous headless neutral mannequin.",
+      "Warm-paper background, even soft light, complete garment edges. No human identity.",
+    ]
+    : input.operation === "MODEL_TRY_ON"
+      ? [
+        `Create one straight-on full-body private try-on of the exact garment on ${input.modelName || "the supplied adult model"}.`,
+        "Source image 1 is garment-only construction authority. Source image 2 is adult identity/body/pose authority. Never blend, swap or reinterpret their authority roles.",
+        "Preserve the supplied adult model identity, face, body proportions, skin tone and hair without reshaping.",
+        "Use a restrained warm neutral studio background and natural editorial light.",
+      ]
+      : [
+        "Edit only the background of the supplied approved model try-on into a restrained warm-paper editorial studio.",
+        "Preserve every pixel-level person, identity, pose, body, hair, face and garment construction as closely as possible.",
+        "No new props, accessories or pose change.",
+      ];
+  return [
+    ...operation,
+    ...truth,
+    `Confirmed garment facts: ${JSON.stringify(input.facts)}.`,
+    input.correction ? `Operator correction: ${input.correction}.` : "",
+  ].filter(Boolean).join(" ");
+}
+
+export async function generateWearImage(input: {
+  prompt: string;
+  sources: Array<{ bytes: Uint8Array; mimeType: string }>;
+}) {
+  assertStudioImageBudget();
+  try {
+    const result = await generateImage({
+      model: studioGatewayPolicy.imageModel,
+      prompt: { images: input.sources.map((source) => source.bytes), text: input.prompt },
+      aspectRatio: "4:5",
+      n: 1,
+      maxRetries: 0,
+      abortSignal: AbortSignal.timeout(60_000),
+      providerOptions: { gateway: { sort: "cost" } },
+    });
+    const metadata = result.providerMetadata as Record<string, unknown>;
+    const gateway = metadata.gateway && typeof metadata.gateway === "object"
+      ? metadata.gateway as Record<string, unknown>
+      : {};
+    const parsedCost = gatewayCostSchema.safeParse(gateway.cost);
+    return {
+      bytes: result.image.uint8Array,
+      mimeType: result.image.mediaType,
+      usage: result.usage as unknown as Record<string, unknown>,
+      costUsd: parsedCost.success && Number.isFinite(parsedCost.data) ? parsedCost.data : null,
+    };
+  } catch (error) {
+    if (error instanceof StudioEngineError) throw error;
+    throw new StudioGatewayError(
+      "The Wear image was not created.",
+      "Try once more or keep the last view.",
+      sanitizeStudioGatewayFailure("generation", studioGatewayPolicy.imageModel, error),
+      failureAccounting(error),
     );
   }
 }

@@ -1,7 +1,6 @@
 import { neon } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import * as schema from "./shop-postgres-schema";
-import { ensureStudioEngineSchema } from "./studio-engine-migration";
 
 function requireRuntimeDatabaseUrl() {
   const databaseUrl = process.env.DATABASE_URL ?? process.env.POSTGRES_URL;
@@ -34,6 +33,5 @@ export function getShopDb(): ShopDb {
 }
 
 export async function getStudioDb(): Promise<ShopDb> {
-  await ensureStudioEngineSchema();
   return getShopDb();
 }

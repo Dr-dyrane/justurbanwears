@@ -1,14 +1,16 @@
-import { and, desc, eq, inArray } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import {
   studioAssets,
   studioDecisions,
   studioGenerations,
   studioIntakes,
+  studioModelProfiles,
   studioWardrobeItems,
 } from "../../db/shop-postgres-schema";
 import { getStudioDb } from "../../db/shop-postgres";
 import type {
   IntakeFacts,
+  OperatorSafeModelProfile,
   OperatorSafeIntake,
   OperatorSafeWardrobeItem,
 } from "../studio/engine/contracts";
@@ -18,6 +20,7 @@ import type { StudioOperator } from "./studio-operator";
 type IntakeRow = typeof studioIntakes.$inferSelect;
 type AssetRow = typeof studioAssets.$inferSelect;
 type GenerationRow = typeof studioGenerations.$inferSelect;
+type ModelProfileRow = typeof studioModelProfiles.$inferSelect;
 
 async function ownedIntake(id: string, subject: string): Promise<IntakeRow> {
   const [row] = await (await getStudioDb()).select().from(studioIntakes).where(and(
@@ -229,6 +232,139 @@ export async function listWardrobeItems(subject: string): Promise<OperatorSafeWa
   return rows.map(mapWardrobeItem);
 }
 
+export async function getOwnedWardrobeItem(id: string, subject: string) {
+  const [item] = await (await getStudioDb()).select().from(studioWardrobeItems).where(and(
+    eq(studioWardrobeItems.id, id),
+    eq(studioWardrobeItems.operatorSubject, subject),
+  )).limit(1);
+  if (!item) throw new StudioEngineError("INTAKE_NOT_FOUND", 404, "That garment was not found.", "Return to Wardrobe.");
+  return item;
+}
+
+export async function ensureLuluV3Profile(input: {
+  blobPathname: string;
+  mimeType: string;
+  byteSize: number;
+  width: number | null;
+  height: number | null;
+  sha256: string;
+}): Promise<ModelProfileRow> {
+  if (
+    input.sha256 !== "ef88e65e78780101693720fd872c23857e4311412900acb28fdc139b08a373b8"
+    || input.width !== 972
+    || input.height !== 1619
+  ) {
+    throw new StudioEngineError("INVALID_ASSET", 503, "Lulu authority did not verify.", "Ask an administrator to restore the approved V3 master.");
+  }
+  const db = await getStudioDb();
+  await db.insert(studioModelProfiles).values({
+    operatorSubject: null,
+    name: "Lulu",
+    authorityId: "lulu-v3",
+    kind: "LULU_V3",
+    sourceBlobPathname: input.blobPathname,
+    sourceMimeType: input.mimeType,
+    sourceByteSize: input.byteSize,
+    sourceWidth: input.width,
+    sourceHeight: input.height,
+    sourceSha256: input.sha256,
+    licenseUrl: null,
+    authority: {
+      canonVersion: "3.0.0",
+      approvalState: "IDENTITY_MASTER_USER_APPROVED",
+      approvedOn: "2026-08-10",
+      approvedBy: "user",
+      privacy: "PRIVATE_PRODUCTION_ONLY",
+      publishable: false,
+      allowedUse: "Private justurban wears Studio try-on generation.",
+      restrictedUse: "Never expose the identity master or publish it as product media.",
+    },
+    authorityConfirmedAt: new Date("2026-08-10T00:00:00.000Z"),
+  }).onConflictDoNothing();
+  const [profile] = await db.select().from(studioModelProfiles).where(eq(studioModelProfiles.authorityId, "lulu-v3")).limit(1);
+  if (!profile) throw new StudioEngineError("ENGINE_UNAVAILABLE", 503, "Lulu is unavailable.", "Choose another model.");
+  if (
+    profile.kind !== "LULU_V3"
+    || profile.sourceSha256 !== input.sha256
+    || profile.sourceWidth !== input.width
+    || profile.sourceHeight !== input.height
+  ) {
+    throw new StudioEngineError("INVALID_ASSET", 503, "Lulu authority did not verify.", "Ask an administrator to restore the approved V3 master.");
+  }
+  return profile;
+}
+
+export async function createOrReuseStockModel(input: {
+  operatorSubject: string;
+  name: string;
+  authorityId: string;
+  blobPathname: string;
+  mimeType: string;
+  byteSize: number;
+  width: number | null;
+  height: number | null;
+  sha256: string;
+  licenseUrl: string;
+}): Promise<ModelProfileRow> {
+  const db = await getStudioDb();
+  await db.insert(studioModelProfiles).values({
+    operatorSubject: input.operatorSubject,
+    name: input.name,
+    authorityId: input.authorityId,
+    kind: "AUTHORIZED_STOCK",
+    sourceBlobPathname: input.blobPathname,
+    sourceMimeType: input.mimeType,
+    sourceByteSize: input.byteSize,
+    sourceWidth: input.width,
+    sourceHeight: input.height,
+    sourceSha256: input.sha256,
+    licenseUrl: input.licenseUrl,
+    authority: {
+      adultConfirmed: true,
+      operatorAuthorityConfirmed: true,
+      sourceUrl: input.licenseUrl,
+      licenseUrl: input.licenseUrl,
+      privacy: "PRIVATE_PRODUCTION_ONLY",
+      publishable: false,
+      allowedUse: "Private Studio try-on generation.",
+      restrictedUse: "No publication without a separate public-media approval.",
+    },
+    authorityConfirmedAt: new Date(),
+  }).onConflictDoNothing();
+  const [profile] = await db.select().from(studioModelProfiles).where(and(
+    eq(studioModelProfiles.authorityId, input.authorityId),
+    eq(studioModelProfiles.operatorSubject, input.operatorSubject),
+  )).limit(1);
+  if (!profile) throw new StudioEngineError("ENGINE_UNAVAILABLE", 503, "The model could not be saved.", "Try again.");
+  return profile;
+}
+
+export async function listOwnedModelProfiles(subject: string): Promise<ModelProfileRow[]> {
+  return (await getStudioDb()).select().from(studioModelProfiles).where(
+    sql`${studioModelProfiles.operatorSubject} = ${subject} or ${studioModelProfiles.kind} = 'LULU_V3'`,
+  ).orderBy(studioModelProfiles.createdAt);
+}
+
+export async function getOwnedModelProfile(id: string, subject: string): Promise<ModelProfileRow> {
+  const [profile] = await (await getStudioDb()).select().from(studioModelProfiles).where(and(
+    eq(studioModelProfiles.id, id),
+    sql`(${studioModelProfiles.operatorSubject} = ${subject} or ${studioModelProfiles.kind} = 'LULU_V3')`,
+    eq(studioModelProfiles.state, "READY"),
+  )).limit(1);
+  if (!profile) throw new StudioEngineError("INVALID_REQUEST", 400, "Choose an approved model.", "Add or select a ready model.");
+  return profile;
+}
+
+export function mapModelProfile(profile: ModelProfileRow, wardrobeItemId: string): OperatorSafeModelProfile {
+  return {
+    id: profile.id,
+    name: profile.name,
+    kind: profile.kind as OperatorSafeModelProfile["kind"],
+    state: "READY",
+    sourceAssetUrl: `/api/studio/wardrobe/${wardrobeItemId}/models/${profile.id}/asset`,
+  };
+}
+
 function mapWardrobeItem(item: typeof studioWardrobeItems.$inferSelect): OperatorSafeWardrobeItem {
   return {
     id: item.id,
@@ -256,6 +392,14 @@ export async function listGenerationsForIntake(intakeId: string): Promise<Genera
   return (await getStudioDb()).select().from(studioGenerations).where(
     eq(studioGenerations.intakeId, intakeId),
   ).orderBy(studioGenerations.createdAt);
+}
+
+export async function getGeneration(id: string, intakeId: string): Promise<GenerationRow | null> {
+  const [row] = await (await getStudioDb()).select().from(studioGenerations).where(and(
+    eq(studioGenerations.id, id),
+    eq(studioGenerations.intakeId, intakeId),
+  )).limit(1);
+  return row ?? null;
 }
 
 export async function getAssetsByIds(ids: string[]): Promise<AssetRow[]> {

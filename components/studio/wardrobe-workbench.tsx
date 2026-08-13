@@ -39,6 +39,7 @@ import { ReadinessList } from "./atoms/readiness-list";
 import { StudioPager, StudioSegmentedView, useStudioSegment } from "./atoms/studio-segmented-view";
 import { StudioTaskSheet } from "./atoms/studio-task-sheet";
 import { GarmentIntakeSheet } from "./garment-intake/garment-intake-sheet";
+import { WearSheet } from "./garment-intake/wear-sheet";
 import { useStudio } from "./studio-provider";
 import { studioGarmentCover } from "./garment-cover";
 
@@ -146,7 +147,7 @@ function PendingProductMedia({
   );
 }
 
-function GarmentCard({ garment, onOpenListing }: { garment: Garment; onOpenListing(listing: StudioListing, origin: HTMLElement): void }) {
+function GarmentCard({ garment, onOpenListing, onOpenWear }: { garment: Garment; onOpenListing(listing: StudioListing, origin: HTMLElement): void; onOpenWear(garment: Garment, origin: HTMLElement): void }) {
   const { listings, moveGarmentToWardrobe, prepareListing } = useStudio();
   const listing = listings.find((candidate) => candidate.garmentId === garment.id);
   const pendingContract = getPendingWardrobeProductContract(garment.sku);
@@ -176,6 +177,7 @@ function GarmentCard({ garment, onOpenListing }: { garment: Garment; onOpenListi
         <ReadinessList gates={gates} compact />
         {pendingContract || approvedContract ? null : <MissingMedia garment={garment} />}
         <div className="studio-card-actions">
+          {garment.privateWardrobeItemId ? <button className="button button-secondary" onClick={(event) => onOpenWear(garment, event.currentTarget)} type="button"><span>Media</span><ImagePlus aria-hidden="true" size={15} /></button> : null}
           {garment.state === "DRAFT" ? <button className="button button-primary" disabled={!ready} onClick={() => moveGarmentToWardrobe(garment.id)} type="button"><span>Move to wardrobe</span><ArrowRight aria-hidden="true" size={14} /></button> : null}
           {["READY", "RETURNED"].includes(garment.state) && !listing ? <button className="button button-primary" onClick={() => prepareListing(garment.id)} type="button"><span>Prepare listing</span><ArrowRight aria-hidden="true" size={14} /></button> : null}
           {listing ? <button className="button button-secondary" onClick={(event) => onOpenListing(listing, event.currentTarget)} type="button"><span>Open listing</span><ArrowRight aria-hidden="true" size={14} /></button> : null}
@@ -283,6 +285,8 @@ export function WardrobeWorkbench() {
   const [listingReturnFocus, setListingReturnFocus] = useState<HTMLElement | null>(null);
   const [garmentPage, setGarmentPage] = useState(0);
   const [publishingPage, setPublishingPage] = useState(0);
+  const [wearWardrobeItemId, setWearWardrobeItemId] = useState<string | null>(null);
+  const [wearReturnFocus, setWearReturnFocus] = useState<HTMLElement | null>(null);
   const segments = useMemo(() => [
     { key: "garments", label: "Garments", count: studio.garments.length },
     { key: "publishing", label: "Publishing", count: studio.listings.length },
@@ -364,7 +368,7 @@ export function WardrobeWorkbench() {
             <span>{visibleGarments.length} shown</span>
           </div>
           <h2 className="sr-only" id="garments-view-title">Garments</h2>
-          {visibleGarments.length ? <><div className="studio-garment-grid">{pagedGarments.map((garment) => <GarmentCard garment={garment} key={garment.id} onOpenListing={(listing, origin) => { setListingReturnFocus(origin); setOpenListingId(listing.id); }} />)}</div><StudioPager label="Garment pages" onPageChange={setGarmentPage} page={safeGarmentPage} pageSize={garmentPageSize} total={visibleGarments.length} /></> : (
+          {visibleGarments.length ? <><div className="studio-garment-grid">{pagedGarments.map((garment) => <GarmentCard garment={garment} key={garment.id} onOpenListing={(listing, origin) => { setListingReturnFocus(origin); setOpenListingId(listing.id); }} onOpenWear={(next, origin) => { setWearReturnFocus(origin); setWearWardrobeItemId(next.privateWardrobeItemId ?? null); }} />)}</div><StudioPager label="Garment pages" onPageChange={setGarmentPage} page={safeGarmentPage} pageSize={garmentPageSize} total={visibleGarments.length} /></> : (
             <div className="studio-quiet-empty studio-wardrobe-empty"><PackageOpen aria-hidden="true" size={26} strokeWidth={1.5} /><div><strong>{studio.garments.length ? "No garments in this state" : "Your wardrobe is empty"}</strong><p>{studio.garments.length ? "Choose another lifecycle filter." : "Start with one photographed and classified piece."}</p></div>{studio.garments.length ? null : <button className="button button-primary" onClick={(event) => openIntake(event.currentTarget)} type="button">Intake garment</button>}</div>
           )}
         </section>
@@ -378,8 +382,19 @@ export function WardrobeWorkbench() {
         </section>
       )}
 
+      {wearWardrobeItemId ? <WearSheet
+        onDismiss={() => { setWearWardrobeItemId(null); setWearReturnFocus(null); }}
+        open
+        returnFocus={wearReturnFocus}
+        wardrobeItemId={wearWardrobeItemId}
+      /> : null}
+
       <GarmentIntakeSheet
         onDismiss={finishIntake}
+        onOpenWear={(id) => {
+          finishIntake();
+          window.setTimeout(() => setWearWardrobeItemId(id), 180);
+        }}
         open={intakeOpen}
         returnFocus={intakeReturnFocus}
       />

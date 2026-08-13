@@ -29,6 +29,13 @@
       "when": 1786533439945,
       "tag": "0003_quick_gauntlet",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1786611111618,
+      "tag": "0004_fixed_betty_ross",
+      "breakpoints": true
     }
   ]
 }

@@ -1,5 +1,4 @@
 import { neon } from "@neondatabase/serverless";
-import { ensureStudioEngineSchema } from "../../db/studio-engine-migration";
 
 export type StudioOperatorMembership = { role: "operator" | "admin" };
 
@@ -8,7 +7,6 @@ export async function getStudioOperatorMembership(input: {
   email: string;
   bootstrap?: boolean;
 }): Promise<StudioOperatorMembership | null> {
-  await ensureStudioEngineSchema();
   const databaseUrl = process.env.DATABASE_URL ?? process.env.POSTGRES_URL;
   if (!databaseUrl) return null;
   const sql = neon(databaseUrl);

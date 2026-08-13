@@ -303,6 +303,7 @@ export const studioAssetRole = pgEnum("studio_asset_role", [
   "GARMENT_FRONT",
   "MANNEQUIN_FRONT",
   "MODEL_TRY_ON",
+  "EDITORIAL_MODEL",
 ]);
 export const studioGenerationState = pgEnum("studio_generation_state", [
   "PENDING",
@@ -366,11 +367,41 @@ export const studioAssets = pgTable("studio_assets", {
   check("studio_assets_private_only", sql`${table.privacy} = 'PRIVATE'`),
 ]);
 
+export const studioModelProfiles = pgTable("studio_model_profiles", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  operatorSubject: text("operator_subject"),
+  name: text("name").notNull(),
+  authorityId: varchar("authority_id", { length: 120 }).notNull(),
+  kind: varchar("kind", { length: 32 }).notNull(),
+  state: varchar("state", { length: 24 }).default("READY").notNull(),
+  sourceBlobPathname: text("source_blob_pathname").notNull(),
+  sourceMimeType: varchar("source_mime_type", { length: 80 }).notNull(),
+  sourceByteSize: integer("source_byte_size").notNull(),
+  sourceWidth: integer("source_width"),
+  sourceHeight: integer("source_height"),
+  sourceSha256: varchar("source_sha256", { length: 64 }).notNull(),
+  licenseUrl: text("license_url"),
+  authority: jsonb("authority").$type<Record<string, unknown>>().notNull(),
+  authorityConfirmedAt: timestamp("authority_confirmed_at", { withTimezone: true }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("studio_model_profiles_operator_authority_unique").on(table.operatorSubject, table.authorityId),
+  uniqueIndex("studio_model_profiles_lulu_authority_unique").on(table.authorityId).where(sql`${table.kind} = 'LULU_V3'`),
+  index("studio_model_profiles_operator_updated_idx").on(table.operatorSubject, table.updatedAt),
+  check("studio_model_profiles_kind_known", sql`${table.kind} in ('LULU_V3', 'AUTHORIZED_STOCK')`),
+  check("studio_model_profiles_state_private", sql`${table.state} in ('READY', 'ARCHIVED')`),
+  check("studio_model_profiles_source_bytes_positive", sql`${table.sourceByteSize} > 0`),
+  check("studio_model_profiles_source_sha256", sql`${table.sourceSha256} ~ '^[0-9a-f]{64}$'`),
+  check("studio_model_profiles_authority_object", sql`jsonb_typeof(${table.authority}) = 'object'`),
+]);
+
 export const studioGenerations = pgTable("studio_generations", {
   id: uuid("id").defaultRandom().primaryKey(),
   intakeId: uuid("intake_id")
     .notNull()
     .references(() => studioIntakes.id, { onDelete: "cascade" }),
+  modelProfileId: uuid("model_profile_id").references(() => studioModelProfiles.id, { onDelete: "restrict" }),
   operation: varchar("operation", { length: 40 }).notNull(),
   state: studioGenerationState("state").default("PENDING").notNull(),
   model: text("model").notNull(),

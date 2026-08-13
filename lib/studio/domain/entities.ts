@@ -143,6 +143,7 @@ export interface Garment {
   reviewCover?: GarmentReviewCover;
   heroGenerationId?: string;
   createdAt: string;
+  privateWardrobeItemId?: string;
 }
 
 export type PublicListingProjection = WardrobePublicProduct;

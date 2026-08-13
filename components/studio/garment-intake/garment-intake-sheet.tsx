@@ -19,15 +19,12 @@ import {
   Shirt,
   Sparkles,
   Upload,
-  UserPlus,
-  UserRound,
   X,
 } from "lucide-react";
 import type { GarmentCategory } from "../../../lib/studio/domain/entities";
 import { LifecycleBadge } from "../atoms/lifecycle-badge";
 import { StudioDisclosureRow } from "../atoms/studio-disclosure-row";
 import { StudioTaskSheet } from "../atoms/studio-task-sheet";
-import { useStudio } from "../studio-provider";
 import {
   addSource,
   analyzeIntake,
@@ -47,6 +44,7 @@ type BuildStage = "READING" | "GARMENT" | "VIEWS" | "READY";
 
 interface GarmentIntakeSheetProps {
   onDismiss(): void;
+  onOpenWear?(wardrobeItemId: string): void;
   open: boolean;
   returnFocus?: HTMLElement | null;
 }
@@ -95,8 +93,7 @@ function isExplicitlyUnavailable(error: unknown) {
     && ["ENGINE_DISABLED", "ENGINE_UNAVAILABLE"].includes(error.code);
 }
 
-export function GarmentIntakeSheet({ onDismiss, open, returnFocus }: GarmentIntakeSheetProps) {
-  const studio = useStudio();
+export function GarmentIntakeSheet({ onDismiss, onOpenWear, open, returnFocus }: GarmentIntakeSheetProps) {
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const receiptExpandRef = useRef<HTMLButtonElement>(null);
   const receiptPreviewCloseRef = useRef<HTMLButtonElement>(null);
@@ -112,7 +109,6 @@ export function GarmentIntakeSheet({ onDismiss, open, returnFocus }: GarmentInta
   const [working, setWorking] = useState(false);
   const [retryUsed, setRetryUsed] = useState(false);
   const [wardrobeItemId, setWardrobeItemId] = useState<string>();
-  const [wearChoice, setWearChoice] = useState<string>();
   const [receiptPreviewOpen, setReceiptPreviewOpen] = useState(false);
 
   const candidatePreview = intake ? candidateUrl(intake) : undefined;
@@ -164,7 +160,6 @@ export function GarmentIntakeSheet({ onDismiss, open, returnFocus }: GarmentInta
     setWorking(false);
     setRetryUsed(false);
     setWardrobeItemId(undefined);
-    setWearChoice(undefined);
     setReceiptPreviewOpen(false);
   }
 
@@ -172,11 +167,6 @@ export function GarmentIntakeSheet({ onDismiss, open, returnFocus }: GarmentInta
     reset();
     onDismiss();
   }
-
-  const existingModels = useMemo(
-    () => studio.models.filter((model) => model.state === "READY" || model.isDefault),
-    [studio.models],
-  );
 
   function back() {
     setError(undefined);
@@ -280,11 +270,6 @@ export function GarmentIntakeSheet({ onDismiss, open, returnFocus }: GarmentInta
     }
   }
 
-  function finishWear(choice?: string) {
-    setWearChoice(choice);
-    setStep("receipt");
-  }
-
   const footer = step === "source" ? (
     <>
       <button className="button button-secondary" onClick={back} type="button">Back</button>
@@ -305,7 +290,7 @@ export function GarmentIntakeSheet({ onDismiss, open, returnFocus }: GarmentInta
       <button className="button button-primary" disabled={!canKeep} onClick={() => setStep("confirm")} type="button">Done</button>
     </>
   ) : step === "wear" ? (
-    <button className="button button-primary" onClick={() => finishWear()} type="button">Not now</button>
+    <button className="button button-primary" onClick={() => setStep("receipt")} type="button">Not now</button>
   ) : step === "receipt" ? (
     <>
       <a className="button button-secondary" href="#garments" onClick={dismiss}>Open garment</a>
@@ -440,11 +425,7 @@ export function GarmentIntakeSheet({ onDismiss, open, returnFocus }: GarmentInta
           <p className="eyebrow">Wear</p>
           <h3>Put it on?</h3>
           <div className="studio-disclosure-group studio-wear-options">
-            <StudioDisclosureRow detail="Next" icon={<Shirt size={19} />} label="Mannequin" onClick={() => finishWear("Mannequin")} />
-            {existingModels.map((model) => (
-              <StudioDisclosureRow detail="Next" icon={<UserRound size={19} />} key={model.id} label={model.name} onClick={() => finishWear(model.name)} />
-            ))}
-            <StudioDisclosureRow detail="Next" icon={<UserPlus size={19} />} label="Add model" onClick={() => finishWear("Add model")} />
+            <StudioDisclosureRow detail="Private media" icon={<Shirt size={19} />} label="Open Wear" onClick={() => wardrobeItemId && onOpenWear?.(wardrobeItemId)} />
           </div>
         </section>
       ) : null}
@@ -463,7 +444,7 @@ export function GarmentIntakeSheet({ onDismiss, open, returnFocus }: GarmentInta
             <span><CheckCircle2 aria-hidden="true" size={24} /></span>
             <p className="eyebrow">Saved</p>
             <h3>{facts.title} is in Wardrobe.</h3>
-            <p>{wearChoice ? `${wearChoice} selected for the next action.` : "Add a model view any time."}</p>
+            <p>Add a mannequin or model view any time.</p>
             <div className="studio-receipt-state"><LifecycleBadge state="DRAFT" /><small>Private · not for sale</small></div>
             <small className="studio-receipt-id">{wardrobeItemId}</small>
           </div>

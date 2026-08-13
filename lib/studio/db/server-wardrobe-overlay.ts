@@ -78,6 +78,7 @@ function mapServerGarment(item: OperatorSafeWardrobeItem): Garment {
       },
     } : {}),
     createdAt: item.createdAt,
+    privateWardrobeItemId: item.id,
   };
 }
 

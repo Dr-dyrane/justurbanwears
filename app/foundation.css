@@ -6679,6 +6679,24 @@ html[data-theme="dark"] .studio-intake-sheet { background: rgba(28, 24, 22, 0.6)
 .studio-choice-list { display: grid; gap: 6px; }
 .studio-choice-list button { justify-content: space-between; width: 100%; }
 .studio-wear-options { margin-top: 30px; }
+.studio-wear-task-sheet .studio-disclosure-row,
+.studio-wear-task-sheet button,
+.studio-garment-card .studio-card-actions button { min-height: 44px; }
+.studio-wear-truth { align-items: center; border-top: 1px solid var(--studio-line); display: flex; flex-wrap: wrap; gap: 8px; margin-top: 22px; padding-top: 18px; }
+.studio-wear-truth strong { font-size: 12px; margin-right: auto; }
+.studio-wear-truth span { background: var(--studio-panel-soft); border-radius: 999px; font-size: 11px; padding: 7px 10px; }
+.studio-wear-model-intake { display: grid; gap: 14px; }
+.studio-model-photo { align-items: center; aspect-ratio: 4 / 5; background: var(--studio-panel-soft); border: 1px solid var(--studio-line); border-radius: 24px; color: inherit; display: flex; flex-direction: column; gap: 10px; justify-content: center; overflow: hidden; padding: 0; width: min(100%, 330px); }
+.studio-model-photo img { height: 100%; object-fit: cover; width: 100%; }
+.studio-authority-check { align-items: center; background: var(--studio-panel-soft); border-radius: 18px; cursor: pointer; display: flex; gap: 12px; min-height: 56px; padding: 12px 14px; }
+.studio-authority-check input { height: 22px; width: 22px; }
+.studio-authority-check span { display: grid; gap: 2px; }
+.studio-authority-check small { color: var(--studio-muted); }
+.studio-wear-review { display: grid; gap: clamp(22px, 4vw, 42px); grid-template-columns: minmax(0, 1.15fr) minmax(220px, .85fr); }
+.studio-wear-review-image { background: var(--studio-panel-soft); border-radius: 28px; min-height: 420px; overflow: hidden; position: relative; }
+.studio-wear-review-image > img { height: 100%; object-fit: contain; width: 100%; }
+.studio-wear-review > div:last-child { align-self: center; }
+.studio-wear-review h3 { font-family: var(--font-display); font-size: clamp(36px, 5vw, 58px); font-weight: 480; letter-spacing: -.05em; line-height: 1; margin: 8px 0 14px; }
 .studio-receipt-visual { align-items: center; aspect-ratio: 4 / 5; background: var(--studio-panel-muted); border-radius: 26px; color: var(--studio-muted); display: flex; justify-content: center; max-height: 470px; overflow: hidden; position: relative; }
 .studio-receipt-visual > img { height: 100%; object-fit: contain; width: 100%; }
 .studio-receipt-copy { min-width: 0; }
@@ -6956,6 +6974,8 @@ html[data-theme="dark"] .studio-shell .studio-listing-preview { color: #1d1512; 
   .studio-build-state,
   .studio-confirm-state,
   .studio-task-receipt { grid-template-columns: 1fr; margin: 0; }
+  .studio-wear-review { grid-template-columns: 1fr; }
+  .studio-wear-review-image { min-height: 52dvh; }
   .studio-build-visual,
   .studio-confirm-hero,
   .studio-receipt-visual { aspect-ratio: 16 / 10; max-height: 300px; }
