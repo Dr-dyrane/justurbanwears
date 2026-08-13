@@ -33,6 +33,8 @@ test("settings links directly to the visual guide", () => {
 });
 
 test("navbar sheets share one state-first dismissal path", () => {
+  assert.match(taskSheet, /createPortal/);
+  assert.match(taskSheet, /document\.body/);
   assert.match(taskSheet, /const dismiss = useCallback/);
   assert.match(taskSheet, /dialog\.addEventListener\("click", handleBackdropClick\)/);
   assert.match(taskSheet, /dialog\.addEventListener\("keydown", handleEscape\)/);

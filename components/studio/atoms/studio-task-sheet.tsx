@@ -1,7 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useId, useRef } from "react";
+import { useCallback, useEffect, useId, useRef, useSyncExternalStore } from "react";
+import { createPortal } from "react-dom";
 import { ArrowLeft, X } from "lucide-react";
+
+const subscribeToClientReady = () => () => {};
+const getClientReady = () => true;
+const getServerReady = () => false;
 
 interface StudioTaskSheetProps {
   children: React.ReactNode;
@@ -33,6 +38,7 @@ export function StudioTaskSheet({
   const dialogRef = useRef<HTMLDialogElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const dismissedRef = useRef(false);
+  const mounted = useSyncExternalStore(subscribeToClientReady, getClientReady, getServerReady);
   const titleId = useId();
 
   const dismiss = useCallback(() => {
@@ -85,7 +91,9 @@ export function StudioTaskSheet({
     };
   }, [dismiss, open]);
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <dialog
       aria-labelledby={titleId}
       className={`studio-intake-sheet studio-task-sheet ${className}`.trim()}
@@ -127,6 +135,7 @@ export function StudioTaskSheet({
         <div className="studio-task-sheet-body">{children}</div>
         {footer ? <footer className="studio-task-sheet-footer">{footer}</footer> : null}
       </div>
-    </dialog>
+    </dialog>,
+    document.body,
   );
 }
