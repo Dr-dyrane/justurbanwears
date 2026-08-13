@@ -308,6 +308,11 @@ export function WardrobeWorkbench() {
   const { active: activeView, isPending: viewPending, select: selectView } = useStudioSegment(segments, "garments");
 
   useEffect(() => {
+    if (searchParams.get("guide") !== "1" || guideOpen) return;
+    window.setTimeout(() => setGuideOpen(true), 0);
+  }, [guideOpen, searchParams]);
+
+  useEffect(() => {
     const garmentId = searchParams.get("garment");
     if (!garmentId) {
       garmentQueryHandledRef.current = null;
@@ -428,7 +433,15 @@ export function WardrobeWorkbench() {
       <StudioTaskSheet
         className="studio-guide-sheet"
         eyebrow="Lulu's guide"
-        onDismiss={() => { setGuideOpen(false); setGuideReturnFocus(null); }}
+        onDismiss={() => {
+          setGuideOpen(false);
+          setGuideReturnFocus(null);
+          if (new URLSearchParams(window.location.search).get("guide") === "1") {
+            const url = new URL(window.location.href);
+            url.searchParams.delete("guide");
+            window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+          }
+        }}
         open={guideOpen}
         returnFocus={guideReturnFocus}
         title="One piece. One action."

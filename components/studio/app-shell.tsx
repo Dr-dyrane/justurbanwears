@@ -18,7 +18,9 @@ import { BrandWordmark } from "../brand/brand-wordmark";
 import { ThemeToggle } from "../theme/theme-toggle";
 import { StudioLink as Link } from "./atoms/studio-link";
 import { StudioNotificationCenter } from "./notifications/studio-notification-center";
+import { StudioSettingsCenter } from "./settings/studio-settings-center";
 import { StudioProvider, useStudio } from "./studio-provider";
+import type { StudioOperator } from "../../lib/server/studio-operator";
 
 interface NavigationItem {
   href: string;
@@ -67,7 +69,7 @@ function NavigationLink({ item, pathname }: {
   );
 }
 
-function AppShellContent({ children }: { children: React.ReactNode }) {
+function AppShellContent({ children, operator }: { children: React.ReactNode; operator: StudioOperator | null }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const studio = useStudio();
@@ -135,6 +137,7 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
             </div>
             <div className="shop-header-actions studio-header-actions">
               <StudioNotificationCenter />
+              <StudioSettingsCenter operator={operator} />
               <ThemeToggle className="shop-theme-toggle studio-top-theme-toggle" />
               <Link
                 aria-current={pathname.startsWith("/shoots") ? "page" : undefined}
@@ -227,6 +230,6 @@ function AppShellContent({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function AppShell({ children }: { children: React.ReactNode }) {
-  return <StudioProvider><AppShellContent>{children}</AppShellContent></StudioProvider>;
+export function AppShell({ children, operator }: { children: React.ReactNode; operator: StudioOperator | null }) {
+  return <StudioProvider><AppShellContent operator={operator}>{children}</AppShellContent></StudioProvider>;
 }

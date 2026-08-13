@@ -7,6 +7,7 @@ export type StudioOperator = {
   subject: string;
   email: string;
   displayName: string;
+  role: "operator" | "admin";
 };
 
 export async function requireStudioOperator(): Promise<StudioOperator> {
@@ -62,5 +63,5 @@ export async function requireStudioOperator(): Promise<StudioOperator> {
       "Ask an administrator to restore your Studio membership.",
     );
   }
-  return { subject: user.userId, email: user.email, displayName: user.displayName };
+  return { subject: user.userId, email: user.email, displayName: user.displayName, role: membership.role };
 }

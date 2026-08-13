@@ -6,9 +6,10 @@ import { redirect } from "next/navigation";
 export const dynamic = "force-dynamic";
 
 export default async function StudioLayout({ children }: { children: React.ReactNode }) {
+  let operator = null;
   if (process.env.STUDIO_AI_ENGINE_AUTH_MODE) {
     try {
-      await requireStudioOperator();
+      operator = await requireStudioOperator();
     } catch (error) {
       if (error instanceof StudioEngineError && error.code === "AUTH_REQUIRED") {
         redirect("/auth/sign-in?returnTo=/studio");
@@ -19,5 +20,5 @@ export default async function StudioLayout({ children }: { children: React.React
       throw error;
     }
   }
-  return <AppShell>{children}</AppShell>;
+  return <AppShell operator={operator}>{children}</AppShell>;
 }

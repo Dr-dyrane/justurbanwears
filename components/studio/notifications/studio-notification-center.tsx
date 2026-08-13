@@ -4,6 +4,7 @@ import { useMemo, useRef, useState } from "react";
 import { Bell, BellRing, ChevronRight, CloudOff, PackageCheck, RotateCcw, Shirt, Sparkles, Users } from "lucide-react";
 import type { StudioNotificationKind } from "../../../lib/studio/notifications";
 import { deriveStudioNotifications } from "../../../lib/studio/notifications";
+import { useStudioPreferences } from "../../../hooks/studio/use-studio-preferences";
 import { StudioLink as Link } from "../atoms/studio-link";
 import { StudioTaskSheet } from "../atoms/studio-task-sheet";
 import { useStudio } from "../studio-provider";
@@ -15,13 +16,14 @@ export function StudioNotificationCenter() {
   const triggerRef = useRef<HTMLButtonElement>(null);
   const [open, setOpen] = useState(false);
   const [returnFocus, setReturnFocus] = useState<HTMLButtonElement | null>(null);
+  const { showUpdateCount } = useStudioPreferences();
   const notifications = useMemo(() => deriveStudioNotifications(studio), [studio]);
   const unresolvedCount = notifications.length;
 
   return <>
     <button aria-controls="studio-notification-centre" aria-expanded={open} aria-label={unresolvedCount ? `Updates, ${unresolvedCount} unresolved` : "Updates"} className="studio-notification-trigger" onClick={(event) => { setReturnFocus(event.currentTarget); setOpen(true); }} ref={triggerRef} type="button">
       {unresolvedCount ? <BellRing aria-hidden="true" size={18} /> : <Bell aria-hidden="true" size={18} />}
-      {unresolvedCount ? <b aria-hidden="true">{Math.min(9, unresolvedCount)}</b> : null}
+      {unresolvedCount && showUpdateCount ? <b aria-hidden="true">{Math.min(9, unresolvedCount)}</b> : null}
     </button>
     <StudioTaskSheet className="studio-notification-sheet" eyebrow="Studio activity" onDismiss={() => setOpen(false)} open={open} returnFocus={returnFocus} title="Updates">
       <section className="studio-notification-centre" id="studio-notification-centre">
