@@ -1,0 +1,83 @@
+name: Align editorial hero contract
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/align-editorial-hero-contract.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: juw-editorial-hero-contract
+  cancel-in-progress: false
+
+jobs:
+  align:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Align rendered HTML expectations
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('tests/rendered-html.test.mjs')
+          source = path.read_text()
+
+          old = '  assert.match(html, /Clothes with a second first impression/);\n'
+          new = '''  assert.match(html, /shop-hero-editorial/);
+          assert.match(html, /Define/);
+          assert.match(html, /urban\\./);
+          assert.match(html, /Shop the edit/);
+          '''
+          if source.count(old) != 1:
+              raise SystemExit(f'expected one legacy hero assertion, found {source.count(old)}')
+          source = source.replace(old, new)
+
+          old = 'test("publishes one product-led hero and one concise Drop 01 discovery grid", async () => {'
+          new = 'test("publishes one editorial-cover hero and one concise Drop 01 discovery grid", async () => {'
+          if source.count(old) != 1:
+              raise SystemExit(f'expected one legacy test title, found {source.count(old)}')
+          source = source.replace(old, new)
+
+          old = '''  const visibleBody = visibleMarkup(html);
+          assert.match(visibleBody, /\\/shop\\/products\\/coral-drift-dress\\/04-model-front\\.webp/);
+          assert.match(visibleBody, /data-model-anchor="lulu-v2"/);
+          '''
+          new = '''  const visibleBody = visibleMarkup(html);
+          assert.match(visibleBody, /class="shop-editorial-cover"/);
+          assert.match(visibleBody, /class="shop-editorial-cover-wordmark">JUW</);
+          assert.doesNotMatch(visibleBody, /shop-hero-copy|shop-hero-stage/);
+          assert.match(visibleBody, /\\/shop\\/products\\/coral-drift-dress\\/04-model-front\\.webp/);
+          assert.match(visibleBody, /data-model-anchor="lulu-v3"/);
+          '''
+          if source.count(old) != 1:
+              raise SystemExit(f'expected one public hero assertion block, found {source.count(old)}')
+          source = source.replace(old, new)
+
+          path.write_text(source)
+          PY
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+      - name: Retain verified contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm .github/workflows/align-editorial-hero-contract.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tests/rendered-html.test.mjs .github/workflows/align-editorial-hero-contract.yml
+          git commit -m "test: certify the editorial shop hero"
+          git push origin HEAD:main
