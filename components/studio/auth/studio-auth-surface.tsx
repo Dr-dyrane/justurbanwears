@@ -29,6 +29,8 @@ export function StudioAuthSurface({ returnTo }: { path: string; returnTo: string
             },
           }}
           localization={{
+            SIGN_IN: "Sign-in code",
+            SIGN_IN_DESCRIPTION: "Enter Lulu’s email. We’ll send a six-digit code.",
             EMAIL_OTP: "Sign-in code",
             EMAIL_OTP_DESCRIPTION: "Enter Lulu’s email. We’ll send a six-digit code.",
           }}

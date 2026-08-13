@@ -63,7 +63,10 @@ export function ShopAuthSurface({ returnTo }: { path: string; returnTo: string }
               separator: styles.separator,
               title: styles.authTitle,
             }}
-            localization={{ EMAIL_OTP_DESCRIPTION: "Enter your email to open your orders." }}
+            localization={{
+              SIGN_IN_DESCRIPTION: "Enter your email to open your orders.",
+              EMAIL_OTP_DESCRIPTION: "Enter your email to open your orders.",
+            }}
             returnTo={returnTo}
           />
         </div>

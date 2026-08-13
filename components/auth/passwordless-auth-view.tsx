@@ -6,6 +6,8 @@ import { AuthView, NeonAuthUIProvider, type AuthLocalization, type AuthViewClass
 const authClient = createAuthClient();
 
 export const PASSWORDLESS_AUTH_LOCALIZATION = {
+  SIGN_IN: "Email code",
+  SIGN_IN_DESCRIPTION: "Enter your email to receive a sign-in code.",
   EMAIL_OTP: "Email code",
   EMAIL_OTP_DESCRIPTION: "Enter your email to receive a sign-in code.",
   EMAIL_OTP_SEND_ACTION: "Send code",
@@ -38,7 +40,7 @@ export function PasswordlessAuthView({ classNames, localization, returnTo }: Pas
         otpSeparators={1}
         redirectTo={returnTo}
         socialLayout="vertical"
-        view="EMAIL_OTP"
+        view="SIGN_IN"
       />
     </NeonAuthUIProvider>
   );

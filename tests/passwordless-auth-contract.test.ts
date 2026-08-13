@@ -12,7 +12,8 @@ const shopStyles = await readFile(new URL("../components/shop/shop-auth.module.c
 
 test("Studio and Shop use one native Neon email-code flow without passwords", () => {
   assert.match(shared, /emailOTP/);
-  assert.match(shared, /view="EMAIL_OTP"/);
+  assert.match(shared, /view="SIGN_IN"/);
+  assert.doesNotMatch(shared, /view="EMAIL_OTP"/);
   assert.match(shared, /credentials=\{false\}/);
   assert.match(shared, /signUp=\{false\}/);
   assert.match(shared, /magicLink=\{false\}/);
