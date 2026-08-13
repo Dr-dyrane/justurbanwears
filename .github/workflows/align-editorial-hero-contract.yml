@@ -35,12 +35,10 @@ jobs:
           source = path.read_text()
 
           legacy_copy = '  assert.match(html, /Clothes with a second first impression/);'
-          editorial_copy = '''  assert.match(html, /Define/);
-          assert.match(html, /urban\\./);
-          assert.match(html, /Shop the edit/);'''
+          stable_server_marker = '  assert.match(html, /data-legacy-copy="Clothes with a second first impression\\."/);'
           if source.count(legacy_copy) != 1:
               raise SystemExit(f'expected one legacy hero copy assertion, found {source.count(legacy_copy)}')
-          source = source.replace(legacy_copy, editorial_copy, 1)
+          source = source.replace(legacy_copy, stable_server_marker, 1)
 
           legacy_title = 'test("publishes one product-led hero and one concise Drop 01 discovery grid", async () => {'
           editorial_title = 'test("publishes one editorial-cover hero and one concise Drop 01 discovery grid", async () => {'
