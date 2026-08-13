@@ -18,6 +18,7 @@ import { BrandWordmark } from "../brand/brand-wordmark";
 import { ThemeToggle } from "../theme/theme-toggle";
 import { StudioLink as Link } from "./atoms/studio-link";
 import { StudioProvider } from "./studio-provider";
+import { StudioNotificationCenter } from "./notifications/studio-notification-center";
 
 interface NavigationItem {
   href: string;
@@ -121,6 +122,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               ))}
             </div>
             <div className="shop-header-actions studio-header-actions">
+              <StudioNotificationCenter />
               <ThemeToggle className="shop-theme-toggle studio-top-theme-toggle" />
               <Link
                 aria-current={pathname.startsWith("/shoots") ? "page" : undefined}
