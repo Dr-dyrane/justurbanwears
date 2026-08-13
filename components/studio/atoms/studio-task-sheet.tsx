@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef } from "react";
+import { useCallback, useEffect, useId, useRef } from "react";
 import { ArrowLeft, X } from "lucide-react";
 
 interface StudioTaskSheetProps {
@@ -32,7 +32,17 @@ export function StudioTaskSheet({
 }: StudioTaskSheetProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const dismissedRef = useRef(false);
   const titleId = useId();
+
+  const dismiss = useCallback(() => {
+    if (dismissedRef.current) return;
+    dismissedRef.current = true;
+    const dialog = dialogRef.current;
+    if (dialog?.open) dialog.close();
+    onDismiss();
+    requestAnimationFrame(() => returnFocus?.focus({ preventScroll: true }));
+  }, [onDismiss, returnFocus]);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -42,6 +52,7 @@ export function StudioTaskSheet({
       return;
     }
 
+    dismissedRef.current = false;
     const bodyOverflow = document.body.style.overflow;
     const documentOverflow = document.documentElement.style.overflow;
     document.body.style.overflow = "hidden";
@@ -55,20 +66,31 @@ export function StudioTaskSheet({
     };
   }, [open]);
 
-  function close() {
-    dialogRef.current?.close();
-  }
-
-  function handleClosed() {
-    onDismiss();
-    requestAnimationFrame(() => returnFocus?.focus({ preventScroll: true }));
-  }
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog || !open) return;
+    const handleBackdropClick = (event: MouseEvent) => {
+      if (event.target === dialog) dismiss();
+    };
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      dismiss();
+    };
+    dialog.addEventListener("click", handleBackdropClick);
+    dialog.addEventListener("keydown", handleEscape);
+    return () => {
+      dialog.removeEventListener("click", handleBackdropClick);
+      dialog.removeEventListener("keydown", handleEscape);
+    };
+  }, [dismiss, open]);
 
   return (
     <dialog
       aria-labelledby={titleId}
       className={`studio-intake-sheet studio-task-sheet ${className}`.trim()}
-      onClose={handleClosed}
+      onCancel={(event) => { event.preventDefault(); dismiss(); }}
+      onClose={dismiss}
       ref={dialogRef}
     >
       <div className="studio-task-sheet-frame">
@@ -84,7 +106,7 @@ export function StudioTaskSheet({
               <h2 id={titleId}>{title}</h2>
             </div>
           </div>
-          <button aria-label="Close" className="studio-icon-action" onClick={close} ref={closeButtonRef} type="button">
+          <button aria-label="Close" className="studio-icon-action" onClick={dismiss} ref={closeButtonRef} type="button">
             <X aria-hidden="true" size={19} />
           </button>
         </header>
