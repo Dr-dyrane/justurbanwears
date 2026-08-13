@@ -24,7 +24,6 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: npm
       - name: Align rendered HTML expectations
         shell: bash
         run: |
@@ -74,7 +73,7 @@ jobs:
           source = source[:start] + block + source[end:]
           path.write_text(source)
           PY
-      - run: npm ci
+      - run: npm install --package-lock=false --ignore-scripts --no-audit --no-fund
       - run: npm test
       - run: npm run build
       - name: Retain verified contract
