@@ -2,7 +2,6 @@
 
 import { usePathname } from "next/navigation";
 import {
-  ArrowRight,
   Camera,
   ClipboardList,
   ExternalLink,
@@ -89,12 +88,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     : pathname.startsWith("/studio/wardrobe")
       ? { label: "Intake garment", href: "/studio/wardrobe?intake=1", icon: Plus }
       : pathname.startsWith("/studio/operations")
-        ? { label: "Open orders", href: "/studio/operations?view=orders", icon: ClipboardList }
+        ? { label: "Open inventory", href: "/studio/operations?view=inventory", icon: ClipboardList }
         : pathname === "/shoots/new"
           ? { label: "Shoot gallery", href: "/shoots", icon: Camera }
           : pathname.startsWith("/shoots")
           ? { label: "New shoot", href: "/shoots/new", icon: Camera }
           : { label: "Intake garment", href: "/studio/wardrobe?intake=1", icon: Plus };
+  const ContextActionIcon = contextAction.icon;
   return (
     <StudioProvider>
       <div
@@ -148,7 +148,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <span className="studio-view-tabs">
                   {shootTabs.map((tab) => <Link aria-current={tab.current ? "page" : undefined} className={tab.current ? "is-active" : undefined} href={tab.href} key={tab.href}>{tab.label}</Link>)}
                 </span>
-                <Link className="studio-view-action" href={contextAction.href}><span>{contextAction.label}</span><ArrowRight aria-hidden="true" size={15} strokeWidth={1.9} /></Link>
+                <Link className="studio-view-action" href={contextAction.href}><span>{contextAction.label}</span><ContextActionIcon aria-hidden="true" size={15} strokeWidth={1.9} /></Link>
               </nav>
             </div>
           ) : null}
@@ -174,18 +174,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             >
               <span><MobileDestinationIcon aria-hidden="true" size={25} strokeWidth={2.2} /></span>
             </button>
-            <Link
-              aria-hidden={mobileChromeMode === "navigation" || mobileChromeMode === "suspended" || undefined}
-              className="shop-mobile-context shop-dock-lens studio-mobile-context"
-              href={contextAction.href}
-              tabIndex={mobileChromeMode === "navigation" || mobileChromeMode === "suspended" ? -1 : undefined}
-            >
-              <span>
-                <small>Action</small>
-                <strong>{contextAction.label}</strong>
-              </span>
-              <ArrowRight aria-hidden="true" size={17} strokeWidth={1.9} />
-            </Link>
             <div className="shop-mobile-row">
               <nav
                 aria-hidden={mobileChromeMode === "compact" || mobileChromeMode === "suspended" || undefined}
@@ -214,12 +202,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 })}
               </nav>
               <Link
-                aria-label="Open the justurban wears public shop"
+                aria-label={contextAction.label}
                 className="shop-mobile-fab shop-dock-lens studio-mobile-fab"
-                href="/shop"
+                href={contextAction.href}
               >
-                <BrandIcon className="studio-mobile-app-icon" size={44} />
-                <ExternalLink className="studio-mobile-exit-mark" aria-hidden="true" size={18} strokeWidth={2.1} />
+                <ContextActionIcon aria-hidden="true" size={25} strokeWidth={2.15} />
               </Link>
             </div>
           </div>
