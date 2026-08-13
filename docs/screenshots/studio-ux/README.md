@@ -12,7 +12,12 @@ production garment or model was created for documentation.
 | Compact Wardrobe garment rows | [04-wardrobe.png](./04-wardrobe.png) |
 | Inventory workspace and contextual Operations FAB | [05-inventory.png](./05-inventory.png) |
 | Progressive Camera / Photos / Describe intake sheet | [06-garment-intake.png](./06-garment-intake.png) |
+| Lulu's in-app guide · dark mode | [07-lulu-guide-dark.png](./07-lulu-guide-dark.png) |
+| Lulu's in-app guide · light mode | [08-lulu-guide-light.png](./08-lulu-guide-light.png) |
 
 The generated Lulu walkthrough remains in
 [`docs/order-flows/just-urban-wears-lulu-garment-intake.png`](../../order-flows/just-urban-wears-lulu-garment-intake.png).
-ADR 0041 defines the interaction and reference-data boundary.
+ADR 0041 defines the interaction and reference-data boundary. The latest guide
+captures use the desktop acceptance viewport because the browser surface cannot
+change emulation mid-session; the guide itself is horizontally snap-scrolled on
+narrow viewports and keeps its touch targets within the shared Studio sheet.

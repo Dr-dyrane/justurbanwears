@@ -6444,6 +6444,11 @@ html[data-theme="dark"] .studio-model-portrait { background: radial-gradient(cir
 .studio-garment-facts { color: var(--studio-muted); display: flex; flex-wrap: wrap; font-size: 8px; gap: 8px; }
 .studio-garment-facts span + span::before { content: "·"; margin-right: 8px; }
 .studio-card-actions { align-items: center; display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+.studio-card-next { align-items: center; background: color-mix(in srgb, var(--studio-accent-soft) 42%, var(--studio-panel)); border-radius: 14px; display: flex; gap: 12px; justify-content: space-between; margin-top: 14px; padding: 10px 11px 10px 13px; }
+.studio-card-next > span { display: grid; gap: 2px; min-width: 0; }
+.studio-card-next small { color: var(--studio-accent); font-size: 7px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.studio-card-next strong { color: var(--studio-ink); font-size: 9px; font-weight: 720; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.studio-card-next button { align-items: center; background: var(--studio-panel-strong); border: 0; border-radius: 11px; color: var(--studio-ink); display: flex; flex: 0 0 auto; height: 36px; justify-content: center; width: 36px; }
 
 .studio-pending-product-media {
   background: var(--studio-panel-muted);
@@ -6685,6 +6690,27 @@ html[data-theme="dark"] .studio-intake-sheet { background: rgba(28, 24, 22, 0.6)
 .studio-wear-truth { align-items: center; border-top: 1px solid var(--studio-line); display: flex; flex-wrap: wrap; gap: 8px; margin-top: 22px; padding-top: 18px; }
 .studio-wear-truth strong { font-size: 12px; margin-right: auto; }
 .studio-wear-truth span { background: var(--studio-panel-soft); border-radius: 999px; font-size: 11px; padding: 7px 10px; }
+.studio-wear-history { border-top: 1px solid var(--studio-line); margin-top: 14px; padding-top: 10px; }
+.studio-wear-history > button { align-items: center; background: transparent; border: 0; color: var(--studio-ink); display: flex; justify-content: space-between; padding: 8px 2px; width: 100%; }
+.studio-wear-history > button span { align-items: center; display: flex; gap: 9px; }
+.studio-wear-history > button small { color: var(--studio-muted); }
+.studio-wear-history > div { background: var(--studio-panel-soft); border-radius: 16px; display: grid; margin-top: 6px; padding: 4px 12px; }
+.studio-wear-history p { align-items: center; display: flex; font-size: 10px; justify-content: space-between; margin: 0; min-height: 38px; }
+.studio-wear-history p + p { border-top: 1px solid var(--studio-line); }
+.studio-wear-history p small { color: var(--studio-muted); }
+.studio-ops-heading-actions { align-items: center; display: flex; gap: 8px; }
+.studio-guide-flow { display: grid; gap: 16px; grid-template-columns: repeat(5, minmax(148px, 1fr)); overflow-x: auto; padding: 2px 2px 16px; scroll-snap-type: x mandatory; scrollbar-width: none; }
+.studio-guide-sheet { height: min(720px, calc(100dvh - 32px)); max-width: 1040px; min-height: min(68dvh, 640px); }
+.studio-guide-flow::-webkit-scrollbar { display: none; }
+.studio-guide-flow figure { background: var(--studio-panel-soft); border-radius: 24px; margin: 0; overflow: hidden; scroll-snap-align: start; }
+.studio-guide-flow img { aspect-ratio: 390 / 844; display: block; height: auto; object-fit: cover; object-position: top; width: 100%; }
+.studio-guide-flow figcaption { align-items: center; display: grid; gap: 10px; grid-template-columns: 30px minmax(0, 1fr); padding: 12px; }
+.studio-guide-flow figcaption > span { align-items: center; background: var(--studio-panel-strong); border-radius: 10px; color: var(--studio-accent); display: flex; font-size: 9px; font-weight: 800; height: 30px; justify-content: center; }
+.studio-guide-flow figcaption div { display: grid; gap: 2px; }
+.studio-guide-flow figcaption strong { font-size: 10px; }
+.studio-guide-flow figcaption small { color: var(--studio-muted); font-size: 7px; }
+.studio-guide-truth { align-items: center; background: color-mix(in srgb, var(--studio-positive) 10%, var(--studio-panel)); border-radius: 16px; color: var(--studio-muted); display: flex; font-size: 10px; gap: 9px; margin: 18px 0 0; padding: 13px 14px; }
+.studio-guide-truth svg { color: var(--studio-positive); flex: 0 0 auto; }
 .studio-wear-model-intake { display: grid; gap: 14px; }
 .studio-model-photo { align-items: center; aspect-ratio: 4 / 5; background: var(--studio-panel-soft); border: 1px solid var(--studio-line); border-radius: 24px; color: inherit; display: flex; flex-direction: column; gap: 10px; justify-content: center; overflow: hidden; padding: 0; width: min(100%, 330px); }
 .studio-model-photo img { height: 100%; object-fit: cover; width: 100%; }
@@ -7006,6 +7032,8 @@ html[data-theme="dark"] .studio-shell .studio-listing-preview { color: #1d1512; 
   .studio-ops-heading > .button,
   .studio-ops-hero .studio-hero-actions,
   .studio-ops-heading > button.button-primary { display: none; }
+  .studio-ops-heading-actions { align-self: stretch; justify-content: flex-end; }
+  .studio-ops-heading-actions .button-primary { display: none; }
 
   .studio-garment-card {
     align-items: stretch;
@@ -7029,6 +7057,8 @@ html[data-theme="dark"] .studio-shell .studio-listing-preview { color: #1d1512; 
   .studio-garment-body > .studio-card-actions { grid-column: 1 / -1; justify-content: flex-end; margin: 0; }
   .studio-garment-body > .studio-card-actions .button { border-radius: 11px; min-height: 34px; padding: 0 10px; }
   .studio-garment-body > .studio-card-actions .button > span { display: none; }
+  .studio-garment-body > .studio-card-next { grid-column: 1 / -1; margin: 0; }
+  .studio-guide-flow { grid-template-columns: repeat(5, minmax(72%, 1fr)); }
 }
 
 @media (max-width: 680px) {

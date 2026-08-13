@@ -6,13 +6,13 @@ This handoff records the customer and Lulu workflows that are live today, then s
 
 - [Customer order guide](./just-urban-wears-customer-order-flow.png)
 - [Lulu order checklist](./just-urban-wears-lulu-order-flow.png)
-- [Lulu garment-intake preview](./just-urban-wears-lulu-garment-intake.png)
+- [Lulu garment-intake guide](./just-urban-wears-lulu-garment-intake.png)
 
 Accessible, editable SVG masters live beside the PNG files.
 
-## Lulu garment intake — preview
+## Lulu garment intake — live private flow
 
-The visual intake is ready for a guided walkthrough with Lulu:
+The signed-in Studio keeps the workflow to one decision at a time:
 
 `Camera / Photos / Describe → Build → Confirm → Keep or Edit → optional Wear → In Wardrobe`
 
@@ -20,9 +20,11 @@ The final receipt shows the accepted garment image, offers **Expand**, and says
 **Draft · Private · not for sale**. The garment save does not wait for mannequin
 or model work.
 
-This is a preview, not a claim that production AI intake is active. The public
-Studio keeps the device intake available until Studio sign-in and the live
-AI-to-Neon-to-private-Blob path pass authenticated end-to-end verification.
+The production intake, Wear generation, Neon persistence, private Blob storage,
+reload recovery, and operator-only access passed the acceptance recorded in
+[ADR 0042](../adr/0042-studio-wear-engine-production-acceptance.md). Product back
+and fabric detail remain explicitly missing until Lulu supplies truthful source
+coverage. Publication is a separate confirmed action.
 
 ## Studio mobile UX reference
 

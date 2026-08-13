@@ -4,7 +4,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Check, CircleAlert, ImagePlus, LoaderCircle, Maximize2, Plus, Shirt, Sparkles, UserRound, X } from "lucide-react";
+import { Check, CircleAlert, Clock3, ImagePlus, LoaderCircle, Maximize2, Plus, Shirt, Sparkles, UserRound, X } from "lucide-react";
 import { StudioDisclosureRow } from "../atoms/studio-disclosure-row";
 import { StudioTaskSheet } from "../atoms/studio-task-sheet";
 import { StudioEngineError } from "./engine-client";
@@ -32,7 +32,20 @@ export function WearSheet({ onDismiss, open, returnFocus, wardrobeItemId }: {
   const [note, setNote] = useState("");
   const [error, setError] = useState<StudioEngineError>();
   const [expanded, setExpanded] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
   const modelPreview = useMemo(() => file ? URL.createObjectURL(file) : undefined, [file]);
+  const latestTryOnByModel = useMemo(() => {
+    const latest = new Map<string, WearGeneration>();
+    workspace?.generations.forEach((generation) => {
+      if (generation.operation === "MODEL_TRY_ON" && generation.state === "APPROVED" && generation.modelProfileId) {
+        latest.set(generation.modelProfileId, generation);
+      }
+    });
+    return [...latest.values()];
+  }, [workspace]);
+  const pastAttempts = useMemo(() => [...(workspace?.generations ?? [])]
+    .filter((generation) => generation.state === "REJECTED" || generation.state === "FAILED")
+    .reverse(), [workspace]);
 
   useEffect(() => () => { if (modelPreview) URL.revokeObjectURL(modelPreview); }, [modelPreview]);
 
@@ -177,9 +190,21 @@ export function WearSheet({ onDismiss, open, returnFocus, wardrobeItemId }: {
             <StudioDisclosureRow detail="Front" icon={<Shirt size={19} />} label="Mannequin" onClick={() => void run("MANNEQUIN_FRONT")} />
             {workspace?.models.map((model) => <StudioDisclosureRow detail={model.kind === "LULU_V3" ? "Approved V3" : "Authorized"} icon={<UserRound size={19} />} key={model.id} label={model.name} onClick={() => void run("MODEL_TRY_ON", model)} />)}
             <StudioDisclosureRow detail="Photo + authority" icon={<Plus size={19} />} label="Add model" onClick={() => setStep("add-model")} />
-            {workspace?.generations.filter((item) => item.operation === "MODEL_TRY_ON" && item.state === "APPROVED").map((item) => <StudioDisclosureRow detail="Approved try-on" icon={<Sparkles size={19} />} key={`editorial-${item.id}`} label="Editorial background" onClick={() => void run("EDITORIAL_MODEL", workspace.models.find((model) => model.id === item.modelProfileId), item)} />)}
+            {latestTryOnByModel.map((item) => {
+              const model = workspace?.models.find((candidate) => candidate.id === item.modelProfileId);
+              return <StudioDisclosureRow detail={model?.name ?? "Approved try-on"} icon={<Sparkles size={19} />} key={`editorial-${item.modelProfileId}`} label="Editorial background" onClick={() => void run("EDITORIAL_MODEL", model, item)} />;
+            })}
           </div>
           <div className="studio-wear-truth"><strong>Still needed</strong><span>Back</span><span>Fabric detail</span></div>
+          {pastAttempts.length ? (
+            <section className="studio-wear-history">
+              <button aria-expanded={historyOpen} onClick={() => setHistoryOpen((current) => !current)} type="button">
+                <span><Clock3 aria-hidden="true" size={17} /><strong>History</strong></span>
+                <small>{pastAttempts.length} not kept</small>
+              </button>
+              {historyOpen ? <div>{pastAttempts.map((attempt) => <p key={attempt.id}><span>{attempt.operation === "MODEL_TRY_ON" ? "Try-on" : attempt.operation === "EDITORIAL_MODEL" ? "Editorial" : "Mannequin"}</span><small>{attempt.state === "FAILED" ? "Not made" : "Rejected"}</small></p>)}</div> : null}
+            </section>
+          ) : null}
           {error ? <p className="studio-task-error" role="alert"><CircleAlert aria-hidden="true" size={17} />{error.message} {error.recovery}</p> : null}
         </section>
       ) : null}

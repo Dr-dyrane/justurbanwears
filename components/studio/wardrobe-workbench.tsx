@@ -7,6 +7,7 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   ArrowRight,
+  BookOpen,
   Check,
   ImagePlus,
   PackageOpen,
@@ -157,6 +158,11 @@ function GarmentCard({ garment, onOpenListing, onOpenWear }: { garment: Garment;
   const cover = studioGarmentCover(garment, listing);
   const gates = garmentReadiness(garment);
   const ready = everyGateReady(gates);
+  const nextAction = pendingContract?.missingViews.length
+    ? `Add ${pendingContract.missingViews.map(pendingWardrobeMediaLabel).join(" · ")}`
+    : garment.privateWardrobeItemId
+      ? "Add back · fabric detail"
+      : ready ? "Ready for wardrobe" : gates.find((gate) => !gate.ready)?.label ?? "Review garment";
   return (
     <article className="studio-garment-card">
       <div className={`studio-garment-visual${cover ? " is-photo" : ""}`} data-variant={garment.visual}>
@@ -176,8 +182,13 @@ function GarmentCard({ garment, onOpenListing, onOpenWear }: { garment: Garment;
         {pendingContract ? <PendingProductMedia contract={pendingContract} title={garment.title} /> : null}
         <ReadinessList gates={gates} compact />
         {pendingContract || approvedContract ? null : <MissingMedia garment={garment} />}
+        {(garment.privateWardrobeItemId || pendingContract) ? (
+          <div className="studio-card-next">
+            <span><small>Next</small><strong>{nextAction}</strong></span>
+            {garment.privateWardrobeItemId ? <button aria-label={`Open media for ${garment.title}`} onClick={(event) => onOpenWear(garment, event.currentTarget)} type="button"><ImagePlus aria-hidden="true" size={17} /></button> : null}
+          </div>
+        ) : null}
         <div className="studio-card-actions">
-          {garment.privateWardrobeItemId ? <button aria-label={`Open media for ${garment.title}`} className="button button-secondary" onClick={(event) => onOpenWear(garment, event.currentTarget)} type="button"><span>Media</span><ImagePlus aria-hidden="true" size={15} /></button> : null}
           {garment.state === "DRAFT" ? <button aria-label={`Move ${garment.title} to wardrobe`} className="button button-primary" disabled={!ready} onClick={() => moveGarmentToWardrobe(garment.id)} type="button"><span>Move to wardrobe</span><ArrowRight aria-hidden="true" size={14} /></button> : null}
           {["READY", "RETURNED"].includes(garment.state) && !listing ? <button aria-label={`Prepare listing for ${garment.title}`} className="button button-primary" onClick={() => prepareListing(garment.id)} type="button"><span>Prepare listing</span><ArrowRight aria-hidden="true" size={14} /></button> : null}
           {listing ? <button aria-label={`Open listing for ${garment.title}`} className="button button-secondary" onClick={(event) => onOpenListing(listing, event.currentTarget)} type="button"><span>Open listing</span><ArrowRight aria-hidden="true" size={14} /></button> : null}
@@ -287,6 +298,8 @@ export function WardrobeWorkbench() {
   const [publishingPage, setPublishingPage] = useState(0);
   const [wearWardrobeItemId, setWearWardrobeItemId] = useState<string | null>(null);
   const [wearReturnFocus, setWearReturnFocus] = useState<HTMLElement | null>(null);
+  const [guideOpen, setGuideOpen] = useState(false);
+  const [guideReturnFocus, setGuideReturnFocus] = useState<HTMLElement | null>(null);
   const segments = useMemo(() => [
     { key: "garments", label: "Garments", count: studio.garments.length },
     { key: "publishing", label: "Publishing", count: studio.listings.length },
@@ -356,7 +369,10 @@ export function WardrobeWorkbench() {
     <div className="studio-ops-page">
       <header className="studio-ops-heading" id="garments">
         <div><p className="eyebrow">Garment pipeline</p><h1>The wardrobe, ready to sell.</h1><p>Capture the piece once, clear its truth gates, then publish only the approved catalogue projection.</p></div>
-        <button className="button button-primary" onClick={(event) => openIntake(event.currentTarget)} type="button"><Plus aria-hidden="true" size={17} />Intake garment</button>
+        <div className="studio-ops-heading-actions">
+          <button className="button button-secondary" onClick={(event) => { setGuideReturnFocus(event.currentTarget); setGuideOpen(true); }} type="button"><BookOpen aria-hidden="true" size={17} />Guide</button>
+          <button className="button button-primary" onClick={(event) => openIntake(event.currentTarget)} type="button"><Plus aria-hidden="true" size={17} />Intake garment</button>
+        </div>
       </header>
 
       <StudioSegmentedView active={activeView} label="Wardrobe workspace" onSelect={selectView} pending={viewPending} segments={segments} />
@@ -388,6 +404,31 @@ export function WardrobeWorkbench() {
         returnFocus={wearReturnFocus}
         wardrobeItemId={wearWardrobeItemId}
       /> : null}
+
+      <StudioTaskSheet
+        className="studio-guide-sheet"
+        eyebrow="Lulu's guide"
+        onDismiss={() => { setGuideOpen(false); setGuideReturnFocus(null); }}
+        open={guideOpen}
+        returnFocus={guideReturnFocus}
+        title="One piece. One action."
+      >
+        <section className="studio-guide-flow">
+          {[
+            ["01", "Show", "Camera · Photos · Describe", "01-start.png"],
+            ["02", "Build", "Confirm the source", "02-source.png"],
+            ["03", "Review", "Keep · Edit · Try once", "03-confirm.png"],
+            ["04", "Wear", "Mannequin · Lulu · Model", "04-wear.png"],
+            ["05", "Finish", "Draft · Private", "05-saved.png"],
+          ].map(([number, title, detail, image]) => (
+            <figure key={number}>
+              <img alt={`${title} step in Lulu's garment intake`} height={844} loading="lazy" src={`/studio/guides/lulu-garment-intake/${image}`} width={390} />
+              <figcaption><span>{number}</span><div><strong>{title}</strong><small>{detail}</small></div></figcaption>
+            </figure>
+          ))}
+        </section>
+        <p className="studio-guide-truth"><ShieldCheck aria-hidden="true" size={17} />Private until you publish. Unseen back and detail stay missing.</p>
+      </StudioTaskSheet>
 
       <GarmentIntakeSheet
         onDismiss={finishIntake}

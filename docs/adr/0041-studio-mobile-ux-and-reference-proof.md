@@ -15,6 +15,8 @@
 6. The progressive intake sheet is the only intake surface. If its server engine or operator session is unavailable, it retains the selected photo or description and shows a recoverable error; it does not fall back to a second form or claim a local draft was saved.
 7. The existing approved reference pair—Lulu and JUW-001 Coral Drift Dress—is the stable published proof. Intake screenshots may exercise new private drafts, but arbitrary test records are not inserted into production merely to produce documentation. The server engine still commits a private garment draft; catalogue publication remains an explicit separate contract under ADR 0040.
 8. Mobile evidence is captured from the local app at a consistent viewport in `docs/screenshots/studio-ux/`. It must cover Home, Model Readiness, Wardrobe, Inventory and the garment intake sheet without secrets or personal data.
+9. Wardrobe keeps a Lulu-facing guide inside the product, not only in repository docs. It uses real workflow screenshots, snap-scrolled progressive disclosure, and the same private/publication truth as ADR 0042.
+10. Garment cards state the next truthful action even when readiness details are collapsed on mobile. Wear shows one current editorial action per model; rejected or failed generations are disclosed separately as History rather than presented as current work.
 
 ## Verification boundary
 

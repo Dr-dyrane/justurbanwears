@@ -1,5 +1,5 @@
 import { createRequire } from "node:module";
-import { readFile, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -33,7 +33,7 @@ const [bodoni, manrope, wordmark, ...screens] = await Promise.all([
 
 const stages = [
   {
-    eyebrow: "01 · SHOW",
+    eyebrow: "01 · START",
     title: "Choose a source.",
     lines: ["Camera", "Photos", "Describe"],
   },
@@ -43,19 +43,19 @@ const stages = [
     lines: ["Use this photo?", "Build garment"],
   },
   {
-    eyebrow: "03 · CONFIRM",
+    eyebrow: "03 · REVIEW",
     title: "You decide.",
     lines: ["Keep", "Edit", "Try again once"],
   },
   {
-    eyebrow: "04 · WEAR · OPTIONAL",
+    eyebrow: "04 · WEAR",
     title: "Choose a view.",
-    lines: ["Mannequin", "Lulu or a model", "Not now"],
+    lines: ["Mannequin", "Lulu or a model", "Editorial"],
   },
   {
-    eyebrow: "05 · SAVE",
+    eyebrow: "05 · FINISH",
     title: "Safe in Wardrobe.",
-    lines: ["Expand to inspect", "Draft · Private", "Not for sale"],
+    lines: ["Draft · Private", "Add back + detail", "Publish later"],
   },
 ];
 
@@ -103,8 +103,8 @@ const clipPaths = stages
   .join("\n");
 
 const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1450" viewBox="0 0 1600 1450" role="img" aria-labelledby="title description">
-  <title id="title">Lulu's garment intake preview</title>
-  <desc id="description">Five real mobile interface stages show Lulu how the Coral Drift Dress moves from source to confirmation, an optional wearer, and a private Wardrobe draft.</desc>
+  <title id="title">Lulu's garment intake</title>
+  <desc id="description">Five real mobile interface stages show Lulu how a garment moves from source to private Wardrobe draft and optional Wear views.</desc>
   <defs>
     <style>
       @font-face { font-family: "Bodoni Moda"; src: url("${dataUri(bodoni, "font/woff2")}") format("woff2"); font-weight: 400 900; }
@@ -124,7 +124,7 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1450" 
   <image x="64" y="58" width="260" height="60" preserveAspectRatio="xMinYMid meet" href="${dataUri(wordmark, "image/svg+xml")}"/>
   <rect x="1280" y="62" width="256" height="48" rx="24" fill="#F0D8CE"/>
   <circle cx="1311" cy="86" r="7" fill="${coral}"/>
-  <text x="1330" y="93" class="sans" font-size="15" font-weight="800" letter-spacing="2">AI INTAKE PREVIEW</text>
+  <text x="1330" y="93" class="sans" font-size="15" font-weight="800" letter-spacing="2">LIVE · PRIVATE</text>
   <text x="64" y="252" class="display" font-size="104">Lulu's garment intake.</text>
   <text x="68" y="324" class="sans" font-size="29" font-weight="550" fill="${muted}">One piece · one action at a time.</text>
   <line x1="64" y1="374" x2="1536" y2="374" stroke="#D9CBC1"/>
@@ -132,13 +132,14 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1450" 
   <rect x="64" y="1274" width="1472" height="112" rx="28" fill="${cocoa}"/>
   <circle cx="116" cy="1330" r="25" fill="${olive}"/>
   <path d="M104 1330l8 8 16-18" fill="none" stroke="${white}" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
-  <text x="163" y="1323" font-family="Manrope, Arial, sans-serif" font-size="23" font-weight="750" fill="${white}">The garment is saved before any mannequin or model work.</text>
-  <text x="163" y="1356" font-family="Manrope, Arial, sans-serif" font-size="17" font-weight="500" fill="#D7CCC5">Preview only · AI Build turns on after Studio sign-in is connected.</text>
+  <text x="163" y="1323" font-family="Manrope, Arial, sans-serif" font-size="23" font-weight="750" fill="${white}">Every kept view stays private until Lulu publishes.</text>
+  <text x="163" y="1356" font-family="Manrope, Arial, sans-serif" font-size="17" font-weight="500" fill="#D7CCC5">Front never invents back · missing views stay visible.</text>
   <text x="64" y="1422" class="sans" font-size="14" font-weight="750" letter-spacing="3.5" fill="${muted}">JUSTURBANWEARS · STUDIO · LULU</text>
 </svg>\n`;
 
 const svgPath = path.join(docsRoot, "just-urban-wears-lulu-garment-intake.svg");
 const pngPath = path.join(docsRoot, "just-urban-wears-lulu-garment-intake.png");
+const publicScreensRoot = path.join(root, "public", "studio", "guides", "lulu-garment-intake");
 
 await writeFile(svgPath, svg, "utf8");
 await sharp(Buffer.from(svg), { density: 144 })
@@ -148,5 +149,10 @@ await sharp(Buffer.from(svg), { density: 144 })
   .png({ compressionLevel: 9 })
   .withIccProfile("srgb")
   .toFile(pngPath);
+
+await mkdir(publicScreensRoot, { recursive: true });
+await Promise.all(["01-start.png", "02-source.png", "03-confirm.png", "04-wear.png", "05-saved.png"].map((name) =>
+  copyFile(path.join(assetsRoot, name), path.join(publicScreensRoot, name)),
+));
 
 console.log(`Rendered ${path.relative(root, svgPath)} and ${path.relative(root, pngPath)}.`);
