@@ -30,7 +30,7 @@ export function StudioNotificationCenter() {
           const Icon = icons[notification.kind];
           return <Link className="is-unread" data-tone={notification.tone} href={notification.href} key={notification.id}><span className="studio-notification-icon"><Icon aria-hidden="true" size={19} /></span><span><strong>{notification.title}</strong><small>{notification.detail}</small></span><span className="studio-notification-action">{notification.actionLabel}<ChevronRight aria-hidden="true" size={14} /></span></Link>;
         })}</div> : <div className="studio-notification-empty"><Bell aria-hidden="true" size={28} /><strong>You’re caught up.</strong><p>New work will appear here.</p></div>}
-        <p className="studio-notification-boundary">In app · this device</p>
+        <p className="studio-notification-boundary">Updates from this workspace</p>
       </section>
       <span aria-live="polite" className="sr-only">{unresolvedCount ? `${unresolvedCount} unresolved Studio update${unresolvedCount === 1 ? "" : "s"}` : "No unresolved Studio updates"}</span>
     </StudioTaskSheet>

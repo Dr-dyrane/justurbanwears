@@ -15,6 +15,10 @@ test("Studio mobile chrome gives the FAB the contextual primary action", () => {
   assert.match(shell, /Add model/);
   assert.match(shell, /Intake garment/);
   assert.match(shell, /Open inventory/);
+  assert.match(shell, /Review returns/);
+  assert.match(shell, /Review orders/);
+  assert.match(shell, /operationsView !== "inventory"/);
+  assert.match(shell, /useStudio/);
   assert.match(shell, /aria-label=\{contextAction\.label\}/);
   assert.match(shell, /href=\{contextAction\.href\}/);
   assert.match(shell, /<ContextActionIcon aria-hidden="true"/);
@@ -54,12 +58,12 @@ test("operator copy and recovery stay action-led", () => {
   assert.match(wardrobe, /publish only what Lulu approves/);
   assert.doesNotMatch(wardrobe, /truth gates|catalogue projection/i);
   assert.match(operations, /One piece\. One clear status\./);
-  assert.match(operations, /Open inventory/);
+  assert.match(operations, /summaryItems/);
   assert.match(operations, /studio-operation-card-trigger/);
   assert.match(operations, /setPendingInventoryDecision\("WRITE_OFF"\)/);
   assert.doesNotMatch(operations, /onClick=\{\(\) => studio\.disposeReturn/);
   assert.doesNotMatch(operations, /Listing-linked stock|named stock disposition/i);
-  assert.match(css, /padding: 30px 16px calc\(156px \+ env\(safe-area-inset-bottom, 0px\)\)/);
+  assert.match(css, /padding: 30px 16px calc\(104px \+ env\(safe-area-inset-bottom, 0px\)\)/);
 });
 
 test("documented browser evidence is complete", () => {

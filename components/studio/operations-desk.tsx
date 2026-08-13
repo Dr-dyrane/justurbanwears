@@ -62,6 +62,12 @@ export function OperationsDesk() {
   const soldOrders = studio.orders.filter((order) => order.state === "SOLD").length;
   const openReturns = studio.returns.filter((returnCase) => returnCase.state === "DRAFT").length;
   const availableUnits = studio.inventory.reduce((total, record) => total + Math.max(0, record.onHand - record.reserved), 0);
+  const summaryItems = [
+    { key: "available", icon: Boxes, value: availableUnits, label: "available units" },
+    { key: "reserved", icon: ClipboardCheck, value: reservedOrders, label: "orders to fulfil" },
+    { key: "sold", icon: PackageCheck, value: soldOrders, label: "sold orders" },
+    { key: "returns", icon: RotateCcw, value: openReturns, label: "returns to dispose" },
+  ].filter((item) => item.key === "available" || item.value > 0);
   const segments = [
     { key: "inventory", label: "Inventory", count: studio.inventory.length },
     { key: "orders", label: "Orders", count: studio.orders.length },
@@ -176,10 +182,10 @@ export function OperationsDesk() {
       </header>
 
       <div className="studio-operation-summary" role="list" aria-label="Operations summary">
-        <div role="listitem"><span><Boxes aria-hidden="true" size={18} /></span><strong>{availableUnits}</strong><small>available units</small></div>
-        <div role="listitem"><span><ClipboardCheck aria-hidden="true" size={18} /></span><strong>{reservedOrders}</strong><small>orders to fulfil</small></div>
-        <div role="listitem"><span><PackageCheck aria-hidden="true" size={18} /></span><strong>{soldOrders}</strong><small>sold orders</small></div>
-        <div role="listitem"><span><RotateCcw aria-hidden="true" size={18} /></span><strong>{openReturns}</strong><small>returns to dispose</small></div>
+        {summaryItems.map((item) => {
+          const Icon = item.icon;
+          return <div role="listitem" key={item.key}><span><Icon aria-hidden="true" size={18} /></span><strong>{item.value}</strong><small>{item.label}</small></div>;
+        })}
       </div>
 
       <StudioSegmentedView active={activeView} label="Operations workspace" onSelect={selectView} pending={viewPending} segments={segments} />

@@ -77,7 +77,7 @@ function ShopChrome({ children }: { children: React.ReactNode }) {
     : pathname === "/shop/orders"
       ? { eyebrow: "The wardrobe", label: "Find another piece", href: "/shop/search" }
     : pathname.startsWith("/shop/orders/")
-      ? { eyebrow: "Saved checkouts", label: "View all checkouts", href: "/shop/orders" }
+      ? { eyebrow: "Checkout drafts", label: "View all drafts", href: "/shop/orders" }
     : pathname.startsWith("/shop/products/")
       ? productAction ?? { eyebrow: "The wardrobe", label: "Find a piece", href: "/shop/search" }
     : bag.length

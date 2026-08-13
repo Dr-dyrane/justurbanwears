@@ -50,8 +50,8 @@ test("top and short documents keep mobile chrome expanded", () => {
   }), { hidden: false, scrolled: true });
 });
 
-test("mobile dock expands, condenses, reveals navigation, and suspends", () => {
-  assert.equal(adaptiveMobileChromeMode({ hidden: false, navigationRevealed: false, suspended: false }), "expanded");
+test("mobile dock rests compact, reveals navigation, and suspends", () => {
+  assert.equal(adaptiveMobileChromeMode({ hidden: false, navigationRevealed: false, suspended: false }), "compact");
   assert.equal(adaptiveMobileChromeMode({ hidden: true, navigationRevealed: false, suspended: false }), "compact");
   assert.equal(adaptiveMobileChromeMode({ hidden: true, navigationRevealed: true, suspended: false }), "navigation");
   assert.equal(adaptiveMobileChromeMode({ hidden: false, navigationRevealed: false, suspended: true }), "suspended");

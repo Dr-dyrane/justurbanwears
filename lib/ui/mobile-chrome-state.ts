@@ -34,7 +34,6 @@ export function deriveMobileChromeVisibility(
 }
 
 export function adaptiveMobileChromeMode({
-  hidden,
   navigationRevealed,
   suspended,
 }: {
@@ -43,6 +42,5 @@ export function adaptiveMobileChromeMode({
   suspended: boolean;
 }): MobileChromeMode {
   if (suspended) return "suspended";
-  if (!hidden) return "expanded";
   return navigationRevealed ? "navigation" : "compact";
 }

@@ -4278,7 +4278,7 @@ html[data-theme="dark"] .shop-shell .shop-dock-lens::before {
 
 @media (max-width: 680px) {
   :root { --rail-width: 0px; }
-  body:has(.shop-shell) { padding-bottom: calc(150px + env(safe-area-inset-bottom, 0px)); }
+  body:has(.shop-shell) { padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }
   .studio-shell .mobile-nav {
     -webkit-backdrop-filter: blur(16px) saturate(125%);
     backdrop-filter: blur(16px) saturate(125%);
@@ -4450,14 +4450,14 @@ html[data-theme="dark"] .shop-shell .shop-dock-lens::before {
   .shop-mobile-context small {
     color: var(--accent-text);
     flex: 0 0 auto;
-    font-size: 8px;
+    font-size: 9.5px;
     font-weight: 800;
     letter-spacing: 0.1em;
     text-transform: uppercase;
   }
   .shop-mobile-context strong {
     color: var(--shop-muted);
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 650;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -6775,7 +6775,7 @@ html[data-theme="dark"] .studio-intake-sheet { background: rgba(28, 24, 22, 0.6)
 
 /* Inventory, orders, returns */
 
-.studio-operation-summary { background: var(--studio-panel); border-radius: 25px; display: grid; grid-template-columns: repeat(4, 1fr); overflow: hidden; }
+.studio-operation-summary { background: var(--studio-panel); border-radius: 25px; display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); overflow: hidden; }
 .studio-operation-summary > div { display: grid; gap: 5px; min-height: 130px; padding: 22px; position: relative; }
 .studio-operation-summary > div + div::before { background: var(--studio-line); content: ""; inset: 18px auto 18px 0; position: absolute; width: 1px; }
 .studio-operation-summary span { color: var(--studio-faint); }
@@ -6988,7 +6988,7 @@ html[data-theme="dark"] .studio-shell .studio-listing-preview { color: #1d1512; 
   .studio-publishing-row { gap: 10px; grid-template-columns: minmax(0, 1fr) auto; }
   .studio-publishing-row > svg { display: none; }
   .studio-view-nav-wrap { padding-left: 12px; padding-right: 12px; }
-  .studio-shell .page-canvas { padding: 30px 16px calc(156px + env(safe-area-inset-bottom, 0px)); }
+  .studio-shell .page-canvas { padding: 30px 16px calc(104px + env(safe-area-inset-bottom, 0px)); }
   .studio-ops-hero h1,
   .studio-ops-heading h1 { font-size: clamp(42px, 12vw, 58px); }
   .studio-hero-actions { display: grid; grid-template-columns: 1fr 1fr; width: 100%; }
@@ -6996,8 +6996,8 @@ html[data-theme="dark"] .studio-shell .studio-listing-preview { color: #1d1512; 
   .studio-garment-grid,
   .studio-operation-cards { grid-template-columns: 1fr; }
   .studio-queue-card { border-radius: 18px; min-height: 142px; padding: 14px; }
-  .studio-queue-card p { display: -webkit-box; font-size: 9px; line-height: 1.45; margin-bottom: 5px; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
-  .studio-queue-card > strong { font-size: 12px; margin-top: 11px; }
+  .studio-queue-card p { display: -webkit-box; font-size: 11px; line-height: 1.45; margin-bottom: 5px; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+  .studio-queue-card > strong { font-size: 13px; margin-top: 11px; }
   .studio-queue-icon { border-radius: 12px; height: 34px; width: 34px; }
   .studio-queue-count { font-size: 26px; right: 14px; top: 11px; }
   .studio-card-link { position: absolute; bottom: 12px; right: 13px; }
@@ -7049,8 +7049,10 @@ html[data-theme="dark"] .studio-shell .studio-listing-preview { color: #1d1512; 
   .studio-model-facts > div { grid-template-columns: 70px minmax(0, 1fr); }
   .studio-listing-preview { min-height: 300px; padding: 23px; }
   .studio-listing-editor { padding: 22px; }
-  .studio-operation-summary { grid-template-columns: 1fr 1fr; }
-  .studio-operation-summary > div { min-height: 112px; padding: 17px; }
+  .studio-operation-summary { grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); }
+  .studio-operation-summary > div { min-height: 92px; padding: 14px; }
+  .studio-operation-summary strong { font-size: 34px; }
+  .studio-operation-summary small { font-size: 9.5px; line-height: 1.35; }
   .studio-table { background: transparent; border-radius: 0; display: grid; gap: 8px; overflow: visible; }
   .studio-table-row { background: var(--studio-panel); border: 0; border-radius: 17px; grid-template-columns: 58px minmax(0, 1fr) auto; min-height: 78px; overflow: hidden; padding: 9px; }
   .studio-inventory-list { background: transparent; border-radius: 0; display: grid; gap: 8px; overflow: visible; }
@@ -8810,5 +8812,38 @@ html[data-theme="dark"] .shop-shell .shop-bag-link > b {
 
   .shop-product-info-sheet::backdrop {
     background: Canvas;
+  }
+}
+
+/* Mobile legibility floor for primary Shop and Studio task surfaces. */
+@media (max-width: 680px) {
+  .shop-kicker,
+  .studio-shell .eyebrow,
+  .studio-record-copy small,
+  .studio-inventory-copy small,
+  .studio-inventory-stock small,
+  .studio-notification-summary small,
+  .studio-notification-boundary {
+    font-size: 10px;
+    line-height: 1.35;
+  }
+
+  .studio-record-copy em,
+  .studio-inventory-copy em,
+  .studio-notification-list small,
+  .studio-notification-action,
+  .studio-operation-card dt,
+  .studio-operation-card dd,
+  .studio-inventory-decision small,
+  .studio-inventory-notice,
+  .studio-inventory-confirmation p {
+    font-size: 11px;
+    line-height: 1.45;
+  }
+
+  .studio-notification-list strong,
+  .studio-inventory-copy strong,
+  .studio-inventory-stock strong {
+    font-size: 12px;
   }
 }

@@ -252,7 +252,7 @@ export function ShopCheckout({
           </ShopActionButton>
           {shouldOfferWhatsApp ? (
             <p className="shop-local-disclosure shop-order-boundary-disclosure">
-              Payment is required. Your checkout is saved on this device, then WhatsApp opens with an order for you to review and send.
+              Payment is required. This draft stays on your device until WhatsApp opens for you to review and send it to Lulu.
             </p>
           ) : (
             <LocalCommerceDisclosure className="shop-order-boundary-disclosure" />

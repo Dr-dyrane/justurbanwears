@@ -28,7 +28,7 @@ export function ShopStatusIndicator({
 }
 
 export const localCommerceDisclosure =
-  "Payment is required. This checkout is saved only on this device.";
+  "Payment is required. This checkout draft stays on this device until you send it to Lulu.";
 
 export function LocalCommerceDisclosure({ className }: { className?: string }) {
   return (

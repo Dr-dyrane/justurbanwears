@@ -1,12 +1,13 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import {
   Camera,
   ClipboardList,
   ExternalLink,
   House,
   Plus,
+  RotateCcw,
   Shirt,
   Users,
   type LucideIcon,
@@ -16,8 +17,8 @@ import { BrandIcon } from "../brand/brand-icon";
 import { BrandWordmark } from "../brand/brand-wordmark";
 import { ThemeToggle } from "../theme/theme-toggle";
 import { StudioLink as Link } from "./atoms/studio-link";
-import { StudioProvider } from "./studio-provider";
 import { StudioNotificationCenter } from "./notifications/studio-notification-center";
+import { StudioProvider, useStudio } from "./studio-provider";
 
 interface NavigationItem {
   href: string;
@@ -66,8 +67,10 @@ function NavigationLink({ item, pathname }: {
   );
 }
 
-export function AppShell({ children }: { children: React.ReactNode }) {
+function AppShellContent({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const studio = useStudio();
   const shootTabs = pathname.startsWith("/shoots") ? shootViewTabs(pathname) : [];
   const {
     chromeHidden,
@@ -83,12 +86,22 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       ? { label: "Shoots", icon: Camera }
       : { label: "Studio", icon: House });
   const MobileDestinationIcon = mobileDestination.icon;
+  const operationsView = searchParams.get("view") ?? "inventory";
+  const reservedOrders = studio.orders.filter((order) => order.state === "RESERVED").length;
+  const openReturns = studio.returns.filter((returnCase) => returnCase.state === "DRAFT").length;
+  const operationsAction = openReturns > 0 && operationsView !== "returns"
+    ? { label: "Review returns", href: "/studio/operations?view=returns", icon: RotateCcw }
+    : reservedOrders > 0 && operationsView !== "orders"
+      ? { label: "Review orders", href: "/studio/operations?view=orders", icon: ClipboardList }
+      : operationsView !== "inventory"
+        ? { label: "Open inventory", href: "/studio/operations?view=inventory", icon: ClipboardList }
+        : { label: "Intake garment", href: "/studio/wardrobe?intake=1", icon: Plus };
   const contextAction = pathname.startsWith("/studio/models")
     ? { label: "Add model", href: "/studio/models?intake=model", icon: Plus }
     : pathname.startsWith("/studio/wardrobe")
       ? { label: "Intake garment", href: "/studio/wardrobe?intake=1", icon: Plus }
       : pathname.startsWith("/studio/operations")
-        ? { label: "Open inventory", href: "/studio/operations?view=inventory", icon: ClipboardList }
+        ? operationsAction
         : pathname === "/shoots/new"
           ? { label: "Shoot gallery", href: "/shoots", icon: Camera }
           : pathname.startsWith("/shoots")
@@ -96,8 +109,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           : { label: "Intake garment", href: "/studio/wardrobe?intake=1", icon: Plus };
   const ContextActionIcon = contextAction.icon;
   return (
-    <StudioProvider>
-      <div
+    <div
         className="app-shell studio-shell"
         data-mobile-chrome-hidden={chromeHidden || undefined}
         data-mobile-chrome-suspended={mobileChromeSuspended || undefined}
@@ -211,7 +223,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             </div>
           </div>
         </aside>
-      </div>
-    </StudioProvider>
+    </div>
   );
+}
+
+export function AppShell({ children }: { children: React.ReactNode }) {
+  return <StudioProvider><AppShellContent>{children}</AppShellContent></StudioProvider>;
 }

@@ -44,8 +44,8 @@ export function OrderStatus() {
         <div className="shop-route-empty">
           <span aria-hidden="true"><PackageSearch size={34} strokeWidth={1.65} /></span>
           <p className="shop-kicker">Checkout not found</p>
-          <h1>That checkout is not on this device.</h1>
-          <ShopActionLink href="/shop/orders">Saved checkouts</ShopActionLink>
+          <h1>That checkout draft is not on this device.</h1>
+          <ShopActionLink href="/shop/orders">Checkout drafts</ShopActionLink>
         </div>
       </div>
     );
@@ -57,7 +57,7 @@ export function OrderStatus() {
   return (
     <div className="shop-list-page shop-status-page">
       <div className="shop-product-topline">
-        <Link href="/shop/orders"><ArrowLeft aria-hidden="true" size={15} strokeWidth={1.8} /> Saved checkouts</Link>
+        <Link href="/shop/orders"><ArrowLeft aria-hidden="true" size={15} strokeWidth={1.8} /> Checkout drafts</Link>
         <span>{order.id}</span>
       </div>
 

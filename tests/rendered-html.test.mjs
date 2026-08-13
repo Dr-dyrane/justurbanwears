@@ -253,7 +253,7 @@ test("server-renders the public commerce route grammar", async () => {
   assert.match(await saved.text(), /Opening saved pieces/);
   assert.match(await bag.text(), /Opening your bag/);
   assert.match(await checkout.text(), /Opening checkout/);
-  assert.match(await orders.text(), /Opening saved checkouts/);
+  assert.match(await orders.text(), /Opening checkout drafts/);
   assert.match(await status.text(), /Opening checkout status/);
   assert.match(await account.text(), /Your space/);
 });

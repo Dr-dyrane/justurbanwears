@@ -21,7 +21,7 @@ function OrderCard({ order }: { order: ShopOrder }) {
   const product = firstLine ? getProduct(firstLine.slug) : undefined;
   const media = resolveOrderLineMedia(firstLine, product);
   const label = getOrderStatusLabel(order.status);
-  const title = firstLine?.snapshot === "PRODUCT" ? firstLine.name : "Saved checkout";
+  const title = firstLine?.snapshot === "PRODUCT" ? firstLine.name : "Checkout draft";
 
   return (
     <Link className="shop-order-card" href={`/shop/orders/${order.id}`}>
@@ -59,23 +59,23 @@ export function ShopOrders() {
   return (
     <div className="shop-list-page shop-orders-page">
       <header className="shop-list-heading">
-        <p className="shop-kicker">Saved checkouts</p>
-        <h1>Your saved checkouts.</h1>
+        <p className="shop-kicker">Checkout drafts</p>
+        <h1>Continue where you stopped.</h1>
       </header>
 
       <LocalCommerceDisclosure className="shop-orders-boundary" />
 
       {isRestoring ? (
         <div className="shop-route-empty" aria-live="polite" role="status">
-          <h2>Opening saved checkouts…</h2>
+          <h2>Opening checkout drafts…</h2>
         </div>
       ) : orders.length ? (
-        <section className="shop-orders-list" aria-label="Saved checkouts">
+        <section className="shop-orders-list" aria-label="Checkout drafts">
           {orders.map((order) => <OrderCard key={order.id} order={order} />)}
         </section>
       ) : (
         <div className="shop-route-empty">
-          <h2>No saved checkouts yet.</h2>
+          <h2>No checkout drafts yet.</h2>
           <ShopActionLink href="/shop/search">Find a piece</ShopActionLink>
         </div>
       )}

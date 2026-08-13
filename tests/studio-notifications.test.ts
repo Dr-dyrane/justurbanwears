@@ -18,6 +18,7 @@ test("Studio updates prioritize failures and actionable commerce work", () => {
   assert.deepEqual(notifications.slice(0, 4).map((item) => item.kind), ["PERSISTENCE", "ORDER", "RETURN", "WARDROBE"]);
   assert.equal(notifications[1].href, "/studio/operations?view=orders");
   assert.equal(notifications[2].href, "/studio/operations?view=returns");
+  assert.equal(notifications[3].href, "/studio/wardrobe?garment=garment-1");
 });
 
 test("a listing lifecycle change creates a new signature and completion clears it", () => {

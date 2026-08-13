@@ -19,6 +19,8 @@ test("guest Shop remains public while account auth is an optional managed Neon b
   assert.match(authSurface, /Guest browsing always available/);
   assert.match(accountPage, /getShopCustomerSession/);
   assert.match(account, /Browse first\. Sign in when it helps\./);
+  assert.match(account, /Checkout drafts/);
+  assert.doesNotMatch(account, /Your checkouts/);
   assert.match(account, /authClient\.signOut\(\)/);
   assert.match(account, /\/auth\/sign-in\?returnTo=\/shop\/account/);
 });

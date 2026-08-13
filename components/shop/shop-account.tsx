@@ -64,7 +64,7 @@ export function ShopAccount({ customer }: { customer: ShopCustomerSession | null
             </Link>
           )}
           <p className={styles.sessionNote}>
-            {customer ? "Signed in securely. Saved checkouts remain on this device." : "Saved pieces and your bag still work on this device as a guest."}
+            {customer ? "Signed in securely. Checkout drafts stay here until you send them to Lulu." : "Saved pieces, your bag and checkout drafts stay on this device."}
           </p>
         </section>
 
@@ -79,7 +79,7 @@ export function ShopAccount({ customer }: { customer: ShopCustomerSession | null
               <ChevronRight aria-hidden="true" size={17} />
             </Link>
             <Link href="/shop/orders">
-              <span><ReceiptText aria-hidden="true" size={18} strokeWidth={1.7} /><span><strong>{customer ? "Your checkouts" : "Saved checkouts"}</strong><small>{orders.length} {orders.length === 1 ? "checkout" : "checkouts"} on this device</small></span></span>
+              <span><ReceiptText aria-hidden="true" size={18} strokeWidth={1.7} /><span><strong>Checkout drafts</strong><small>{orders.length} {orders.length === 1 ? "draft" : "drafts"} on this device</small></span></span>
               <ChevronRight aria-hidden="true" size={17} />
             </Link>
           </div>
