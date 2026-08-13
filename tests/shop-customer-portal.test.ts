@@ -30,4 +30,5 @@ test("scrolled mobile action stays between equal safe edge controls", () => {
   assert.match(mobileChrome, /overflow: hidden/);
   assert.match(mobileChrome, /text-overflow: ellipsis/);
   assert.match(mobileChrome, /@media \(max-width: 379px\)/);
+  assert.match(shopShell, /shop-mobile-fab/);
 });

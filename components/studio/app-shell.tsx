@@ -94,8 +94,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           : pathname.startsWith("/shoots")
           ? { label: "New shoot", href: "/shoots/new", icon: Camera }
           : { label: "Intake garment", href: "/studio/wardrobe?intake=1", icon: Plus };
-  const ContextActionIcon = contextAction.icon;
-
   return (
     <StudioProvider>
       <div
@@ -174,6 +172,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             >
               <span><MobileDestinationIcon aria-hidden="true" size={25} strokeWidth={2.2} /></span>
             </button>
+            <Link
+              aria-hidden={mobileChromeMode === "navigation" || mobileChromeMode === "suspended" || undefined}
+              className="shop-mobile-context shop-dock-lens studio-mobile-context"
+              href={contextAction.href}
+              tabIndex={mobileChromeMode === "navigation" || mobileChromeMode === "suspended" ? -1 : undefined}
+            >
+              <span>
+                <small>Action</small>
+                <strong>{contextAction.label}</strong>
+              </span>
+              <ArrowRight aria-hidden="true" size={17} strokeWidth={1.9} />
+            </Link>
             <div className="shop-mobile-row">
               <nav
                 aria-hidden={mobileChromeMode === "compact" || mobileChromeMode === "suspended" || undefined}
@@ -202,11 +212,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 })}
               </nav>
               <Link
-                aria-label={contextAction.label}
+                aria-label="Open the justurban wears public shop"
                 className="shop-mobile-fab shop-dock-lens studio-mobile-fab"
-                href={contextAction.href}
+                href="/shop"
               >
-                <ContextActionIcon aria-hidden="true" size={24} strokeWidth={2.2} />
+                <BrandIcon className="studio-mobile-app-icon" size={44} />
+                <ExternalLink className="studio-mobile-exit-mark" aria-hidden="true" size={18} strokeWidth={2.1} />
               </Link>
             </div>
           </div>
