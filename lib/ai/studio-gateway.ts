@@ -28,7 +28,7 @@ export const studioGatewayPolicy = {
   imageCostCapUsd: Number(
     process.env.STUDIO_AI_IMAGE_COST_CAP_USD || String(DEFAULT_IMAGE_COST_CAP_USD),
   ),
-  promptVersion: "garment-front-v1",
+  promptVersion: "garment-front-v2",
 } as const;
 
 export type StudioGatewayFailureMetadata = Readonly<{
@@ -178,7 +178,11 @@ export function buildGarmentFrontPrompt(input: {
 }): string {
   return [
     "Create one clean product-only straight-on front catalogue image of the exact garment.",
-    "Neutral warm-paper background, even soft light, complete visible edges, no person, mannequin, hanger, text, logo or invented closures.",
+    "Use the supplied source image as the primary construction authority when present; otherwise use only the confirmed facts.",
+    "Reproduce the visible front construction exactly: neckline, shoulder line, sleeve cut, sleeve length and volume, waist seam or gathering, silhouette, garment length and hem treatment.",
+    "Preserve the visible fabric surface and drape; never infer or name a material or fibre composition that is not confirmed.",
+    "Do not reinterpret, simplify, lengthen, shorten, smooth or add those features. Never turn a dolman or batwing sleeve into a long or puff sleeve, and never remove a visible gathered or elastic waist.",
+    "Neutral warm-paper background, even soft light, complete visible edges, no person, mannequin, hanger, text, logo, label, brand tag or invented closure, pocket, seam, lining or back construction.",
     `Confirmed facts: ${JSON.stringify(input.facts)}.`,
     input.correction ? `Operator correction: ${input.correction}.` : "",
   ].filter(Boolean).join(" ");
