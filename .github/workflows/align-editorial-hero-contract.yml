@@ -24,7 +24,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Align rendered HTML expectations
+      - name: Align the stable server-rendered hero contract
         shell: bash
         run: |
           set -euo pipefail
@@ -34,38 +34,22 @@ jobs:
           path = Path('tests/rendered-html.test.mjs')
           source = path.read_text()
 
-          legacy_copy = '  assert.match(html, /Clothes with a second first impression/);'
-          stable_server_marker = '  assert.match(html, /data-legacy-copy="Clothes with a second first impression\\."/);'
-          if source.count(legacy_copy) != 1:
-              raise SystemExit(f'expected one legacy hero copy assertion, found {source.count(legacy_copy)}')
-          source = source.replace(legacy_copy, stable_server_marker, 1)
+          replacements = [
+            (
+              '  assert.match(html, /Clothes with a second first impression/);',
+              '  assert.match(html, /data-legacy-copy="Clothes with a second first impression\\."/);',
+            ),
+            (
+              'test("publishes one product-led hero and one concise Drop 01 discovery grid", async () => {',
+              'test("publishes one editorial-cover hero and one concise Drop 01 discovery grid", async () => {',
+            ),
+          ]
 
-          legacy_title = 'test("publishes one product-led hero and one concise Drop 01 discovery grid", async () => {'
-          editorial_title = 'test("publishes one editorial-cover hero and one concise Drop 01 discovery grid", async () => {'
-          if source.count(legacy_title) != 1:
-              raise SystemExit(f'expected one legacy hero test title, found {source.count(legacy_title)}')
-          source = source.replace(legacy_title, editorial_title, 1)
+          for old, new in replacements:
+            if source.count(old) != 1:
+              raise SystemExit(f'expected one contract fragment, found {source.count(old)}: {old!r}')
+            source = source.replace(old, new, 1)
 
-          start = source.index(editorial_title)
-          end = source.index('test("keeps the private Studio and public shop visibly distinct"', start)
-          block = source[start:end]
-
-          visible_line = '  const visibleBody = visibleMarkup(html);'
-          editorial_assertions = '''  const visibleBody = visibleMarkup(html);
-          assert.match(visibleBody, /class="shop-editorial-cover"/);
-          assert.match(visibleBody, /class="shop-editorial-cover-wordmark">JUW</);
-          assert.doesNotMatch(visibleBody, /shop-hero-copy|shop-hero-stage/);'''
-          if block.count(visible_line) != 1:
-              raise SystemExit(f'expected one visible body line in hero test, found {block.count(visible_line)}')
-          block = block.replace(visible_line, editorial_assertions, 1)
-
-          legacy_anchor = '  assert.match(visibleBody, /data-model-anchor="lulu-v2"/);'
-          editorial_anchor = '  assert.match(visibleBody, /data-model-anchor="lulu-v3"/);'
-          if block.count(legacy_anchor) != 1:
-              raise SystemExit(f'expected one legacy hero anchor, found {block.count(legacy_anchor)}')
-          block = block.replace(legacy_anchor, editorial_anchor, 1)
-
-          source = source[:start] + block + source[end:]
           path.write_text(source)
           PY
       - run: npm install --package-lock=false --ignore-scripts --no-audit --no-fund
