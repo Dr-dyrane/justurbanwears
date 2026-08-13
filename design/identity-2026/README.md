@@ -1,4 +1,4 @@
-# JustUrbanWears identity — 2026.2
+# JustUrbanWears identity — 2026.3
 
 Status: **owner-approved and production-applied for digital use**.
 
@@ -25,9 +25,9 @@ manufacturer.
 - **Wordmark — website and horizontal spaces.** The established outlined
   lowercase `justurban wears` artwork remains unchanged in Shop and Studio
   navigation, editorial signatures, and other shallow horizontal placements.
-- **Icon — compact reduction.** Use the wardrobe / silhouette / Double-L mark
-  for favicons, installed-app icons, browser or device tiles, hardware stamps,
-  embossing, seals, tissue patterns, and genuinely compact spaces.
+- **Icon — compact reduction.** Use the owner-selected cocoa circular seal with
+  copper silhouette and mirrored `L` forms for favicons, installed-app icons,
+  browser or device tiles, compact Studio, and genuinely compact spaces.
 
 The icon expresses the brand story, but it does not spell the brand name.
 Therefore it is **not the default social-profile identity on its own**. Social
@@ -61,11 +61,14 @@ text.
 | Source | Dimensions | SHA-256 | Current rule |
 | --- | ---: | --- | --- |
 | `justurban-logo-source.png` | 1313 × 1392 | `9990e1c587a5f12aac986329a0d9ab56b7201d8dffb0a2fdfe5aa40d6f6a1b06` | Preserve its corrected four-row lettering, spelling, spacing, colour, and transparency exactly. |
-| `justurban-icon-source.png` | 1024 × 1536 | `b518af74bcfa3040434b3e73ff8d67a118e20c674388f1207d410ae81360d917` | Preserve the approved wardrobe / curvy silhouette / Double-L geometry until an owner-approved vector master replaces it. |
+| `justurban-seal-icon-source.png` | 1254 × 1254 | `76afbcd3f2a3c4c6c69696c4feb5e6e91aa5eb7546b3d9fb7b9c57b8770059a1` | Preserve every opaque supplied pixel inside the cocoa seal; the transparent edge is decontaminated from the former white background. |
+| `justurban-icon-source.png` | 1024 × 1536 | `b518af74bcfa3040434b3e73ff8d67a118e20c674388f1207d410ae81360d917` | Retained only for existing one-colour production-method exports; it is not the web icon or favicon. |
 
-The current SVG logo and icon masters preserve the exact owner-supplied PNG
-sources losslessly. This is an exact-preservation strategy, not a claim that the
-artwork is already a finished Bézier reconstruction.
+The current SVG logo and icon masters embed the approved PNG sources. The seal
+icon uses the supplied opaque artwork exactly, with a deterministic alpha
+cutout and edge decontamination outside the circle. This is an
+exact-preservation strategy, not a claim that
+the artwork is already a finished Bézier reconstruction.
 
 A later vector rebuild is allowed only as a controlled replacement: it must
 retain the approved silhouette, mirrored L feet, corrected typography, and
@@ -81,7 +84,7 @@ do not trace or redraw production assets casually.
 | `justurban-mark.svg` | Exact supplied compact icon in a transparent SVG wrapper. |
 | `justurban-micro.svg` | Compact icon wrapper for constrained use. |
 | `justurban-favicon.svg` | Compact icon prepared for browser tabs. |
-| `justurban-app-icon.svg` | Compact icon on the current warm-paper app tile. |
+| `justurban-app-icon.svg` | Cocoa seal icon with transparent exterior and no added wrapper or border. |
 | `justurban-app-foreground.svg` | Compact icon inside the adaptive safe area. |
 | `justurban-app-background.svg` | Warm-paper adaptive background. |
 | `justurban-app-monochrome.svg` | One-colour adaptive derivative. |
@@ -115,10 +118,11 @@ minimum width and 6-unit external clear zone.
 
 ## Colour and compact use
 
-The supplied logo and icon pixels remain authoritative. Warm paper `#F4EEE6`
-is the preferred light field; cocoa `#3A2E25` and coral `#CB6A4A` define the
-current physical-display palette. Generated cocoa, black, and white one-colour
-exports remain available for constrained production methods.
+The supplied logo and icon pixels remain authoritative. The cocoa circle is
+part of the icon; the pixels outside it remain transparent, and no second tile,
+border, or circular wrapper may be added. Generated cocoa, black, and white
+one-colour exports from the retained flat source remain available only for
+constrained production methods.
 
 Use the finite 16, 32, and 48 px favicon exports at their intended sizes. Use
 38–48 px for compact product chrome where possible. The icon may be simplified

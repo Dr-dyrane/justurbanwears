@@ -32,29 +32,34 @@ function pngInfo(buffer) {
   };
 }
 
-test("owner-supplied logo and icon sources are pinned exactly", async () => {
-  const [logo, icon, specText] = await Promise.all([
+test("owner-supplied logo and seal icon sources are pinned exactly", async () => {
+  const [logo, icon, flatIcon, specText] = await Promise.all([
     readFile(designFile("justurban-logo-source.png")),
+    readFile(designFile("justurban-seal-icon-source.png")),
     readFile(designFile("justurban-icon-source.png")),
     readFile(designFile("identity-spec.json"), "utf8"),
   ]);
   assert.deepEqual([pngInfo(logo).width, pngInfo(logo).height], [1313, 1392]);
-  assert.deepEqual([pngInfo(icon).width, pngInfo(icon).height], [1024, 1536]);
+  assert.deepEqual([pngInfo(icon).width, pngInfo(icon).height], [1254, 1254]);
+  assert.equal(pngInfo(icon).colorType, 6, "seal source must retain transparent exterior pixels");
+  assert.deepEqual([pngInfo(flatIcon).width, pngInfo(flatIcon).height], [1024, 1536]);
   assert.equal(sha256(logo), "9990e1c587a5f12aac986329a0d9ab56b7201d8dffb0a2fdfe5aa40d6f6a1b06");
-  assert.equal(sha256(icon), "b518af74bcfa3040434b3e73ff8d67a118e20c674388f1207d410ae81360d917");
+  assert.equal(sha256(icon), "76afbcd3f2a3c4c6c69696c4feb5e6e91aa5eb7546b3d9fb7b9c57b8770059a1");
+  assert.equal(sha256(flatIcon), "b518af74bcfa3040434b3e73ff8d67a118e20c674388f1207d410ae81360d917");
   assert.deepEqual(await readFile(publicFile("logo.png")), logo);
 
   const spec = JSON.parse(specText);
   assert.equal(spec.status, "approved-production-owner-supplied");
-  assert.equal(spec.version, "2026.2");
+  assert.equal(spec.version, "2026.3");
   assert.equal(
     spec.sources.logo.sha256,
     "9990e1c587a5f12aac986329a0d9ab56b7201d8dffb0a2fdfe5aa40d6f6a1b06",
   );
   assert.equal(
     spec.sources.icon.sha256,
-    "b518af74bcfa3040434b3e73ff8d67a118e20c674388f1207d410ae81360d917",
+    "76afbcd3f2a3c4c6c69696c4feb5e6e91aa5eb7546b3d9fb7b9c57b8770059a1",
   );
+  assert.equal(spec.sources.flatProductionIcon.sha256, "b518af74bcfa3040434b3e73ff8d67a118e20c674388f1207d410ae81360d917");
   assert.equal(spec.format.redrawApproved, false);
 });
 
@@ -65,7 +70,7 @@ test("public logo, wordmark, and icon SVGs keep their assigned roles", async () 
     readFile(publicFile("brand", "wordmark-white.svg"), "utf8"),
     readFile(publicFile("brand", "icon.svg"), "utf8"),
     readFile(designFile("justurban-logo-source.png")),
-    readFile(designFile("justurban-icon-source.png")),
+    readFile(designFile("justurban-seal-icon-source.png")),
   ]);
 
   assert.match(logo, /viewBox="0 0 1313 1392"/);
@@ -78,6 +83,7 @@ test("public logo, wordmark, and icon SVGs keep their assigned roles", async () 
   assert.equal(reverseWordmark.match(/fill="#ffffff"/g)?.length, 2);
   assert.match(icon, /viewBox="0 0 512 512"/);
   assert.ok(icon.includes(iconSource.toString("base64")));
+  assert.doesNotMatch(icon, /<rect\b/i, "web icon must not add a tile or border around the seal");
   assert.doesNotMatch(icon, /<(?:text|filter|linearGradient|radialGradient)\b/i);
 
   assert.deepEqual(await readFile(publicFile("brand", "wordmark.svg")), await readFile(designFile("justurban-wordmark.svg")));
@@ -87,7 +93,7 @@ test("public logo, wordmark, and icon SVGs keep their assigned roles", async () 
 test("browser favicon has SVG and multi-size ICO fallbacks from the supplied icon", async () => {
   const [svg, iconSource, ico] = await Promise.all([
     readFile(publicFile("favicon.svg"), "utf8"),
-    readFile(designFile("justurban-icon-source.png")),
+    readFile(designFile("justurban-seal-icon-source.png")),
     readFile(publicFile("favicon.ico")),
   ]);
   assert.match(svg, /viewBox="0 0 64 64"/);
@@ -156,19 +162,19 @@ test("public files byte-match the regenerated identity exports", async () => {
   await assert.rejects(access(publicFile("brand", "logo-white.svg")), { code: "ENOENT" });
 });
 
-test("platform PNGs are sRGB exports at their required dimensions", async () => {
-  const opaque = new Map([
+test("platform PNGs preserve transparent seal exteriors at their required dimensions", async () => {
+  const transparent = new Map([
     ["apple-touch-icon.png", 180],
     ["icon-192.png", 192],
     ["icon-512.png", 512],
     ["icon-maskable-512.png", 512],
     ["icon-master-1024.png", 1024],
   ]);
-  for (const [name, size] of opaque) {
+  for (const [name, size] of transparent) {
     const info = pngInfo(await readFile(publicFile("brand", name)));
     assert.deepEqual([info.width, info.height], [size, size], name);
     assert.equal(info.bitDepth, 8, name);
-    assert.equal(info.colorType, 2, `${name} must be opaque RGB`);
+    assert.equal(info.colorType, 6, `${name} must retain the transparent exterior`);
     assert.ok(info.chunks.includes("iCCP"), `${name} must carry an sRGB ICC profile`);
   }
   const logo = pngInfo(await readFile(publicFile("logo.png")));
@@ -179,7 +185,7 @@ test("platform PNGs are sRGB exports at their required dimensions", async () => 
   assert.equal(wordmark.colorType, 6);
 });
 
-test("every live surface uses the centralized 2026.2 identity contract", async () => {
+test("every live surface uses the centralized 2026.3 seal identity contract", async () => {
   const [layout, manifest, studio, shop, brandAssets, brandIcon, brandWordmark, styles, logoRoute, wordmarkRoute, iconRoute] = await Promise.all([
     readFile(path.join(root, "app", "layout.tsx"), "utf8"),
     readFile(path.join(root, "app", "manifest.ts"), "utf8"),
@@ -195,7 +201,7 @@ test("every live surface uses the centralized 2026.2 identity contract", async (
   ]);
   assert.match(layout, /BRAND_ASSETS\.favicon\.runtimeSvg/);
   assert.match(manifest, /BRAND_ASSETS\.icon\.runtimeMaskable512/);
-  assert.equal(studio.match(/<BrandIcon\b/g)?.length, 2);
+  assert.equal(studio.match(/<BrandIcon\b/g)?.length, 1);
   assert.equal(studio.match(/<BrandWordmark\b/g)?.length, 1);
   assert.equal(shop.match(/<BrandWordmark\b/g)?.length, 2);
   assert.match(brandIcon, /BRAND_ASSETS\.icon\.runtimeSvg/);
@@ -206,18 +212,18 @@ test("every live surface uses the centralized 2026.2 identity contract", async (
     "/brand/wordmark.svg", "/brand/wordmark-white.svg", "/wordmark.png", "/wordmark",
     "/brand/icon.svg", "/icon.png", "/icon", "/favicon.svg", "/favicon.ico",
   ]) assert.ok(brandAssets.includes(`"${requiredPath}"`), requiredPath);
-  assert.match(brandAssets, /version: "2026\.2-wardrobe"/);
+  assert.match(brandAssets, /version: "2026\.3-seal"/);
   for (const runtimePath of [
     "/brand/logo.svg?v=2026.2-wardrobe",
     "/brand/wordmark.svg?v=2026.2-wardrobe",
     "/brand/wordmark-white.svg?v=2026.2-wardrobe",
-    "/brand/icon.svg?v=2026.2-wardrobe",
-    "/brand/icon-192.png?v=2026.2-wardrobe",
-    "/brand/icon-512.png?v=2026.2-wardrobe",
-    "/brand/icon-maskable-512.png?v=2026.2-wardrobe",
-    "/brand/apple-touch-icon.png?v=2026.2-wardrobe",
-    "/favicon.svg?v=2026.2-wardrobe",
-    "/favicon.ico?v=2026.2-wardrobe",
+    "/brand/icon.svg?v=2026.3-seal",
+    "/brand/icon-192.png?v=2026.3-seal",
+    "/brand/icon-512.png?v=2026.3-seal",
+    "/brand/icon-maskable-512.png?v=2026.3-seal",
+    "/brand/apple-touch-icon.png?v=2026.3-seal",
+    "/favicon.svg?v=2026.3-seal",
+    "/favicon.ico?v=2026.3-seal",
   ]) assert.ok(brandAssets.includes(`"${runtimePath}"`), runtimePath);
   assert.match(styles, /@media \(max-width: 820px\) \{\s*\.studio-shell \.studio-brand-mark \{ display: inline-flex; \}/);
   assert.match(logoRoute, /justurban-logo\.svg\?raw/);
@@ -227,7 +233,7 @@ test("every live surface uses the centralized 2026.2 identity contract", async (
 });
 
 test("identity packet includes the generator, source records, and no production JU/W geometry", async () => {
-  const [readme, specText, generator, vercelIgnore, customerFlow, luluFlow, iconSource] = await Promise.all([
+  const [readme, specText, generator, vercelIgnore, customerFlow, luluFlow, flatIconSource] = await Promise.all([
     readFile(designFile("README.md"), "utf8"),
     readFile(designFile("identity-spec.json"), "utf8"),
     readFile(path.join(root, "scripts", "generate-brand-assets.mjs"), "utf8"),
@@ -236,8 +242,8 @@ test("identity packet includes the generator, source records, and no production 
     readFile(path.join(root, "docs", "order-flows", "just-urban-wears-lulu-order-flow.svg"), "utf8"),
     readFile(designFile("justurban-icon-source.png")),
   ]);
-  const iconSourceDataUri = `data:image/png;base64,${iconSource.toString("base64")}`;
-  assert.match(readme, /exact owner-supplied/i);
+  const flatIconSourceDataUri = `data:image/png;base64,${flatIconSource.toString("base64")}`;
+  assert.match(readme, /owner-selected|owner-supplied/i);
   assert.match(readme, /Do not trace or redraw/i);
   assert.match(readme, /\/wordmark/);
   assert.doesNotMatch(readme, /W is the immediate read|JU is the discovery/);
@@ -246,17 +252,17 @@ test("identity packet includes the generator, source records, and no production 
   assert.equal(spec.public.shareWordmark, "/wordmark");
   assert.equal(spec.roles.desktopCombination, "wordmark-only");
   assert.match(generator, /justurban-logo-source\.png/);
-  assert.match(generator, /justurban-icon-source\.png/);
+  assert.match(generator, /justurban-seal-icon-source\.png/);
   for (const master of ["justurban-logo.svg", "justurban-wordmark.svg", "justurban-app-icon.svg"]) {
     assert.match(vercelIgnore, new RegExp(`^!/design/identity-2026/${master.replace(".", "\\.")}$`, "m"));
   }
   for (const flow of [customerFlow, luluFlow]) {
     assert.equal(flow.match(/data-identity-source="owner-icon"/g)?.length, 2);
-    assert.ok(flow.includes(iconSourceDataUri), "order-flow icon must embed the exact supplied source");
+    assert.ok(flow.includes(flatIconSourceDataUri), "order-flow production glyph must remain on the flat source");
     assert.doesNotMatch(flow, /M48 88H296L176 424/);
   }
   for (const required of [
-    "justurban-logo.svg", "justurban-logo-source.png", "justurban-icon-source.png",
+    "justurban-logo.svg", "justurban-logo-source.png", "justurban-seal-icon-source.png", "justurban-icon-source.png",
     path.join("exports", "mark-black.svg"), path.join("exports", "mark-cocoa.svg"),
     path.join("exports", "mark-coral.svg"), path.join("exports", "mark-white.svg"),
   ]) await access(designFile(required));

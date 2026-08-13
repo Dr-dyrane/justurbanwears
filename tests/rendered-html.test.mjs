@@ -284,5 +284,5 @@ test("publishes the canonical shop PWA manifest", async () => {
   assert.equal(manifest.id, "/shop");
   assert.equal(manifest.start_url, "/shop");
   assert.equal(manifest.scope, "/shop");
-  assert.ok(manifest.icons.some((icon) => icon.src === "/brand/icon-maskable-512.png?v=2026.2-wardrobe"));
+  assert.ok(manifest.icons.some((icon) => icon.src === "/brand/icon-maskable-512.png?v=2026.3-seal"));
 });

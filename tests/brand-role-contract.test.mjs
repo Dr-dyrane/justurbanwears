@@ -26,7 +26,7 @@ function pngInfo(buffer) {
   };
 }
 
-test("the 2026.2 contract assigns logo, wordmark, and icon to different jobs", async () => {
+test("the 2026.3 contract assigns logo, wordmark, and icon to different jobs", async () => {
   const [specText, readme, assets, layout, logoComponent] = await Promise.all([
     readFile(designFile("identity-spec.json"), "utf8"),
     readFile(designFile("README.md"), "utf8"),

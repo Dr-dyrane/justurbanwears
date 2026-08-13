@@ -12,17 +12,19 @@ const exportsRoot = path.join(designRoot, "exports");
 const publicRoot = path.join(root, "public");
 const publicBrandRoot = path.join(publicRoot, "brand");
 
-const iconSourcePath = path.join(designRoot, "justurban-icon-source.png");
+const iconSourcePath = path.join(designRoot, "justurban-seal-icon-source.png");
+const flatIconSourcePath = path.join(designRoot, "justurban-icon-source.png");
 const logoSourcePath = path.join(designRoot, "justurban-logo-source.png");
 const wordmarkPath = path.join(designRoot, "justurban-wordmark.svg");
 
-const iconSourceBounds = { left: 75, top: 157, width: 873, height: 1216 };
+const flatIconSourceBounds = { left: 75, top: 157, width: 873, height: 1216 };
 const warmPaper = "#F4EEE6";
 
 await Promise.all([mkdir(exportsRoot, { recursive: true }), mkdir(publicBrandRoot, { recursive: true })]);
 
-const [iconSource, logoSource, wordmark] = await Promise.all([
+const [iconSource, flatIconSource, logoSource, wordmark] = await Promise.all([
   readFile(iconSourcePath),
+  readFile(flatIconSourcePath),
   readFile(logoSourcePath),
   readFile(wordmarkPath),
 ]);
@@ -40,12 +42,12 @@ ${body}
 `;
 }
 
-function embeddedSource({ x = 0, y = 0, width = 1024, height = 1536, href = dataUri(iconSource, "image/png") } = {}) {
+function embeddedSource({ x = 0, y = 0, width = 1254, height = 1254, href = dataUri(iconSource, "image/png") } = {}) {
   return `  <image x="${x}" y="${y}" width="${width}" height="${height}" preserveAspectRatio="xMidYMid meet" href="${href}"/>`;
 }
 
 function nestedIcon({ x, y, width, height }) {
-  return `  <svg x="${x}" y="${y}" width="${width}" height="${height}" viewBox="75 157 873 1216" overflow="visible">
+  return `  <svg x="${x}" y="${y}" width="${width}" height="${height}" viewBox="0 0 1254 1254" overflow="visible">
 ${embeddedSource()}
   </svg>`;
 }
@@ -58,18 +60,16 @@ async function pngWithProfile(pipeline) {
   return pipeline.png({ compressionLevel: 9 }).withIccProfile("srgb").toBuffer();
 }
 
-async function croppedIconLayer(size, heightRatio) {
-  const boxHeight = Math.round(size * heightRatio);
-  const boxWidth = Math.round(boxHeight * (iconSourceBounds.width / iconSourceBounds.height));
-  return sharp(iconSource)
-    .extract(iconSourceBounds)
-    .resize({ width: boxWidth, height: boxHeight, fit: "inside" })
+async function iconLayer(source, size, sizeRatio) {
+  const boxSize = Math.round(size * sizeRatio);
+  return sharp(source)
+    .resize({ width: boxSize, height: boxSize, fit: "inside" })
     .png()
     .toBuffer();
 }
 
-async function transparentIconCanvas(size, heightRatio = 0.9) {
-  const layer = await croppedIconLayer(size, heightRatio);
+async function transparentIconCanvas(size, sizeRatio = 1) {
+  const layer = await iconLayer(iconSource, size, sizeRatio);
   const metadata = await sharp(layer).metadata();
   return pngWithProfile(
     sharp({
@@ -84,17 +84,25 @@ async function transparentIconCanvas(size, heightRatio = 0.9) {
   );
 }
 
-async function opaqueIconTile(size, heightRatio = 0.82) {
-  const layer = await croppedIconLayer(size, heightRatio);
+async function transparentFlatIconCanvas(size, heightRatio = 0.9) {
+  const boxHeight = Math.round(size * heightRatio);
+  const boxWidth = Math.round(boxHeight * (flatIconSourceBounds.width / flatIconSourceBounds.height));
+  const layer = await sharp(flatIconSource)
+    .extract(flatIconSourceBounds)
+    .resize({ width: boxWidth, height: boxHeight, fit: "inside" })
+    .png()
+    .toBuffer();
   const metadata = await sharp(layer).metadata();
   return pngWithProfile(
-    sharp({ create: { width: size, height: size, channels: 3, background: warmPaper } }).composite([
+    sharp({
+      create: { width: size, height: size, channels: 4, background: { r: 0, g: 0, b: 0, alpha: 0 } },
+    }).composite([
       {
         input: layer,
         left: Math.round((size - metadata.width) / 2),
         top: Math.round((size - metadata.height) / 2),
       },
-    ]).flatten({ background: warmPaper }).removeAlpha(),
+    ]),
   );
 }
 
@@ -152,39 +160,38 @@ function makeIco(entries) {
 }
 
 const markSvg = svgDocument({
-  title: "JustUrbanWears wardrobe and figure icon",
-  description: "The exact owner-supplied wardrobe, curvy figure, and mirrored L icon preserved as embedded source pixels.",
-  viewBox: "75 157 873 1216",
+  title: "JustUrbanWears cocoa seal icon",
+  description: "The owner-selected cocoa seal and copper figure icon with a transparent exterior.",
+  viewBox: "0 0 1254 1254",
   body: embeddedSource(),
 });
 
 const microSvg = svgDocument({
-  title: "JustUrbanWears wardrobe and figure micro icon",
-  description: "The exact owner-supplied wardrobe and figure icon used without redrawing for compact display.",
-  viewBox: "75 157 873 1216",
+  title: "JustUrbanWears cocoa seal micro icon",
+  description: "The owner-selected cocoa seal and copper figure icon used directly for compact display.",
+  viewBox: "0 0 1254 1254",
   body: embeddedSource(),
 });
 
 const faviconSvg = svgDocument({
-  title: "JustUrbanWears wardrobe and figure favicon",
-  description: "The exact owner-supplied wardrobe and figure icon centered transparently for browser tabs.",
+  title: "JustUrbanWears cocoa seal favicon",
+  description: "The owner-selected cocoa seal and copper figure icon on a transparent exterior.",
   viewBox: "0 0 64 64",
-  body: nestedIcon({ x: 12, y: 2, width: 40, height: 60 }),
+  body: nestedIcon({ x: 1, y: 1, width: 62, height: 62 }),
 });
 
 const appIconSvg = svgDocument({
   title: "JustUrbanWears app icon",
-  description: "The exact owner-supplied wardrobe and figure icon centered on warm paper.",
+  description: "The owner-selected cocoa seal and copper figure icon without an added tile or border.",
   viewBox: "0 0 512 512",
-  body: `  <rect width="512" height="512" fill="${warmPaper}"/>
-${nestedIcon({ x: 107, y: 48, width: 298, height: 416 })}`,
+  body: nestedIcon({ x: 0, y: 0, width: 512, height: 512 }),
 });
 
 const appForegroundSvg = svgDocument({
   title: "JustUrbanWears adaptive app foreground",
-  description: "The exact owner-supplied wardrobe and figure icon centered inside the adaptive safe area.",
+  description: "The owner-selected cocoa seal and copper figure icon centered inside the adaptive safe area.",
   viewBox: "0 0 512 512",
-  body: nestedIcon({ x: 127, y: 76, width: 258, height: 360 }),
+  body: nestedIcon({ x: 76, y: 76, width: 360, height: 360 }),
 });
 
 const appBackgroundSvg = svgDocument({
@@ -218,28 +225,28 @@ await Promise.all([
   copyFile(path.join(exportsRoot, "wordmark-cocoa-1620.png"), path.join(publicRoot, "wordmark.png")),
 ]);
 
-const [app1024, app512, app192, apple180, maskable512, foreground512, transparent1024] = await Promise.all([
-  opaqueIconTile(1024, 0.82),
-  opaqueIconTile(512, 0.82),
-  opaqueIconTile(192, 0.82),
-  opaqueIconTile(180, 0.82),
-  opaqueIconTile(512, 0.7),
+const [app1024, app512, app192, apple180, maskable512, foreground512, flatTransparent1024] = await Promise.all([
+  transparentIconCanvas(1024),
+  transparentIconCanvas(512),
+  transparentIconCanvas(192),
+  transparentIconCanvas(180),
   transparentIconCanvas(512, 0.7),
-  transparentIconCanvas(1024, 0.9),
+  transparentIconCanvas(512, 0.7),
+  transparentFlatIconCanvas(1024, 0.9),
 ]);
 
 const [markCocoa1024, markBlack1024, markWhite1024, microCocoa512, monochrome512] = await Promise.all([
-  recolorAlpha(transparent1024, "#3A2E25"),
-  recolorAlpha(transparent1024, "#000000"),
-  recolorAlpha(transparent1024, "#FFFFFF"),
-  transparentIconCanvas(512, 0.9).then((png) => recolorAlpha(png, "#3A2E25")),
-  recolorAlpha(foreground512, "#000000"),
+  recolorAlpha(flatTransparent1024, "#3A2E25"),
+  recolorAlpha(flatTransparent1024, "#000000"),
+  recolorAlpha(flatTransparent1024, "#FFFFFF"),
+  transparentFlatIconCanvas(512, 0.9).then((png) => recolorAlpha(png, "#3A2E25")),
+  transparentFlatIconCanvas(512, 0.7).then((png) => recolorAlpha(png, "#000000")),
 ]);
 
 const markCoralSvg = rasterSvg({
   title: "JustUrbanWears owner-supplied icon",
   description: "The owner-supplied icon on a transparent square canvas.",
-  png: transparent1024,
+  png: flatTransparent1024,
   size: 1024,
 });
 const markCocoaSvg = rasterSvg({ title: "JustUrbanWears cocoa icon", description: "Cocoa one-colour icon.", png: markCocoa1024, size: 1024 });
@@ -253,7 +260,7 @@ const monochromeSvg = rasterSvg({
 });
 
 const faviconEntries = await Promise.all(
-  [16, 32, 48].map(async (size) => ({ size, png: await transparentIconCanvas(size, 0.92) })),
+  [16, 32, 48].map(async (size) => ({ size, png: await transparentIconCanvas(size, 0.94) })),
 );
 const faviconIco = makeIco(faviconEntries);
 
@@ -273,7 +280,7 @@ await Promise.all([
     writeFile(path.join(exportsRoot, "app-background-512.png"), png),
   ),
   writeFile(path.join(exportsRoot, "app-monochrome-512.png"), monochrome512),
-  writeFile(path.join(exportsRoot, "mark-coral-1024.png"), transparent1024),
+  writeFile(path.join(exportsRoot, "mark-coral-1024.png"), flatTransparent1024),
   writeFile(path.join(exportsRoot, "mark-cocoa-1024.png"), markCocoa1024),
   writeFile(path.join(exportsRoot, "mark-black-1024.png"), markBlack1024),
   writeFile(path.join(exportsRoot, "mark-reverse-1024.png"), markWhite1024),
@@ -300,9 +307,9 @@ await Promise.all(
     const source = await readFile(svgPath, "utf8");
     const embedded = source.replace(
       /(<image\b[^>]*\bdata-identity-source="owner-icon"[^>]*\bhref=")[^"]*("[^>]*\/>)/g,
-      `$1${dataUri(iconSource, "image/png")}$2`,
+      `$1${dataUri(flatIconSource, "image/png")}$2`,
     );
-    if (embedded === source && !source.includes(dataUri(iconSource, "image/png"))) {
+    if (embedded === source && !source.includes(dataUri(flatIconSource, "image/png"))) {
       throw new Error(`No owner-icon integration points found in ${relativePath}`);
     }
     await writeFile(svgPath, embedded, "utf8");
@@ -317,10 +324,10 @@ await Promise.all(
 
 const previewSvg = svgDocument({
   title: "JustUrbanWears identity preview",
-  description: "The approved supplied logo, unchanged outlined wordmark, and supplied wardrobe icon system.",
+  description: "The approved supplied logo, unchanged outlined wordmark, and owner-selected cocoa seal icon.",
   viewBox: "0 0 1800 1200",
   body: `  <rect width="1800" height="1200" fill="#F4EEE6"/>
-  <text x="80" y="80" fill="#3A2E25" font-family="Arial, sans-serif" font-size="22" font-weight="700" letter-spacing="8">JUSTURBANWEARS / IDENTITY 2026.2</text>
+  <text x="80" y="80" fill="#3A2E25" font-family="Arial, sans-serif" font-size="22" font-weight="700" letter-spacing="8">JUSTURBANWEARS / IDENTITY 2026.3</text>
   <rect x="80" y="120" width="620" height="920" rx="36" fill="#FFFFFF"/>
   <text x="120" y="178" fill="#9A4F39" font-family="Arial, sans-serif" font-size="17" font-weight="700" letter-spacing="5">PUBLIC LOGO</text>
   <image x="160" y="230" width="460" height="720" preserveAspectRatio="xMidYMid meet" href="${dataUri(logoSource, "image/png")}"/>
@@ -329,7 +336,7 @@ const previewSvg = svgDocument({
   <image x="820" y="255" width="820" height="185" preserveAspectRatio="xMidYMid meet" href="${dataUri(wordmark, "image/svg+xml")}"/>
   <rect x="740" y="580" width="470" height="460" rx="36" fill="#FFFFFF"/>
   <text x="780" y="638" fill="#9A4F39" font-family="Arial, sans-serif" font-size="17" font-weight="700" letter-spacing="5">ICON</text>
-  <image x="895" y="680" width="160" height="290" preserveAspectRatio="xMidYMid meet" href="${dataUri(iconSource, "image/png")}"/>
+  <image x="845" y="680" width="260" height="260" preserveAspectRatio="xMidYMid meet" href="${dataUri(iconSource, "image/png")}"/>
   <rect x="1250" y="580" width="470" height="460" rx="36" fill="#3A2E25"/>
   <text x="1290" y="638" fill="#F4EEE6" font-family="Arial, sans-serif" font-size="17" font-weight="700" letter-spacing="5">APP / FAVICON</text>
   <image x="1355" y="700" width="260" height="260" href="${dataUri(app512, "image/png")}"/>

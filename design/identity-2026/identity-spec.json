@@ -1,6 +1,6 @@
 {
   "name": "JustUrbanWears identity",
-  "version": "2026.2",
+  "version": "2026.3",
   "status": "approved-production-owner-supplied",
   "concept": {
     "name": "Wardrobe / curvy silhouette / Double-L",
@@ -10,7 +10,7 @@
   "roles": {
     "logo": "Exact owner-supplied four-row centered logo for social identity, formal brand display, signage, packaging fronts, hang tags, and name-bearing square or vertical placements.",
     "wordmark": "Unchanged exact lowercase justurban wears outlined wordmark for Shop and Studio navigation, editorial signatures, and horizontal spaces.",
-    "icon": "Exact owner-supplied wardrobe, curvy silhouette, and mirrored-L reduction for favicon, installed app, device tiles, compact Studio, hardware, embossing, seals, and patterns.",
+    "icon": "Owner-selected cocoa circular seal with copper curvy silhouette and mirrored-L forms for favicon, installed app, device tiles, and compact Studio.",
     "socialProfile": "logo",
     "desktopCombination": "wordmark-only",
     "defaultNameBearingDisplay": "logo"
@@ -27,18 +27,23 @@
       "policy": "Preserve the corrected four-row lettering, spelling, spacing, colour, and transparency exactly."
     },
     "icon": {
+      "file": "justurban-seal-icon-source.png",
+      "dimensionsPx": [1254, 1254],
+      "sha256": "76afbcd3f2a3c4c6c69696c4feb5e6e91aa5eb7546b3d9fb7b9c57b8770059a1",
+      "policy": "Preserve every opaque source RGB pixel inside the cocoa seal. The exterior is transparent and its antialiased edge is decontaminated from the former white background."
+    },
+    "flatProductionIcon": {
       "file": "justurban-icon-source.png",
       "dimensionsPx": [1024, 1536],
-      "visibleBoundsPxAlpha16": [75, 157, 947, 1372],
       "sha256": "b518af74bcfa3040434b3e73ff8d67a118e20c674388f1207d410ae81360d917",
-      "policy": "Preserve the approved wardrobe, curvy silhouette, and mirrored-L geometry until an owner-approved vector master replaces it."
+      "policy": "Retained only for existing one-colour production-method exports. It is not the web icon or favicon."
     }
   },
   "canonical": {
     "logo": "justurban-logo.svg",
     "logoSource": "justurban-logo-source.png",
     "wordmark": "justurban-wordmark.svg",
-    "iconSource": "justurban-icon-source.png",
+    "iconSource": "justurban-seal-icon-source.png",
     "markStandard": "justurban-mark.svg",
     "markMicro": "justurban-micro.svg",
     "favicon": "justurban-favicon.svg",
@@ -82,12 +87,12 @@
   },
   "geometry": {
     "logoViewBox": [0, 0, 1313, 1392],
-    "iconSourceViewBox": [0, 0, 1024, 1536],
-    "iconVisibleBoundsPxAlpha16": [75, 157, 947, 1372],
-    "iconEmbeddedViewBox": [75, 157, 873, 1216],
-    "standardAppArtworkHeightRatio": 0.82,
+    "iconSourceViewBox": [0, 0, 1254, 1254],
+    "iconVisibleBoundsPxAlpha16": [0, 0, 1253, 1253],
+    "iconEmbeddedViewBox": [0, 0, 1254, 1254],
+    "standardAppArtworkHeightRatio": 1,
     "adaptiveArtworkHeightRatio": 0.7,
-    "faviconArtworkHeightRatio": 0.92,
+    "faviconArtworkHeightRatio": 0.94,
     "wordmarkClearSpaceUnits": 6
   },
   "minimumSize": {
@@ -126,7 +131,8 @@
     "appIconSizesPx": [192, 512, 1024],
     "maskableIconPx": 512,
     "doNotBakePlatformMasks": true,
-    "tileBackground": "#F4EEE6"
+    "tileBackground": "transparent",
+    "adaptiveBackground": "#F4EEE6"
   },
   "social": {
     "profile": {
