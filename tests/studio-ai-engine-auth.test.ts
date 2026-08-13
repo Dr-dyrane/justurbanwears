@@ -19,6 +19,7 @@ test("model policy stays server-owned, cost-capped and bounded", () => {
   assert.match(engineSource, /bfl\/flux-2-klein-4b/);
   assert.match(engineSource, /STUDIO_AI_IMAGE_COST_CAP_USD/);
   assert.match(engineSource, /APPROVED_IMAGE_MODEL_CEILINGS_USD/);
+  assert.match(engineSource, /DEFAULT_IMAGE_COST_CAP_USD = 0\.025/);
   assert.match(engineSource, /maxRetries: 0/);
   assert.match(engineSource, /Output\.object\(\{ schema: intakeFactsSchema/);
   assert.match(engineSource, /caching: "auto"/);

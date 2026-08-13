@@ -14,14 +14,20 @@ import { StudioEngineError } from "../studio/engine/errors";
 const DEFAULT_TEXT_MODEL = "google/gemini-2.5-flash-lite";
 const DEFAULT_TEXT_FALLBACK = "google/gemini-2.5-flash";
 const DEFAULT_IMAGE_MODEL = "bfl/flux-2-klein-4b";
+const DEFAULT_IMAGE_COST_CAP_USD = 0.025;
 const APPROVED_IMAGE_MODEL_CEILINGS_USD: Readonly<Record<string, number>> = Object.freeze({
-  "bfl/flux-2-klein-4b": 0.02,
+  // AI Gateway currently reports about $0.021 for the 4:5 edit used by
+  // Studio. Keep a narrow allowance above that observed price while still
+  // failing closed if provider pricing moves materially.
+  "bfl/flux-2-klein-4b": DEFAULT_IMAGE_COST_CAP_USD,
 });
 
 export const studioGatewayPolicy = {
   textModel: process.env.STUDIO_AI_TEXT_MODEL || DEFAULT_TEXT_MODEL,
   imageModel: process.env.STUDIO_AI_IMAGE_MODEL || DEFAULT_IMAGE_MODEL,
-  imageCostCapUsd: Number(process.env.STUDIO_AI_IMAGE_COST_CAP_USD || "0.02"),
+  imageCostCapUsd: Number(
+    process.env.STUDIO_AI_IMAGE_COST_CAP_USD || String(DEFAULT_IMAGE_COST_CAP_USD),
+  ),
   promptVersion: "garment-front-v1",
 } as const;
 
