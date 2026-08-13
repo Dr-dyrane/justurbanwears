@@ -164,7 +164,7 @@ function GarmentCard({ garment, onOpenListing, onOpenWear }: { garment: Garment;
       ? "Add back · fabric detail"
       : ready ? "Ready for wardrobe" : gates.find((gate) => !gate.ready)?.label ?? "Review garment";
   return (
-    <article className="studio-garment-card">
+    <article className="studio-garment-card" id={`studio-garment-${garment.id}`} tabIndex={-1}>
       <div className={`studio-garment-visual${cover ? " is-photo" : ""}`} data-variant={garment.visual}>
         {cover ? <img alt={cover.alt} height={cover.height} loading="lazy" src={cover.src} width={cover.width} /> : null}
         <span>{garment.category}</span>
@@ -289,6 +289,7 @@ export function WardrobeWorkbench() {
   const studio = useStudio();
   const searchParams = useSearchParams();
   const intakeOriginRef = useRef<"query" | "trigger" | null>(null);
+  const garmentQueryHandledRef = useRef<string | null>(null);
   const [intakeReturnFocus, setIntakeReturnFocus] = useState<HTMLElement | null>(null);
   const [intakeOpen, setIntakeOpen] = useState(false);
   const [filter, setFilter] = useState<(typeof filters)[number]>("ALL");
@@ -305,6 +306,25 @@ export function WardrobeWorkbench() {
     { key: "publishing", label: "Publishing", count: studio.listings.length },
   ], [studio.garments.length, studio.listings.length]);
   const { active: activeView, isPending: viewPending, select: selectView } = useStudioSegment(segments, "garments");
+
+  useEffect(() => {
+    const garmentId = searchParams.get("garment");
+    if (!garmentId) {
+      garmentQueryHandledRef.current = null;
+      return;
+    }
+    if (garmentQueryHandledRef.current === garmentId || studio.hydration === "idle" || studio.hydration === "restoring") return;
+    const garmentIndex = studio.garments.findIndex((garment) => garment.id === garmentId);
+    if (garmentIndex < 0) return;
+    garmentQueryHandledRef.current = garmentId;
+    const listing = studio.listings.find((candidate) => candidate.garmentId === garmentId);
+    window.requestAnimationFrame(() => {
+      setFilter("ALL");
+      setGarmentPage(Math.floor(garmentIndex / garmentPageSize));
+      if (listing) setOpenListingId(listing.id);
+      else window.requestAnimationFrame(() => document.getElementById(`studio-garment-${garmentId}`)?.focus({ preventScroll: false }));
+    });
+  }, [searchParams, studio.garments, studio.hydration, studio.listings]);
 
   useEffect(() => {
     const queryWantsIntake = searchParams.get("intake") === "1";
@@ -368,7 +388,7 @@ export function WardrobeWorkbench() {
   return (
     <div className="studio-ops-page">
       <header className="studio-ops-heading" id="garments">
-        <div><p className="eyebrow">Garment pipeline</p><h1>The wardrobe, ready to sell.</h1><p>Capture the piece once, clear its truth gates, then publish only the approved catalogue projection.</p></div>
+        <div><p className="eyebrow">Wardrobe</p><h1>Every piece, ready when it is true.</h1><p>Add the piece, review each view, and publish only what Lulu approves.</p></div>
         <div className="studio-ops-heading-actions">
           <button className="button button-secondary" onClick={(event) => { setGuideReturnFocus(event.currentTarget); setGuideOpen(true); }} type="button"><BookOpen aria-hidden="true" size={17} />Guide</button>
           <button className="button button-primary" onClick={(event) => openIntake(event.currentTarget)} type="button"><Plus aria-hidden="true" size={17} />Intake garment</button>
@@ -390,7 +410,7 @@ export function WardrobeWorkbench() {
         </section>
       ) : (
         <section className="studio-publishing-section studio-stack-panel" id="studio-view-publishing" aria-labelledby="studio-tab-publishing" role="tabpanel">
-          <div className="studio-section-title"><div><p className="eyebrow">Publishing</p><h2 id="publishing-title">Catalogue gates</h2></div><span>{studio.listings.length} listing{studio.listings.length === 1 ? "" : "s"}</span></div>
+          <div className="studio-section-title"><div><p className="eyebrow">Publishing</p><h2 id="publishing-title">Listing review</h2></div><span>{studio.listings.length} listing{studio.listings.length === 1 ? "" : "s"}</span></div>
           {studio.listings.length ? <><div className="studio-publishing-queue">{pagedListings.map((listing) => {
             const garment = studio.garments.find((candidate) => candidate.id === listing.garmentId);
             return <button className="studio-publishing-row" key={listing.id} onClick={(event) => { setListingReturnFocus(event.currentTarget); setOpenListingId(listing.id); }} type="button"><span><small>{garment?.sku}</small><strong>{listing.title}</strong></span><LifecycleBadge state={listing.state} /><ArrowRight aria-hidden="true" size={17} /></button>;

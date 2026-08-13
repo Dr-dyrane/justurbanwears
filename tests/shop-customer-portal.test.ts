@@ -32,3 +32,7 @@ test("scrolled mobile action stays between equal safe edge controls", () => {
   assert.match(mobileChrome, /@media \(max-width: 379px\)/);
   assert.match(shopShell, /shop-mobile-fab/);
 });
+
+test("product chrome keeps the current buying task ahead of bag review", () => {
+  assert.match(shopShell, /pathname\.startsWith\("\/shop\/products\/"\)[\s\S]*?Choose size and buy[\s\S]*?#shop-purchase[\s\S]*?: bag\.length/);
+});

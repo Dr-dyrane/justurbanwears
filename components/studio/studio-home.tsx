@@ -97,8 +97,8 @@ export function StudioHome() {
 
       <div className={`studio-save-state ${persistence === "available" ? "is-saved" : "is-memory"}`} role="status">
         {persistence === "available"
-          ? <><CheckCircle2 aria-hidden="true" size={16} />Saved on this device</>
-          : <><RotateCcw aria-hidden="true" size={16} />Memory only for this session</>}
+          ? <><CheckCircle2 aria-hidden="true" size={16} />Workspace saved</>
+          : <><RotateCcw aria-hidden="true" size={16} />Temporary session</>}
       </div>
 
       <StudioSegmentedView active={activeView} label="Business home workspace" onSelect={selectView} pending={viewPending} segments={segments} />
@@ -157,7 +157,7 @@ export function StudioHome() {
               const stock = inventory.find((candidate) => candidate.garmentId === garment.id);
               const cover = studioGarmentCover(garment, listing);
               return (
-                <Link className="studio-record-row" href="/studio/wardrobe" key={garment.id}>
+                <Link className="studio-record-row" href={`/studio/wardrobe?garment=${encodeURIComponent(garment.id)}`} key={garment.id}>
                   <span className="studio-record-copy"><small>{garment.sku}</small><strong>{garment.title}</strong><em>{stock ? `${Math.max(0, stock.onHand - stock.reserved)} available` : "No stock record"}</em></span>
                   <span className="studio-record-action"><LifecycleBadge state={listing?.state ?? garment.state} /><ArrowRight aria-hidden="true" size={17} /></span>
                   <span className={`studio-record-media${cover ? " is-photo" : ""}`} data-variant={garment.visual} aria-hidden="true">

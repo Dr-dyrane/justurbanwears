@@ -4334,6 +4334,7 @@ html[data-theme="dark"] .shop-shell .shop-dock-lens::before {
   .shop-values > div { grid-template-columns: 1fr; }
   .shop-product-page,
   .shop-list-page { padding-bottom: 80px; padding-top: 20px; }
+  .shop-product-choice-row { scroll-margin-top: 112px; }
   .shop-product-topline > span { display: none; }
   .shop-detail-hero { gap: 32px; min-height: 0; padding-bottom: 64px; }
   .shop-detail-stage { margin-left: -16px; margin-right: -16px; max-width: none; width: calc(100% + 32px); }
@@ -6632,6 +6633,9 @@ html[data-theme="dark"] .studio-intake-sheet { background: rgba(28, 24, 22, 0.6)
 
 .studio-task-receipt { align-items: center; display: grid; flex: 1 1 auto; gap: clamp(24px, 5vw, 48px); grid-template-columns: minmax(240px, 0.92fr) minmax(260px, 1.08fr); margin: auto 0; position: relative; width: 100%; }
 .studio-task-receipt .studio-lifecycle { margin-top: 24px; }
+.studio-model-receipt-visual { align-items: center; aspect-ratio: 4 / 3; background: linear-gradient(145deg, color-mix(in srgb, var(--studio-accent) 24%, var(--studio-panel)), var(--studio-panel-muted)); border-radius: 26px; color: var(--studio-accent); display: flex; flex-direction: column; justify-content: center; overflow: hidden; position: relative; }
+.studio-model-receipt-visual > span { align-items: center; background: color-mix(in srgb, var(--studio-panel-strong) 78%, transparent); border-radius: 50%; display: flex; height: 96px; justify-content: center; width: 96px; }
+.studio-model-receipt-visual > small { bottom: 18px; font-size: 8px; font-weight: 760; letter-spacing: 0.12em; position: absolute; text-transform: uppercase; }
 .studio-task-error { color: var(--studio-critical); font-size: 9px; margin: auto 0 0; min-height: 18px; padding-top: 18px; }
 
 .studio-intake-sheet .studio-task-sheet-footer { background: color-mix(in srgb, var(--studio-panel-strong) 92%, transparent); border-top: 1px solid var(--studio-line); flex: 0 0 auto; margin: 0; padding: 16px 26px calc(16px + env(safe-area-inset-bottom)); }
@@ -6896,7 +6900,12 @@ html[data-theme="dark"] .studio-intake-sheet { background: rgba(28, 24, 22, 0.6)
 .studio-inventory-confirmation .button-secondary { background: color-mix(in srgb, white 8%, transparent); color: var(--studio-canvas); }
 
 .studio-operation-cards { display: grid; gap: 14px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
-.studio-operation-card { background: var(--studio-panel); border-radius: 23px; box-shadow: 0 12px 32px rgba(46, 36, 30, 0.045); padding: 22px; }
+.studio-operation-card { background: var(--studio-panel); border-radius: 23px; box-shadow: 0 12px 32px rgba(46, 36, 30, 0.045); overflow: hidden; }
+.studio-operation-card-trigger { background: transparent; border: 0; color: inherit; cursor: pointer; display: block; padding: 22px; text-align: left; width: 100%; }
+.studio-operation-card-trigger:focus-visible { outline: 3px solid var(--focus); outline-offset: -3px; }
+.studio-operation-card-trigger:active { transform: scale(0.992); }
+.studio-operation-card-trigger:disabled { cursor: default; opacity: 0.62; }
+.studio-operation-card-open { align-items: center; color: var(--studio-accent); display: flex; font-size: 9px; font-weight: 760; gap: 5px; justify-content: flex-end; margin-top: 18px; }
 .studio-operation-card dl { display: grid; gap: 9px; margin: 22px 0 0; }
 .studio-operation-card dl > div { align-items: start; border-top: 1px solid var(--studio-line); display: grid; gap: 10px; grid-template-columns: 70px 1fr; padding-top: 9px; }
 .studio-operation-card dt { color: var(--studio-faint); font-size: 8px; }
@@ -6979,7 +6988,7 @@ html[data-theme="dark"] .studio-shell .studio-listing-preview { color: #1d1512; 
   .studio-publishing-row { gap: 10px; grid-template-columns: minmax(0, 1fr) auto; }
   .studio-publishing-row > svg { display: none; }
   .studio-view-nav-wrap { padding-left: 12px; padding-right: 12px; }
-  .studio-shell .page-canvas { padding: 30px 16px 92px; }
+  .studio-shell .page-canvas { padding: 30px 16px calc(156px + env(safe-area-inset-bottom, 0px)); }
   .studio-ops-hero h1,
   .studio-ops-heading h1 { font-size: clamp(42px, 12vw, 58px); }
   .studio-hero-actions { display: grid; grid-template-columns: 1fr 1fr; width: 100%; }
@@ -7096,7 +7105,7 @@ html[data-theme="dark"] .studio-shell .studio-listing-preview { color: #1d1512; 
   .studio-notification-list > a { grid-template-columns: 42px minmax(0, 1fr); }
   .studio-notification-action { grid-column: 2; }
   .studio-shell .workspace { padding-top: 78px; }
-  .studio-shell .page-canvas { padding-bottom: calc(136px + env(safe-area-inset-bottom, 0px)); }
+  .studio-shell .page-canvas { padding-bottom: calc(156px + env(safe-area-inset-bottom, 0px)); }
   .studio-floating-nav { grid-template-columns: minmax(0, 1fr) auto; max-width: 100%; }
   .studio-view-nav-wrap { padding-top: 6px; top: 76px; }
   .studio-view-navigation { border-radius: 17px; grid-template-columns: minmax(0, 1fr); min-height: 54px; padding: 4px; }

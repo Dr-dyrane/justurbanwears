@@ -44,6 +44,22 @@ test("model segmented content can render without the portrait obstruction", () =
   assert.match(models, /activeView === "profile" \? <div className=/);
   assert.match(models, /is-panel-only/);
   assert.match(models, /pending=\{viewPending\}/);
+  assert.match(models, /studio-model-receipt-visual/);
+  assert.match(models, /studio-receipt-copy/);
+});
+
+test("operator copy and recovery stay action-led", () => {
+  assert.match(home, /Workspace saved/);
+  assert.match(home, /wardrobe\?garment=/);
+  assert.match(wardrobe, /publish only what Lulu approves/);
+  assert.doesNotMatch(wardrobe, /truth gates|catalogue projection/i);
+  assert.match(operations, /One piece\. One clear status\./);
+  assert.match(operations, /Open inventory/);
+  assert.match(operations, /studio-operation-card-trigger/);
+  assert.match(operations, /setPendingInventoryDecision\("WRITE_OFF"\)/);
+  assert.doesNotMatch(operations, /onClick=\{\(\) => studio\.disposeReturn/);
+  assert.doesNotMatch(operations, /Listing-linked stock|named stock disposition/i);
+  assert.match(css, /padding: 30px 16px calc\(156px \+ env\(safe-area-inset-bottom, 0px\)\)/);
 });
 
 test("documented browser evidence is complete", () => {

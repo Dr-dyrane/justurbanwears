@@ -338,11 +338,17 @@ function ModelTaskSheet({
 
           {step === "receipt" ? (
             <section className="studio-task-receipt" aria-live="polite" role="status">
-              <span><CheckCircle2 aria-hidden="true" size={30} /></span>
-              <p className="eyebrow">Saved</p>
-              <h3 ref={questionRef} tabIndex={-1}>{draft.name} is in Studio.</h3>
-              <p>{receiptState === "READY" ? "The model is ready to support a listing." : "The model is saved as a draft. Open it when you are ready to finish approval."}</p>
-              <LifecycleBadge state={receiptState} />
+              <div className="studio-model-receipt-visual" aria-hidden="true">
+                <span><UserRound size={52} strokeWidth={1.2} /></span>
+                <small>{receiptState === "READY" ? "Ready" : "Draft"}</small>
+              </div>
+              <div className="studio-receipt-copy">
+                <span><CheckCircle2 aria-hidden="true" size={24} /></span>
+                <p className="eyebrow">Saved</p>
+                <h3 ref={questionRef} tabIndex={-1}>{draft.name} is in Studio.</h3>
+                <p>{receiptState === "READY" ? "Ready for approved try-ons." : "Saved privately. Finish approval when ready."}</p>
+                <div className="studio-receipt-state"><LifecycleBadge state={receiptState} /><small>Private Studio profile</small></div>
+              </div>
             </section>
           ) : null}
 
@@ -381,7 +387,7 @@ function ModelProfile({ model, onEdit, view }: { model: StudioModel; onEdit(even
       {view === "profile" && model.isDefault ? (
         <div className="studio-approved-prefill" role="note">
           <ShieldCheck aria-hidden="true" size={18} strokeWidth={1.8} />
-          <span><strong>Lulu neutral master V2</strong><small>Approved portrait and product-first direction</small></span>
+          <span><strong>Lulu approved profile</strong><small>Approved portrait and product-first direction</small></span>
         </div>
       ) : null}
 
@@ -497,7 +503,7 @@ export function ModelAtelier() {
                 {/* Approved public projection only; no private source image enters this bundle. */}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  alt={`${selected.name}, approved neutral identity master V2`}
+                  alt={`${selected.name}, approved Studio identity profile`}
                   className="studio-model-approved-image"
                   height={1619}
                   src={APPROVED_PUBLIC_MODEL_ANCHOR.src}
@@ -505,12 +511,12 @@ export function ModelAtelier() {
                 />
                 <span className="studio-model-anchor-badge">
                   <ShieldCheck aria-hidden="true" size={17} strokeWidth={1.8} />
-                  <span><small>Approved anchor</small><strong>{APPROVED_PUBLIC_MODEL_ANCHOR.id}</strong></span>
+                  <span><small>Approved profile</small><strong>Lulu</strong></span>
                 </span>
                 <div className="studio-model-master-caption">
-                  <small>Neutral identity master</small>
+                  <small>Studio identity profile</small>
                   <strong>{selected.name}</strong>
-                  <span>{selected.version}</span>
+                  <span>Ready for approved try-ons</span>
                 </div>
               </>
             ) : (

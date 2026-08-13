@@ -234,7 +234,7 @@ export function ProductDetail() {
             </button>
           </div>
 
-          <div className="shop-product-choice-row">
+          <div className="shop-product-choice-row" id="shop-purchase">
             <div
               className="shop-availability-panel"
               data-state={product.availabilityConfirmed ? product.availability.toLowerCase() : "unconfirmed"}

@@ -41,7 +41,7 @@ function destinationState(href: string, pathname: string) {
 
 function ShopChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { bag, isOnline, saved } = useShop();
+  const { bag, getProduct, isOnline, saved } = useShop();
   const {
     chromeHidden,
     closeNavigation,
@@ -58,6 +58,14 @@ function ShopChrome({ children }: { children: React.ReactNode }) {
         ? { label: "Account", icon: CircleUserRound }
         : { label: "Shop", icon: House });
   const MobileDestinationIcon = mobileDestination.icon;
+  const currentProduct = pathname.startsWith("/shop/products/")
+    ? getProduct(pathname.slice("/shop/products/".length))
+    : undefined;
+  const productAction = currentProduct && (!currentProduct.availabilityConfirmed || currentProduct.availability === "AVAILABLE")
+    ? { eyebrow: "This piece", label: "Choose size and buy", href: "#shop-purchase" }
+    : currentProduct
+      ? { eyebrow: currentProduct.availability === "SOLD" ? "Archive" : "Unavailable", label: "See similar pieces", href: "/shop/search" }
+      : undefined;
   const contextAction = !isOnline
     ? { eyebrow: "Offline", label: "Review app connection and local state", href: "/shop/account" }
     : pathname === "/shop/bag"
@@ -70,15 +78,15 @@ function ShopChrome({ children }: { children: React.ReactNode }) {
       ? { eyebrow: "The wardrobe", label: "Find another piece", href: "/shop/search" }
     : pathname.startsWith("/shop/orders/")
       ? { eyebrow: "Saved checkouts", label: "View all checkouts", href: "/shop/orders" }
+    : pathname.startsWith("/shop/products/")
+      ? productAction ?? { eyebrow: "The wardrobe", label: "Find a piece", href: "/shop/search" }
     : bag.length
     ? {
         eyebrow: "Bag ready",
         label: `${bag.length} one-off ${bag.length === 1 ? "piece" : "pieces"} to review`,
         href: "/shop/bag",
       }
-    : pathname.startsWith("/shop/products/")
-      ? { eyebrow: "Keep looking", label: "Search similar shapes", href: "/shop/search" }
-      : pathname === "/shop/search"
+    : pathname === "/shop/search"
         ? { eyebrow: "Drop 01", label: "Browse available pieces", href: "/shop#discover" }
       : { eyebrow: "Drop 01", label: "Search the wardrobe", href: "/shop/search" };
 

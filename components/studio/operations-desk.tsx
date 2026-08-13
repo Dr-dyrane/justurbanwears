@@ -37,13 +37,15 @@ const currency = new Intl.NumberFormat("en-NG", {
   style: "currency",
 });
 
-type InventoryDecision = "RESERVE" | "FULFILL" | "RELEASE" | "RETURN";
+type InventoryDecision = "RESERVE" | "FULFILL" | "RELEASE" | "RETURN" | "RESTOCK" | "WRITE_OFF";
 
 const inventoryDecisionCopy: Record<InventoryDecision, { confirm: string; description: string; title: string }> = {
   RESERVE: { confirm: "Reserve unit", description: "This creates an order and removes one unit from available stock.", title: "Reserve this piece?" },
   FULFILL: { confirm: "Mark sold", description: "This fulfils the linked order and records the reserved unit as sold.", title: "Complete this sale?" },
   RELEASE: { confirm: "Release", description: "This cancels the linked order hold and restores the unit to published availability.", title: "Release this reservation?" },
   RETURN: { confirm: "Open return", description: "This creates a return record. Restock or write-off remains a separate decision.", title: "Open a return?" },
+  RESTOCK: { confirm: "Restock", description: "This returns the piece to wardrobe review before it can be published again.", title: "Restock this piece?" },
+  WRITE_OFF: { confirm: "Write off", description: "This removes the returned piece from sellable stock.", title: "Write off this piece?" },
 };
 
 export function OperationsDesk() {
@@ -130,11 +132,20 @@ export function OperationsDesk() {
     setPendingInventoryDecision(null);
   }
 
+  function disposeSelectedReturn(disposition: "RESTOCK" | "WRITE_OFF") {
+    if (!selectedReturn) return;
+    studio.disposeReturn(selectedReturn.id, disposition);
+    setInventoryNotice(disposition === "RESTOCK" ? "Returned to wardrobe review." : "Removed from sellable stock.");
+    setPendingInventoryDecision(null);
+  }
+
   function confirmInventoryDecision() {
     if (pendingInventoryDecision === "RESERVE") reserveSelectedListing();
     if (pendingInventoryDecision === "FULFILL") fulfillSelectedOrder();
     if (pendingInventoryDecision === "RELEASE") releaseSelectedReservation();
     if (pendingInventoryDecision === "RETURN") openSelectedReturn();
+    if (pendingInventoryDecision === "RESTOCK") disposeSelectedReturn("RESTOCK");
+    if (pendingInventoryDecision === "WRITE_OFF") disposeSelectedReturn("WRITE_OFF");
   }
 
   function showSelectedOrder() {
@@ -160,7 +171,7 @@ export function OperationsDesk() {
   return (
     <div className="studio-ops-page">
       <header className="studio-ops-heading">
-        <div><p className="eyebrow">Operations</p><h1>Stock follows every decision.</h1><p>Reservations link listings to orders. Returns link the sold order back to a named stock disposition.</p></div>
+        <div><p className="eyebrow">Operations</p><h1>One piece. One clear status.</h1><p>Reserve it, mark it sold, or return it to the wardrobe.</p></div>
         <Link className="button button-secondary" href="/studio/wardrobe">Open wardrobe <ArrowRight aria-hidden="true" size={15} /></Link>
       </header>
 
@@ -174,7 +185,7 @@ export function OperationsDesk() {
       <StudioSegmentedView active={activeView} label="Operations workspace" onSelect={selectView} pending={viewPending} segments={segments} />
 
       {activeView === "inventory" ? <section className="studio-operation-section studio-stack-panel" id="studio-view-inventory" aria-labelledby="studio-tab-inventory" role="tabpanel">
-        <div className="studio-section-title"><div><p className="eyebrow">Inventory</p><h2 id="inventory-title">Listing-linked stock</h2></div><span>{studio.inventory.length} records</span></div>
+        <div className="studio-section-title"><div><p className="eyebrow">Inventory</p><h2 id="inventory-title">Pieces and availability</h2></div><span>{studio.inventory.length} records</span></div>
         {studio.inventory.length ? (
           <div className="studio-table studio-inventory-list" role="list" aria-label="Inventory records">
             {studio.inventory.slice(safeInventoryPage * pageSize, (safeInventoryPage + 1) * pageSize).map((record) => {
@@ -204,32 +215,29 @@ export function OperationsDesk() {
       </section> : null}
 
       {activeView === "orders" ? <section className="studio-operation-section studio-stack-panel" id="studio-view-orders" aria-labelledby="studio-tab-orders" role="tabpanel">
-        <div className="studio-section-title"><div><p className="eyebrow">Orders</p><h2 id="orders-title">Reservations to sold</h2></div><span>{studio.orders.length} orders</span></div>
+        <div className="studio-section-title"><div><p className="eyebrow">Orders</p><h2 id="orders-title">Reserved and sold</h2></div><span>{studio.orders.length} orders</span></div>
         {studio.orders.length ? (
           <div className="studio-operation-cards">
             {studio.orders.slice(safeOrdersPage * pageSize, (safeOrdersPage + 1) * pageSize).map((order) => {
               const listing = studio.listings.find((candidate) => candidate.id === order.listingId);
               const garment = listing ? studio.garments.find((candidate) => candidate.id === listing.garmentId) : undefined;
-              const returnCase = studio.returns.find((candidate) => candidate.orderId === order.id);
               return (
                 <article className="studio-operation-card" key={order.id}>
-                  <div className="studio-card-heading"><div><small>{order.id}</small><h3>{garment?.title ?? "Listing record"}</h3></div><LifecycleBadge state={order.state} /></div>
-                  <dl><div><dt>Listing</dt><dd>{listing?.slug ?? "Unavailable"}</dd></div><div><dt>Quantity</dt><dd>{order.quantity}</dd></div><div><dt>Reserved</dt><dd>{shortDate(order.createdAt)}</dd></div></dl>
-                  <div className="studio-card-actions">
-                    {order.state === "RESERVED" ? <button className="button button-primary" onClick={() => studio.fulfillOrder(order.id)} type="button"><Check aria-hidden="true" size={15} />Mark sold</button> : null}
-                    {order.state === "SOLD" && !returnCase ? <button className="button button-secondary" onClick={() => studio.openReturn(order.id)} type="button"><RotateCcw aria-hidden="true" size={15} />Open return</button> : null}
-                    {returnCase ? <button className="button button-secondary" onClick={() => { setReturnsPage(Math.floor(studio.returns.findIndex((candidate) => candidate.id === returnCase.id) / pageSize)); selectView("returns"); }} type="button">View return</button> : null}
-                  </div>
+                  <button aria-label={`Open order for ${garment?.title ?? "listing record"}`} className="studio-operation-card-trigger" disabled={!order.inventoryId} onClick={(event) => order.inventoryId && openInventoryDetail(order.inventoryId, event.currentTarget)} type="button">
+                    <div className="studio-card-heading"><div><small>{order.id}</small><h3>{garment?.title ?? "Listing record"}</h3></div><LifecycleBadge state={order.state} /></div>
+                    <dl><div><dt>Listing</dt><dd>{listing?.slug ?? "Unavailable"}</dd></div><div><dt>Quantity</dt><dd>{order.quantity}</dd></div><div><dt>Reserved</dt><dd>{shortDate(order.createdAt)}</dd></div></dl>
+                    <span className="studio-operation-card-open">Review <ChevronRight aria-hidden="true" size={17} /></span>
+                  </button>
                 </article>
               );
             })}
           </div>
-        ) : <div className="studio-quiet-empty"><ClipboardCheck aria-hidden="true" size={24} /><div><strong>No orders</strong><p>Reserve a published listing from Inventory to create one.</p></div></div>}
+        ) : <div className="studio-quiet-empty"><ClipboardCheck aria-hidden="true" size={24} /><div><strong>No orders</strong><p>Reserve an available piece to begin.</p></div><button className="button button-primary" onClick={() => selectView("inventory")} type="button">Open inventory</button></div>}
         <StudioPager label="Order pages" onPageChange={setOrdersPage} page={safeOrdersPage} pageSize={pageSize} total={studio.orders.length} />
       </section> : null}
 
       {activeView === "returns" ? <section className="studio-operation-section studio-stack-panel" id="studio-view-returns" aria-labelledby="studio-tab-returns" role="tabpanel">
-        <div className="studio-section-title"><div><p className="eyebrow">Returns</p><h2 id="returns-title">Receive and dispose</h2></div><span>{openReturns} open</span></div>
+        <div className="studio-section-title"><div><p className="eyebrow">Returns</p><h2 id="returns-title">Inspect and decide</h2></div><span>{openReturns} open</span></div>
         {studio.returns.length ? (
           <div className="studio-operation-cards">
             {studio.returns.slice(safeReturnsPage * pageSize, (safeReturnsPage + 1) * pageSize).map((returnCase) => {
@@ -238,9 +246,11 @@ export function OperationsDesk() {
               const garment = listing ? studio.garments.find((candidate) => candidate.id === listing.garmentId) : undefined;
               return (
                 <article className="studio-operation-card" id={returnCase.id} key={returnCase.id}>
-                  <div className="studio-card-heading"><div><small>{returnCase.id}</small><h3>{garment?.title ?? "Returned piece"}</h3></div><LifecycleBadge state={returnCase.state} /></div>
-                  <dl><div><dt>Order</dt><dd>{returnCase.orderId}</dd></div><div><dt>Quantity</dt><dd>{returnCase.quantity}</dd></div><div><dt>Disposition</dt><dd>{returnCase.disposition.toLowerCase().replace("_", " ")}</dd></div></dl>
-                  {returnCase.state === "DRAFT" ? <div className="studio-disposition-actions"><button className="button button-primary" onClick={() => studio.disposeReturn(returnCase.id, "RESTOCK")} type="button"><RotateCcw aria-hidden="true" size={15} />Restock to review</button><button className="button button-secondary" onClick={() => studio.disposeReturn(returnCase.id, "WRITE_OFF")} type="button"><ShieldAlert aria-hidden="true" size={15} />Write off</button></div> : <p className="studio-resolution-note">{returnCase.disposition === "RESTOCK" ? "Back in wardrobe readiness; republish when checked." : "Removed from sellable stock."}</p>}
+                  <button aria-label={`Open return for ${garment?.title ?? "returned piece"}`} className="studio-operation-card-trigger" disabled={!order?.inventoryId} onClick={(event) => order?.inventoryId && openInventoryDetail(order.inventoryId, event.currentTarget)} type="button">
+                    <div className="studio-card-heading"><div><small>{returnCase.id}</small><h3>{garment?.title ?? "Returned piece"}</h3></div><LifecycleBadge state={returnCase.state} /></div>
+                    <dl><div><dt>Order</dt><dd>{returnCase.orderId}</dd></div><div><dt>Quantity</dt><dd>{returnCase.quantity}</dd></div><div><dt>Disposition</dt><dd>{returnCase.disposition.toLowerCase().replace("_", " ")}</dd></div></dl>
+                    <span className="studio-operation-card-open">Review <ChevronRight aria-hidden="true" size={17} /></span>
+                  </button>
                 </article>
               );
             })}
@@ -290,14 +300,20 @@ export function OperationsDesk() {
                 {selectedOrder?.state === "RESERVED" ? (
                   <button className="studio-inventory-decision" onClick={() => setPendingInventoryDecision("RELEASE")} type="button"><RotateCcw aria-hidden="true" size={20} /><span><strong>Release reservation</strong><small>Cancel this order hold and restore availability.</small></span><ChevronRight aria-hidden="true" size={17} /></button>
                 ) : null}
-                {selectedOrder ? (
+                {selectedOrder && activeView !== "orders" ? (
                   <button className="studio-inventory-decision" onClick={showSelectedOrder} type="button"><PackageOpen aria-hidden="true" size={20} /><span><strong>Open order</strong><small>Review the linked reservation record.</small></span><ChevronRight aria-hidden="true" size={17} /></button>
                 ) : null}
                 {selectedOrder?.state === "SOLD" && !selectedReturn ? (
                   <button className="studio-inventory-decision" onClick={() => setPendingInventoryDecision("RETURN")} type="button"><RotateCcw aria-hidden="true" size={20} /><span><strong>Open return</strong><small>Start a disposition record for this sale.</small></span><ChevronRight aria-hidden="true" size={17} /></button>
                 ) : null}
-                {selectedReturn ? (
+                {selectedReturn && activeView !== "returns" ? (
                   <button className="studio-inventory-decision" onClick={showSelectedReturn} type="button"><RotateCcw aria-hidden="true" size={20} /><span><strong>Review return</strong><small>Choose restock or write-off.</small></span><ChevronRight aria-hidden="true" size={17} /></button>
+                ) : null}
+                {selectedReturn?.state === "DRAFT" ? (
+                  <button className="studio-inventory-decision" onClick={() => setPendingInventoryDecision("RESTOCK")} type="button"><RotateCcw aria-hidden="true" size={20} /><span><strong>Restock to review</strong><small>Return this piece to wardrobe readiness.</small></span><ChevronRight aria-hidden="true" size={17} /></button>
+                ) : null}
+                {selectedReturn?.state === "DRAFT" ? (
+                  <button className="studio-inventory-decision" onClick={() => setPendingInventoryDecision("WRITE_OFF")} type="button"><ShieldAlert aria-hidden="true" size={20} /><span><strong>Write off</strong><small>Remove this piece from sellable stock.</small></span><ChevronRight aria-hidden="true" size={17} /></button>
                 ) : null}
                 {selectedListing ? (
                   <Link className="studio-inventory-decision" href={`/shop/products/${selectedListing.slug}`}><ExternalLink aria-hidden="true" size={20} /><span><strong>View listing</strong><small>Open the customer-facing product page.</small></span><ChevronRight aria-hidden="true" size={17} /></Link>
