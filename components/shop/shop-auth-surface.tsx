@@ -1,16 +1,13 @@
 "use client";
 
-import { createAuthClient } from "@neondatabase/auth/next";
-import { AuthView, NeonAuthUIProvider } from "@neondatabase/auth/react/ui";
 import { ArrowLeft, Check, PackageCheck, Sparkles } from "lucide-react";
 import Image from "next/image";
+import { PasswordlessAuthView } from "../auth/passwordless-auth-view";
 import { BrandWordmark } from "../brand/brand-wordmark";
 import { ShopLink as Link } from "./atoms/shop-link";
 import styles from "./shop-auth.module.css";
 
-const authClient = createAuthClient();
-
-export function ShopAuthSurface({ path, returnTo }: { path: string; returnTo: string }) {
+export function ShopAuthSurface({ returnTo }: { path: string; returnTo: string }) {
   return (
     <main className={styles.shell} id="shop-content">
       <Link className={styles.back} href="/shop">
@@ -42,51 +39,33 @@ export function ShopAuthSurface({ path, returnTo }: { path: string; returnTo: st
 
         <div className={styles.auth}>
           <div className={styles.authHeading}>
-            <p>{path === "sign-up" ? "Create account" : "Welcome back"}</p>
-            <span>{path === "sign-up" ? "Save your details for the next handoff." : "Continue to your account and order history."}</span>
+            <p>Welcome back</p>
+            <span>One email. One code.</span>
           </div>
-          <NeonAuthUIProvider
-            authClient={authClient}
-            basePath="/auth"
-            credentials={{ forgotPassword: true, rememberMe: true }}
-            redirectTo={returnTo}
-            signUp={{ fields: ["name"] }}
-          >
-            <AuthView
-              classNames={{
-                base: styles.authCard,
-                content: styles.authContent,
-                description: styles.authDescription,
-                footer: styles.authFooter,
-                footerLink: styles.authFooterLink,
-                form: {
-                  base: styles.form,
-                  button: styles.button,
-                  checkbox: styles.checkbox,
-                  error: styles.error,
-                  input: styles.input,
-                  label: styles.label,
-                  outlineButton: styles.outlineButton,
-                  primaryButton: styles.primaryButton,
-                  secondaryButton: styles.outlineButton,
-                },
-                header: styles.authHeader,
-                separator: styles.separator,
-                title: styles.authTitle,
-              }}
-              localization={{
-                SIGN_IN: "Welcome back",
-                SIGN_IN_ACTION: "Continue",
-                SIGN_IN_DESCRIPTION: "Open your orders and account.",
-                SIGN_UP: "Join the wardrobe",
-                SIGN_UP_ACTION: "Create account",
-                SIGN_UP_DESCRIPTION: "Keep your orders together.",
-              }}
-              path={path}
-              redirectTo={returnTo}
-              socialLayout="vertical"
-            />
-          </NeonAuthUIProvider>
+          <PasswordlessAuthView
+            classNames={{
+              base: styles.authCard,
+              content: styles.authContent,
+              description: styles.authDescription,
+              footer: styles.authFooter,
+              footerLink: styles.authFooterLink,
+              form: {
+                base: styles.form,
+                button: styles.button,
+                error: styles.error,
+                input: styles.input,
+                label: styles.label,
+                otpInput: styles.otpInput,
+                otpInputContainer: styles.otpInputContainer,
+                primaryButton: styles.primaryButton,
+              },
+              header: styles.authHeader,
+              separator: styles.separator,
+              title: styles.authTitle,
+            }}
+            localization={{ EMAIL_OTP_DESCRIPTION: "Enter your email to open your orders." }}
+            returnTo={returnTo}
+          />
         </div>
       </section>
     </main>

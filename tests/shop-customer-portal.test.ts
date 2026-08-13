@@ -14,8 +14,8 @@ test("guest Shop remains public while account auth is an optional managed Neon b
   assert.doesNotMatch(shopLayout, /requireStudioOperator|getShopCustomerSession|redirect\(/);
   assert.match(authPage, /candidate\?\.startsWith\("\/shop"\)/);
   assert.match(authPage, /ShopAuthSurface/);
-  assert.match(authSurface, /createAuthClient/);
-  assert.match(authSurface, /NeonAuthUIProvider/);
+  assert.match(authSurface, /PasswordlessAuthView/);
+  assert.doesNotMatch(authSurface, /forgotPassword|rememberMe|type="password"/i);
   assert.match(authSurface, /Guest browsing always available/);
   assert.match(accountPage, /getShopCustomerSession/);
   assert.match(account, /Browse first\. Sign in when it helps\./);
