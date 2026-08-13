@@ -33,7 +33,7 @@ export const studioGatewayPolicy = {
   wearPromptVersions: Object.freeze({
     MANNEQUIN_FRONT: "mannequin-front-v1",
     MODEL_TRY_ON: "model-try-on-v1",
-    EDITORIAL_MODEL: "editorial-model-v1",
+    EDITORIAL_MODEL: "editorial-model-v2",
   }),
 } as const;
 
@@ -309,12 +309,19 @@ export function buildWearPrompt(input: {
   modelName?: string;
   correction?: string;
 }): string {
-  const truth = [
-    "Treat the supplied approved garment front as the only garment-construction authority.",
-    "Preserve its exact visible front neckline, shoulders, sleeve cut and volume, waist gathering, silhouette, length, hem treatment, surface and drape.",
-    "Do not infer or show a back, closure, lining, pockets, label, brand, fibre or unseen construction.",
-    "Never add text, logo or watermark.",
-  ];
+  const truth = input.operation === "EDITORIAL_MODEL"
+    ? [
+      "Treat the supplied approved model try-on as the sole person and garment authority.",
+      "Keep the complete subject silhouette, identity, face, body, hair, pose, hands, accessories and every visible garment detail unchanged; edit only pixels outside that silhouette.",
+      "Do not infer or show a back, closure, lining, pockets, label, brand, fibre or unseen construction.",
+      "Never add text, logo or watermark.",
+    ]
+    : [
+      "Treat the supplied approved garment front as the only garment-construction authority.",
+      "Preserve its exact visible front neckline, shoulders, sleeve cut and volume, waist gathering, silhouette, length, hem treatment, surface and drape.",
+      "Do not infer or show a back, closure, lining, pockets, label, brand, fibre or unseen construction.",
+      "Never add text, logo or watermark.",
+    ];
   const operation = input.operation === "MANNEQUIN_FRONT"
     ? [
       "Create one straight-on catalogue front of the exact garment on an anonymous headless neutral mannequin.",
@@ -328,9 +335,9 @@ export function buildWearPrompt(input: {
         "Use a restrained warm neutral studio background and natural editorial light.",
       ]
       : [
-        "Edit only the background of the supplied approved model try-on into a restrained warm-paper editorial studio.",
-        "Preserve every pixel-level person, identity, pose, body, hair, face and garment construction as closely as possible.",
-        "No new props, accessories or pose change.",
+        "Replace the complete existing background of the supplied approved model try-on with a visibly distinct restrained editorial interior.",
+        "The new environment must read clearly: matte warm-plaster wall, one shallow architectural arch, pale terracotta floor and a soft diagonal window-light shadow; keep it quiet, uncluttered and photorealistic.",
+        "Do not retain the original neutral backdrop. Do not add furniture, handheld props, accessories or change the camera, crop or pose.",
       ];
   return [
     ...operation,

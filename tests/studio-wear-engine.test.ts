@@ -12,7 +12,17 @@ test("Wear prompts preserve ordered authority and visible-front truth", () => {
   assert.match(prompt, /Source image 1 is garment-only construction authority/);
   assert.match(prompt, /Source image 2 is adult identity\/body\/pose authority/);
   assert.match(prompt, /Do not infer or show a back, closure, lining, pockets/);
-  assert.equal(studioGatewayPolicy.wearPromptVersions.EDITORIAL_MODEL, "editorial-model-v1");
+  assert.equal(studioGatewayPolicy.wearPromptVersions.EDITORIAL_MODEL, "editorial-model-v2");
+});
+
+test("Editorial prompt replaces the backdrop while freezing the approved subject", () => {
+  const prompt = buildWearPrompt({ operation: "EDITORIAL_MODEL", facts: { title: "Black dress" }, modelName: "Lulu" });
+  assert.match(prompt, /supplied approved model try-on as the sole person and garment authority/);
+  assert.match(prompt, /edit only pixels outside that silhouette/);
+  assert.match(prompt, /visibly distinct restrained editorial interior/);
+  assert.match(prompt, /matte warm-plaster wall, one shallow architectural arch, pale terracotta floor/);
+  assert.match(prompt, /Do not retain the original neutral backdrop/);
+  assert.doesNotMatch(prompt, /supplied approved garment front as the only garment-construction authority/);
 });
 
 test("Wear input requires model, approved parent, and explicit stock authority", () => {
