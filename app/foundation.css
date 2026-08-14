@@ -411,6 +411,8 @@
   --shop-save-ink: #8f321f;
   --shop-badge-surface: #963824;
   --shop-badge-ink: #fffaf7;
+  --shop-browse-edge: rgba(111, 72, 58, 0.08);
+  --shop-browse-surface: #f5ebe3;
   --shop-footer-surface: #f0e3da;
   --shop-editorial-surface:
     radial-gradient(circle at 88% 0, rgba(245, 152, 134, 0.2), transparent 28rem),
@@ -466,6 +468,8 @@ html[data-theme="dark"] .shop-shell {
   --shop-save-ink: #ffd1c5;
   --shop-badge-surface: #f5c4b5;
   --shop-badge-ink: #2b1d18;
+  --shop-browse-edge: rgba(255, 232, 220, 0.08);
+  --shop-browse-surface: #201a17;
   --shop-footer-surface: var(--dyrane-dark-floor);
   --shop-editorial-surface:
     radial-gradient(circle at 86% -4%, rgba(245, 152, 134, 0.32), transparent 27rem),
@@ -5434,7 +5438,17 @@ html[data-theme="dark"] .shop-shell {
 }
 
 .shop-home .shop-discovery {
-  padding-top: clamp(48px, 6vw, 82px);
+  background: var(--shop-browse-surface);
+  border: 1px solid var(--shop-browse-edge);
+  border-radius: clamp(30px, 3vw, 44px);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, white 42%, transparent);
+  margin-bottom: clamp(24px, 4vw, 60px);
+  padding: clamp(48px, 6vw, 82px) clamp(22px, 3vw, 48px) clamp(72px, 8vw, 120px);
+}
+
+.shop-catalogue-notice {
+  line-height: 1.55;
+  max-width: 38ch;
 }
 
 .shop-product-card .shop-product-visual {
@@ -5544,6 +5558,13 @@ html[data-theme="dark"] .shop-shell {
   .shop-home .shop-hero-lede { margin-top: 20px; }
   .shop-home .shop-hero-actions { margin-top: 26px; }
 
+  .shop-home .shop-discovery {
+    border-radius: 28px;
+    margin-left: -8px;
+    margin-right: -8px;
+    padding: 36px 12px 64px;
+  }
+
   .shop-hero-identity .shop-product-visual {
     border-radius: 28px 28px 17px 17px;
     width: min(92%, 360px);
@@ -5583,7 +5604,36 @@ html[data-theme="dark"] .shop-shell {
   }
 
   .shop-discovery > .shop-product-grid {
-    grid-template-columns: 1fr;
+    gap: 32px 10px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .shop-home .shop-discovery .shop-product-card .shop-product-visual {
+    border-radius: 16px 16px 11px 11px;
+  }
+
+  .shop-home .shop-discovery .shop-product-copy {
+    padding-top: 11px;
+  }
+
+  .shop-home .shop-discovery .shop-product-copy h3 {
+    font-size: 18px;
+    line-height: 1.06;
+    margin: 7px 0 5px;
+  }
+
+  .shop-home .shop-discovery .availability-tag {
+    left: 7px;
+    letter-spacing: 0.04em;
+    max-width: calc(100% - 66px);
+    padding: 6px 8px;
+    text-transform: none;
+    top: 7px;
+  }
+
+  .shop-home .shop-discovery .product-save {
+    right: 7px;
+    top: 7px;
   }
 }
 
@@ -9387,9 +9437,169 @@ html[data-theme="dark"] .shop-shell .shop-bag-link > b {
   }
 }
 
-/* Mobile legibility floor for primary Shop and Studio task surfaces. */
+/* Readable Shop microcopy contract. */
+.shop-shell :is(
+    small,
+    dt,
+    dd,
+    .shop-nav-links > a,
+    .nav-count,
+    .shop-bag-link,
+    .shop-bag-link b,
+    .shop-account-link,
+    .shop-offline-banner,
+    .shop-kicker,
+    .shop-text-action,
+    .shop-section-title > p,
+    .shop-search input,
+    .shop-filter-row button,
+    .availability-filter,
+    .shop-results-line,
+    .availability-tag,
+    .shop-product-copy > span,
+    .shop-product-copy > p,
+    .product-card-action strong,
+    .shop-no-results p,
+    .shop-no-results button,
+    .shop-values article > span,
+    .shop-values article p,
+    .shop-product-topline,
+    .shop-availability-panel strong,
+    .shop-size-fieldset legend,
+    .shop-size-fieldset p,
+    .shop-action-note,
+    .shop-delivery-note,
+    .shop-local-disclosure,
+    .shop-detail-disclosures summary,
+    .shop-detail-disclosures dl,
+    .shop-detail-disclosures ul,
+    .shop-detail-disclosures p,
+    .shop-product-facts li,
+    .shop-product-facts p,
+    .shop-route-empty p,
+    .shop-bag-line > div > span,
+    .shop-bag-line p,
+    .shop-bag-line button,
+    .shop-order-summary dl > div,
+    .shop-search-field > span:first-child,
+    .shop-refine-group legend,
+    .shop-price-filter > span,
+    .shop-refine-selects > label > span,
+    .shop-search-input input,
+    .shop-refine-chips button,
+    .shop-refine-selects select,
+    .shop-filter-trigger,
+    .shop-filter-trigger > b,
+    .shop-filter-description,
+    .shop-filter-sheet-actions button,
+    .shop-results-heading > button,
+    .shop-results-heading > span,
+    .shop-form-section-heading > span,
+    .shop-form-grid label > span,
+    .shop-form-disclosure,
+    .shop-delivery-options strong,
+    .shop-delivery-options b,
+    .shop-pickup-card strong,
+    .shop-payment-state > p,
+    .shop-checkout-lines strong,
+    .shop-checkout-lines b,
+    .shop-order-card-copy > span,
+    .shop-order-card-copy p,
+    .shop-order-state strong,
+    .shop-orders-disclosure p,
+    .shop-orders-disclosure a,
+    .shop-status-pill,
+    .shop-timeline li > span,
+    .shop-timeline li p,
+    .shop-status-summary dl > div,
+    .shop-merchant-row p,
+    .shop-merchant-row > button,
+    .shop-account-status > div p,
+    .shop-account-status > p,
+    .shop-account-links strong,
+    .shop-account-toggles strong,
+    .shop-account-disclosure,
+    .pwa-install-control__eyebrow,
+    .pwa-install-control__description,
+    .pwa-install-control__status,
+    .pwa-install-control__action,
+    .theme-settings button,
+    .shop-field-label,
+    .shop-location-caption strong,
+    .shop-footer,
+    .shop-footer > span,
+    .shop-mobile-context small,
+    .shop-mobile-context strong,
+    .shop-mobile-dock a > span,
+    .shop-mobile-fab > span,
+    .shop-connected-order-card-state strong,
+    .shop-connected-state-grid strong,
+    .shop-evidence-upload > p,
+    .shop-evidence-received > p,
+    .shop-payment-receipt > p,
+    .shop-tracking-card > p,
+    .shop-return-card > p,
+    .shop-evidence-upload form > label > span,
+    .shop-selected-file,
+    .shop-evidence-feedback,
+    .shop-payment-receipt dt,
+    .shop-tracking-card dt,
+    .shop-return-card dt,
+    .shop-payment-receipt dd,
+    .shop-tracking-card dd,
+    .shop-return-card dd,
+    .shop-return-sheet form > label > span,
+    .shop-connected-timeline time,
+    .shop-timeline-refresh,
+    .shop-connected-notification-note,
+    .shop-release-count,
+    .shop-release-link > span:first-child,
+    .product-model-link,
+    .shop-model-tryout-entry strong,
+    .shop-model-tryout-header > div > p:last-child,
+    .shop-model-tryout-frame figcaption,
+    .shop-model-tryout-state p,
+    .shop-model-tryout-state button,
+    .shop-model-view-label > span,
+    .shop-model-view-label > strong,
+    .shop-model-tryout-status,
+    .shop-model-tryout-fit-note,
+    .shop-model-tryout-action-note,
+    .shop-wardrobe-preview-header > p,
+    .shop-wardrobe-preview-state,
+    .shop-wardrobe-preview-index,
+    .shop-detail-utility,
+    .shop-product-choice-row .shop-size-fieldset button,
+    .shop-product-choice-row .shop-size-fieldset p,
+    .shop-product-info-actions strong,
+    .shop-product-info-header > div > p:last-child,
+    .shop-product-info-body p,
+    .shop-product-info-body li
+  ) {
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+/* Mobile legibility and dock fit. */
 @media (max-width: 680px) {
-  .shop-kicker,
+  .shop-shell :is(input, select, textarea) {
+    font-size: 16px;
+  }
+
+  .shop-mobile-context strong {
+    font-size: 13px;
+  }
+
+  .availability-tag {
+    line-height: 1.2;
+  }
+
+  .shop-mobile-fab > span {
+    font-size: 12px;
+    height: 20px;
+    width: 20px;
+  }
+
   .studio-shell .eyebrow,
   .studio-record-copy small,
   .studio-inventory-copy small,

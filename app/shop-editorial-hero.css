@@ -105,7 +105,7 @@
   z-index: 3;
   color: rgba(255, 250, 247, 0.58);
   font-family: var(--font-code);
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.2em;
   text-transform: uppercase;
@@ -124,7 +124,7 @@
   margin: 0 0 clamp(18px, 2.5vw, 30px);
   color: var(--editorial-accent);
   font-family: var(--font-code);
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.25em;
   text-transform: uppercase;
@@ -172,7 +172,7 @@
   margin-top: clamp(20px, 2.7vw, 34px);
   color: #fffaf7;
   font-family: var(--font-code);
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.18em;
   text-transform: uppercase;
@@ -220,7 +220,7 @@
 .shop-editorial-cover-caption small {
   color: var(--editorial-accent);
   font-family: var(--font-code);
-  font-size: 9px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.2em;
   text-transform: uppercase;
@@ -237,7 +237,7 @@
 .shop-editorial-cover-caption b {
   color: rgba(255, 250, 247, 0.52);
   font-family: var(--font-code);
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.12em;
 }
@@ -324,7 +324,7 @@
   .shop-editorial-cover-folio {
     top: 22px;
     right: 20px;
-    font-size: 8px;
+    font-size: 12px;
     letter-spacing: 0.18em;
   }
 
@@ -336,7 +336,7 @@
 
   .shop-editorial-cover-kicker {
     margin-bottom: 16px;
-    font-size: 8px;
+    font-size: 12px;
     letter-spacing: 0.21em;
   }
 
@@ -359,7 +359,7 @@
 
   .shop-editorial-cover-action {
     margin-top: 18px;
-    font-size: 8px;
+    font-size: 12px;
     letter-spacing: 0.16em;
   }
 }

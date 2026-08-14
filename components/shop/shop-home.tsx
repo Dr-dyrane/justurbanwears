@@ -48,6 +48,8 @@ export function ShopHome() {
     ?? dropProducts[0]
     ?? products[0];
   const heroModelView = heroProduct ? resolveApprovedModelTryout(heroProduct.modelTryout) : null;
+  const liveAvailabilityConfirmed = products.length > 0
+    && products.every((product) => product.availabilityConfirmed);
   const activeFilterCount = countActiveShopFilters(filters, homeShopFilters);
   const isRefining = query.trim().length > 0 || activeFilterCount > 0;
   const displayedProducts = !isRefining && heroProduct
@@ -135,9 +137,14 @@ export function ShopHome() {
       <section className="shop-discovery" id="discover" aria-labelledby="discover-title">
         <div className="shop-section-title">
           <div>
-            <p className="shop-kicker">Available now</p>
+            <p className="shop-kicker">{liveAvailabilityConfirmed ? "Available now" : "Browse the edit"}</p>
             <h2 id="discover-title">The wardrobe.</h2>
           </div>
+          {!liveAvailabilityConfirmed ? (
+            <p className="shop-catalogue-notice" role="status">
+              Live availability is temporarily unavailable. Browsing remains open; checkout stays paused.
+            </p>
+          ) : null}
         </div>
 
         <div className="shop-discovery-bar glass-surface">
@@ -165,7 +172,9 @@ export function ShopHome() {
           <span>
             {query
               ? `Matching “${query}”`
-              : `${filters.category} · ${filters.availability === "ALL" ? "All statuses" : filters.availability.toLowerCase()}`}
+              : liveAvailabilityConfirmed
+                ? `${filters.category} · ${filters.availability === "ALL" ? "All statuses" : filters.availability.toLowerCase()}`
+                : `${filters.category} · Live availability paused`}
           </span>
         </div>
 

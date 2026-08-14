@@ -12,12 +12,24 @@ import type {
 import {
   createEmptyCommerceSnapshot,
   createInitialCommerceState,
+  isBagCheckoutAvailable,
 } from "../lib/shop/domain/state";
 import { commerceReducer } from "../lib/shop/machines/commerce-machine";
 import { resolveOrderLineMedia } from "../lib/shop/commerce";
 import { createCommerceService } from "../lib/shop/services/commerce-service";
 
 const product = shopProducts[0];
+
+test("checkout availability fails closed until every exact bag line is live-confirmed", () => {
+  const bag = [{ slug: product.slug, size: product.taggedSize }];
+
+  assert.equal(isBagCheckoutAvailable(bag, [product]), true);
+  assert.equal(isBagCheckoutAvailable(bag, [{ ...product, availabilityConfirmed: false }]), false);
+  assert.equal(isBagCheckoutAvailable(bag, [{ ...product, availability: "RESERVED" }]), false);
+  assert.equal(isBagCheckoutAvailable([{ ...bag[0], size: "Wrong size" }], [product]), false);
+  assert.equal(isBagCheckoutAvailable(bag, []), false);
+  assert.equal(isBagCheckoutAvailable([], [product]), false);
+});
 
 function createService(products: ShopProduct[] = [product]) {
   return createCommerceService({

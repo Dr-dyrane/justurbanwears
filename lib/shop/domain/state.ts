@@ -68,6 +68,23 @@ export function createEmptyCommerceSnapshot(): CommerceSnapshot {
   };
 }
 
+export function isBagCheckoutAvailable(
+  bag: readonly BagItem[],
+  products: readonly ShopProduct[],
+): boolean {
+  if (!bag.length) return false;
+  const productsBySlug = new Map(products.map((product) => [product.slug, product]));
+  return bag.every((item) => {
+    const product = productsBySlug.get(item.slug);
+    return Boolean(
+      product
+      && product.taggedSize === item.size
+      && product.availabilityConfirmed
+      && product.availability === "AVAILABLE",
+    );
+  });
+}
+
 export function createInitialCommerceState(catalog: readonly ShopProduct[] = []): CommerceMachineState {
   return {
     ...createEmptyCommerceSnapshot(),

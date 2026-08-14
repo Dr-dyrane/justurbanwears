@@ -15,6 +15,7 @@ import { useMemo } from "react";
 import { useMobileChrome } from "../../hooks/use-mobile-chrome";
 import { createBrowserCommerceService } from "../../lib/shop/services/commerce-service";
 import type { ShopProduct } from "../../lib/shop/domain/entities";
+import { isBagCheckoutAvailable } from "../../lib/shop/domain/state";
 import { BrandWordmark } from "../brand/brand-wordmark";
 import { ThemeToggle } from "../theme/theme-toggle";
 import { ShopLink as Link } from "./atoms/shop-link";
@@ -41,7 +42,7 @@ function destinationState(href: string, pathname: string) {
 
 function ShopChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { bag, getProduct, isOnline, saved } = useShop();
+  const { bag, getProduct, isOnline, products, saved } = useShop();
   const {
     chromeHidden,
     closeNavigation,
@@ -61,8 +62,11 @@ function ShopChrome({ children }: { children: React.ReactNode }) {
   const currentProduct = pathname.startsWith("/shop/products/")
     ? getProduct(pathname.slice("/shop/products/".length))
     : undefined;
-  const productAction = currentProduct && (!currentProduct.availabilityConfirmed || currentProduct.availability === "AVAILABLE")
+  const checkoutAvailable = isBagCheckoutAvailable(bag, products);
+  const productAction = currentProduct?.availabilityConfirmed && currentProduct.availability === "AVAILABLE"
     ? { eyebrow: "This piece", label: "Choose size and buy", href: "#shop-purchase" }
+    : currentProduct && !currentProduct.availabilityConfirmed
+      ? { eyebrow: "Live check paused", label: "View purchase status", href: "#shop-purchase" }
     : currentProduct
       ? { eyebrow: currentProduct.availability === "SOLD" ? "Archive" : "Unavailable", label: "See similar pieces", href: "/shop/search" }
       : undefined;
@@ -70,10 +74,14 @@ function ShopChrome({ children }: { children: React.ReactNode }) {
     ? { eyebrow: "Offline", label: "Review app connection and local state", href: "/shop/account" }
     : pathname === "/shop/bag"
       ? bag.length
-        ? { eyebrow: "Ready to continue", label: "Continue to checkout", href: "/shop/checkout" }
+        ? checkoutAvailable
+          ? { eyebrow: "Ready to continue", label: "Continue to checkout", href: "/shop/checkout" }
+          : { eyebrow: "Checkout paused", label: "Availability is not confirmed", href: "#shop-content" }
         : { eyebrow: "Drop 01", label: "Find a piece", href: "/shop/search" }
     : pathname === "/shop/checkout"
-      ? { eyebrow: "Your bag", label: `${bag.length} ${bag.length === 1 ? "piece" : "pieces"} selected`, href: "/shop/bag" }
+      ? checkoutAvailable
+        ? { eyebrow: "Your bag", label: `${bag.length} ${bag.length === 1 ? "piece" : "pieces"} selected`, href: "/shop/bag" }
+        : { eyebrow: "Checkout paused", label: "Return to your bag", href: "/shop/bag" }
     : pathname === "/shop/orders"
       ? { eyebrow: "The wardrobe", label: "Find another piece", href: "/shop/search" }
     : pathname.startsWith("/shop/orders/")
@@ -81,11 +89,13 @@ function ShopChrome({ children }: { children: React.ReactNode }) {
     : pathname.startsWith("/shop/products/")
       ? productAction ?? { eyebrow: "The wardrobe", label: "Find a piece", href: "/shop/search" }
     : bag.length
-    ? {
-        eyebrow: "Bag ready",
-        label: `${bag.length} one-off ${bag.length === 1 ? "piece" : "pieces"} to review`,
-        href: "/shop/bag",
-      }
+    ? checkoutAvailable
+      ? {
+          eyebrow: "Bag ready",
+          label: `${bag.length} one-off ${bag.length === 1 ? "piece" : "pieces"} to review`,
+          href: "/shop/bag",
+        }
+      : { eyebrow: "Bag needs review", label: "Availability is not confirmed", href: "/shop/bag" }
     : pathname === "/shop/search"
         ? { eyebrow: "Drop 01", label: "Browse available pieces", href: "/shop#discover" }
       : { eyebrow: "Drop 01", label: "Search the wardrobe", href: "/shop/search" };

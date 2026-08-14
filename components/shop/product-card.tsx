@@ -32,7 +32,7 @@ export function ProductCard({
   const isAvailable = product.availabilityConfirmed && product.availability === "AVAILABLE";
   const availabilityLabel = product.availabilityConfirmed
     ? availabilityCopy[product.availability]
-    : "Checking availability";
+    : "Live check paused";
   const approvedModelTryout = product.modelTryout.modelStatus === "APPROVED"
     ? resolveApprovedModelTryout(product.modelTryout)
     : null;

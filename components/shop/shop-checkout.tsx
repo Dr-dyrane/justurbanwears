@@ -10,6 +10,7 @@ import {
 } from "../../lib/shop/connected-order-client";
 import { shopDeliveryOptions, type ShopDeliveryId } from "../../lib/shop/commerce";
 import type { ShopCheckoutRequest } from "../../lib/shop/domain/entities";
+import { isBagCheckoutAvailable } from "../../lib/shop/domain/state";
 import { authSignInPath } from "../../lib/auth/return-to";
 import { ShopActionButton, ShopActionLink } from "./atoms/action";
 import {
@@ -87,6 +88,7 @@ export function ShopCheckout({ mapboxAccessToken }: { mapboxAccessToken: string 
   );
   const delivery = shopDeliveryOptions.find((item) => item.id === deliveryId) ?? shopDeliveryOptions[0];
   const subtotal = lines.reduce((sum, line) => sum + line.product.price, 0);
+  const checkoutAvailable = isBagCheckoutAvailable(bag, products);
 
   useEffect(() => {
     beginCheckout();
@@ -245,6 +247,20 @@ export function ShopCheckout({ mapboxAccessToken }: { mapboxAccessToken: string 
           <p className="shop-kicker">Checkout</p>
           <h1>Your bag needs a piece first.</h1>
           <ShopActionLink href="/shop/search">Search the wardrobe</ShopActionLink>
+        </div>
+      </div>
+    );
+  }
+
+  if (!checkoutAvailable) {
+    return (
+      <div className="shop-list-page shop-checkout-page">
+        <div className="shop-route-empty" aria-live="polite" role="status">
+          <ShoppingBag aria-hidden="true" size={34} strokeWidth={1.65} />
+          <p className="shop-kicker">Checkout paused</p>
+          <h1>Availability needs a live check.</h1>
+          <p>Your bag is still here. Checkout stays closed until every one-off piece is confirmed.</p>
+          <ShopActionLink href="/shop/bag">Review your bag</ShopActionLink>
         </div>
       </div>
     );

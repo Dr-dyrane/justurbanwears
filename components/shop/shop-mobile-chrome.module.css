@@ -12,16 +12,22 @@
 }
 
 .contextAction {
+  height: var(--edge-action-size);
   max-width: 100%;
+  min-height: var(--edge-action-size);
   min-width: 0;
   overflow: hidden;
 }
 
 .contextAction > span {
+  align-content: center;
+  display: grid;
+  gap: 1px;
   min-width: 0;
   overflow: hidden;
 }
 
+.contextAction small,
 .contextAction strong {
   display: block;
   overflow: hidden;

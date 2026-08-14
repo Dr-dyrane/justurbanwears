@@ -241,8 +241,8 @@ export function ProductDetail() {
             >
               <span aria-hidden="true" />
               <div>
-                <strong>{!product.availabilityConfirmed ? "Checking current availability" : product.availability === "AVAILABLE" ? "Available now" : product.availability === "RESERVED" ? "Reserved for another shopper" : "Sold — kept as an archive reference"}</strong>
-                <small>{!product.availabilityConfirmed ? "Purchase actions are paused safely" : product.availability === "AVAILABLE" ? "One piece · bag does not reserve" : product.availability === "RESERVED" ? "Primary actions are paused" : "Archive only"}</small>
+                <strong>{!product.availabilityConfirmed ? "Live availability is unavailable" : product.availability === "AVAILABLE" ? "Available now" : product.availability === "RESERVED" ? "Reserved for another shopper" : "Sold — kept as an archive reference"}</strong>
+                <small>{!product.availabilityConfirmed ? "Checkout stays paused until the catalogue reconnects" : product.availability === "AVAILABLE" ? "One piece · bag does not reserve" : product.availability === "RESERVED" ? "Primary actions are paused" : "Archive only"}</small>
               </div>
             </div>
             <fieldset className="shop-size-fieldset">

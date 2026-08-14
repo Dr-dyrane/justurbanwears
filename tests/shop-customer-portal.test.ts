@@ -8,7 +8,11 @@ const accountPage = await readFile(new URL("../app/shop/account/page.tsx", impor
 const account = await readFile(new URL("../components/shop/shop-account.tsx", import.meta.url), "utf8");
 const shopLayout = await readFile(new URL("../app/shop/layout.tsx", import.meta.url), "utf8");
 const shopShell = await readFile(new URL("../components/shop/shop-shell.tsx", import.meta.url), "utf8");
+const shopBag = await readFile(new URL("../components/shop/shop-bag.tsx", import.meta.url), "utf8");
+const shopCheckout = await readFile(new URL("../components/shop/shop-checkout.tsx", import.meta.url), "utf8");
 const mobileChrome = await readFile(new URL("../components/shop/shop-mobile-chrome.module.css", import.meta.url), "utf8");
+const foundation = await readFile(new URL("../app/foundation.css", import.meta.url), "utf8");
+const editorialHero = await readFile(new URL("../app/shop-editorial-hero.css", import.meta.url), "utf8");
 
 test("guest Shop remains public while account auth is an optional managed Neon boundary", () => {
   assert.doesNotMatch(shopLayout, /requireStudioOperator|getShopCustomerSession|redirect\(/);
@@ -31,8 +35,26 @@ test("scrolled mobile action stays between equal safe edge controls", () => {
   assert.match(mobileChrome, /grid-template-columns:[\s\S]*var\(--edge-action-size\)[\s\S]*minmax\(0, 1fr\)[\s\S]*var\(--edge-action-size\)/);
   assert.match(mobileChrome, /overflow: hidden/);
   assert.match(mobileChrome, /text-overflow: ellipsis/);
+  assert.match(mobileChrome, /height: var\(--edge-action-size\)/);
+  assert.match(mobileChrome, /\.contextAction > span[\s\S]*display: grid/);
   assert.match(mobileChrome, /@media \(max-width: 379px\)/);
   assert.match(shopShell, /shop-mobile-fab/);
+});
+
+test("bag, checkout, and mobile chrome share the same fail-closed availability decision", () => {
+  for (const source of [shopShell, shopBag, shopCheckout]) {
+    assert.match(source, /isBagCheckoutAvailable/);
+  }
+  assert.match(shopShell, /Checkout paused/);
+  assert.match(shopCheckout, /if \(!checkoutAvailable\)/);
+  assert.ok(shopCheckout.indexOf("if (!checkoutAvailable)") < shopCheckout.indexOf("<form"));
+});
+
+test("mobile discovery stays compact and functional microcopy has a 12px floor", () => {
+  assert.match(foundation, /--shop-browse-surface: #f5ebe3/);
+  assert.match(foundation, /@media \(max-width: 460px\)[\s\S]*?\.shop-discovery > \.shop-product-grid[\s\S]*?repeat\(2, minmax\(0, 1fr\)\)/);
+  assert.match(foundation, /\/\* Readable Shop microcopy contract\. \*\/[\s\S]*?font-size: 12px/);
+  assert.doesNotMatch(editorialHero, /font-size:\s*(?:[0-9]|1[01])(?:\.\d+)?px/);
 });
 
 test("product chrome keeps the current buying task ahead of bag review", () => {

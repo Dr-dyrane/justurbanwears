@@ -3,13 +3,14 @@
 import { ShoppingBag } from "lucide-react";
 import { useRef, useState } from "react";
 import { formatNaira } from "../../lib/shop/catalog";
+import { isBagCheckoutAvailable } from "../../lib/shop/domain/state";
 import { ShopActionButton, ShopActionLink } from "./atoms/action";
 import { ShopLink as Link } from "./atoms/shop-link";
 import { ProductVisual } from "./product-visual";
 import { useShop } from "./shop-provider";
 
 export function ShopBag() {
-  const { bag, getProduct, hydration, removeFromBag } = useShop();
+  const { bag, getProduct, hydration, products, removeFromBag } = useShop();
   const pageRef = useRef<HTMLDivElement>(null);
   const [notice, setNotice] = useState("");
   const lines = bag.flatMap((item) => {
@@ -17,9 +18,7 @@ export function ShopBag() {
     return product ? [{ ...item, product }] : [];
   });
   const subtotal = lines.reduce((sum, line) => sum + line.product.price, 0);
-  const checkoutAvailable = lines.every(
-    (line) => line.product.availabilityConfirmed && line.product.availability === "AVAILABLE",
-  );
+  const checkoutAvailable = isBagCheckoutAvailable(bag, products);
   const isRestoring = hydration === "idle" || hydration === "restoring";
 
   function removeLine(slug: string, name: string) {
