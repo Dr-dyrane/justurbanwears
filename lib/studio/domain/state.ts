@@ -30,7 +30,7 @@ export type StudioHydrationState = "idle" | "restoring" | "ready" | "degraded";
 export type StudioPersistenceState = "available" | "unavailable";
 
 export const LULU_NEUTRAL_MASTER_PROFILE = Object.freeze({
-  version: "LULU NEUTRAL IDENTITY MASTER V2",
+  version: "LULU NEUTRAL IDENTITY MASTER V3",
   styling: Object.freeze({
     hair: "Natural, softly shaped",
     makeup: "Fresh skin, quiet definition",
@@ -64,7 +64,7 @@ export function createDefaultModel(): StudioModel {
       consentConfirmed: true,
       stylingComplete: true,
     },
-    approvedAt: "Lulu V2 approved",
+    approvedAt: "Lulu V3 approved",
     bodyReferenceStatus: "COMPLETE",
     hairReferenceStatus: "COMPLETE",
     references: [],

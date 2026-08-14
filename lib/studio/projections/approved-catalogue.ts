@@ -1,16 +1,16 @@
 import type {
   PublicListingMediaProjection,
   PublicListingMediaSlot,
-  PublicModelAnchorProjection,
 } from "../domain/entities";
 import {
-  WARDROBE_PUBLIC_MODEL_ANCHOR,
   WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS,
 } from "../../wardrobe-public-view/seeds";
 import { canonicalCatalogueSku } from "../../wardrobe-public-view/sku";
 
-export const APPROVED_PUBLIC_MODEL_ANCHOR: PublicModelAnchorProjection = Object.freeze({
-  ...WARDROBE_PUBLIC_MODEL_ANCHOR,
+/** Public V3 try-on preview only. The private V3 identity master never enters the browser bundle. */
+export const APPROVED_PUBLIC_MODEL_PREVIEW = Object.freeze({
+  id: "lulu-v3" as const,
+  src: "/shop/products/cocoa-cowl-gathered-midi-dress/07-model-left-profile.webp" as const,
 });
 
 export const APPROVED_PUBLIC_LISTINGS = Object.freeze(

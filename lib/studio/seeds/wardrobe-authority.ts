@@ -214,14 +214,30 @@ export function mergeWardrobeAuthoritySeeds(snapshot: StudioSnapshot): StudioSna
       listing.id === seed.id || listing.slug === seed.slug || listing.garmentId === garmentId,
     );
     if (existing) {
-      if (renamedGarments.has(seed.garmentId) && seed.publicProjection) {
+      if (existing.publicProjection && seed.publicProjection) {
         const index = listings.indexOf(existing);
         listings[index] = {
           ...existing,
           garmentId,
-          publicProjection: existing.publicProjection
-            ? { ...existing.publicProjection, sku: seed.publicProjection.sku }
-            : { ...seed.publicProjection },
+          publicProjection: {
+            ...existing.publicProjection,
+            sku: seed.publicProjection.sku,
+            modelAnchor: { ...seed.publicProjection.modelAnchor },
+            media: seed.publicProjection.media.map((frame) => ({ ...frame })),
+          },
+        };
+      } else if (renamedGarments.has(seed.garmentId) && seed.publicProjection) {
+        const index = listings.indexOf(existing);
+        listings[index] = {
+          ...existing,
+          garmentId,
+          publicProjection: {
+            ...seed.publicProjection,
+            details: [...seed.publicProjection.details],
+            measurements: seed.publicProjection.measurements.map((measurement) => ({ ...measurement })),
+            modelAnchor: { ...seed.publicProjection.modelAnchor },
+            media: seed.publicProjection.media.map((frame) => ({ ...frame })),
+          },
         };
       }
       continue;

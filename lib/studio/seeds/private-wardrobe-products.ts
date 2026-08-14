@@ -232,7 +232,7 @@ export const PENDING_WARDROBE_PRODUCT_CONTRACTS: readonly PendingWardrobeProduct
         view: "MODEL_LEFT_PROFILE",
         src: "/shop/products/cocoa-cowl-gathered-midi-dress/07-model-left-profile.webp",
         width: 972,
-        height: 1728,
+        height: 1619,
       },
       {
         view: "MODEL_REAR_THREE_QUARTER",

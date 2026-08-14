@@ -18,7 +18,7 @@ import {
 import type { StudioModel } from "../../lib/studio/domain/entities";
 import { modelReadiness } from "../../lib/studio/domain/readiness";
 import { LULU_NEUTRAL_MASTER_PROFILE } from "../../lib/studio/domain/state";
-import { APPROVED_PUBLIC_MODEL_ANCHOR } from "../../lib/studio/projections/approved-catalogue";
+import { APPROVED_PUBLIC_MODEL_PREVIEW } from "../../lib/studio/projections/approved-catalogue";
 import { LifecycleBadge } from "./atoms/lifecycle-badge";
 import { ReadinessList } from "./atoms/readiness-list";
 import { StudioSegmentedView, useStudioSegment } from "./atoms/studio-segmented-view";
@@ -500,21 +500,21 @@ export function ModelAtelier() {
           {activeView === "profile" ? <div className={`studio-model-portrait${selected.isDefault ? " is-approved" : ""}`}>
             {selected.isDefault ? (
               <>
-                {/* Approved public projection only; no private source image enters this bundle. */}
+                {/* Approved public V3 try-on only; the private V3 identity master never enters this bundle. */}
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  alt={`${selected.name}, approved Studio identity profile`}
+                  alt={`${selected.name}, approved V3 public try-on preview`}
                   className="studio-model-approved-image"
                   height={1619}
-                  src={APPROVED_PUBLIC_MODEL_ANCHOR.src}
+                  src={APPROVED_PUBLIC_MODEL_PREVIEW.src}
                   width={972}
                 />
                 <span className="studio-model-anchor-badge">
                   <ShieldCheck aria-hidden="true" size={17} strokeWidth={1.8} />
-                  <span><small>Approved profile</small><strong>Lulu</strong></span>
+                  <span><small>Approved V3 profile</small><strong>Lulu</strong></span>
                 </span>
                 <div className="studio-model-master-caption">
-                  <small>Studio identity profile</small>
+                  <small>V3 public try-on preview</small>
                   <strong>{selected.name}</strong>
                   <span>Ready for approved try-ons</span>
                 </div>

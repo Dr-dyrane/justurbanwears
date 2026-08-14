@@ -55,7 +55,7 @@ function parseCurrentSnapshot(value: unknown): StudioSnapshot | null {
     return {
       ...model,
       version: approvedDefault.version,
-      approvedAt: model.approvedAt || approvedDefault.approvedAt,
+      approvedAt: approvedDefault.approvedAt,
       styling: {
         hair: typeof styling.hair === "string" && styling.hair.trim() ? styling.hair : approvedDefault.styling.hair,
         makeup: typeof styling.makeup === "string" && styling.makeup.trim() ? styling.makeup : approvedDefault.styling.makeup,
@@ -179,7 +179,11 @@ export function createBrowserLocalStudioRepository(): StudioRepository {
       if (currentRaw) {
         const restored = parseStoredStudioState(currentRaw) ?? createEmptyStudioSnapshot();
         const merged = mergeWardrobeAuthoritySeeds(restored);
-        if (JSON.stringify(merged) !== JSON.stringify(restored)) await this.write(merged);
+        const normalizedEnvelope: StoredStudioStateV2 = {
+          version: STUDIO_STATE_SCHEMA_VERSION,
+          data: merged,
+        };
+        if (JSON.stringify(normalizedEnvelope) !== currentRaw) await this.write(merged);
         return merged;
       }
 
