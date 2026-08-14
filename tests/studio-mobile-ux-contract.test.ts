@@ -10,7 +10,7 @@ const wardrobe = readFileSync(`${root}/components/studio/wardrobe-workbench.tsx`
 const operations = readFileSync(`${root}/components/studio/operations-desk.tsx`, "utf8");
 const css = readFileSync(`${root}/app/foundation.css`, "utf8");
 
-test("Studio mobile chrome gives the FAB the contextual primary action", () => {
+test("Studio mobile chrome keeps the contextual action between navigation and Shop", () => {
   assert.match(shell, /studio-mobile-fab/);
   assert.match(shell, /Add model/);
   assert.match(shell, /Intake garment/);
@@ -19,11 +19,11 @@ test("Studio mobile chrome gives the FAB the contextual primary action", () => {
   assert.match(shell, /Review orders/);
   assert.match(shell, /operationsView !== "inventory"/);
   assert.match(shell, /useStudio/);
-  assert.match(shell, /aria-label=\{contextAction\.label\}/);
   assert.match(shell, /href=\{contextAction\.href\}/);
+  assert.match(shell, /<strong>\{contextAction\.label\}<\/strong>/);
   assert.match(shell, /<ContextActionIcon aria-hidden="true"/);
-  assert.doesNotMatch(shell, /studio-mobile-context/);
-  assert.doesNotMatch(shell, /aria-label="Open the justurban wears public shop"/);
+  assert.match(shell, /className="shop-mobile-context shop-dock-lens studio-mobile-context"/);
+  assert.match(shell, /aria-label="Open the justurban wears public shop"/);
 });
 
 test("compact records, garments, and inventory use approved media", () => {
@@ -47,7 +47,7 @@ test("compact garment rows expose preview and one Piece workspace", () => {
 test("garments open one Piece workspace with one truthful next action", () => {
   assert.match(wardrobe, /className="studio-draft-sheet studio-piece-sheet"/);
   assert.match(wardrobe, /<PieceWorkspaceView/);
-  assert.match(wardrobe, /workspace\.nextAction\.label/);
+  assert.match(wardrobe, /nextAction\.label/);
   assert.doesNotMatch(wardrobe, /Move to wardrobe|Clear gates|Create media/);
 });
 

@@ -255,6 +255,17 @@ export function useCommerceMachine(service: CommerceService) {
     return operation;
   }, [service]);
 
+  const commitConnectedOrder = useCallback(async (committedSlugs: readonly string[]) => {
+    if (!committedSlugs.length) return;
+    const command = { type: "CONNECTED_ORDER_COMMITTED" as const, committedSlugs: [...committedSlugs] };
+    const next = commerceReducer(stateRef.current, command);
+    if (next === stateRef.current) return;
+    await service.persist(selectCommerceSnapshot(next));
+    stateRef.current = next;
+    persistedRevisionRef.current = next.persistenceRevision;
+    dispatch(command);
+  }, [service]);
+
   const viewOrder = useCallback((id: string) => {
     dispatch({ type: "ORDER_VIEWED", id });
   }, []);
@@ -269,12 +280,14 @@ export function useCommerceMachine(service: CommerceService) {
     beginCheckout,
     closeCheckout,
     saveCheckout,
+    commitConnectedOrder,
     viewOrder,
   }), [
     addToBag,
     beginCheckout,
     closeCheckout,
     saveCheckout,
+    commitConnectedOrder,
     prepareCheckout,
     removeFromBag,
     toggleFollowing,

@@ -50,6 +50,13 @@
       "when": 1786692544071,
       "tag": "0006_jittery_joystick",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1786709628913,
+      "tag": "0007_material_cyclops",
+      "breakpoints": true
     }
   ]
 }

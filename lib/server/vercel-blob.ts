@@ -1,5 +1,8 @@
 import {
+  get,
   put,
+  type GetBlobResult,
+  type GetCommandOptions,
   type PutBlobResult,
   type PutCommandOptions,
 } from "@vercel/blob";
@@ -40,6 +43,18 @@ export function putShopBlob(
   options: ShopBlobPutOptions = {},
 ): Promise<PutBlobResult> {
   return put(pathname, body, {
+    ...options,
+    access,
+    token: getShopBlobToken(access),
+  });
+}
+
+export function getShopBlob(
+  access: ShopBlobAccess,
+  pathname: string,
+  options: Omit<GetCommandOptions, "access" | "oidcToken" | "storeId" | "token"> = {},
+): Promise<GetBlobResult | null> {
+  return get(pathname, {
     ...options,
     access,
     token: getShopBlobToken(access),

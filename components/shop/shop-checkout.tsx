@@ -1,118 +1,230 @@
 "use client";
 
 import { MapPin, ShoppingBag } from "lucide-react";
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { formatNaira } from "../../lib/shop/catalog";
+import {
+  checkoutPayloadFingerprint,
+  createConnectedCheckoutIntent,
+  mapConnectedOrderFailure,
+} from "../../lib/shop/connected-order-client";
 import { shopDeliveryOptions, type ShopDeliveryId } from "../../lib/shop/commerce";
-import type {
-  ShopCheckoutFailureReason,
-  ShopCheckoutRequest,
-} from "../../lib/shop/domain/entities";
-import { createWhatsAppOrderUrl } from "../../lib/shop/whatsapp-order";
+import type { ShopCheckoutRequest } from "../../lib/shop/domain/entities";
+import { authSignInPath } from "../../lib/auth/return-to";
 import { ShopActionButton, ShopActionLink } from "./atoms/action";
-import { LocalCommerceDisclosure } from "./atoms/status";
-import { ShopDeliveryLocation } from "./location/shop-delivery-location";
+import {
+  ShopDeliveryLocation,
+  type DeliveryAddressDraft,
+} from "./location/shop-delivery-location";
 import { ProductVisual } from "./product-visual";
 import { useShop } from "./shop-provider";
 
-export function ShopCheckout({
-  mapboxAccessToken,
-  whatsappOrderNumber,
-}: {
-  mapboxAccessToken: string;
-  whatsappOrderNumber: string | null;
-}) {
+const DRAFT_STORAGE_KEY = "justurban-wears:connected-checkout:v1";
+
+interface CheckoutDraft {
+  version: 1;
+  bagSignature: string;
+  contact: ShopCheckoutRequest["contact"];
+  address: DeliveryAddressDraft;
+  deliveryId: ShopDeliveryId;
+  idempotencyKey: string;
+  payloadFingerprint: string;
+}
+const emptyContact: ShopCheckoutRequest["contact"] = { name: "", email: "", phone: "" };
+const emptyAddress: DeliveryAddressDraft = { street: "", area: "", state: "" };
+
+function readDraft(): CheckoutDraft | null {
+  try {
+    const value = JSON.parse(window.sessionStorage.getItem(DRAFT_STORAGE_KEY) ?? "null") as Partial<CheckoutDraft> | null;
+    if (
+      !value
+      || value.version !== 1
+      || typeof value.bagSignature !== "string"
+      || !value.contact
+      || !value.address
+      || !shopDeliveryOptions.some((option) => option.id === value.deliveryId)
+      || typeof value.idempotencyKey !== "string"
+      || typeof value.payloadFingerprint !== "string"
+    ) return null;
+    return value as CheckoutDraft;
+  } catch {
+    return null;
+  }
+}
+
+function createIdempotencyKey() {
+  return `checkout:${globalThis.crypto.randomUUID()}`;
+}
+
+export function ShopCheckout({ mapboxAccessToken }: { mapboxAccessToken: string }) {
   const {
     bag,
     beginCheckout,
     closeCheckout,
+    commitConnectedOrder,
     getProduct,
     hydration,
     isOnline,
-    lifecycle,
-    saveCheckout,
+    products,
   } = useShop();
   const [deliveryId, setDeliveryId] = useState<ShopDeliveryId>("lagos");
   const [deliveryAddressId, setDeliveryAddressId] = useState<Exclude<ShopDeliveryId, "pickup">>("lagos");
-  const [formNotice, setFormNotice] = useState("");
+  const [contact, setContact] = useState(emptyContact);
+  const [address, setAddress] = useState(emptyAddress);
+  const [idempotencyKey, setIdempotencyKey] = useState("");
+  const [payloadFingerprint, setPayloadFingerprint] = useState("");
+  const [restored, setRestored] = useState(false);
+  const [pending, setPending] = useState(false);
+  const [progress, setProgress] = useState("");
+  const [formError, setFormError] = useState("");
   const lines = bag.flatMap((item) => {
     const product = getProduct(item.slug);
     return product ? [{ ...item, product }] : [];
   });
+  const bagSignature = useMemo(
+    () => bag.map((item) => `${item.slug}:${item.size}`).sort().join("|"),
+    [bag],
+  );
   const delivery = shopDeliveryOptions.find((item) => item.id === deliveryId) ?? shopDeliveryOptions[0];
   const subtotal = lines.reduce((sum, line) => sum + line.product.price, 0);
-  const isSaving = lifecycle === "saving-checkout";
-  const shouldOfferWhatsApp = Boolean(whatsappOrderNumber && isOnline);
 
   useEffect(() => {
     beginCheckout();
     return closeCheckout;
   }, [beginCheckout, closeCheckout]);
 
-  function checkoutNotice(reason: ShopCheckoutFailureReason) {
-    if (reason === "BAG_CHANGED") return "A piece changed availability. Review your bag.";
-    if (reason === "AVAILABILITY_UNCONFIRMED") return "We could not confirm current availability. Please try again.";
-    if (reason === "INVALID_CHECKOUT") return "Check your contact and handoff details.";
-    if (reason === "PERSISTENCE_FAILED") return "This browser could not save the checkout.";
-    if (reason === "IN_PROGRESS") return "Checkout is already saving.";
-    return "Your bag changed. Review it before continuing.";
-  }
+  useEffect(() => {
+    if (hydration === "idle" || hydration === "restoring" || restored) return;
+    const draft = readDraft();
+    const frame = window.requestAnimationFrame(() => {
+      if (draft?.bagSignature === bagSignature) {
+        setContact(draft.contact);
+        setAddress(draft.address);
+        setDeliveryId(draft.deliveryId);
+        if (draft.deliveryId !== "pickup") setDeliveryAddressId(draft.deliveryId);
+        setIdempotencyKey(draft.idempotencyKey);
+        setPayloadFingerprint(draft.payloadFingerprint);
+      }
+      if (new URL(window.location.href).searchParams.get("resume") === "1") {
+        setProgress("Signed in. Review your details, then place the order.");
+      }
+      setRestored(true);
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [bagSignature, hydration, restored]);
+
+  useEffect(() => {
+    if (!restored || !bagSignature) return;
+    const draft: CheckoutDraft = {
+      version: 1,
+      bagSignature,
+      contact,
+      address,
+      deliveryId,
+      idempotencyKey,
+      payloadFingerprint,
+    };
+    window.sessionStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draft));
+  }, [address, bagSignature, contact, deliveryId, idempotencyKey, payloadFingerprint, restored]);
 
   async function submitCheckout(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!lines.length || isSaving) return;
-    setFormNotice("");
-    const form = new FormData(event.currentTarget);
-    const field = (name: string) => String(form.get(name) ?? "");
-    const contact: ShopCheckoutRequest["contact"] = {
-      name: field("name"),
-      email: field("email"),
-      phone: field("phone"),
-    };
-    const fulfillment: ShopCheckoutRequest["fulfillment"] = deliveryId === "pickup"
-      ? { kind: "PICKUP", optionId: "pickup" }
-      : {
-          kind: "DELIVERY",
-          optionId: deliveryId,
-          address: {
-            street: field("address"),
-            area: field("area"),
-            state: field("state"),
-            country: "Nigeria",
-          },
-        };
-    const result = await saveCheckout({ contact, fulfillment });
-    if (result.ok === false) {
-      setFormNotice(checkoutNotice(result.reason));
-      return;
-    }
-    const whatsappUrl = createWhatsAppOrderUrl(shouldOfferWhatsApp ? whatsappOrderNumber : null, {
-      reference: result.orderId,
+    if (!lines.length || pending) return;
+    setFormError("");
+    setProgress("Reserving your piece…");
+
+    const request: ShopCheckoutRequest = {
       contact,
-      fulfillment: fulfillment.kind === "PICKUP"
-        ? {
-            kind: "PICKUP",
-            label: delivery.label,
-            estimate: delivery.estimate,
-          }
+      fulfillment: deliveryId === "pickup"
+        ? { kind: "PICKUP", optionId: "pickup" }
         : {
             kind: "DELIVERY",
-            label: delivery.label,
-            estimate: delivery.estimate,
-            address: fulfillment.address,
+            optionId: deliveryId,
+            address: { ...address, country: "Nigeria" },
           },
-      lines: lines.map(({ product }) => ({
-        name: product.name,
-        sku: product.sku,
-        taggedSize: product.taggedSize,
-        unitPrice: product.price,
-        quantity: 1,
-      })),
-      subtotal,
-      deliveryFee: delivery.fee,
-      total: subtotal + delivery.fee,
-    });
-    window.location.assign(whatsappUrl ?? `/shop/orders/${result.orderId}`);
+    };
+    const nextFingerprint = checkoutPayloadFingerprint(bag, request);
+    const nextIdempotencyKey = idempotencyKey && payloadFingerprint === nextFingerprint
+      ? idempotencyKey
+      : createIdempotencyKey();
+    const intent = createConnectedCheckoutIntent(bag, products, request, nextIdempotencyKey);
+    if (!intent) {
+      setProgress("");
+      setFormError("A piece changed availability. Review your bag before placing the order.");
+      return;
+    }
+
+    setIdempotencyKey(nextIdempotencyKey);
+    setPayloadFingerprint(nextFingerprint);
+    window.sessionStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify({
+      version: 1,
+      bagSignature,
+      contact,
+      address,
+      deliveryId,
+      idempotencyKey: nextIdempotencyKey,
+      payloadFingerprint: nextFingerprint,
+    } satisfies CheckoutDraft));
+
+    setPending(true);
+    let response: Response;
+    let body: {
+      ok?: boolean;
+      order?: { reference?: string; lines?: Array<{ slug?: string }> };
+      error?: { code?: string; message?: string };
+    } = {};
+    try {
+      response = await fetch("/api/shop/orders", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(intent),
+      });
+      body = await response.json().catch(() => ({}));
+    } catch {
+      setPending(false);
+      setProgress("");
+      setFormError("Orders are briefly unavailable. Your bag is safe; try again shortly.");
+      return;
+    }
+
+    if (!response.ok || !body.ok || !body.order?.reference) {
+      const failure = mapConnectedOrderFailure(response.status, body.error?.code);
+      setPending(false);
+      setProgress("");
+      if (failure.kind === "AUTH_REQUIRED") {
+        window.location.assign(authSignInPath("/shop/checkout?resume=1"));
+        return;
+      }
+      if (failure.kind === "IDEMPOTENCY") {
+        setIdempotencyKey("");
+        setPayloadFingerprint("");
+      }
+      setFormError(failure.message);
+      return;
+    }
+
+    const committedSlugs = intent.lines.map((line) => line.slug);
+    const responseSlugs = body.order.lines?.map((line) => line.slug).filter((slug): slug is string => Boolean(slug)) ?? [];
+    if (
+      responseSlugs.length !== committedSlugs.length
+      || committedSlugs.some((slug) => !responseSlugs.includes(slug))
+    ) {
+      setPending(false);
+      setProgress("");
+      setFormError("The order was received, but its confirmation was incomplete. Open Orders before trying again.");
+      return;
+    }
+
+    setProgress("Your piece is reserved. Payment is still required.");
+    try {
+      await commitConnectedOrder(committedSlugs);
+    } catch {
+      // The authoritative order already exists. Its idempotency key remains stable
+      // and the destination page will show server truth even if local storage fails.
+    }
+    window.sessionStorage.removeItem(DRAFT_STORAGE_KEY);
+    window.location.assign(`/shop/orders/${encodeURIComponent(body.order.reference)}`);
   }
 
   if (hydration === "idle" || hydration === "restoring") {
@@ -145,11 +257,7 @@ export function ShopCheckout({
         <h1>Review your handoff.</h1>
       </header>
 
-      <form
-        aria-busy={isSaving}
-        className="shop-checkout-layout"
-        onSubmit={submitCheckout}
-      >
+      <form aria-busy={pending} className="shop-checkout-layout" onSubmit={submitCheckout}>
         <div className="shop-checkout-form">
           <section aria-labelledby="contact-title">
             <div className="shop-form-section-heading">
@@ -159,15 +267,15 @@ export function ShopCheckout({
             <div className="shop-form-grid">
               <label>
                 <span>Full name</span>
-                <input autoComplete="name" name="name" required />
+                <input autoComplete="name" name="name" onChange={(event) => setContact((value) => ({ ...value, name: event.target.value }))} required value={contact.name} />
               </label>
               <label>
                 <span>Email</span>
-                <input autoComplete="email" name="email" required type="email" />
+                <input autoComplete="email" name="email" onChange={(event) => setContact((value) => ({ ...value, email: event.target.value }))} required type="email" value={contact.email} />
               </label>
               <label>
                 <span>Phone</span>
-                <input autoComplete="tel" inputMode="tel" name="phone" required type="tel" />
+                <input autoComplete="tel" inputMode="tel" name="phone" onChange={(event) => setContact((value) => ({ ...value, phone: event.target.value }))} required type="tel" value={contact.phone} />
               </label>
             </div>
           </section>
@@ -206,9 +314,7 @@ export function ShopCheckout({
               <span>03</span>
               <div>
                 <p className="shop-kicker">{deliveryId === "pickup" ? "Collection" : "Destination"}</p>
-                <h2 id="destination-title">
-                  {deliveryId === "pickup" ? "Pickup in Lagos." : "Where should it arrive?"}
-                </h2>
+                <h2 id="destination-title">{deliveryId === "pickup" ? "Pickup in Lagos." : "Where should it arrive?"}</h2>
               </div>
             </div>
             {deliveryId === "pickup" ? (
@@ -223,8 +329,10 @@ export function ShopCheckout({
             <div hidden={deliveryId === "pickup"}>
               <ShopDeliveryLocation
                 accessToken={mapboxAccessToken}
+                address={address}
                 deliveryId={deliveryAddressId}
                 disabled={deliveryId === "pickup"}
+                onAddressChange={setAddress}
               />
             </div>
           </section>
@@ -232,7 +340,7 @@ export function ShopCheckout({
 
         <aside className="shop-order-summary glass-surface">
           <p className="shop-kicker">Payment required</p>
-          <h2 className="shop-order-summary-title">Checkout summary</h2>
+          <h2 className="shop-order-summary-title">Order summary</h2>
           <div className="shop-checkout-lines">
             {lines.map(({ product, size }) => (
               <div key={product.slug}>
@@ -247,17 +355,14 @@ export function ShopCheckout({
             <div><dt>{delivery.label}</dt><dd>{delivery.fee ? formatNaira(delivery.fee) : "Free"}</dd></div>
             <div className="shop-summary-total"><dt>Total</dt><dd>{formatNaira(subtotal + delivery.fee)}</dd></div>
           </dl>
-          <ShopActionButton disabled={isSaving} type="submit">
-            {isSaving ? "Saving…" : shouldOfferWhatsApp ? "Continue on WhatsApp" : "Save checkout"}
+          <ShopActionButton disabled={pending || !isOnline} type="submit">
+            {pending ? "Reserving your piece…" : "Place order"}
           </ShopActionButton>
-          {shouldOfferWhatsApp ? (
-            <p className="shop-local-disclosure shop-order-boundary-disclosure">
-              Payment is required. This draft stays on your device until WhatsApp opens for you to review and send it to Lulu.
-            </p>
-          ) : (
-            <LocalCommerceDisclosure className="shop-order-boundary-disclosure" />
-          )}
-          <p className="shop-action-note" aria-live="polite" role="status">{formNotice}</p>
+          <p className="shop-local-disclosure shop-order-boundary-disclosure">
+            Adding a piece does not reserve it. We reserve only after the server accepts your order. Payment is still required.
+          </p>
+          {progress ? <p className="shop-action-note" aria-live="polite" role="status">{progress}</p> : null}
+          {formError ? <p className="shop-action-note is-error" role="alert">{formError}</p> : null}
         </aside>
       </form>
     </div>

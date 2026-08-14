@@ -53,7 +53,7 @@ export async function requireStudioOperator(): Promise<StudioOperator> {
     );
   }
   const membership = mode === "neon-auth"
-    ? await getStudioOperatorMembership({ subject: user.userId, email: normalizedEmail, bootstrap: true })
+    ? await getStudioOperatorMembership({ subject: user.userId, email: normalizedEmail })
     : { role: "operator" as const };
   if (!membership) {
     throw new StudioEngineError(

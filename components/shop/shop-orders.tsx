@@ -1,81 +1,95 @@
 "use client";
 
-import { ArrowUpRight } from "lucide-react";
-import Image from "next/image";
+import { ArrowUpRight, PackageSearch } from "lucide-react";
+import { useEffect, useState } from "react";
 import { formatNaira } from "../../lib/shop/catalog";
-import {
-  formatOrderDate,
-  getOrderStatusLabel,
-  resolveOrderLineMedia,
-  type ShopOrder,
-} from "../../lib/shop/commerce";
+import { formatConnectedOrderDate, orderStateLabel } from "../../lib/shop/order-presentation";
+import type { ShopServerOrder } from "../../lib/shop/server-order/types";
+import { authSignInPath } from "../../lib/auth/return-to";
 import { ShopActionLink } from "./atoms/action";
 import { ShopLink as Link } from "./atoms/shop-link";
-import { LocalCommerceDisclosure, ShopStatusIndicator } from "./atoms/status";
 import { ProductVisual } from "./product-visual";
 import { useShop } from "./shop-provider";
 
-function OrderCard({ order }: { order: ShopOrder }) {
+function OrderCard({ order }: { order: ShopServerOrder }) {
   const { getProduct } = useShop();
   const firstLine = order.lines[0];
   const product = firstLine ? getProduct(firstLine.slug) : undefined;
-  const media = resolveOrderLineMedia(firstLine, product);
-  const label = getOrderStatusLabel(order.status);
-  const title = firstLine?.snapshot === "PRODUCT" ? firstLine.name : "Checkout draft";
 
   return (
-    <Link className="shop-order-card" href={`/shop/orders/${order.id}`}>
-      {media.kind === "SNAPSHOT" ? (
-        <Image
-          alt={media.alt}
-          className="shop-order-snapshot"
-          height={135}
-          src={media.src}
-          width={108}
-        />
-      ) : media.kind === "CATALOG" ? (
-        <ProductVisual compact product={media.product} />
-      ) : <span className="shop-order-snapshot is-empty" aria-hidden="true" />}
+    <Link className="shop-order-card" href={`/shop/orders/${order.reference}`}>
+      {product ? <ProductVisual compact product={product} /> : <span className="shop-order-snapshot is-empty" aria-hidden="true" />}
       <div className="shop-order-card-copy">
-        <span>Checkout</span>
-        <h2>{title}</h2>
-        <p>{order.id} · {order.lines.length} {order.lines.length === 1 ? "piece" : "pieces"} · {formatNaira(order.total)}</p>
+        <span>Order · {orderStateLabel(order.lifecycleStatus)}</span>
+        <h2>{firstLine?.name ?? "Wardrobe order"}</h2>
+        <p>{order.reference} · {order.lines.length} {order.lines.length === 1 ? "piece" : "pieces"} · {formatNaira(order.total)}</p>
       </div>
-      <ShopStatusIndicator
-        className={`shop-order-state is-${order.status.toLowerCase()}`}
-        detail={formatOrderDate(order.savedAt)}
-        label={label}
-        tone={order.status === "PAYMENT_REQUIRED" ? "attention" : "positive"}
-      />
+      <div className="shop-connected-order-card-state">
+        <strong>{orderStateLabel(order.paymentReviewStatus)}</strong>
+        <small>{orderStateLabel(order.fundsConfirmationStatus)} · {formatConnectedOrderDate(order.savedAt, false)}</small>
+      </div>
       <b aria-hidden="true"><ArrowUpRight size={18} strokeWidth={1.8} /></b>
     </Link>
   );
 }
-
 export function ShopOrders() {
-  const { hydration, orders } = useShop();
-  const isRestoring = hydration === "idle" || hydration === "restoring";
+  const [orders, setOrders] = useState<ShopServerOrder[]>([]);
+  const [state, setState] = useState<"loading" | "ready" | "error">("loading");
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const controller = new AbortController();
+    void fetch("/api/shop/orders", {
+      cache: "no-store",
+      credentials: "same-origin",
+      signal: controller.signal,
+    }).then(async (response) => {
+      const body = await response.json().catch(() => ({})) as {
+        ok?: boolean;
+        orders?: ShopServerOrder[];
+      };
+      if (response.status === 401) {
+        window.location.assign(authSignInPath("/shop/orders"));
+        return;
+      }
+      if (!response.ok || !body.ok || !Array.isArray(body.orders)) {
+        throw new Error("Your orders could not be opened. Try again.");
+      }
+      setOrders(body.orders);
+      setState("ready");
+    }).catch((cause: unknown) => {
+      if (controller.signal.aborted) return;
+      setError(cause instanceof Error ? cause.message : "Your orders could not be opened. Try again.");
+      setState("error");
+    });
+    return () => controller.abort();
+  }, []);
 
   return (
     <div className="shop-list-page shop-orders-page">
       <header className="shop-list-heading">
-        <p className="shop-kicker">Checkout drafts</p>
-        <h1>Continue where you stopped.</h1>
+        <p className="shop-kicker">Your orders</p>
+        <h1>From reservation to handoff.</h1>
       </header>
 
-      <LocalCommerceDisclosure className="shop-orders-boundary" />
-
-      {isRestoring ? (
+      {state === "loading" ? (
         <div className="shop-route-empty" aria-live="polite" role="status">
-          <h2>Opening checkout drafts…</h2>
+          <h2>Opening your orders…</h2>
+        </div>
+      ) : state === "error" ? (
+        <div className="shop-route-empty" role="alert">
+          <span aria-hidden="true"><PackageSearch size={34} strokeWidth={1.65} /></span>
+          <h2>{error}</h2>
+          <ShopActionLink href="/shop/orders">Try again</ShopActionLink>
         </div>
       ) : orders.length ? (
-        <section className="shop-orders-list" aria-label="Checkout drafts">
-          {orders.map((order) => <OrderCard key={order.id} order={order} />)}
+        <section className="shop-orders-list" aria-label="Your orders">
+          {orders.map((order) => <OrderCard key={order.reference} order={order} />)}
         </section>
       ) : (
         <div className="shop-route-empty">
-          <h2>No checkout drafts yet.</h2>
+          <h2>No orders yet.</h2>
+          <p>Your first reservation will appear here after the server accepts it.</p>
           <ShopActionLink href="/shop/search">Find a piece</ShopActionLink>
         </div>
       )}

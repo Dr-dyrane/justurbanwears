@@ -25,7 +25,7 @@ const nav: Array<{ href: string; label: string; icon: LucideIcon }> = [
   { href: "/shop", label: "Home", icon: House },
   { href: "/shop/search", label: "Search", icon: Search },
   { href: "/shop/saved", label: "Saved", icon: Heart },
-  { href: "/shop/orders", label: "Checkouts", icon: ReceiptText },
+  { href: "/shop/orders", label: "Orders", icon: ReceiptText },
 ];
 
 function destinationState(href: string, pathname: string) {
@@ -77,7 +77,7 @@ function ShopChrome({ children }: { children: React.ReactNode }) {
     : pathname === "/shop/orders"
       ? { eyebrow: "The wardrobe", label: "Find another piece", href: "/shop/search" }
     : pathname.startsWith("/shop/orders/")
-      ? { eyebrow: "Checkout drafts", label: "View all drafts", href: "/shop/orders" }
+      ? { eyebrow: "Your orders", label: "View all orders", href: "/shop/orders" }
     : pathname.startsWith("/shop/products/")
       ? productAction ?? { eyebrow: "The wardrobe", label: "Find a piece", href: "/shop/search" }
     : bag.length

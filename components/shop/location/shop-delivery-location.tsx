@@ -9,17 +9,11 @@ import type { ShopDeliveryId } from "../../../lib/shop/domain/entities";
 
 type GeocodingFeature = Parameters<NonNullable<GeocoderProps["onRetrieve"]>>[0];
 
-interface DeliveryAddress {
+export interface DeliveryAddressDraft {
   street: string;
   area: string;
   state: string;
 }
-
-const emptyAddress: DeliveryAddress = {
-  street: "",
-  area: "",
-  state: "",
-};
 
 function contextName(feature: GeocodingFeature, key: "locality" | "place" | "district" | "region") {
   return feature.properties.context?.[key]?.name ?? "";
@@ -27,14 +21,17 @@ function contextName(feature: GeocodingFeature, key: "locality" | "place" | "dis
 
 export function ShopDeliveryLocation({
   accessToken,
+  address,
   deliveryId,
   disabled = false,
+  onAddressChange,
 }: {
   accessToken: string;
+  address: DeliveryAddressDraft;
   deliveryId: Exclude<ShopDeliveryId, "pickup">;
   disabled?: boolean;
+  onAddressChange(address: DeliveryAddressDraft): void;
 }) {
-  const [address, setAddress] = useState<DeliveryAddress>(emptyAddress);
   const [coordinates, setCoordinates] = useState<ShopLocationCoordinates | null>(null);
   const [locationLabel, setLocationLabel] = useState("");
   const [searchNotice, setSearchNotice] = useState("");
@@ -63,8 +60,8 @@ export function ShopDeliveryLocation({
     },
   }), [resolvedTheme]);
 
-  function updateAddress(field: keyof DeliveryAddress, value: string) {
-    setAddress((current) => ({ ...current, [field]: value }));
+  function updateAddress(field: keyof DeliveryAddressDraft, value: string) {
+    onAddressChange({ ...address, [field]: value });
     setCoordinates(null);
     setLocationLabel("");
   }
@@ -78,7 +75,7 @@ export function ShopDeliveryLocation({
       || contextName(feature, "district");
     const state = contextName(feature, "region");
 
-    setAddress({
+    onAddressChange({
       street: feature.properties.name || fullAddress,
       area,
       state,

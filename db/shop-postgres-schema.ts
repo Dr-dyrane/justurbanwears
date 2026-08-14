@@ -2,6 +2,7 @@
 // Keep this module out of public shop imports; it does not initialize a client or read credentials.
 import { sql } from "drizzle-orm";
 import {
+  boolean,
   check,
   index,
   integer,
@@ -146,6 +147,64 @@ export const shopFulfillmentKind = pgEnum("shop_fulfillment_kind", [
   "PICKUP",
 ]);
 
+export const shopActorKind = pgEnum("shop_actor_kind", ["CUSTOMER", "OPERATOR", "SYSTEM"]);
+export const shopOrderLifecycleStatus = pgEnum("shop_order_lifecycle_status", [
+  "ACTIVE",
+  "COMPLETED",
+  "CANCELLED",
+  "EXPIRED",
+]);
+export const shopPaymentReviewStatus = pgEnum("shop_payment_review_status", [
+  "AWAITING_EVIDENCE",
+  "EVIDENCE_RECEIVED",
+  "UNDER_REVIEW",
+  "REVIEW_APPROVED",
+  "REVIEW_REJECTED",
+]);
+export const shopFundsConfirmationStatus = pgEnum("shop_funds_confirmation_status", [
+  "UNCONFIRMED",
+  "CONFIRMED",
+]);
+export const shopFulfillmentStatus = pgEnum("shop_fulfillment_status", [
+  "NOT_STARTED",
+  "QUALITY_CHECK",
+  "READY_FOR_HANDOFF",
+  "IN_TRANSIT",
+  "DELIVERED",
+]);
+export const shopEventVisibility = pgEnum("shop_event_visibility", ["CUSTOMER", "OPERATOR"]);
+export const shopPaymentEvidenceStatus = pgEnum("shop_payment_evidence_status", [
+  "AUTHORIZED",
+  "RECEIVED",
+  "SUPERSEDED",
+]);
+export const shopNotificationOutboxStatus = pgEnum("shop_notification_outbox_status", [
+  "PENDING",
+  "DELIVERED",
+  "FAILED",
+]);
+export const shopReturnStatus = pgEnum("shop_return_status", [
+  "REQUESTED",
+  "APPROVED",
+  "REJECTED",
+  "RECEIVED",
+  "RESOLVED",
+]);
+export const shopReturnReason = pgEnum("shop_return_reason", [
+  "WRONG_SIZE",
+  "NOT_AS_DESCRIBED",
+  "DAMAGED",
+  "CHANGED_MIND",
+  "OTHER",
+]);
+export const shopRefundStatus = pgEnum("shop_refund_status", [
+  "NOT_STARTED",
+  "PENDING",
+  "COMPLETED",
+  "FAILED",
+]);
+export const shopReturnDisposition = pgEnum("shop_return_disposition", ["RESTOCK", "WRITE_OFF"]);
+
 export const shopCustomers = pgTable("shop_customers", {
   id: uuid("id").defaultRandom().primaryKey(),
   authSubject: text("auth_subject").notNull(),
@@ -216,6 +275,18 @@ export const shopOrders = pgTable("shop_orders", {
     .references(() => shopCustomers.id, { onDelete: "restrict" }),
   sourceCartId: uuid("source_cart_id").references(() => shopCarts.id, { onDelete: "set null" }),
   status: shopOrderStatus("status").default("PAYMENT_REQUIRED").notNull(),
+  lifecycleStatus: shopOrderLifecycleStatus("lifecycle_status").default("ACTIVE").notNull(),
+  paymentReviewStatus: shopPaymentReviewStatus("payment_review_status")
+    .default("AWAITING_EVIDENCE")
+    .notNull(),
+  fundsConfirmationStatus: shopFundsConfirmationStatus("funds_confirmation_status")
+    .default("UNCONFIRMED")
+    .notNull(),
+  fulfillmentStatus: shopFulfillmentStatus("fulfillment_status").default("NOT_STARTED").notNull(),
+  requestFingerprint: varchar("request_fingerprint", { length: 64 })
+    .default("0000000000000000000000000000000000000000000000000000000000000000")
+    .notNull(),
+  version: integer("version").default(0).notNull(),
   transmission: shopOrderTransmission("transmission").default("SUBMITTED").notNull(),
   contactName: text("contact_name").notNull(),
   contactEmail: text("contact_email").notNull(),
@@ -234,7 +305,25 @@ export const shopOrders = pgTable("shop_orders", {
   total: integer("total").notNull(),
   deliveryLabel: text("delivery_label").notNull(),
   deliveryEstimate: text("delivery_estimate").notNull(),
+  fundsTransferReference: text("funds_transfer_reference"),
+  fundsReceivingAccountLabel: text("funds_receiving_account_label"),
+  fundsConfirmedAt: timestamp("funds_confirmed_at", { withTimezone: true }),
+  fundsVerifierSubject: text("funds_verifier_subject"),
+  fundsVerifierDisplayName: text("funds_verifier_display_name"),
+  carrierName: text("carrier_name"),
+  trackingReference: text("tracking_reference"),
+  pickupAppointment: timestamp("pickup_appointment", { withTimezone: true }),
+  recipientName: text("recipient_name"),
+  dispatchReference: text("dispatch_reference"),
+  dispatchedAt: timestamp("dispatched_at", { withTimezone: true }),
+  deliveredAt: timestamp("delivered_at", { withTimezone: true }),
+  deliveryProofReference: text("delivery_proof_reference"),
   savedAt: timestamp("saved_at", { withTimezone: true }).defaultNow().notNull(),
+  reservationExpiresAt: timestamp("reservation_expires_at", { withTimezone: true }),
+  returnEligibleUntil: timestamp("return_eligible_until", { withTimezone: true }),
+  completedAt: timestamp("completed_at", { withTimezone: true }),
+  cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
+  expiredAt: timestamp("expired_at", { withTimezone: true }),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 }, (table) => [
   uniqueIndex("shop_orders_reference_unique").on(table.reference),
@@ -251,6 +340,67 @@ export const shopOrders = pgTable("shop_orders", {
     ${table.subtotal} >= 0
     and ${table.deliveryFee} >= 0
     and ${table.total} = ${table.subtotal} + ${table.deliveryFee}
+  `),
+  check("shop_orders_request_fingerprint_sha256", sql`
+    ${table.requestFingerprint} ~ '^[0-9a-f]{64}$'
+  `),
+  check("shop_orders_version_nonnegative", sql`${table.version} >= 0`),
+  check("shop_orders_lifecycle_timestamps", sql`
+    (${table.lifecycleStatus} = 'ACTIVE'
+      and ${table.completedAt} is null
+      and ${table.cancelledAt} is null
+      and ${table.expiredAt} is null)
+    or (${table.lifecycleStatus} = 'COMPLETED'
+      and ${table.completedAt} is not null
+      and ${table.cancelledAt} is null
+      and ${table.expiredAt} is null)
+    or (${table.lifecycleStatus} = 'CANCELLED'
+      and ${table.completedAt} is null
+      and ${table.cancelledAt} is not null
+      and ${table.expiredAt} is null)
+    or (${table.lifecycleStatus} = 'EXPIRED'
+      and ${table.completedAt} is null
+      and ${table.cancelledAt} is null
+      and ${table.expiredAt} is not null)
+  `),
+  check("shop_orders_funds_audit_complete", sql`
+    (${table.fundsConfirmationStatus} = 'UNCONFIRMED'
+      and ${table.fundsTransferReference} is null
+      and ${table.fundsReceivingAccountLabel} is null
+      and ${table.fundsConfirmedAt} is null
+      and ${table.fundsVerifierSubject} is null
+      and ${table.fundsVerifierDisplayName} is null)
+    or (${table.fundsConfirmationStatus} = 'CONFIRMED'
+      and ${table.fundsTransferReference} is not null
+      and ${table.fundsReceivingAccountLabel} is not null
+      and ${table.fundsConfirmedAt} is not null
+      and ${table.fundsVerifierSubject} is not null
+      and ${table.fundsVerifierDisplayName} is not null)
+  `),
+  check("shop_orders_fulfillment_facts_complete", sql`
+    (${table.fulfillmentStatus} in ('NOT_STARTED', 'QUALITY_CHECK', 'READY_FOR_HANDOFF')
+      and ${table.dispatchedAt} is null and ${table.deliveredAt} is null)
+    or (${table.fulfillmentStatus} = 'IN_TRANSIT'
+      and ${table.fulfillmentKind} = 'DELIVERY'
+      and ${table.carrierName} is not null
+      and ${table.trackingReference} is not null
+      and ${table.dispatchReference} is not null
+      and ${table.dispatchedAt} is not null
+      and ${table.deliveredAt} is null)
+    or (${table.fulfillmentStatus} = 'DELIVERED'
+      and ${table.recipientName} is not null
+      and ${table.deliveredAt} is not null
+      and ${table.deliveryProofReference} is not null
+      and (
+        (${table.fulfillmentKind} = 'DELIVERY'
+          and ${table.carrierName} is not null
+          and ${table.trackingReference} is not null
+          and ${table.dispatchReference} is not null
+          and ${table.dispatchedAt} is not null)
+        or (${table.fulfillmentKind} = 'PICKUP'
+          and ${table.pickupAppointment} is not null
+          and ${table.dispatchedAt} is null)
+      ))
   `),
 ]);
 
@@ -278,12 +428,146 @@ export const shopOrderEvents = pgTable("shop_order_events", {
   orderId: uuid("order_id")
     .notNull()
     .references(() => shopOrders.id, { onDelete: "cascade" }),
-  status: shopOrderStatus("status").notNull(),
+  status: shopOrderStatus("status"),
+  eventType: varchar("event_type", { length: 80 }).default("LEGACY_STATUS").notNull(),
+  actorKind: shopActorKind("actor_kind").default("SYSTEM").notNull(),
+  actorSubject: text("actor_subject").default("migration:legacy").notNull(),
+  visibility: shopEventVisibility("visibility").default("OPERATOR").notNull(),
+  lifecycleStatus: shopOrderLifecycleStatus("lifecycle_status"),
+  paymentReviewStatus: shopPaymentReviewStatus("payment_review_status"),
+  fundsConfirmationStatus: shopFundsConfirmationStatus("funds_confirmation_status"),
+  fulfillmentStatus: shopFulfillmentStatus("fulfillment_status"),
   note: text("note"),
   metadata: jsonb("metadata").$type<Record<string, unknown>>(),
   occurredAt: timestamp("occurred_at", { withTimezone: true }).defaultNow().notNull(),
 }, (table) => [
   index("shop_order_events_order_time_idx").on(table.orderId, table.occurredAt),
+  check("shop_order_events_type_nonempty", sql`length(trim(${table.eventType})) > 0`),
+  check("shop_order_events_actor_subject_nonempty", sql`length(trim(${table.actorSubject})) > 0`),
+]);
+
+export const shopPaymentEvidence = pgTable("shop_payment_evidence", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  orderId: uuid("order_id").notNull().references(() => shopOrders.id, { onDelete: "cascade" }),
+  customerId: uuid("customer_id").notNull().references(() => shopCustomers.id, { onDelete: "restrict" }),
+  idempotencyKey: varchar("idempotency_key", { length: 160 }).notNull(),
+  requestFingerprint: varchar("request_fingerprint", { length: 64 }).notNull(),
+  status: shopPaymentEvidenceStatus("status").default("AUTHORIZED").notNull(),
+  originalFileName: varchar("original_file_name", { length: 180 }).notNull(),
+  contentType: varchar("content_type", { length: 80 }).notNull(),
+  byteSize: integer("byte_size").notNull(),
+  sha256: varchar("sha256", { length: 64 }).notNull(),
+  blobPathname: text("blob_pathname"),
+  blobUrl: text("blob_url"),
+  authorizedAt: timestamp("authorized_at", { withTimezone: true }).defaultNow().notNull(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  receivedAt: timestamp("received_at", { withTimezone: true }),
+}, (table) => [
+  uniqueIndex("shop_payment_evidence_order_idempotency_unique").on(table.orderId, table.idempotencyKey),
+  index("shop_payment_evidence_order_status_idx").on(table.orderId, table.status),
+  check("shop_payment_evidence_fingerprints_sha256", sql`
+    ${table.requestFingerprint} ~ '^[0-9a-f]{64}$' and ${table.sha256} ~ '^[0-9a-f]{64}$'
+  `),
+  check("shop_payment_evidence_size", sql`${table.byteSize} > 0 and ${table.byteSize} <= 5000000`),
+  check("shop_payment_evidence_mime", sql`
+    ${table.contentType} in ('image/jpeg', 'image/png', 'image/webp', 'application/pdf')
+  `),
+  check("shop_payment_evidence_received_metadata", sql`
+    (${table.status} = 'AUTHORIZED'
+      and ${table.receivedAt} is null
+      and ${table.blobPathname} is null
+      and ${table.blobUrl} is null)
+    or (${table.status} in ('RECEIVED', 'SUPERSEDED')
+      and ${table.receivedAt} is not null
+      and ${table.blobPathname} is not null
+      and ${table.blobUrl} is not null)
+  `),
+]);
+
+export const shopOrderReturns = pgTable("shop_order_returns", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  orderId: uuid("order_id").notNull().references(() => shopOrders.id, { onDelete: "cascade" }),
+  customerId: uuid("customer_id").notNull().references(() => shopCustomers.id, { onDelete: "restrict" }),
+  idempotencyKey: varchar("idempotency_key", { length: 160 }).notNull(),
+  requestFingerprint: varchar("request_fingerprint", { length: 64 }).notNull(),
+  status: shopReturnStatus("status").default("REQUESTED").notNull(),
+  reason: shopReturnReason("reason").notNull(),
+  detail: text("detail").notNull(),
+  requestedAt: timestamp("requested_at", { withTimezone: true }).defaultNow().notNull(),
+  eligibleUntil: timestamp("eligible_until", { withTimezone: true }).notNull(),
+  approvedAt: timestamp("approved_at", { withTimezone: true }),
+  rejectedAt: timestamp("rejected_at", { withTimezone: true }),
+  receivedAt: timestamp("received_at", { withTimezone: true }),
+  resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+  resolutionNote: text("resolution_note"),
+  refundStatus: shopRefundStatus("refund_status").default("NOT_STARTED").notNull(),
+  refundReference: text("refund_reference"),
+  refundAmount: integer("refund_amount"),
+  refundCurrency: varchar("refund_currency", { length: 3 }),
+  refundUpdatedAt: timestamp("refund_updated_at", { withTimezone: true }),
+  disposition: shopReturnDisposition("disposition"),
+}, (table) => [
+  uniqueIndex("shop_order_returns_order_unique").on(table.orderId),
+  uniqueIndex("shop_order_returns_customer_idempotency_unique").on(table.customerId, table.idempotencyKey),
+  index("shop_order_returns_status_requested_idx").on(table.status, table.requestedAt),
+  check("shop_order_returns_request_fingerprint_sha256", sql`${table.requestFingerprint} ~ '^[0-9a-f]{64}$'`),
+  check("shop_order_returns_detail_length", sql`length(trim(${table.detail})) between 10 and 500`),
+  check("shop_order_returns_refund_reference", sql`
+    (${table.refundStatus} = 'COMPLETED'
+      and ${table.refundReference} is not null
+      and ${table.refundAmount} > 0
+      and ${table.refundCurrency} = 'NGN')
+    or (${table.refundStatus} <> 'COMPLETED'
+      and ${table.refundAmount} is null
+      and ${table.refundCurrency} is null)
+  `),
+  check("shop_order_returns_resolution", sql`
+    (${table.status} = 'RESOLVED'
+      and ${table.resolvedAt} is not null
+      and ${table.disposition} is not null
+      and ${table.refundStatus} = 'COMPLETED')
+    or (${table.status} <> 'RESOLVED'
+      and ${table.resolvedAt} is null
+      and ${table.disposition} is null)
+  `),
+]);
+
+export const shopNotificationOutbox = pgTable("shop_notification_outbox", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  orderId: uuid("order_id").notNull().references(() => shopOrders.id, { onDelete: "cascade" }),
+  customerId: uuid("customer_id").notNull().references(() => shopCustomers.id, { onDelete: "restrict" }),
+  topic: varchar("topic", { length: 80 }).notNull(),
+  dedupeKey: varchar("dedupe_key", { length: 240 }).notNull(),
+  payload: jsonb("payload").$type<Record<string, unknown>>().notNull(),
+  status: shopNotificationOutboxStatus("status").default("PENDING").notNull(),
+  attempts: integer("attempts").default(0).notNull(),
+  availableAt: timestamp("available_at", { withTimezone: true }).defaultNow().notNull(),
+  lockedAt: timestamp("locked_at", { withTimezone: true }),
+  lockedBy: text("locked_by"),
+  deliveredAt: timestamp("delivered_at", { withTimezone: true }),
+  lastError: text("last_error"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("shop_notification_outbox_dedupe_unique").on(table.dedupeKey),
+  index("shop_notification_outbox_delivery_idx").on(table.status, table.availableAt),
+  check("shop_notification_outbox_payload_object", sql`jsonb_typeof(${table.payload}) = 'object'`),
+  check("shop_notification_outbox_attempts_nonnegative", sql`${table.attempts} >= 0`),
+  check("shop_notification_outbox_lock_pair", sql`
+    (${table.lockedAt} is null and ${table.lockedBy} is null)
+    or (${table.lockedAt} is not null and ${table.lockedBy} is not null)
+  `),
+]);
+
+export const studioOperatorMembership = pgTable("studio_operator_membership", {
+  authSubject: text("auth_subject").primaryKey(),
+  email: text("email").notNull(),
+  role: varchar("role", { length: 24 }).default("operator").notNull(),
+  active: boolean("active").default(true).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("studio_operator_membership_email_unique").on(sql`lower(${table.email})`),
+  check("studio_operator_membership_role", sql`${table.role} in ('operator', 'admin')`),
 ]);
 
 // Private Studio AI intake. These records are deliberately separate from the

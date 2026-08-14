@@ -24,7 +24,6 @@ const authClient = createAuthClient();
 
 export function ShopAccount({ customer }: { customer: ShopCustomerSession | null }) {
   const {
-    orders,
     saved,
   } = useShop();
   const [signingOut, setSigningOut] = useState(false);
@@ -64,7 +63,7 @@ export function ShopAccount({ customer }: { customer: ShopCustomerSession | null
             </Link>
           )}
           <p className={styles.sessionNote}>
-            {customer ? "Signed in securely. Checkout drafts stay here until you send them to Lulu." : "Saved pieces, your bag and checkout drafts stay on this device."}
+            {customer ? "Signed in securely. Accepted orders and returns stay with your account; saved pieces and your bag stay on this device." : "Saved pieces and your bag stay on this device. Sign in when you are ready to place or track an order."}
           </p>
         </section>
 
@@ -79,7 +78,7 @@ export function ShopAccount({ customer }: { customer: ShopCustomerSession | null
               <ChevronRight aria-hidden="true" size={17} />
             </Link>
             <Link href="/shop/orders">
-              <span><ReceiptText aria-hidden="true" size={18} strokeWidth={1.7} /><span><strong>Checkout drafts</strong><small>{orders.length} {orders.length === 1 ? "draft" : "drafts"} on this device</small></span></span>
+              <span><ReceiptText aria-hidden="true" size={18} strokeWidth={1.7} /><span><strong>Your orders</strong><small>{customer ? "Live order, delivery, and return updates" : "Sign in to open server-backed orders"}</small></span></span>
               <ChevronRight aria-hidden="true" size={17} />
             </Link>
           </div>

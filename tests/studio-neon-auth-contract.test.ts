@@ -13,7 +13,7 @@ test("production Studio uses managed Neon Auth and still enforces the operator a
   assert.match(operator, /STUDIO_OPERATOR_EMAILS/);
   assert.match(operator, /getStudioOperatorMembership/);
   assert.match(layout, /requireStudioOperator\(\)/);
-  assert.match(layout, /redirect\("\/auth\/sign-in/);
+  assert.match(layout, /redirect\(authSignInPath\(returnTo\)\)/);
   assert.match(route, /getNeonAuth\(\)\.handler\(\)/);
   assert.match(authPage, /PasswordlessAuthView/);
   assert.doesNotMatch(authPage, /forgotPassword|rememberMe|type="password"/i);

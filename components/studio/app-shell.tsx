@@ -2,10 +2,12 @@
 
 import { usePathname, useSearchParams } from "next/navigation";
 import {
+  ArrowRight,
   Camera,
   ClipboardList,
   ExternalLink,
   House,
+  PackageCheck,
   Plus,
   RotateCcw,
   Shirt,
@@ -39,6 +41,7 @@ const primaryNavigation: NavigationItem[] = [
   { href: "/studio", label: "Business home", mobileLabel: "Home", icon: House },
   { href: "/studio/models", label: "Model atelier", mobileLabel: "Models", icon: Users },
   { href: "/studio/wardrobe", label: "Wardrobe", mobileLabel: "Wardrobe", icon: Shirt },
+  { href: "/studio/orders", label: "Connected orders", mobileLabel: "Orders", icon: PackageCheck },
   { href: "/studio/operations", label: "Operations", mobileLabel: "Operations", icon: ClipboardList },
 ];
 
@@ -102,6 +105,10 @@ function AppShellContent({ children, operator }: { children: React.ReactNode; op
     ? { label: "Add model", href: "/studio/models?intake=model", icon: Plus }
     : pathname.startsWith("/studio/wardrobe")
       ? { label: "Intake garment", href: "/studio/wardrobe?intake=1", icon: Plus }
+      : pathname.startsWith("/studio/orders")
+        ? pathname === "/studio/orders"
+          ? { label: "Refresh orders", href: "/studio/orders", icon: RotateCcw }
+          : { label: "All connected orders", href: "/studio/orders", icon: PackageCheck }
       : pathname.startsWith("/studio/operations")
         ? operationsAction
         : pathname === "/shoots/new"
@@ -189,6 +196,18 @@ function AppShellContent({ children, operator }: { children: React.ReactNode; op
             >
               <span><MobileDestinationIcon aria-hidden="true" size={25} strokeWidth={2.2} /></span>
             </button>
+            <Link
+              aria-hidden={mobileChromeMode === "navigation" || mobileChromeMode === "suspended" || undefined}
+              className="shop-mobile-context shop-dock-lens studio-mobile-context"
+              href={contextAction.href}
+              tabIndex={mobileChromeMode === "navigation" || mobileChromeMode === "suspended" ? -1 : undefined}
+            >
+              <span>
+                <small>Action</small>
+                <strong>{contextAction.label}</strong>
+              </span>
+              <ArrowRight aria-hidden="true" size={17} strokeWidth={1.9} />
+            </Link>
             <div className="shop-mobile-row">
               <nav
                 aria-hidden={mobileChromeMode === "compact" || mobileChromeMode === "suspended" || undefined}
@@ -217,11 +236,12 @@ function AppShellContent({ children, operator }: { children: React.ReactNode; op
                 })}
               </nav>
               <Link
-                aria-label={contextAction.label}
+                aria-label="Open the justurban wears public shop"
                 className="shop-mobile-fab shop-dock-lens studio-mobile-fab"
-                href={contextAction.href}
+                href="/shop"
               >
-                <ContextActionIcon aria-hidden="true" size={25} strokeWidth={2.15} />
+                <BrandIcon className="studio-mobile-app-icon" size={44} />
+                <ExternalLink className="studio-mobile-exit-mark" aria-hidden="true" size={18} strokeWidth={2.1} />
               </Link>
             </div>
           </div>

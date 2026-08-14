@@ -49,6 +49,7 @@ interface ShopContextValue {
   beginCheckout(): void;
   closeCheckout(): void;
   saveCheckout(request: ShopCheckoutRequest): Promise<ShopCheckoutSaveResult>;
+  commitConnectedOrder(committedSlugs: readonly string[]): Promise<void>;
   viewOrder(id: string): void;
 }
 

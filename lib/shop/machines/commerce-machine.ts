@@ -14,6 +14,7 @@ import {
   MAX_LOCAL_ORDERS,
   createInitialCommerceState,
 } from "../domain/state";
+import { retainUncommittedBagLines } from "../connected-order-client";
 
 export type CommerceCommand =
   | { type: "HYDRATION_REQUESTED" }
@@ -32,6 +33,7 @@ export type CommerceCommand =
   | { type: "CHECKOUT_SAVE_REQUESTED" }
   | { type: "CHECKOUT_SAVE_SUCCEEDED"; order: ShopOrder }
   | { type: "CHECKOUT_SAVE_FAILED" }
+  | { type: "CONNECTED_ORDER_COMMITTED"; committedSlugs: string[] }
   | {
       type: "CHECKOUT_SUBMISSION_SUCCEEDED";
       localOrderId: string;
@@ -179,6 +181,15 @@ export function commerceReducer(
         ...state,
         checkout: state.bag.length ? "reviewing" : "idle",
       };
+    case "CONNECTED_ORDER_COMMITTED": {
+      const bag = retainUncommittedBagLines(state.bag, command.committedSlugs);
+      if (bag.length === state.bag.length) return state;
+      return {
+        ...persistentUpdate(state, { bag }),
+        checkout: "idle",
+        order: "saved",
+      };
+    }
     case "CHECKOUT_SUBMISSION_SUCCEEDED": {
       const localOrder = state.orders.find((order) => order.id === command.localOrderId);
       if (!localOrder || localOrder.transmission !== "LOCAL_ONLY") return state;
