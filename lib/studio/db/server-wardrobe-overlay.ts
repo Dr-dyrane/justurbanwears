@@ -4,12 +4,13 @@ import {
   pendingCaptureView,
   type OperatorSafePendingCapture,
 } from "../engine/pending-capture-contracts";
-import type { Garment, GarmentCategory, InventoryRecord } from "../domain/entities";
+import type { Garment, GarmentCategory, InventoryRecord, StudioListing } from "../domain/entities";
 import type { StudioSnapshot } from "../domain/state";
 import type { StudioRepository } from "../services/contracts";
 
 const SERVER_GARMENT_PREFIX = "studio-server-garment-";
 const SERVER_INVENTORY_PREFIX = "studio-server-inventory-";
+const SERVER_LISTING_PREFIX = "studio-server-listing-";
 
 type ServerWardrobeLoader = () => Promise<OperatorSafeWardrobeItem[]>;
 
@@ -35,7 +36,22 @@ function isWardrobeItem(value: unknown): value is OperatorSafeWardrobeItem {
     && (value.directCaptures === undefined || (
       Array.isArray(value.directCaptures)
       && value.directCaptures.every(isDirectCapture)
-    ));
+    ))
+    && (value.publication === undefined || isPublication(value.publication, value.id));
+}
+
+function isPublication(value: unknown, wardrobeItemId: string) {
+  if (!isRecord(value)) return false;
+  const slug = typeof value.slug === "string" ? value.slug : "";
+  return typeof value.publicationId === "string"
+    && value.wardrobeItemId === wardrobeItemId
+    && typeof value.sku === "string"
+    && /^JUW-[0-9]{3,}$/.test(value.sku)
+    && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)
+    && value.state === "PUBLISHED"
+    && typeof value.publishedAt === "string"
+    && Number.isFinite(Date.parse(value.publishedAt))
+    && value.shopUrl === `/shop/products/${slug}`;
 }
 
 function isDirectCapture(value: unknown): value is OperatorSafePendingCapture {
@@ -60,6 +76,10 @@ function inventoryId(itemId: string) {
   return `${SERVER_INVENTORY_PREFIX}${itemId}`;
 }
 
+function listingId(itemId: string) {
+  return `${SERVER_LISTING_PREFIX}${itemId}`;
+}
+
 function mapServerGarment(item: OperatorSafeWardrobeItem): Garment {
   const approvedAssetPath = item.approvedAssetId
     ? `/api/studio/intakes/${item.intakeId}/assets/${item.approvedAssetId}` as const
@@ -78,7 +98,7 @@ function mapServerGarment(item: OperatorSafeWardrobeItem): Garment {
   );
   return {
     id: garmentId(item.id),
-    sku: `INTAKE-${item.id.slice(0, 8).toUpperCase()}`,
+    sku: item.publication?.sku ?? `INTAKE-${item.id.slice(0, 8).toUpperCase()}`,
     title: item.title,
     category: studioCategory(item.category),
     sizeLabel: item.sizeLabel,
@@ -91,13 +111,13 @@ function mapServerGarment(item: OperatorSafeWardrobeItem): Garment {
     privateNote: "",
     publicDescription: "",
     quantity: item.state === "ARCHIVED" ? 0 : 1,
-    saleEligible: false,
+    saleEligible: Boolean(item.publication),
     measurements: [],
     classificationState: "READY",
     mediaState: mediaReady ? "READY" : approvedAssetPath ? "DRAFT" : "EMPTY",
-    state: "DRAFT",
+    state: item.publication ? "PUBLISHED" : "DRAFT",
     availability: item.state === "ARCHIVED" ? "ARCHIVED" : "AVAILABLE",
-    canonState: "REVIEW",
+    canonState: item.publication ? "APPROVED" : "REVIEW",
     visual: "studio",
     references,
     ...(approvedAssetPath ? {
@@ -110,6 +130,31 @@ function mapServerGarment(item: OperatorSafeWardrobeItem): Garment {
     } : {}),
     createdAt: item.createdAt,
     privateWardrobeItemId: item.id,
+    ...(item.publication ? { dynamicPublication: {
+      publicationId: item.publication.publicationId,
+      wardrobeItemId: item.publication.wardrobeItemId,
+      sku: item.publication.sku,
+      slug: item.publication.slug,
+      state: "PUBLISHED" as const,
+      publishedAt: item.publication.publishedAt,
+      shopUrl: item.publication.shopUrl,
+    } } : {}),
+  };
+}
+
+function mapServerListing(item: OperatorSafeWardrobeItem): StudioListing | null {
+  if (!item.publication) return null;
+  return {
+    id: listingId(item.id),
+    garmentId: garmentId(item.id),
+    modelId: "",
+    slug: item.publication.slug,
+    title: item.title,
+    description: `${item.colour} · ${item.condition}`,
+    price: item.price,
+    state: "PUBLISHED",
+    createdAt: item.createdAt,
+    publishedAt: item.publication.publishedAt,
   };
 }
 
@@ -117,12 +162,13 @@ function mapServerInventory(item: OperatorSafeWardrobeItem): InventoryRecord {
   return {
     id: inventoryId(item.id),
     garmentId: garmentId(item.id),
+    ...(item.publication ? { listingId: listingId(item.id) } : {}),
     onHand: item.state === "ARCHIVED" ? 0 : 1,
     reserved: 0,
     sold: 0,
     returned: 0,
     writeOff: item.state === "ARCHIVED" ? 1 : 0,
-    state: "DRAFT",
+    state: item.publication ? "PUBLISHED" : "DRAFT",
     updatedAt: item.updatedAt,
   };
 }
@@ -132,6 +178,7 @@ export function stripServerWardrobeOverlay(snapshot: StudioSnapshot): StudioSnap
     ...snapshot,
     garments: snapshot.garments.filter((garment) => !garment.id.startsWith(SERVER_GARMENT_PREFIX)),
     inventory: snapshot.inventory.filter((record) => !record.id.startsWith(SERVER_INVENTORY_PREFIX)),
+    listings: snapshot.listings.filter((listing) => !listing.id.startsWith(SERVER_LISTING_PREFIX)),
   };
 }
 
@@ -144,6 +191,10 @@ export function mergeServerWardrobeOverlay(
     ...local,
     garments: [...local.garments, ...items.map(mapServerGarment)],
     inventory: [...local.inventory, ...items.map(mapServerInventory)],
+    listings: [...local.listings, ...items.flatMap((item) => {
+      const listing = mapServerListing(item);
+      return listing ? [listing] : [];
+    })],
   };
 }
 

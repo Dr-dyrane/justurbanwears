@@ -38,7 +38,18 @@ export function resolveShopPublicMediaUrl(sourcePath: string): string {
 
 export function isSafeShopProductMediaUrl(value: string, slug: string): boolean {
   const asset = assetsBySource.get(value) ?? assetsByUrl.get(value);
-  return asset?.sourcePath.startsWith(`/shop/products/${slug}/`) ?? false;
+  if (asset?.sourcePath.startsWith(`/shop/products/${slug}/`)) return true;
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:"
+      && !url.username
+      && !url.password
+      && !url.port
+      && url.hostname.endsWith(".public.blob.vercel-storage.com")
+      && url.pathname.startsWith(`/shop/studio/${slug}/`);
+  } catch {
+    return false;
+  }
 }
 
 export function absoluteShopMediaUrl(value: string): string {

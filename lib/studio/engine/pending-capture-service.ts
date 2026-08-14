@@ -53,7 +53,7 @@ const WARDROBE_CAPTURE_ROLES: readonly PendingDirectCaptureRole[] = [
   "FABRIC_DETAIL",
 ];
 
-function wardrobeCaptureKey(wardrobeItemId: string) {
+export function wardrobeCaptureKey(wardrobeItemId: string) {
   return `INTAKE-${wardrobeItemId.replace(/-/g, "").slice(0, 32).toUpperCase()}`;
 }
 

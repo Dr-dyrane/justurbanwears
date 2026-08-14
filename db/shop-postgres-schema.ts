@@ -7,6 +7,7 @@ import {
   integer,
   jsonb,
   pgEnum,
+  pgSequence,
   pgTable,
   primaryKey,
   text,
@@ -22,6 +23,12 @@ export const shopCatalogueAvailability = pgEnum("shop_catalogue_availability", [
   "SOLD",
   "ARCHIVED",
 ]);
+
+// Compact public identities for Studio-published pieces. Sequence values may
+// have harmless gaps; they are never derived with a race-prone max+1 query.
+export const shopDynamicSkuSequence = pgSequence("shop_dynamic_sku_sequence", {
+  startWith: 100,
+});
 
 export const shopCatalogueItems = pgTable("shop_catalogue_items", {
   sku: varchar("sku", { length: 40 }).primaryKey(),
@@ -453,6 +460,7 @@ export const studioWardrobeItems = pgTable("studio_wardrobe_items", {
   price: integer("price").notNull(),
   quantity: integer("quantity").default(1).notNull(),
   state: varchar("state", { length: 24 }).default("DRAFT").notNull(),
+  version: integer("version").default(1).notNull(),
   approvedAssetId: uuid("approved_asset_id").references(() => studioAssets.id, { onDelete: "restrict" }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
@@ -461,6 +469,7 @@ export const studioWardrobeItems = pgTable("studio_wardrobe_items", {
   index("studio_wardrobe_items_operator_updated_idx").on(table.operatorSubject, table.updatedAt),
   check("studio_wardrobe_items_price_nonnegative", sql`${table.price} >= 0`),
   check("studio_wardrobe_items_quantity_one", sql`${table.quantity} = 1`),
+  check("studio_wardrobe_items_version_positive", sql`${table.version} > 0`),
   check("studio_wardrobe_items_state_private", sql`${table.state} in ('DRAFT', 'READY', 'ARCHIVED')`),
 ]);
 
@@ -492,4 +501,51 @@ export const studioPendingProductCaptures = pgTable("studio_pending_product_capt
   check("studio_pending_product_captures_bytes_positive", sql`${table.byteSize} > 0`),
   check("studio_pending_product_captures_sha256", sql`${table.sha256} ~ '^[0-9a-f]{64}$'`),
   check("studio_pending_product_captures_private_only", sql`${table.privacy} = 'PRIVATE'`),
+]);
+
+// Durable, append-only bridge from a private Studio piece to its first public
+// catalogue row. The checked-in release ledger remains authoritative for the
+// seeded catalogue; this ledger is the authority for operator publications.
+export const studioCataloguePublications = pgTable("studio_catalogue_publications", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  wardrobeItemId: uuid("wardrobe_item_id")
+    .notNull()
+    .references(() => studioWardrobeItems.id, { onDelete: "restrict" }),
+  operatorSubject: text("operator_subject").notNull(),
+  idempotencyKey: varchar("idempotency_key", { length: 160 }).notNull(),
+  sourceRevision: varchar("source_revision", { length: 64 }).notNull(),
+  sku: varchar("sku", { length: 40 })
+    .notNull()
+    .references(() => shopCatalogueItems.sku, { onDelete: "restrict", onUpdate: "cascade" }),
+  slug: text("slug").notNull(),
+  state: varchar("state", { length: 24 }).default("PUBLISHED").notNull(),
+  facts: jsonb("facts").$type<Record<string, unknown>>().notNull(),
+  media: jsonb("media").$type<Array<{
+    slot: "GARMENT_FRONT" | "GARMENT_BACK" | "FABRIC_DETAIL";
+    src: string;
+    pathname: string;
+    sourceSha256: string;
+    sha256: string;
+    mimeType: string;
+    width: number;
+    height: number;
+  }>>().notNull(),
+  publishedAt: timestamp("published_at", { withTimezone: true }).defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("studio_catalogue_publications_wardrobe_unique").on(table.wardrobeItemId),
+  uniqueIndex("studio_catalogue_publications_sku_unique").on(table.sku),
+  uniqueIndex("studio_catalogue_publications_slug_unique").on(table.slug),
+  uniqueIndex("studio_catalogue_publications_operator_idempotency_unique").on(
+    table.operatorSubject,
+    table.idempotencyKey,
+  ),
+  index("studio_catalogue_publications_operator_published_idx").on(
+    table.operatorSubject,
+    table.publishedAt,
+  ),
+  check("studio_catalogue_publications_source_revision_sha256", sql`${table.sourceRevision} ~ '^[0-9a-f]{64}$'`),
+  check("studio_catalogue_publications_state_known", sql`${table.state} = 'PUBLISHED'`),
+  check("studio_catalogue_publications_facts_object", sql`jsonb_typeof(${table.facts}) = 'object'`),
+  check("studio_catalogue_publications_media_array", sql`jsonb_typeof(${table.media}) = 'array'`),
 ]);

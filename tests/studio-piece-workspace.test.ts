@@ -112,6 +112,7 @@ test("dynamic intake captures reuse the private capture store after ownership va
 test("Piece surface uses one workspace, durable captures, and a universal accessible viewer", () => {
   const workbench = readFileSync(`${root}/components/studio/wardrobe-workbench.tsx`, "utf8");
   const viewer = readFileSync(`${root}/components/studio/media-viewer.tsx`, "utf8");
+  const foundation = readFileSync(`${root}/app/foundation.css`, "utf8");
 
   assert.match(workbench, /selectPieceWorkspace/);
   assert.match(workbench, /<PieceWorkspaceView/);
@@ -127,4 +128,5 @@ test("Piece surface uses one workspace, durable captures, and a universal access
   assert.match(viewer, /addEventListener\("keydown", onEscape, true\)/);
   assert.match(viewer, /origin\?\.focus/);
   assert.match(viewer, /aria-modal|showModal/);
+  assert.match(foundation, /studio-media-viewer-stage > img:only-child \{ grid-column: 1 \/ -1; \}/);
 });

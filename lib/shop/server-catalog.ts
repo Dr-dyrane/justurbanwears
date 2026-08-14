@@ -5,11 +5,13 @@ import {
   shopCatalogueItems,
   shopInventory,
   shopSeedLedger,
+  studioCataloguePublications,
 } from "../../db/shop-postgres-schema";
 import { shopProducts } from "./catalog";
 import type { ShopProduct } from "./domain/entities";
 import {
   isApprovedShopMediaSource,
+  isSafeShopProductMediaUrl,
   SHOP_PUBLIC_MEDIA_CATALOGUE_CHECKSUM,
   SHOP_PUBLIC_MEDIA_PRESENTATION_CHECKSUM,
   SHOP_PUBLIC_MEDIA_REVISION,
@@ -47,7 +49,15 @@ const modelSlots = new Set([
   "MODEL_DETAIL",
 ]);
 
-type DatabaseCatalogueRow = Awaited<ReturnType<typeof readDatabaseCatalogue>>[number];
+type DatabaseCatalogueRow = Omit<typeof shopCatalogueItems.$inferSelect, "createdAt" | "updatedAt"> & {
+  availability: "AVAILABLE" | "RESERVED" | "SOLD" | "ARCHIVED" | null;
+  publicationId?: string | null;
+  publicationState?: string | null;
+  publicationSourceRevision?: string | null;
+  publicationMedia?: (typeof studioCataloguePublications.$inferSelect)["media"] | null;
+  publicationSlug?: string | null;
+  publicationFacts?: Record<string, unknown> | null;
+};
 interface CatalogueReleaseLedger {
   revision: string;
   checksum: string;
@@ -159,8 +169,118 @@ function parseMedia(value: unknown, slug: string): WardrobePublicMedia[] {
   });
 }
 
+function dynamicCatalogueRowToShopProduct(row: DatabaseCatalogueRow): ShopProduct {
+  if (
+    !row.publicationId
+    || row.publicationState !== "PUBLISHED"
+    || typeof row.publicationSourceRevision !== "string"
+    || !/^[0-9a-f]{64}$/.test(row.publicationSourceRevision)
+    || !Array.isArray(row.publicationMedia)
+    || row.publicationSlug !== row.slug
+    || !row.publicationFacts
+    || typeof row.publicationFacts !== "object"
+  ) throw new Error("Invalid Studio publication ledger.");
+  const slug = nonEmptyString(row.slug, "slug");
+  const sku = nonEmptyString(row.sku, "SKU");
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) throw new Error("Invalid Studio catalogue slug.");
+  if (!/^JUW-[0-9]{3,}$/.test(sku)) throw new Error("Invalid Studio catalogue SKU.");
+  if (!Number.isSafeInteger(row.price) || row.price <= 0) throw new Error("Invalid Studio catalogue price.");
+  if (!categories.has(row.category) || !tones.has(row.tone) || !silhouettes.has(row.silhouette)) {
+    throw new Error("Invalid Studio catalogue presentation.");
+  }
+  if (!Array.isArray(row.media) || row.media.length !== 3 || row.publicationMedia.length !== 3) {
+    throw new Error("Invalid Studio catalogue media set.");
+  }
+  const ledgerFacts = row.publicationFacts;
+  if (
+    ledgerFacts.title !== row.name
+    || ledgerFacts.category !== row.category
+    || ledgerFacts.colour !== row.colour
+    || ledgerFacts.sizeLabel !== row.taggedSize
+    || ledgerFacts.condition !== row.condition
+    || ledgerFacts.price !== row.price
+    || ledgerFacts.quantity !== 1
+  ) throw new Error("Studio catalogue facts drifted from publication review.");
+  const catalogueSources = new Map(row.media.map((item) => {
+    if (!item || typeof item !== "object" || !("slot" in item) || !("src" in item)) {
+      throw new Error("Invalid Studio catalogue media.");
+    }
+    return [String(item.slot), String(item.src)];
+  }));
+  const expectedSlots = new Set(["GARMENT_FRONT", "GARMENT_BACK", "FABRIC_DETAIL"]);
+  const media = row.publicationMedia.map((item) => {
+    if (
+      !item
+      || typeof item !== "object"
+      || !("slot" in item)
+      || !("src" in item)
+      || !("sha256" in item)
+      || !("sourceSha256" in item)
+      || !("pathname" in item)
+      || !("mimeType" in item)
+      || !("width" in item)
+      || !("height" in item)
+      || typeof item.slot !== "string"
+      || !expectedSlots.delete(item.slot)
+      || typeof item.src !== "string"
+      || catalogueSources.get(item.slot) !== item.src
+      || !isSafeShopProductMediaUrl(item.src, slug)
+      || typeof item.sha256 !== "string"
+      || !/^[0-9a-f]{64}$/.test(item.sha256)
+      || typeof item.sourceSha256 !== "string"
+      || !/^[0-9a-f]{64}$/.test(item.sourceSha256)
+      || item.mimeType !== "image/webp"
+      || item.pathname !== `shop/studio/${slug}/${item.slot.toLowerCase()}/${item.sha256}.webp`
+      || !item.src.endsWith(`/${item.sha256}.webp`)
+      || !Number.isSafeInteger(item.width)
+      || !Number.isSafeInteger(item.height)
+      || Number(item.width) < 1
+      || Number(item.height) < 1
+    ) throw new Error("Invalid Studio publication media.");
+    const slot = item.slot as "GARMENT_FRONT" | "GARMENT_BACK" | "FABRIC_DETAIL";
+    const label = slot === "GARMENT_FRONT" ? "Garment front" : slot === "GARMENT_BACK" ? "Garment back" : "Fabric detail";
+    return {
+      id: slot.toLowerCase().replaceAll("_", "-"),
+      src: item.src,
+      alt: `${row.name} · ${label.toLowerCase()}.`,
+      label,
+      presentation: "garment" as const,
+      view: slot === "GARMENT_FRONT" ? "front" as const : slot === "GARMENT_BACK" ? "back" as const : "detail" as const,
+      width: Number(item.width),
+      height: Number(item.height),
+    };
+  });
+  if (expectedSlots.size || catalogueSources.size !== 3) throw new Error("Incomplete Studio publication media.");
+  if (row.availability !== "AVAILABLE" && row.availability !== "RESERVED" && row.availability !== "SOLD") {
+    throw new Error("Studio catalogue inventory is missing or invalid.");
+  }
+  return {
+    slug,
+    sku,
+    name: nonEmptyString(row.name, "name"),
+    category: row.category as ShopProduct["category"],
+    price: row.price,
+    taggedSize: nonEmptyString(row.taggedSize, "tagged size"),
+    fit: nonEmptyString(row.fit, "fit"),
+    condition: nonEmptyString(row.condition, "condition"),
+    colour: nonEmptyString(row.colour, "colour"),
+    availability: row.availability,
+    availabilityConfirmed: true,
+    drop: nonEmptyString(row.dropLabel, "drop label"),
+    tone: row.tone as ShopProduct["tone"],
+    silhouette: row.silhouette as ShopProduct["silhouette"],
+    media,
+    modelTryout: { modelStatus: "PENDING" },
+    note: nonEmptyString(row.note, "note"),
+    story: nonEmptyString(row.story, "story"),
+    details: stringArray(row.details, "details"),
+    measurements: parseMeasurements(row.measurements),
+  };
+}
+
 export function databaseCatalogueRowToShopProduct(row: DatabaseCatalogueRow): ShopProduct | null {
   if (row.availability === "ARCHIVED") return null;
+  if (row.publicationId) return dynamicCatalogueRowToShopProduct(row);
   if (
     row.availability !== "AVAILABLE"
     && row.availability !== "RESERVED"
@@ -307,9 +427,16 @@ async function readDatabaseCatalogue() {
         modelAnchor: shopCatalogueItems.modelAnchor,
         media: shopCatalogueItems.media,
         availability: shopInventory.availability,
+        publicationId: studioCataloguePublications.id,
+        publicationState: studioCataloguePublications.state,
+        publicationSourceRevision: studioCataloguePublications.sourceRevision,
+        publicationMedia: studioCataloguePublications.media,
+        publicationSlug: studioCataloguePublications.slug,
+        publicationFacts: studioCataloguePublications.facts,
       })
       .from(shopCatalogueItems)
       .leftJoin(shopInventory, eq(shopCatalogueItems.sku, shopInventory.sku))
+      .leftJoin(studioCataloguePublications, eq(shopCatalogueItems.sku, studioCataloguePublications.sku))
       .orderBy(asc(shopCatalogueItems.sku)),
     database
       .select({
@@ -322,8 +449,9 @@ async function readDatabaseCatalogue() {
       .orderBy(desc(shopSeedLedger.appliedAt))
       .limit(1),
   ]));
-  assertCatalogueReleaseLedger(ledgerRows[0], rows.length);
-  assertCataloguePresentation(rows);
+  const releaseRows = rows.filter((row) => !row.publicationId);
+  assertCatalogueReleaseLedger(ledgerRows[0], releaseRows.length);
+  assertCataloguePresentation(releaseRows);
   return rows;
 }
 
@@ -358,6 +486,17 @@ export function getServerShopProducts(): Promise<ShopProduct[]> {
   return promise;
 }
 
+export function invalidateServerShopCatalogue(): void {
+  cachedCatalogue = undefined;
+}
+
 export async function getServerShopProduct(slug: string): Promise<ShopProduct | undefined> {
-  return (await getServerShopProducts()).find((product) => product.slug === slug);
+  const cached = (await getServerShopProducts()).find((product) => product.slug === slug);
+  if (cached) return cached;
+  // A publication receipt can land on a different server instance than its
+  // first PDP request. One bounded authoritative miss refresh makes that link
+  // immediately useful without removing the short index cache.
+  const products = await loadServerShopProducts();
+  cachedCatalogue = { expiresAt: Date.now() + CACHE_TTL_MS, promise: Promise.resolve(products) };
+  return products.find((product) => product.slug === slug);
 }

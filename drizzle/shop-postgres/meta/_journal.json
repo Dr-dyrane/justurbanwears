@@ -43,6 +43,13 @@
       "when": 1786670273055,
       "tag": "0005_dazzling_sister_grimm",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1786692544071,
+      "tag": "0006_jittery_joystick",
+      "breakpoints": true
     }
   ]
 }

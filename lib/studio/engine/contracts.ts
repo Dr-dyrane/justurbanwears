@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { OperatorSafePendingCapture } from "./pending-capture-contracts";
+import type { StudioPublicationReceipt } from "./catalogue-publication-contracts";
 
 export const intakeFactsSchema = z.object({
   title: z.string().trim().min(1).max(100),
@@ -136,6 +137,7 @@ export type OperatorSafeWardrobeItem = IntakeFacts & {
   state: "DRAFT" | "READY" | "ARCHIVED";
   approvedAssetId: string | null;
   directCaptures?: OperatorSafePendingCapture[];
+  publication?: StudioPublicationReceipt;
   createdAt: string;
   updatedAt: string;
 };

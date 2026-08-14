@@ -55,7 +55,16 @@ export function selectPieceWorkspace(input: {
   const approved = approvedSlug
     ? getApprovedPublicListingContract(garment.sku, approvedSlug)
     : undefined;
-  const canPublish = Boolean(approved);
+  const dynamicApproved = Boolean(
+    listing
+    && garment.dynamicPublication
+    && garment.privateWardrobeItemId === garment.dynamicPublication.wardrobeItemId
+    && garment.sku === garment.dynamicPublication.sku
+    && listing.slug === garment.dynamicPublication.slug
+    && listing.state === "PUBLISHED"
+    && garment.dynamicPublication.state === "PUBLISHED"
+  );
+  const canPublish = Boolean(approved || dynamicApproved);
   const garmentGates = garmentReadiness(garment);
   const garmentReady = everyGateReady(garmentGates);
   const otherBlockers = garmentGates

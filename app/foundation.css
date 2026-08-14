@@ -6709,8 +6709,18 @@ html[data-theme="dark"] .studio-model-portrait { background: radial-gradient(cir
 .studio-media-viewer-frame > header small { color: rgba(255,255,255,.54); font-size: 8px; letter-spacing: .08em; text-transform: uppercase; }
 .studio-media-viewer-frame > header strong { font-size: 12px; }
 .studio-media-viewer-frame button { align-items: center; background: rgba(255,255,255,.12); border: 0; border-radius: 50%; color: #fff; display: flex; height: 44px; justify-content: center; width: 44px; }
-.studio-media-viewer-stage { align-items: center; display: grid; gap: 12px; grid-template-columns: 44px minmax(0, 1fr) 44px; min-height: 0; }
-.studio-media-viewer-stage > img { height: 100%; max-height: calc(100dvh - 130px); object-fit: contain; width: 100%; }
+.studio-media-viewer-stage { align-items: center; display: grid; gap: 12px; grid-template-columns: 44px minmax(0, 1fr) 44px; justify-items: center; min-height: 0; }
+.studio-media-viewer-stage > img { display: block; height: auto; max-height: calc(100dvh - 130px); max-width: 100%; object-fit: contain; width: auto; }
+.studio-media-viewer-stage > img:only-child { grid-column: 1 / -1; }
+.studio-publication-review { display: grid; gap: 18px; }
+.studio-publication-media { display: grid; gap: 8px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.studio-publication-media > button { aspect-ratio: 4 / 5; background: var(--surface); border: 0; border-radius: 18px; cursor: zoom-in; overflow: hidden; padding: 0; }
+.studio-publication-media img { height: 100%; object-fit: cover; width: 100%; }
+.studio-publication-confirm { align-items: center; background: color-mix(in srgb, var(--accent) 8%, var(--surface)); border-radius: 18px; cursor: pointer; display: flex; gap: 12px; min-height: 58px; padding: 12px 14px; }
+.studio-publication-confirm input { accent-color: var(--accent); height: 20px; width: 20px; }
+.studio-publication-confirm label { cursor: pointer; display: grid; gap: 2px; }
+.studio-publication-confirm small { opacity: .62; }
+@media (max-width: 560px) { .studio-publication-media { gap: 5px; } .studio-publication-media > button { border-radius: 12px; } }
 .studio-media-viewer-frame > p { color: rgba(255,255,255,.58); font-size: 9px; margin: 10px 0 0; text-align: center; }
 .studio-listing-preview > small { font-size: 8px; opacity: 0.47; }
 .studio-listing-preview h3 { font-family: var(--font-display); font-size: clamp(35px, 4vw, 54px); font-weight: 480; letter-spacing: -0.055em; line-height: 0.96; margin: 15px 0; }

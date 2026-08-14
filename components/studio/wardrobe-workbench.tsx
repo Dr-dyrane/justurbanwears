@@ -3,7 +3,7 @@
 /* Approved catalogue media uses fixed local public paths across supported runtimes. */
 /* eslint-disable @next/next/no-img-element */
 
-import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { FormEvent, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   ArrowRight,
@@ -53,6 +53,10 @@ import {
   type OperatorSafePendingCapture,
 } from "../../lib/studio/engine/pending-capture-contracts";
 import { selectPieceWorkspace } from "../../lib/studio/projections/piece-workspace";
+import type {
+  StudioPublicationReceipt,
+  StudioPublicationReview,
+} from "../../lib/studio/engine/catalogue-publication-contracts";
 import {
   StudioMediaButton,
   StudioMediaViewerProvider,
@@ -174,8 +178,21 @@ function GarmentCard({ garment, onOpenPiece }: { garment: Garment; onOpenPiece(g
 function PieceWorkspaceView({ garment, onDismiss, onContinueMedia }: { garment: Garment; onDismiss(): void; onContinueMedia(garment: Garment): void }) {
   const studio = useStudio();
   const [captures, setCaptures] = useState<OperatorSafePendingCapture[]>([]);
+  const [publicationReview, setPublicationReview] = useState<StudioPublicationReview | null>(
+    garment.dynamicPublication ? { state: "PUBLISHED", receipt: garment.dynamicPublication } : null,
+  );
+  const [publicationLoading, setPublicationLoading] = useState(Boolean(garment.privateWardrobeItemId && !garment.dynamicPublication));
+  const [publicationLoadError, setPublicationLoadError] = useState("");
+  const [publicationReload, setPublicationReload] = useState(0);
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [publicationConfirmed, setPublicationConfirmed] = useState(false);
+  const [publishing, setPublishing] = useState(false);
+  const [publicationError, setPublicationError] = useState("");
+  const publicationConfirmationId = useId();
   const captureSectionRef = useRef<HTMLElement>(null);
   const listingSectionRef = useRef<HTMLElement>(null);
+  const publicationSectionRef = useRef<HTMLElement>(null);
+  const publicationKeyRef = useRef(`studio-publish:${garment.privateWardrobeItemId ?? garment.id}:${crypto.randomUUID()}`);
   const listing = studio.listings.find((candidate) => candidate.garmentId === garment.id);
   const pendingContract = getPendingWardrobeProductContract(garment.sku);
   const cover = studioGarmentCover(garment, listing);
@@ -197,9 +214,110 @@ function PieceWorkspaceView({ garment, onDismiss, onContinueMedia }: { garment: 
     requiredRoles: ["GARMENT_BACK", "FABRIC_DETAIL"],
   } : null;
   const coverItems: StudioMediaItem[] = cover ? [{ alt: cover.alt, label: "Garment front", src: cover.src }] : [];
+  const captureRevision = captures.map((capture) => `${capture.id}:${capture.approvedAt}`).join("|");
+  const dynamicReview = garment.privateWardrobeItemId ? publicationReview : null;
+  const nextAction = publicationLoading
+    ? { kind: "DYNAMIC_LOADING", label: "Checking readiness…", detail: "" }
+    : publicationLoadError
+      ? { kind: "DYNAMIC_RETRY", label: "Check again", detail: publicationLoadError }
+      : dynamicReview?.state === "READY"
+    ? { kind: "DYNAMIC_REVIEW", label: "Review Shop preview", detail: "Confirm the piece and its three public photos." }
+    : dynamicReview?.state === "PUBLISHED"
+      ? { kind: "DYNAMIC_LIVE", label: "View in Shop", detail: "This piece is live." }
+      : workspace.nextAction;
+  const dynamicStage = dynamicReview?.state === "READY"
+    ? { stage: "READY", label: "Ready to publish" }
+    : dynamicReview?.state === "PUBLISHED"
+      ? { stage: "LIVE", label: "Live" }
+      : { stage: workspace.stage, label: workspace.stageLabel };
+  const visibleBlockers = dynamicReview?.state === "READY" || dynamicReview?.state === "PUBLISHED"
+    ? []
+    : dynamicReview?.state === "BLOCKED" ? dynamicReview.blockers : workspace.blockers;
+
+  useEffect(() => {
+    if (!garment.privateWardrobeItemId) return;
+    if (garment.dynamicPublication) {
+      setPublicationReview({ state: "PUBLISHED", receipt: garment.dynamicPublication });
+      setPublicationLoading(false);
+      return;
+    }
+    const controller = new AbortController();
+    setPublicationLoading(true);
+    setPublicationLoadError("");
+    void fetch(`/api/studio/wardrobe/${encodeURIComponent(garment.privateWardrobeItemId)}/publication`, {
+      cache: "no-store",
+      credentials: "same-origin",
+      headers: { accept: "application/json" },
+      signal: controller.signal,
+    }).then(async (response) => {
+      const body = await response.json() as { review?: StudioPublicationReview; error?: { message?: string } };
+      if (!response.ok) throw new Error(body.error?.message || "Readiness is unavailable.");
+      if (body.review) {
+        setPublicationReview(body.review);
+        if (body.review.state === "PUBLISHED") setReviewOpen(false);
+      }
+    }).catch((error: unknown) => {
+      if (!controller.signal.aborted) setPublicationLoadError(error instanceof Error ? error.message : "Readiness is unavailable.");
+    }).finally(() => {
+      if (!controller.signal.aborted) setPublicationLoading(false);
+    });
+    return () => controller.abort();
+  }, [garment.dynamicPublication, garment.privateWardrobeItemId, captureRevision, publicationReload]);
+
+  async function publishDynamicPiece() {
+    if (!garment.privateWardrobeItemId || dynamicReview?.state !== "READY" || !publicationConfirmed || publishing) return;
+    setPublishing(true);
+    setPublicationError("");
+    try {
+      const response = await fetch(`/api/studio/wardrobe/${encodeURIComponent(garment.privateWardrobeItemId)}/publication`, {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { accept: "application/json", "content-type": "application/json" },
+        body: JSON.stringify({
+          expectedRevision: dynamicReview.expectedRevision,
+          idempotencyKey: publicationKeyRef.current,
+          confirmation: "PUBLISH",
+          publicMediaConfirmed: true,
+        }),
+      });
+      const body = await response.json() as {
+        receipt?: StudioPublicationReceipt;
+        error?: { code?: string; message?: string; recovery?: string };
+      };
+      if (!response.ok || !body.receipt) {
+        if (response.status === 409) {
+          publicationKeyRef.current = `studio-publish:${garment.privateWardrobeItemId}:${crypto.randomUUID()}`;
+          setPublicationConfirmed(false);
+          setPublicationReview(null);
+          setPublicationLoading(true);
+          setPublicationError("Piece changed. Review the refreshed details.");
+          setPublicationReload((value) => value + 1);
+          return;
+        }
+        setPublicationError([body.error?.message, body.error?.recovery].filter(Boolean).join(" ") || "Publishing did not finish.");
+        return;
+      }
+      setPublicationReview({ state: "PUBLISHED", receipt: body.receipt });
+      setReviewOpen(false);
+    } catch {
+      setPublicationError("Publishing did not finish. Try again.");
+    } finally {
+      setPublishing(false);
+    }
+  }
 
   function runNextAction() {
-    if (workspace.nextAction.kind === "CAPTURE") {
+    if (nextAction.kind === "DYNAMIC_REVIEW") {
+      setReviewOpen(true);
+      window.setTimeout(() => {
+        publicationSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+        publicationSectionRef.current?.focus({ preventScroll: true });
+      }, 0);
+    } else if (nextAction.kind === "DYNAMIC_LIVE" && dynamicReview?.state === "PUBLISHED") {
+      window.location.assign(dynamicReview.receipt.shopUrl);
+    } else if (nextAction.kind === "DYNAMIC_RETRY") {
+      setPublicationReload((value) => value + 1);
+    } else if (workspace.nextAction.kind === "CAPTURE") {
       captureSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
       captureSectionRef.current?.focus({ preventScroll: true });
     } else if (workspace.nextAction.kind === "FINISH") {
@@ -230,7 +348,7 @@ function PieceWorkspaceView({ garment, onDismiss, onContinueMedia }: { garment: 
       </div>
       <div className="studio-draft-content">
         <div className="studio-draft-summary">
-          <div className="studio-card-heading"><div><small>{garment.sku} · {garment.sizeLabel}</small><h3>{garment.title}</h3></div><span className="studio-piece-stage" data-stage={workspace.stage}>{workspace.stageLabel}</span></div>
+          <div className="studio-card-heading"><div><small>{garment.sku} · {garment.sizeLabel}</small><h3>{garment.title}</h3></div><span className="studio-piece-stage" data-stage={dynamicStage.stage}>{dynamicStage.label}</span></div>
           <p>{garment.color} · {garment.condition}</p>
           <div className="studio-garment-facts">
             <span>{garment.price > 0 ? formatNaira(garment.price) : "Price pending"}</span>
@@ -238,14 +356,34 @@ function PieceWorkspaceView({ garment, onDismiss, onContinueMedia }: { garment: 
             <span>{garment.measurements.length > 0 ? `${garment.measurements.length} measurements` : "Measurements pending"}</span>
           </div>
         </div>
-        <section className="studio-piece-next" aria-label={`Next action for ${garment.title}`}>
-          <span>{workspace.nextAction.kind === "CAPTURE" ? <Camera aria-hidden="true" size={19} /> : workspace.canPublish ? <Eye aria-hidden="true" size={19} /> : <LockKeyhole aria-hidden="true" size={19} />}</span>
-          <div><small>Next</small><strong>{workspace.nextAction.label}</strong><p>{workspace.nextAction.detail}</p></div>
-          <button className="button button-primary" onClick={runNextAction} type="button">{workspace.nextAction.label}<ArrowRight aria-hidden="true" size={15} /></button>
-        </section>
+        {!reviewOpen ? <section className="studio-piece-next" aria-label={`Next action for ${garment.title}`}>
+          <span>{workspace.nextAction.kind === "CAPTURE" ? <Camera aria-hidden="true" size={19} /> : dynamicReview?.state === "READY" || workspace.canPublish ? <Eye aria-hidden="true" size={19} /> : <LockKeyhole aria-hidden="true" size={19} />}</span>
+          <div><small>Next</small><strong>{nextAction.label}</strong><p>{nextAction.detail}</p></div>
+          <button className="button button-primary" disabled={nextAction.kind === "DYNAMIC_LOADING"} onClick={runNextAction} type="button">{nextAction.label}{nextAction.kind === "DYNAMIC_LOADING" ? null : <ArrowRight aria-hidden="true" size={15} />}</button>
+        </section> : null}
         {pendingContract ? <PendingProductMedia capturedViews={capturedRoles} contract={pendingContract} title={garment.title} /> : null}
         {captureTarget ? <section id={`piece-captures-${garment.id}`} ref={captureSectionRef} tabIndex={-1}><DraftDirectCaptures garment={garment} onCapturesChange={setCaptures} target={captureTarget} /></section> : null}
-        {workspace.blockers.length ? <section className="studio-piece-blockers" aria-label={`${garment.title} still needs`}><small>Still needed</small><div>{workspace.blockers.map((blocker) => <span key={blocker}>{blocker}</span>)}</div></section> : null}
+        {reviewOpen && dynamicReview?.state === "READY" ? <section className="studio-piece-shop studio-publication-review" ref={publicationSectionRef} tabIndex={-1}>
+          <div className="studio-card-heading"><div><small>Shop preview</small><h3>{dynamicReview.title}</h3></div><strong>{formatNaira(dynamicReview.price)}</strong></div>
+          <div className="studio-publication-media">
+            {dynamicReview.media.map((item) => <StudioMediaButton items={[{
+              alt: `${dynamicReview.title} · ${item.label.toLowerCase()}`,
+              label: item.label,
+              src: item.assetUrl,
+            }]} key={item.id} label={`Preview ${item.label.toLowerCase()}`}>
+              <img alt={`${dynamicReview.title} · ${item.label.toLowerCase()}`} height={item.height} src={item.assetUrl} width={item.width} />
+            </StudioMediaButton>)}
+          </div>
+          <div className="studio-garment-facts">
+            <span>{dynamicReview.category}</span><span>{dynamicReview.colour}</span><span>{dynamicReview.sizeLabel}</span><span>1 available</span>
+          </div>
+          <div className="studio-publication-confirm"><input checked={publicationConfirmed} id={publicationConfirmationId} onChange={(event) => setPublicationConfirmed(event.target.checked)} type="checkbox" /><label htmlFor={publicationConfirmationId}><strong>Make public</strong><small>These facts and photos will appear in Shop.</small></label></div>
+          {publicationError ? <p className="studio-engine-error" role="alert">{publicationError}</p> : null}
+          <div className="studio-sheet-actions"><button className="button button-secondary" onClick={() => setReviewOpen(false)} type="button">Back</button><button className="button button-primary" disabled={!publicationConfirmed || publishing} onClick={() => void publishDynamicPiece()} type="button">{publishing ? "Publishing…" : "Publish"}</button></div>
+        </section> : null}
+        {reviewOpen && publicationLoading ? <section className="studio-piece-shop studio-publication-review" aria-live="polite"><small>Refreshing Shop preview…</small></section> : null}
+        {reviewOpen && !publicationLoading && publicationLoadError ? <section className="studio-piece-shop studio-publication-review"><p className="studio-engine-error" role="alert">{publicationLoadError}</p><button className="button button-primary" onClick={() => setPublicationReload((value) => value + 1)} type="button">Check again</button></section> : null}
+        {visibleBlockers.length ? <section className="studio-piece-blockers" aria-label={`${garment.title} still needs`}><small>Still needed</small><div>{visibleBlockers.map((blocker) => <span key={blocker}>{blocker}</span>)}</div></section> : null}
         {listing ? <section className="studio-piece-shop" ref={listingSectionRef} tabIndex={-1}><ListingEditor listing={listing} /></section> : null}
       </div>
     </section>

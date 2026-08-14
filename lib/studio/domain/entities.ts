@@ -111,6 +111,16 @@ export interface GarmentReviewCover {
   height: number;
 }
 
+export interface DynamicPublicationProjection {
+  publicationId: string;
+  wardrobeItemId: string;
+  sku: string;
+  slug: string;
+  state: "PUBLISHED";
+  publishedAt: string;
+  shopUrl: string;
+}
+
 export type PublicListingMediaSlot = WardrobePublicMediaSlot;
 export type PublicListingMediaProjection = WardrobePublicMedia;
 export type PublicModelAnchorProjection = WardrobePublicModelAnchor;
@@ -144,6 +154,7 @@ export interface Garment {
   heroGenerationId?: string;
   createdAt: string;
   privateWardrobeItemId?: string;
+  dynamicPublication?: DynamicPublicationProjection;
 }
 
 export type PublicListingProjection = WardrobePublicProduct;

@@ -6,6 +6,7 @@ import {
 import type { Garment, InventoryRecord } from "../lib/studio/domain/entities";
 import { createEmptyStudioSnapshot } from "../lib/studio/domain/state";
 import type { StudioRepository } from "../lib/studio/services/contracts";
+import { selectPieceWorkspace } from "../lib/studio/projections/piece-workspace";
 
 const localGarment: Garment = {
   id: "local-garment",
@@ -98,4 +99,52 @@ test("server Wardrobe drafts hydrate as a private read overlay and never persist
   storageListener?.(local);
   assert.equal(external.garments.length, 2);
   assert.equal(external.garments[1].title, "Coral Bias Dress");
+});
+
+test("a server publication rehydrates one sanitized Live listing after reload", async () => {
+  const empty = createEmptyStudioSnapshot();
+  let persisted = empty;
+  const repository = createServerWardrobeOverlayRepository({
+    read: async () => empty,
+    write: async (snapshot) => { persisted = snapshot; },
+    subscribe: () => () => undefined,
+  }, async () => [{
+    id: "11111111-1111-4111-8111-111111111111",
+    intakeId: "22222222-2222-4222-8222-222222222222",
+    title: "Coral Bias Dress",
+    category: "Dress",
+    colour: "Coral",
+    sizeLabel: "Size on request",
+    condition: "Excellent · real-worn wardrobe piece",
+    price: 24_500,
+    quantity: 1,
+    state: "READY",
+    approvedAssetId: "33333333-3333-4333-8333-333333333333",
+    createdAt: "2026-08-12T01:00:00.000Z",
+    updatedAt: "2026-08-12T01:01:00.000Z",
+    publication: {
+      publicationId: "44444444-4444-4444-8444-444444444444",
+      wardrobeItemId: "11111111-1111-4111-8111-111111111111",
+      sku: "JUW-100",
+      slug: "coral-bias-dress-11111111111141118111111111111111",
+      state: "PUBLISHED",
+      publishedAt: "2026-08-12T01:01:00.000Z",
+      shopUrl: "/shop/products/coral-bias-dress-11111111111141118111111111111111",
+    },
+  }]);
+
+  const hydrated = await repository.read();
+  assert.equal(hydrated.garments.length, 1);
+  assert.equal(hydrated.listings.length, 1);
+  assert.equal(hydrated.garments[0].sku, "JUW-100");
+  assert.equal(hydrated.garments[0].state, "PUBLISHED");
+  assert.equal(hydrated.listings[0].slug, hydrated.garments[0].dynamicPublication?.slug);
+  const piece = selectPieceWorkspace({ garment: hydrated.garments[0], listing: hydrated.listings[0] });
+  assert.equal(piece.stage, "LIVE");
+  assert.equal(piece.nextAction.kind, "VIEW_SHOP");
+
+  await repository.write(hydrated);
+  assert.equal(persisted.garments.length, 0);
+  assert.equal(persisted.inventory.length, 0);
+  assert.equal(persisted.listings.length, 0);
 });
