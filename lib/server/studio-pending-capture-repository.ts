@@ -56,6 +56,8 @@ export async function upsertPendingProductCapture(input: {
       width: input.width,
       height: input.height,
       sha256: input.sha256,
+      origin: "DIRECT",
+      completionJobId: null,
       operatorApprovedAt: input.operatorApprovedAt,
       updatedAt: new Date(),
     },

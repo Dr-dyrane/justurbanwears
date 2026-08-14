@@ -106,11 +106,11 @@ function PendingProductMedia({
             : <ImagePlus aria-hidden="true" size={14} />}
         </span>
         <div>
-          <strong>{hasPublicMedia ? "Customer views" : directSetComplete ? "Public review pending" : "Capture needed"}</strong>
+          <strong>{hasPublicMedia ? "Shop photos" : directSetComplete ? "Ready to review" : "Photos needed"}</strong>
           <small>
             {hasPublicMedia
-              ? `${contract.publicSafeMedia.length} customer-ready view${contract.publicSafeMedia.length === 1 ? "" : "s"}`
-              : directSetComplete ? "Direct set saved privately" : "Customer view not ready yet"}
+              ? `${contract.publicSafeMedia.length} Shop-ready photo${contract.publicSafeMedia.length === 1 ? "" : "s"}`
+              : directSetComplete ? "Photos saved privately" : "Add the missing photos"}
           </small>
         </div>
       </div>
@@ -132,12 +132,12 @@ function PendingProductMedia({
       ) : null}
 
       <div className="studio-capture-next">
-        <small>{stillMissing.length ? "Capture next" : "Direct set"}</small>
+        <small>{stillMissing.length ? "Next photos" : "Photos"}</small>
         <div>
           {stillMissing.map((view) => (
             <span key={view}>{pendingWardrobeMediaLabel(view)}</span>
           ))}
-          {stillMissing.length ? null : <span>Complete · private</span>}
+          {stillMissing.length ? null : <span>Saved · private</span>}
         </div>
       </div>
     </section>
@@ -205,10 +205,12 @@ function PieceWorkspaceView({ garment, onDismiss, onContinueMedia }: { garment: 
   );
   const workspace = selectPieceWorkspace({ garment, listing, capturedRoles });
   const captureTarget: DirectCaptureTarget | null = pendingContract ? {
+    completionEndpoint: `/api/studio/pending-products/${encodeURIComponent(pendingContract.sku)}/completions`,
     endpoint: `/api/studio/pending-products/${encodeURIComponent(pendingContract.sku)}/captures`,
     key: pendingContract.sku,
     requiredRoles: pendingContract.missingViews.filter(isPendingDirectCaptureRole),
   } : garment.privateWardrobeItemId ? {
+    completionEndpoint: `/api/studio/wardrobe/${encodeURIComponent(garment.privateWardrobeItemId)}/completions`,
     endpoint: `/api/studio/wardrobe/${encodeURIComponent(garment.privateWardrobeItemId)}/captures`,
     key: garment.privateWardrobeItemId,
     requiredRoles: ["GARMENT_BACK", "FABRIC_DETAIL"],
@@ -595,10 +597,10 @@ export function WardrobeWorkbench() {
     <StudioMediaViewerProvider>
     <div className="studio-ops-page studio-premium-surface">
       <header className="studio-ops-heading" id="garments">
-        <div><p className="eyebrow">Wardrobe</p><h1>Every piece, ready when it is true.</h1><p>Add the piece, review each view, and publish only what Lulu approves.</p></div>
+        <div><p className="eyebrow">Wardrobe</p><h1>Manage your wardrobe.</h1><p>Add photos, review each piece, and publish when ready.</p></div>
         <div className="studio-ops-heading-actions">
           <button className="button button-secondary" onClick={(event) => { setGuideReturnFocus(event.currentTarget); setGuideOpen(true); }} type="button"><BookOpen aria-hidden="true" size={17} />Guide</button>
-          <button className="button button-primary" onClick={(event) => openIntake(event.currentTarget)} type="button"><Plus aria-hidden="true" size={17} />Intake garment</button>
+          <button className="button button-primary" onClick={(event) => openIntake(event.currentTarget)} type="button"><Plus aria-hidden="true" size={17} />Add garment</button>
         </div>
       </header>
 
@@ -612,7 +614,7 @@ export function WardrobeWorkbench() {
           </div>
           <h2 className="sr-only" id="garments-view-title">Garments</h2>
           {visibleGarments.length ? <><div className="studio-garment-grid">{pagedGarments.map((garment) => <GarmentCard garment={garment} key={garment.id} onOpenPiece={(piece, origin) => { setPieceReturnFocus(origin); setOpenPieceId(piece.id); }} />)}</div><StudioPager label="Garment pages" onPageChange={setGarmentPage} page={safeGarmentPage} pageSize={garmentPageSize} total={visibleGarments.length} /></> : (
-            <div className="studio-quiet-empty studio-wardrobe-empty"><PackageOpen aria-hidden="true" size={26} strokeWidth={1.5} /><div><strong>{studio.garments.length ? "No garments in this state" : "Your wardrobe is empty"}</strong><p>{studio.garments.length ? "Choose another lifecycle filter." : "Start with one photographed and classified piece."}</p></div>{studio.garments.length ? null : <button className="button button-primary" onClick={(event) => openIntake(event.currentTarget)} type="button">Intake garment</button>}</div>
+            <div className="studio-quiet-empty studio-wardrobe-empty"><PackageOpen aria-hidden="true" size={26} strokeWidth={1.5} /><div><strong>{studio.garments.length ? "No garments in this state" : "Your wardrobe is empty"}</strong><p>{studio.garments.length ? "Choose another filter." : "Add your first garment."}</p></div>{studio.garments.length ? null : <button className="button button-primary" onClick={(event) => openIntake(event.currentTarget)} type="button">Add garment</button>}</div>
           )}
         </section>
       ) : (

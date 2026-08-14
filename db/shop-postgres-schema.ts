@@ -757,6 +757,106 @@ export const studioWardrobeItems = pgTable("studio_wardrobe_items", {
   check("studio_wardrobe_items_state_private", sql`${table.state} in ('DRAFT', 'READY', 'ARCHIVED')`),
 ]);
 
+// Append-only AI media jobs keep the authority source, generated candidate,
+// actual Gateway accounting, and operator decision separate from a capture
+// that can satisfy catalogue publication.
+export const studioMediaCompletionJobs = pgTable("studio_media_completion_jobs", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  operatorSubject: text("operator_subject").notNull(),
+  targetKind: varchar("target_kind", { length: 32 }).notNull(),
+  targetKey: varchar("target_key", { length: 80 }).notNull(),
+  role: varchar("role", { length: 32 }).notNull(),
+  state: varchar("state", { length: 24 }).default("PENDING").notNull(),
+  attempt: integer("attempt").notNull(),
+  executionToken: uuid("execution_token"),
+  startedAt: timestamp("started_at", { withTimezone: true }),
+  leaseExpiresAt: timestamp("lease_expires_at", { withTimezone: true }),
+  model: text("model").notNull(),
+  promptVersion: varchar("prompt_version", { length: 48 }).notNull(),
+  promptHash: varchar("prompt_hash", { length: 64 }).notNull(),
+  fingerprint: varchar("fingerprint", { length: 64 }).notNull(),
+  correction: text("correction"),
+  sourceBlobPathname: text("source_blob_pathname").notNull(),
+  sourceMimeType: varchar("source_mime_type", { length: 80 }).notNull(),
+  sourceByteSize: integer("source_byte_size").notNull(),
+  sourceWidth: integer("source_width"),
+  sourceHeight: integer("source_height"),
+  sourceSha256: varchar("source_sha256", { length: 64 }).notNull(),
+  authorityConfirmedAt: timestamp("authority_confirmed_at", { withTimezone: true }).notNull(),
+  sourceValidation: jsonb("source_validation").$type<Record<string, unknown>>(),
+  validationUsage: jsonb("validation_usage").$type<Record<string, unknown>>(),
+  validationCostUsd: text("validation_cost_usd"),
+  outputBlobPathname: text("output_blob_pathname"),
+  outputMimeType: varchar("output_mime_type", { length: 80 }),
+  outputByteSize: integer("output_byte_size"),
+  outputWidth: integer("output_width"),
+  outputHeight: integer("output_height"),
+  outputSha256: varchar("output_sha256", { length: 64 }),
+  usage: jsonb("usage").$type<Record<string, unknown>>(),
+  costUsd: text("cost_usd"),
+  errorCode: varchar("error_code", { length: 80 }),
+  approvedAt: timestamp("approved_at", { withTimezone: true }),
+  rejectedAt: timestamp("rejected_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("studio_media_completion_jobs_fingerprint_unique").on(
+    table.operatorSubject,
+    table.fingerprint,
+  ),
+  uniqueIndex("studio_media_completion_jobs_attempt_slot_unique").on(
+    table.operatorSubject,
+    table.targetKind,
+    table.targetKey,
+    table.role,
+    table.attempt,
+  ),
+  index("studio_media_completion_jobs_target_idx").on(
+    table.operatorSubject,
+    table.targetKind,
+    table.targetKey,
+    table.role,
+    table.createdAt,
+  ),
+  check("studio_media_completion_jobs_target_known", sql`${table.targetKind} in ('PENDING_PRODUCT', 'WARDROBE_ITEM')`),
+  check("studio_media_completion_jobs_role_known", sql`${table.role} in ('GARMENT_FRONT', 'GARMENT_BACK', 'FABRIC_DETAIL')`),
+  check("studio_media_completion_jobs_state_known", sql`${table.state} in ('PENDING', 'RUNNING', 'COMPLETE', 'APPROVED', 'REJECTED', 'FAILED')`),
+  check("studio_media_completion_jobs_attempt_bounded", sql`${table.attempt} in (1, 2)`),
+  check("studio_media_completion_jobs_execution_lease", sql`
+    (${table.state} = 'RUNNING'
+      and ${table.executionToken} is not null
+      and ${table.startedAt} is not null
+      and ${table.leaseExpiresAt} is not null)
+    or (${table.state} <> 'RUNNING'
+      and ${table.executionToken} is null
+      and ${table.startedAt} is null
+      and ${table.leaseExpiresAt} is null)
+  `),
+  check("studio_media_completion_jobs_prompt_hash", sql`${table.promptHash} ~ '^[0-9a-f]{64}$'`),
+  check("studio_media_completion_jobs_fingerprint", sql`${table.fingerprint} ~ '^[0-9a-f]{64}$'`),
+  check("studio_media_completion_jobs_source_sha256", sql`${table.sourceSha256} ~ '^[0-9a-f]{64}$'`),
+  check("studio_media_completion_jobs_source_bytes_positive", sql`${table.sourceByteSize} > 0`),
+  check("studio_media_completion_jobs_output_complete", sql`
+    (${table.state} in ('PENDING', 'RUNNING', 'FAILED')
+      and ${table.approvedAt} is null and ${table.rejectedAt} is null)
+    or (${table.state} = 'COMPLETE'
+      and ${table.sourceValidation} is not null
+      and ${table.outputBlobPathname} is not null and ${table.outputMimeType} is not null
+      and ${table.outputByteSize} > 0 and ${table.outputSha256} ~ '^[0-9a-f]{64}$'
+      and ${table.approvedAt} is null and ${table.rejectedAt} is null)
+    or (${table.state} = 'APPROVED'
+      and ${table.sourceValidation} is not null
+      and ${table.outputBlobPathname} is not null and ${table.outputMimeType} is not null
+      and ${table.outputByteSize} > 0 and ${table.outputSha256} ~ '^[0-9a-f]{64}$'
+      and ${table.approvedAt} is not null and ${table.rejectedAt} is null)
+    or (${table.state} = 'REJECTED'
+      and ${table.sourceValidation} is not null
+      and ${table.outputBlobPathname} is not null and ${table.outputMimeType} is not null
+      and ${table.outputByteSize} > 0 and ${table.outputSha256} ~ '^[0-9a-f]{64}$'
+      and ${table.approvedAt} is null and ${table.rejectedAt} is not null)
+  `),
+]);
+
 // Operator-approved direct captures for the static Studio pending-product
 // contracts. They remain private and never become catalogue media implicitly.
 export const studioPendingProductCaptures = pgTable("studio_pending_product_captures", {
@@ -771,6 +871,8 @@ export const studioPendingProductCaptures = pgTable("studio_pending_product_capt
   height: integer("height"),
   sha256: varchar("sha256", { length: 64 }).notNull(),
   privacy: varchar("privacy", { length: 24 }).default("PRIVATE").notNull(),
+  origin: varchar("origin", { length: 24 }).default("DIRECT").notNull(),
+  completionJobId: uuid("completion_job_id").references(() => studioMediaCompletionJobs.id, { onDelete: "restrict" }),
   operatorApprovedAt: timestamp("operator_approved_at", { withTimezone: true }).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
@@ -785,6 +887,11 @@ export const studioPendingProductCaptures = pgTable("studio_pending_product_capt
   check("studio_pending_product_captures_bytes_positive", sql`${table.byteSize} > 0`),
   check("studio_pending_product_captures_sha256", sql`${table.sha256} ~ '^[0-9a-f]{64}$'`),
   check("studio_pending_product_captures_private_only", sql`${table.privacy} = 'PRIVATE'`),
+  check("studio_pending_product_captures_origin_known", sql`${table.origin} in ('DIRECT', 'AI_DERIVED')`),
+  check("studio_pending_product_captures_lineage", sql`
+    (${table.origin} = 'DIRECT' and ${table.completionJobId} is null)
+    or (${table.origin} = 'AI_DERIVED' and ${table.completionJobId} is not null)
+  `),
 ]);
 
 // Durable, append-only bridge from a private Studio piece to its first public

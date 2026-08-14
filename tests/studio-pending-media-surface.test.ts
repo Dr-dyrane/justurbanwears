@@ -127,8 +127,8 @@ test("renders the image-first ready and capture-next Studio surface", () => {
     "utf8",
   );
   assert.match(source, /className="studio-pending-media-strip"/u);
-  assert.match(source, /directSetComplete \? "Public review pending" : "Capture needed"/u);
-  assert.match(source, /stillMissing\.length \? "Capture next" : "Direct set"/u);
+  assert.match(source, /directSetComplete \? "Ready to review" : "Photos needed"/u);
+  assert.match(source, /stillMissing\.length \? "Next photos" : "Photos"/u);
   assert.match(source, /<DraftDirectCaptures/u);
   assert.match(source, /getPendingWardrobeProductContract\(garment\.sku\)/u);
   assert.doesNotMatch(source, /storage\/|sha-?256|prompt|evidence|identity metric/iu);
@@ -157,10 +157,25 @@ test("gives draft management an image-led mobile sheet with unsqueezed capture a
   assert.match(workbench, /className="studio-draft-summary"/u);
   assert.match(captures, />Camera<\/span>/u);
   assert.match(captures, /saved \? "Replace" : "Photos"/u);
+  assert.match(captures, /WandSparkles/u);
+  assert.match(captures, /Create view/u);
+  assert.match(captures, /Only this view\. Unseen sides stay missing\./u);
+  assert.match(captures, /Full back is visible/u);
+  assert.match(captures, /Keep this view\?/u);
+  assert.match(captures, /decision: "KEEP"/u);
+  assert.match(captures, /decideAi\("REJECT"\)/u);
+  assert.match(captures, /completionEndpoint\}\?role=/u);
+  assert.match(captures, /aiStepHeadingRef\.current\?\.focus/u);
+  assert.match(captures, /aiReturnFocusRef/u);
+  assert.match(captures, /aria-labelledby=\{aiStepHeadingId\}/u);
+  assert.match(captures, /Opening saved work/u);
   assert.match(captures, /captures\.length === requiredRoles\.length/u);
   assert.match(captures, /className="is-incomplete"/u);
   assert.match(styles, /\.studio-draft-sheet \.studio-task-sheet-body \{ padding: 0; \}/u);
   assert.match(styles, /\.studio-draft-visual \{ aspect-ratio: auto; border-radius: 0; height: clamp\(250px, 34dvh, 320px\); \}/u);
-  assert.match(styles, /\.studio-direct-capture-actions \{ display: grid; gap: 7px; grid-column: 1 \/ -1; grid-template-columns: 1fr 1fr; \}/u);
+  assert.match(styles, /\.studio-direct-capture-actions \{ display: grid; gap: 7px; grid-column: 1 \/ -1; grid-template-columns: repeat\(3, minmax\(0, 1fr\)\); \}/u);
+  assert.match(styles, /\.studio-ai-review-actions/u);
+  assert.match(styles, /@media \(prefers-reduced-motion: reduce\)/u);
+  assert.match(styles, /\.studio-premium-surface > section\[role="tabpanel"\][\s\S]*?border: 0;/u);
   assert.doesNotMatch(styles, /\.studio-draft-manager \{ grid-template-columns: 92px minmax\(0, 1fr\); \}/u);
 });

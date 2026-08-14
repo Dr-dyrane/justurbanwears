@@ -8,6 +8,7 @@ import {
   type PublicPublicationMedia,
 } from "../../server/studio-catalogue-publication-repository";
 import { listPendingProductCaptures, type PendingCaptureRow } from "../../server/studio-pending-capture-repository";
+import { captureHasApprovedMediaLineage } from "../../server/studio-media-completion-repository";
 import { getShopBlobToken, putShopBlob } from "../../server/vercel-blob";
 import { invalidateServerShopCatalogue } from "../../shop/server-catalog";
 import type { StudioOperator } from "../../server/studio-operator";
@@ -130,8 +131,22 @@ async function publicationContext(wardrobeItemId: string, operator: StudioOperat
       : Promise.resolve(null),
     listPendingProductCaptures({ operatorSubject: operator.subject, sku: captureKey }),
   ]);
-  const back = captures.find((capture) => capture.role === "GARMENT_BACK");
-  const detail = captures.find((capture) => capture.role === "FABRIC_DETAIL");
+  const backCandidate = captures.find((capture) => capture.role === "GARMENT_BACK");
+  const detailCandidate = captures.find((capture) => capture.role === "FABRIC_DETAIL");
+  const [backApproved, detailApproved] = await Promise.all([
+    backCandidate ? captureHasApprovedMediaLineage({
+      capture: backCandidate,
+      targetKind: "WARDROBE_ITEM",
+      targetKey: item.id,
+    }) : false,
+    detailCandidate ? captureHasApprovedMediaLineage({
+      capture: detailCandidate,
+      targetKind: "WARDROBE_ITEM",
+      targetKey: item.id,
+    }) : false,
+  ]);
+  const back = backApproved ? backCandidate : undefined;
+  const detail = detailApproved ? detailCandidate : undefined;
   const sources: PublicationSource[] = [
     ...(front && front.role === "GARMENT_FRONT" ? [{
       id: front.id,

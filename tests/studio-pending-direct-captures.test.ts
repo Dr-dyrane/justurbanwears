@@ -64,6 +64,8 @@ test("operator-safe capture DTO exposes only its authenticated proxy", () => {
     height: 1402,
     sha256: "a".repeat(64),
     privacy: "PRIVATE",
+    origin: "DIRECT",
+    completionJobId: null,
     operatorApprovedAt: new Date("2026-08-13T00:00:00.000Z"),
     createdAt: new Date("2026-08-13T00:00:00.000Z"),
     updatedAt: new Date("2026-08-13T00:00:00.000Z"),

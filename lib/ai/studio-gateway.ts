@@ -11,6 +11,7 @@ import { z } from "zod";
 import { intakeFactsSchema, type IntakeFacts } from "../studio/engine/contracts";
 import { StudioEngineError } from "../studio/engine/errors";
 import type { WearOperation } from "../studio/engine/contracts";
+import type { MediaCompletionRole } from "../studio/engine/media-completion-contracts";
 
 const DEFAULT_TEXT_MODEL = "google/gemini-2.5-flash-lite";
 const DEFAULT_TEXT_FALLBACK = "google/gemini-2.5-flash";
@@ -25,11 +26,19 @@ const APPROVED_IMAGE_MODEL_CEILINGS_USD: Readonly<Record<string, number>> = Obje
 
 export const studioGatewayPolicy = {
   textModel: process.env.STUDIO_AI_TEXT_MODEL || DEFAULT_TEXT_MODEL,
+  sourceValidationModel: process.env.STUDIO_AI_SOURCE_VALIDATION_MODEL
+    || process.env.STUDIO_AI_TEXT_MODEL
+    || DEFAULT_TEXT_MODEL,
   imageModel: process.env.STUDIO_AI_IMAGE_MODEL || DEFAULT_IMAGE_MODEL,
   imageCostCapUsd: Number(
     process.env.STUDIO_AI_IMAGE_COST_CAP_USD || String(DEFAULT_IMAGE_COST_CAP_USD),
   ),
   promptVersion: "garment-front-v2",
+  mediaCompletionPromptVersions: Object.freeze({
+    GARMENT_FRONT: "media-full-front-v1",
+    GARMENT_BACK: "media-full-back-v1",
+    FABRIC_DETAIL: "media-fabric-detail-v1",
+  }),
   wearPromptVersions: Object.freeze({
     MANNEQUIN_FRONT: "mannequin-front-v1",
     MODEL_TRY_ON: "model-try-on-v1",
@@ -258,6 +267,80 @@ export async function analyzeGarmentFacts(input: {
 
 const gatewayCostSchema = z.union([z.string(), z.number()]).transform(Number);
 
+const mediaSourceValidationSchema = z.object({
+  observedRole: z.enum(["FULL_FRONT", "FULL_BACK", "FABRIC_CLOSEUP", "OTHER"]),
+  completeCoverage: z.boolean(),
+  unobstructed: z.boolean(),
+  surfaceResolved: z.boolean(),
+});
+
+export type MediaSourceValidation = z.infer<typeof mediaSourceValidationSchema>;
+
+export async function validateMediaCompletionSource(input: {
+  role: MediaCompletionRole;
+  source: { bytes: Uint8Array; mimeType: string };
+}) {
+  const expected = input.role === "GARMENT_FRONT"
+    ? "FULL_FRONT"
+    : input.role === "GARMENT_BACK" ? "FULL_BACK" : "FABRIC_CLOSEUP";
+  const instruction = [
+    "Judge only whether this exact photograph is eligible authority for one truthful catalogue transformation.",
+    "FULL_FRONT requires the entire garment front from neckline through hem, both sleeves and all outer edges visible and unobstructed.",
+    "FULL_BACK requires the entire garment back from back neckline through hem, both sleeves, all outer edges and any visible closure visible and unobstructed.",
+    "FABRIC_CLOSEUP requires a close view where the actual fabric surface, texture or print is visibly resolved.",
+    "Upper-body crops, model details, front views used as back authority, rear three-quarter views, distant views, descriptions and inferred surfaces are OTHER.",
+    `Requested authority: ${expected}. Return the observed role and strict visibility booleans.`,
+  ].join("\n");
+  try {
+    const result = await generateText({
+      model: studioGatewayPolicy.sourceValidationModel,
+      output: Output.object({ schema: mediaSourceValidationSchema, name: "media_source_validation" }),
+      messages: [{
+        role: "user",
+        content: [
+          { type: "text", text: instruction },
+          { type: "file", mediaType: input.source.mimeType, data: input.source.bytes },
+        ],
+      }],
+      maxOutputTokens: 100,
+      maxRetries: 0,
+      abortSignal: AbortSignal.timeout(30_000),
+      providerOptions: {
+        gateway: {
+          caching: "auto",
+          tags: ["studio:media-completion", "stage:source-validation"],
+        },
+      },
+    });
+    const metadata = (result.providerMetadata ?? {}) as Record<string, unknown>;
+    const gateway = metadata.gateway && typeof metadata.gateway === "object"
+      ? metadata.gateway as Record<string, unknown>
+      : {};
+    const parsedCost = gatewayCostSchema.safeParse(gateway.cost);
+    const validation = result.output;
+    const eligible = validation.observedRole === expected
+      && (input.role === "FABRIC_DETAIL"
+        ? validation.surfaceResolved
+        : validation.completeCoverage && validation.unobstructed);
+    return {
+      validation,
+      eligible,
+      usage: result.usage as unknown as Record<string, unknown>,
+      costUsd: parsedCost.success && Number.isFinite(parsedCost.data) && parsedCost.data >= 0
+        ? parsedCost.data
+        : null,
+    };
+  } catch (error) {
+    if (error instanceof StudioEngineError) throw error;
+    throw new StudioGatewayError(
+      "The source photo could not be checked.",
+      "Use a clearer role-matching photo.",
+      sanitizeStudioGatewayFailure("analysis", studioGatewayPolicy.sourceValidationModel, error),
+      failureAccounting(error),
+    );
+  }
+}
+
 export async function generateGarmentFront(input: {
   facts: Partial<IntakeFacts>;
   source?: { bytes: Uint8Array; mimeType: string };
@@ -299,6 +382,78 @@ export async function generateGarmentFront(input: {
       "The garment image was not created.",
       "Try once more or edit the garment details.",
       sanitizeStudioGatewayFailure("generation", studioGatewayPolicy.imageModel, error),
+    );
+  }
+}
+
+export function buildMediaCompletionPrompt(input: {
+  role: MediaCompletionRole;
+  facts: Partial<IntakeFacts>;
+  correction?: string;
+}): string {
+  const roleInstruction = input.role === "GARMENT_FRONT"
+    ? [
+      "Create one clean product-only straight-on front catalogue view from the supplied full-front authority photo.",
+      "The source must already show the complete front from neckline through hem with both sleeves and outer edges visible.",
+      "Preserve every visible front construction detail, proportion, length, surface, print, colour and drape exactly.",
+    ]
+    : input.role === "GARMENT_BACK"
+      ? [
+        "Create one clean product-only straight-on back catalogue view from the supplied full-back authority photo.",
+        "The source must already show the complete back from neckline through hem with both sleeves, outer edges and any visible closure visible.",
+        "Preserve every visible back construction detail, proportion, length, surface, print, colour and drape exactly.",
+      ]
+      : [
+        "Create one clean catalogue fabric close-up from the supplied close-up authority photo of this exact garment.",
+        "Preserve the photographed surface, weave, print, colour, texture, wear and scale exactly.",
+        "Do not sharpen, regularize, extend, synthesize or replace the fabric pattern or surface.",
+      ];
+  return [
+    ...roleInstruction,
+    "Use only what is visible in the supplied authority image. Never infer, invent, mirror, extrapolate, complete or reinterpret unseen garment construction.",
+    "Remove only the surrounding person, hanger or background when necessary; use an even warm-paper background and soft neutral light.",
+    "No person, mannequin, hanger, text, logo, watermark, brand tag or added accessory.",
+    "Never add or alter closures, pockets, seams, lining, labels, fibre composition, material claims or concealed surfaces.",
+    `Confirmed garment facts: ${JSON.stringify(input.facts)}.`,
+    input.correction ? `Operator correction: ${input.correction}.` : "",
+  ].filter(Boolean).join(" ");
+}
+
+export async function generateMediaCompletionImage(input: {
+  prompt: string;
+  source: { bytes: Uint8Array; mimeType: string };
+}) {
+  assertStudioImageBudget();
+  try {
+    const result = await generateImage({
+      model: studioGatewayPolicy.imageModel,
+      prompt: { images: [input.source.bytes], text: input.prompt },
+      aspectRatio: "4:5",
+      n: 1,
+      maxRetries: 0,
+      abortSignal: AbortSignal.timeout(60_000),
+      providerOptions: { gateway: { sort: "cost" } },
+    });
+    const metadata = result.providerMetadata as Record<string, unknown>;
+    const gateway = metadata.gateway && typeof metadata.gateway === "object"
+      ? metadata.gateway as Record<string, unknown>
+      : {};
+    const parsedCost = gatewayCostSchema.safeParse(gateway.cost);
+    return {
+      bytes: result.image.uint8Array,
+      mimeType: result.image.mediaType,
+      usage: result.usage as unknown as Record<string, unknown>,
+      costUsd: parsedCost.success && Number.isFinite(parsedCost.data) && parsedCost.data >= 0
+        ? parsedCost.data
+        : null,
+    };
+  } catch (error) {
+    if (error instanceof StudioEngineError) throw error;
+    throw new StudioGatewayError(
+      "The AI view was not created.",
+      "Use the source photo or try once more.",
+      sanitizeStudioGatewayFailure("generation", studioGatewayPolicy.imageModel, error),
+      failureAccounting(error),
     );
   }
 }

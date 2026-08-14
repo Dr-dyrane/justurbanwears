@@ -114,22 +114,50 @@ export async function insertCataloguePublicationAtomically(
             and privacy = 'PRIVATE'
         )
         and exists (
-          select 1 from studio_pending_product_captures
-          where id = ${input.backCaptureId}::uuid
-            and operator_subject = ${input.operatorSubject}
-            and sku = ${input.captureKey}
-            and role = 'GARMENT_BACK'
-            and sha256 = ${input.backCaptureSha256}
-            and privacy = 'PRIVATE'
+          select 1 from studio_pending_product_captures capture
+          where capture.id = ${input.backCaptureId}::uuid
+            and capture.operator_subject = ${input.operatorSubject}
+            and capture.sku = ${input.captureKey}
+            and capture.role = 'GARMENT_BACK'
+            and capture.sha256 = ${input.backCaptureSha256}
+            and capture.privacy = 'PRIVATE'
+            and (
+              (capture.origin = 'DIRECT' and capture.completion_job_id is null)
+              or (capture.origin = 'AI_DERIVED' and exists (
+                select 1 from studio_media_completion_jobs job
+                where job.id = capture.completion_job_id
+                  and job.operator_subject = capture.operator_subject
+                  and job.target_kind = 'WARDROBE_ITEM'
+                  and job.target_key = ${input.wardrobeItemId}
+                  and job.role = capture.role
+                  and job.state = 'APPROVED'
+                  and job.output_blob_pathname = capture.blob_pathname
+                  and job.output_sha256 = capture.sha256
+              ))
+            )
         )
         and exists (
-          select 1 from studio_pending_product_captures
-          where id = ${input.detailCaptureId}::uuid
-            and operator_subject = ${input.operatorSubject}
-            and sku = ${input.captureKey}
-            and role = 'FABRIC_DETAIL'
-            and sha256 = ${input.detailCaptureSha256}
-            and privacy = 'PRIVATE'
+          select 1 from studio_pending_product_captures capture
+          where capture.id = ${input.detailCaptureId}::uuid
+            and capture.operator_subject = ${input.operatorSubject}
+            and capture.sku = ${input.captureKey}
+            and capture.role = 'FABRIC_DETAIL'
+            and capture.sha256 = ${input.detailCaptureSha256}
+            and capture.privacy = 'PRIVATE'
+            and (
+              (capture.origin = 'DIRECT' and capture.completion_job_id is null)
+              or (capture.origin = 'AI_DERIVED' and exists (
+                select 1 from studio_media_completion_jobs job
+                where job.id = capture.completion_job_id
+                  and job.operator_subject = capture.operator_subject
+                  and job.target_kind = 'WARDROBE_ITEM'
+                  and job.target_key = ${input.wardrobeItemId}
+                  and job.role = capture.role
+                  and job.state = 'APPROVED'
+                  and job.output_blob_pathname = capture.blob_pathname
+                  and job.output_sha256 = capture.sha256
+              ))
+            )
         )
         and not exists (
           select 1 from studio_catalogue_publications
