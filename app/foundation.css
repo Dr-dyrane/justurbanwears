@@ -6477,7 +6477,7 @@ html[data-theme="dark"] .studio-shell .demo-ribbon > span:first-child {
 }
 
 .studio-lifecycle-step + .studio-lifecycle-step::before {
-  background: color-mix(in srgb, var(--studio-canvas) 16%, transparent);
+  background: color-mix(in srgb, var(--studio-on-cocoa) 16%, transparent);
   content: "";
   inset: 18px auto 18px 0;
   position: absolute;
@@ -7586,7 +7586,6 @@ html[data-theme="dark"] .studio-shell .button-secondary {
 
 html[data-theme="dark"] .studio-shell .button-secondary:hover { background: var(--studio-panel-hover); color: var(--studio-ink); }
 html[data-theme="dark"] .studio-shell .button-primary { background: linear-gradient(145deg, var(--studio-accent), #a64632); color: white; }
-html[data-theme="dark"] .studio-shell .studio-lifecycle-track,
 html[data-theme="dark"] .studio-shell .studio-listing-preview { color: #1d1512; }
 
 @media (max-width: 1240px) {

@@ -191,7 +191,15 @@ export function DraftDirectCaptures({
 
   useEffect(() => {
     if (!aiStep) return;
-    window.requestAnimationFrame(() => aiStepHeadingRef.current?.focus({ preventScroll: true }));
+    window.requestAnimationFrame(() => {
+      const heading = aiStepHeadingRef.current;
+      if (!heading) return;
+      heading.scrollIntoView({
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+        block: "start",
+      });
+      heading.focus({ preventScroll: true });
+    });
   }, [aiJobId, aiStep]);
 
   useEffect(() => () => aiResumeControllerRef.current?.abort(), []);
@@ -404,7 +412,7 @@ export function DraftDirectCaptures({
               <label aria-disabled={busy} aria-label={`Choose source photo for ${pendingWardrobeMediaLabel(aiFlow.role).toLowerCase()}`}><Images aria-hidden="true" size={18} /><span>Photos</span><input accept="image/jpeg,image/png,image/webp" disabled={busy} onChange={(event) => chooseAiSource(event.target.files?.[0])} type="file" /></label>
             </div>
             {aiFlow.source ? <label className="studio-ai-authority"><input checked={aiFlow.confirmed} onChange={(event) => setAiFlow({ ...aiFlow, confirmed: event.target.checked })} type="checkbox" /><span><Check aria-hidden="true" size={15} /><strong>{roleSourceCopy(aiFlow.role).confirmation}</strong></span></label> : null}
-            <button className="button button-primary studio-ai-create" disabled={!aiFlow.source || !aiFlow.confirmed} onClick={() => void createAiCandidate()} type="button"><WandSparkles aria-hidden="true" size={17} />Create view</button>
+            {aiFlow.source ? <button className="button button-primary studio-ai-create" disabled={!aiFlow.confirmed} onClick={() => void createAiCandidate()} type="button"><WandSparkles aria-hidden="true" size={17} />Create view</button> : null}
           </div> : null}
 
           {aiFlow.step === "OPENING" || aiFlow.step === "MAKING" ? <div aria-live="polite" className="studio-ai-making" role="status"><span><WandSparkles aria-hidden="true" size={29} /></span><h3 id={aiStepHeadingId} ref={aiStepHeadingRef} tabIndex={-1}>{aiFlow.step === "OPENING" ? "Opening saved work" : `Making ${pendingWardrobeMediaLabel(aiFlow.role).toLowerCase()}`}</h3><div aria-hidden="true"><i /><i /><i /></div></div> : null}

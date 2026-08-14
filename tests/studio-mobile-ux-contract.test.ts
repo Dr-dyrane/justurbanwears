@@ -68,6 +68,10 @@ test("operator copy and recovery stay action-led", () => {
   assert.match(home, /wardrobe\?garment=/);
   assert.match(directCaptures, /studio-magic-capture-shortcut/);
   assert.match(directCaptures, /Magic Wand/);
+  assert.match(directCaptures, /heading\.scrollIntoView/);
+  assert.match(directCaptures, /prefers-reduced-motion: reduce/);
+  assert.match(directCaptures, /aiFlow\.source \? <button className="button button-primary studio-ai-create" disabled=\{!aiFlow\.confirmed\}/);
+  assert.doesNotMatch(directCaptures, /disabled=\{!aiFlow\.source \|\| !aiFlow\.confirmed\}/);
   assert.match(directCaptures, /Only Lulu sees this/);
   assert.doesNotMatch(wardrobe, /truth gates|catalogue projection/i);
   assert.match(operations, /Manage stock and returns\./);
@@ -77,6 +81,8 @@ test("operator copy and recovery stay action-led", () => {
   assert.doesNotMatch(operations, /onClick=\{\(\) => studio\.disposeReturn/);
   assert.doesNotMatch(operations, /Listing-linked stock|named stock disposition/i);
   assert.match(css, /padding: 30px 16px calc\(104px \+ env\(safe-area-inset-bottom, 0px\)\)/);
+  assert.match(css, /\.studio-lifecycle-step \+ \.studio-lifecycle-step::before \{[\s\S]*?var\(--studio-on-cocoa\) 16%/);
+  assert.doesNotMatch(css, /html\[data-theme="dark"\] \.studio-shell \.studio-lifecycle-track,[\s\S]*?color: #1d1512/);
 });
 
 test("documented browser evidence is complete", () => {
