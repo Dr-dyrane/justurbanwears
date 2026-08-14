@@ -148,8 +148,8 @@ function PendingProductMedia({
   );
 }
 
-function GarmentCard({ garment, onOpenListing, onOpenWear }: { garment: Garment; onOpenListing(listing: StudioListing, origin: HTMLElement): void; onOpenWear(garment: Garment, origin: HTMLElement): void }) {
-  const { listings, moveGarmentToWardrobe, prepareListing } = useStudio();
+function GarmentCard({ garment, onOpenDraft, onOpenListing, onOpenWear }: { garment: Garment; onOpenDraft(garment: Garment, origin: HTMLElement): void; onOpenListing(listing: StudioListing, origin: HTMLElement): void; onOpenWear(garment: Garment, origin: HTMLElement): void }) {
+  const { listings, prepareListing } = useStudio();
   const listing = listings.find((candidate) => candidate.garmentId === garment.id);
   const pendingContract = getPendingWardrobeProductContract(garment.sku);
   const approvedContract = listing
@@ -189,12 +189,48 @@ function GarmentCard({ garment, onOpenListing, onOpenWear }: { garment: Garment;
           </div>
         ) : null}
         <div className="studio-card-actions">
-          {garment.state === "DRAFT" ? <button aria-label={`Move ${garment.title} to wardrobe`} className="button button-primary" disabled={!ready} onClick={() => moveGarmentToWardrobe(garment.id)} type="button"><span>Move to wardrobe</span><ArrowRight aria-hidden="true" size={14} /></button> : null}
+          {garment.state === "DRAFT" ? <button aria-label={`Manage draft ${garment.title}`} className="button button-primary" onClick={(event) => onOpenDraft(garment, event.currentTarget)} type="button"><span>Manage draft</span><ArrowRight aria-hidden="true" size={14} /></button> : null}
           {["READY", "RETURNED"].includes(garment.state) && !listing ? <button aria-label={`Prepare listing for ${garment.title}`} className="button button-primary" onClick={() => prepareListing(garment.id)} type="button"><span>Prepare listing</span><ArrowRight aria-hidden="true" size={14} /></button> : null}
           {listing ? <button aria-label={`Open listing for ${garment.title}`} className="button button-secondary" onClick={(event) => onOpenListing(listing, event.currentTarget)} type="button"><span>Open listing</span><ArrowRight aria-hidden="true" size={14} /></button> : null}
         </div>
       </div>
     </article>
+  );
+}
+
+function DraftManager({ garment, onContinueMedia }: { garment: Garment; onContinueMedia(garment: Garment): void }) {
+  const { listings } = useStudio();
+  const listing = listings.find((candidate) => candidate.garmentId === garment.id);
+  const pendingContract = getPendingWardrobeProductContract(garment.sku);
+  const approvedContract = listing
+    ? getApprovedPublicListingContract(garment.sku, listing.slug)
+    : undefined;
+  const cover = studioGarmentCover(garment, listing);
+  const gates = garmentReadiness(garment);
+  const blocked = gates.filter((gate) => !gate.ready);
+
+  return (
+    <section className="studio-draft-manager">
+      <div className={`studio-draft-visual${cover ? " is-photo" : ""}`} data-variant={garment.visual}>
+        {cover ? <img alt={cover.alt} height={cover.height} src={cover.src} width={cover.width} /> : <Shirt aria-hidden="true" size={64} strokeWidth={1.05} />}
+      </div>
+      <div className="studio-draft-content">
+        <div className="studio-card-heading"><div><small>{garment.sku} · {garment.sizeLabel}</small><h3>{garment.title}</h3></div><LifecycleBadge state={garment.state} /></div>
+        <p>{garment.color} · {garment.condition}</p>
+        <div className="studio-garment-facts">
+          <span>{garment.price > 0 ? formatNaira(garment.price) : "Price pending"}</span>
+          <span>{garment.quantity} unit{garment.quantity === 1 ? "" : "s"}</span>
+          <span>{garment.measurements.length > 0 ? `${garment.measurements.length} measurements` : "Measurements pending"}</span>
+        </div>
+        {pendingContract ? <PendingProductMedia contract={pendingContract} title={garment.title} /> : null}
+        <section className="studio-draft-readiness" aria-label={`${garment.title} readiness`}>
+          <div><small>Before wardrobe</small><strong>{blocked.length ? `${blocked.length} item${blocked.length === 1 ? "" : "s"} left` : "Ready to move"}</strong></div>
+          <ReadinessList gates={gates} compact />
+        </section>
+        {pendingContract || approvedContract ? null : <MissingMedia garment={garment} />}
+        {garment.privateWardrobeItemId ? <button className="studio-draft-media-action" onClick={() => onContinueMedia(garment)} type="button"><span><ImagePlus aria-hidden="true" size={18} /><span><strong>Create media</strong><small>Mannequin · Lulu · model</small></span></span><ArrowRight aria-hidden="true" size={17} /></button> : null}
+      </div>
+    </section>
   );
 }
 
@@ -295,6 +331,8 @@ export function WardrobeWorkbench() {
   const [filter, setFilter] = useState<(typeof filters)[number]>("ALL");
   const [openListingId, setOpenListingId] = useState<string | null>(null);
   const [listingReturnFocus, setListingReturnFocus] = useState<HTMLElement | null>(null);
+  const [openDraftId, setOpenDraftId] = useState<string | null>(null);
+  const [draftReturnFocus, setDraftReturnFocus] = useState<HTMLElement | null>(null);
   const [garmentPage, setGarmentPage] = useState(0);
   const [publishingPage, setPublishingPage] = useState(0);
   const [wearWardrobeItemId, setWearWardrobeItemId] = useState<string | null>(null);
@@ -327,6 +365,7 @@ export function WardrobeWorkbench() {
       setFilter("ALL");
       setGarmentPage(Math.floor(garmentIndex / garmentPageSize));
       if (listing) setOpenListingId(listing.id);
+      else if (studio.garments[garmentIndex]?.state === "DRAFT") setOpenDraftId(garmentId);
       else window.requestAnimationFrame(() => document.getElementById(`studio-garment-${garmentId}`)?.focus({ preventScroll: false }));
     });
   }, [searchParams, studio.garments, studio.hydration, studio.listings]);
@@ -385,6 +424,8 @@ export function WardrobeWorkbench() {
   const safePublishingPage = Math.min(publishingPage, Math.max(0, Math.ceil(studio.listings.length / publishingPageSize) - 1));
   const pagedListings = studio.listings.slice(safePublishingPage * publishingPageSize, (safePublishingPage + 1) * publishingPageSize);
   const openListing = studio.listings.find((listing) => listing.id === openListingId);
+  const openDraft = studio.garments.find((garment) => garment.id === openDraftId);
+  const openDraftReady = openDraft ? everyGateReady(garmentReadiness(openDraft)) : false;
 
   if (studio.hydration === "idle" || studio.hydration === "restoring") {
     return <div className="studio-loading" role="status">Opening wardrobe…</div>;
@@ -409,7 +450,7 @@ export function WardrobeWorkbench() {
             <span>{visibleGarments.length} shown</span>
           </div>
           <h2 className="sr-only" id="garments-view-title">Garments</h2>
-          {visibleGarments.length ? <><div className="studio-garment-grid">{pagedGarments.map((garment) => <GarmentCard garment={garment} key={garment.id} onOpenListing={(listing, origin) => { setListingReturnFocus(origin); setOpenListingId(listing.id); }} onOpenWear={(next, origin) => { setWearReturnFocus(origin); setWearWardrobeItemId(next.privateWardrobeItemId ?? null); }} />)}</div><StudioPager label="Garment pages" onPageChange={setGarmentPage} page={safeGarmentPage} pageSize={garmentPageSize} total={visibleGarments.length} /></> : (
+          {visibleGarments.length ? <><div className="studio-garment-grid">{pagedGarments.map((garment) => <GarmentCard garment={garment} key={garment.id} onOpenDraft={(draft, origin) => { setDraftReturnFocus(origin); setOpenDraftId(draft.id); }} onOpenListing={(listing, origin) => { setListingReturnFocus(origin); setOpenListingId(listing.id); }} onOpenWear={(next, origin) => { setWearReturnFocus(origin); setWearWardrobeItemId(next.privateWardrobeItemId ?? null); }} />)}</div><StudioPager label="Garment pages" onPageChange={setGarmentPage} page={safeGarmentPage} pageSize={garmentPageSize} total={visibleGarments.length} /></> : (
             <div className="studio-quiet-empty studio-wardrobe-empty"><PackageOpen aria-hidden="true" size={26} strokeWidth={1.5} /><div><strong>{studio.garments.length ? "No garments in this state" : "Your wardrobe is empty"}</strong><p>{studio.garments.length ? "Choose another lifecycle filter." : "Start with one photographed and classified piece."}</p></div>{studio.garments.length ? null : <button className="button button-primary" onClick={(event) => openIntake(event.currentTarget)} type="button">Intake garment</button>}</div>
           )}
         </section>
@@ -472,6 +513,18 @@ export function WardrobeWorkbench() {
         open={intakeOpen}
         returnFocus={intakeReturnFocus}
       />
+
+      <StudioTaskSheet
+        className="studio-draft-sheet"
+        eyebrow="Wardrobe draft"
+        footer={openDraft ? <><button className="button button-secondary" onClick={() => setOpenDraftId(null)} type="button">Close</button><button className="button button-primary" disabled={!openDraftReady} onClick={() => { if (studio.moveGarmentToWardrobe(openDraft.id)) setOpenDraftId(null); }} type="button">Move to wardrobe</button></> : undefined}
+        onDismiss={() => { setOpenDraftId(null); setDraftReturnFocus(null); }}
+        open={Boolean(openDraft)}
+        returnFocus={draftReturnFocus}
+        title={openDraft?.title ?? "Draft"}
+      >
+        {openDraft ? <DraftManager garment={openDraft} onContinueMedia={(garment) => { setOpenDraftId(null); setWearReturnFocus(draftReturnFocus); window.setTimeout(() => setWearWardrobeItemId(garment.privateWardrobeItemId ?? null), 180); }} /> : null}
+      </StudioTaskSheet>
 
       <StudioTaskSheet
         eyebrow="Publishing"

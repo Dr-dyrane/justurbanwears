@@ -6559,6 +6559,23 @@ html[data-theme="dark"] .studio-model-portrait { background: radial-gradient(cir
   margin-top: 14px;
   padding: 10px;
 }
+
+.studio-draft-manager { display: grid; gap: 24px; grid-template-columns: minmax(190px, .78fr) minmax(0, 1.22fr); }
+.studio-draft-visual { align-items: center; aspect-ratio: 4 / 5; background: var(--studio-panel-group); border-radius: 22px; color: var(--studio-muted); display: flex; justify-content: center; min-height: 0; overflow: hidden; }
+.studio-draft-visual.is-photo img { height: 100%; object-fit: cover; width: 100%; }
+.studio-draft-content { align-content: start; display: grid; gap: 18px; min-width: 0; }
+.studio-draft-content > p { color: var(--studio-muted); margin: -8px 0 0; }
+.studio-draft-content .studio-garment-facts { margin: 0; }
+.studio-draft-readiness { background: var(--studio-panel-group); border-radius: 18px; display: grid; gap: 14px; padding: 18px; }
+.studio-draft-readiness > div:first-child { align-items: end; display: flex; justify-content: space-between; }
+.studio-draft-readiness small { color: var(--studio-muted); display: block; }
+.studio-draft-readiness strong { color: var(--studio-ink); }
+.studio-draft-media-action { align-items: center; background: var(--studio-panel-group); border: 0; border-radius: 17px; color: var(--studio-ink); cursor: pointer; display: flex; justify-content: space-between; min-height: 62px; padding: 12px 16px; text-align: left; transition: background-color 160ms ease, transform 160ms ease; width: 100%; }
+.studio-draft-media-action:hover { background: var(--studio-panel-hover); }
+.studio-draft-media-action:active { transform: scale(.985); }
+.studio-draft-media-action > span { align-items: center; display: flex; gap: 12px; }
+.studio-draft-media-action > span > span { display: grid; gap: 2px; }
+.studio-draft-media-action small { color: var(--studio-muted); }
 .studio-pending-media-heading { align-items: center; display: grid; gap: 9px; grid-template-columns: 30px minmax(0, 1fr); }
 .studio-pending-media-heading > span { align-items: center; background: var(--studio-panel-strong); border-radius: 10px; color: var(--studio-muted); display: flex; height: 30px; justify-content: center; width: 30px; }
 .studio-pending-media-heading.is-ready > span { background: color-mix(in srgb, var(--studio-positive) 14%, var(--studio-panel)); color: var(--studio-positive); }
@@ -7168,6 +7185,13 @@ html[data-theme="dark"] .studio-shell .studio-listing-preview { color: #1d1512; 
   .studio-garment-body > .studio-card-actions { grid-column: 1 / -1; justify-content: flex-end; margin: 0; }
   .studio-garment-body > .studio-card-actions .button { border-radius: 11px; min-height: 34px; padding: 0 10px; }
   .studio-garment-body > .studio-card-actions .button > span { display: none; }
+  .studio-draft-manager { grid-template-columns: 92px minmax(0, 1fr); }
+  .studio-draft-visual { border-radius: 17px; }
+  .studio-draft-content { gap: 14px; }
+  .studio-draft-content > .studio-pending-product-media,
+  .studio-draft-content > .studio-draft-readiness,
+  .studio-draft-content > .studio-missing-media,
+  .studio-draft-content > .studio-draft-media-action { grid-column: 1 / -1; }
   .studio-garment-body > .studio-card-next { grid-column: 1 / -1; margin: 0; }
   .studio-guide-flow { grid-template-columns: repeat(5, minmax(72%, 1fr)); }
 }

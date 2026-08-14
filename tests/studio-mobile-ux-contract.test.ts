@@ -39,9 +39,16 @@ test("compact records, garments, and inventory use approved media", () => {
 
 test("compact garment actions keep specific accessible names when labels collapse", () => {
   assert.match(wardrobe, /aria-label=\{`Open media for \$\{garment\.title\}`\}/);
-  assert.match(wardrobe, /aria-label=\{`Move \$\{garment\.title\} to wardrobe`\}/);
+  assert.match(wardrobe, /aria-label=\{`Manage draft \$\{garment\.title\}`\}/);
   assert.match(wardrobe, /aria-label=\{`Prepare listing for \$\{garment\.title\}`\}/);
   assert.match(wardrobe, /aria-label=\{`Open listing for \$\{garment\.title\}`\}/);
+});
+
+test("draft garments open a management sheet before promotion", () => {
+  assert.match(wardrobe, /className="studio-draft-sheet"/);
+  assert.match(wardrobe, /<DraftManager garment=\{openDraft\}/);
+  assert.match(wardrobe, /disabled=\{!openDraftReady\}/);
+  assert.doesNotMatch(wardrobe, /aria-label=\{`Move \$\{garment\.title\} to wardrobe`\}/);
 });
 
 test("model segmented content can render without the portrait obstruction", () => {
