@@ -6592,6 +6592,44 @@ html[data-theme="dark"] .studio-model-portrait { background: radial-gradient(cir
 .studio-capture-next > div { display: flex; flex-wrap: wrap; gap: 5px; }
 .studio-capture-next span { background: var(--studio-panel-strong); border-radius: 9px; color: var(--studio-ink); font-size: 7px; font-weight: 700; line-height: 24px; padding: 0 8px; }
 
+.studio-direct-captures { background: color-mix(in srgb, var(--studio-panel-group) 78%, transparent); border-radius: 20px; display: grid; gap: 13px; padding: 16px; }
+.studio-direct-captures-heading { align-items: center; display: flex; justify-content: space-between; }
+.studio-direct-captures-heading > div { display: grid; gap: 2px; }
+.studio-direct-captures-heading small { color: var(--studio-faint); font-size: 7px; font-weight: 780; letter-spacing: .08em; text-transform: uppercase; }
+.studio-direct-captures-heading strong { color: var(--studio-ink); font-size: 11px; }
+.studio-direct-captures-heading > svg,
+.studio-capture-spinner { color: var(--studio-positive); }
+.studio-direct-capture-list { display: grid; gap: 8px; }
+.studio-direct-capture-list > article { align-items: center; background: var(--studio-panel-strong); border-radius: 15px; display: grid; gap: 10px; grid-template-columns: 48px minmax(0, 1fr) auto; min-height: 60px; padding: 6px 8px 6px 6px; }
+.studio-direct-capture-list > article > img,
+.studio-direct-capture-list > article > div:first-child { align-items: center; background: var(--studio-panel-muted); border-radius: 11px; color: var(--studio-faint); display: flex; height: 48px; justify-content: center; object-fit: cover; width: 48px; }
+.studio-direct-capture-list > article > span { display: grid; gap: 2px; min-width: 0; }
+.studio-direct-capture-list > article > span small { color: var(--studio-faint); font-size: 7px; font-weight: 720; text-transform: uppercase; }
+.studio-direct-capture-list > article.is-saved > span small { color: var(--studio-positive); }
+.studio-direct-capture-list > article > span strong { color: var(--studio-ink); font-size: 9px; }
+.studio-direct-capture-actions { display: flex; gap: 5px; }
+.studio-direct-capture-actions label { align-items: center; background: var(--studio-panel-muted); border-radius: 11px; color: var(--studio-accent); cursor: pointer; display: flex; height: 44px; justify-content: center; transition: background-color 160ms ease, transform 160ms ease; width: 44px; }
+.studio-direct-capture-actions label:active { transform: scale(.94); }
+.studio-direct-capture-actions label[aria-disabled="true"],
+.studio-capture-preview label[aria-disabled="true"] { cursor: wait; opacity: .46; }
+.studio-direct-capture-actions label:has(input:focus-visible),
+.studio-capture-preview label:has(input:focus-visible) { outline: 2px solid var(--studio-accent); outline-offset: 2px; }
+.studio-direct-capture-actions input,
+.studio-capture-preview input { height: 1px; opacity: 0; position: absolute; width: 1px; }
+.studio-capture-preview { background: var(--studio-panel-strong); border-radius: 17px; display: grid; gap: 12px; grid-template-columns: 110px minmax(0, 1fr); overflow: hidden; padding: 8px; }
+.studio-capture-preview > img { border-radius: 12px; height: 138px; object-fit: cover; width: 110px; }
+.studio-capture-preview > div { align-content: center; display: grid; gap: 7px; grid-template-columns: 1fr 1fr; }
+.studio-capture-preview > div > span { display: grid; gap: 2px; grid-column: 1 / -1; }
+.studio-capture-preview small { color: var(--studio-accent); font-size: 7px; font-weight: 760; text-transform: uppercase; }
+.studio-capture-preview strong { color: var(--studio-ink); font-size: 11px; }
+.studio-capture-preview .button { cursor: pointer; min-height: 44px; padding: 0 11px; }
+.studio-capture-feedback { align-items: center; border-radius: 12px; display: flex; font-size: 8px; gap: 7px; margin: 0; padding: 9px 10px; }
+.studio-capture-feedback.is-success { background: color-mix(in srgb, var(--studio-positive) 13%, var(--studio-panel)); color: var(--studio-positive); }
+.studio-capture-feedback.is-error { background: color-mix(in srgb, var(--studio-critical) 12%, var(--studio-panel)); color: var(--studio-critical); }
+.studio-capture-private-note { color: var(--studio-faint); font-size: 7px; margin: 0; text-align: center; }
+.studio-capture-spinner { align-items: center; display: inline-flex; justify-content: center; }
+.studio-capture-spinner > svg { animation: studio-spin .8s linear infinite; }
+
 .studio-missing-media { background: var(--studio-panel-muted); border-radius: 14px; margin-top: 15px; padding: 11px; }
 .studio-missing-media > span { align-items: center; color: var(--studio-muted); display: flex; font-size: 8px; font-weight: 740; gap: 6px; }
 .studio-missing-media > div { display: flex; gap: 6px; margin-top: 9px; }
@@ -7189,6 +7227,7 @@ html[data-theme="dark"] .studio-shell .studio-listing-preview { color: #1d1512; 
   .studio-draft-visual { border-radius: 17px; }
   .studio-draft-content { gap: 14px; }
   .studio-draft-content > .studio-pending-product-media,
+  .studio-draft-content > .studio-direct-captures,
   .studio-draft-content > .studio-draft-readiness,
   .studio-draft-content > .studio-missing-media,
   .studio-draft-content > .studio-draft-media-action { grid-column: 1 / -1; }
@@ -7208,6 +7247,8 @@ html[data-theme="dark"] .studio-shell .studio-listing-preview { color: #1d1512; 
   .studio-shell .workspace { padding-top: 78px; }
   .studio-shell .page-canvas { padding-bottom: calc(156px + env(safe-area-inset-bottom, 0px)); }
   .studio-floating-nav { grid-template-columns: minmax(0, 1fr) auto; max-width: 100%; }
+  .studio-capture-preview { grid-template-columns: 82px minmax(0, 1fr); }
+  .studio-capture-preview > img { height: 116px; width: 82px; }
   .studio-view-nav-wrap { padding-top: 6px; top: 76px; }
   .studio-view-navigation { border-radius: 17px; grid-template-columns: minmax(0, 1fr); min-height: 54px; padding: 4px; }
   .studio-view-action { display: none; }
@@ -7265,7 +7306,8 @@ html[data-theme="dark"] .studio-shell .studio-listing-preview { color: #1d1512; 
   .studio-task-progress > span { transition: none; }
   .studio-disclosure-row { transition: none; }
   .studio-disclosure-row:active { transform: none; }
-  .studio-spin { animation: none; }
+  .studio-spin,
+  .studio-capture-spinner > svg { animation: none; }
 }
 
 @media (forced-colors: active) {

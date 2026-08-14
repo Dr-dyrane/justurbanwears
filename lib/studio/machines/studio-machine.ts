@@ -37,6 +37,7 @@ export type StudioCommand =
   | { type: "IDENTITY_REFERENCES_ADDED"; id: string; references: ModelReference[] }
   | { type: "GARMENT_CREATED"; garment: Garment; inventory: InventoryRecord }
   | { type: "GARMENT_MEDIA_ADDED"; id: string; references: Garment["references"] }
+  | { type: "GARMENT_PENDING_CAPTURES_SYNCED"; id: string; references: Garment["references"] }
   | { type: "GARMENT_READY_REQUESTED"; id: string }
   | { type: "GARMENT_APPROVED"; id: string }
   | { type: "LISTING_DRAFTED"; listing: StudioListing }
@@ -190,6 +191,26 @@ export function studioReducer(
             references,
             mediaState,
             canonState: mediaState === "READY" ? "REVIEW" : garment.canonState,
+          };
+        }),
+      });
+    case "GARMENT_PENDING_CAPTURES_SYNCED":
+      return persistentUpdate(state, {
+        garments: state.garments.map((garment) => {
+          if (garment.id !== command.id) return garment;
+          const references = [
+            ...garment.references.filter((reference) => !reference.id.startsWith("pending-capture-")),
+            ...command.references,
+          ];
+          const mediaState = (["FRONT", "BACK", "DETAIL"] as const).every((view) =>
+            references.some((reference) => reference.view === view)
+          ) ? "READY" as const : references.length ? "DRAFT" as const : "EMPTY" as const;
+          return {
+            ...garment,
+            references,
+            mediaState,
+            state: mediaState === "READY" ? garment.state : "DRAFT",
+            canonState: mediaState === "READY" ? "REVIEW" : "DRAFT",
           };
         }),
       });

@@ -463,3 +463,33 @@ export const studioWardrobeItems = pgTable("studio_wardrobe_items", {
   check("studio_wardrobe_items_quantity_one", sql`${table.quantity} = 1`),
   check("studio_wardrobe_items_state_private", sql`${table.state} in ('DRAFT', 'READY', 'ARCHIVED')`),
 ]);
+
+// Operator-approved direct captures for the static Studio pending-product
+// contracts. They remain private and never become catalogue media implicitly.
+export const studioPendingProductCaptures = pgTable("studio_pending_product_captures", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  operatorSubject: text("operator_subject").notNull(),
+  sku: varchar("sku", { length: 40 }).notNull(),
+  role: varchar("role", { length: 32 }).notNull(),
+  blobPathname: text("blob_pathname").notNull(),
+  mimeType: varchar("mime_type", { length: 80 }).notNull(),
+  byteSize: integer("byte_size").notNull(),
+  width: integer("width"),
+  height: integer("height"),
+  sha256: varchar("sha256", { length: 64 }).notNull(),
+  privacy: varchar("privacy", { length: 24 }).default("PRIVATE").notNull(),
+  operatorApprovedAt: timestamp("operator_approved_at", { withTimezone: true }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("studio_pending_product_captures_operator_sku_role_unique").on(
+    table.operatorSubject,
+    table.sku,
+    table.role,
+  ),
+  index("studio_pending_product_captures_operator_sku_idx").on(table.operatorSubject, table.sku),
+  check("studio_pending_product_captures_role_known", sql`${table.role} in ('GARMENT_FRONT', 'GARMENT_BACK', 'FABRIC_DETAIL')`),
+  check("studio_pending_product_captures_bytes_positive", sql`${table.byteSize} > 0`),
+  check("studio_pending_product_captures_sha256", sql`${table.sha256} ~ '^[0-9a-f]{64}$'`),
+  check("studio_pending_product_captures_private_only", sql`${table.privacy} = 'PRIVATE'`),
+]);

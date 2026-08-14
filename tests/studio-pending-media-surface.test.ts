@@ -127,8 +127,9 @@ test("renders the image-first ready and capture-next Studio surface", () => {
     "utf8",
   );
   assert.match(source, /className="studio-pending-media-strip"/u);
-  assert.match(source, /hasReadyMedia \? "Ready" : "Capture needed"/u);
-  assert.match(source, />Capture next</u);
+  assert.match(source, /directSetComplete \? "Public review pending" : "Capture needed"/u);
+  assert.match(source, /stillMissing\.length \? "Capture next" : "Direct set"/u);
+  assert.match(source, /<DraftDirectCaptures/u);
   assert.match(source, /getPendingWardrobeProductContract\(garment\.sku\)/u);
   assert.doesNotMatch(source, /storage\/|sha-?256|prompt|evidence|identity metric/iu);
 });

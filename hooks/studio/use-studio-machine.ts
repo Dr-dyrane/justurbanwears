@@ -141,6 +141,7 @@ export interface StudioActions {
   updateModel(id: string, update: ModelUpdateInput): void;
   createGarment(input: NewGarmentInput): Garment;
   addGarmentMedia(id: string, view: Garment["references"][number]["view"]): void;
+  syncPendingGarmentCaptures(id: string, references: Garment["references"]): void;
   moveGarmentToWardrobe(id: string): boolean;
   prepareListing(garmentId: string): string;
   updateListing(id: string, update: ListingUpdateInput): void;
@@ -225,6 +226,10 @@ export function useStudioMachine(service: StudioService) {
       references: [{ id: service.createId("media"), view, quality: 100 }],
     });
   }, [service]);
+
+  const syncPendingGarmentCaptures = useCallback((id: string, references: Garment["references"]) => {
+    dispatch({ type: "GARMENT_PENDING_CAPTURES_SYNCED", id, references });
+  }, []);
 
   const moveGarmentToWardrobe = useCallback((id: string) => {
     const garment = stateRef.current.garments.find((candidate) => candidate.id === id);
@@ -411,6 +416,7 @@ export function useStudioMachine(service: StudioService) {
     updateModel,
     createGarment,
     addGarmentMedia,
+    syncPendingGarmentCaptures,
     moveGarmentToWardrobe,
     prepareListing,
     updateListing,
@@ -444,6 +450,7 @@ export function useStudioMachine(service: StudioService) {
     reserveOrder,
     reviewGeneration,
     setHero,
+    syncPendingGarmentCaptures,
     updateListing,
     updateModel,
   ]);

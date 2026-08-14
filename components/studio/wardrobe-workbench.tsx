@@ -41,8 +41,14 @@ import { StudioPager, StudioSegmentedView, useStudioSegment } from "./atoms/stud
 import { StudioTaskSheet } from "./atoms/studio-task-sheet";
 import { GarmentIntakeSheet } from "./garment-intake/garment-intake-sheet";
 import { WearSheet } from "./garment-intake/wear-sheet";
+import { DraftDirectCaptures } from "./draft-direct-captures";
 import { useStudio } from "./studio-provider";
 import { studioGarmentCover } from "./garment-cover";
+import {
+  isPendingDirectCaptureRole,
+  pendingCaptureView,
+  type OperatorSafePendingCapture,
+} from "../../lib/studio/engine/pending-capture-contracts";
 
 const filters: Array<"ALL" | StudioLifecycleState> = [
   "ALL",
@@ -91,13 +97,17 @@ function MissingMedia({ garment }: { garment: Garment }) {
 }
 
 function PendingProductMedia({
+  capturedViews = [],
   contract,
   title,
 }: {
+  capturedViews?: readonly PendingWardrobeProductContract["missingViews"][number][];
   contract: PendingWardrobeProductContract;
   title: string;
 }) {
   const hasReadyMedia = contract.publicSafeMedia.length > 0;
+  const stillMissing = contract.missingViews.filter((view) => !capturedViews.includes(view));
+  const directSetComplete = contract.missingViews.length > 0 && stillMissing.length === 0;
   return (
     <section className="studio-pending-product-media" aria-label={`${title} media readiness`}>
       <div className={`studio-pending-media-heading${hasReadyMedia ? " is-ready" : ""}`}>
@@ -107,11 +117,11 @@ function PendingProductMedia({
             : <ImagePlus aria-hidden="true" size={14} />}
         </span>
         <div>
-          <strong>{hasReadyMedia ? "Ready" : "Capture needed"}</strong>
+          <strong>{hasReadyMedia ? "Ready" : directSetComplete ? "Public review pending" : "Capture needed"}</strong>
           <small>
             {hasReadyMedia
               ? `${contract.publicSafeMedia.length} customer-ready view${contract.publicSafeMedia.length === 1 ? "" : "s"}`
-              : "Customer view not ready yet"}
+              : directSetComplete ? "Direct set saved privately" : "Customer view not ready yet"}
           </small>
         </div>
       </div>
@@ -137,11 +147,12 @@ function PendingProductMedia({
       ) : null}
 
       <div className="studio-capture-next">
-        <small>Capture next</small>
+        <small>{stillMissing.length ? "Capture next" : "Direct set"}</small>
         <div>
-          {contract.missingViews.map((view) => (
+          {stillMissing.map((view) => (
             <span key={view}>{pendingWardrobeMediaLabel(view)}</span>
           ))}
+          {stillMissing.length ? null : <span>Complete · private</span>}
         </div>
       </div>
     </section>
@@ -158,8 +169,16 @@ function GarmentCard({ garment, onOpenDraft, onOpenListing, onOpenWear }: { garm
   const cover = studioGarmentCover(garment, listing);
   const gates = garmentReadiness(garment);
   const ready = everyGateReady(gates);
-  const nextAction = pendingContract?.missingViews.length
-    ? `Add ${pendingContract.missingViews.map(pendingWardrobeMediaLabel).join(" · ")}`
+  const capturedPendingViews = pendingContract?.missingViews.filter((view) =>
+    isPendingDirectCaptureRole(view)
+    && garment.references.some((reference) =>
+      reference.id.startsWith("pending-capture-")
+      && reference.view === pendingCaptureView(view)
+    )
+  ) ?? [];
+  const remainingPendingViews = pendingContract?.missingViews.filter((view) => !capturedPendingViews.includes(view)) ?? [];
+  const nextAction = remainingPendingViews.length
+    ? `Add ${remainingPendingViews.map(pendingWardrobeMediaLabel).join(" · ")}`
     : garment.privateWardrobeItemId
       ? "Add back · fabric detail"
       : ready ? "Ready for wardrobe" : gates.find((gate) => !gate.ready)?.label ?? "Review garment";
@@ -179,7 +198,7 @@ function GarmentCard({ garment, onOpenDraft, onOpenListing, onOpenWear }: { garm
           <span>{garment.quantity} unit{garment.quantity === 1 ? "" : "s"}</span>
           <span>{garment.measurements.length > 0 ? `${garment.measurements.length} measurements` : "Measurements pending"}</span>
         </div>
-        {pendingContract ? <PendingProductMedia contract={pendingContract} title={garment.title} /> : null}
+        {pendingContract ? <PendingProductMedia capturedViews={capturedPendingViews} contract={pendingContract} title={garment.title} /> : null}
         <ReadinessList gates={gates} compact />
         {pendingContract || approvedContract ? null : <MissingMedia garment={garment} />}
         {(garment.privateWardrobeItemId || pendingContract) ? (
@@ -200,6 +219,7 @@ function GarmentCard({ garment, onOpenDraft, onOpenListing, onOpenWear }: { garm
 
 function DraftManager({ garment, onContinueMedia }: { garment: Garment; onContinueMedia(garment: Garment): void }) {
   const { listings } = useStudio();
+  const [captures, setCaptures] = useState<OperatorSafePendingCapture[]>([]);
   const listing = listings.find((candidate) => candidate.garmentId === garment.id);
   const pendingContract = getPendingWardrobeProductContract(garment.sku);
   const approvedContract = listing
@@ -222,7 +242,8 @@ function DraftManager({ garment, onContinueMedia }: { garment: Garment; onContin
           <span>{garment.quantity} unit{garment.quantity === 1 ? "" : "s"}</span>
           <span>{garment.measurements.length > 0 ? `${garment.measurements.length} measurements` : "Measurements pending"}</span>
         </div>
-        {pendingContract ? <PendingProductMedia contract={pendingContract} title={garment.title} /> : null}
+        {pendingContract ? <PendingProductMedia capturedViews={captures.map((capture) => capture.role)} contract={pendingContract} title={garment.title} /> : null}
+        {pendingContract ? <DraftDirectCaptures contract={pendingContract} garment={garment} onCapturesChange={setCaptures} /> : null}
         <section className="studio-draft-readiness" aria-label={`${garment.title} readiness`}>
           <div><small>Before wardrobe</small><strong>{blocked.length ? `${blocked.length} item${blocked.length === 1 ? "" : "s"} left` : "Ready to move"}</strong></div>
           <ReadinessList gates={gates} compact />
