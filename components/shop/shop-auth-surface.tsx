@@ -18,7 +18,7 @@ export function ShopAuthSurface({ returnTo }: { path: string; returnTo: string }
         <div className={styles.story}>
           <BrandWordmark className={styles.wordmark} />
           <p className={styles.kicker}>Your wardrobe, remembered</p>
-          <h1 id="shop-auth-title">A quiet way back to every order.</h1>
+          <h1 id="shop-auth-title">Sign in to view your orders.</h1>
           <div className={styles.promises} aria-label="Account benefits">
             <span><PackageCheck aria-hidden="true" size={17} /><b>Orders in one place</b></span>
             <span><Check aria-hidden="true" size={17} /><b>Your bag stays open</b></span>
@@ -38,10 +38,6 @@ export function ShopAuthSurface({ returnTo }: { path: string; returnTo: string }
         </div>
 
         <div className={styles.auth}>
-          <div className={styles.authHeading}>
-            <p>Welcome back</p>
-            <span>One email. One code.</span>
-          </div>
           <PasswordlessAuthView
             classNames={{
               base: styles.authCard,

@@ -11,7 +11,7 @@ test("Wardrobe exposes a visual next action and an in-app Lulu guide", async () 
   ]);
 
   assert.match(workbench, /studio-piece-next/);
-  assert.match(workbench, /One piece\. One action\./);
+  assert.match(workbench, /title="Add a garment"/);
   assert.match(workbench, /Unseen back and detail stay missing/);
   assert.match(css, /\.studio-guide-flow/);
   assert.match(css, /scroll-snap-type: x mandatory/);
@@ -30,7 +30,7 @@ test("Lulu guide reflects the live private production contract", async () => {
     read("docs/order-flows/JUST-URBAN-WEARS-ORDER-FLOWS.md"),
   ]);
   assert.match(renderer, /LIVE · PRIVATE/);
-  assert.match(renderer, /Front never invents back/);
+  assert.match(renderer, /Missing views remain marked Missing/);
   assert.match(guide, /live private flow/);
   assert.doesNotMatch(guide, /AI intake is active/);
 });

@@ -646,7 +646,7 @@ export function WardrobeWorkbench() {
         }}
         open={guideOpen}
         returnFocus={guideReturnFocus}
-        title="One piece. One action."
+        title="Add a garment"
       >
         <section className="studio-guide-flow">
           {[

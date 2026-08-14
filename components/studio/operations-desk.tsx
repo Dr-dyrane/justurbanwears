@@ -177,7 +177,7 @@ export function OperationsDesk() {
   return (
     <div className="studio-ops-page">
       <header className="studio-ops-heading">
-        <div><p className="eyebrow">Operations</p><h1>One piece. One clear status.</h1><p>Reserve it, mark it sold, or return it to the wardrobe.</p></div>
+        <div><p className="eyebrow">Operations</p><h1>Manage stock and returns.</h1><p>Reserve it, mark it sold, or return it to the wardrobe.</p></div>
         <Link className="button button-secondary" href="/studio/wardrobe">Open wardrobe <ArrowRight aria-hidden="true" size={15} /></Link>
       </header>
 

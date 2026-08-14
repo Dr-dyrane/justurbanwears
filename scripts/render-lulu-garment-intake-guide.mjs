@@ -44,7 +44,7 @@ const stages = [
   },
   {
     eyebrow: "03 · REVIEW",
-    title: "You decide.",
+    title: "Review details.",
     lines: ["Keep", "Edit", "Try again once"],
   },
   {
@@ -54,7 +54,7 @@ const stages = [
   },
   {
     eyebrow: "05 · FINISH",
-    title: "Safe in Wardrobe.",
+    title: "Saved in Wardrobe.",
     lines: ["Draft · Private", "Add back + detail", "Publish later"],
   },
 ];
@@ -126,14 +126,14 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1450" 
   <circle cx="1311" cy="86" r="7" fill="${coral}"/>
   <text x="1330" y="93" class="sans" font-size="15" font-weight="800" letter-spacing="2">LIVE · PRIVATE</text>
   <text x="64" y="252" class="display" font-size="104">Lulu's garment intake.</text>
-  <text x="68" y="324" class="sans" font-size="29" font-weight="550" fill="${muted}">One piece · one action at a time.</text>
+  <text x="68" y="324" class="sans" font-size="29" font-weight="550" fill="${muted}">Photograph. Review. Save.</text>
   <line x1="64" y1="374" x2="1536" y2="374" stroke="#D9CBC1"/>
   <g filter="url(#soft-shadow)">${cards}</g>
   <rect x="64" y="1274" width="1472" height="112" rx="28" fill="${cocoa}"/>
   <circle cx="116" cy="1330" r="25" fill="${olive}"/>
   <path d="M104 1330l8 8 16-18" fill="none" stroke="${white}" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
-  <text x="163" y="1323" font-family="Manrope, Arial, sans-serif" font-size="23" font-weight="750" fill="${white}">Every kept view stays private until Lulu publishes.</text>
-  <text x="163" y="1356" font-family="Manrope, Arial, sans-serif" font-size="17" font-weight="500" fill="#D7CCC5">Front never invents back · missing views stay visible.</text>
+  <text x="163" y="1323" font-family="Manrope, Arial, sans-serif" font-size="23" font-weight="750" fill="${white}">Drafts stay private until you publish.</text>
+  <text x="163" y="1356" font-family="Manrope, Arial, sans-serif" font-size="17" font-weight="500" fill="#D7CCC5">Missing views remain marked Missing.</text>
   <text x="64" y="1422" class="sans" font-size="14" font-weight="750" letter-spacing="3.5" fill="${muted}">JUSTURBANWEARS · STUDIO · LULU</text>
 </svg>\n`;
 
