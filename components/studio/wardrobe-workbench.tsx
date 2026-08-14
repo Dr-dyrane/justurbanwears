@@ -593,7 +593,7 @@ export function WardrobeWorkbench() {
 
   return (
     <StudioMediaViewerProvider>
-    <div className="studio-ops-page">
+    <div className="studio-ops-page studio-premium-surface">
       <header className="studio-ops-heading" id="garments">
         <div><p className="eyebrow">Wardrobe</p><h1>Every piece, ready when it is true.</h1><p>Add the piece, review each view, and publish only what Lulu approves.</p></div>
         <div className="studio-ops-heading-actions">

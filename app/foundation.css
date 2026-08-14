@@ -9629,3 +9629,172 @@ html[data-theme="dark"] .shop-shell .shop-bag-link > b {
     font-size: 12px;
   }
 }
+
+/* Studio premium refinement: paper, mineral depth, and coral action hierarchy. */
+html:has(.studio-premium-surface),
+.studio-shell:has(.studio-premium-surface) {
+  --studio-canvas: #f5f0e8;
+  --studio-canvas-deep: #e8e0d5;
+  --studio-panel: rgba(255, 252, 247, 0.82);
+  --studio-panel-strong: #fffdf9;
+  --studio-panel-muted: #e9e1d6;
+  --studio-panel-hover: #fbf6ef;
+  --studio-mineral: #e4ddd2;
+  --studio-mineral-strong: #d8cec1;
+  --studio-ink: #1d1916;
+  --studio-cocoa: #211b18;
+  --studio-cocoa-hover: #151210;
+}
+
+html[data-theme="dark"]:has(.studio-premium-surface),
+html[data-theme="dark"] .studio-shell:has(.studio-premium-surface) {
+  --studio-canvas: #0f0d0c;
+  --studio-canvas-deep: #15110f;
+  --studio-panel: rgba(34, 28, 24, 0.84);
+  --studio-panel-strong: #241e1a;
+  --studio-panel-muted: #2d2520;
+  --studio-panel-hover: #382e28;
+  --studio-mineral: #211c18;
+  --studio-mineral-strong: #2b231e;
+  --studio-ink: #f8f1e9;
+  --studio-cocoa: #171310;
+  --studio-cocoa-hover: #0d0b0a;
+}
+
+.studio-premium-surface > section[role="tabpanel"] {
+  background:
+    linear-gradient(145deg, color-mix(in srgb, var(--studio-mineral) 86%, transparent), transparent 72%),
+    color-mix(in srgb, var(--studio-panel-strong) 48%, transparent);
+  border: 1px solid var(--studio-line);
+  border-radius: 30px;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--studio-panel-strong) 70%, transparent);
+  padding: clamp(20px, 3vw, 30px);
+}
+
+.studio-premium-surface .studio-queue-card,
+.studio-premium-surface .studio-record-row,
+.studio-premium-surface .studio-garment-card,
+.studio-premium-surface .studio-operation-card,
+.studio-premium-surface .studio-operation-summary,
+.studio-premium-surface .studio-table,
+.studio-premium-surface .studio-publishing-row {
+  border: 1px solid var(--studio-line);
+}
+
+.studio-premium-surface .studio-operation-summary {
+  background: linear-gradient(140deg, var(--studio-mineral), var(--studio-panel-strong));
+}
+
+html[data-theme="dark"] .studio-premium-surface > section[role="tabpanel"] {
+  background:
+    radial-gradient(circle at 92% 0, rgba(185, 88, 63, 0.1), transparent 26rem),
+    linear-gradient(145deg, var(--studio-mineral-strong), var(--studio-mineral));
+}
+
+/* Functional Studio labels stay readable without inflating editorial display type. */
+.studio-shell:has(.studio-premium-surface) .studio-nav-links > a,
+.studio-shell:has(.studio-premium-surface) .studio-shoot-link,
+.studio-shell:has(.studio-premium-surface) .studio-public-action,
+.studio-premium-surface .studio-save-state,
+.studio-premium-surface .studio-private-chip,
+.studio-premium-surface .studio-inline-state,
+.studio-premium-surface .studio-segmented-view > button small,
+.studio-premium-surface .studio-pager,
+.studio-premium-surface .studio-pager strong,
+.studio-premium-surface .studio-section-title > span,
+.studio-premium-surface .studio-queue-card p,
+.studio-premium-surface .studio-card-link,
+.studio-premium-surface .studio-record-copy small,
+.studio-premium-surface .studio-record-copy em,
+.studio-premium-surface .studio-lifecycle-step > small,
+.studio-premium-surface .studio-quiet-empty p,
+.studio-premium-surface .studio-lifecycle,
+.studio-premium-surface .studio-filter-bar button,
+.studio-premium-surface .studio-filter-bar > span,
+.studio-premium-surface .studio-garment-disclosure > span:first-child strong,
+.studio-premium-surface .studio-garment-disclosure > span:first-child small,
+.studio-premium-surface .studio-garment-body > p,
+.studio-premium-surface .studio-garment-facts,
+.studio-premium-surface .studio-piece-stage,
+.studio-premium-surface .studio-card-heading small,
+.studio-premium-surface .studio-publishing-row small,
+.studio-premium-surface .studio-operation-summary small,
+.studio-premium-surface .studio-table-head,
+.studio-premium-surface .studio-table-row > span,
+.studio-premium-surface .studio-inventory-copy small,
+.studio-premium-surface .studio-inventory-copy strong,
+.studio-premium-surface .studio-inventory-copy em,
+.studio-premium-surface .studio-inventory-stock small,
+.studio-premium-surface .studio-inventory-stock strong,
+.studio-premium-surface .studio-operation-card-open,
+.studio-premium-surface .studio-operation-card dt,
+.studio-premium-surface .studio-operation-card dd,
+.studio-premium-surface .studio-inventory-detail-heading > span,
+.studio-premium-surface .studio-inventory-detail-facts dt,
+.studio-premium-surface .studio-inventory-detail-facts dd,
+.studio-premium-surface .studio-inventory-decision strong,
+.studio-premium-surface .studio-inventory-decision small,
+.studio-premium-surface .studio-inventory-constraint,
+.studio-premium-surface .studio-inventory-notice,
+.studio-premium-surface .studio-inventory-confirmation strong,
+.studio-premium-surface .studio-inventory-confirmation p,
+.studio-shell:has(.studio-premium-surface) .studio-mobile-shell .shop-mobile-context small,
+.studio-shell:has(.studio-premium-surface) .studio-mobile-shell .shop-mobile-context strong,
+.studio-shell:has(.studio-premium-surface) .studio-mobile-shell .shop-mobile-dock a > span {
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.studio-premium-surface .studio-piece-stage { line-height: 26px; }
+
+@media (max-width: 680px) {
+  html:has(.studio-premium-surface) { scroll-padding-bottom: calc(188px + env(safe-area-inset-bottom, 0px)); }
+
+  .studio-shell:has(.studio-premium-surface) .page-canvas {
+    padding-bottom: calc(188px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .studio-shell:has(.studio-premium-surface) .studio-mobile-shell {
+    padding-bottom: max(12px, env(safe-area-inset-bottom, 0px));
+  }
+
+  .studio-shell:has(.studio-premium-surface) .shop-mobile-composition {
+    isolation: isolate;
+  }
+
+  .studio-shell:has(.studio-premium-surface) .shop-mobile-context {
+    margin-bottom: 7px;
+    min-height: 48px;
+  }
+
+  .studio-premium-surface > section[role="tabpanel"] {
+    border-radius: 22px;
+    padding: 14px;
+  }
+
+  .studio-premium-surface .studio-queue-section,
+  .studio-premium-surface .studio-lifecycle-section,
+  .studio-premium-surface .studio-record-section,
+  .studio-premium-surface .studio-publishing-section,
+  .studio-premium-surface .studio-operation-section {
+    margin-top: 20px;
+  }
+
+  .studio-premium-surface .studio-section-title { margin-bottom: 16px; }
+  .studio-premium-surface .studio-queue-grid,
+  .studio-premium-surface .studio-record-list,
+  .studio-premium-surface .studio-listing-stack,
+  .studio-premium-surface .studio-publishing-queue,
+  .studio-premium-surface .studio-inventory-list { gap: 7px; }
+  .studio-premium-surface .studio-queue-card { min-height: 128px; padding: 13px; }
+  .studio-premium-surface .studio-record-row { min-height: 72px; }
+  .studio-premium-surface .studio-garment-card,
+  .studio-premium-surface .studio-garment-disclosure,
+  .studio-premium-surface .studio-garment-visual,
+  .studio-premium-surface .studio-garment-visual.is-photo { min-height: 104px; }
+  .studio-premium-surface .studio-operation-card-trigger { padding: 17px; }
+  .studio-premium-surface .studio-operation-card dl { margin-top: 16px; }
+  .studio-premium-surface .studio-piece-stage { line-height: 24px; }
+  .studio-premium-surface .studio-table-row,
+  .studio-premium-surface .studio-inventory-row-trigger { min-height: 74px; }
+}

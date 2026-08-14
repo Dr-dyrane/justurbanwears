@@ -82,7 +82,7 @@ export function StudioHome() {
   ];
 
   return (
-    <div className="studio-ops-page studio-business-home">
+    <div className="studio-ops-page studio-business-home studio-premium-surface">
       <header className="studio-ops-hero">
         <div>
           <p className="eyebrow">Business home</p>
