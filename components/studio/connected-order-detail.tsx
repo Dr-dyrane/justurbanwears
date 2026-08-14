@@ -15,6 +15,7 @@ import { mapConnectedOrderFailure } from "../../lib/shop/connected-order-client"
 import {
   formatConnectedOrderDate,
   nextStudioOrderTransition,
+  orderEventLabel,
   orderStateLabel,
   orderStateSummary,
   studioOrderActionLabel,
@@ -510,7 +511,7 @@ export function ConnectedOrderDetail() {
               {timeline.map((event, index) => (
                 <li aria-current={index === timeline.length - 1 ? "step" : undefined} key={event.id}>
                   <span>{String(index + 1).padStart(2, "0")}</span>
-                  <div><strong>{event.note ?? orderStateLabel(event.eventType)}</strong><small>{event.actorKind === "OPERATOR" ? "Studio operator" : event.actorKind === "CUSTOMER" ? "Customer" : "Order system"}</small><time dateTime={event.occurredAt}>{formatConnectedOrderDate(event.occurredAt)}</time></div>
+                  <div><strong>{orderEventLabel(event, order.fulfillment.kind)}</strong><small>{event.actorKind === "OPERATOR" ? "Studio operator" : event.actorKind === "CUSTOMER" ? "Customer" : "Order system"}</small><time dateTime={event.occurredAt}>{formatConnectedOrderDate(event.occurredAt)}</time></div>
                 </li>
               ))}
             </ol>

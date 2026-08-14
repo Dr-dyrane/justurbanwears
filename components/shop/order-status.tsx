@@ -8,6 +8,7 @@ import { formatNaira } from "../../lib/shop/catalog";
 import {
   customerNextAction,
   formatConnectedOrderDate,
+  orderEventLabel,
   orderNeedsEvidence,
   orderStateLabel,
   orderStateSummary,
@@ -142,7 +143,13 @@ export function OrderStatus() {
             <section className="shop-evidence-received" aria-labelledby="evidence-state-title">
               <p className="shop-kicker">Transfer receipt</p>
               <h2 id="evidence-state-title">{orderStateLabel(order.paymentReviewStatus)}.</h2>
-              <p>Lulu is checking your transfer. Payment: <strong>{orderStateLabel(order.fundsConfirmationStatus)}</strong>.</p>
+              <p>
+                {order.fundsConfirmationStatus === "CONFIRMED"
+                  ? "Receipt checked. Payment confirmed."
+                  : order.paymentReviewStatus === "REVIEW_APPROVED"
+                    ? "Receipt checked. Lulu is confirming the payment."
+                    : <>Lulu is checking your transfer. Payment: <strong>{orderStateLabel(order.fundsConfirmationStatus)}</strong>.</>}
+              </p>
               <ul>
                 {order.evidence.filter((item) => item.status !== "SUPERSEDED").map((item) => (
                   <li key={item.id}>
@@ -222,7 +229,7 @@ export function OrderStatus() {
                 <li aria-current={index === timeline.length - 1 ? "step" : undefined} className={index === timeline.length - 1 ? "is-current" : "is-complete"} key={event.id}>
                   <span aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
                   <div>
-                    <strong>{event.note ?? orderStateLabel(event.eventType)}</strong>
+                    <strong>{orderEventLabel(event, order.fulfillment.kind)}</strong>
                     <p>{event.actorKind === "CUSTOMER" ? "Customer" : event.actorKind === "OPERATOR" ? "Lulu · Studio" : "Order system"}</p>
                     <time dateTime={event.occurredAt}>{formatConnectedOrderDate(event.occurredAt)}</time>
                   </div>

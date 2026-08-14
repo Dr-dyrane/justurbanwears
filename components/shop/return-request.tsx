@@ -4,6 +4,7 @@ import { RotateCcw, X } from "lucide-react";
 import { useRef, useState, type FormEvent } from "react";
 import { authSignInPath } from "../../lib/auth/return-to";
 import { mapConnectedOrderFailure } from "../../lib/shop/connected-order-client";
+import { orderStateLabel } from "../../lib/shop/order-presentation";
 import type { ShopReturnReason, ShopServerOrder } from "../../lib/shop/server-order/types";
 
 const reasons: Array<{ value: ShopReturnReason; label: string }> = [
@@ -78,19 +79,21 @@ export function ReturnRequest({
   }
 
   if (order.return) {
+    const reasonLabel = reasons.find((item) => item.value === order.return?.reason)?.label
+      ?? order.return.reason.replaceAll("_", " ").toLowerCase();
     return (
       <section className="shop-return-card" aria-labelledby="return-state-title">
         <p className="shop-kicker">Return</p>
-        <h2 id="return-state-title">{order.return.status.replaceAll("_", " ").toLowerCase()}.</h2>
+        <h2 id="return-state-title">{orderStateLabel(order.return.status)}.</h2>
         <p>{order.return.detail}</p>
         <dl>
-          <div><dt>Reason</dt><dd>{order.return.reason.replaceAll("_", " ").toLowerCase()}</dd></div>
-          <div><dt>Refund</dt><dd>{order.return.refundStatus.replaceAll("_", " ").toLowerCase()}</dd></div>
+          <div><dt>Reason</dt><dd>{reasonLabel}</dd></div>
+          <div><dt>Refund</dt><dd>{orderStateLabel(order.return.refundStatus)}</dd></div>
           {order.return.refundAmount && order.return.refundCurrency ? (
             <div><dt>Refund amount</dt><dd>{order.return.refundCurrency} {order.return.refundAmount.toLocaleString("en-NG")}</dd></div>
           ) : null}
           {order.return.refundReference ? <div><dt>Refund reference</dt><dd>{order.return.refundReference}</dd></div> : null}
-          {order.return.disposition ? <div><dt>Resolution</dt><dd>{order.return.disposition.replaceAll("_", " ").toLowerCase()}</dd></div> : null}
+          {order.return.disposition ? <div><dt>Resolution</dt><dd>{orderStateLabel(order.return.disposition)}</dd></div> : null}
         </dl>
         {feedback ? <p aria-live="polite">{feedback}</p> : null}
       </section>
@@ -123,12 +126,22 @@ export function ReturnRequest({
             </button>
           </div>
           <form aria-busy={pending} onSubmit={submit}>
-            <label>
-              <span>Reason</span>
-              <select disabled={pending} onChange={(event) => setReason(event.target.value as ShopReturnReason)} value={reason}>
-                {reasons.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
-              </select>
-            </label>
+            <fieldset className="shop-return-reasons">
+              <legend>Reason</legend>
+              {reasons.map((item) => (
+                <label key={item.value}>
+                  <input
+                    checked={reason === item.value}
+                    disabled={pending}
+                    name="return-reason"
+                    onChange={() => setReason(item.value)}
+                    type="radio"
+                    value={item.value}
+                  />
+                  <span>{item.label}</span>
+                </label>
+              ))}
+            </fieldset>
             <label>
               <span>What should Lulu know?</span>
               <textarea

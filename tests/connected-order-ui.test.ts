@@ -101,6 +101,11 @@ test("customer list, receipt, tracking, evidence, and return surfaces use shared
   assert.match(evidence, /Selected: \{selectedFile\.name\}/);
   assert.match(evidence, /Receipt sent\. Lulu will check it and confirm your payment/);
   assert.match(returns, /role="dialog"/);
+  assert.match(returns, /shop-return-reasons/);
+  assert.match(returns, /type="radio"/);
+  assert.doesNotMatch(returns, /<select|<option/);
+  assert.match(returns, /orderStateLabel\(order\.return\.status\)/);
+  assert.match(returns, /reasonLabel/);
   assert.match(returns, /refundAmount/);
   assert.match(returns, /one return request/);
 });
@@ -156,5 +161,15 @@ test("commerce surfaces use customer language and register the exact next Studio
   assert.match(presentation, /"Check receipt"/);
   assert.match(presentation, /"Review receipt"/);
   assert.match(presentation, /"Review return"/);
-  assert.doesNotMatch(visibleCommerce, /Connected orders|settled funds|Evidence review|Fulfilment|Neon is authoritative|server-backed|server accepts|Inspect the artifact|Immutable record/);
+  assert.match(presentation, /FULFILLMENT_QUALITY_CHECK[\s\S]*The piece was checked/);
+  assert.match(presentation, /FULFILLMENT_READY_FOR_HANDOFF[\s\S]*Ready for pickup/);
+  assert.match(presentation, /PAYMENT_EVIDENCE_RECEIVED[\s\S]*Receipt sent\. Lulu will check it/);
+  assert.match(presentation, /PAYMENT_UNDER_REVIEW[\s\S]*Lulu is checking the receipt/);
+  assert.match(presentation, /PAYMENT_REVIEW_APPROVED[\s\S]*Receipt checked/);
+  assert.match(presentation, /REFUND_COMPLETED[\s\S]*Refund sent/);
+  assert.match(presentation, /fulfillmentStatus === "DELIVERED"[\s\S]*"Collected"/);
+  assert.match(customerStatus, /Receipt checked\. Payment confirmed\./);
+  assert.match(detail, /orderEventLabel\(event, order\.fulfillment\.kind\)/);
+  assert.match(customerStatus, /orderEventLabel\(event, order\.fulfillment\.kind\)/);
+  assert.doesNotMatch(visibleCommerce, /Connected orders|settled funds|Evidence review|payment evidence|Fulfilment|Neon is authoritative|server-backed|server accepts|Inspect the artifact|Immutable record/);
 });

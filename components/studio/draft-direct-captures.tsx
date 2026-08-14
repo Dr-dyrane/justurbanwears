@@ -5,6 +5,7 @@
 
 import {
   ArrowLeft,
+  ArrowRight,
   Camera,
   Check,
   CircleAlert,
@@ -146,6 +147,7 @@ export function DraftDirectCaptures({
   const requiredRoles = useMemo(() => PENDING_DIRECT_CAPTURE_ROLES.filter((role) =>
     target.requiredRoles.includes(role)
   ), [target.requiredRoles]);
+  const missingRoles = requiredRoles.filter((role) => !captures.some((capture) => capture.role === role));
 
   const applyWorkspace = useCallback((workspace: CaptureWorkspace) => {
     setCaptures(workspace.captures);
@@ -445,6 +447,19 @@ export function DraftDirectCaptures({
         </div>
       ) : (
         <div className="studio-direct-capture-list">
+          {missingRoles[0] ? (
+            <button
+              aria-label={`Create ${pendingWardrobeMediaLabel(missingRoles[0]).toLowerCase()} with Magic Wand`}
+              className="studio-magic-capture-shortcut"
+              disabled={busy}
+              onClick={(event) => void openAi(missingRoles[0], event.currentTarget)}
+              type="button"
+            >
+              <span><WandSparkles aria-hidden="true" size={18} /></span>
+              <span><small>Magic Wand</small><strong>{pendingWardrobeMediaLabel(missingRoles[0])}</strong></span>
+              <ArrowRight aria-hidden="true" size={16} />
+            </button>
+          ) : null}
           {requiredRoles.map((role) => {
             const saved = captures.find((capture) => capture.role === role);
             return (
@@ -452,6 +467,7 @@ export function DraftDirectCaptures({
                 {saved ? <StudioMediaButton className="studio-direct-capture-media" index={captures.findIndex((capture) => capture.id === saved.id)} items={savedMedia} label={`Preview ${pendingWardrobeMediaLabel(role).toLowerCase()}`}><img alt={`${pendingWardrobeMediaLabel(role)} saved privately`} src={saved.assetUrl} /></StudioMediaButton> : <div><Images aria-hidden="true" size={21} /></div>}
                 <span><small>{saved ? "Saved privately" : "Missing"}</small><strong>{pendingWardrobeMediaLabel(role)}</strong></span>
                 <div className="studio-direct-capture-actions">
+                  {saved ? null : <button aria-label={`Create ${pendingWardrobeMediaLabel(role).toLowerCase()} with AI`} className="studio-direct-capture-magic" disabled={busy} onClick={(event) => void openAi(role, event.currentTarget)} type="button"><WandSparkles aria-hidden="true" size={18} /><span aria-hidden="true">Magic</span></button>}
                   <label aria-disabled={busy} aria-label={`Take ${pendingWardrobeMediaLabel(role).toLowerCase()} photo`}>
                     <Camera aria-hidden="true" size={17} />
                     <span aria-hidden="true">Camera</span>
@@ -462,7 +478,6 @@ export function DraftDirectCaptures({
                     <span aria-hidden="true">{saved ? "Replace" : "Photos"}</span>
                     <input accept="image/jpeg,image/png,image/webp" disabled={busy} onChange={(event) => choose(role, event.target.files?.[0])} type="file" />
                   </label>
-                  {saved ? null : <button aria-label={`Create ${pendingWardrobeMediaLabel(role).toLowerCase()} with AI`} disabled={busy} onClick={(event) => void openAi(role, event.currentTarget)} type="button"><WandSparkles aria-hidden="true" size={17} /><span aria-hidden="true">Wand</span></button>}
                 </div>
               </article>
             );
@@ -471,7 +486,7 @@ export function DraftDirectCaptures({
       )}
 
       {feedback ? <p className={`studio-capture-feedback is-${feedback.tone}`} role={feedback.tone === "error" ? "alert" : "status"}>{feedback.tone === "error" ? <CircleAlert aria-hidden="true" size={15} /> : <Check aria-hidden="true" size={15} />}{feedback.text}</p> : null}
-      <p className="studio-capture-private-note">Private until you publish.</p>
+      <p className="studio-capture-private-note">Only Lulu sees this.</p>
     </section>
   );
 }

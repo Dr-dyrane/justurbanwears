@@ -7,6 +7,7 @@ const shell = readFileSync(`${root}/components/studio/app-shell.tsx`, "utf8");
 const home = readFileSync(`${root}/components/studio/studio-home.tsx`, "utf8");
 const models = readFileSync(`${root}/components/studio/model-atelier.tsx`, "utf8");
 const wardrobe = readFileSync(`${root}/components/studio/wardrobe-workbench.tsx`, "utf8");
+const directCaptures = readFileSync(`${root}/components/studio/draft-direct-captures.tsx`, "utf8");
 const operations = readFileSync(`${root}/components/studio/operations-desk.tsx`, "utf8");
 const css = readFileSync(`${root}/app/foundation.css`, "utf8");
 
@@ -65,7 +66,9 @@ test("model segmented content can render without the portrait obstruction", () =
 test("operator copy and recovery stay action-led", () => {
   assert.match(home, /Workspace saved/);
   assert.match(home, /wardrobe\?garment=/);
-  assert.match(wardrobe, /publish only what Lulu approves/);
+  assert.match(directCaptures, /studio-magic-capture-shortcut/);
+  assert.match(directCaptures, /Magic Wand/);
+  assert.match(directCaptures, /Only Lulu sees this/);
   assert.doesNotMatch(wardrobe, /truth gates|catalogue projection/i);
   assert.match(operations, /Manage stock and returns\./);
   assert.match(operations, /summaryItems/);

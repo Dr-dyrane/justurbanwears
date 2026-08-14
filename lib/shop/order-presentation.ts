@@ -5,6 +5,7 @@ import type {
   ShopPaymentReviewStatus,
   ShopOperatorReturnTransition,
   ShopOperatorTransition,
+  ShopOrderAuditEvent,
   ShopServerOrder,
 } from "./server-order/types";
 
@@ -38,6 +39,56 @@ const labelByState: Record<string, string> = {
 
 export function orderStateLabel(value: string): string {
   return labelByState[value] ?? value.toLowerCase().replaceAll("_", " ");
+}
+
+export function orderEventLabel(
+  event: ShopOrderAuditEvent,
+  fulfillmentKind: "DELIVERY" | "PICKUP",
+): string {
+  switch (event.eventType) {
+    case "ORDER_CREATED":
+      return "Order placed. Send your transfer receipt.";
+    case "PAYMENT_EVIDENCE_AUTHORIZED":
+      return "Receipt upload opened.";
+    case "PAYMENT_EVIDENCE_RECEIVED":
+      return "Receipt sent. Lulu will check it.";
+    case "PAYMENT_UNDER_REVIEW":
+      return "Lulu is checking the receipt.";
+    case "PAYMENT_REVIEW_APPROVED":
+      return "Receipt checked.";
+    case "PAYMENT_REVIEW_REJECTED":
+      return "A clearer receipt is needed.";
+    case "FUNDS_CONFIRMATION_CONFIRMED":
+      return "Payment confirmed.";
+    case "FULFILLMENT_QUALITY_CHECK":
+      return "The piece was checked.";
+    case "FULFILLMENT_READY_FOR_HANDOFF":
+      return fulfillmentKind === "PICKUP" ? "Ready for pickup." : "Ready to send.";
+    case "FULFILLMENT_IN_TRANSIT":
+      return "The order was sent.";
+    case "FULFILLMENT_DELIVERED":
+      return fulfillmentKind === "PICKUP" ? "Collected from the Studio." : "Delivered.";
+    case "RETURN_REQUESTED":
+      return "Return requested.";
+    case "RETURN_APPROVED":
+      return "Return approved.";
+    case "RETURN_REJECTED":
+      return "Return declined.";
+    case "RETURN_RECEIVED":
+      return "Returned piece received.";
+    case "REFUND_PENDING":
+      return "Refund is being prepared.";
+    case "REFUND_COMPLETED":
+      return "Refund sent.";
+    case "REFUND_FAILED":
+      return "Refund needs attention.";
+    case "RETURN_RESOLVED_RESTOCK":
+      return "Piece returned to wardrobe.";
+    case "RETURN_RESOLVED_WRITE_OFF":
+      return "Piece removed from sale.";
+    default:
+      return event.note ?? orderStateLabel(event.eventType);
+  }
 }
 
 export function formatConnectedOrderDate(value: string, includeTime = true): string {
@@ -106,11 +157,19 @@ export function orderNeedsEvidence(order: ShopServerOrder): boolean {
 }
 
 export function orderStateSummary(order: ShopServerOrder): Array<{ label: string; value: string }> {
+  const fulfillmentValue = order.fulfillment.kind === "PICKUP"
+    ? order.fulfillmentStatus === "DELIVERED"
+      ? "Collected"
+      : order.fulfillmentStatus === "READY_FOR_HANDOFF"
+        ? "Ready for pickup"
+        : orderStateLabel(order.fulfillmentStatus)
+    : orderStateLabel(order.fulfillmentStatus);
+
   return [
     { label: "Order", value: orderStateLabel(order.lifecycleStatus) },
     { label: "Receipt", value: orderStateLabel(order.paymentReviewStatus) },
     { label: "Payment", value: orderStateLabel(order.fundsConfirmationStatus) },
-    { label: order.fulfillment.kind === "PICKUP" ? "Pickup" : "Delivery", value: orderStateLabel(order.fulfillmentStatus) },
+    { label: order.fulfillment.kind === "PICKUP" ? "Pickup" : "Delivery", value: fulfillmentValue },
   ];
 }
 
