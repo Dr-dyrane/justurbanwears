@@ -139,10 +139,8 @@ test("keeps contracted catalogue cards free of open capture inputs", () => {
     join(process.cwd(), "components/studio/wardrobe-workbench.tsx"),
     "utf8",
   );
-  assert.match(
-    source,
-    /pendingContract \|\| approvedContract \? null : <MissingMedia garment=\{garment\} \/>/u,
-  );
+  assert.match(source, /className="studio-garment-disclosure"/u);
+  assert.doesNotMatch(source, /function MissingMedia|<MissingMedia/u);
 });
 
 test("gives draft management an image-led mobile sheet with unsqueezed capture actions", () => {

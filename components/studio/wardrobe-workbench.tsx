@@ -8,8 +8,11 @@ import { useSearchParams } from "next/navigation";
 import {
   ArrowRight,
   BookOpen,
+  Camera,
   Check,
+  Eye,
   ImagePlus,
+  LockKeyhole,
   PackageOpen,
   Plus,
   Send,
@@ -23,7 +26,6 @@ import type {
 } from "../../lib/studio/domain/entities";
 import {
   everyGateReady,
-  garmentReadiness,
   listingReadiness,
 } from "../../lib/studio/domain/readiness";
 import {
@@ -42,6 +44,7 @@ import { StudioTaskSheet } from "./atoms/studio-task-sheet";
 import { GarmentIntakeSheet } from "./garment-intake/garment-intake-sheet";
 import { WearSheet } from "./garment-intake/wear-sheet";
 import { DraftDirectCaptures } from "./draft-direct-captures";
+import type { DirectCaptureTarget } from "./draft-direct-captures";
 import { useStudio } from "./studio-provider";
 import { studioGarmentCover } from "./garment-cover";
 import {
@@ -49,6 +52,12 @@ import {
   pendingCaptureView,
   type OperatorSafePendingCapture,
 } from "../../lib/studio/engine/pending-capture-contracts";
+import { selectPieceWorkspace } from "../../lib/studio/projections/piece-workspace";
+import {
+  StudioMediaButton,
+  StudioMediaViewerProvider,
+  type StudioMediaItem,
+} from "./media-viewer";
 
 const filters: Array<"ALL" | StudioLifecycleState> = [
   "ALL",
@@ -67,35 +76,6 @@ function formatNaira(value: number) {
   return new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", maximumFractionDigits: 0 }).format(value);
 }
 
-function MissingMedia({ garment }: { garment: Garment }) {
-  const { addGarmentMedia } = useStudio();
-  const missing = (["FRONT", "BACK", "DETAIL"] as const).filter((view) =>
-    !garment.references.some((reference) => reference.view === view),
-  );
-  if (!missing.length) return null;
-  return (
-    <div className="studio-missing-media">
-      <span><ImagePlus aria-hidden="true" size={16} />Add missing media</span>
-      <div>
-        {missing.map((view) => (
-          <label key={view}>
-            <input
-              type="file"
-              accept="image/*"
-              capture="environment"
-              onChange={(event) => {
-                if (event.target.files?.[0]) addGarmentMedia(garment.id, view);
-                event.target.value = "";
-              }}
-            />
-            {view.toLowerCase()}
-          </label>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 function PendingProductMedia({
   capturedViews = [],
   contract,
@@ -105,21 +85,26 @@ function PendingProductMedia({
   contract: PendingWardrobeProductContract;
   title: string;
 }) {
-  const hasReadyMedia = contract.publicSafeMedia.length > 0;
+  const hasPublicMedia = contract.publicSafeMedia.length > 0;
   const stillMissing = contract.missingViews.filter((view) => !capturedViews.includes(view));
   const directSetComplete = contract.missingViews.length > 0 && stillMissing.length === 0;
+  const mediaItems: StudioMediaItem[] = contract.publicSafeMedia.map((media) => ({
+    alt: `${title}: ${pendingWardrobeMediaLabel(media.view).toLowerCase()}`,
+    label: pendingWardrobeMediaLabel(media.view),
+    src: media.src,
+  }));
   return (
     <section className="studio-pending-product-media" aria-label={`${title} media readiness`}>
-      <div className={`studio-pending-media-heading${hasReadyMedia ? " is-ready" : ""}`}>
+      <div className={`studio-pending-media-heading${hasPublicMedia ? " is-ready" : ""}`}>
         <span>
-          {hasReadyMedia
+          {hasPublicMedia
             ? <Check aria-hidden="true" size={14} />
             : <ImagePlus aria-hidden="true" size={14} />}
         </span>
         <div>
-          <strong>{hasReadyMedia ? "Ready" : directSetComplete ? "Public review pending" : "Capture needed"}</strong>
+          <strong>{hasPublicMedia ? "Customer views" : directSetComplete ? "Public review pending" : "Capture needed"}</strong>
           <small>
-            {hasReadyMedia
+            {hasPublicMedia
               ? `${contract.publicSafeMedia.length} customer-ready view${contract.publicSafeMedia.length === 1 ? "" : "s"}`
               : directSetComplete ? "Direct set saved privately" : "Customer view not ready yet"}
           </small>
@@ -128,19 +113,15 @@ function PendingProductMedia({
 
       {contract.publicSafeMedia.length ? (
         <div className="studio-pending-media-strip" aria-label={`${title} customer-ready views`}>
-          {contract.publicSafeMedia.map((media) => {
+          {contract.publicSafeMedia.map((media, index) => {
             const label = pendingWardrobeMediaLabel(media.view);
             return (
-              <figure key={media.view}>
-                <img
-                  alt={`${title}: ${label.toLowerCase()}`}
-                  height={media.height}
-                  loading="lazy"
-                  src={media.src}
-                  width={media.width}
-                />
-                <figcaption>{label}</figcaption>
-              </figure>
+              <StudioMediaButton index={index} items={mediaItems} key={media.view} label={`Preview ${label.toLowerCase()}`}>
+                <figure>
+                  <img alt={`${title}: ${label.toLowerCase()}`} height={media.height} loading="lazy" src={media.src} width={media.width} />
+                  <figcaption>{label}</figcaption>
+                </figure>
+              </StudioMediaButton>
             );
           })}
         </div>
@@ -159,84 +140,97 @@ function PendingProductMedia({
   );
 }
 
-function GarmentCard({ garment, onOpenDraft, onOpenListing, onOpenWear }: { garment: Garment; onOpenDraft(garment: Garment, origin: HTMLElement): void; onOpenListing(listing: StudioListing, origin: HTMLElement): void; onOpenWear(garment: Garment, origin: HTMLElement): void }) {
-  const { listings, prepareListing } = useStudio();
+function GarmentCard({ garment, onOpenPiece }: { garment: Garment; onOpenPiece(garment: Garment, origin: HTMLElement): void }) {
+  const { listings } = useStudio();
   const listing = listings.find((candidate) => candidate.garmentId === garment.id);
-  const pendingContract = getPendingWardrobeProductContract(garment.sku);
-  const approvedContract = listing
-    ? getApprovedPublicListingContract(garment.sku, listing.slug)
-    : undefined;
   const cover = studioGarmentCover(garment, listing);
-  const gates = garmentReadiness(garment);
-  const ready = everyGateReady(gates);
-  const capturedPendingViews = pendingContract?.missingViews.filter((view) =>
-    isPendingDirectCaptureRole(view)
-    && garment.references.some((reference) =>
+  const capturedRoles = (["GARMENT_FRONT", "GARMENT_BACK", "FABRIC_DETAIL"] as const).filter((role) =>
+    garment.references.some((reference) =>
       reference.id.startsWith("pending-capture-")
-      && reference.view === pendingCaptureView(view)
+      && reference.view === pendingCaptureView(role)
     )
-  ) ?? [];
-  const remainingPendingViews = pendingContract?.missingViews.filter((view) => !capturedPendingViews.includes(view)) ?? [];
-  const nextAction = remainingPendingViews.length
-    ? `Add ${remainingPendingViews.map(pendingWardrobeMediaLabel).join(" · ")}`
-    : garment.privateWardrobeItemId
-      ? "Add back · fabric detail"
-      : ready ? "Ready for wardrobe" : gates.find((gate) => !gate.ready)?.label ?? "Review garment";
+  );
+  const workspace = selectPieceWorkspace({ garment, listing, capturedRoles });
+  const coverItems: StudioMediaItem[] = cover ? [{ alt: cover.alt, label: "Garment front", src: cover.src }] : [];
   return (
     <article className="studio-garment-card" id={`studio-garment-${garment.id}`} tabIndex={-1}>
       <div className={`studio-garment-visual${cover ? " is-photo" : ""}`} data-variant={garment.visual}>
-        {cover ? <img alt={cover.alt} height={cover.height} loading="lazy" src={cover.src} width={cover.width} /> : null}
+        {cover ? <StudioMediaButton items={coverItems} label={`Preview ${garment.title}`}><img alt={cover.alt} height={cover.height} loading="lazy" src={cover.src} width={cover.width} /></StudioMediaButton> : null}
         <span>{garment.category}</span>
         {cover ? null : <Shirt aria-hidden="true" size={54} strokeWidth={1.1} />}
         <small>{garment.sku}</small>
       </div>
       <div className="studio-garment-body">
-        <div className="studio-card-heading"><div><small>{garment.sku} · {garment.sizeLabel}</small><h3>{garment.title}</h3></div><LifecycleBadge state={listing?.state ?? garment.state} /></div>
-        <p>{garment.color} · {garment.condition}</p>
-        <div className="studio-garment-facts">
-          <span>{garment.price > 0 ? formatNaira(garment.price) : "Price pending"}</span>
-          <span>{garment.quantity} unit{garment.quantity === 1 ? "" : "s"}</span>
-          <span>{garment.measurements.length > 0 ? `${garment.measurements.length} measurements` : "Measurements pending"}</span>
-        </div>
-        {pendingContract ? <PendingProductMedia capturedViews={capturedPendingViews} contract={pendingContract} title={garment.title} /> : null}
-        <ReadinessList gates={gates} compact />
-        {pendingContract || approvedContract ? null : <MissingMedia garment={garment} />}
-        {(garment.privateWardrobeItemId || pendingContract) ? (
-          <div className="studio-card-next">
-            <span><small>Next</small><strong>{nextAction}</strong></span>
-            {garment.privateWardrobeItemId ? <button aria-label={`Open media for ${garment.title}`} onClick={(event) => onOpenWear(garment, event.currentTarget)} type="button"><ImagePlus aria-hidden="true" size={17} /></button> : null}
-          </div>
-        ) : null}
-        <div className="studio-card-actions">
-          {garment.state === "DRAFT" ? <button aria-label={`Manage draft ${garment.title}`} className="button button-primary" onClick={(event) => onOpenDraft(garment, event.currentTarget)} type="button"><span>Manage draft</span><ArrowRight aria-hidden="true" size={14} /></button> : null}
-          {["READY", "RETURNED"].includes(garment.state) && !listing ? <button aria-label={`Prepare listing for ${garment.title}`} className="button button-primary" onClick={() => prepareListing(garment.id)} type="button"><span>Prepare listing</span><ArrowRight aria-hidden="true" size={14} /></button> : null}
-          {listing ? <button aria-label={`Open listing for ${garment.title}`} className="button button-secondary" onClick={(event) => onOpenListing(listing, event.currentTarget)} type="button"><span>Open listing</span><ArrowRight aria-hidden="true" size={14} /></button> : null}
-        </div>
+        <button aria-label={`Open ${garment.title}`} className="studio-garment-disclosure" onClick={(event) => onOpenPiece(garment, event.currentTarget)} type="button">
+          <span><small>{garment.sku} · {garment.sizeLabel}</small><strong>{garment.title}</strong><small>{garment.color} · {garment.price > 0 ? formatNaira(garment.price) : "Price pending"}</small></span>
+          <span className="studio-piece-stage" data-stage={workspace.stage}>{workspace.stageLabel}</span>
+          <ArrowRight aria-hidden="true" size={17} />
+        </button>
       </div>
     </article>
   );
 }
 
-function DraftManager({ garment, onContinueMedia }: { garment: Garment; onContinueMedia(garment: Garment): void }) {
-  const { listings } = useStudio();
+function PieceWorkspaceView({ garment, onDismiss, onContinueMedia }: { garment: Garment; onDismiss(): void; onContinueMedia(garment: Garment): void }) {
+  const studio = useStudio();
   const [captures, setCaptures] = useState<OperatorSafePendingCapture[]>([]);
-  const listing = listings.find((candidate) => candidate.garmentId === garment.id);
+  const captureSectionRef = useRef<HTMLElement>(null);
+  const listingSectionRef = useRef<HTMLElement>(null);
+  const listing = studio.listings.find((candidate) => candidate.garmentId === garment.id);
   const pendingContract = getPendingWardrobeProductContract(garment.sku);
-  const approvedContract = listing
-    ? getApprovedPublicListingContract(garment.sku, listing.slug)
-    : undefined;
   const cover = studioGarmentCover(garment, listing);
-  const gates = garmentReadiness(garment);
-  const blocked = gates.filter((gate) => !gate.ready);
+  const capturedRoles = (["GARMENT_FRONT", "GARMENT_BACK", "FABRIC_DETAIL"] as const).filter((role) =>
+    captures.some((capture) => capture.role === role)
+    || garment.references.some((reference) =>
+      reference.id.startsWith("pending-capture-")
+      && reference.view === pendingCaptureView(role)
+    )
+  );
+  const workspace = selectPieceWorkspace({ garment, listing, capturedRoles });
+  const captureTarget: DirectCaptureTarget | null = pendingContract ? {
+    endpoint: `/api/studio/pending-products/${encodeURIComponent(pendingContract.sku)}/captures`,
+    key: pendingContract.sku,
+    requiredRoles: pendingContract.missingViews.filter(isPendingDirectCaptureRole),
+  } : garment.privateWardrobeItemId ? {
+    endpoint: `/api/studio/wardrobe/${encodeURIComponent(garment.privateWardrobeItemId)}/captures`,
+    key: garment.privateWardrobeItemId,
+    requiredRoles: ["GARMENT_BACK", "FABRIC_DETAIL"],
+  } : null;
+  const coverItems: StudioMediaItem[] = cover ? [{ alt: cover.alt, label: "Garment front", src: cover.src }] : [];
+
+  function runNextAction() {
+    if (workspace.nextAction.kind === "CAPTURE") {
+      captureSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      captureSectionRef.current?.focus({ preventScroll: true });
+    } else if (workspace.nextAction.kind === "FINISH") {
+      studio.moveGarmentToWardrobe(garment.id);
+    } else if (workspace.nextAction.kind === "TRY_ON") {
+      onContinueMedia(garment);
+    } else if (workspace.nextAction.kind === "PREPARE_SHOP") {
+      studio.prepareListing(garment.id);
+      window.setTimeout(() => listingSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 0);
+    } else if (workspace.nextAction.kind === "REVIEW_SHOP") {
+      listingSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      listingSectionRef.current?.focus({ preventScroll: true });
+    } else if (workspace.nextAction.kind === "PUBLISH" && listing) {
+      studio.publishListing(listing.id);
+    } else if (workspace.nextAction.kind === "VIEW_SHOP" && listing) {
+      window.location.assign(`/shop/products/${listing.slug}`);
+    } else if (workspace.nextAction.kind === "VIEW_OPERATIONS") {
+      window.location.assign("/studio/operations");
+    } else if (workspace.nextAction.kind === "KEEP_PRIVATE") {
+      onDismiss();
+    }
+  }
 
   return (
-    <section className="studio-draft-manager">
+    <section className="studio-draft-manager studio-piece-workspace">
       <div className={`studio-draft-visual${cover ? " is-photo" : ""}`} data-variant={garment.visual}>
-        {cover ? <img alt={cover.alt} height={cover.height} src={cover.src} width={cover.width} /> : <Shirt aria-hidden="true" size={64} strokeWidth={1.05} />}
+        {cover ? <StudioMediaButton items={coverItems} label={`Preview ${garment.title}`}><img alt={cover.alt} height={cover.height} src={cover.src} width={cover.width} /></StudioMediaButton> : <Shirt aria-hidden="true" size={64} strokeWidth={1.05} />}
       </div>
       <div className="studio-draft-content">
         <div className="studio-draft-summary">
-          <div className="studio-card-heading"><div><small>{garment.sku} · {garment.sizeLabel}</small><h3>{garment.title}</h3></div><LifecycleBadge state={garment.state} /></div>
+          <div className="studio-card-heading"><div><small>{garment.sku} · {garment.sizeLabel}</small><h3>{garment.title}</h3></div><span className="studio-piece-stage" data-stage={workspace.stage}>{workspace.stageLabel}</span></div>
           <p>{garment.color} · {garment.condition}</p>
           <div className="studio-garment-facts">
             <span>{garment.price > 0 ? formatNaira(garment.price) : "Price pending"}</span>
@@ -244,14 +238,15 @@ function DraftManager({ garment, onContinueMedia }: { garment: Garment; onContin
             <span>{garment.measurements.length > 0 ? `${garment.measurements.length} measurements` : "Measurements pending"}</span>
           </div>
         </div>
-        {pendingContract ? <PendingProductMedia capturedViews={captures.map((capture) => capture.role)} contract={pendingContract} title={garment.title} /> : null}
-        {pendingContract ? <DraftDirectCaptures contract={pendingContract} garment={garment} onCapturesChange={setCaptures} /> : null}
-        <section className="studio-draft-readiness" aria-label={`${garment.title} readiness`}>
-          <div><small>Before wardrobe</small><strong>{blocked.length ? `${blocked.length} item${blocked.length === 1 ? "" : "s"} left` : "Ready to move"}</strong></div>
-          <ReadinessList gates={gates} compact />
+        <section className="studio-piece-next" aria-label={`Next action for ${garment.title}`}>
+          <span>{workspace.nextAction.kind === "CAPTURE" ? <Camera aria-hidden="true" size={19} /> : workspace.canPublish ? <Eye aria-hidden="true" size={19} /> : <LockKeyhole aria-hidden="true" size={19} />}</span>
+          <div><small>Next</small><strong>{workspace.nextAction.label}</strong><p>{workspace.nextAction.detail}</p></div>
+          <button className="button button-primary" onClick={runNextAction} type="button">{workspace.nextAction.label}<ArrowRight aria-hidden="true" size={15} /></button>
         </section>
-        {pendingContract || approvedContract ? null : <MissingMedia garment={garment} />}
-        {garment.privateWardrobeItemId ? <button className="studio-draft-media-action" onClick={() => onContinueMedia(garment)} type="button"><span><ImagePlus aria-hidden="true" size={18} /><span><strong>Create media</strong><small>Mannequin · Lulu · model</small></span></span><ArrowRight aria-hidden="true" size={17} /></button> : null}
+        {pendingContract ? <PendingProductMedia capturedViews={capturedRoles} contract={pendingContract} title={garment.title} /> : null}
+        {captureTarget ? <section id={`piece-captures-${garment.id}`} ref={captureSectionRef} tabIndex={-1}><DraftDirectCaptures garment={garment} onCapturesChange={setCaptures} target={captureTarget} /></section> : null}
+        {workspace.blockers.length ? <section className="studio-piece-blockers" aria-label={`${garment.title} still needs`}><small>Still needed</small><div>{workspace.blockers.map((blocker) => <span key={blocker}>{blocker}</span>)}</div></section> : null}
+        {listing ? <section className="studio-piece-shop" ref={listingSectionRef} tabIndex={-1}><ListingEditor listing={listing} /></section> : null}
       </div>
     </section>
   );
@@ -272,6 +267,12 @@ function ApprovedPublicMedia({ sku, slug, title }: {
     );
   }
 
+  const mediaItems: StudioMediaItem[] = contract.media.map((frame) => ({
+    alt: `${title}: ${publicMediaLabel(frame.slot).toLowerCase()}`,
+    label: publicMediaLabel(frame.slot),
+    src: frame.src,
+  }));
+
   return (
     <div className="studio-public-contract">
       <div className="studio-public-anchor">
@@ -282,13 +283,15 @@ function ApprovedPublicMedia({ sku, slug, title }: {
         <ShieldCheck aria-hidden="true" size={17} strokeWidth={1.8} />
       </div>
       <div className="studio-public-media-grid" aria-label={`${title} approved public frames`}>
-        {contract.media.map((frame) => {
+        {contract.media.map((frame, index) => {
           const label = publicMediaLabel(frame.slot);
           return (
-            <figure key={frame.slot}>
-              <img alt={`${title}: ${label.toLowerCase()}`} loading="lazy" src={frame.src} />
-              <figcaption>{label}</figcaption>
-            </figure>
+            <StudioMediaButton index={index} items={mediaItems} key={frame.slot} label={`Preview ${label.toLowerCase()}`}>
+              <figure>
+                <img alt={`${title}: ${label.toLowerCase()}`} loading="lazy" src={frame.src} />
+                <figcaption>{label}</figcaption>
+              </figure>
+            </StudioMediaButton>
           );
         })}
       </div>
@@ -305,6 +308,7 @@ function ListingEditor({ listing }: { listing: StudioListing }) {
   const [modelId, setModelId] = useState(listing.modelId);
   const gates = listingReadiness(studio, listing);
   const allReady = everyGateReady(gates);
+  const approvedContract = getApprovedPublicListingContract(garment?.sku ?? "", listing.slug);
   if (!garment) return null;
 
   function save(event: FormEvent) {
@@ -333,8 +337,10 @@ function ListingEditor({ listing }: { listing: StudioListing }) {
         </div>
         <ReadinessList gates={gates} />
         <div className="studio-card-actions">
-          {listing.state === "DRAFT" ? <><button className="button button-secondary" type="submit">Save listing</button><button className="button button-primary" disabled={!allReady} onClick={() => studio.confirmListingReady(listing.id)} type="button">Clear gates</button></> : null}
-          {listing.state === "READY" ? <button className="button button-primary" onClick={() => studio.publishListing(listing.id)} type="button">Put up for sale</button> : null}
+          {listing.state === "DRAFT" ? <button className="button button-secondary" type="submit">Save details</button> : null}
+          {listing.state === "DRAFT" && approvedContract ? <button className="button button-primary" disabled={!allReady} onClick={() => studio.confirmListingReady(listing.id)} type="button">Approve Shop preview</button> : null}
+          {listing.state === "READY" && approvedContract ? <button className="button button-primary" onClick={() => studio.publishListing(listing.id)} type="button">Publish</button> : null}
+          {!approvedContract && ["DRAFT", "READY"].includes(listing.state) ? <span className="studio-inline-state"><LockKeyhole aria-hidden="true" size={16} />Private · public media approval required</span> : null}
           {listing.state === "PUBLISHED" ? <span className="studio-inline-state"><Check aria-hidden="true" size={16} />Available in catalogue state</span> : null}
           {listing.state === "RESERVED" ? <span className="studio-inline-state">Reserved by an open order</span> : null}
           {listing.state === "SOLD" ? <span className="studio-inline-state">Sold · return actions live in Operations</span> : null}
@@ -352,10 +358,8 @@ export function WardrobeWorkbench() {
   const [intakeReturnFocus, setIntakeReturnFocus] = useState<HTMLElement | null>(null);
   const [intakeOpen, setIntakeOpen] = useState(false);
   const [filter, setFilter] = useState<(typeof filters)[number]>("ALL");
-  const [openListingId, setOpenListingId] = useState<string | null>(null);
-  const [listingReturnFocus, setListingReturnFocus] = useState<HTMLElement | null>(null);
-  const [openDraftId, setOpenDraftId] = useState<string | null>(null);
-  const [draftReturnFocus, setDraftReturnFocus] = useState<HTMLElement | null>(null);
+  const [openPieceId, setOpenPieceId] = useState<string | null>(null);
+  const [pieceReturnFocus, setPieceReturnFocus] = useState<HTMLElement | null>(null);
   const [garmentPage, setGarmentPage] = useState(0);
   const [publishingPage, setPublishingPage] = useState(0);
   const [wearWardrobeItemId, setWearWardrobeItemId] = useState<string | null>(null);
@@ -383,13 +387,10 @@ export function WardrobeWorkbench() {
     const garmentIndex = studio.garments.findIndex((garment) => garment.id === garmentId);
     if (garmentIndex < 0) return;
     garmentQueryHandledRef.current = garmentId;
-    const listing = studio.listings.find((candidate) => candidate.garmentId === garmentId);
     window.requestAnimationFrame(() => {
       setFilter("ALL");
       setGarmentPage(Math.floor(garmentIndex / garmentPageSize));
-      if (listing) setOpenListingId(listing.id);
-      else if (studio.garments[garmentIndex]?.state === "DRAFT") setOpenDraftId(garmentId);
-      else window.requestAnimationFrame(() => document.getElementById(`studio-garment-${garmentId}`)?.focus({ preventScroll: false }));
+      setOpenPieceId(garmentId);
     });
   }, [searchParams, studio.garments, studio.hydration, studio.listings]);
 
@@ -446,15 +447,14 @@ export function WardrobeWorkbench() {
   const pagedGarments = visibleGarments.slice(safeGarmentPage * garmentPageSize, (safeGarmentPage + 1) * garmentPageSize);
   const safePublishingPage = Math.min(publishingPage, Math.max(0, Math.ceil(studio.listings.length / publishingPageSize) - 1));
   const pagedListings = studio.listings.slice(safePublishingPage * publishingPageSize, (safePublishingPage + 1) * publishingPageSize);
-  const openListing = studio.listings.find((listing) => listing.id === openListingId);
-  const openDraft = studio.garments.find((garment) => garment.id === openDraftId);
-  const openDraftReady = openDraft ? everyGateReady(garmentReadiness(openDraft)) : false;
+  const openPiece = studio.garments.find((garment) => garment.id === openPieceId);
 
   if (studio.hydration === "idle" || studio.hydration === "restoring") {
     return <div className="studio-loading" role="status">Opening wardrobe…</div>;
   }
 
   return (
+    <StudioMediaViewerProvider>
     <div className="studio-ops-page">
       <header className="studio-ops-heading" id="garments">
         <div><p className="eyebrow">Wardrobe</p><h1>Every piece, ready when it is true.</h1><p>Add the piece, review each view, and publish only what Lulu approves.</p></div>
@@ -473,7 +473,7 @@ export function WardrobeWorkbench() {
             <span>{visibleGarments.length} shown</span>
           </div>
           <h2 className="sr-only" id="garments-view-title">Garments</h2>
-          {visibleGarments.length ? <><div className="studio-garment-grid">{pagedGarments.map((garment) => <GarmentCard garment={garment} key={garment.id} onOpenDraft={(draft, origin) => { setDraftReturnFocus(origin); setOpenDraftId(draft.id); }} onOpenListing={(listing, origin) => { setListingReturnFocus(origin); setOpenListingId(listing.id); }} onOpenWear={(next, origin) => { setWearReturnFocus(origin); setWearWardrobeItemId(next.privateWardrobeItemId ?? null); }} />)}</div><StudioPager label="Garment pages" onPageChange={setGarmentPage} page={safeGarmentPage} pageSize={garmentPageSize} total={visibleGarments.length} /></> : (
+          {visibleGarments.length ? <><div className="studio-garment-grid">{pagedGarments.map((garment) => <GarmentCard garment={garment} key={garment.id} onOpenPiece={(piece, origin) => { setPieceReturnFocus(origin); setOpenPieceId(piece.id); }} />)}</div><StudioPager label="Garment pages" onPageChange={setGarmentPage} page={safeGarmentPage} pageSize={garmentPageSize} total={visibleGarments.length} /></> : (
             <div className="studio-quiet-empty studio-wardrobe-empty"><PackageOpen aria-hidden="true" size={26} strokeWidth={1.5} /><div><strong>{studio.garments.length ? "No garments in this state" : "Your wardrobe is empty"}</strong><p>{studio.garments.length ? "Choose another lifecycle filter." : "Start with one photographed and classified piece."}</p></div>{studio.garments.length ? null : <button className="button button-primary" onClick={(event) => openIntake(event.currentTarget)} type="button">Intake garment</button>}</div>
           )}
         </section>
@@ -482,8 +482,8 @@ export function WardrobeWorkbench() {
           <div className="studio-section-title"><div><p className="eyebrow">Publishing</p><h2 id="publishing-title">Listing review</h2></div><span>{studio.listings.length} listing{studio.listings.length === 1 ? "" : "s"}</span></div>
           {studio.listings.length ? <><div className="studio-publishing-queue">{pagedListings.map((listing) => {
             const garment = studio.garments.find((candidate) => candidate.id === listing.garmentId);
-            return <button className="studio-publishing-row" key={listing.id} onClick={(event) => { setListingReturnFocus(event.currentTarget); setOpenListingId(listing.id); }} type="button"><span><small>{garment?.sku}</small><strong>{listing.title}</strong></span><LifecycleBadge state={listing.state} /><ArrowRight aria-hidden="true" size={17} /></button>;
-          })}</div><StudioPager label="Publishing pages" onPageChange={setPublishingPage} page={safePublishingPage} pageSize={publishingPageSize} total={studio.listings.length} /></> : <div className="studio-quiet-empty"><Send aria-hidden="true" size={24} strokeWidth={1.5} /><div><strong>No listing drafts</strong><p>Move a garment to wardrobe, then prepare its listing.</p></div></div>}
+            return <button className="studio-publishing-row" key={listing.id} onClick={(event) => { if (!garment) return; setPieceReturnFocus(event.currentTarget); setOpenPieceId(garment.id); }} type="button"><span><small>{garment?.sku}</small><strong>{listing.title}</strong></span><LifecycleBadge state={listing.state} /><ArrowRight aria-hidden="true" size={17} /></button>;
+          })}</div><StudioPager label="Publishing pages" onPageChange={setPublishingPage} page={safePublishingPage} pageSize={publishingPageSize} total={studio.listings.length} /></> : <div className="studio-quiet-empty"><Send aria-hidden="true" size={24} strokeWidth={1.5} /><div><strong>No Shop previews</strong><p>Approved Shop previews appear here.</p></div></div>}
         </section>
       )}
 
@@ -538,26 +538,24 @@ export function WardrobeWorkbench() {
       />
 
       <StudioTaskSheet
-        className="studio-draft-sheet"
-        eyebrow="Wardrobe draft"
-        footer={openDraft ? <><button className="button button-secondary" onClick={() => setOpenDraftId(null)} type="button">Close</button><button className="button button-primary" disabled={!openDraftReady} onClick={() => { if (studio.moveGarmentToWardrobe(openDraft.id)) setOpenDraftId(null); }} type="button">Move to wardrobe</button></> : undefined}
-        onDismiss={() => { setOpenDraftId(null); setDraftReturnFocus(null); }}
-        open={Boolean(openDraft)}
-        returnFocus={draftReturnFocus}
-        title={openDraft?.title ?? "Draft"}
+        className="studio-draft-sheet studio-piece-sheet"
+        eyebrow="Piece"
+        onDismiss={() => { setOpenPieceId(null); setPieceReturnFocus(null); }}
+        open={Boolean(openPiece)}
+        returnFocus={pieceReturnFocus}
+        title={openPiece?.title ?? "Piece"}
       >
-        {openDraft ? <DraftManager garment={openDraft} onContinueMedia={(garment) => { setOpenDraftId(null); setWearReturnFocus(draftReturnFocus); window.setTimeout(() => setWearWardrobeItemId(garment.privateWardrobeItemId ?? null), 180); }} /> : null}
-      </StudioTaskSheet>
-
-      <StudioTaskSheet
-        eyebrow="Publishing"
-        onDismiss={() => setOpenListingId(null)}
-        open={Boolean(openListing)}
-        returnFocus={listingReturnFocus}
-        title={openListing?.title ?? "Listing"}
-      >
-        {openListing ? <ListingEditor listing={openListing} /> : null}
+        {openPiece ? <PieceWorkspaceView
+          garment={openPiece}
+          onDismiss={() => setOpenPieceId(null)}
+          onContinueMedia={(garment) => {
+            setOpenPieceId(null);
+            setWearReturnFocus(pieceReturnFocus);
+            window.setTimeout(() => setWearWardrobeItemId(garment.privateWardrobeItemId ?? null), 180);
+          }}
+        /> : null}
       </StudioTaskSheet>
     </div>
+    </StudioMediaViewerProvider>
   );
 }

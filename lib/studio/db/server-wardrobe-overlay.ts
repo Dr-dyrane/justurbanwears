@@ -1,4 +1,9 @@
 import type { OperatorSafeWardrobeItem } from "../engine/contracts";
+import {
+  isPendingDirectCaptureRole,
+  pendingCaptureView,
+  type OperatorSafePendingCapture,
+} from "../engine/pending-capture-contracts";
 import type { Garment, GarmentCategory, InventoryRecord } from "../domain/entities";
 import type { StudioSnapshot } from "../domain/state";
 import type { StudioRepository } from "../services/contracts";
@@ -26,7 +31,21 @@ function isWardrobeItem(value: unknown): value is OperatorSafeWardrobeItem {
     && ["DRAFT", "READY", "ARCHIVED"].includes(String(value.state))
     && (value.approvedAssetId === null || typeof value.approvedAssetId === "string")
     && typeof value.createdAt === "string"
-    && typeof value.updatedAt === "string";
+    && typeof value.updatedAt === "string"
+    && (value.directCaptures === undefined || (
+      Array.isArray(value.directCaptures)
+      && value.directCaptures.every(isDirectCapture)
+    ));
+}
+
+function isDirectCapture(value: unknown): value is OperatorSafePendingCapture {
+  return isRecord(value)
+    && typeof value.id === "string"
+    && isPendingDirectCaptureRole(value.role)
+    && typeof value.view === "string"
+    && typeof value.mimeType === "string"
+    && typeof value.assetUrl === "string"
+    && typeof value.approvedAt === "string";
 }
 
 function studioCategory(category: OperatorSafeWardrobeItem["category"]): GarmentCategory {
@@ -45,6 +64,18 @@ function mapServerGarment(item: OperatorSafeWardrobeItem): Garment {
   const approvedAssetPath = item.approvedAssetId
     ? `/api/studio/intakes/${item.intakeId}/assets/${item.approvedAssetId}` as const
     : undefined;
+  const directReferences = (item.directCaptures ?? []).map((capture) => ({
+    id: `pending-capture-${capture.id}`,
+    view: pendingCaptureView(capture.role),
+    quality: 100,
+  }));
+  const references = [
+    ...(approvedAssetPath ? [{ id: item.approvedAssetId!, view: "FRONT" as const, quality: 100 }] : []),
+    ...directReferences,
+  ];
+  const mediaReady = (["FRONT", "BACK", "DETAIL"] as const).every((view) =>
+    references.some((reference) => reference.view === view)
+  );
   return {
     id: garmentId(item.id),
     sku: `INTAKE-${item.id.slice(0, 8).toUpperCase()}`,
@@ -63,12 +94,12 @@ function mapServerGarment(item: OperatorSafeWardrobeItem): Garment {
     saleEligible: false,
     measurements: [],
     classificationState: "READY",
-    mediaState: approvedAssetPath ? "DRAFT" : "EMPTY",
+    mediaState: mediaReady ? "READY" : approvedAssetPath ? "DRAFT" : "EMPTY",
     state: "DRAFT",
     availability: item.state === "ARCHIVED" ? "ARCHIVED" : "AVAILABLE",
     canonState: "REVIEW",
     visual: "studio",
-    references: approvedAssetPath ? [{ id: item.approvedAssetId!, view: "FRONT", quality: 100 }] : [],
+    references,
     ...(approvedAssetPath ? {
       reviewCover: {
         src: approvedAssetPath,

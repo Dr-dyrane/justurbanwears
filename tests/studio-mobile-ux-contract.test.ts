@@ -37,18 +37,18 @@ test("compact records, garments, and inventory use approved media", () => {
   assert.match(css, /\.studio-table-row \{ background: var\(--studio-panel\);[\s\S]*?grid-template-columns: 58px/);
 });
 
-test("compact garment actions keep specific accessible names when labels collapse", () => {
-  assert.match(wardrobe, /aria-label=\{`Open media for \$\{garment\.title\}`\}/);
-  assert.match(wardrobe, /aria-label=\{`Manage draft \$\{garment\.title\}`\}/);
-  assert.match(wardrobe, /aria-label=\{`Prepare listing for \$\{garment\.title\}`\}/);
-  assert.match(wardrobe, /aria-label=\{`Open listing for \$\{garment\.title\}`\}/);
+test("compact garment rows expose preview and one Piece workspace", () => {
+  assert.match(wardrobe, /label=\{`Preview \$\{garment\.title\}`\}/);
+  assert.match(wardrobe, /aria-label=\{`Open \$\{garment\.title\}`\}/);
+  assert.match(wardrobe, /className="studio-garment-disclosure"/);
+  assert.doesNotMatch(wardrobe, /Manage draft|Prepare listing|Open listing/);
 });
 
-test("draft garments open a management sheet before promotion", () => {
-  assert.match(wardrobe, /className="studio-draft-sheet"/);
-  assert.match(wardrobe, /<DraftManager garment=\{openDraft\}/);
-  assert.match(wardrobe, /disabled=\{!openDraftReady\}/);
-  assert.doesNotMatch(wardrobe, /aria-label=\{`Move \$\{garment\.title\} to wardrobe`\}/);
+test("garments open one Piece workspace with one truthful next action", () => {
+  assert.match(wardrobe, /className="studio-draft-sheet studio-piece-sheet"/);
+  assert.match(wardrobe, /<PieceWorkspaceView/);
+  assert.match(wardrobe, /workspace\.nextAction\.label/);
+  assert.doesNotMatch(wardrobe, /Move to wardrobe|Clear gates|Create media/);
 });
 
 test("model segmented content can render without the portrait obstruction", () => {

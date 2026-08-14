@@ -10,7 +10,7 @@ test("Wardrobe exposes a visual next action and an in-app Lulu guide", async () 
     read("app/foundation.css"),
   ]);
 
-  assert.match(workbench, /studio-card-next/);
+  assert.match(workbench, /studio-piece-next/);
   assert.match(workbench, /One piece\. One action\./);
   assert.match(workbench, /Unseen back and detail stay missing/);
   assert.match(css, /\.studio-guide-flow/);

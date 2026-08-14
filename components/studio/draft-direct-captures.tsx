@@ -8,7 +8,6 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Garment } from "../../lib/studio/domain/entities";
 import {
   pendingWardrobeMediaLabel,
-  type PendingWardrobeProductContract,
 } from "../../lib/studio/seeds/private-wardrobe-products";
 import {
   PENDING_DIRECT_CAPTURE_ROLES,
@@ -16,9 +15,16 @@ import {
   type PendingDirectCaptureRole,
 } from "../../lib/studio/engine/pending-capture-contracts";
 import { useStudio } from "./studio-provider";
+import { StudioMediaButton, type StudioMediaItem } from "./media-viewer";
 
 type CaptureWorkspace = { sku: string; captures: OperatorSafePendingCapture[] };
 type Preview = { role: PendingDirectCaptureRole; file: File; url: string };
+
+export type DirectCaptureTarget = {
+  endpoint: string;
+  key: string;
+  requiredRoles: readonly PendingDirectCaptureRole[];
+};
 
 function Spinner({ label }: { label?: string }) {
   return <span aria-label={label} className="studio-capture-spinner" role={label ? "status" : undefined}><LoaderCircle aria-hidden="true" size={17} /></span>;
@@ -29,7 +35,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function parseWorkspace(value: unknown): CaptureWorkspace | null {
-  if (!isRecord(value) || typeof value.sku !== "string" || !Array.isArray(value.captures)) return null;
+  if (!isRecord(value) || !Array.isArray(value.captures)) return null;
   const captures = value.captures.filter((capture): capture is OperatorSafePendingCapture =>
     isRecord(capture)
     && typeof capture.id === "string"
@@ -40,7 +46,10 @@ function parseWorkspace(value: unknown): CaptureWorkspace | null {
     && typeof capture.assetUrl === "string"
     && typeof capture.approvedAt === "string"
   );
-  return { sku: value.sku, captures };
+  const key = typeof value.sku === "string"
+    ? value.sku
+    : typeof value.wardrobeItemId === "string" ? value.wardrobeItemId : null;
+  return key ? { sku: key, captures } : null;
 }
 
 function errorMessage(value: unknown) {
@@ -50,13 +59,13 @@ function errorMessage(value: unknown) {
 }
 
 export function DraftDirectCaptures({
-  contract,
   garment,
   onCapturesChange,
+  target,
 }: {
-  contract: PendingWardrobeProductContract;
   garment: Garment;
   onCapturesChange(captures: OperatorSafePendingCapture[]): void;
+  target: DirectCaptureTarget;
 }) {
   const { syncPendingGarmentCaptures } = useStudio();
   const [captures, setCaptures] = useState<OperatorSafePendingCapture[]>([]);
@@ -65,9 +74,14 @@ export function DraftDirectCaptures({
   const [savingRole, setSavingRole] = useState<PendingDirectCaptureRole | null>(null);
   const [feedback, setFeedback] = useState<{ tone: "success" | "error"; text: string } | null>(null);
   const busy = loading || Boolean(savingRole);
+  const savedMedia: StudioMediaItem[] = captures.map((capture) => ({
+    alt: `${pendingWardrobeMediaLabel(capture.role)} saved privately`,
+    label: pendingWardrobeMediaLabel(capture.role),
+    src: capture.assetUrl,
+  }));
   const requiredRoles = useMemo(() => PENDING_DIRECT_CAPTURE_ROLES.filter((role) =>
-    contract.missingViews.includes(role)
-  ), [contract]);
+    target.requiredRoles.includes(role)
+  ), [target.requiredRoles]);
 
   const applyWorkspace = useCallback((workspace: CaptureWorkspace) => {
     setCaptures(workspace.captures);
@@ -82,7 +96,7 @@ export function DraftDirectCaptures({
   useEffect(() => {
     const controller = new AbortController();
     setLoading(true);
-    void fetch(`/api/studio/pending-products/${encodeURIComponent(contract.sku)}/captures`, {
+    void fetch(target.endpoint, {
       cache: "no-store",
       credentials: "same-origin",
       headers: { accept: "application/json" },
@@ -99,7 +113,7 @@ export function DraftDirectCaptures({
       if (!controller.signal.aborted) setLoading(false);
     });
     return () => controller.abort();
-  }, [applyWorkspace, contract.sku]);
+  }, [applyWorkspace, target.endpoint]);
 
   useEffect(() => () => {
     if (preview) URL.revokeObjectURL(preview.url);
@@ -124,7 +138,7 @@ export function DraftDirectCaptures({
     form.set("role", preview.role);
     form.set("file", preview.file);
     try {
-      const response = await fetch(`/api/studio/pending-products/${encodeURIComponent(contract.sku)}/captures`, {
+      const response = await fetch(target.endpoint, {
         method: "POST",
         credentials: "same-origin",
         body: form,
@@ -161,7 +175,13 @@ export function DraftDirectCaptures({
 
       {preview ? (
         <div className="studio-capture-preview">
-          <img alt={`${pendingWardrobeMediaLabel(preview.role)} preview`} src={preview.url} />
+          <StudioMediaButton className="studio-capture-preview-media" items={[{
+            alt: `${pendingWardrobeMediaLabel(preview.role)} preview`,
+            label: pendingWardrobeMediaLabel(preview.role),
+            src: preview.url,
+          }]} label={`Expand ${pendingWardrobeMediaLabel(preview.role).toLowerCase()} preview`}>
+            <img alt={`${pendingWardrobeMediaLabel(preview.role)} preview`} src={preview.url} />
+          </StudioMediaButton>
           <div>
             <span><small>Preview</small><strong>{pendingWardrobeMediaLabel(preview.role)}</strong></span>
             <label aria-disabled={busy} className="button button-secondary">
@@ -180,7 +200,7 @@ export function DraftDirectCaptures({
             const saved = captures.find((capture) => capture.role === role);
             return (
               <article className={saved ? "is-saved" : undefined} key={role}>
-                {saved ? <img alt={`${pendingWardrobeMediaLabel(role)} saved privately`} src={saved.assetUrl} /> : <div><Images aria-hidden="true" size={21} /></div>}
+                {saved ? <StudioMediaButton className="studio-direct-capture-media" index={captures.findIndex((capture) => capture.id === saved.id)} items={savedMedia} label={`Preview ${pendingWardrobeMediaLabel(role).toLowerCase()}`}><img alt={`${pendingWardrobeMediaLabel(role)} saved privately`} src={saved.assetUrl} /></StudioMediaButton> : <div><Images aria-hidden="true" size={21} /></div>}
                 <span><small>{saved ? "Saved privately" : "Missing"}</small><strong>{pendingWardrobeMediaLabel(role)}</strong></span>
                 <div className="studio-direct-capture-actions">
                   <label aria-disabled={busy} aria-label={`Take ${pendingWardrobeMediaLabel(role).toLowerCase()} photo`}>
