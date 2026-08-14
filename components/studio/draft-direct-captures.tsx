@@ -150,7 +150,13 @@ export function DraftDirectCaptures({
     <section className="studio-direct-captures" aria-label={`${garment.title} private captures`}>
       <div className="studio-direct-captures-heading">
         <div><small>Direct captures</small><strong>{captures.length}/{requiredRoles.length} saved</strong></div>
-        {loading ? <Spinner label="Loading saved photos" /> : <Check aria-hidden="true" size={18} />}
+        {loading ? (
+          <Spinner label="Loading saved photos" />
+        ) : captures.length === requiredRoles.length ? (
+          <Check aria-hidden="true" size={18} />
+        ) : (
+          <Images aria-hidden="true" className="is-incomplete" size={18} />
+        )}
       </div>
 
       {preview ? (
@@ -179,10 +185,12 @@ export function DraftDirectCaptures({
                 <div className="studio-direct-capture-actions">
                   <label aria-disabled={busy} aria-label={`Take ${pendingWardrobeMediaLabel(role).toLowerCase()} photo`}>
                     <Camera aria-hidden="true" size={17} />
+                    <span aria-hidden="true">Camera</span>
                     <input accept="image/jpeg,image/png,image/webp" capture="environment" disabled={busy} onChange={(event) => choose(role, event.target.files?.[0])} type="file" />
                   </label>
                   <label aria-disabled={busy} aria-label={`${saved ? "Replace" : "Choose"} ${pendingWardrobeMediaLabel(role).toLowerCase()} from Photos`}>
                     {saved ? <RefreshCw aria-hidden="true" size={17} /> : <Images aria-hidden="true" size={17} />}
+                    <span aria-hidden="true">{saved ? "Replace" : "Photos"}</span>
                     <input accept="image/jpeg,image/png,image/webp" disabled={busy} onChange={(event) => choose(role, event.target.files?.[0])} type="file" />
                   </label>
                 </div>

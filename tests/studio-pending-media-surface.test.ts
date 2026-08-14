@@ -144,3 +144,25 @@ test("keeps contracted catalogue cards free of open capture inputs", () => {
     /pendingContract \|\| approvedContract \? null : <MissingMedia garment=\{garment\} \/>/u,
   );
 });
+
+test("gives draft management an image-led mobile sheet with unsqueezed capture actions", () => {
+  const workbench = readFileSync(
+    join(process.cwd(), "components/studio/wardrobe-workbench.tsx"),
+    "utf8",
+  );
+  const captures = readFileSync(
+    join(process.cwd(), "components/studio/draft-direct-captures.tsx"),
+    "utf8",
+  );
+  const styles = readFileSync(join(process.cwd(), "app/foundation.css"), "utf8");
+
+  assert.match(workbench, /className="studio-draft-summary"/u);
+  assert.match(captures, />Camera<\/span>/u);
+  assert.match(captures, /saved \? "Replace" : "Photos"/u);
+  assert.match(captures, /captures\.length === requiredRoles\.length/u);
+  assert.match(captures, /className="is-incomplete"/u);
+  assert.match(styles, /\.studio-draft-sheet \.studio-task-sheet-body \{ padding: 0; \}/u);
+  assert.match(styles, /\.studio-draft-visual \{ aspect-ratio: auto; border-radius: 0; height: clamp\(250px, 34dvh, 320px\); \}/u);
+  assert.match(styles, /\.studio-direct-capture-actions \{ display: grid; gap: 7px; grid-column: 1 \/ -1; grid-template-columns: 1fr 1fr; \}/u);
+  assert.doesNotMatch(styles, /\.studio-draft-manager \{ grid-template-columns: 92px minmax\(0, 1fr\); \}/u);
+});

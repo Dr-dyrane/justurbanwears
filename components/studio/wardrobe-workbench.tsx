@@ -235,12 +235,14 @@ function DraftManager({ garment, onContinueMedia }: { garment: Garment; onContin
         {cover ? <img alt={cover.alt} height={cover.height} src={cover.src} width={cover.width} /> : <Shirt aria-hidden="true" size={64} strokeWidth={1.05} />}
       </div>
       <div className="studio-draft-content">
-        <div className="studio-card-heading"><div><small>{garment.sku} · {garment.sizeLabel}</small><h3>{garment.title}</h3></div><LifecycleBadge state={garment.state} /></div>
-        <p>{garment.color} · {garment.condition}</p>
-        <div className="studio-garment-facts">
-          <span>{garment.price > 0 ? formatNaira(garment.price) : "Price pending"}</span>
-          <span>{garment.quantity} unit{garment.quantity === 1 ? "" : "s"}</span>
-          <span>{garment.measurements.length > 0 ? `${garment.measurements.length} measurements` : "Measurements pending"}</span>
+        <div className="studio-draft-summary">
+          <div className="studio-card-heading"><div><small>{garment.sku} · {garment.sizeLabel}</small><h3>{garment.title}</h3></div><LifecycleBadge state={garment.state} /></div>
+          <p>{garment.color} · {garment.condition}</p>
+          <div className="studio-garment-facts">
+            <span>{garment.price > 0 ? formatNaira(garment.price) : "Price pending"}</span>
+            <span>{garment.quantity} unit{garment.quantity === 1 ? "" : "s"}</span>
+            <span>{garment.measurements.length > 0 ? `${garment.measurements.length} measurements` : "Measurements pending"}</span>
+          </div>
         </div>
         {pendingContract ? <PendingProductMedia capturedViews={captures.map((capture) => capture.role)} contract={pendingContract} title={garment.title} /> : null}
         {pendingContract ? <DraftDirectCaptures contract={pendingContract} garment={garment} onCapturesChange={setCaptures} /> : null}
