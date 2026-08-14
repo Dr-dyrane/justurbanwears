@@ -1,7 +1,7 @@
 import { requireStudioOperator } from "../../../../../../lib/server/studio-operator";
 import { engineErrorResponse } from "../../../../../../lib/studio/engine/errors";
 import { engineJson } from "../../../../../../lib/studio/engine/http";
-import { parseMediaCompletionForm } from "../../../../../../lib/studio/engine/media-completion-http";
+import { parseMediaCompletionRequest } from "../../../../../../lib/studio/engine/media-completion-http";
 import { createMediaCompletion, readLatestMediaCompletion } from "../../../../../../lib/studio/engine/media-completion-service";
 
 export const dynamic = "force-dynamic";
@@ -23,7 +23,7 @@ export async function GET(request: Request, context: { params: Promise<{ sku: st
 export async function POST(request: Request, context: { params: Promise<{ sku: string }> }) {
   try {
     const [operator, { sku }] = await Promise.all([requireStudioOperator(), context.params]);
-    const input = await parseMediaCompletionForm(request);
+    const input = await parseMediaCompletionRequest(request);
     return engineJson(await createMediaCompletion({
       target: { kind: "PENDING_PRODUCT", key: sku },
       operator,

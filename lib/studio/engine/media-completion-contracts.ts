@@ -10,6 +10,11 @@ export const mediaCompletionRoleSchema = z.enum([
 
 export type MediaCompletionRole = z.infer<typeof mediaCompletionRoleSchema>;
 export type MediaCompletionTargetKind = "PENDING_PRODUCT" | "WARDROBE_ITEM";
+export const mediaCompletionSourceModeSchema = z.enum([
+  "UPLOADED_AUTHORITY",
+  "APPROVED_FRONT",
+]);
+export type MediaCompletionSourceMode = z.infer<typeof mediaCompletionSourceModeSchema>;
 export type MediaCompletionState =
   | "PENDING"
   | "RUNNING"
@@ -21,6 +26,7 @@ export type MediaCompletionState =
 export const mediaCompletionDecisionSchema = z.object({
   decision: z.enum(["KEEP", "RETRY", "REJECT"]),
   correction: z.string().trim().max(500).optional(),
+  truthConfirmed: z.boolean().optional(),
 });
 
 export type MediaCompletionDecision = z.infer<typeof mediaCompletionDecisionSchema>;
@@ -28,6 +34,7 @@ export type MediaCompletionDecision = z.infer<typeof mediaCompletionDecisionSche
 export type OperatorSafeMediaCompletionJob = {
   id: string;
   role: MediaCompletionRole;
+  sourceMode: MediaCompletionSourceMode;
   state: MediaCompletionState;
   assetUrl?: string;
   attempt: 1 | 2;
@@ -66,6 +73,21 @@ export function assertMediaCompletionAuthority(
       400,
       `Confirm that the source shows the ${requiredAuthorityStatement(role)}.`,
       "Choose a role-matching source photo.",
+    );
+  }
+}
+
+export function assertMediaCompletionTruthConfirmation(
+  sourceMode: MediaCompletionSourceMode,
+  decision: MediaCompletionDecision["decision"],
+  truthConfirmed: unknown,
+): void {
+  if (sourceMode === "APPROVED_FRONT" && decision === "KEEP" && truthConfirmed !== true) {
+    throw new StudioEngineError(
+      "INVALID_REQUEST",
+      400,
+      "Confirm that the AI preview matches the real garment.",
+      "Compare the preview with the garment, then choose Yes, it matches.",
     );
   }
 }

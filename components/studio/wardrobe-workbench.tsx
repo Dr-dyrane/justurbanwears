@@ -210,6 +210,8 @@ function PieceWorkspaceView({ garment, onDismiss, onContinueMedia }: { garment: 
     key: pendingContract.sku,
     requiredRoles: pendingContract.missingViews.filter(isPendingDirectCaptureRole),
   } : garment.privateWardrobeItemId ? {
+    aiSourceMode: "APPROVED_FRONT",
+    approvedFrontUrl: garment.reviewCover?.src,
     completionEndpoint: `/api/studio/wardrobe/${encodeURIComponent(garment.privateWardrobeItemId)}/completions`,
     endpoint: `/api/studio/wardrobe/${encodeURIComponent(garment.privateWardrobeItemId)}/captures`,
     key: garment.privateWardrobeItemId,

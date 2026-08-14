@@ -11,7 +11,10 @@ import { z } from "zod";
 import { intakeFactsSchema, type IntakeFacts } from "../studio/engine/contracts";
 import { StudioEngineError } from "../studio/engine/errors";
 import type { WearOperation } from "../studio/engine/contracts";
-import type { MediaCompletionRole } from "../studio/engine/media-completion-contracts";
+import type {
+  MediaCompletionRole,
+  MediaCompletionSourceMode,
+} from "../studio/engine/media-completion-contracts";
 
 const DEFAULT_TEXT_MODEL = "google/gemini-2.5-flash-lite";
 const DEFAULT_TEXT_FALLBACK = "google/gemini-2.5-flash";
@@ -36,8 +39,8 @@ export const studioGatewayPolicy = {
   promptVersion: "garment-front-v2",
   mediaCompletionPromptVersions: Object.freeze({
     GARMENT_FRONT: "media-full-front-v1",
-    GARMENT_BACK: "media-full-back-v1",
-    FABRIC_DETAIL: "media-fabric-detail-v1",
+    GARMENT_BACK: "media-full-back-v2",
+    FABRIC_DETAIL: "media-fabric-detail-v2",
   }),
   wearPromptVersions: Object.freeze({
     MANNEQUIN_FRONT: "mannequin-front-v1",
@@ -390,8 +393,27 @@ export function buildMediaCompletionPrompt(input: {
   role: MediaCompletionRole;
   facts: Partial<IntakeFacts>;
   correction?: string;
+  sourceMode?: MediaCompletionSourceMode;
 }): string {
-  const roleInstruction = input.role === "GARMENT_FRONT"
+  const sourceMode = input.sourceMode ?? "UPLOADED_AUTHORITY";
+  const inferredInstruction = input.role === "GARMENT_BACK"
+    ? [
+      "Create one private, provisional straight-on back preview inferred from the supplied approved full-front product image.",
+      "The back is not visible in the source. Continue only the visible silhouette, sleeves, side seams, hem, colour and material cues conservatively.",
+      "Use the simplest plausible rear construction. Do not add decorative seams, pockets, cut-outs, fasteners, labels or trim that are not visible.",
+      "This is an unverified suggestion for the operator to compare with the physical garment, never a factual record of the back.",
+    ]
+    : input.role === "FABRIC_DETAIL"
+      ? [
+        "Create one private, provisional fabric-detail preview using only a clearly visible surface region from the supplied approved full-front product image.",
+        "Crop and enlarge visible colour, print and surface cues conservatively; do not invent fibre, weave, texture, sheen or material claims beyond the source resolution.",
+        "This is an unverified suggestion for the operator to compare with the physical garment, never a factual material record.",
+      ]
+      : [
+        "Create one clean product-only straight-on front catalogue view from the supplied approved full-front product image.",
+        "Preserve every visible front construction detail, proportion, length, surface, print, colour and drape exactly.",
+      ];
+  const authorityInstruction = input.role === "GARMENT_FRONT"
     ? [
       "Create one clean product-only straight-on front catalogue view from the supplied full-front authority photo.",
       "The source must already show the complete front from neckline through hem with both sleeves and outer edges visible.",
@@ -408,9 +430,12 @@ export function buildMediaCompletionPrompt(input: {
         "Preserve the photographed surface, weave, print, colour, texture, wear and scale exactly.",
         "Do not sharpen, regularize, extend, synthesize or replace the fabric pattern or surface.",
       ];
+  const roleInstruction = sourceMode === "APPROVED_FRONT" ? inferredInstruction : authorityInstruction;
   return [
     ...roleInstruction,
-    "Use only what is visible in the supplied authority image. Never infer, invent, mirror, extrapolate, complete or reinterpret unseen garment construction.",
+    sourceMode === "APPROVED_FRONT"
+      ? "Preserve all visible source evidence. Infer only the minimum needed for the requested provisional view and keep every uncertainty reviewable."
+      : "Use only what is visible in the supplied authority image. Never infer, invent, mirror, extrapolate, complete or reinterpret unseen garment construction.",
     "Remove only the surrounding person, hanger or background when necessary; use an even warm-paper background and soft neutral light.",
     "No person, mannequin, hanger, text, logo, watermark, brand tag or added accessory.",
     "Never add or alter closures, pockets, seams, lining, labels, fibre composition, material claims or concealed surfaces.",

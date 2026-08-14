@@ -3,10 +3,13 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 import {
   assertMediaCompletionAuthority,
+  assertMediaCompletionTruthConfirmation,
   mediaCompletionDecisionSchema,
+  mediaCompletionSourceModeSchema,
   requiredAuthorityStatement,
 } from "../lib/studio/engine/media-completion-contracts";
 import { buildMediaCompletionPrompt } from "../lib/ai/studio-gateway";
+import { parseMediaCompletionRequest } from "../lib/studio/engine/media-completion-http";
 
 const root = new URL("../", import.meta.url);
 const source = (path: string) => readFile(new URL(path, root), "utf8");
@@ -20,6 +23,24 @@ test("UI contracts expose one reviewable candidate and one retry", () => {
   assert.equal(requiredAuthorityStatement("FABRIC_DETAIL"), "fabric close-up");
   assert.throws(() => assertMediaCompletionAuthority("GARMENT_BACK", "false"), /full back/);
   assert.doesNotThrow(() => assertMediaCompletionAuthority("GARMENT_BACK", "true"));
+  assert.equal(mediaCompletionSourceModeSchema.safeParse("APPROVED_FRONT").success, true);
+  assert.throws(
+    () => assertMediaCompletionTruthConfirmation("APPROVED_FRONT", "KEEP", false),
+    /matches the real garment/,
+  );
+  assert.doesNotThrow(() => assertMediaCompletionTruthConfirmation("APPROVED_FRONT", "KEEP", true));
+  assert.doesNotThrow(() => assertMediaCompletionTruthConfirmation("UPLOADED_AUTHORITY", "KEEP", undefined));
+});
+
+test("approved wardrobe fronts can request a private AI candidate without another upload", async () => {
+  const parsed = await parseMediaCompletionRequest(new Request("https://example.test/completions", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ role: "GARMENT_BACK", sourceMode: "APPROVED_FRONT" }),
+  }));
+  assert.equal(parsed.role, "GARMENT_BACK");
+  assert.equal(parsed.sourceMode, "APPROVED_FRONT");
+  assert.equal("bytes" in parsed, false);
 });
 
 test("role prompts preserve the supplied authority and never infer missing construction", () => {
@@ -36,6 +57,25 @@ test("role prompts preserve the supplied authority and never infer missing const
     assert.match(prompt, /Never infer, invent, mirror, extrapolate, complete or reinterpret unseen/);
     assert.match(prompt, /Never add or alter closures, pockets, seams, lining/);
   }
+});
+
+test("approved-front cross-view prompts stay provisional until physical review", () => {
+  const back = buildMediaCompletionPrompt({
+    role: "GARMENT_BACK",
+    sourceMode: "APPROVED_FRONT",
+    facts: { title: "Dress" },
+  });
+  const detail = buildMediaCompletionPrompt({
+    role: "FABRIC_DETAIL",
+    sourceMode: "APPROVED_FRONT",
+    facts: { title: "Dress" },
+  });
+  assert.match(back, /private, provisional straight-on back preview inferred/);
+  assert.match(back, /not visible in the source/);
+  assert.match(back, /never a factual record/);
+  assert.match(detail, /private, provisional fabric-detail preview/);
+  assert.match(detail, /do not invent fibre, weave, texture/);
+  assert.match(detail, /never a factual material record/);
 });
 
 test("0008 stores append-only candidate lineage and keeps capture promotion explicit", async () => {
@@ -63,6 +103,8 @@ test("0008 stores append-only candidate lineage and keeps capture promotion expl
   assert.match(repository, /eq\(studioMediaCompletionJobs\.executionToken, executionToken\)/);
   assert.match(repository, /with approved_job as/);
   assert.match(repository, /state = 'COMPLETE'/);
+  assert.match(repository, /operatorTruthConfirmed/);
+  assert.match(repository, /source_validation->>'sourceMode' = 'APPROVED_FRONT'/);
   assert.match(repository, /origin, completion_job_id/);
   assert.match(repository, /state = 'APPROVED'/);
 });
@@ -78,10 +120,18 @@ test("service validates visible role coverage before paid image generation", asy
   assert.match(gateway, /FULL_BACK/);
   assert.match(gateway, /FABRIC_CLOSEUP/);
   assert.match(gateway, /maxRetries: 0/);
+  assert.match(gateway, /GARMENT_BACK: "media-full-back-v2"/);
+  assert.match(gateway, /FABRIC_DETAIL: "media-fabric-detail-v2"/);
   const execution = service.slice(service.indexOf("async function executeCompletion"));
   assert.ok(execution.indexOf("validateMediaCompletionSource") < execution.indexOf("generateMediaCompletionImage"));
   assert.ok(execution.indexOf("validationCostUsd") < execution.indexOf("generateMediaCompletionImage"));
   assert.match(service, /generated\.costUsd === null \|\| generated\.costUsd > studioGatewayPolicy\.imageCostCapUsd/);
+  assert.match(service, /readApprovedWardrobeFront/);
+  assert.match(service, /getOwnedAsset/);
+  assert.match(service, /asset\.role !== "GARMENT_FRONT"/);
+  assert.match(service, /sourceMode: input\.sourceMode/);
+  assert.match(service, /approvedFrontSelected: input\.sourceMode === "APPROVED_FRONT"/);
+  assert.match(service, /sourceMode === "APPROVED_FRONT" \? "GARMENT_FRONT" : input\.role/);
   assert.match(service, /\.toColourspace\("srgb"\)/);
   assert.match(service, /\.webp\(/);
   assert.ok(service.indexOf("const outputHash = sha256(verified.bytes)") > service.indexOf(".webp("));
@@ -108,9 +158,11 @@ test("operator routes require auth, private source files, and explicit decisions
   const http = await source("lib/studio/engine/media-completion-http.ts");
   assert.match(http, /MAX_STUDIO_IMAGE_BYTES/);
   assert.match(http, /authorityConfirmed/);
+  assert.match(http, /application\/json/);
+  assert.match(http, /APPROVED_FRONT/);
   assert.match(http, /private, no-store, max-age=0/);
   for (const route of routes.slice(0, 2)) {
-    assert.ok(route.indexOf("requireStudioOperator()") < route.indexOf("parseMediaCompletionForm(request)"));
+    assert.ok(route.indexOf("requireStudioOperator()") < route.indexOf("parseMediaCompletionRequest(request)"));
   }
 });
 
@@ -126,4 +178,5 @@ test("publication rejects AI captures without matching approved lineage", async 
   assert.match(atomic, /job\.output_sha256 = capture\.sha256/);
   assert.match(directRepository, /origin: "DIRECT"/);
   assert.match(directRepository, /completionJobId: null/);
+  assert.match(directRepository, /onConflictDoUpdate/);
 });

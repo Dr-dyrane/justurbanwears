@@ -150,15 +150,26 @@ export async function approveAndPromoteMediaCompletionJob(input: {
   id: string;
   operatorSubject: string;
   captureKey: string;
+  truthConfirmed: boolean;
 }): Promise<MediaCompletionJobRow> {
   const db = await getStudioDb();
   const result = await db.execute(sql`
     with approved_job as (
       update studio_media_completion_jobs
-      set state = 'APPROVED', approved_at = now(), rejected_at = null, updated_at = now()
+      set state = 'APPROVED',
+          source_validation = case
+            when source_validation->>'sourceMode' = 'APPROVED_FRONT'
+              then source_validation || jsonb_build_object('operatorTruthConfirmed', true)
+            else source_validation
+          end,
+          approved_at = now(), rejected_at = null, updated_at = now()
       where id = ${input.id}::uuid
         and operator_subject = ${input.operatorSubject}
         and state = 'COMPLETE'
+        and (
+          coalesce(source_validation->>'sourceMode', 'UPLOADED_AUTHORITY') <> 'APPROVED_FRONT'
+          or ${input.truthConfirmed}
+        )
         and output_blob_pathname is not null
         and output_mime_type is not null
         and output_byte_size > 0

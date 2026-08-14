@@ -33,6 +33,8 @@ type CaptureWorkspace = { sku: string; captures: OperatorSafePendingCapture[] };
 type Preview = { role: PendingDirectCaptureRole; file: File; url: string };
 
 export type DirectCaptureTarget = {
+  aiSourceMode?: "APPROVED_FRONT";
+  approvedFrontUrl?: string;
   completionEndpoint: string;
   endpoint: string;
   key: string;
@@ -45,6 +47,7 @@ type CompletionJob = {
   canRetry: boolean;
   id: string;
   role: PendingDirectCaptureRole;
+  sourceMode: "APPROVED_FRONT" | "UPLOADED_AUTHORITY";
   state: "PENDING" | "RUNNING" | "COMPLETE" | "APPROVED" | "REJECTED" | "FAILED";
 };
 
@@ -55,6 +58,7 @@ type AiFlow = {
   job: CompletionJob | null;
   role: PendingDirectCaptureRole;
   source: AiSource | null;
+  sourceMode: "APPROVED_FRONT" | "UPLOADED_AUTHORITY";
   step: "OPENING" | "SOURCE" | "MAKING" | "REVIEW";
 };
 
@@ -99,6 +103,7 @@ function parseCompletionJob(value: unknown): CompletionJob | null {
     canRetry: typeof candidate.canRetry === "boolean" ? candidate.canRetry : candidate.state === "COMPLETE" && candidate.attempt < 2,
     id: candidate.id,
     role: candidate.role,
+    sourceMode: candidate.sourceMode === "APPROVED_FRONT" ? "APPROVED_FRONT" : "UPLOADED_AUTHORITY",
     state: candidate.state as CompletionJob["state"],
   };
 }
@@ -107,6 +112,23 @@ function roleSourceCopy(role: PendingDirectCaptureRole) {
   if (role === "GARMENT_FRONT") return { action: "Add a full front", confirmation: "Full front is visible" };
   if (role === "GARMENT_BACK") return { action: "Add a full back", confirmation: "Full back is visible" };
   return { action: "Add a fabric close-up", confirmation: "Fabric surface is clear" };
+}
+
+function inferredSourceCopy(role: PendingDirectCaptureRole) {
+  if (role === "GARMENT_BACK") return {
+    action: "Create from product front",
+    detail: "AI suggests the unseen back. You verify it before saving.",
+  };
+  return {
+    action: "Create from product front",
+    detail: "AI suggests a detail from visible fabric. You verify it before saving.",
+  };
+}
+
+function inferredReviewCopy(role: PendingDirectCaptureRole) {
+  return role === "GARMENT_BACK"
+    ? { heading: "Does this match the real back?", detail: "Inferred from the product front. Check the garment." }
+    : { heading: "Does this match the real fabric?", detail: "Suggested from the product front. Check the garment." };
 }
 
 function errorMessage(value: unknown) {
@@ -148,6 +170,7 @@ export function DraftDirectCaptures({
     target.requiredRoles.includes(role)
   ), [target.requiredRoles]);
   const missingRoles = requiredRoles.filter((role) => !captures.some((capture) => capture.role === role));
+  const aiUsesApprovedFront = aiFlow?.sourceMode === "APPROVED_FRONT";
 
   const applyWorkspace = useCallback((workspace: CaptureWorkspace) => {
     setCaptures(workspace.captures);
@@ -258,7 +281,15 @@ export function DraftDirectCaptures({
     aiResumeControllerRef.current = controller;
     aiReturnFocusRef.current = origin;
     setFeedback(null);
-    setAiFlow({ confirmed: false, correction: "", job: null, role, source: null, step: "OPENING" });
+    setAiFlow({
+      confirmed: false,
+      correction: "",
+      job: null,
+      role,
+      source: null,
+      sourceMode: target.aiSourceMode ?? "UPLOADED_AUTHORITY",
+      step: "OPENING",
+    });
     try {
       for (let poll = 0; poll < 40 && !controller.signal.aborted; poll += 1) {
         const response = await fetch(`${target.completionEndpoint}?role=${encodeURIComponent(role)}`, {
@@ -275,10 +306,10 @@ export function DraftDirectCaptures({
           return;
         }
         if (job.state === "COMPLETE" || job.state === "FAILED") {
-          setAiFlow((current) => current?.role === role ? { ...current, job, step: "REVIEW" } : current);
+          setAiFlow((current) => current?.role === role ? { ...current, job, sourceMode: job.sourceMode, step: "REVIEW" } : current);
           return;
         }
-        setAiFlow((current) => current?.role === role ? { ...current, job, step: "MAKING" } : current);
+        setAiFlow((current) => current?.role === role ? { ...current, job, sourceMode: job.sourceMode, step: "MAKING" } : current);
         await new Promise((resolve) => window.setTimeout(resolve, 1_500));
       }
       if (!controller.signal.aborted) {
@@ -306,26 +337,48 @@ export function DraftDirectCaptures({
       return;
     }
     if (aiFlow.source) URL.revokeObjectURL(aiFlow.source.url);
-    setAiFlow({ ...aiFlow, confirmed: false, job: null, source: { file, url: URL.createObjectURL(file) }, step: "SOURCE" });
+    setAiFlow({ ...aiFlow, confirmed: false, job: null, source: { file, url: URL.createObjectURL(file) }, sourceMode: "UPLOADED_AUTHORITY", step: "SOURCE" });
+    setFeedback(null);
+  }
+
+  function chooseDirectAlternative(file?: File) {
+    if (!file || busy || !aiFlow) return;
+    if (!["image/jpeg", "image/png", "image/webp"].includes(file.type) || file.size > 12 * 1024 * 1024) {
+      setFeedback({ tone: "error", text: "Choose a JPEG, PNG or WebP under 12 MB." });
+      return;
+    }
+    const role = aiFlow.role;
+    if (aiFlow.source) URL.revokeObjectURL(aiFlow.source.url);
+    if (preview) URL.revokeObjectURL(preview.url);
+    setAiFlow(null);
+    setPreview({ role, file, url: URL.createObjectURL(file) });
     setFeedback(null);
   }
 
   async function createAiCandidate() {
-    if (!aiFlow?.source || !aiFlow.confirmed || aiFlow.step === "MAKING") return;
+    if (!aiFlow || aiFlow.step === "MAKING") return;
+    if (aiFlow.sourceMode === "UPLOADED_AUTHORITY" && (!aiFlow.source || !aiFlow.confirmed)) return;
     const source = aiFlow.source;
     const role = aiFlow.role;
+    const sourceMode = aiFlow.sourceMode;
     setAiFlow({ ...aiFlow, step: "MAKING" });
     setFeedback(null);
-    const form = new FormData();
-    form.set("role", role);
-    form.set("file", source.file);
-    form.set("authorityConfirmed", "true");
-    try {
-      const response = await fetch(target.completionEndpoint, {
+    const requestInit: RequestInit = sourceMode === "APPROVED_FRONT"
+      ? {
         method: "POST",
         credentials: "same-origin",
-        body: form,
-      });
+        headers: { accept: "application/json", "content-type": "application/json" },
+        body: JSON.stringify({ role, sourceMode }),
+      }
+      : (() => {
+        const form = new FormData();
+        form.set("role", role);
+        form.set("file", source!.file);
+        form.set("authorityConfirmed", "true");
+        return { method: "POST", credentials: "same-origin", body: form } satisfies RequestInit;
+      })();
+    try {
+      const response = await fetch(target.completionEndpoint, requestInit);
       const body: unknown = await response.json();
       if (!response.ok) throw new Error(errorMessage(body));
       const job = parseCompletionJob(body);
@@ -347,7 +400,11 @@ export function DraftDirectCaptures({
         method: "POST",
         credentials: "same-origin",
         headers: { accept: "application/json", "content-type": "application/json" },
-        body: JSON.stringify({ decision, correction: aiFlow.correction.trim() || undefined }),
+        body: JSON.stringify({
+          decision,
+          correction: aiFlow.correction.trim() || undefined,
+          ...(decision === "KEEP" && aiFlow.sourceMode === "APPROVED_FRONT" ? { truthConfirmed: true } : {}),
+        }),
       });
       const body: unknown = await response.json();
       if (!response.ok) throw new Error(errorMessage(body));
@@ -401,18 +458,29 @@ export function DraftDirectCaptures({
           </div>
 
           {aiFlow.step === "SOURCE" ? <div className="studio-ai-source">
-            <div className="studio-ai-source-heading"><WandSparkles aria-hidden="true" size={24} /><div><h3 id={aiStepHeadingId} ref={aiStepHeadingRef} tabIndex={-1}>{roleSourceCopy(aiFlow.role).action}</h3><small>Only this view. Unseen sides stay missing.</small></div></div>
+            <div className="studio-ai-source-heading"><WandSparkles aria-hidden="true" size={24} /><div><h3 id={aiStepHeadingId} ref={aiStepHeadingRef} tabIndex={-1}>{aiUsesApprovedFront ? inferredSourceCopy(aiFlow.role).action : roleSourceCopy(aiFlow.role).action}</h3><small>{aiUsesApprovedFront ? inferredSourceCopy(aiFlow.role).detail : "Only this view. Unseen sides stay missing."}</small></div></div>
+            {aiUsesApprovedFront && target.approvedFrontUrl ? <StudioMediaButton className="studio-ai-source-preview" items={[{
+              alt: `${garment.title} approved product front`,
+              label: "Product front",
+              src: target.approvedFrontUrl,
+            }]} label="Expand approved product front"><img alt={`${garment.title} approved product front`} src={target.approvedFrontUrl} /></StudioMediaButton> : null}
             {aiFlow.source ? <StudioMediaButton className="studio-ai-source-preview" items={[{
               alt: `${pendingWardrobeMediaLabel(aiFlow.role)} source`,
               label: "Source",
               src: aiFlow.source.url,
             }]} label="Expand source photo"><img alt={`${pendingWardrobeMediaLabel(aiFlow.role)} source`} src={aiFlow.source.url} /></StudioMediaButton> : null}
-            <div className="studio-ai-source-actions">
-              <label aria-disabled={busy} aria-label={`Take source photo for ${pendingWardrobeMediaLabel(aiFlow.role).toLowerCase()}`}><Camera aria-hidden="true" size={18} /><span>Camera</span><input accept="image/jpeg,image/png,image/webp" capture="environment" disabled={busy} onChange={(event) => chooseAiSource(event.target.files?.[0])} type="file" /></label>
-              <label aria-disabled={busy} aria-label={`Choose source photo for ${pendingWardrobeMediaLabel(aiFlow.role).toLowerCase()}`}><Images aria-hidden="true" size={18} /><span>Photos</span><input accept="image/jpeg,image/png,image/webp" disabled={busy} onChange={(event) => chooseAiSource(event.target.files?.[0])} type="file" /></label>
-            </div>
-            {aiFlow.source ? <label className="studio-ai-authority"><input checked={aiFlow.confirmed} onChange={(event) => setAiFlow({ ...aiFlow, confirmed: event.target.checked })} type="checkbox" /><span><Check aria-hidden="true" size={15} /><strong>{roleSourceCopy(aiFlow.role).confirmation}</strong></span></label> : null}
-            {aiFlow.source ? <button className="button button-primary studio-ai-create" disabled={!aiFlow.confirmed} onClick={() => void createAiCandidate()} type="button"><WandSparkles aria-hidden="true" size={17} />Create view</button> : null}
+            {aiUsesApprovedFront ? <button className="button button-primary studio-ai-create" onClick={() => void createAiCandidate()} type="button"><WandSparkles aria-hidden="true" size={17} />Create AI preview</button> : null}
+            {aiUsesApprovedFront ? <div className="studio-ai-source-alternatives"><small>Or add the real view</small><div className="studio-ai-source-actions">
+              <label aria-disabled={busy} aria-label={`Take ${pendingWardrobeMediaLabel(aiFlow.role).toLowerCase()} photo`}><Camera aria-hidden="true" size={18} /><span>Camera</span><input accept="image/jpeg,image/png,image/webp" capture="environment" disabled={busy} onChange={(event) => chooseDirectAlternative(event.target.files?.[0])} type="file" /></label>
+              <label aria-disabled={busy} aria-label={`Choose ${pendingWardrobeMediaLabel(aiFlow.role).toLowerCase()} from Photos`}><Images aria-hidden="true" size={18} /><span>Photos</span><input accept="image/jpeg,image/png,image/webp" disabled={busy} onChange={(event) => chooseDirectAlternative(event.target.files?.[0])} type="file" /></label>
+            </div></div> : <>
+              <div className="studio-ai-source-actions">
+                <label aria-disabled={busy} aria-label={`Take source photo for ${pendingWardrobeMediaLabel(aiFlow.role).toLowerCase()}`}><Camera aria-hidden="true" size={18} /><span>Camera</span><input accept="image/jpeg,image/png,image/webp" capture="environment" disabled={busy} onChange={(event) => chooseAiSource(event.target.files?.[0])} type="file" /></label>
+                <label aria-disabled={busy} aria-label={`Choose source photo for ${pendingWardrobeMediaLabel(aiFlow.role).toLowerCase()}`}><Images aria-hidden="true" size={18} /><span>Photos</span><input accept="image/jpeg,image/png,image/webp" disabled={busy} onChange={(event) => chooseAiSource(event.target.files?.[0])} type="file" /></label>
+              </div>
+              {aiFlow.source ? <label className="studio-ai-authority"><input checked={aiFlow.confirmed} onChange={(event) => setAiFlow({ ...aiFlow, confirmed: event.target.checked })} type="checkbox" /><span><Check aria-hidden="true" size={15} /><strong>{roleSourceCopy(aiFlow.role).confirmation}</strong></span></label> : null}
+              {aiFlow.source ? <button className="button button-primary studio-ai-create" disabled={!aiFlow.confirmed} onClick={() => void createAiCandidate()} type="button"><WandSparkles aria-hidden="true" size={17} />Create view</button> : null}
+            </>}
           </div> : null}
 
           {aiFlow.step === "OPENING" || aiFlow.step === "MAKING" ? <div aria-live="polite" className="studio-ai-making" role="status"><span><WandSparkles aria-hidden="true" size={29} /></span><h3 id={aiStepHeadingId} ref={aiStepHeadingRef} tabIndex={-1}>{aiFlow.step === "OPENING" ? "Opening saved work" : `Making ${pendingWardrobeMediaLabel(aiFlow.role).toLowerCase()}`}</h3><div aria-hidden="true"><i /><i /><i /></div></div> : null}
@@ -423,11 +491,11 @@ export function DraftDirectCaptures({
               label: pendingWardrobeMediaLabel(aiFlow.role),
               src: aiFlow.job.assetUrl,
             }]} label={`Expand ${pendingWardrobeMediaLabel(aiFlow.role).toLowerCase()} candidate`}><img alt={`${pendingWardrobeMediaLabel(aiFlow.role)} AI candidate`} src={aiFlow.job.assetUrl} /></StudioMediaButton> : null}
-            <div className="studio-ai-review-copy"><small>Private</small><h3 id={aiStepHeadingId} ref={aiStepHeadingRef} tabIndex={-1}>{aiFlow.job?.assetUrl ? "Keep this view?" : "This view did not finish"}</h3></div>
+            <div className="studio-ai-review-copy"><small>{aiUsesApprovedFront ? "Private AI preview" : "Private"}</small><h3 id={aiStepHeadingId} ref={aiStepHeadingRef} tabIndex={-1}>{aiFlow.job?.assetUrl ? aiUsesApprovedFront ? inferredReviewCopy(aiFlow.role).heading : "Keep this view?" : "This view did not finish"}</h3>{aiFlow.job?.assetUrl && aiUsesApprovedFront ? <p>{inferredReviewCopy(aiFlow.role).detail}</p> : null}</div>
             {aiFlow.job?.canRetry ? <label className="studio-ai-correction"><span>Correction</span><input maxLength={180} onChange={(event) => setAiFlow({ ...aiFlow, correction: event.target.value })} placeholder="Keep the sleeves unchanged" value={aiFlow.correction} /></label> : null}
             <div className="studio-ai-review-actions">
               <button className="button button-secondary" disabled={!aiFlow.job?.canRetry} onClick={() => void decideAi("RETRY")} type="button"><RefreshCw aria-hidden="true" size={16} />Try again</button>
-              {aiFlow.job?.assetUrl ? <button className="button button-primary" onClick={() => void decideAi("KEEP")} type="button"><Check aria-hidden="true" size={16} />Keep</button> : null}
+              {aiFlow.job?.assetUrl ? <button className="button button-primary" onClick={() => void decideAi("KEEP")} type="button"><Check aria-hidden="true" size={16} />{aiUsesApprovedFront ? "Yes, it matches" : "Keep"}</button> : null}
             </div>
             {aiFlow.job?.state === "COMPLETE" ? <button className="studio-ai-discard" onClick={() => void decideAi("REJECT")} type="button">Discard AI view</button> : <button className="studio-ai-discard" onClick={closeAi} type="button">Done</button>}
           </div> : null}

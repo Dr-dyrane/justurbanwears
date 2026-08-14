@@ -18,7 +18,7 @@ import {
   updateRunningMediaCompletionJob,
   type MediaCompletionJobRow,
 } from "../../server/studio-media-completion-repository";
-import { getOwnedWardrobeItem } from "../../server/studio-intake-repository";
+import { getOwnedAsset, getOwnedWardrobeItem } from "../../server/studio-intake-repository";
 import type { StudioOperator } from "../../server/studio-operator";
 import { getShopBlobToken, putShopBlob } from "../../server/vercel-blob";
 import type { IntakeFacts } from "./contracts";
@@ -27,10 +27,13 @@ import { StudioEngineError } from "./errors";
 import { generationFingerprint, sha256 } from "./fingerprint";
 import {
   assertMediaCompletionAuthority,
+  assertMediaCompletionTruthConfirmation,
   mediaCompletionRoleSchema,
+  mediaCompletionSourceModeSchema,
   type MediaCompletionDecision,
   type MediaCompletionResponse,
   type MediaCompletionRole,
+  type MediaCompletionSourceMode,
   type MediaCompletionTargetKind,
   type OperatorSafeMediaCompletionJob,
 } from "./media-completion-contracts";
@@ -49,6 +52,10 @@ type CompletionTarget = {
 type ResolvedTarget = CompletionTarget & {
   captureKey: string;
   facts: Partial<IntakeFacts>;
+  approvedFront?: {
+    assetId: string;
+    intakeId: string;
+  };
 };
 
 type PrivateSource = {
@@ -162,6 +169,9 @@ async function resolveTarget(
       condition: item.condition,
       price: item.price,
     },
+    ...(item.approvedAssetId ? {
+      approvedFront: { assetId: item.approvedAssetId, intakeId: item.intakeId },
+    } : {}),
   };
 }
 
@@ -188,6 +198,58 @@ async function storeAuthoritySource(input: {
     height: verified.height,
     sha256: hash,
     blobPathname: storedPathname,
+  };
+}
+
+async function readApprovedWardrobeFront(
+  target: ResolvedTarget,
+  operator: StudioOperator,
+): Promise<PrivateSource> {
+  if (target.kind !== "WARDROBE_ITEM" || !target.approvedFront) {
+    throw new StudioEngineError(
+      "INVALID_TRANSITION",
+      409,
+      "This piece has no approved product front.",
+      "Add or keep a product front first.",
+    );
+  }
+  const asset = await getOwnedAsset({
+    intakeId: target.approvedFront.intakeId,
+    assetId: target.approvedFront.assetId,
+    subject: operator.subject,
+  });
+  if (asset.role !== "GARMENT_FRONT") {
+    throw new StudioEngineError(
+      "INVALID_ASSET",
+      409,
+      "The approved image is not a product front.",
+      "Keep a product front first.",
+    );
+  }
+  const result = await get(asset.blobPathname, {
+    access: "private",
+    token: getShopBlobToken("private"),
+    useCache: true,
+  });
+  if (!result || result.statusCode !== 200) {
+    throw new StudioEngineError("ENGINE_UNAVAILABLE", 503, "The approved product front is unavailable.", "Open the piece again.");
+  }
+  const verified = verifyStudioImage(
+    new Uint8Array(await new Response(result.stream).arrayBuffer()),
+    result.blob.contentType ?? asset.mimeType,
+  );
+  const hash = sha256(verified.bytes);
+  if (hash !== asset.sha256 || verified.bytes.byteLength !== asset.byteSize) {
+    throw new StudioEngineError("INVALID_ASSET", 503, "The approved product front did not verify.", "Open the piece again.");
+  }
+  return {
+    bytes: verified.bytes,
+    mimeType: verified.mimeType,
+    byteSize: verified.bytes.byteLength,
+    width: verified.width,
+    height: verified.height,
+    sha256: hash,
+    blobPathname: asset.blobPathname,
   };
 }
 
@@ -226,10 +288,16 @@ function jobAssetUrl(job: MediaCompletionJobRow): string | undefined {
   return `${target}/completions/${job.id}/asset`;
 }
 
+function jobSourceMode(job: MediaCompletionJobRow): MediaCompletionSourceMode {
+  const parsed = mediaCompletionSourceModeSchema.safeParse(job.sourceValidation?.sourceMode);
+  return parsed.success ? parsed.data : "UPLOADED_AUTHORITY";
+}
+
 export function operatorSafeMediaCompletionJob(job: MediaCompletionJobRow): OperatorSafeMediaCompletionJob {
   return {
     id: job.id,
     role: job.role as MediaCompletionRole,
+    sourceMode: jobSourceMode(job),
     state: job.state as OperatorSafeMediaCompletionJob["state"],
     ...(jobAssetUrl(job) ? { assetUrl: jobAssetUrl(job) } : {}),
     attempt: job.attempt as 1 | 2,
@@ -245,11 +313,17 @@ async function executeCompletion(input: {
   role: MediaCompletionRole;
   operator: StudioOperator;
   source: PrivateSource;
+  sourceMode: MediaCompletionSourceMode;
   correction?: string;
   attempt: 1 | 2;
 }): Promise<MediaCompletionJobRow> {
   const correction = normalizedCorrection(input.correction);
-  const proposedPrompt = buildMediaCompletionPrompt({ role: input.role, facts: input.target.facts, correction });
+  const proposedPrompt = buildMediaCompletionPrompt({
+    role: input.role,
+    facts: input.target.facts,
+    correction,
+    sourceMode: input.sourceMode,
+  });
   const promptVersion = studioGatewayPolicy.mediaCompletionPromptVersions[input.role];
   const fingerprint = generationFingerprint({
     sourceHashes: [input.source.sha256],
@@ -261,7 +335,9 @@ async function executeCompletion(input: {
       targetKind: input.target.kind,
       targetKey: input.target.key,
       aspectRatio: "4:5",
-      authorityConfirmed: true,
+      authorityConfirmed: input.sourceMode === "UPLOADED_AUTHORITY",
+      approvedFrontSelected: input.sourceMode === "APPROVED_FRONT",
+      sourceMode: input.sourceMode,
       attempt: input.attempt,
       correction: correction ?? null,
     },
@@ -299,6 +375,12 @@ async function executeCompletion(input: {
     sourceHeight: input.source.height,
     sourceSha256: input.source.sha256,
     authorityConfirmedAt: new Date(),
+    sourceValidation: {
+      authorityRole: input.sourceMode === "APPROVED_FRONT" ? "GARMENT_FRONT" : input.role,
+      sourceMode: input.sourceMode,
+      targetRole: input.role,
+      validationState: "PENDING",
+    },
   });
   if (job.state !== "PENDING") return job;
   const executionToken = await claimMediaCompletionJob(job.id);
@@ -313,11 +395,13 @@ async function executeCompletion(input: {
       && job.sourceBlobPathname === input.source.blobPathname
       ? input.source
       : await readAuthoritySource(job);
+    const sourceMode = jobSourceMode(job);
     const persistedCorrection = normalizedCorrection(job.correction ?? undefined);
     const prompt = buildMediaCompletionPrompt({
       role: input.role,
       facts: input.target.facts,
       correction: persistedCorrection,
+      sourceMode,
     });
     if (sha256(prompt) !== job.promptHash) {
       throw new StudioEngineError(
@@ -328,25 +412,32 @@ async function executeCompletion(input: {
       );
     }
     const sourceCheck = await validateMediaCompletionSource({
-      role: input.role,
+      role: sourceMode === "APPROVED_FRONT" ? "GARMENT_FRONT" : input.role,
       source: { bytes: source.bytes, mimeType: source.mimeType },
     });
     if (!(await updateRunningMediaCompletionJob(job.id, executionToken, {
-      sourceValidation: sourceCheck.validation,
+      sourceValidation: {
+        ...sourceCheck.validation,
+        authorityRole: sourceMode === "APPROVED_FRONT" ? "GARMENT_FRONT" : input.role,
+        sourceMode,
+        targetRole: input.role,
+        validationState: "COMPLETE",
+      },
       validationUsage: sourceCheck.usage,
       validationCostUsd: sourceCheck.costUsd === null ? null : sourceCheck.costUsd.toFixed(6),
     }))) {
       throw new StudioEngineError("INVALID_TRANSITION", 409, "That AI view stopped safely.", "Open the latest view.");
     }
     if (!sourceCheck.eligible) {
-      const needed = input.role === "GARMENT_FRONT"
+      const validationRole = sourceMode === "APPROVED_FRONT" ? "GARMENT_FRONT" : input.role;
+      const needed = validationRole === "GARMENT_FRONT"
         ? "a clear full-front photo"
-        : input.role === "GARMENT_BACK" ? "a clear full-back photo" : "a clear fabric close-up";
+        : validationRole === "GARMENT_BACK" ? "a clear full-back photo" : "a clear fabric close-up";
       throw new StudioEngineError(
         "INVALID_ASSET",
         422,
         `This source does not show ${needed}.`,
-        "Choose a role-matching source photo.",
+        sourceMode === "APPROVED_FRONT" ? "Keep a clearer product front first." : "Choose a role-matching source photo.",
       );
     }
     const generated = await generateMediaCompletionImage({
@@ -423,10 +514,11 @@ async function executeCompletion(input: {
 export async function createMediaCompletion(input: {
   target: CompletionTarget;
   role: unknown;
-  authorityConfirmed: unknown;
+  authorityConfirmed?: unknown;
   correction?: string;
   operator: StudioOperator;
-  bytes: Uint8Array;
+  sourceMode?: unknown;
+  bytes?: Uint8Array;
   declaredType?: string;
 }): Promise<MediaCompletionResponse> {
   const parsedRole = mediaCompletionRoleSchema.safeParse(input.role);
@@ -434,7 +526,20 @@ export async function createMediaCompletion(input: {
     throw new StudioEngineError("INVALID_REQUEST", 400, "Choose a missing product view.", "Choose product front, back or fabric detail.");
   }
   const role = parsedRole.data;
-  assertMediaCompletionAuthority(role, input.authorityConfirmed);
+  const parsedSourceMode = mediaCompletionSourceModeSchema.safeParse(input.sourceMode ?? "UPLOADED_AUTHORITY");
+  if (!parsedSourceMode.success) {
+    throw new StudioEngineError("INVALID_REQUEST", 400, "Choose a garment source.", "Open the piece again.");
+  }
+  const sourceMode = parsedSourceMode.data;
+  if (sourceMode === "APPROVED_FRONT" && input.target.kind !== "WARDROBE_ITEM") {
+    throw new StudioEngineError("INVALID_REQUEST", 400, "This draft has no approved product front.", "Use Camera or Photos.");
+  }
+  if (sourceMode === "UPLOADED_AUTHORITY") {
+    assertMediaCompletionAuthority(role, input.authorityConfirmed);
+    if (!input.bytes) {
+      throw new StudioEngineError("INVALID_ASSET", 415, "Choose one authority photo.", "Use Camera or Photos.");
+    }
+  }
   const target = await resolveTarget(input.target, role, input.operator);
   await recoverStaleMediaCompletionJobs({
     operatorSubject: input.operator.subject,
@@ -442,11 +547,13 @@ export async function createMediaCompletion(input: {
     targetKey: target.key,
     role,
   });
-  const source = await storeAuthoritySource({
-    operator: input.operator,
-    bytes: input.bytes,
-    declaredType: input.declaredType,
-  });
+  const source = sourceMode === "APPROVED_FRONT"
+    ? await readApprovedWardrobeFront(target, input.operator)
+    : await storeAuthoritySource({
+      operator: input.operator,
+      bytes: input.bytes!,
+      declaredType: input.declaredType,
+    });
   const prior = await listMediaCompletionJobs({
     operatorSubject: input.operator.subject,
     targetKind: target.kind,
@@ -465,6 +572,7 @@ export async function createMediaCompletion(input: {
     role,
     operator: input.operator,
     source,
+    sourceMode,
     correction: input.correction,
     attempt: attempt as 1 | 2,
   });
@@ -502,6 +610,7 @@ export async function decideMediaCompletion(input: {
   operator: StudioOperator;
   decision: MediaCompletionDecision["decision"];
   correction?: string;
+  truthConfirmed?: boolean;
 }): Promise<MediaCompletionResponse> {
   const job = await getOwnedMediaCompletionJob({ id: input.jobId, operatorSubject: input.operator.subject });
   const role = mediaCompletionRoleSchema.parse(job.role);
@@ -510,10 +619,13 @@ export async function decideMediaCompletion(input: {
     throw new StudioEngineError("INTAKE_NOT_FOUND", 404, "That AI view was not found.", "Open the piece again.");
   }
   if (input.decision === "KEEP") {
+    const sourceMode = jobSourceMode(job);
+    assertMediaCompletionTruthConfirmation(sourceMode, input.decision, input.truthConfirmed);
     const approved = await approveAndPromoteMediaCompletionJob({
       id: job.id,
       operatorSubject: input.operator.subject,
       captureKey: target.captureKey,
+      truthConfirmed: input.truthConfirmed === true,
     });
     const workspace = target.kind === "PENDING_PRODUCT"
       ? await getPendingCaptureWorkspace(target.key, input.operator)
@@ -535,11 +647,13 @@ export async function decideMediaCompletion(input: {
     await rejectMediaCompletionJob({ id: job.id, operatorSubject: input.operator.subject });
   }
   const source = await readAuthoritySource(job);
+  const sourceMode = jobSourceMode(job);
   const retried = await executeCompletion({
     target,
     role,
     operator: input.operator,
     source,
+    sourceMode,
     correction: input.correction,
     attempt: 2,
   });

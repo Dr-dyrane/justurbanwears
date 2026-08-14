@@ -68,6 +68,15 @@ test("operator copy and recovery stay action-led", () => {
   assert.match(home, /wardrobe\?garment=/);
   assert.match(directCaptures, /studio-magic-capture-shortcut/);
   assert.match(directCaptures, /Magic Wand/);
+  assert.match(wardrobe, /aiSourceMode: "APPROVED_FRONT"/);
+  assert.match(wardrobe, /approvedFrontUrl: garment\.reviewCover\?\.src/);
+  assert.match(directCaptures, /Create from product front/);
+  assert.match(directCaptures, /Create AI preview/);
+  assert.match(directCaptures, /AI suggests the unseen back\. You verify it before saving\./);
+  assert.match(directCaptures, /Yes, it matches/);
+  assert.match(directCaptures, /truthConfirmed: true/);
+  assert.match(directCaptures, /chooseDirectAlternative/);
+  assert.match(directCaptures, /sourceMode === "APPROVED_FRONT"/);
   assert.match(directCaptures, /heading\.scrollIntoView/);
   assert.match(directCaptures, /prefers-reduced-motion: reduce/);
   assert.match(directCaptures, /aiFlow\.source \? <button className="button button-primary studio-ai-create" disabled=\{!aiFlow\.confirmed\}/);
