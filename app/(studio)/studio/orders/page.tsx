@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { ConnectedOrderInbox } from "../../../../components/studio/connected-order-inbox";
 
 export const metadata: Metadata = {
-  title: "Connected orders · Studio",
+  title: "Orders · Studio",
   description: "Review customer reservations and progress each order safely.",
 };
 

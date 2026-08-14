@@ -80,7 +80,7 @@ test("checkout preserves a recovery draft and clears the bag only after server a
   assert.ok(post >= 0 && commit > post);
   assert.match(checkout, /sessionStorage\.setItem\(DRAFT_STORAGE_KEY/);
   assert.match(checkout, /authSignInPath\("\/shop\/checkout\?resume=1"\)/);
-  assert.match(checkout, /Adding a piece does not reserve it/);
+  assert.match(checkout, /Your piece is reserved when you place the order/);
   assert.doesNotMatch(checkout, /saveCheckout|Continue on WhatsApp|createWhatsAppOrderUrl/);
 });
 
@@ -99,7 +99,7 @@ test("customer list, receipt, tracking, evidence, and return surfaces use shared
   assert.match(detail, /<ReturnRequest order=\{order\}/);
   assert.match(evidence, /crypto\.subtle\.digest\("SHA-256"/);
   assert.match(evidence, /Selected: \{selectedFile\.name\}/);
-  assert.match(evidence, /This does not prove bank payment/);
+  assert.match(evidence, /Receipt sent\. Lulu will check it and confirm your payment/);
   assert.match(returns, /role="dialog"/);
   assert.match(returns, /refundAmount/);
   assert.match(returns, /one return request/);
@@ -117,10 +117,10 @@ test("Studio posts structured facts, role-gates finance UX, and covers return re
   assert.match(detail, /refundAmount: transition\.dimension/);
   assert.match(detail, /refundCurrency: transition\.dimension/);
   assert.match(detail, /operatorRole !== "admin"/);
-  assert.match(detail, /Delivery-fee policy is not assumed/);
+  assert.match(detail, /Enter the amount actually returned/);
   assert.match(detail, /RETURN_RESOLUTION/);
   assert.match(detail, /onVersionConflict/);
-  assert.match(detail, /Pickup is recorded as collected, never in transit/);
+  assert.match(detail, /Prepare for collection/);
   assert.match(route, /requireOperatorActor/);
   assert.match(route, /getShopBlob\("private", evidence\.blobPathname/);
   assert.doesNotMatch(route, /blobUrl|downloadUrl/);
@@ -132,8 +132,29 @@ test("route shells and account expose authoritative orders without relabelling l
   const account = source("components/shop/shop-account.tsx");
 
   assert.match(shopShell, /href: "\/shop\/orders", label: "Orders"/);
-  assert.match(studioShell, /href: "\/studio\/orders", label: "Connected orders"/);
+  assert.match(studioShell, /href: "\/studio\/orders", label: "Orders"/);
   assert.match(account, /Your orders/);
-  assert.match(account, /server-backed orders/);
+  assert.match(account, /Sign in to open your orders/);
   assert.doesNotMatch(account, /orders\.length|Checkout drafts/);
+});
+
+test("commerce surfaces use customer language and register the exact next Studio action", () => {
+  const inbox = source("components/studio/connected-order-inbox.tsx");
+  const detail = source("components/studio/connected-order-detail.tsx");
+  const mobileAction = source("components/studio/mobile-action-context.tsx");
+  const presentation = source("lib/shop/order-presentation.ts");
+  const customerStatus = source("components/shop/order-status.tsx");
+  const customerUpload = source("components/shop/payment-evidence-upload.tsx");
+  const visibleCommerce = [inbox, detail, customerStatus, customerUpload].join("\n");
+
+  assert.match(inbox, /useStudioMobileAction/);
+  assert.match(inbox, /#studio-order-next-action/);
+  assert.match(detail, /id=\{isNextAction \? "studio-order-next-action"/);
+  assert.match(detail, /open=\{isNextAction \|\| undefined\}/);
+  assert.match(mobileAction, /StudioMobileActionProvider/);
+  assert.match(presentation, /studioOrderNextActionLabel/);
+  assert.match(presentation, /"Check receipt"/);
+  assert.match(presentation, /"Review receipt"/);
+  assert.match(presentation, /"Review return"/);
+  assert.doesNotMatch(visibleCommerce, /Connected orders|settled funds|Evidence review|Fulfilment|Neon is authoritative|server-backed|server accepts|Inspect the artifact|Immutable record/);
 });

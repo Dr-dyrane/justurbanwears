@@ -135,19 +135,19 @@ export function OrderStatus() {
               reference={order.reference}
               onReceived={(nextOrder) => {
                 setOrder(nextOrder);
-                setEvidenceNotice("Evidence received. Lulu will review it. This does not prove bank payment.");
+                setEvidenceNotice("Transfer receipt received. Lulu will confirm your payment.");
               }}
             />
           ) : order.evidence.length ? (
             <section className="shop-evidence-received" aria-labelledby="evidence-state-title">
-              <p className="shop-kicker">Private evidence</p>
+              <p className="shop-kicker">Transfer receipt</p>
               <h2 id="evidence-state-title">{orderStateLabel(order.paymentReviewStatus)}.</h2>
-              <p>Evidence review is separate from settled-funds confirmation. Current funds state: <strong>{orderStateLabel(order.fundsConfirmationStatus)}</strong>.</p>
+              <p>Lulu is checking your transfer. Payment: <strong>{orderStateLabel(order.fundsConfirmationStatus)}</strong>.</p>
               <ul>
                 {order.evidence.filter((item) => item.status !== "SUPERSEDED").map((item) => (
                   <li key={item.id}>
                     <span>{item.originalFileName}</span>
-                    <small>{item.status === "RECEIVED" ? "Received privately" : "Upload authorized"} · {Math.ceil(item.byteSize / 1024)} KB</small>
+                    <small>{item.status === "RECEIVED" ? "Ready for review" : "Ready to upload"} · {Math.ceil(item.byteSize / 1024)} KB</small>
                   </li>
                 ))}
               </ul>
@@ -159,7 +159,7 @@ export function OrderStatus() {
                         <p className="shop-kicker">Payment receipt</p>
                         <h2 id="payment-confirmed-title">Payment confirmed.</h2>
                         <p>
-                          Lulu reconciled settled funds for <strong>{formatNaira(order.total)}</strong> against the receiving account.
+                          Lulu confirmed your payment of <strong>{formatNaira(order.total)}</strong>.
                         </p>
                         <dl>
                           <div><dt>Transfer reference</dt><dd>{order.fundsConfirmation.transferReference}</dd></div>
@@ -181,11 +181,9 @@ export function OrderStatus() {
                         <dl>
                           {order.fulfillmentFacts.carrierName ? <div><dt>Carrier</dt><dd>{order.fulfillmentFacts.carrierName}</dd></div> : null}
                           {order.fulfillmentFacts.trackingReference ? <div><dt>Tracking reference</dt><dd>{order.fulfillmentFacts.trackingReference}</dd></div> : null}
-                          {order.fulfillmentFacts.dispatchReference ? <div><dt>Dispatch record</dt><dd>{order.fulfillmentFacts.dispatchReference}</dd></div> : null}
                           {order.fulfillmentFacts.dispatchedAt ? <div><dt>Dispatched</dt><dd><time dateTime={order.fulfillmentFacts.dispatchedAt}>{formatConnectedOrderDate(order.fulfillmentFacts.dispatchedAt)}</time></dd></div> : null}
                           {order.fulfillmentFacts.recipientName ? <div><dt>Recipient</dt><dd>{order.fulfillmentFacts.recipientName}</dd></div> : null}
                           {order.fulfillmentFacts.deliveredAt ? <div><dt>Delivered</dt><dd><time dateTime={order.fulfillmentFacts.deliveredAt}>{formatConnectedOrderDate(order.fulfillmentFacts.deliveredAt)}</time></dd></div> : null}
-                          {order.fulfillmentFacts.deliveryProofReference ? <div><dt>Proof reference</dt><dd>{order.fulfillmentFacts.deliveryProofReference}</dd></div> : null}
                         </dl>
                       </section>
                     ) : order.fulfillment.kind === "PICKUP" && order.fulfillmentFacts.deliveredAt ? (
@@ -196,7 +194,6 @@ export function OrderStatus() {
                           {order.fulfillmentFacts.pickupAppointment ? <div><dt>Appointment</dt><dd><time dateTime={order.fulfillmentFacts.pickupAppointment}>{formatConnectedOrderDate(order.fulfillmentFacts.pickupAppointment)}</time></dd></div> : null}
                           {order.fulfillmentFacts.recipientName ? <div><dt>Collected by</dt><dd>{order.fulfillmentFacts.recipientName}</dd></div> : null}
                           <div><dt>Collected</dt><dd><time dateTime={order.fulfillmentFacts.deliveredAt}>{formatConnectedOrderDate(order.fulfillmentFacts.deliveredAt)}</time></dd></div>
-                          {order.fulfillmentFacts.deliveryProofReference ? <div><dt>Handoff reference</dt><dd>{order.fulfillmentFacts.deliveryProofReference}</dd></div> : null}
                         </dl>
                       </section>
                     ) : null}
@@ -232,7 +229,7 @@ export function OrderStatus() {
                 </li>
               ))}
             </ol>
-            <p className="shop-connected-notification-note"><BellRing aria-hidden="true" size={14} /> External notifications are not connected. Every accepted update remains visible here.</p>
+            <p className="shop-connected-notification-note"><BellRing aria-hidden="true" size={14} /> Updates are always saved here.</p>
           </section>
         </div>
 
@@ -254,7 +251,7 @@ export function OrderStatus() {
             <div><dt>Reference</dt><dd>{order.reference}</dd></div>
             <div><dt>Reserved</dt><dd>{formatConnectedOrderDate(order.savedAt)}</dd></div>
             {order.reservationExpiresAt ? <div><dt>Reservation expires</dt><dd><time dateTime={order.reservationExpiresAt}>{formatConnectedOrderDate(order.reservationExpiresAt)}</time></dd></div> : null}
-            <div><dt>Handoff</dt><dd>{order.deliveryLabel}</dd></div>
+            <div><dt>{order.fulfillment.kind === "PICKUP" ? "Pickup" : "Delivery"}</dt><dd>{order.deliveryLabel}</dd></div>
             <div><dt>Estimate</dt><dd>{order.deliveryEstimate}</dd></div>
             <div><dt>Contact</dt><dd>{order.contact.email}</dd></div>
             {order.fulfillment.kind === "DELIVERY" ? (

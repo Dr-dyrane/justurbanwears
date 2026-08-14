@@ -3,11 +3,9 @@
 import {
   ArrowLeft,
   FileSearch,
-  PackageCheck,
   RotateCcw,
   ShieldCheck,
   Truck,
-  WalletCards,
 } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -16,8 +14,11 @@ import { formatNaira } from "../../lib/shop/catalog";
 import { mapConnectedOrderFailure } from "../../lib/shop/connected-order-client";
 import {
   formatConnectedOrderDate,
+  nextStudioOrderTransition,
   orderStateLabel,
   orderStateSummary,
+  studioOrderActionLabel,
+  studioOrderNextActionLabel,
 } from "../../lib/shop/order-presentation";
 import type {
   ShopOperatorReturnTransition,
@@ -25,6 +26,7 @@ import type {
   ShopOrderTransitionDetails,
   ShopServerOrder,
 } from "../../lib/shop/server-order/types";
+import { useStudioMobileAction } from "./mobile-action-context";
 
 type OperatorRole = "operator" | "admin";
 type StudioTransition = ShopOperatorTransition | ShopOperatorReturnTransition;
@@ -39,52 +41,24 @@ function transitionKey(transition: StudioTransition): string {
   return `${transition.dimension}:${transition.target}`;
 }
 
-function transitionLabel(transition: StudioTransition, fulfillmentKind: "DELIVERY" | "PICKUP"): string {
-  if (transition.dimension === "FUNDS_CONFIRMATION") return "Confirm settled funds";
-  if (transition.dimension === "PAYMENT_REVIEW") {
-    if (transition.target === "UNDER_REVIEW") return "Begin evidence review";
-    return transition.target === "REVIEW_APPROVED" ? "Accept evidence" : "Reject evidence";
-  }
-  if (transition.dimension === "LIFECYCLE") {
-    return transition.target === "EXPIRED" ? "Release expired reservation" : "Cancel order";
-  }
-  if (transition.dimension === "FULFILLMENT") {
-    if (transition.target === "QUALITY_CHECK") return "Begin quality check";
-    if (transition.target === "READY_FOR_HANDOFF") return "Mark ready for handoff";
-    if (transition.target === "IN_TRANSIT") return "Record dispatch";
-    return fulfillmentKind === "PICKUP" ? "Record collection" : "Record delivery";
-  }
-  if (transition.dimension === "RETURN") {
-    if (transition.target === "APPROVED") return "Approve return";
-    if (transition.target === "REJECTED") return "Reject return";
-    return "Mark return received";
-  }
-  if (transition.dimension === "REFUND") {
-    if (transition.target === "PENDING") return "Mark refund pending";
-    if (transition.target === "COMPLETED") return "Record completed refund";
-    return "Record refund issue";
-  }
-  return transition.target === "RESTOCK" ? "Restock returned piece" : "Write off returned piece";
-}
-
 function confirmationCopy(transition: StudioTransition, fulfillmentKind: "DELIVERY" | "PICKUP"): string {
   if (transition.dimension === "FUNDS_CONFIRMATION") {
-    return "I checked the receiving account and the transfer is settled.";
+    return "I checked the receiving account and the payment arrived.";
   }
   if (transition.dimension === "FULFILLMENT" && transition.target === "DELIVERED") {
     return fulfillmentKind === "PICKUP"
-      ? "I witnessed the Studio collection and verified the handoff facts."
-      : "I verified the delivery and its proof reference.";
+      ? "I confirmed that the customer collected the piece."
+      : "I confirmed that the customer received the piece.";
   }
   if (transition.dimension === "REFUND" && transition.target === "COMPLETED") {
-    return "I verified the exact completed refund against the recorded reference.";
+    return "I checked the refund amount and reference.";
   }
   if (transition.dimension === "RETURN_RESOLUTION") {
     return transition.target === "RESTOCK"
       ? "I inspected the returned piece and it is safe to offer again."
       : "I inspected the returned piece and confirm it must not return to sale.";
   }
-  return `I confirm: ${transitionLabel(transition, fulfillmentKind).toLowerCase()}.`;
+  return `I confirm: ${studioOrderActionLabel(transition, fulfillmentKind).toLowerCase()}.`;
 }
 
 function requiresNote(transition: StudioTransition): boolean {
@@ -117,12 +91,14 @@ function MutationAction({
   operatorRole,
   order,
   transition,
+  isNextAction = false,
   onApplied,
   onVersionConflict,
 }: {
   operatorRole: OperatorRole;
   order: ShopServerOrder;
   transition: StudioTransition;
+  isNextAction?: boolean;
   onApplied(order: ShopServerOrder, notice: string): void;
   onVersionConflict(): void;
 }) {
@@ -145,7 +121,7 @@ function MutationAction({
   const financeAction = (transition.dimension === "FUNDS_CONFIRMATION")
     || (transition.dimension === "REFUND" && transition.target === "COMPLETED");
   const adminLocked = financeAction && operatorRole !== "admin";
-  const label = transitionLabel(transition, order.fulfillment.kind);
+  const label = studioOrderActionLabel(transition, order.fulfillment.kind);
   const confirmationId = `studio-confirm-${transitionKey(transition).toLowerCase().replaceAll(":", "-")}-${order.version}`;
   const noteRequired = requiresNote(transition);
 
@@ -252,7 +228,7 @@ function MutationAction({
         const mapped = mapConnectedOrderFailure(response.status, body.error?.code);
         throw new Error(body.error?.message || mapped.message);
       }
-      onApplied(body.order, `${label} recorded.`);
+      onApplied(body.order, `${label} saved.`);
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "The order could not be updated.");
     } finally {
@@ -261,12 +237,12 @@ function MutationAction({
   }
 
   return (
-    <details className="studio-transition-action">
+    <details className="studio-transition-action" id={isNextAction ? "studio-order-next-action" : undefined} open={isNextAction || undefined}>
       <summary>{label}<span>Review and confirm</span></summary>
       <div className="studio-transition-action-body">
         {adminLocked ? (
           <p className="studio-order-finance-lock" role="note">
-            Admin membership is required for this finance record. Ask an active Studio admin to complete it.
+            Only a Studio admin can confirm payments and refunds.
           </p>
         ) : null}
 
@@ -281,7 +257,7 @@ function MutationAction({
           <div className="studio-transition-fields studio-transition-fields-two">
             <label><span>Carrier</span><input maxLength={120} onChange={(event) => setCarrierName(event.target.value)} required value={carrierName} /></label>
             <label><span>Tracking reference</span><input maxLength={120} onChange={(event) => setTrackingReference(event.target.value)} required value={trackingReference} /></label>
-            <label><span>Dispatch record</span><input maxLength={120} onChange={(event) => setDispatchReference(event.target.value)} required value={dispatchReference} /></label>
+            <label><span>Delivery note</span><input maxLength={120} onChange={(event) => setDispatchReference(event.target.value)} required value={dispatchReference} /></label>
             <label><span>Dispatched at</span><input onChange={(event) => setDispatchTime(event.target.value)} required type="datetime-local" value={dispatchTime} /></label>
           </div>
         ) : null}
@@ -293,20 +269,20 @@ function MutationAction({
             ) : null}
             <label><span>{order.fulfillment.kind === "PICKUP" ? "Collected by" : "Recipient"}</span><input maxLength={120} onChange={(event) => setRecipientName(event.target.value)} required value={recipientName} /></label>
             <label><span>{order.fulfillment.kind === "PICKUP" ? "Collected at" : "Delivered at"}</span><input onChange={(event) => setHandoffTime(event.target.value)} required type="datetime-local" value={handoffTime} /></label>
-            <label><span>{order.fulfillment.kind === "PICKUP" ? "Handoff reference" : "Proof reference"}</span><input maxLength={160} onChange={(event) => setProofReference(event.target.value)} required value={proofReference} /></label>
+            <label><span>{order.fulfillment.kind === "PICKUP" ? "Collection note" : "Delivery note"}</span><input maxLength={160} onChange={(event) => setProofReference(event.target.value)} required value={proofReference} /></label>
           </div>
         ) : null}
 
         {transition.dimension === "REFUND" && transition.target === "COMPLETED" ? (
           <div className="studio-transition-fields studio-transition-fields-two">
-            <label><span>Exact refund amount (NGN)</span><input inputMode="numeric" max={order.total} min={1} onChange={(event) => setRefundAmount(event.target.value)} required step={1} type="number" value={refundAmount} /><small>Maximum {formatNaira(order.total)}. Delivery-fee policy is not assumed.</small></label>
+            <label><span>Exact refund amount (NGN)</span><input inputMode="numeric" max={order.total} min={1} onChange={(event) => setRefundAmount(event.target.value)} required step={1} type="number" value={refundAmount} /><small>Enter the amount actually returned, up to {formatNaira(order.total)}.</small></label>
             <label><span>Refund reference</span><input maxLength={160} onChange={(event) => setRefundReference(event.target.value)} required value={refundReference} /></label>
           </div>
         ) : null}
 
         {noteRequired || transition.dimension === "RETURN_RESOLUTION" ? (
           <label className="studio-transition-note">
-            <span>{noteRequired ? noteLabel(transition) : "Resolution note (optional)"}</span>
+            <span>{noteRequired ? noteLabel(transition) : "Note (optional)"}</span>
             <textarea maxLength={500} onChange={(event) => setNote(event.target.value)} required={noteRequired} value={note} />
           </label>
         ) : null}
@@ -314,7 +290,7 @@ function MutationAction({
         <label className="studio-funds-confirmation" htmlFor={confirmationId}>
           <input checked={confirmed} disabled={adminLocked} id={confirmationId} onChange={(event) => setConfirmed(event.target.checked)} type="checkbox" />
           <span className="sr-only">Confirm this Studio action</span>
-          <span><strong>{confirmationCopy(transition, order.fulfillment.kind)}</strong><small>This writes an audited customer-visible update.</small></span>
+          <span><strong>{confirmationCopy(transition, order.fulfillment.kind)}</strong><small>The customer will see this update.</small></span>
         </label>
         <button
           aria-busy={pending}
@@ -323,9 +299,9 @@ function MutationAction({
           onClick={() => void applyTransition()}
           type="button"
         >
-          {pending ? "Recording…" : label}
+          {pending ? "Saving…" : label}
         </button>
-        {error ? <p className="is-error" role="alert">{error} Check the latest order state, then retry.</p> : null}
+        {error ? <p className="is-error" role="alert">{error} Refresh the order, then try again.</p> : null}
       </div>
     </details>
   );
@@ -361,7 +337,7 @@ export function ConnectedOrderDetail() {
         return;
       }
       if (!response.ok || !body.ok || !body.order) {
-        throw new Error("This connected order could not be opened.");
+        throw new Error("This order could not be opened.");
       }
       setOrder(body.order);
       setOperatorRole(body.operatorRole === "admin" ? "admin" : "operator");
@@ -369,7 +345,7 @@ export function ConnectedOrderDetail() {
       setError("");
     } catch (cause: unknown) {
       if (signal?.aborted) return;
-      setError(cause instanceof Error ? cause.message : "This connected order could not be opened.");
+      setError(cause instanceof Error ? cause.message : "This order could not be opened.");
       if (!quiet) setState("error");
     } finally {
       setRefreshing(false);
@@ -386,6 +362,17 @@ export function ConnectedOrderDetail() {
     () => [...(order?.events ?? [])].sort((left, right) => left.occurredAt.localeCompare(right.occurredAt)),
     [order?.events],
   );
+  const primaryTransition = order ? nextStudioOrderTransition(order) : undefined;
+  useStudioMobileAction(
+    order
+      ? primaryTransition
+        ? {
+            href: `/studio/orders/${order.reference}#studio-order-next-action`,
+            label: studioOrderNextActionLabel(order),
+          }
+        : { href: "/studio/orders", label: "All orders" }
+      : null,
+  );
 
   if (state === "loading") {
     return <div className="studio-loading" aria-live="polite" role="status">Opening the order desk…</div>;
@@ -394,7 +381,7 @@ export function ConnectedOrderDetail() {
     return (
       <div className="studio-quiet-empty" role={state === "error" ? "alert" : undefined}>
         <FileSearch aria-hidden="true" size={24} />
-        <div><strong>{state === "error" ? error : "Order not found"}</strong><p>Return to the connected inbox.</p></div>
+        <div><strong>{state === "error" ? error : "Order not found"}</strong><p>Return to Orders.</p></div>
         {state === "error" ? <button className="button button-secondary" onClick={() => void loadOrder()} type="button">Try again</button> : null}
         <Link className="button button-primary" href="/studio/orders">Orders</Link>
       </div>
@@ -413,6 +400,7 @@ export function ConnectedOrderDetail() {
   };
   const action = (transition: StudioTransition) => (
     <MutationAction
+      isNextAction={primaryTransition ? transitionKey(transition) === transitionKey(primaryTransition) : false}
       key={`${transitionKey(transition)}:${order.version}`}
       onApplied={applyOrderUpdate}
       onVersionConflict={() => void loadOrder(undefined, true)}
@@ -425,19 +413,19 @@ export function ConnectedOrderDetail() {
   return (
     <div className="studio-connected-order-detail">
       <div className="studio-connected-order-back">
-        <Link href="/studio/orders"><ArrowLeft aria-hidden="true" size={15} /> Connected orders</Link>
-        <span>{order.reference} · v{order.version} · {operatorRole === "admin" ? "Admin" : "Operator"}</span>
+        <Link href="/studio/orders"><ArrowLeft aria-hidden="true" size={15} /> Orders</Link>
+        <span>{order.reference}</span>
       </div>
       <header className="studio-connected-detail-heading">
         <div>
-          <p className="eyebrow">Order action desk</p>
+          <p className="eyebrow">Order</p>
           <h1>{order.lines[0]?.name ?? "Wardrobe order"}</h1>
           <p>{order.contact.name} · {order.deliveryLabel} · {formatNaira(order.total)}</p>
         </div>
         <span>{orderStateLabel(order.lifecycleStatus)}</span>
       </header>
 
-      <section className="studio-connected-state-grid" aria-label="Independent order states">
+      <section className="studio-connected-state-grid" aria-label="Order status">
         {orderStateSummary(order).map((item) => <div key={item.label}><small>{item.label}</small><strong>{item.value}</strong></div>)}
       </section>
       {updateNotice ? (
@@ -446,25 +434,25 @@ export function ConnectedOrderDetail() {
 
       <div className="studio-connected-detail-grid">
         <main>
-          <section className="studio-order-action-section" aria-labelledby="evidence-review-title">
-            <div className="studio-order-action-heading"><span><FileSearch aria-hidden="true" size={19} /></span><div><p className="eyebrow">Evidence review</p><h2 id="evidence-review-title">Inspect the artifact.</h2></div></div>
-            <p>Reviewing evidence does not prove that money settled in the receiving account.</p>
+          <section className="studio-order-action-section" aria-labelledby="receipt-review-title">
+            <div className="studio-order-action-heading"><span><FileSearch aria-hidden="true" size={19} /></span><div><p className="eyebrow">Transfer receipt</p><h2 id="receipt-review-title">Check the receipt.</h2></div></div>
+            <p>Check the receipt first. Confirm payment only after the money reaches the account.</p>
             {order.evidence.filter((item) => item.status === "RECEIVED").length ? (
               <div className="studio-evidence-list">
                 {order.evidence.filter((item) => item.status === "RECEIVED").map((item) => (
                   <a href={`/api/studio/orders/${encodeURIComponent(order.reference)}/payment-evidence/${encodeURIComponent(item.id)}`} key={item.id} rel="noreferrer" target="_blank">
-                    <span><strong>{item.originalFileName}</strong><small>{Math.ceil(item.byteSize / 1024)} KB · SHA-256 {item.sha256.slice(0, 12)}…</small></span>
-                    <span>View privately</span>
+                    <span><strong>{item.originalFileName}</strong><small>{Math.ceil(item.byteSize / 1024)} KB</small></span>
+                    <span>Open receipt</span>
                   </a>
                 ))}
               </div>
-            ) : <p className="studio-order-quiet-note">No received evidence yet.</p>}
+            ) : <p className="studio-order-quiet-note">No transfer receipt yet.</p>}
             <div className="studio-transition-list">{paymentTransitions.map(action)}</div>
           </section>
 
-          <section className="studio-order-action-section studio-funds-section" aria-labelledby="funds-title">
-            <div className="studio-order-action-heading"><span><ShieldCheck aria-hidden="true" size={19} /></span><div><p className="eyebrow">Settled funds</p><h2 id="funds-title">Check the receiving account.</h2></div></div>
-            <p>Current state: <strong>{orderStateLabel(order.fundsConfirmationStatus)}</strong>. This is separate from evidence acceptance and admin-only.</p>
+          <section className="studio-order-action-section studio-funds-section" aria-labelledby="payment-title">
+            <div className="studio-order-action-heading"><span><ShieldCheck aria-hidden="true" size={19} /></span><div><p className="eyebrow">Payment</p><h2 id="payment-title">Check the receiving account.</h2></div></div>
+            <p>Status: <strong>{orderStateLabel(order.fundsConfirmationStatus)}</strong>. Only an admin can confirm that payment arrived.</p>
             {order.fundsConfirmation ? (
               <dl className="studio-order-facts">
                 <div><dt>Transfer reference</dt><dd>{order.fundsConfirmation.transferReference}</dd></div>
@@ -474,12 +462,12 @@ export function ConnectedOrderDetail() {
               </dl>
             ) : null}
             <div className="studio-transition-list">{fundsTransitions.map(action)}</div>
-            {!fundsTransitions.length && !order.fundsConfirmation ? <p className="studio-order-quiet-note">Available after evidence is accepted.</p> : null}
+            {!fundsTransitions.length && !order.fundsConfirmation ? <p className="studio-order-quiet-note">Available after the receipt is checked.</p> : null}
           </section>
 
-          <section className="studio-order-action-section" aria-labelledby="fulfilment-title">
-            <div className="studio-order-action-heading"><span><Truck aria-hidden="true" size={19} /></span><div><p className="eyebrow">Fulfilment</p><h2 id="fulfilment-title">Prepare and hand off.</h2></div></div>
-            <p>Current state: <strong>{orderStateLabel(order.fulfillmentStatus)}</strong>. {order.fulfillment.kind === "PICKUP" ? "Pickup is recorded as collected, never in transit." : "Dispatch and delivery facts remain visible to the customer."}</p>
+          <section className="studio-order-action-section" aria-labelledby="delivery-title">
+            <div className="studio-order-action-heading"><span><Truck aria-hidden="true" size={19} /></span><div><p className="eyebrow">{order.fulfillment.kind === "PICKUP" ? "Pickup" : "Delivery"}</p><h2 id="delivery-title">{order.fulfillment.kind === "PICKUP" ? "Prepare for collection." : "Prepare and send."}</h2></div></div>
+            <p>Status: <strong>{orderStateLabel(order.fulfillmentStatus)}</strong>.</p>
             {order.fulfillmentFacts.dispatchedAt || order.fulfillmentFacts.deliveredAt ? (
               <dl className="studio-order-facts">
                 {order.fulfillmentFacts.carrierName ? <div><dt>Carrier</dt><dd>{order.fulfillmentFacts.carrierName}</dd></div> : null}
@@ -515,7 +503,7 @@ export function ConnectedOrderDetail() {
 
           <section className="studio-order-timeline" aria-labelledby="studio-order-timeline-title">
             <div className="studio-connected-section-heading">
-              <div><p className="eyebrow">Immutable record</p><h2 id="studio-order-timeline-title">Order timeline</h2></div>
+              <div><p className="eyebrow">Updates</p><h2 id="studio-order-timeline-title">Order timeline</h2></div>
               <button aria-busy={refreshing} className="button button-secondary" disabled={refreshing} onClick={() => void loadOrder(undefined, true)} type="button">{refreshing ? "Checking…" : "Check for updates"}</button>
             </div>
             <ol>
@@ -530,7 +518,7 @@ export function ConnectedOrderDetail() {
         </main>
 
         <aside className="studio-connected-order-summary">
-          <p className="eyebrow">Order record</p>
+          <p className="eyebrow">Order details</p>
           <dl>
             <div><dt>Reference</dt><dd>{order.reference}</dd></div>
             <div><dt>Customer</dt><dd>{order.contact.name}</dd></div>
@@ -539,7 +527,7 @@ export function ConnectedOrderDetail() {
             <div><dt>Reserved</dt><dd>{formatConnectedOrderDate(order.savedAt)}</dd></div>
             {order.reservationExpiresAt ? <div><dt>Expires</dt><dd><time dateTime={order.reservationExpiresAt}>{formatConnectedOrderDate(order.reservationExpiresAt)}</time></dd></div> : null}
             {order.returnEligibleUntil ? <div><dt>Return window</dt><dd><time dateTime={order.returnEligibleUntil}>Until {formatConnectedOrderDate(order.returnEligibleUntil)}</time></dd></div> : null}
-            <div><dt>Handoff</dt><dd>{order.deliveryLabel}</dd></div>
+            <div><dt>{order.fulfillment.kind === "PICKUP" ? "Pickup" : "Delivery"}</dt><dd>{order.deliveryLabel}</dd></div>
             {order.fulfillment.kind === "DELIVERY" ? <div><dt>Destination</dt><dd>{order.fulfillment.address.street}, {order.fulfillment.address.area}, {order.fulfillment.address.state}</dd></div> : null}
             <div><dt>Subtotal</dt><dd>{formatNaira(order.subtotal)}</dd></div>
             <div><dt>Delivery</dt><dd>{formatNaira(order.deliveryFee)}</dd></div>
@@ -547,8 +535,6 @@ export function ConnectedOrderDetail() {
           </dl>
           <h2>Pieces</h2>
           <ul>{order.lines.map((line) => <li key={line.slug}><span><strong>{line.name}</strong><small>{line.sku} · {line.taggedSize}</small></span><b>{formatNaira(line.unitPrice)}</b></li>)}</ul>
-          <p className="studio-connected-authority-note"><PackageCheck aria-hidden="true" size={15} /> Neon is authoritative. Reloading this desk rehydrates the same record.</p>
-          <p className="studio-connected-authority-note"><WalletCards aria-hidden="true" size={15} /> Evidence, settled funds, and refunds are separate audited facts.</p>
         </aside>
       </div>
     </div>

@@ -254,7 +254,7 @@ export function ShopCheckout({ mapboxAccessToken }: { mapboxAccessToken: string 
     <div className="shop-list-page shop-checkout-page">
       <header className="shop-list-heading">
         <p className="shop-kicker">Checkout</p>
-        <h1>Review your handoff.</h1>
+        <h1>Review your order.</h1>
       </header>
 
       <form aria-busy={pending} className="shop-checkout-layout" onSubmit={submitCheckout}>
@@ -283,7 +283,7 @@ export function ShopCheckout({ mapboxAccessToken }: { mapboxAccessToken: string 
           <section aria-labelledby="delivery-title">
             <div className="shop-form-section-heading">
               <span>02</span>
-              <div><p className="shop-kicker">Delivery</p><h2 id="delivery-title">Select a handoff.</h2></div>
+              <div><p className="shop-kicker">Delivery</p><h2 id="delivery-title">Delivery or pickup?</h2></div>
             </div>
             <fieldset className="shop-delivery-options">
               <legend className="sr-only">Delivery or pickup method</legend>
@@ -359,7 +359,7 @@ export function ShopCheckout({ mapboxAccessToken }: { mapboxAccessToken: string 
             {pending ? "Reserving your piece…" : "Place order"}
           </ShopActionButton>
           <p className="shop-local-disclosure shop-order-boundary-disclosure">
-            Adding a piece does not reserve it. We reserve only after the server accepts your order. Payment is still required.
+            Your piece is reserved when you place the order. Payment comes next.
           </p>
           {progress ? <p className="shop-action-note" aria-live="polite" role="status">{progress}</p> : null}
           {formError ? <p className="shop-action-note is-error" role="alert">{formError}</p> : null}

@@ -69,7 +69,7 @@ export function ShopOrders() {
     <div className="shop-list-page shop-orders-page">
       <header className="shop-list-heading">
         <p className="shop-kicker">Your orders</p>
-        <h1>From reservation to handoff.</h1>
+        <h1>Track every order.</h1>
       </header>
 
       {state === "loading" ? (
@@ -89,7 +89,7 @@ export function ShopOrders() {
       ) : (
         <div className="shop-route-empty">
           <h2>No orders yet.</h2>
-          <p>Your first reservation will appear here after the server accepts it.</p>
+          <p>Your first order will appear here as soon as it is placed.</p>
           <ShopActionLink href="/shop/search">Find a piece</ShopActionLink>
         </div>
       )}

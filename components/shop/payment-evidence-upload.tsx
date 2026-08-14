@@ -50,7 +50,7 @@ export function PaymentEvidenceUpload({
     setProgress("Checking the file…");
     try {
       const fingerprint = await sha256(file);
-      setProgress("Authorizing a private upload…");
+      setProgress("Preparing secure upload…");
       const authorizationResponse = await fetch(
         `/api/shop/orders/${encodeURIComponent(reference)}/payment-evidence/authorizations`,
         {
@@ -93,7 +93,7 @@ export function PaymentEvidenceUpload({
         throw new Error(failure.message);
       }
 
-      setProgress("Uploading evidence privately…");
+      setProgress("Uploading your receipt…");
       const uploadResponse = await fetch(authorization.uploadUrl, {
         method: "PUT",
         credentials: "same-origin",
@@ -122,7 +122,7 @@ export function PaymentEvidenceUpload({
       onReceived(uploadBody.order);
       if (inputRef.current) inputRef.current.value = "";
       setSelectedFile(null);
-      setProgress("Evidence received. Lulu will review it. This does not prove bank payment.");
+      setProgress("Receipt sent. Lulu will check it and confirm your payment.");
     } catch (cause) {
       setProgress("");
       setError(cause instanceof Error ? cause.message : "The upload could not be completed. Try again.");
@@ -136,11 +136,11 @@ export function PaymentEvidenceUpload({
       <div className="shop-form-section-heading">
         <span aria-hidden="true"><FileCheck2 size={18} /></span>
         <div>
-          <p className="shop-kicker">Private payment evidence</p>
-          <h2 id="payment-evidence-title">Send evidence for review.</h2>
+          <p className="shop-kicker">Transfer receipt</p>
+          <h2 id="payment-evidence-title">Send your receipt.</h2>
         </div>
       </div>
-      <p>Evidence helps Lulu review the payment. It is not proof that funds settled in the receiving account.</p>
+      <p>Upload the receipt from your bank. Lulu will check it and confirm when the payment arrives.</p>
       <form aria-busy={pending} onSubmit={submit}>
         <label>
           <span>Image or PDF · 5 MB maximum</span>
@@ -165,7 +165,7 @@ export function PaymentEvidenceUpload({
         </label>
         <button className="shop-action shop-action-primary" disabled={pending} type="submit">
           <Upload aria-hidden="true" size={16} />
-          {pending ? "Sending evidence…" : "Send evidence privately"}
+          {pending ? "Sending receipt…" : "Send receipt"}
         </button>
       </form>
       {progress ? <p className="shop-evidence-feedback" aria-live="polite" role="status">{progress}</p> : null}

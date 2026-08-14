@@ -21,6 +21,10 @@ import { ThemeToggle } from "../theme/theme-toggle";
 import { StudioLink as Link } from "./atoms/studio-link";
 import { StudioNotificationCenter } from "./notifications/studio-notification-center";
 import { StudioSettingsCenter } from "./settings/studio-settings-center";
+import {
+  StudioMobileActionProvider,
+  useRegisteredStudioMobileAction,
+} from "./mobile-action-context";
 import { StudioProvider, useStudio } from "./studio-provider";
 import type { StudioOperator } from "../../lib/server/studio-operator";
 
@@ -41,7 +45,7 @@ const primaryNavigation: NavigationItem[] = [
   { href: "/studio", label: "Business home", mobileLabel: "Home", icon: House },
   { href: "/studio/models", label: "Model atelier", mobileLabel: "Models", icon: Users },
   { href: "/studio/wardrobe", label: "Wardrobe", mobileLabel: "Wardrobe", icon: Shirt },
-  { href: "/studio/orders", label: "Connected orders", mobileLabel: "Orders", icon: PackageCheck },
+  { href: "/studio/orders", label: "Orders", mobileLabel: "Orders", icon: PackageCheck },
   { href: "/studio/operations", label: "Operations", mobileLabel: "Operations", icon: ClipboardList },
 ];
 
@@ -91,6 +95,7 @@ function AppShellContent({ children, operator }: { children: React.ReactNode; op
       ? { label: "Shoots", icon: Camera }
       : { label: "Studio", icon: House });
   const MobileDestinationIcon = mobileDestination.icon;
+  const registeredMobileAction = useRegisteredStudioMobileAction();
   const operationsView = searchParams.get("view") ?? "inventory";
   const reservedOrders = studio.orders.filter((order) => order.state === "RESERVED").length;
   const openReturns = studio.returns.filter((returnCase) => returnCase.state === "DRAFT").length;
@@ -101,14 +106,14 @@ function AppShellContent({ children, operator }: { children: React.ReactNode; op
       : operationsView !== "inventory"
         ? { label: "Open inventory", href: "/studio/operations?view=inventory", icon: ClipboardList }
         : { label: "Intake garment", href: "/studio/wardrobe?intake=1", icon: Plus };
-  const contextAction = pathname.startsWith("/studio/models")
+  const routeAction = pathname.startsWith("/studio/models")
     ? { label: "Add model", href: "/studio/models?intake=model", icon: Plus }
     : pathname.startsWith("/studio/wardrobe")
       ? { label: "Intake garment", href: "/studio/wardrobe?intake=1", icon: Plus }
       : pathname.startsWith("/studio/orders")
         ? pathname === "/studio/orders"
-          ? { label: "Refresh orders", href: "/studio/orders", icon: RotateCcw }
-          : { label: "All connected orders", href: "/studio/orders", icon: PackageCheck }
+          ? { label: "Open wardrobe", href: "/studio/wardrobe", icon: Shirt }
+          : { label: "All orders", href: "/studio/orders", icon: PackageCheck }
       : pathname.startsWith("/studio/operations")
         ? operationsAction
         : pathname === "/shoots/new"
@@ -116,6 +121,9 @@ function AppShellContent({ children, operator }: { children: React.ReactNode; op
           : pathname.startsWith("/shoots")
           ? { label: "New shoot", href: "/shoots/new", icon: Camera }
           : { label: "Intake garment", href: "/studio/wardrobe?intake=1", icon: Plus };
+  const contextAction = registeredMobileAction
+    ? { ...registeredMobileAction, icon: PackageCheck }
+    : routeAction;
   const ContextActionIcon = contextAction.icon;
   return (
     <div
@@ -236,12 +244,11 @@ function AppShellContent({ children, operator }: { children: React.ReactNode; op
                 })}
               </nav>
               <Link
-                aria-label="Open the justurban wears public shop"
+                aria-label={contextAction.label}
                 className="shop-mobile-fab shop-dock-lens studio-mobile-fab"
-                href="/shop"
+                href={contextAction.href}
               >
-                <BrandIcon className="studio-mobile-app-icon" size={44} />
-                <ExternalLink className="studio-mobile-exit-mark" aria-hidden="true" size={18} strokeWidth={2.1} />
+                <ContextActionIcon aria-hidden="true" size={24} strokeWidth={2.1} />
               </Link>
             </div>
           </div>
@@ -251,5 +258,9 @@ function AppShellContent({ children, operator }: { children: React.ReactNode; op
 }
 
 export function AppShell({ children, operator }: { children: React.ReactNode; operator: StudioOperator | null }) {
-  return <StudioProvider><AppShellContent operator={operator}>{children}</AppShellContent></StudioProvider>;
+  return (
+    <StudioMobileActionProvider>
+      <StudioProvider><AppShellContent operator={operator}>{children}</AppShellContent></StudioProvider>
+    </StudioMobileActionProvider>
+  );
 }

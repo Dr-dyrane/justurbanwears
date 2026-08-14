@@ -10,7 +10,7 @@ const wardrobe = readFileSync(`${root}/components/studio/wardrobe-workbench.tsx`
 const operations = readFileSync(`${root}/components/studio/operations-desk.tsx`, "utf8");
 const css = readFileSync(`${root}/app/foundation.css`, "utf8");
 
-test("Studio mobile chrome keeps the contextual action between navigation and Shop", () => {
+test("Studio mobile chrome keeps one state-aware action between navigation and its matching FAB", () => {
   assert.match(shell, /studio-mobile-fab/);
   assert.match(shell, /Add model/);
   assert.match(shell, /Intake garment/);
@@ -23,7 +23,10 @@ test("Studio mobile chrome keeps the contextual action between navigation and Sh
   assert.match(shell, /<strong>\{contextAction\.label\}<\/strong>/);
   assert.match(shell, /<ContextActionIcon aria-hidden="true"/);
   assert.match(shell, /className="shop-mobile-context shop-dock-lens studio-mobile-context"/);
-  assert.match(shell, /aria-label="Open the justurban wears public shop"/);
+  assert.match(shell, /aria-label=\{contextAction\.label\}/);
+  assert.match(shell, /StudioMobileActionProvider/);
+  assert.match(shell, /useRegisteredStudioMobileAction/);
+  assert.doesNotMatch(shell, /className="shop-mobile-fab[\s\S]*?href="\/shop"/);
 });
 
 test("compact records, garments, and inventory use approved media", () => {

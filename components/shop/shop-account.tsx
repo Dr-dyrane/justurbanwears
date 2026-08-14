@@ -78,7 +78,7 @@ export function ShopAccount({ customer }: { customer: ShopCustomerSession | null
               <ChevronRight aria-hidden="true" size={17} />
             </Link>
             <Link href="/shop/orders">
-              <span><ReceiptText aria-hidden="true" size={18} strokeWidth={1.7} /><span><strong>Your orders</strong><small>{customer ? "Live order, delivery, and return updates" : "Sign in to open server-backed orders"}</small></span></span>
+              <span><ReceiptText aria-hidden="true" size={18} strokeWidth={1.7} /><span><strong>Your orders</strong><small>{customer ? "Live order, delivery, and return updates" : "Sign in to open your orders"}</small></span></span>
               <ChevronRight aria-hidden="true" size={17} />
             </Link>
           </div>

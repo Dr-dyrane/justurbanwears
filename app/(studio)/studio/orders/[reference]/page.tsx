@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { ConnectedOrderDetail } from "../../../../../components/studio/connected-order-detail";
 
 export const metadata: Metadata = {
-  title: "Order action desk · Studio",
-  description: "Review evidence, confirm settled funds, and progress fulfilment.",
+  title: "Order · Studio",
+  description: "Check payment, prepare delivery, and manage returns.",
 };
 
 export default function StudioOrderDetailPage() {
