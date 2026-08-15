@@ -51,7 +51,7 @@ await htmlCheck("product passport", "/shop/products/coral-drift-dress", [
   ["product name missing", (body) => body.includes("Coral Drift Dress")],
   ["Product JSON-LD missing", (body) => body.includes("application/ld+json") && body.includes('"@type":"Product"')],
 ]);
-await htmlCheck("passwordless auth", "/auth/sign-in?returnTo=%2Fshop%2Forders", [["sign-in surface missing", (body) => body.includes("Sign-in code")]]);
+await htmlCheck("passwordless auth", "/auth/sign-in?returnTo=%2Fshop%2Forders", [["email-code surface missing", (body) => body.includes("Email code")]]);
 try {
   const { response, duration } = await request("/manifest.webmanifest", { headers: { accept: "application/manifest+json" } });
   const manifest = await response.json();
@@ -73,7 +73,7 @@ try {
 try {
   const { response, duration } = await request("/api/shop/catalogue/availability", { method: "POST", headers: { accept: "application/json", "content-type": "application/json" }, body: "{}" });
   const body = await response.json().catch(() => null);
-  record("availability validation boundary", response.status === 400 && Boolean(body?.error), `${response.status} · ${duration} ms`);
+  record("availability validation boundary", response.status === 400 && body?.status === "CHANGED", `${response.status} · ${duration} ms`);
 } catch (error) { record("availability validation boundary", false, error instanceof Error ? error.message : String(error)); }
 const failures = results.filter((result) => !result.passed);
 console.log(`\n${results.length - failures.length}/${results.length} production checks passed for ${origin.origin}.`);

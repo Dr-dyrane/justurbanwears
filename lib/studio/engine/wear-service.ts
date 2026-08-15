@@ -17,10 +17,11 @@ import {
   updateGeneration,
 } from "../../server/studio-intake-repository";
 import type { StudioOperator } from "../../server/studio-operator";
-import type {
-  OperatorSafeWearGeneration,
-  OperatorSafeWearWorkspace,
-  WearOperation,
+import {
+  intakeFactsSchema,
+  type OperatorSafeWearGeneration,
+  type OperatorSafeWearWorkspace,
+  type WearOperation,
 } from "./contracts";
 import { StudioEngineError } from "./errors";
 import { generationFingerprint, sha256 } from "./fingerprint";
@@ -193,7 +194,7 @@ export async function generateWearCandidate(input: {
     operation: input.operation,
     facts: {
       title: item.title,
-      category: item.category,
+      category: intakeFactsSchema.shape.category.parse(item.category),
       colour: item.colour,
       sizeLabel: item.sizeLabel,
       condition: item.condition,

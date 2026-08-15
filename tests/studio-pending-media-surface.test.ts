@@ -165,7 +165,8 @@ test("gives draft management an image-led mobile sheet with unsqueezed capture a
   assert.match(captures, /decision: "KEEP"/u);
   assert.match(captures, /decideAi\("REJECT"\)/u);
   assert.match(captures, /completionEndpoint\}\?role=/u);
-  assert.match(captures, /aiStepHeadingRef\.current\?\.focus/u);
+  assert.match(captures, /const heading = aiStepHeadingRef\.current/u);
+  assert.match(captures, /heading\.focus\(\{ preventScroll: true \}\)/u);
   assert.match(captures, /aiReturnFocusRef/u);
   assert.match(captures, /aria-labelledby=\{aiStepHeadingId\}/u);
   assert.match(captures, /Opening saved work/u);

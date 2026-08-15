@@ -509,7 +509,9 @@ test("build and deployment remain free of database administration side effects",
   for (const scriptName of ["build", "build:vercel", "dev", "start"]) {
     assert.doesNotMatch(packageJson.scripts[scriptName], /shop-db|drizzle-kit\s+migrate|db:release|db:shop/);
   }
-  for (const prefix of ["prebuild", "postbuild", "prestart", "poststart"]) assert.equal(packageJson.scripts[prefix], undefined);
+  assert.equal(packageJson.scripts.prebuild, "npm run brand:generate:social");
+  assert.equal(packageJson.scripts["prebuild:vercel"], "npm run brand:generate:social");
+  for (const prefix of ["postbuild", "prestart", "poststart"]) assert.equal(packageJson.scripts[prefix], undefined);
   const vercelIgnore = readFileSync(join(repositoryRoot, ".vercelignore"), "utf8");
   assert.match(vercelIgnore, /^\/drizzle\/$/m);
   assert.match(vercelIgnore, /^\/scripts\/shop-db\/$/m);

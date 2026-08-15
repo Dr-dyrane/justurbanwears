@@ -129,6 +129,7 @@ function ModelTaskSheet({
   if (!task) {
     return <dialog className="studio-intake-sheet studio-model-task-sheet" ref={dialogRef} />;
   }
+  const activeTask = task;
 
   const activeIndex = taskSteps.indexOf(step);
   const progress = step === "receipt" || editingFromReview
@@ -148,7 +149,7 @@ function ModelTaskSheet({
       return false;
     }
     const duplicate = models.some((model) => (
-      model.id !== task?.modelId
+      model.id !== activeTask.modelId
       && model.name.trim().toLocaleLowerCase() === name.toLocaleLowerCase()
     ));
     if (duplicate) {
@@ -208,7 +209,7 @@ function ModelTaskSheet({
       },
     };
 
-    if (task.mode === "create") {
+    if (activeTask.mode === "create") {
       const id = createModel({ name: draft.name });
       if (!id) {
         setError("Studio could not create this model. Check the name and try again.");
@@ -217,9 +218,9 @@ function ModelTaskSheet({
       }
       updateModel(id, update);
       onSelect(id);
-    } else if (task.modelId) {
-      updateModel(task.modelId, update);
-      onSelect(task.modelId);
+    } else if (activeTask.modelId) {
+      updateModel(activeTask.modelId, update);
+      onSelect(activeTask.modelId);
     }
 
     setReceiptState(ready ? "READY" : "DRAFT");
@@ -243,7 +244,7 @@ function ModelTaskSheet({
       }}
       onClose={() => {
         onDismiss();
-        task.returnFocus?.focus({ preventScroll: true });
+        activeTask.returnFocus?.focus({ preventScroll: true });
       }}
       ref={dialogRef}
     >
@@ -257,7 +258,7 @@ function ModelTaskSheet({
             ) : null}
             <div>
               <p className="eyebrow">Model intake</p>
-              <h2 id="studio-model-task-title">{task.mode === "create" ? "Add model" : `Edit ${task.draft.name}`}</h2>
+              <h2 id="studio-model-task-title">{activeTask.mode === "create" ? "Add model" : `Edit ${activeTask.draft.name}`}</h2>
             </div>
           </div>
           <button aria-label="Close model intake" className="studio-icon-action" onClick={close} ref={closeButtonRef} type="button">
@@ -362,7 +363,7 @@ function ModelTaskSheet({
             <>
               <button className="button button-secondary" onClick={close} type="button">Cancel</button>
               <button className="button button-primary" type="submit">
-                {step === "review" ? (task.mode === "create" ? "Add model" : "Save changes") : editingFromReview ? "Done" : "Continue"}
+                {step === "review" ? (activeTask.mode === "create" ? "Add model" : "Save changes") : editingFromReview ? "Done" : "Continue"}
               </button>
             </>
           )}

@@ -100,7 +100,7 @@ function parseCompletionJob(value: unknown): CompletionJob | null {
   return {
     assetUrl,
     attempt: typeof candidate.attempt === "number" ? candidate.attempt : 1,
-    canRetry: typeof candidate.canRetry === "boolean" ? candidate.canRetry : candidate.state === "COMPLETE" && candidate.attempt < 2,
+    canRetry: typeof candidate.canRetry === "boolean" ? candidate.canRetry : candidate.state === "COMPLETE" && (typeof candidate.attempt !== "number" || candidate.attempt < 2),
     id: candidate.id,
     role: candidate.role,
     sourceMode: candidate.sourceMode === "APPROVED_FRONT" ? "APPROVED_FRONT" : "UPLOADED_AUTHORITY",

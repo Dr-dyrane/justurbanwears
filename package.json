@@ -16,7 +16,7 @@
     "brand:generate": "node scripts/generate-brand-assets.mjs",
     "brand:generate:social": "node scripts/generate-social-brand-assets.mjs",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit -p tsconfig.release.json",
     "env:check": "node scripts/validate-release-env.mjs --template",
     "env:check:runtime": "node scripts/validate-release-env.mjs --runtime",
     "env:check:release": "node scripts/validate-release-env.mjs --release",

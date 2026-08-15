@@ -493,7 +493,7 @@ export const PENDING_WARDROBE_PRODUCT_CONTRACTS: readonly PendingWardrobeProduct
     price: 16500,
     description: "A gathered strapless bandeau top.",
     note: "The product upper-front and Lulu upper-front detail are ready. Capture the full product front, product back and one fabric detail before publishing; confirm the exact colour at intake.",
-    visual: "ivory",
+    visual: "chalk",
     approvedViews: ["GARMENT_UPPER_FRONT", "MODEL_DETAIL"],
     missingViews: ["GARMENT_FRONT", "GARMENT_BACK", "FABRIC_DETAIL"],
     publicSafeMedia: [
