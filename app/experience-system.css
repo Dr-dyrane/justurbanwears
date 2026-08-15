@@ -1,0 +1,255 @@
+/*
+ * JustUrbanWears Experience System — implementation layer
+ *
+ * Authority: docs/experience/EXPERIENCE-SYSTEM.md
+ * This file is intentionally additive. Existing Shop and Studio surface styles
+ * keep their individual temperature; this layer supplies the shared laws.
+ */
+
+:root {
+  /* Material language: ink, paper, skin, coral. */
+  --juw-material-ink: var(--espresso, #211713);
+  --juw-material-paper: #fffaf6;
+  --juw-material-paper-warm: var(--mineral, #efede8);
+  --juw-material-nude: var(--peach, #f5c4b5);
+  --juw-intent: var(--coral, #dd6042);
+  --juw-intent-strong: #b94b34;
+
+  /* Shared type roles. Surface CSS may size them, but must not rename them. */
+  --juw-type-display: var(--font-display);
+  --juw-type-body: var(--font-ui);
+  --juw-type-utility-tracking: 0.14em;
+  --juw-type-readable-floor: 0.75rem;
+
+  /* Shared spatial grammar. */
+  --juw-space-page-inset: clamp(1rem, 5vw, 4.75rem);
+  --juw-space-section-rhythm: clamp(4.5rem, 10vw, 10rem);
+  --juw-space-card-gap: clamp(1rem, 2.4vw, 2rem);
+  --juw-space-sheet-inset: clamp(1rem, 3vw, 2rem);
+  --juw-space-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --juw-space-island-clearance: calc(5.75rem + var(--juw-space-safe-bottom));
+  --juw-focus-expansion: 1.018;
+
+  /* Motion baseline: fast acknowledgement, composed release. */
+  --juw-motion-press: 90ms;
+  --juw-motion-hover-in: 120ms;
+  --juw-motion-hover-out: 200ms;
+  --juw-motion-state: 220ms;
+  --juw-motion-sheet: 320ms;
+  --juw-motion-focus: 520ms;
+  --juw-motion-editorial: 900ms;
+  --juw-ease-responsive: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --juw-ease-focus: cubic-bezier(0.22, 1, 0.36, 1);
+  --juw-ease-sheet: cubic-bezier(0.32, 0.72, 0, 1);
+
+  /* One layer grammar. Native dialogs still use the browser top layer. */
+  --juw-layer-canvas: 0;
+  --juw-layer-content: var(--z-content, 1);
+  --juw-layer-elevated: var(--z-route-sticky, 30);
+  --juw-layer-island: var(--z-mobile-chrome, 95);
+  --juw-layer-sheet: 110;
+  --juw-layer-critical: 130;
+}
+
+/* Same system, different tempo. */
+[data-experience-surface="site"][data-experience-tempo="editorial"] {
+  --juw-surface-motion: var(--juw-motion-editorial);
+  --juw-surface-focus-distance: 18px;
+  --juw-surface-motion-amplitude: 1;
+}
+
+[data-experience-surface="shop"][data-experience-tempo="focus"] {
+  --juw-surface-motion: var(--juw-motion-focus);
+  --juw-surface-focus-distance: 10px;
+  --juw-surface-motion-amplitude: 0.72;
+}
+
+[data-experience-surface="studio"][data-experience-tempo="resolve"] {
+  --juw-surface-motion: var(--juw-motion-state);
+  --juw-surface-focus-distance: 5px;
+  --juw-surface-motion-amplitude: 0.42;
+}
+
+/* Nothing interactive should feel inert. Most responses remain composed. */
+:where(
+  [data-experience-surface] a,
+  [data-experience-surface] button,
+  [data-experience-surface] input,
+  [data-experience-surface] select,
+  [data-experience-surface] textarea
+) {
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+:where(
+  .shop-floating-nav a,
+  .shop-action,
+  .product-card-action,
+  .detail-save,
+  .shop-filter-trigger,
+  .shop-mobile-nav-reveal,
+  .shop-mobile-context,
+  .shop-mobile-fab,
+  .shop-mobile-dock a,
+  .studio-floating-nav a,
+  .studio-shell .button,
+  .studio-view-action,
+  .studio-lens-action
+) {
+  transition-duration: var(--juw-motion-hover-out);
+  transition-timing-function: var(--juw-ease-responsive);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  :where(
+    .shop-floating-nav a,
+    .shop-action,
+    .product-card-action,
+    .detail-save,
+    .shop-filter-trigger,
+    .shop-mobile-context,
+    .shop-mobile-fab,
+    .shop-mobile-dock a,
+    .studio-floating-nav a,
+    .studio-shell .button,
+    .studio-view-action,
+    .studio-lens-action
+  ):hover {
+    transition-duration: var(--juw-motion-hover-in);
+  }
+}
+
+:where(
+  .shop-floating-nav a,
+  .shop-action,
+  .product-card-action,
+  .detail-save,
+  .shop-filter-trigger,
+  .shop-mobile-nav-reveal,
+  .shop-mobile-context,
+  .shop-mobile-fab,
+  .shop-mobile-dock a,
+  .studio-floating-nav a,
+  .studio-shell .button,
+  .studio-view-action,
+  .studio-lens-action
+):active:not(:disabled) {
+  transform: translate3d(0, 1px, 0) scale(0.985);
+  transition-duration: var(--juw-motion-press);
+}
+
+/* Focus uses a dual contrast ring and never depends on coral alone. */
+:where(
+  [data-experience-surface] a,
+  [data-experience-surface] button,
+  [data-experience-surface] input,
+  [data-experience-surface] select,
+  [data-experience-surface] textarea,
+  [data-experience-surface] [tabindex]:not([tabindex="-1"])
+):focus-visible {
+  box-shadow:
+    0 0 0 5px var(--juw-material-paper),
+    0 0 0 7px var(--juw-material-ink);
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+
+/*
+ * Signature intent underlay.
+ * It is opt-in so secondary actions never inherit primary theatre by accident.
+ */
+[data-experience-action="primary"] {
+  isolation: isolate;
+  overflow: hidden;
+  position: relative;
+  z-index: 0;
+}
+
+[data-experience-action="primary"]::after {
+  background: linear-gradient(
+    104deg,
+    color-mix(in srgb, var(--juw-intent) 30%, transparent),
+    color-mix(in srgb, var(--juw-material-nude) 18%, transparent)
+  );
+  content: "";
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+  transform: translate3d(-102%, 0, 0);
+  transition: transform var(--juw-motion-hover-out) var(--juw-ease-focus);
+  z-index: -1;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  [data-experience-action="primary"]:hover::after {
+    transform: translate3d(0, 0, 0);
+    transition-duration: var(--juw-motion-hover-in);
+  }
+}
+
+[data-experience-action="primary"]:active::after {
+  transform: translate3d(0, 0, 0);
+  transition-duration: var(--juw-motion-press);
+}
+
+/* The action pill is a state inside one shared contextual island. */
+[data-experience-layer="island"] {
+  z-index: var(--juw-layer-island);
+}
+
+[data-experience-layer="island"] .shop-mobile-composition {
+  transform-origin: center bottom;
+  transition-duration: var(--juw-motion-sheet);
+  transition-timing-function: var(--juw-ease-sheet);
+}
+
+[data-experience-layer="island"] .shop-mobile-context {
+  min-width: 0;
+}
+
+[data-experience-layer="island"] .shop-mobile-context > span {
+  min-width: 0;
+}
+
+/* Reduced motion preserves hierarchy while removing travel and perspective. */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --juw-motion-press: 1ms;
+    --juw-motion-hover-in: 1ms;
+    --juw-motion-hover-out: 1ms;
+    --juw-motion-state: 1ms;
+    --juw-motion-sheet: 1ms;
+    --juw-motion-focus: 1ms;
+    --juw-motion-editorial: 1ms;
+  }
+
+  [data-experience-action="primary"]::after {
+    opacity: 0.08;
+    transform: none;
+    transition: none;
+  }
+
+  [data-experience-layer="island"] .shop-mobile-composition {
+    transition-duration: 1ms;
+  }
+}
+
+@media (forced-colors: active) {
+  [data-experience-action="primary"]::after {
+    display: none;
+  }
+
+  :where(
+    [data-experience-surface] a,
+    [data-experience-surface] button,
+    [data-experience-surface] input,
+    [data-experience-surface] select,
+    [data-experience-surface] textarea,
+    [data-experience-surface] [tabindex]:not([tabindex="-1"])
+  ):focus-visible {
+    box-shadow: none;
+    outline: 2px solid Highlight;
+    outline-offset: 3px;
+  }
+}

@@ -9,6 +9,7 @@ import { BRAND_ASSETS } from "../lib/brand/assets";
 import "./globals.css";
 import "./foundation.css";
 import "./shop-editorial-hero.css";
+import "./experience-system.css";
 
 const siteUrl = new URL("https://www.justurbanwears.com");
 const socialImage = new URL(BRAND_ASSETS.social.runtimeOg, siteUrl).toString();

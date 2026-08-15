@@ -122,7 +122,12 @@ export default async function Home() {
   const editorialMedia = approvedEditorial?.frame ?? editorialGallery[1] ?? editorialGallery[0];
 
   return (
-    <main className={`${styles.page} ${editorial.pageAtmosphere}`} data-brand-entrance="justurbanwears">
+    <main
+      className={`${styles.page} ${editorial.pageAtmosphere}`}
+      data-brand-entrance="justurbanwears"
+      data-experience-surface="site"
+      data-experience-tempo="editorial"
+    >
       <a className={styles.skipLink} href="#issue-contents">Skip to issue</a>
 
       <header className={`${styles.header} ${cover.header}`}>

@@ -128,6 +128,8 @@ function AppShellContent({ children, operator }: { children: React.ReactNode; op
   return (
     <div
         className="app-shell studio-shell"
+        data-experience-surface="studio"
+        data-experience-tempo="resolve"
         data-mobile-chrome-hidden={chromeHidden || undefined}
         data-mobile-chrome-suspended={mobileChromeSuspended || undefined}
       >
@@ -178,7 +180,7 @@ function AppShellContent({ children, operator }: { children: React.ReactNode; op
                 <span className="studio-view-tabs">
                   {shootTabs.map((tab) => <Link aria-current={tab.current ? "page" : undefined} className={tab.current ? "is-active" : undefined} href={tab.href} key={tab.href}>{tab.label}</Link>)}
                 </span>
-                <Link className="studio-view-action" href={contextAction.href}><span>{contextAction.label}</span><ContextActionIcon aria-hidden="true" size={15} strokeWidth={1.9} /></Link>
+                <Link className="studio-view-action" data-experience-action="primary" href={contextAction.href}><span>{contextAction.label}</span><ContextActionIcon aria-hidden="true" size={15} strokeWidth={1.9} /></Link>
               </nav>
             </div>
           ) : null}
@@ -188,6 +190,7 @@ function AppShellContent({ children, operator }: { children: React.ReactNode; op
           aria-hidden={mobileChromeMode === "suspended" || undefined}
           aria-label="Mobile Studio controls"
           className="shop-mobile-shell studio-mobile-shell"
+          data-experience-layer="island"
           data-mobile-chrome-mode={mobileChromeMode}
           inert={mobileChromeMode === "suspended" || undefined}
         >
@@ -207,6 +210,7 @@ function AppShellContent({ children, operator }: { children: React.ReactNode; op
             <Link
               aria-hidden={mobileChromeMode === "navigation" || mobileChromeMode === "suspended" || undefined}
               className="shop-mobile-context shop-dock-lens studio-mobile-context"
+              data-experience-action="primary"
               href={contextAction.href}
               tabIndex={mobileChromeMode === "navigation" || mobileChromeMode === "suspended" ? -1 : undefined}
             >

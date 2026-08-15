@@ -103,6 +103,8 @@ function ShopChrome({ children }: { children: React.ReactNode }) {
   return (
     <div
       className="shop-shell"
+      data-experience-surface="shop"
+      data-experience-tempo="focus"
       data-mobile-chrome-hidden={chromeHidden || undefined}
       data-mobile-chrome-suspended={mobileChromeSuspended || undefined}
     >
@@ -175,6 +177,7 @@ function ShopChrome({ children }: { children: React.ReactNode }) {
         aria-hidden={mobileChromeMode === "suspended" || undefined}
         aria-label="Mobile shop controls"
         className="shop-mobile-shell"
+        data-experience-layer="island"
         data-mobile-chrome-mode={mobileChromeMode}
         inert={mobileChromeMode === "suspended" || undefined}
       >
@@ -194,6 +197,7 @@ function ShopChrome({ children }: { children: React.ReactNode }) {
           <Link
             aria-hidden={mobileChromeMode === "navigation" || mobileChromeMode === "suspended" || undefined}
             className={`shop-mobile-context shop-dock-lens ${chromeStyles.contextAction}`}
+            data-experience-action="primary"
             href={contextAction.href}
             tabIndex={mobileChromeMode === "navigation" || mobileChromeMode === "suspended" ? -1 : undefined}
           >
