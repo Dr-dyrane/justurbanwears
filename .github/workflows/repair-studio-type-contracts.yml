@@ -98,12 +98,31 @@ jobs:
               '    title: "Pale Gathered Bandeau Top",\n    category: "Shirt",\n    color: "Pale tone · exact colour to confirm",\n    price: 16500,\n    description: "A gathered strapless bandeau top.",\n    note: "The product upper-front and Lulu upper-front detail are ready. Capture the full product front, product back and one fabric detail before publishing; confirm the exact colour at intake.",\n    visual: "chalk",',
           )
 
+          replace_once(
+              "lib/studio/engine/catalogue-publication-service.ts",
+              'type WardrobeItem = Awaited<ReturnType<typeof getOwnedWardrobeItem>>;\ntype StudioAsset = Awaited<ReturnType<typeof getOwnedAsset>>;\n\ntype PublicationSource = {',
+              'type WardrobeItem = Awaited<ReturnType<typeof getOwnedWardrobeItem>>;\ntype StudioAsset = Awaited<ReturnType<typeof getOwnedAsset>>;\n\ntype PublicationImagePipeline = {\n  rotate(): PublicationImagePipeline;\n  toColourspace(colourspace: "srgb"): PublicationImagePipeline;\n  webp(options: { quality: number; alphaQuality: number; effort: number }): PublicationImagePipeline;\n  toBuffer(): Promise<Uint8Array>;\n};\n\nconst createPublicationImagePipeline = sharp as unknown as (input: Uint8Array) => PublicationImagePipeline;\n\ntype PublicationSource = {',
+          )
+          replace_once(
+              "lib/studio/engine/catalogue-publication-service.ts",
+              "  const normalizedBytes = new Uint8Array(await sharp(bytes)",
+              "  const normalizedBytes = new Uint8Array(await createPublicationImagePipeline(bytes)",
+          )
+
           package_path = Path("package.json")
           package = json.loads(package_path.read_text())
           if package["scripts"].get("typecheck") != "tsc --noEmit":
               raise SystemExit("unexpected typecheck script")
           package["scripts"]["typecheck"] = "tsc --noEmit -p tsconfig.release.json"
           package_path.write_text(json.dumps(package, indent=2, ensure_ascii=False) + "\n")
+
+          Path("types").mkdir(exist_ok=True)
+          Path("types/vite-assets.d.ts").write_text(
+              'declare module "*.svg?raw" {\n'
+              '  const source: string;\n'
+              '  export default source;\n'
+              '}\n'
+          )
 
           Path("tsconfig.release.json").write_text(json.dumps({
               "extends": "./tsconfig.json",
@@ -113,6 +132,7 @@ jobs:
               },
               "include": [
                   "next-env.d.ts",
+                  "types/**/*.d.ts",
                   "app/**/*.ts",
                   "app/**/*.tsx",
                   "components/**/*.ts",
@@ -149,9 +169,11 @@ jobs:
             components/studio/draft-direct-captures.tsx \
             components/studio/model-atelier.tsx \
             components/studio/notifications/studio-notification-center.tsx \
+            lib/studio/engine/catalogue-publication-service.ts \
             lib/studio/engine/wear-service.ts \
             lib/studio/seeds/private-wardrobe-products.ts \
             package.json \
-            tsconfig.release.json
+            tsconfig.release.json \
+            types/vite-assets.d.ts
           git commit -m "fix: certify Studio release type contracts"
           git push origin HEAD:agent/phase-0-release-foundation
