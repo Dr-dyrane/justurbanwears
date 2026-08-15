@@ -8,6 +8,7 @@ import {
   selectProductGalleryMedia,
 } from "../lib/shop/model-tryout";
 import { getServerShopProducts } from "../lib/shop/server-catalog";
+import cover from "./brand-cover-minimal.module.css";
 import editorial from "./brand-editorial.module.css";
 import styles from "./brand-home.module.css";
 
@@ -36,12 +37,6 @@ const ISSUE_CONTENTS = [
   ["02", "Proof", "One real piece", "#brand-story"],
   ["03", "Lulu", "Style changes hands", "#curators-note"],
   ["04", "Drop 01", "Shop the edit", "#drop-01"],
-] as const;
-
-const COVER_LINES = [
-  ["Lagos edit", "One piece. One chance."],
-  ["Every frame", "Approved by Lulu."],
-  ["Issue 01", "Chosen again."],
 ] as const;
 
 function availabilityLabel(product: ShopProduct) {
@@ -130,50 +125,31 @@ export default async function Home() {
     <main className={`${styles.page} ${editorial.pageAtmosphere}`} data-brand-entrance="justurbanwears">
       <a className={styles.skipLink} href="#issue-contents">Skip to issue</a>
 
-      <header className={`${styles.header} ${editorial.magazineHeader}`}>
+      <header className={`${styles.header} ${cover.header}`}>
         <ShopLink aria-label="JustUrbanWears home" className={styles.wordmark} href="/">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img alt="JustUrbanWears" height={370} src={BRAND_ASSETS.wordmark.runtimeReverseSvg} width={1620} />
         </ShopLink>
-        <nav aria-label="Primary" className={styles.nav}>
-          <a href="#brand-story">Proof</a>
-          <a href="#curators-note">Lulu</a>
-          <a href="#drop-01">Drop 01</a>
-          <a className={styles.navAction} href="/shop">Shop <span aria-hidden="true">↗</span></a>
+        <nav aria-label="Primary" className={`${styles.nav} ${cover.nav}`}>
+          <a className={cover.headerAction} href="/shop">Shop <span aria-hidden="true">↗</span></a>
         </nav>
       </header>
 
-      <section aria-labelledby="brand-hero-title" className={`${styles.hero} ${editorial.coverHero}`}>
-        <div aria-hidden="true" className={editorial.coverMasthead}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img alt="" height={370} src={BRAND_ASSETS.wordmark.runtimeReverseSvg} width={1620} />
-        </div>
-
-        <div aria-hidden="true" className={editorial.issueRail}>
-          <span>Issue 01</span>
-          <span>Lagos · 2026</span>
-        </div>
-
-        <div className={styles.heroCopy}>
-          <p className={styles.eyebrow}>Lagos · Issue 01</p>
-          <h1 className={editorial.coverTitle} id="brand-hero-title">
+      <section aria-labelledby="brand-hero-title" className={`${styles.hero} ${cover.hero}`}>
+        <div className={`${styles.heroCopy} ${cover.copy}`}>
+          <p className={`${styles.eyebrow} ${cover.eyebrow}`}>Lagos · Issue 01</p>
+          <h1 className={cover.title} id="brand-hero-title">
             Clothes deserve
             <span>more than one</span>
             first impression.
           </h1>
-          <p className={styles.heroLede}>
-            Lulu’s wardrobe.<br />
-            One-off pieces.<br />
-            Back in the city.
-          </p>
-          <div className={styles.heroActions}>
-            <a className={styles.primaryAction} href="/shop">Enter the wardrobe <span aria-hidden="true">↗</span></a>
-            <a className={styles.textAction} href="#brand-story">See the proof</a>
-          </div>
+          <a className={cover.entryAction} href="/shop">
+            Enter wardrobe <span aria-hidden="true">↗</span>
+          </a>
         </div>
 
-        <div className={`${styles.wardrobe} ${editorial.coverWardrobe}`} aria-label="The JustUrbanWears wardrobe opening onto the current edit">
-          <div className={`${styles.wardrobeFrame} ${editorial.coverFrame}`}>
+        <div className={`${styles.wardrobe} ${cover.wardrobe}`} aria-label="The JustUrbanWears wardrobe opening onto the current edit">
+          <div className={`${styles.wardrobeFrame} ${cover.frame}`}>
             <span aria-hidden="true" className={styles.wardrobeGlow} />
             {heroMedia ? (
               <ProductImage eager media={heroMedia} />
@@ -186,31 +162,14 @@ export default async function Home() {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img alt="" height={1024} src={BRAND_ASSETS.icon.runtimeSvg} width={1024} />
             </span>
-            <span className={styles.wardrobeIndex}>01 / Cover</span>
-            <div aria-label="Issue highlights" className={editorial.coverLines}>
-              {COVER_LINES.map(([kicker, title]) => (
-                <span key={kicker}>
-                  <small>{kicker}</small>
-                  <strong>{title}</strong>
-                </span>
-              ))}
-            </div>
             {heroProduct ? (
-              <a className={styles.wardrobeCaption} href={`/shop/products/${heroProduct.slug}`}>
-                <span>
-                  <small>{approvedHero ? "Lulu approved" : "Current piece"}</small>
-                  <strong>{heroProduct.name}</strong>
-                </span>
+              <a className={`${styles.wardrobeCaption} ${cover.caption}`} href={`/shop/products/${heroProduct.slug}`}>
+                <span><strong>{heroProduct.name}</strong></span>
                 <b>{formatNaira(heroProduct.price)}</b>
               </a>
             ) : null}
           </div>
         </div>
-
-        <a aria-label="Continue to this issue" className={editorial.scrollCue} href="#issue-contents">
-          <span>Open the issue</span>
-          <i aria-hidden="true" />
-        </a>
       </section>
 
       <aside aria-labelledby="issue-contents-title" className={editorial.issueContents} id="issue-contents">
