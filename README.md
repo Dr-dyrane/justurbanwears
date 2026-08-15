@@ -85,7 +85,7 @@ Production smoke runs after successful production deployment events, on demand, 
 
 ## Routes
 
-Public: `/shop`, `/shop/search`, `/shop/products/[slug]`, `/shop/saved`, `/shop/bag`, `/shop/checkout`, `/shop/account`, `/shop/orders`, and `/shop/orders/[reference]`. The root route still redirects to `/shop` until the dedicated brand entrance ships.
+Public: `/` is the editorial brand entrance. Commerce begins at `/shop`, with `/shop/search`, `/shop/products/[slug]`, `/shop/saved`, `/shop/bag`, `/shop/checkout`, `/shop/account`, `/shop/orders`, and `/shop/orders/[reference]` supporting the complete customer journey.
 
 Protected Studio: `/studio`, `/studio/wardrobe`, `/studio/models`, `/studio/operations`, `/studio/orders`, and `/studio/orders/[reference]`, with compatibility routes under `/garments`, `/shoots`, and `/konan`.
 
