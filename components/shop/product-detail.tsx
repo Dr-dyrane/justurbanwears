@@ -212,7 +212,7 @@ export function ProductDetail() {
           <ProductMediaGallery product={product} />
         </div>
 
-        <aside className="shop-detail-copy" aria-label={`${product.name} buying information }>
+        <aside className="shop-detail-copy" aria-label={`${product.name} buying information`}>
           <div className="shop-detail-intro">
             <p className="shop-kicker">{product.category}</p>
             <div className="shop-detail-heading">
