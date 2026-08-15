@@ -25,4 +25,15 @@ jobs:
       - name: Install the locked dependency graph
         run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Validate repository, contracts, and production build
-        run: npm run verify
+        shell: bash
+        run: |
+          set -o pipefail
+          npm run verify 2>&1 | tee verify.log
+      - name: Preserve verification diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: verify-log-${{ github.run_id }}
+          path: verify.log
+          if-no-files-found: error
+          retention-days: 7
