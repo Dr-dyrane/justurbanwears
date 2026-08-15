@@ -84,6 +84,14 @@ export function ProductDetail() {
     .concat(products.filter((item) => item.slug !== product.slug && item.category !== product.category))
     .slice(0, 3);
 
+  const availabilityCopy = !product.availabilityConfirmed
+    ? { title: "Live availability is unavailable", note: "Checkout waits for confirmation." }
+    : product.availability === "AVAILABLE"
+      ? { title: "One piece available", note: "Bag does not reserve." }
+      : product.availability === "RESERVED"
+        ? { title: "Reserved", note: "Waiting on another shopper." }
+        : { title: "Sold", note: "Kept in the archive." };
+
   function addProduct() {
     if (!isOnline) {
       setNotice("Reconnect to add this piece to your bag.");
@@ -189,9 +197,13 @@ export function ProductDetail() {
       data-product-slug={product.slug}
     >
       <div className="shop-product-topline">
-        <Link href="/shop#discover"><ArrowLeft aria-hidden="true" size={15} strokeWidth={1.8} /> Back to the edit</Link>
+        <Link href="/shop#discover">
+          <ArrowLeft aria-hidden="true" size={15} strokeWidth={1.8} />
+          Back to the edit
+        </Link>
         <span>{product.drop} · {product.sku}</span>
       </div>
+
       <section className="shop-detail-hero">
         <div
           className="shop-detail-stage"
@@ -199,13 +211,16 @@ export function ProductDetail() {
         >
           <ProductMediaGallery product={product} />
         </div>
-        <div className="shop-detail-copy">
-          <p className="shop-kicker">{product.category} · {product.condition}</p>
-          <div className="shop-detail-heading">
-            <h1>{product.name}</h1>
+
+        <aside className="shop-detail-copy" aria-label={`${product.name} buying information }>
+          <div className="shop-detail-intro">
+            <p className="shop-kicker">{product.category}</p>
+            <div className="shop-detail-heading">
+              <h1>{product.name}</h1>
+              <p className="shop-detail-price">{formatNaira(product.price)}</p>
+            </div>
+            <p className="shop-detail-note">{product.note}</p>
           </div>
-          <p className="shop-detail-price">{formatNaira(product.price)}</p>
-          <p className="shop-detail-note">{product.note}</p>
 
           <div className="shop-detail-utility-row" aria-label="Product actions">
             {approvedModelTryout ? (
@@ -241,28 +256,32 @@ export function ProductDetail() {
             </button>
           </div>
 
-          <div className="shop-product-choice-row" id="shop-purchase">
+          <dl className="shop-detail-facts" id="shop-purchase">
+            <div>
+              <dt>Size</dt>
+              <dd>{product.taggedSize}</dd>
+              <small>{product.fit}</small>
+            </div>
+            <div>
+              <dt>Colour</dt>
+              <dd>{product.colour}</dd>
+              <small>{product.condition}</small>
+            </div>
             <div
-              className="shop-availability-panel"
+              className="shop-detail-availability"
               data-state={product.availabilityConfirmed ? product.availability.toLowerCase() : "unconfirmed"}
             >
-              <span aria-hidden="true" />
-              <div>
-                <strong>{!product.availabilityConfirmed ? "Live availability is unavailable" : product.availability === "AVAILABLE" ? "Available now" : product.availability === "RESERVED" ? "Reserved for another shopper" : "Sold — kept as an archive reference"}</strong>
-                <small>{!product.availabilityConfirmed ? "Checkout stays paused until the catalogue reconnects" : product.availability === "AVAILABLE" ? "One piece · bag does not reserve" : product.availability === "RESERVED" ? "Primary actions are paused" : "Archive only"}</small>
-              </div>
+              <dt>Availability</dt>
+              <dd><span aria-hidden="true" />{availabilityCopy.title}</dd>
+              <small>{availabilityCopy.note}</small>
             </div>
-            <fieldset className="shop-size-fieldset">
-              <legend>Size</legend>
-              <button aria-pressed="true" type="button">{product.taggedSize}</button>
-              <p>{product.fit}</p>
-            </fieldset>
-          </div>
+          </dl>
 
           {product.availabilityConfirmed && product.availability === "AVAILABLE" ? (
             <div className="shop-purchase-actions">
               <ShopActionButton
                 aria-busy={isPreparingCheckout}
+                data-experience-action="primary"
                 disabled={!isOnline || isPreparingCheckout}
                 onClick={buyProduct}
               >
@@ -285,28 +304,45 @@ export function ProductDetail() {
                   : "Sold"}
             </ShopActionButton>
           )}
+
           <p className="shop-action-note" aria-live="polite" role="status">{notice}</p>
-          <p className="shop-delivery-note">Lagos in 1–3 working days · Pickup and nationwide options at checkout.</p>
+          <p className="shop-delivery-note">Lagos 1–3 days · Pickup · Nationwide at checkout.</p>
           <ProductInfoSheet
             condition={product.condition}
             details={product.details}
             measurements={product.measurements}
             productName={product.name}
           />
-        </div>
+        </aside>
       </section>
 
       <section className="shop-detail-story">
         <div>
-          <p className="shop-kicker">Why it works</p>
-          <h2>Easy to understand. Better in motion.</h2>
+          <p className="shop-kicker">The piece</p>
+          <h2>Why it made the edit.</h2>
         </div>
         <p>{product.story}</p>
       </section>
 
       <section className="shop-related">
-        <div className="shop-section-title"><div><p className="shop-kicker">Keep looking</p><h2>More from the wardrobe.</h2></div></div>
-        <div className="shop-product-grid">{related.map((item) => <ProductCard key={item.slug} product={item} />)}</div>
+        <div className="shop-section-title">
+          <div>
+            <p className="shop-kicker">Continue</p>
+            <h2>Next pieces.</h2>
+          </div>
+        </div>
+        <div className="shop-product-grid">
+          {related.map((item, index) => (
+            <ProductCard
+              index={index + 1}
+              key={item.slug}
+              product={item}
+              showModelLink={false}
+              showStudyMark={false}
+              total={related.length}
+            />
+          ))}
+        </div>
       </section>
 
       {approvedModelTryout ? (

@@ -1,0 +1,185 @@
+/* Garment focus ---------------------------------------------------------- */
+
+.shop-product-page {
+  padding-bottom: clamp(88px, 11vw, 164px);
+}
+
+.shop-product-page .shop-product-topline {
+  align-items: center;
+  border-bottom: 1px solid color-mix(in srgb, var(--text, #241814) 13%, transparent);
+  color: var(--text-soft);
+  display: flex;
+  font-family: var(--font-code);
+  font-size: 12px;
+  font-weight: 650;
+  justify-content: space-between;
+  letter-spacing: 0.13em;
+  min-height: 68px;
+  text-transform: uppercase;
+}
+
+.shop-product-page .shop-product-topline a {
+  align-items: center;
+  display: inline-flex;
+  gap: 8px;
+  min-height: 44px;
+  transition:
+    color var(--juw-motion-hover-out, 200ms) var(--juw-ease-responsive, ease),
+    transform var(--juw-motion-hover-out, 200ms) var(--juw-ease-responsive, ease);
+}
+
+.shop-product-page .shop-product-topline a:hover,
+.shop-product-page .shop-product-topline a:focus-visible {
+  color: var(--juw-intent-strong, #b94b34);
+  transform: translateX(-2px);
+}
+
+.shop-product-page .shop-detail-hero {
+  align-items: start;
+  display: grid;
+  gap: clamp(44px, 6.4vw, 104px);
+  grid-template-columns: minmax(0, 1.34fr) minmax(340px, 0.66fr);
+  padding: clamp(28px, 4vw, 56px) 0 clamp(88px, 10vw, 148px);
+}
+
+.shop-product-page .shop-detail-stage {
+  min-width: 0;
+}
+
+.shop-product-page .shop-media-grid {
+  gap: clamp(10px, 1.2vw, 18px);
+}
+
+.shop-product-page .shop-media-open {
+  background: color-mix(in srgb, var(--juw-material-paper, #fffaf7) 90%, var(--juw-material-nude, #ead1c5));
+  border-radius: clamp(18px, 2.2vw, 30px);
+  box-shadow: 0 24px 64px rgba(43, 23, 18, 0.085);
+  overflow: hidden;
+}
+
+.shop-product-page .shop-media-open::after {
+  background: linear-gradient(180deg, transparent 73%, rgba(18, 10, 8, 0.32));
+}
+
+.shop-product-page .shop-media-open > img {
+  transform: scale(1.001);
+  transition:
+    filter var(--juw-motion-hover-out, 200ms) var(--juw-ease-responsive, ease),
+    transform var(--juw-motion-focus, 520ms) var(--juw-ease-focus, ease);
+}
+
+.shop-product-page .shop-media-open:hover > img,
+.shop-product-page .shop-media-open:focus-visible > img {
+  filter: saturate(1.025) contrast(1.012);
+  transform: scale(1.025);
+}
+
+.shop-product-page .shop-media-label {
+  bottom: 17px;
+  left: 18px;
+}
+
+.shop-product-page .shop-media-label small,
+.shop-product-page .shop-media-label strong {
+  font-size: 12px;
+}
+
+.shop-product-page .shop-media-expand {
+  backdrop-filter: blur(14px);
+  background: rgba(255, 250, 247, 0.82);
+  border: 0;
+  border-radius: 999px;
+  color: #241814;
+  height: 44px;
+  right: 14px;
+  top: 14px;
+  width: 44px;
+}
+
+.shop-product-page .shop-media-controls {
+  align-items: center;
+  color: var(--text-soft);
+  display: flex;
+  font-family: var(--font-code);
+  justify-content: space-between;
+  margin-top: 14px;
+}
+
+.shop-product-page .shop-media-controls button {
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+  height: 44px;
+  width: 44px;
+}
+
+.shop-product-page .shop-media-controls span {
+  align-items: center;
+  display: inline-flex;
+  gap: 10px;
+}
+
+.shop-product-page .shop-media-controls strong,
+.shop-product-page .shop-media-controls small {
+  font-size: 12px;
+}
+
+.shop-product-page .shop-detail-copy {
+  align-self: start;
+  display: grid;
+  gap: 0;
+  max-width: 560px;
+  padding-top: clamp(8px, 1.5vw, 20px);
+  position: sticky;
+  top: 108px;
+}
+
+.shop-product-page .shop-detail-intro {
+  display: grid;
+}
+
+.shop-product-page .shop-detail-intro > .shop-kicker {
+  color: var(--juw-intent-strong, #b94b34);
+  font-family: var(--font-code);
+  font-size: 12px;
+  font-weight: 720;
+  letter-spacing: 0.2em;
+  margin: 0 0 20px;
+  text-transform: uppercase;
+}
+
+.shop-product-page .shop-detail-heading {
+  display: grid;
+  gap: 22px;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.shop-product-page .shop-detail-heading h1 {
+  font-family: var(--font-display);
+  font-size: clamp(56px, 5.5vw, 92px);
+  font-weight: 500;
+  letter-spacing: -0.075em;
+  line-height: 0.84;
+  margin: 0;
+  max-width: 8.5ch;
+  text-wrap: balance;
+}
+
+.shop-product-page .shop-detail-price {
+  color: var(--text);
+  font-family: var(--font-code);
+  font-size: clamp(18px, 1.7vw, 24px);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  margin: 0;
+}
+
+.shop-product-page .shop-detail-note {
+  color: var(--text-soft);
+  font-family: var(--font-display);
+  font-size: clamp(20px, 2vw, 29px);
+  letter-spacing: -0.026em;
+  line-height: 1.34;
+  margin: clamp(24px, 3vw, 38px) 0 0;
+  max-width: 30ch;
+}

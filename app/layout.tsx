@@ -10,6 +10,7 @@ import { shopFocusTransitionScript } from "../lib/ui/shop-focus-transition-scrip
 import "./globals.css";
 import "./foundation.css";
 import "./shop-editorial-hero.css";
+import "./shop-product-detail.css";
 import "./experience-system.css";
 
 const siteUrl = new URL("https://www.justurbanwears.com");
