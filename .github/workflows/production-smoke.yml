@@ -27,4 +27,4 @@ jobs:
         with:
           node-version: 22.14.0
       - name: Verify the public production boundary
-        run: node scripts/smoke-deployment.mjs https://www.justurbanwears.com
+        run: npm run smoke:production && npm run smoke:experience
