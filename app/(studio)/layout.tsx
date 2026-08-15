@@ -1,4 +1,4 @@
-import "../studio-atelier.css";
+import studioAtelierCss from "../studio-atelier.css?raw";
 import { AppShell } from "../../components/studio/app-shell";
 import { requireStudioOperator } from "../../lib/server/studio-operator";
 import { StudioEngineError } from "../../lib/studio/engine/errors";
@@ -38,5 +38,10 @@ export default async function StudioLayout({ children }: { children: React.React
       throw error;
     }
   }
-  return <AppShell operator={operator}>{children}</AppShell>;
+  return (
+    <>
+      <style data-studio-atelier>{studioAtelierCss}</style>
+      <AppShell operator={operator}>{children}</AppShell>
+    </>
+  );
 }

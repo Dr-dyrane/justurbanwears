@@ -21,8 +21,9 @@ test("Atelier wave finishes desktop, mobile, dark, and reduced-motion treatment"
     read("app/(studio)/layout.tsx"),
   ]);
 
-  assert.doesNotMatch(rootLayout, /\.\/studio-atelier\.css/);
-  assert.match(studioLayout, /\.\.\/studio-atelier\.css/);
+  assert.doesNotMatch(rootLayout, /studio-atelier\.css/);
+  assert.match(studioLayout, /studio-atelier\.css\?raw/);
+  assert.match(studioLayout, /<style data-studio-atelier>\{studioAtelierCss\}<\/style>/);
   assert.match(css, /\.studio-attention-primary/);
   assert.match(css, /\.studio-garment-grid/);
   assert.match(css, /\.studio-model-layout/);
