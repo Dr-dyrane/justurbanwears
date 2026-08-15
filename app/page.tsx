@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ShopLink } from "../components/shop/atoms/shop-link";
 import { BRAND_ASSETS } from "../lib/brand/assets";
 import { formatNaira } from "../lib/shop/catalog";
 import type { ShopProduct, ShopProductMedia } from "../lib/shop/domain/entities";
@@ -106,10 +107,10 @@ export default async function Home() {
       <a className={styles.skipLink} href="#brand-story">Skip to the story</a>
 
       <header className={styles.header}>
-        <a aria-label="JustUrbanWears home" className={styles.wordmark} href="/">
+        <ShopLink aria-label="JustUrbanWears home" className={styles.wordmark} href="/">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img alt="JustUrbanWears" height={370} src={BRAND_ASSETS.wordmark.runtimeReverseSvg} width={1620} />
-        </a>
+        </ShopLink>
         <nav aria-label="Primary" className={styles.nav}>
           <a href="#brand-story">The idea</a>
           <a href="#drop-01">Drop 01</a>
@@ -233,7 +234,7 @@ export default async function Home() {
           <a href="/shop">Wardrobe</a>
           <a href="/shop/search">Search</a>
           <a href="/shop/account">Your space</a>
-          <a href="/auth/sign-in?returnTo=%2Fstudio">Studio sign in</a>
+          <ShopLink href="/auth/sign-in?returnTo=%2Fstudio">Studio sign in</ShopLink>
         </div>
         <p className={styles.footerNote}>Curated in Lagos · Built around one-off truth.</p>
       </footer>
