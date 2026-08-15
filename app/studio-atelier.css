@@ -1,0 +1,1569 @@
+/* justurban wears Studio — atelier resolution wave
+   One dominant task, quieter supporting context, image-led records. */
+
+.studio-shell,
+body:has(.studio-shell) {
+  --atelier-canvas: #efede8;
+  --atelier-canvas-strong: #e7e2dc;
+  --atelier-panel: rgba(255, 252, 248, 0.82);
+  --atelier-panel-strong: #fffaf6;
+  --atelier-panel-soft: rgba(255, 250, 246, 0.58);
+  --atelier-ink: #2b2420;
+  --atelier-muted: #766b64;
+  --atelier-faint: #9a8f88;
+  --atelier-accent: #dd6042;
+  --atelier-accent-deep: #b94730;
+  --atelier-accent-soft: rgba(221, 96, 66, 0.12);
+  --atelier-positive: #667356;
+  --atelier-positive-soft: rgba(102, 115, 86, 0.13);
+  --atelier-line: rgba(76, 58, 49, 0.09);
+  --atelier-shadow: 0 22px 64px rgba(57, 43, 36, 0.08);
+  --atelier-shadow-raised: 0 30px 88px rgba(48, 35, 29, 0.14);
+  --atelier-radius: 28px;
+  --atelier-radius-small: 18px;
+}
+
+html[data-theme="dark"] .studio-shell,
+html[data-theme="dark"] body:has(.studio-shell) {
+  --atelier-canvas: #0f0c0a;
+  --atelier-canvas-strong: #16110f;
+  --atelier-panel: rgba(28, 23, 20, 0.86);
+  --atelier-panel-strong: #201a17;
+  --atelier-panel-soft: rgba(31, 25, 22, 0.64);
+  --atelier-ink: #f3ede8;
+  --atelier-muted: #bdb2ab;
+  --atelier-faint: #8f847d;
+  --atelier-accent: #e28369;
+  --atelier-accent-deep: #f09a80;
+  --atelier-accent-soft: rgba(226, 131, 105, 0.16);
+  --atelier-positive: #a9b697;
+  --atelier-positive-soft: rgba(169, 182, 151, 0.13);
+  --atelier-line: rgba(255, 236, 226, 0.09);
+  --atelier-shadow: 0 24px 72px rgba(0, 0, 0, 0.24);
+  --atelier-shadow-raised: 0 34px 96px rgba(0, 0, 0, 0.36);
+}
+
+/* Wave 1 — quieter shell -------------------------------------------------- */
+
+.studio-shell .workspace {
+  background:
+    radial-gradient(circle at 78% -8%, color-mix(in srgb, var(--atelier-accent) 14%, transparent), transparent 31rem),
+    radial-gradient(circle at 9% 72%, color-mix(in srgb, var(--atelier-positive) 7%, transparent), transparent 27rem),
+    var(--atelier-canvas);
+}
+
+.studio-shell .page-canvas {
+  max-width: 1480px;
+  padding: clamp(36px, 4vw, 66px) clamp(22px, 4.6vw, 74px) 132px;
+}
+
+.studio-shell .studio-floating-nav {
+  background: color-mix(in srgb, var(--atelier-panel-strong) 78%, transparent);
+  border: 0;
+  box-shadow:
+    0 18px 52px rgba(51, 38, 31, 0.09),
+    inset 0 1px 0 color-mix(in srgb, white 72%, transparent);
+}
+
+html[data-theme="dark"] .studio-shell .studio-floating-nav {
+  box-shadow:
+    0 20px 58px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.07);
+}
+
+.studio-shell .studio-nav-links {
+  gap: 3px;
+}
+
+.studio-shell .studio-nav-links a {
+  background: transparent;
+  border: 0;
+  color: var(--atelier-muted);
+  min-height: 38px;
+  padding-inline: 13px;
+  transition:
+    background 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+.studio-shell .studio-nav-links a:hover {
+  background: var(--atelier-panel-soft);
+  color: var(--atelier-ink);
+  transform: translateY(-1px);
+}
+
+.studio-shell .studio-nav-links a.is-active {
+  background: var(--atelier-panel-strong);
+  box-shadow: 0 8px 22px rgba(53, 39, 32, 0.07);
+  color: var(--atelier-ink);
+}
+
+.studio-shell .studio-header-actions > a,
+.studio-shell .studio-header-actions > button {
+  border: 0;
+}
+
+.studio-shell .studio-ops-page,
+.studio-shell .studio-connected-orders-page {
+  color: var(--atelier-ink);
+  display: grid;
+  gap: clamp(42px, 5vw, 72px);
+  margin: 0 auto;
+  width: min(100%, 1320px);
+}
+
+.studio-shell .studio-ops-heading,
+.studio-shell .studio-ops-hero,
+.studio-shell .studio-connected-orders-heading {
+  align-items: flex-end;
+  display: flex;
+  gap: 28px;
+  justify-content: space-between;
+  margin: 0;
+}
+
+.studio-shell .studio-ops-heading > div:first-child,
+.studio-shell .studio-ops-hero > div:first-child,
+.studio-shell .studio-connected-orders-heading > div:first-child {
+  max-width: 820px;
+}
+
+.studio-shell .studio-ops-heading h1,
+.studio-shell .studio-ops-hero h1,
+.studio-shell .studio-connected-orders-heading h1 {
+  color: var(--atelier-ink);
+  font-family: var(--font-display);
+  font-size: clamp(48px, 6vw, 82px);
+  font-weight: 450;
+  letter-spacing: -0.055em;
+  line-height: 0.94;
+  margin: 0;
+}
+
+.studio-shell .studio-ops-heading p:last-child,
+.studio-shell .studio-ops-hero p:last-child,
+.studio-shell .studio-connected-orders-heading p:last-child {
+  color: var(--atelier-muted);
+  font-size: 14px;
+  line-height: 1.65;
+  margin: 18px 0 0;
+  max-width: 640px;
+}
+
+.studio-shell .eyebrow {
+  color: var(--atelier-accent);
+}
+
+.studio-shell .studio-segmented-view {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  display: flex;
+  gap: 5px;
+  justify-content: flex-start;
+  margin: -18px 0 0;
+  overflow-x: auto;
+  padding: 0;
+  scrollbar-width: none;
+}
+
+.studio-shell .studio-segmented-view::-webkit-scrollbar {
+  display: none;
+}
+
+.studio-shell .studio-segmented-view button {
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+  color: var(--atelier-muted);
+  flex: 0 0 auto;
+  min-height: 42px;
+  padding: 0 15px;
+  transition:
+    background 160ms ease,
+    box-shadow 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+.studio-shell .studio-segmented-view button:hover {
+  background: var(--atelier-panel-soft);
+  color: var(--atelier-ink);
+}
+
+.studio-shell .studio-segmented-view button.is-active {
+  background: var(--atelier-panel-strong);
+  box-shadow: 0 10px 28px rgba(53, 39, 32, 0.08);
+  color: var(--atelier-ink);
+}
+
+.studio-shell .studio-segmented-view button small {
+  background: var(--atelier-accent-soft);
+  border: 0;
+  color: var(--atelier-accent-deep);
+}
+
+.studio-shell .studio-stack-panel,
+.studio-shell .studio-operation-section,
+.studio-shell .studio-publishing-section {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
+}
+
+.studio-shell .studio-section-title {
+  align-items: flex-end;
+  display: flex;
+  gap: 24px;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.studio-shell .studio-section-title h2 {
+  color: var(--atelier-ink);
+  font-family: var(--font-display);
+  font-size: clamp(32px, 4vw, 52px);
+  font-weight: 450;
+  letter-spacing: -0.045em;
+  line-height: 1;
+  margin: 0;
+}
+
+.studio-shell .studio-section-title > span {
+  color: var(--atelier-faint);
+  font-size: 11px;
+  font-weight: 720;
+  letter-spacing: 0.04em;
+}
+
+.studio-shell .status-pill,
+.studio-shell .studio-private-chip,
+.studio-shell .studio-piece-stage {
+  border: 0;
+}
+
+.studio-shell .button {
+  border: 0;
+}
+
+.studio-shell .button-primary {
+  background: var(--atelier-ink);
+  box-shadow: 0 14px 34px rgba(43, 36, 32, 0.17);
+  color: var(--atelier-panel-strong);
+}
+
+.studio-shell .button-primary:hover {
+  background: color-mix(in srgb, var(--atelier-ink) 88%, var(--atelier-accent));
+}
+
+.studio-shell .button-secondary {
+  background: var(--atelier-panel-strong);
+  box-shadow: 0 10px 28px rgba(53, 39, 32, 0.07);
+  color: var(--atelier-ink);
+}
+
+/* Wave 2 — business home becomes a task-first atelier -------------------- */
+
+.studio-shell .studio-atelier-home {
+  gap: clamp(48px, 6vw, 86px);
+}
+
+.studio-shell .studio-atelier-hero {
+  align-items: flex-end;
+  display: grid;
+  gap: 32px;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.studio-shell .studio-atelier-hero-copy {
+  max-width: 900px;
+}
+
+.studio-shell .studio-atelier-hero h1 {
+  color: var(--atelier-ink);
+  font-family: var(--font-display);
+  font-size: clamp(56px, 7.2vw, 102px);
+  font-weight: 440;
+  letter-spacing: -0.065em;
+  line-height: 0.9;
+  margin: 0;
+  max-width: 900px;
+}
+
+.studio-shell .studio-atelier-hero-copy > p:last-child {
+  color: var(--atelier-muted);
+  font-size: clamp(14px, 1.4vw, 17px);
+  line-height: 1.65;
+  margin: 22px 0 0;
+  max-width: 620px;
+}
+
+.studio-shell .studio-atelier-hero-actions {
+  align-items: flex-end;
+  display: grid;
+  gap: 14px;
+  justify-items: end;
+}
+
+.studio-shell .studio-atelier-save-state {
+  align-items: center;
+  color: var(--atelier-faint);
+  display: inline-flex;
+  font-size: 10px;
+  font-weight: 720;
+  gap: 7px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.studio-shell .studio-atelier-save-state.is-saved {
+  color: var(--atelier-positive);
+}
+
+.studio-shell .studio-atelier-section-heading {
+  align-items: flex-end;
+  display: flex;
+  gap: 24px;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+
+.studio-shell .studio-atelier-section-heading h2 {
+  color: var(--atelier-ink);
+  font-family: var(--font-display);
+  font-size: clamp(34px, 4vw, 54px);
+  font-weight: 450;
+  letter-spacing: -0.045em;
+  line-height: 0.98;
+  margin: 0;
+}
+
+.studio-shell .studio-atelier-section-heading > span,
+.studio-shell .studio-atelier-section-heading > a {
+  align-items: center;
+  color: var(--atelier-faint);
+  display: inline-flex;
+  font-size: 11px;
+  font-weight: 720;
+  gap: 7px;
+}
+
+.studio-shell .studio-attention-layout {
+  align-items: stretch;
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(0, 1.48fr) minmax(300px, 0.72fr);
+}
+
+.studio-shell .studio-attention-primary {
+  align-items: center;
+  background:
+    radial-gradient(circle at 10% 16%, rgba(221, 96, 66, 0.22), transparent 20rem),
+    linear-gradient(145deg, #2f2824, #211c19);
+  border: 0;
+  border-radius: 34px;
+  box-shadow: var(--atelier-shadow-raised);
+  color: #fffaf6;
+  display: grid;
+  gap: clamp(20px, 3vw, 34px);
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  min-height: 270px;
+  overflow: hidden;
+  padding: clamp(26px, 4vw, 48px);
+  position: relative;
+  transition:
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+.studio-shell .studio-attention-primary::after {
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
+  content: "";
+  height: 1px;
+  left: 24px;
+  position: absolute;
+  right: 24px;
+  top: 0;
+}
+
+.studio-shell .studio-attention-primary:hover {
+  box-shadow: 0 38px 104px rgba(42, 30, 24, 0.24);
+  transform: translateY(-2px);
+}
+
+.studio-shell .studio-attention-primary.is-clear {
+  background:
+    radial-gradient(circle at 10% 16%, rgba(102, 115, 86, 0.24), transparent 20rem),
+    linear-gradient(145deg, #30342b, #22251f);
+}
+
+.studio-shell .studio-attention-primary-icon {
+  align-items: center;
+  background: var(--atelier-accent);
+  border-radius: 50%;
+  box-shadow: 0 16px 38px rgba(221, 96, 66, 0.3);
+  display: inline-flex;
+  height: 64px;
+  justify-content: center;
+  width: 64px;
+}
+
+.studio-shell .studio-attention-primary.is-clear .studio-attention-primary-icon {
+  background: var(--atelier-positive);
+  box-shadow: 0 16px 38px rgba(102, 115, 86, 0.28);
+}
+
+.studio-shell .studio-attention-primary-copy small {
+  color: rgba(255, 250, 246, 0.56);
+  display: block;
+  font-size: 9px;
+  font-weight: 780;
+  letter-spacing: 0.16em;
+  margin-bottom: 13px;
+  text-transform: uppercase;
+}
+
+.studio-shell .studio-attention-primary-copy h3 {
+  font-family: var(--font-display);
+  font-size: clamp(35px, 4.2vw, 60px);
+  font-weight: 450;
+  letter-spacing: -0.05em;
+  line-height: 0.98;
+  margin: 0;
+  max-width: 670px;
+}
+
+.studio-shell .studio-attention-primary-copy p {
+  color: rgba(255, 250, 246, 0.64);
+  font-size: 13px;
+  line-height: 1.65;
+  margin: 17px 0 0;
+  max-width: 560px;
+}
+
+.studio-shell .studio-attention-primary-action {
+  align-items: flex-end;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-width: 112px;
+  text-align: right;
+}
+
+.studio-shell .studio-attention-primary-action strong {
+  font-family: var(--font-display);
+  font-size: clamp(48px, 5vw, 76px);
+  font-weight: 430;
+  letter-spacing: -0.06em;
+  line-height: 0.85;
+}
+
+.studio-shell .studio-attention-primary-action span {
+  align-items: center;
+  color: rgba(255, 250, 246, 0.82);
+  display: inline-flex;
+  font-size: 11px;
+  font-weight: 760;
+  gap: 8px;
+}
+
+.studio-shell .studio-attention-queue {
+  display: grid;
+  gap: 10px;
+}
+
+.studio-shell .studio-attention-row,
+.studio-shell .studio-attention-clear {
+  align-items: center;
+  background: var(--atelier-panel);
+  border: 0;
+  border-radius: 22px;
+  box-shadow: var(--atelier-shadow);
+  color: var(--atelier-ink);
+  display: grid;
+  gap: 15px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  min-height: 82px;
+  padding: 16px 18px;
+}
+
+.studio-shell .studio-attention-clear {
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+.studio-shell .studio-attention-row {
+  transition:
+    background 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.studio-shell .studio-attention-row:hover {
+  background: var(--atelier-panel-strong);
+  box-shadow: 0 24px 68px rgba(55, 41, 34, 0.11);
+  transform: translateY(-1px);
+}
+
+.studio-shell .studio-attention-row > span:first-child,
+.studio-shell .studio-attention-clear > svg {
+  align-items: center;
+  background: var(--atelier-accent-soft);
+  border-radius: 14px;
+  color: var(--atelier-accent-deep);
+  display: inline-flex;
+  height: 42px;
+  justify-content: center;
+  padding: 0;
+  width: 42px;
+}
+
+.studio-shell .studio-attention-clear > svg {
+  background: var(--atelier-positive-soft);
+  color: var(--atelier-positive);
+  padding: 10px;
+}
+
+.studio-shell .studio-attention-row strong,
+.studio-shell .studio-attention-clear strong {
+  display: block;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.studio-shell .studio-attention-row small,
+.studio-shell .studio-attention-clear p {
+  color: var(--atelier-muted);
+  display: block;
+  font-size: 10px;
+  line-height: 1.45;
+  margin: 4px 0 0;
+}
+
+.studio-shell .studio-attention-row > em {
+  color: var(--atelier-accent-deep);
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-style: normal;
+}
+
+.studio-shell .studio-atelier-pulse {
+  background: var(--atelier-panel-soft);
+  border-radius: 30px;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, white 68%, transparent);
+  padding: clamp(24px, 3.2vw, 38px);
+}
+
+html[data-theme="dark"] .studio-shell .studio-atelier-pulse {
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.studio-shell .studio-pulse-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.studio-shell .studio-pulse-item {
+  background: transparent;
+  border: 0;
+  border-radius: 18px;
+  display: grid;
+  min-height: 112px;
+  padding: 14px 16px;
+  transition:
+    background 160ms ease,
+    transform 160ms ease;
+}
+
+.studio-shell .studio-pulse-item:hover {
+  background: var(--atelier-panel-soft);
+  transform: translateY(-1px);
+}
+
+.studio-shell .studio-pulse-item small {
+  color: var(--atelier-faint);
+  font-size: 9px;
+  font-weight: 780;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.studio-shell .studio-pulse-item strong {
+  align-self: end;
+  color: var(--atelier-ink);
+  font-family: var(--font-display);
+  font-size: clamp(40px, 4vw, 58px);
+  font-weight: 440;
+  letter-spacing: -0.055em;
+  line-height: 0.9;
+  margin-top: 18px;
+}
+
+.studio-shell .studio-pulse-item span {
+  color: var(--atelier-muted);
+  font-size: 10px;
+  margin-top: 8px;
+}
+
+.studio-shell .studio-recent-list {
+  display: grid;
+  gap: 10px;
+}
+
+.studio-shell .studio-recent-row {
+  align-items: center;
+  background: var(--atelier-panel);
+  border: 0;
+  border-radius: 22px;
+  box-shadow: var(--atelier-shadow);
+  display: grid;
+  gap: 18px;
+  grid-template-columns: 74px minmax(0, 1fr) auto;
+  min-height: 96px;
+  padding: 11px 16px 11px 11px;
+  transition:
+    background 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.studio-shell .studio-recent-row:hover {
+  background: var(--atelier-panel-strong);
+  box-shadow: 0 24px 68px rgba(55, 41, 34, 0.11);
+  transform: translateY(-1px);
+}
+
+.studio-shell .studio-recent-media {
+  align-items: center;
+  aspect-ratio: 1;
+  background: var(--atelier-canvas-strong);
+  border-radius: 16px;
+  display: inline-flex;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.studio-shell .studio-recent-media img {
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.studio-shell .studio-recent-copy small,
+.studio-shell .studio-recent-copy em {
+  color: var(--atelier-faint);
+  display: block;
+  font-size: 9px;
+  font-style: normal;
+  line-height: 1.45;
+}
+
+.studio-shell .studio-recent-copy strong {
+  display: block;
+  font-size: 14px;
+  margin: 4px 0;
+}
+
+.studio-shell .studio-recent-state {
+  align-items: center;
+  display: flex;
+  gap: 11px;
+}
+
+/* Wave 3 — wardrobe and model work become image-led ---------------------- */
+
+.studio-shell .studio-filter-bar {
+  align-items: center;
+  background: var(--atelier-panel-soft);
+  border: 0;
+  border-radius: 999px;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, white 65%, transparent);
+  display: flex;
+  gap: 4px;
+  margin-bottom: 26px;
+  max-width: 100%;
+  overflow-x: auto;
+  padding: 6px;
+  scrollbar-width: none;
+  width: fit-content;
+}
+
+.studio-shell .studio-filter-bar::-webkit-scrollbar {
+  display: none;
+}
+
+.studio-shell .studio-filter-bar button {
+  background: transparent;
+  border: 0;
+  border-radius: 999px;
+  color: var(--atelier-muted);
+  flex: 0 0 auto;
+  min-height: 38px;
+  padding-inline: 14px;
+}
+
+.studio-shell .studio-filter-bar button.is-active {
+  background: var(--atelier-ink);
+  box-shadow: 0 9px 22px rgba(43, 36, 32, 0.16);
+  color: var(--atelier-panel-strong);
+}
+
+.studio-shell .studio-filter-bar > span {
+  color: var(--atelier-faint);
+  flex: 0 0 auto;
+  font-size: 10px;
+  padding: 0 12px;
+}
+
+.studio-shell .studio-garment-grid {
+  display: grid;
+  gap: clamp(28px, 3vw, 42px) clamp(18px, 2.4vw, 32px);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.studio-shell .studio-garment-card {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+  padding: 0;
+}
+
+.studio-shell .studio-garment-visual {
+  aspect-ratio: 4 / 5;
+  background:
+    radial-gradient(circle at 70% 18%, color-mix(in srgb, var(--atelier-accent) 14%, transparent), transparent 11rem),
+    var(--atelier-canvas-strong);
+  border: 0;
+  border-radius: 28px;
+  box-shadow: var(--atelier-shadow);
+  overflow: hidden;
+  position: relative;
+  transition:
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+.studio-shell .studio-garment-card:hover .studio-garment-visual {
+  box-shadow: 0 30px 82px rgba(51, 37, 30, 0.14);
+  transform: translateY(-2px);
+}
+
+.studio-shell .studio-garment-visual > button,
+.studio-shell .studio-garment-visual > button img,
+.studio-shell .studio-garment-visual > img {
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.studio-shell .studio-garment-visual > span,
+.studio-shell .studio-garment-visual > small {
+  -webkit-backdrop-filter: blur(12px) saturate(130%);
+  backdrop-filter: blur(12px) saturate(130%);
+  background: rgba(25, 20, 18, 0.62);
+  border: 0;
+  border-radius: 999px;
+  color: #fffaf6;
+  font-size: 8px;
+  font-weight: 760;
+  letter-spacing: 0.08em;
+  padding: 7px 10px;
+  position: absolute;
+  text-transform: uppercase;
+  z-index: 2;
+}
+
+.studio-shell .studio-garment-visual > span {
+  left: 12px;
+  top: 12px;
+}
+
+.studio-shell .studio-garment-visual > small {
+  bottom: 12px;
+  left: 12px;
+}
+
+.studio-shell .studio-garment-body {
+  padding: 0 2px;
+}
+
+.studio-shell .studio-garment-disclosure {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  padding: 0;
+  text-align: left;
+  width: 100%;
+}
+
+.studio-shell .studio-garment-disclosure > span:first-child small {
+  color: var(--atelier-faint);
+  display: block;
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+.studio-shell .studio-garment-disclosure > span:first-child strong {
+  color: var(--atelier-ink);
+  display: block;
+  font-size: 14px;
+  line-height: 1.35;
+  margin: 4px 0;
+}
+
+.studio-shell .studio-piece-stage {
+  background: var(--atelier-panel-soft);
+  color: var(--atelier-muted);
+  font-size: 8px;
+  min-height: 26px;
+  padding-inline: 9px;
+}
+
+.studio-shell .studio-publishing-queue {
+  display: grid;
+  gap: 10px;
+}
+
+.studio-shell .studio-publishing-row {
+  align-items: center;
+  background: var(--atelier-panel);
+  border: 0;
+  border-radius: 20px;
+  box-shadow: var(--atelier-shadow);
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  min-height: 78px;
+  padding: 15px 18px;
+  text-align: left;
+  transition:
+    background 160ms ease,
+    transform 160ms ease;
+}
+
+.studio-shell .studio-publishing-row:hover {
+  background: var(--atelier-panel-strong);
+  transform: translateY(-1px);
+}
+
+.studio-shell .studio-model-layout {
+  align-items: start;
+  display: grid;
+  gap: clamp(22px, 3vw, 38px);
+  grid-template-columns: minmax(210px, 0.28fr) minmax(0, 1fr);
+}
+
+.studio-shell .studio-model-index {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
+  position: sticky;
+  top: 112px;
+}
+
+.studio-shell .studio-index-heading {
+  color: var(--atelier-faint);
+  margin-bottom: 12px;
+}
+
+.studio-shell .studio-model-list {
+  display: grid;
+  gap: 8px;
+}
+
+.studio-shell .studio-model-option,
+.studio-shell .studio-model-create {
+  background: transparent;
+  border: 0;
+  border-radius: 18px;
+  color: var(--atelier-ink);
+  min-height: 72px;
+  padding: 12px;
+  transition:
+    background 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.studio-shell .studio-model-option:hover,
+.studio-shell .studio-model-create:hover {
+  background: var(--atelier-panel-soft);
+  transform: translateY(-1px);
+}
+
+.studio-shell .studio-model-option.is-selected {
+  background: var(--atelier-panel-strong);
+  box-shadow: var(--atelier-shadow);
+}
+
+.studio-shell .studio-model-avatar {
+  background: var(--atelier-accent-soft);
+  border: 0;
+  color: var(--atelier-accent-deep);
+}
+
+.studio-shell .studio-model-stage {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  gap: clamp(20px, 3vw, 38px);
+  grid-template-columns: minmax(0, 1.12fr) minmax(320px, 0.88fr);
+  padding: 0;
+}
+
+.studio-shell .studio-model-portrait {
+  border: 0;
+  border-radius: 34px;
+  box-shadow: var(--atelier-shadow-raised);
+  min-height: min(760px, 74vh);
+  overflow: hidden;
+}
+
+.studio-shell .studio-model-approved-image {
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.studio-shell .studio-private-chip {
+  background: var(--atelier-positive-soft);
+  color: var(--atelier-positive);
+}
+
+/* Wave 4 — operations and orders resolve in one scan --------------------- */
+
+.studio-shell .studio-operation-summary {
+  background: var(--atelier-panel-soft);
+  border: 0;
+  border-radius: 28px;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, white 64%, transparent);
+  display: grid;
+  gap: 4px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: -20px 0 0;
+  padding: 12px;
+}
+
+.studio-shell .studio-operation-summary > div {
+  align-content: center;
+  background: transparent;
+  border: 0;
+  border-radius: 18px;
+  box-shadow: none;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  min-height: 88px;
+  padding: 14px;
+}
+
+.studio-shell .studio-operation-summary > div > span {
+  align-items: center;
+  background: var(--atelier-accent-soft);
+  border-radius: 13px;
+  color: var(--atelier-accent-deep);
+  display: inline-flex;
+  grid-row: 1 / span 2;
+  height: 40px;
+  justify-content: center;
+  margin-right: 12px;
+  width: 40px;
+}
+
+.studio-shell .studio-operation-summary strong {
+  color: var(--atelier-ink);
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: 450;
+  line-height: 1;
+}
+
+.studio-shell .studio-operation-summary small {
+  color: var(--atelier-muted);
+  font-size: 9px;
+  margin-top: 3px;
+}
+
+.studio-shell .studio-table,
+.studio-shell .studio-inventory-list {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  display: grid;
+  gap: 10px;
+}
+
+.studio-shell .studio-inventory-row-trigger {
+  align-items: center;
+  background: var(--atelier-panel);
+  border: 0;
+  border-radius: 22px;
+  box-shadow: var(--atelier-shadow);
+  display: grid;
+  gap: 18px;
+  grid-template-columns: 64px minmax(0, 1fr) minmax(120px, auto) auto;
+  min-height: 90px;
+  padding: 12px 16px 12px 12px;
+  text-align: left;
+  transition:
+    background 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+  width: 100%;
+}
+
+.studio-shell .studio-inventory-row-trigger:hover {
+  background: var(--atelier-panel-strong);
+  box-shadow: 0 24px 68px rgba(55, 41, 34, 0.11);
+  transform: translateY(-1px);
+}
+
+.studio-shell .studio-inventory-media {
+  align-items: center;
+  aspect-ratio: 1;
+  background: var(--atelier-canvas-strong);
+  border: 0;
+  border-radius: 15px;
+  display: inline-flex;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.studio-shell .studio-inventory-media img {
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.studio-shell .studio-inventory-copy small,
+.studio-shell .studio-inventory-copy em,
+.studio-shell .studio-inventory-stock small {
+  color: var(--atelier-faint);
+  display: block;
+  font-size: 9px;
+  font-style: normal;
+  line-height: 1.45;
+}
+
+.studio-shell .studio-inventory-copy strong,
+.studio-shell .studio-inventory-stock strong {
+  color: var(--atelier-ink);
+  display: block;
+  font-size: 12px;
+  margin: 4px 0;
+}
+
+.studio-shell .studio-inventory-action {
+  align-items: center;
+  display: flex;
+  gap: 9px;
+}
+
+.studio-shell .studio-operation-cards {
+  display: grid;
+  gap: 11px;
+  grid-template-columns: 1fr;
+}
+
+.studio-shell .studio-operation-card {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+.studio-shell .studio-operation-card-trigger {
+  background: var(--atelier-panel);
+  border: 0;
+  border-radius: 22px;
+  box-shadow: var(--atelier-shadow);
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(240px, 1fr) minmax(340px, 1.2fr) auto;
+  min-height: 108px;
+  padding: 20px 22px;
+  text-align: left;
+  transition:
+    background 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+  width: 100%;
+}
+
+.studio-shell .studio-operation-card-trigger:hover:not(:disabled) {
+  background: var(--atelier-panel-strong);
+  box-shadow: 0 24px 68px rgba(55, 41, 34, 0.11);
+  transform: translateY(-1px);
+}
+
+.studio-shell .studio-card-heading h3 {
+  color: var(--atelier-ink);
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 450;
+  letter-spacing: -0.035em;
+  margin: 4px 0 0;
+}
+
+.studio-shell .studio-operation-card dl {
+  align-items: start;
+  display: grid;
+  gap: 15px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+}
+
+.studio-shell .studio-operation-card dt {
+  color: var(--atelier-faint);
+  font-size: 8px;
+  font-weight: 760;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.studio-shell .studio-operation-card dd {
+  color: var(--atelier-ink);
+  font-size: 10px;
+  margin: 5px 0 0;
+}
+
+.studio-shell .studio-operation-card-open {
+  align-items: center;
+  align-self: center;
+  color: var(--atelier-accent-deep);
+  display: inline-flex;
+  font-size: 10px;
+  font-weight: 760;
+  gap: 5px;
+}
+
+.studio-shell .studio-connected-orders-page {
+  max-width: 1320px;
+}
+
+.studio-shell .studio-connected-orders-heading > span {
+  color: var(--atelier-faint);
+  font-size: 11px;
+  font-weight: 720;
+}
+
+.studio-shell .studio-connected-order-list {
+  display: grid;
+  gap: 12px;
+}
+
+.studio-shell .studio-connected-order-card {
+  align-items: center;
+  background: var(--atelier-panel);
+  border: 0;
+  border-radius: 24px;
+  box-shadow: var(--atelier-shadow);
+  display: grid;
+  gap: 22px;
+  grid-template-columns: minmax(220px, 1.05fr) minmax(330px, 1.2fr) minmax(210px, 0.72fr) auto;
+  min-height: 132px;
+  padding: 22px 24px;
+  transition:
+    background 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.studio-shell .studio-connected-order-card:hover {
+  background: var(--atelier-panel-strong);
+  box-shadow: 0 26px 76px rgba(55, 41, 34, 0.12);
+  transform: translateY(-1px);
+}
+
+.studio-shell .studio-connected-order-reference h2 {
+  color: var(--atelier-ink);
+  font-family: var(--font-display);
+  font-size: 26px;
+  font-weight: 450;
+  letter-spacing: -0.04em;
+  line-height: 1.05;
+  margin: 5px 0 7px;
+}
+
+.studio-shell .studio-connected-order-reference small,
+.studio-shell .studio-connected-order-reference p,
+.studio-shell .studio-connected-order-next small,
+.studio-shell .studio-connected-order-next time {
+  color: var(--atelier-faint);
+  font-size: 9px;
+}
+
+.studio-shell .studio-connected-order-card dl {
+  display: grid;
+  gap: 13px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 0;
+}
+
+.studio-shell .studio-connected-order-card dt {
+  color: var(--atelier-faint);
+  font-size: 8px;
+  font-weight: 760;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.studio-shell .studio-connected-order-card dd {
+  color: var(--atelier-ink);
+  font-size: 10px;
+  margin: 5px 0 0;
+}
+
+.studio-shell .studio-connected-order-next {
+  background: var(--atelier-accent-soft);
+  border-radius: 17px;
+  color: var(--atelier-accent-deep);
+  display: grid;
+  gap: 5px;
+  padding: 13px 15px;
+}
+
+.studio-shell .studio-connected-order-next strong {
+  font-size: 11px;
+}
+
+.studio-shell .studio-inventory-decision-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.studio-shell .studio-inventory-decision {
+  background: var(--atelier-panel-soft);
+  border: 0;
+  border-radius: 18px;
+  color: var(--atelier-ink);
+  min-height: 76px;
+  transition:
+    background 160ms ease,
+    transform 160ms ease;
+}
+
+.studio-shell .studio-inventory-decision:hover {
+  background: var(--atelier-panel-strong);
+  transform: translateY(-1px);
+}
+
+.studio-shell .studio-inventory-confirmation {
+  background: var(--atelier-accent-soft);
+  border: 0;
+  border-radius: 20px;
+}
+
+.studio-shell .studio-pager {
+  color: var(--atelier-faint);
+  margin-top: 24px;
+}
+
+.studio-shell .studio-pager button {
+  background: var(--atelier-panel-strong);
+  border: 0;
+  box-shadow: 0 8px 22px rgba(53, 39, 32, 0.07);
+}
+
+/* Guarded sheets retain safety, but visually read as focused work -------- */
+
+.studio-task-sheet {
+  background: transparent;
+  border: 0;
+  padding: 0;
+}
+
+.studio-task-sheet::backdrop {
+  -webkit-backdrop-filter: blur(14px) saturate(90%);
+  backdrop-filter: blur(14px) saturate(90%);
+  background: rgba(20, 15, 13, 0.48);
+}
+
+.studio-task-sheet .studio-task-sheet-frame {
+  background: var(--atelier-panel-strong);
+  border: 0;
+  box-shadow: 0 38px 120px rgba(25, 18, 15, 0.28);
+}
+
+.studio-task-sheet .studio-task-sheet-header {
+  background: color-mix(in srgb, var(--atelier-panel-strong) 86%, transparent);
+  border: 0;
+  box-shadow: inset 0 -1px 0 var(--atelier-line);
+}
+
+.studio-task-sheet .studio-icon-action {
+  background: var(--atelier-panel-soft);
+  border: 0;
+}
+
+/* Responsive completion -------------------------------------------------- */
+
+@media (max-width: 1120px) {
+  .studio-shell .studio-attention-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .studio-shell .studio-attention-queue {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .studio-shell .studio-operation-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .studio-shell .studio-operation-card-trigger,
+  .studio-shell .studio-connected-order-card {
+    grid-template-columns: minmax(220px, 1fr) minmax(0, 1.25fr) auto;
+  }
+
+  .studio-shell .studio-connected-order-next {
+    grid-column: 1 / -2;
+  }
+
+  .studio-shell .studio-connected-order-card > svg {
+    grid-column: -2 / -1;
+    grid-row: 1 / span 2;
+  }
+}
+
+@media (max-width: 900px) {
+  .studio-shell .page-canvas {
+    padding: 30px 20px 142px;
+  }
+
+  .studio-shell .studio-ops-heading,
+  .studio-shell .studio-ops-hero,
+  .studio-shell .studio-connected-orders-heading,
+  .studio-shell .studio-atelier-hero {
+    align-items: start;
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .studio-shell .studio-atelier-hero-actions {
+    align-items: center;
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+  }
+
+  .studio-shell .studio-garment-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .studio-shell .studio-model-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .studio-shell .studio-model-index {
+    position: static;
+  }
+
+  .studio-shell .studio-model-list {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+
+  .studio-shell .studio-model-list::-webkit-scrollbar {
+    display: none;
+  }
+
+  .studio-shell .studio-model-option {
+    flex: 0 0 min(270px, 78vw);
+    scroll-snap-align: start;
+  }
+
+  .studio-shell .studio-model-stage {
+    grid-template-columns: 1fr;
+  }
+
+  .studio-shell .studio-model-portrait {
+    min-height: min(720px, 76vh);
+  }
+
+  .studio-shell .studio-operation-card-trigger,
+  .studio-shell .studio-connected-order-card {
+    grid-template-columns: 1fr;
+  }
+
+  .studio-shell .studio-connected-order-next,
+  .studio-shell .studio-connected-order-card > svg {
+    grid-column: auto;
+    grid-row: auto;
+  }
+}
+
+@media (max-width: 620px) {
+  .studio-shell .page-canvas {
+    padding: 24px 14px 138px;
+  }
+
+  .studio-shell .studio-ops-page,
+  .studio-shell .studio-connected-orders-page,
+  .studio-shell .studio-atelier-home {
+    gap: 48px;
+  }
+
+  .studio-shell .studio-ops-heading h1,
+  .studio-shell .studio-ops-hero h1,
+  .studio-shell .studio-connected-orders-heading h1,
+  .studio-shell .studio-atelier-hero h1 {
+    font-size: clamp(44px, 14vw, 64px);
+  }
+
+  .studio-shell .studio-atelier-hero-actions {
+    align-items: stretch;
+    display: grid;
+    justify-items: stretch;
+  }
+
+  .studio-shell .studio-atelier-save-state {
+    justify-content: flex-start;
+  }
+
+  .studio-shell .studio-attention-primary {
+    align-items: start;
+    grid-template-columns: 1fr;
+    min-height: 0;
+    padding: 26px 22px;
+  }
+
+  .studio-shell .studio-attention-primary-icon {
+    height: 52px;
+    width: 52px;
+  }
+
+  .studio-shell .studio-attention-primary-action {
+    align-items: center;
+    flex-direction: row;
+    margin-top: 10px;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .studio-shell .studio-attention-primary-action strong {
+    font-size: 48px;
+  }
+
+  .studio-shell .studio-attention-queue {
+    grid-template-columns: 1fr;
+  }
+
+  .studio-shell .studio-pulse-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .studio-shell .studio-pulse-item {
+    grid-template-columns: minmax(0, 1fr) auto;
+    min-height: 72px;
+  }
+
+  .studio-shell .studio-pulse-item strong {
+    align-self: center;
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    margin: 0;
+  }
+
+  .studio-shell .studio-pulse-item span {
+    grid-column: 1;
+  }
+
+  .studio-shell .studio-recent-row {
+    gap: 13px;
+    grid-template-columns: 62px minmax(0, 1fr) auto;
+  }
+
+  .studio-shell .studio-recent-state .status-pill {
+    display: none;
+  }
+
+  .studio-shell .studio-garment-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .studio-shell .studio-garment-visual {
+    aspect-ratio: 4 / 5;
+  }
+
+  .studio-shell .studio-operation-summary {
+    grid-template-columns: 1fr 1fr;
+    padding: 8px;
+  }
+
+  .studio-shell .studio-operation-summary > div {
+    grid-template-columns: 1fr;
+    min-height: 96px;
+  }
+
+  .studio-shell .studio-operation-summary > div > span {
+    grid-row: auto;
+    height: 34px;
+    margin: 0 0 10px;
+    width: 34px;
+  }
+
+  .studio-shell .studio-inventory-row-trigger {
+    gap: 12px;
+    grid-template-columns: 56px minmax(0, 1fr) auto;
+  }
+
+  .studio-shell .studio-inventory-stock {
+    display: none;
+  }
+
+  .studio-shell .studio-operation-card-trigger {
+    padding: 18px;
+  }
+
+  .studio-shell .studio-operation-card dl,
+  .studio-shell .studio-connected-order-card dl {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .studio-shell .studio-connected-order-card {
+    padding: 18px;
+  }
+
+  .studio-shell .studio-model-portrait {
+    border-radius: 26px;
+    min-height: 64vh;
+  }
+
+  .studio-shell .studio-section-title,
+  .studio-shell .studio-atelier-section-heading {
+    align-items: flex-start;
+  }
+
+  .studio-shell .studio-section-title > span,
+  .studio-shell .studio-atelier-section-heading > span {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .studio-shell *,
+  .studio-shell *::before,
+  .studio-shell *::after,
+  .studio-task-sheet *,
+  .studio-task-sheet *::before,
+  .studio-task-sheet *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
