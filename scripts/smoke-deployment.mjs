@@ -44,7 +44,7 @@ await htmlCheck("brand entrance", "/", [
   ["brand entrance missing", (body) => body.includes('data-brand-entrance="justurbanwears"')],
   ["brand proposition missing", (body) => body.includes("Clothes deserve") && body.includes("more than one")],
   ["wardrobe handoff missing", (body) => body.includes('href="/shop"') && body.includes("Enter the wardrobe")],
-  ["garment truth story missing", (body) => body.includes("A complete digital identity") && body.includes("Human reviewed")],
+  ["garment truth story missing", (body) => body.includes("Fully seen") && body.includes("Reviewed frames") && body.includes("AI disclosed")],
   ["malformed metadata", (body) => !body.includes("[object Object]")],
 ]);
 await htmlCheck("shop shell", "/shop", [
