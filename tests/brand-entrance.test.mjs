@@ -22,7 +22,7 @@ async function renderRoot() {
   );
 }
 
-test("publishes the scan-first editorial brand entrance at the root", async () => {
+test("publishes the restrained editorial brand entrance at the root", async () => {
   const response = await renderRoot();
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
@@ -32,7 +32,7 @@ test("publishes the scan-first editorial brand entrance at the root", async () =
   assert.match(html, /Clothes deserve/);
   assert.match(html, /more than one/);
   assert.match(html, /first impression/);
-  assert.match(html, /Enter the wardrobe/);
+  assert.match(html, /Enter wardrobe/);
   assert.match(html, /Inside/);
   assert.match(html, /Style changes hands/);
   assert.match(html, /One piece/);
