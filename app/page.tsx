@@ -8,6 +8,7 @@ import {
   selectProductGalleryMedia,
 } from "../lib/shop/model-tryout";
 import { getServerShopProducts } from "../lib/shop/server-catalog";
+import editorial from "./brand-editorial.module.css";
 import styles from "./brand-home.module.css";
 
 export const dynamic = "force-dynamic";
@@ -28,6 +29,19 @@ const PROCESS_STEPS = [
   ["04", "Publish", "Lulu reviews every public frame."],
   ["05", "Reserve", "One piece can have only one active buyer."],
   ["06", "Deliver", "The digital identity follows the real order."],
+] as const;
+
+const ISSUE_CONTENTS = [
+  ["01", "Cover story", "A second first impression", "#cover-story"],
+  ["02", "Garment truth", "How one piece becomes public", "#brand-story"],
+  ["03", "Curator’s note", "The point of view behind the edit", "#curators-note"],
+  ["04", "Drop 01", "The public wardrobe", "#drop-01"],
+] as const;
+
+const COVER_LINES = [
+  ["The Lagos edit", "One piece. One chance."],
+  ["Garment truth", "Every public frame reviewed."],
+  ["Issue 01", "Independent fashion, 2026."],
 ] as const;
 
 function availabilityLabel(product: ShopProduct) {
@@ -65,24 +79,26 @@ function ProductImage({
   );
 }
 
-function ProductCard({ product }: { product: ShopProduct }) {
+function ProductCard({ product, index }: { product: ShopProduct; index: number }) {
   const media = selectProductGalleryMedia(product)[0];
 
   return (
     <a
       aria-label={`View ${product.name}`}
-      className={styles.productCard}
+      className={`${styles.productCard} ${editorial.editorialProductCard}`}
       data-availability={product.availability.toLowerCase()}
       href={`/shop/products/${product.slug}`}
     >
       <span className={styles.productImage}>
         {media ? <ProductImage media={media} /> : <span aria-hidden="true" className={styles.productFallback} />}
+        <span aria-hidden="true" className={editorial.productNumber}>0{index + 1}</span>
         <span className={styles.productStatus}>{availabilityLabel(product)}</span>
       </span>
       <span className={styles.productMeta}>
         <span>
           <small>{product.category} · {product.taggedSize}</small>
           <strong>{product.name}</strong>
+          <span className={editorial.productAction}>View the piece <span aria-hidden="true">↗</span></span>
         </span>
         <b>{formatNaira(product.price)}</b>
       </span>
@@ -101,27 +117,46 @@ export default async function Home() {
   const heroMedia = approvedHero?.frame ?? (heroProduct ? selectProductGalleryMedia(heroProduct)[0] : undefined);
   const evidenceMedia = heroProduct ? selectProductGalleryMedia(heroProduct).slice(0, 3) : [];
   const dropProducts = publicEdit.slice(0, 4);
+  const editorialProduct = publicEdit.find((product) => (
+    product.slug !== heroProduct?.slug && resolveApprovedModelTryout(product.modelTryout)
+  )) ?? heroProduct;
+  const approvedEditorial = editorialProduct
+    ? resolveApprovedModelTryout(editorialProduct.modelTryout)
+    : null;
+  const editorialGallery = editorialProduct ? selectProductGalleryMedia(editorialProduct) : [];
+  const editorialMedia = approvedEditorial?.frame ?? editorialGallery[1] ?? editorialGallery[0];
 
   return (
-    <main className={styles.page} data-brand-entrance="justurbanwears">
-      <a className={styles.skipLink} href="#brand-story">Skip to the story</a>
+    <main className={`${styles.page} ${editorial.pageAtmosphere}`} data-brand-entrance="justurbanwears">
+      <a className={styles.skipLink} href="#issue-contents">Skip to this issue</a>
 
-      <header className={styles.header}>
+      <header className={`${styles.header} ${editorial.magazineHeader}`}>
         <ShopLink aria-label="JustUrbanWears home" className={styles.wordmark} href="/">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img alt="JustUrbanWears" height={370} src={BRAND_ASSETS.wordmark.runtimeReverseSvg} width={1620} />
         </ShopLink>
         <nav aria-label="Primary" className={styles.nav}>
           <a href="#brand-story">The idea</a>
+          <a href="#curators-note">Lulu’s note</a>
           <a href="#drop-01">Drop 01</a>
           <a className={styles.navAction} href="/shop">Enter shop <span aria-hidden="true">↗</span></a>
         </nav>
       </header>
 
-      <section aria-labelledby="brand-hero-title" className={styles.hero}>
+      <section aria-labelledby="brand-hero-title" className={`${styles.hero} ${editorial.coverHero}`}>
+        <div aria-hidden="true" className={editorial.coverMasthead}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img alt="" height={370} src={BRAND_ASSETS.wordmark.runtimeReverseSvg} width={1620} />
+        </div>
+
+        <div aria-hidden="true" className={editorial.issueRail}>
+          <span>Issue 01</span>
+          <span>Lagos · 2026</span>
+        </div>
+
         <div className={styles.heroCopy}>
-          <p className={styles.eyebrow}>JustUrbanWears · Lagos · Issue 01</p>
-          <h1 id="brand-hero-title">
+          <p className={styles.eyebrow}>The independent fashion issue · Lagos · Vol. 01</p>
+          <h1 className={editorial.coverTitle} id="brand-hero-title">
             Clothes deserve
             <span>more than one</span>
             first impression.
@@ -131,7 +166,7 @@ export default async function Home() {
           </p>
           <div className={styles.heroActions}>
             <a className={styles.primaryAction} href="/shop">Enter the wardrobe <span aria-hidden="true">↗</span></a>
-            <a className={styles.textAction} href="#brand-story">See how the piece becomes public</a>
+            <a className={styles.textAction} href="#brand-story">Read the cover story</a>
           </div>
           <dl className={styles.heroFacts}>
             <div><dt>Inventory</dt><dd>One physical piece</dd></div>
@@ -140,8 +175,8 @@ export default async function Home() {
           </dl>
         </div>
 
-        <div className={styles.wardrobe} aria-label="The JustUrbanWears wardrobe opening onto the current edit">
-          <div className={styles.wardrobeFrame}>
+        <div className={`${styles.wardrobe} ${editorial.coverWardrobe}`} aria-label="The JustUrbanWears wardrobe opening onto the current edit">
+          <div className={`${styles.wardrobeFrame} ${editorial.coverFrame}`}>
             <span aria-hidden="true" className={styles.wardrobeGlow} />
             {heroMedia ? (
               <ProductImage eager media={heroMedia} />
@@ -154,7 +189,15 @@ export default async function Home() {
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img alt="" height={1024} src={BRAND_ASSETS.icon.runtimeSvg} width={1024} />
             </span>
-            <span className={styles.wardrobeIndex}>01 / The wardrobe</span>
+            <span className={styles.wardrobeIndex}>01 / The cover</span>
+            <div aria-label="Issue highlights" className={editorial.coverLines}>
+              {COVER_LINES.map(([kicker, title]) => (
+                <span key={kicker}>
+                  <small>{kicker}</small>
+                  <strong>{title}</strong>
+                </span>
+              ))}
+            </div>
             {heroProduct ? (
               <a className={styles.wardrobeCaption} href={`/shop/products/${heroProduct.slug}`}>
                 <span>
@@ -166,15 +209,39 @@ export default async function Home() {
             ) : null}
           </div>
         </div>
+
+        <a aria-label="Continue to this issue" className={editorial.scrollCue} href="#issue-contents">
+          <span>Scroll through the issue</span>
+          <i aria-hidden="true" />
+        </a>
       </section>
 
-      <section aria-labelledby="manifesto-title" className={styles.manifesto}>
+      <aside aria-labelledby="issue-contents-title" className={editorial.issueContents} id="issue-contents">
+        <div className={editorial.contentsLead}>
+          <p>JustUrbanWears · Issue 01</p>
+          <h2 id="issue-contents-title">In this issue.</h2>
+        </div>
+        <ol className={editorial.contentsList}>
+          {ISSUE_CONTENTS.map(([number, section, title, href]) => (
+            <li key={number}>
+              <a href={href}>
+                <span>{number}</span>
+                <small>{section}</small>
+                <strong>{title}</strong>
+                <i aria-hidden="true">↘</i>
+              </a>
+            </li>
+          ))}
+        </ol>
+      </aside>
+
+      <section aria-labelledby="manifesto-title" className={`${styles.manifesto} ${editorial.coverStory}`} id="cover-story">
         <p>From Lulu’s wardrobe, back into the city.</p>
         <h2 id="manifesto-title">Worn once. Chosen again.</h2>
         <span>Not mass inventory. Not imaginary fashion. One real garment at a time.</span>
       </section>
 
-      <section aria-labelledby="brand-story-title" className={styles.story} id="brand-story">
+      <section aria-labelledby="brand-story-title" className={`${styles.story} ${editorial.storyRefinement}`} id="brand-story">
         <div className={styles.storyIntro}>
           <p className={styles.sectionIndex}>02 / Garment truth</p>
           <div>
@@ -187,7 +254,7 @@ export default async function Home() {
 
         <div className={styles.evidenceGrid}>
           {evidenceMedia.map((media, index) => (
-            <figure className={styles.evidenceFrame} key={`${media.id}-${index}`}>
+            <figure className={`${styles.evidenceFrame} ${editorial.editorialReveal}`} key={`${media.id}-${index}`}>
               <ProductImage media={media} />
               <figcaption>
                 <span><small>0{index + 1}</small><strong>{media.label}</strong></span>
@@ -207,10 +274,45 @@ export default async function Home() {
         </ol>
       </section>
 
-      <section aria-labelledby="drop-title" className={styles.drop} id="drop-01">
+      <section aria-labelledby="curators-note-title" className={editorial.curator} id="curators-note">
+        <div className={editorial.curatorMedia}>
+          <div className={editorial.curatorImage}>
+            {editorialMedia ? (
+              <ProductImage media={editorialMedia} />
+            ) : (
+              <span aria-hidden="true" className={styles.heroFallback} />
+            )}
+          </div>
+          {editorialProduct ? (
+            <a className={editorial.editorialPlate} href={`/shop/products/${editorialProduct.slug}`}>
+              <span><small>Editorial plate 04</small><strong>{editorialProduct.name}</strong></span>
+              <em>{availabilityLabel(editorialProduct)}</em>
+            </a>
+          ) : null}
+        </div>
+
+        <div className={editorial.curatorCopy}>
+          <p className={`${styles.sectionIndex} ${editorial.curatorIndex}`}>03 / Curator’s note</p>
+          <h2 id="curators-note-title">Style does not expire when ownership changes.</h2>
+          <div className={editorial.curatorBody}>
+            <p><span className={editorial.dropCap}>J</span>ustUrbanWears begins with a personal wardrobe and a simple belief: a piece can have another life without losing the truth of its first one.</p>
+            <p>Each drop is edited, not filled. Lulu chooses the garment, reviews every public frame and releases it only when the digital story still matches the real piece.</p>
+          </div>
+          <div className={editorial.byline}>
+            <span aria-hidden="true">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img alt="" height={1024} src={BRAND_ASSETS.icon.runtimeSvg} width={1024} />
+            </span>
+            <p><strong>Lulu</strong><small>Founder & curator · Lagos</small></p>
+          </div>
+          <a className={editorial.curatorAction} href="/shop">Meet the current edit <span aria-hidden="true">↗</span></a>
+        </div>
+      </section>
+
+      <section aria-labelledby="drop-title" className={`${styles.drop} ${editorial.dropRefinement}`} id="drop-01">
         <div className={styles.dropHeader}>
           <div>
-            <p className={styles.sectionIndex}>03 / The public wardrobe</p>
+            <p className={styles.sectionIndex}>04 / The public wardrobe</p>
             <h2 id="drop-title">Drop 01.</h2>
           </div>
           <div>
@@ -220,11 +322,13 @@ export default async function Home() {
         </div>
 
         <div className={styles.productGrid}>
-          {dropProducts.map((product) => <ProductCard key={product.slug} product={product} />)}
+          {dropProducts.map((product, index) => (
+            <ProductCard index={index} key={product.slug} product={product} />
+          ))}
         </div>
       </section>
 
-      <footer className={styles.footer}>
+      <footer className={`${styles.footer} ${editorial.footerRefinement}`}>
         <div>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img alt="JustUrbanWears" height={370} src={BRAND_ASSETS.wordmark.runtimeReverseSvg} width={1620} />
@@ -236,7 +340,13 @@ export default async function Home() {
           <a href="/shop/account">Your space</a>
           <ShopLink href="/auth/sign-in?returnTo=%2Fstudio">Studio sign in</ShopLink>
         </div>
-        <p className={styles.footerNote}>Curated in Lagos · Built around one-off truth.</p>
+        <div aria-label="Issue credits" className={editorial.colophon}>
+          <p><small>Curated by</small><strong>Lulu</strong></p>
+          <p><small>Digital direction</small><strong>Dyrane</strong></p>
+          <p><small>Edition</small><strong>Lagos · 2026</strong></p>
+          <p><small>Issue</small><strong>Vol. 01</strong></p>
+        </div>
+        <p className={`${styles.footerNote} ${editorial.footerNoteRefinement}`}>Curated in Lagos · Built around one-off truth.</p>
       </footer>
     </main>
   );
