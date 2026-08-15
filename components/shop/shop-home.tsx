@@ -43,6 +43,7 @@ export function ShopHome() {
       return products.indexOf(left) - products.indexOf(right);
     });
   }, [filters, products, query]);
+
   const dropProducts = products.filter((product) => product.availability === "AVAILABLE");
   const heroProduct = dropProducts.find((product) => resolveApprovedModelTryout(product.modelTryout))
     ?? dropProducts[0]
@@ -55,6 +56,7 @@ export function ShopHome() {
   const displayedProducts = !isRefining && heroProduct
     ? filtered.filter((product) => product.slug !== heroProduct.slug)
     : filtered;
+  const totalDisplayCount = displayedProducts.length;
 
   return (
     <div className="shop-home">
@@ -112,18 +114,19 @@ export function ShopHome() {
           </div>
 
           <span aria-hidden="true" className="shop-editorial-cover-veil" />
-          <span aria-hidden="true" className="shop-editorial-cover-wordmark">JUW</span>
-          <span aria-hidden="true" className="shop-editorial-cover-folio">Drop 01 / Lagos</span>
+          <span aria-hidden="true" className="shop-editorial-cover-folio">Drop 01 · Lagos</span>
 
           <div className="shop-editorial-cover-copy">
-            <p className="shop-editorial-cover-kicker">Just Urban Wears · Issue 01</p>
+            <p className="shop-editorial-cover-kicker">Just Urban Wears</p>
             <h1 id="shop-hero-title">
-              <span>Define</span>
-              <em>urban.</em>
+              <span>One</span>
+              <em>of one.</em>
             </h1>
-            <p className="shop-editorial-cover-lede">One-off womenswear from Lulu’s wardrobe.</p>
+            <p className="shop-editorial-cover-lede">
+              {dropProducts.length ? `${dropProducts.length} pieces. No restocks.` : "New pieces soon."}
+            </p>
             <span className="shop-editorial-cover-action">
-              Shop the edit <span aria-hidden="true">↗</span>
+              {heroProduct ? "Open the piece" : "View the wardrobe"} <span aria-hidden="true">↗</span>
             </span>
           </div>
 
@@ -140,8 +143,8 @@ export function ShopHome() {
       <section className="shop-discovery" id="discover" aria-labelledby="discover-title">
         <div className="shop-section-title">
           <div>
-            <p className="shop-kicker">{liveAvailabilityConfirmed ? "Available now" : "Browse the edit"}</p>
-            <h2 id="discover-title">The wardrobe.</h2>
+            <p className="shop-kicker">Drop 01 · {dropProducts.length} one-off pieces</p>
+            <h2 id="discover-title">Choose yours.</h2>
           </div>
           {!liveAvailabilityConfirmed ? (
             <p className="shop-catalogue-notice" role="status">
@@ -156,7 +159,7 @@ export function ShopHome() {
             <span className="sr-only">Search the wardrobe</span>
             <input
               onChange={(event) => setQuery(event.target.value)}
-              placeholder="Search colour, fit, or piece"
+              placeholder="Search the wardrobe"
               type="search"
               value={query}
             />
@@ -183,12 +186,14 @@ export function ShopHome() {
 
         {displayedProducts.length ? (
           <div className="shop-product-grid">
-            {displayedProducts.map((product) => (
+            {displayedProducts.map((product, index) => (
               <ProductCard
+                index={index + 1}
                 key={product.slug}
                 product={product}
                 showModelLink={false}
                 showStudyMark={false}
+                total={totalDisplayCount}
               />
             ))}
           </div>
@@ -200,7 +205,6 @@ export function ShopHome() {
           </div>
         )}
       </section>
-
     </div>
   );
 }
