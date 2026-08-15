@@ -58,3 +58,5 @@ jobs:
           path: .auth-e2e/private.pem
           if-no-files-found: error
           retention-days: 1
+
+# Fresh isolated key and OTP request for the final production verification.
