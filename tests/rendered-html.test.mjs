@@ -48,8 +48,8 @@ test("server-renders the public shop foundation", async () => {
   assert.match(html, /Drop 01/);
   assert.match(html, /Clothes with a second first impression/);
   assert.match(html, /Search the wardrobe/);
-  assert.match(html, /Quick add/);
-  assert.match(html, /data-mobile-chrome-mode="expanded"/);
+  assert.match(html, /Live availability is temporarily unavailable/);
+  assert.match(html, /data-mobile-chrome-mode="compact"/);
   assert.match(html, /aria-label="Show navigation\. Home selected"/);
   assert.match(html, /id="shop-mobile-navigation"/);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/i);
@@ -61,8 +61,8 @@ test("publishes one product-led hero and one concise Drop 01 discovery grid", as
 
   const html = await response.text();
   const visibleBody = visibleMarkup(html);
-  assert.match(visibleBody, /\/shop\/products\/coral-drift-dress\/04-model-front\.webp/);
-  assert.match(visibleBody, /data-model-anchor="lulu-v2"/);
+  assert.match(visibleBody, /\/products\/coral-drift-dress\/04-model-front\.webp/);
+  assert.match(visibleBody, /data-model-anchor="lulu-v3"/);
   assert.match(visibleBody, /On Lulu/);
   assert.match(visibleBody, /Coral Drift Dress/);
   assert.doesNotMatch(visibleBody, /Approved studio identity|not shop merchandise/);
@@ -105,7 +105,7 @@ test("keeps the private Studio and public shop visibly distinct", async () => {
   assert.match(visibleBody, /href="\/studio\/models"/);
   assert.match(visibleBody, /href="\/studio\/wardrobe"/);
   assert.match(visibleBody, /href="\/studio\/operations"/);
-  assert.match(visibleBody, /data-mobile-chrome-mode="expanded"/);
+  assert.match(visibleBody, /data-mobile-chrome-mode="compact"/);
   assert.match(visibleBody, /aria-label="Show navigation\. Business home selected"/);
   assert.match(visibleBody, /id="studio-mobile-navigation"/);
   assert.doesNotMatch(visibleBody, /Clothes with a second first impression/);
@@ -117,9 +117,9 @@ test("server-renders a navigable public product detail", async () => {
 
   const html = await response.text();
   assert.match(html, /Coral Drift Dress/);
-  assert.match(html, /Available now/);
-  assert.match(html, /Buy now/);
-  assert.match(html, /Add to bag/);
+  assert.match(html, /Live availability is unavailable/);
+  assert.match(html, /Availability temporarily unavailable/);
+  assert.doesNotMatch(html, /Buy now|Add to bag/);
   assert.match(html, /Garment front/);
   assert.match(html, /Garment back/);
   assert.match(html, /On mannequin/);
@@ -181,7 +181,7 @@ test("server-renders product studies plus only identity-cleared model views", as
     assert.equal(response.status, 200);
     const html = await response.text();
     const visibleBody = visibleMarkup(html);
-    const base = `/shop/products/${slugs[index]}`;
+    const base = `/products/${slugs[index]}`;
     assert.match(html, new RegExp(`${base}/01-garment-front\\.webp`));
     assert.match(html, new RegExp(`${base}/02-garment-back\\.webp`));
     assert.match(html, new RegExp(`${base}/03-mannequin-front\\.webp`));
@@ -253,8 +253,8 @@ test("server-renders the public commerce route grammar", async () => {
   assert.match(await saved.text(), /Opening saved pieces/);
   assert.match(await bag.text(), /Opening your bag/);
   assert.match(await checkout.text(), /Opening checkout/);
-  assert.match(await orders.text(), /Opening checkout drafts/);
-  assert.match(await status.text(), /Opening checkout status/);
+  assert.match(await orders.text(), /Opening your orders/);
+  assert.match(await status.text(), /Opening your order/);
   assert.match(await account.text(), /Your space/);
 });
 

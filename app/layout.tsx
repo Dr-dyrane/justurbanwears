@@ -60,11 +60,7 @@ export const metadata: Metadata = {
       { url: BRAND_ASSETS.icon.runtimeApp192, sizes: "192x192", type: "image/png" },
       { url: BRAND_ASSETS.icon.runtimeApp512, sizes: "512x512", type: "image/png" },
     ],
-    shortcut: {
-      url: BRAND_ASSETS.favicon.runtimeIco,
-      sizes: "16x16 32x32 48x48",
-      type: "image/x-icon",
-    },
+    shortcut: BRAND_ASSETS.favicon.runtimeIco,
     apple: [
       {
         url: BRAND_ASSETS.icon.runtimeAppleTouch,

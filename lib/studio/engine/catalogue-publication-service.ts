@@ -26,6 +26,15 @@ import { wardrobeCaptureKey } from "./pending-capture-service";
 type WardrobeItem = Awaited<ReturnType<typeof getOwnedWardrobeItem>>;
 type StudioAsset = Awaited<ReturnType<typeof getOwnedAsset>>;
 
+type PublicationImagePipeline = {
+  rotate(): PublicationImagePipeline;
+  toColourspace(colourspace: "srgb"): PublicationImagePipeline;
+  webp(options: { quality: number; alphaQuality: number; effort: number }): PublicationImagePipeline;
+  toBuffer(): Promise<Uint8Array>;
+};
+
+const createPublicationImagePipeline = sharp as unknown as (input: Uint8Array) => PublicationImagePipeline;
+
 type PublicationSource = {
   id: string;
   slot: PublicationMediaSlot;
@@ -251,7 +260,7 @@ async function verifiedPrivateSource(source: PublicationSource) {
 }
 
 export async function normalizeStudioPublicationImage(bytes: Uint8Array) {
-  const normalizedBytes = new Uint8Array(await sharp(bytes)
+  const normalizedBytes = new Uint8Array(await createPublicationImagePipeline(bytes)
     .rotate()
     .toColourspace("srgb")
     .webp({ quality: 92, alphaQuality: 100, effort: 4 })

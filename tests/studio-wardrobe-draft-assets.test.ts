@@ -34,12 +34,16 @@ const expectedCovers = [
   },
 ] as const;
 
-test("keeps every real-worn wardrobe cover present, typed, and byte-reviewed", async () => {
+test("keeps canonical garment fronts linked while retired review covers remain byte-reviewed", async () => {
   const seeded = mergeWardrobeAuthoritySeeds(createEmptyStudioSnapshot());
-  const reviewCovers = seeded.garments
-    .filter((garment) => garment.sku.startsWith("REVIEW-"))
-    .map((garment) => garment.reviewCover?.src);
-  assert.deepEqual(reviewCovers, expectedCovers.map(({ src }) => src));
+  const expectedSlugs = new Set(expectedCovers.map(({ src }) => src.split("/")[3]));
+  const canonicalCovers = seeded.listings
+    .filter((listing) => expectedSlugs.has(listing.slug))
+    .map((listing) => listing.publicProjection?.media.find((item) => item.slot === "GARMENT_FRONT")?.src);
+  assert.deepEqual(
+    canonicalCovers,
+    expectedCovers.map(({ src }) => src.replace("/studio/wardrobe/", "/shop/products/")),
+  );
 
   for (const expected of expectedCovers) {
     const assetPath = join(process.cwd(), "public", expected.src.replace(/^\/+/, ""));

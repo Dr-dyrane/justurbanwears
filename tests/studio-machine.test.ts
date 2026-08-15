@@ -363,7 +363,7 @@ test("publish rechecks the Lulu V2 readiness gate after a draft is cleared", () 
   assert.deepEqual(selectWardrobePublicView(state), []);
 });
 
-test("a version-one local envelope migrates into the version-two graph", () => {
+test("a version-one local envelope migrates into the current V3 identity graph", () => {
   const migrated = migrateLegacyStudioState(JSON.stringify({
     version: 1,
     data: {
@@ -375,7 +375,7 @@ test("a version-one local envelope migrates into the version-two graph", () => {
   assert.ok(migrated);
   assert.equal(migrated.defaultModelId, "model-old");
   assert.equal(migrated.models[0].state, "READY");
-  assert.equal(migrated.models[0].version, "LULU NEUTRAL IDENTITY MASTER V2");
+  assert.equal(migrated.models[0].version, "LULU NEUTRAL IDENTITY MASTER V3");
   assert.equal(migrated.garments[0].state, "DRAFT");
   assert.deepEqual(migrated.listings, []);
 });
