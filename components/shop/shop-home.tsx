@@ -67,7 +67,10 @@ export function ShopHome() {
           className={`shop-editorial-cover${heroProduct ? "" : " is-empty"}`}
           href={heroProduct ? `/shop/products/${heroProduct.slug}` : "#discover"}
         >
-          <div className="shop-editorial-cover-media">
+          <div
+            className="shop-editorial-cover-media"
+            data-product-transition={heroProduct?.slug}
+          >
             {heroProduct ? (
               heroModelView ? (
                 <div

@@ -62,6 +62,7 @@ export function ProductCard({
       <div className="shop-product-media">
         <Link
           aria-label={`View ${product.name}`}
+          data-product-transition={product.slug}
           href={`/shop/products/${product.slug}`}
         >
           <ProductVisual product={product} compact showStudyMark={showStudyMark} />

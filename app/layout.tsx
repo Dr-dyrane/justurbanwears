@@ -6,6 +6,7 @@ import { Analytics } from "@vercel/analytics/react";
 import { ServiceWorkerRegistration } from "../components/pwa/service-worker-registration";
 import { ThemeProvider } from "../components/theme/theme-provider";
 import { BRAND_ASSETS } from "../lib/brand/assets";
+import { shopFocusTransitionScript } from "../lib/ui/shop-focus-transition-script";
 import "./globals.css";
 import "./foundation.css";
 import "./shop-editorial-hero.css";
@@ -113,6 +114,7 @@ export default function RootLayout({
     <html lang="en-NG" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
+        <script dangerouslySetInnerHTML={{ __html: shopFocusTransitionScript }} />
       </head>
       <body className="antialiased">
         <ThemeProvider>

@@ -212,6 +212,46 @@
   min-width: 0;
 }
 
+[data-product-transition] {
+  transform-origin: center;
+  view-transition-name: none;
+}
+
+/*
+ * Shop focus transition.
+ * The head bootstrap assigns a unique name only to the garment participating
+ * in the current same-origin navigation. Every other route remains still.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  @view-transition {
+    navigation: auto;
+  }
+
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none;
+    mix-blend-mode: normal;
+  }
+
+  ::view-transition-group(*) {
+    animation-duration: var(--juw-motion-focus);
+    animation-timing-function: var(--juw-ease-focus);
+    z-index: var(--juw-layer-elevated);
+  }
+
+  ::view-transition-image-pair(*) {
+    isolation: isolate;
+  }
+
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation-duration: var(--juw-motion-focus);
+    animation-timing-function: var(--juw-ease-focus);
+    backface-visibility: hidden;
+    mix-blend-mode: normal;
+  }
+}
+
 /* Reduced motion preserves hierarchy while removing travel and perspective. */
 @media (prefers-reduced-motion: reduce) {
   :root {

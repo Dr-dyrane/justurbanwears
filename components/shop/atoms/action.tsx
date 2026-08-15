@@ -23,6 +23,7 @@ export function ShopActionButton({
   return (
     <button
       className={actionClassName(tone, className)}
+      data-experience-action={tone === "primary" ? "primary" : undefined}
       type={type}
       {...props}
     />
@@ -39,5 +40,11 @@ export function ShopActionLink({
   tone = "primary",
   ...props
 }: ShopActionLinkProps) {
-  return <ShopLink className={actionClassName(tone, className)} {...props} />;
+  return (
+    <ShopLink
+      className={actionClassName(tone, className)}
+      data-experience-action={tone === "primary" ? "primary" : undefined}
+      {...props}
+    />
+  );
 }

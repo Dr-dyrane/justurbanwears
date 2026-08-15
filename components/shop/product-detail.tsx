@@ -183,13 +183,20 @@ export function ProductDetail() {
   }
 
   return (
-    <div className="shop-product-page">
+    <div
+      className="shop-product-page"
+      data-experience-focus="garment"
+      data-product-slug={product.slug}
+    >
       <div className="shop-product-topline">
         <Link href="/shop#discover"><ArrowLeft aria-hidden="true" size={15} strokeWidth={1.8} /> Back to the edit</Link>
         <span>{product.drop} · {product.sku}</span>
       </div>
       <section className="shop-detail-hero">
-        <div className="shop-detail-stage">
+        <div
+          className="shop-detail-stage"
+          data-product-transition={product.slug}
+        >
           <ProductMediaGallery product={product} />
         </div>
         <div className="shop-detail-copy">
