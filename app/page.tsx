@@ -8,9 +8,9 @@ import {
   selectProductGalleryMedia,
 } from "../lib/shop/model-tryout";
 import { getServerShopProducts } from "../lib/shop/server-catalog";
-import cover from "./brand-cover-minimal.module.css";
 import editorial from "./brand-editorial.module.css";
 import styles from "./brand-home.module.css";
+import cover from "./brand-cover-minimal.module.css";
 
 export const dynamic = "force-dynamic";
 
