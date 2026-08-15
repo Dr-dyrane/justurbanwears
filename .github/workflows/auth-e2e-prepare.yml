@@ -1,0 +1,60 @@
+name: Prepare isolated email-code authentication test
+
+on:
+  push:
+    branches: [agent/phase-0-release-foundation]
+    paths:
+      - .github/workflows/auth-e2e-prepare.yml
+
+permissions:
+  contents: read
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.14.0
+      - name: Create an ephemeral encrypted reply channel
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .auth-e2e
+          openssl genpkey -algorithm RSA -pkeyopt rsa_keygen_bits:3072 -out .auth-e2e/private.pem 2>/dev/null
+          openssl pkey -in .auth-e2e/private.pem -pubout -out .auth-e2e/public.pem 2>/dev/null
+          printf 'AUTH_E2E_PUBLIC_KEY_B64=' && base64 -w0 .auth-e2e/public.pem && printf '\n'
+      - name: Request the real production sign-in code
+        shell: bash
+        run: |
+          set -euo pipefail
+          node <<'NODE'
+          const origin = "https://www.justurbanwears.com";
+          const response = await fetch(`${origin}/api/auth/email-otp/send-verification-otp`, {
+            method: "POST",
+            headers: {
+              accept: "application/json",
+              "content-type": "application/json",
+              origin,
+              referer: `${origin}/auth/sign-in?returnTo=%2Fstudio`,
+              "user-agent": "justurbanwears-auth-e2e/1.0",
+            },
+            body: JSON.stringify({ email: "halodyrane@gmail.com", type: "sign-in" }),
+          });
+          const text = await response.text();
+          if (!response.ok) {
+            console.error(`Email-code request failed with HTTP ${response.status}.`);
+            console.error(text.slice(0, 400));
+            process.exit(1);
+          }
+          console.log(`Email-code request accepted with HTTP ${response.status}.`);
+          NODE
+      - name: Retain the private key for the authenticated continuation
+        uses: actions/upload-artifact@v4
+        with:
+          name: juw-auth-e2e-private-${{ github.run_id }}
+          path: .auth-e2e/private.pem
+          if-no-files-found: error
+          retention-days: 1
