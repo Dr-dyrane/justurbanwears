@@ -2,12 +2,14 @@
 
 import { Ruler, Shirt, X } from "lucide-react";
 import {
-  useEffect,
   useId,
   useRef,
   useState,
   type MouseEvent,
 } from "react";
+import { useDocumentScrollLock } from "../../hooks/use-document-scroll-lock";
+import { useHistoryBackedDialog } from "../../hooks/use-history-backed-dialog";
+import { useSheetDismissGesture } from "../../hooks/use-sheet-dismiss-gesture";
 import {
   ShopSheet,
   ShopSheetCloseButton,
@@ -33,34 +35,40 @@ export function ProductInfoSheet({
   const dialogRef = useRef<HTMLDialogElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const returnFocusRef = useRef<HTMLButtonElement | null>(null);
-  const titleId = useId();
-  const descriptionId = useId();
+  const dialogId = useId();
+  const titleId = `${dialogId}-title`;
+  const descriptionId = `${dialogId}-description`;
   const section = activeSection ?? "measurements";
   const isOpen = activeSection !== null;
+  useDocumentScrollLock(isOpen);
 
-  useEffect(() => {
-    if (!isOpen) return;
-    const bodyOverflow = document.body.style.overflow;
-    const documentOverflow = document.documentElement.style.overflow;
-    document.body.style.overflow = "hidden";
-    document.documentElement.style.overflow = "hidden";
-
-    return () => {
-      document.body.style.overflow = bodyOverflow;
-      document.documentElement.style.overflow = documentOverflow;
-    };
-  }, [isOpen]);
+  const { openWithHistory, requestClose } = useHistoryBackedDialog({
+    marker: `product-info:${dialogId}`,
+    isOpen,
+    onDismiss: dismissSheet,
+  });
+  const sheetGesture = useSheetDismissGesture({
+    dialogRef,
+    onDismiss: requestClose,
+  });
 
   function openSection(nextSection: ProductInfoSection, trigger: HTMLButtonElement) {
     returnFocusRef.current = trigger;
-    setActiveSection(nextSection);
     const dialog = dialogRef.current;
+    if (dialog && !dialog.open) openWithHistory();
+    setActiveSection(nextSection);
     if (dialog && !dialog.open) dialog.showModal();
     window.requestAnimationFrame(() => closeButtonRef.current?.focus());
   }
 
+  function dismissSheet() {
+    const dialog = dialogRef.current;
+    if (dialog?.open) dialog.close();
+    else setActiveSection(null);
+  }
+
   function closeSheet() {
-    dialogRef.current?.close();
+    requestClose();
   }
 
   function handleClosed() {
@@ -82,6 +90,7 @@ export function ProductInfoSheet({
     <div className="shop-product-info">
       <div className="shop-product-info-actions" aria-label="Product information">
         <button
+          aria-controls={dialogId}
           aria-expanded={section === "measurements" && isOpen}
           aria-haspopup="dialog"
           onClick={(event) => openSection("measurements", event.currentTarget)}
@@ -91,6 +100,7 @@ export function ProductInfoSheet({
           <span><strong>Measurements</strong><small>Check the fit</small></span>
         </button>
         <button
+          aria-controls={dialogId}
           aria-expanded={section === "care" && isOpen}
           aria-haspopup="dialog"
           onClick={(event) => openSection("care", event.currentTarget)}
@@ -107,6 +117,7 @@ export function ProductInfoSheet({
         aria-modal="true"
         className="shop-product-info-sheet"
         data-section={section}
+        id={dialogId}
         onCancel={(event) => {
           event.preventDefault();
           closeSheet();
@@ -115,7 +126,7 @@ export function ProductInfoSheet({
         onClose={handleClosed}
         ref={dialogRef}
       >
-        <ShopSheetHandle />
+        <ShopSheetHandle {...sheetGesture} />
         <header className="shop-product-info-header">
           <div>
             <p className="shop-kicker">Product information</p>

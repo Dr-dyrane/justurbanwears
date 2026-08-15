@@ -20,6 +20,8 @@ import {
   useState,
   type MouseEvent,
 } from "react";
+import { useDocumentScrollLock } from "../../hooks/use-document-scroll-lock";
+import { useSheetDismissGesture } from "../../hooks/use-sheet-dismiss-gesture";
 import type { ShopAvailability } from "../../lib/shop/domain/entities";
 import type {
   HydrationState,
@@ -105,18 +107,11 @@ export function ProductModelTryout({
     }
   }, [isOpen]);
 
-  useEffect(() => {
-    if (!isOpen) return;
-    const bodyOverflow = document.body.style.overflow;
-    const documentOverflow = document.documentElement.style.overflow;
-    document.body.style.overflow = "hidden";
-    document.documentElement.style.overflow = "hidden";
-
-    return () => {
-      document.body.style.overflow = bodyOverflow;
-      document.documentElement.style.overflow = documentOverflow;
-    };
-  }, [isOpen]);
+  useDocumentScrollLock(isOpen);
+  const sheetGesture = useSheetDismissGesture({
+    dialogRef,
+    onDismiss: onRequestClose,
+  });
 
   const hasLoadedFrame = state.phase === "ready";
   const isOfflineWithoutFrame = !isOnline && !hasLoadedFrame;
@@ -186,7 +181,7 @@ export function ProductModelTryout({
       }}
       ref={dialogRef}
     >
-      <ShopSheetHandle />
+      <ShopSheetHandle {...sheetGesture} />
       <header className="shop-model-tryout-header">
         <div>
           <p className="shop-kicker">On model</p>

@@ -4,7 +4,15 @@
 /* eslint-disable @next/next/no-img-element */
 
 import { ChevronLeft, ChevronRight, Expand, X } from "lucide-react";
-import { useRef, useState, type KeyboardEvent, type UIEvent } from "react";
+import {
+  useId,
+  useRef,
+  useState,
+  type KeyboardEvent,
+  type UIEvent,
+} from "react";
+import { useDocumentScrollLock } from "../../hooks/use-document-scroll-lock";
+import { useHistoryBackedDialog } from "../../hooks/use-history-backed-dialog";
 import type { ShopProduct } from "../../lib/shop/catalog";
 import { selectProductGalleryMedia } from "../../lib/shop/model-tryout";
 import { ProductVisual } from "./product-visual";
@@ -16,8 +24,19 @@ function nextIndex(current: number, direction: number, count: number) {
 export function ProductMediaGallery({ product }: { product: ShopProduct }) {
   const media = selectProductGalleryMedia(product);
   const [activeIndex, setActiveIndex] = useState(0);
+  const [viewerOpen, setViewerOpen] = useState(false);
   const railRef = useRef<HTMLDivElement>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const returnFocusRef = useRef<HTMLButtonElement | null>(null);
+  const dialogId = useId();
+  useDocumentScrollLock(viewerOpen);
+
+  const { openWithHistory, requestClose } = useHistoryBackedDialog({
+    marker: `product-media:${dialogId}`,
+    isOpen: viewerOpen,
+    onDismiss: dismissViewer,
+  });
 
   if (!media.length) {
     return (
@@ -44,9 +63,25 @@ export function ProductMediaGallery({ product }: { product: ShopProduct }) {
     });
   }
 
-  function openViewer(index: number) {
+  function openViewer(index: number, trigger: HTMLButtonElement) {
+    const dialog = dialogRef.current;
+    if (!dialog || dialog.open) return;
+    returnFocusRef.current = trigger;
     setActiveIndex(index);
-    dialogRef.current?.showModal();
+    setViewerOpen(true);
+    openWithHistory();
+    dialog.showModal();
+    window.requestAnimationFrame(() => closeButtonRef.current?.focus());
+  }
+
+  function dismissViewer() {
+    const dialog = dialogRef.current;
+    if (dialog?.open) dialog.close();
+    else setViewerOpen(false);
+  }
+
+  function closeViewer() {
+    requestClose();
   }
 
   function trackVisibleFrame(event: UIEvent<HTMLDivElement>) {
@@ -80,8 +115,11 @@ export function ProductMediaGallery({ product }: { product: ShopProduct }) {
   }
 
   function syncRailAfterViewer() {
-    if (!window.matchMedia("(max-width: 680px)").matches) return;
-    window.requestAnimationFrame(() => moveTo(activeIndex));
+    setViewerOpen(false);
+    if (window.matchMedia("(max-width: 680px)").matches) {
+      window.requestAnimationFrame(() => moveTo(activeIndex));
+    }
+    window.requestAnimationFrame(() => returnFocusRef.current?.focus());
   }
 
   return (
@@ -101,9 +139,12 @@ export function ProductMediaGallery({ product }: { product: ShopProduct }) {
             key={item.id}
           >
             <button
+              aria-controls={dialogId}
+              aria-expanded={viewerOpen && activeIndex === index}
+              aria-haspopup="dialog"
               aria-label={`Open ${item.label.toLowerCase()} view of ${product.name}`}
               className="shop-media-open"
-              onClick={() => openViewer(index)}
+              onClick={(event) => openViewer(index, event.currentTarget)}
               type="button"
             >
               <img
@@ -150,7 +191,14 @@ export function ProductMediaGallery({ product }: { product: ShopProduct }) {
 
       <dialog
         aria-label={`${product.name} expanded image viewer`}
+        aria-modal="true"
         className="shop-media-dialog"
+        data-experience-layer="sheet"
+        id={dialogId}
+        onCancel={(event) => {
+          event.preventDefault();
+          closeViewer();
+        }}
         onClose={syncRailAfterViewer}
         onKeyDown={handleViewerKeys}
         ref={dialogRef}
@@ -158,7 +206,8 @@ export function ProductMediaGallery({ product }: { product: ShopProduct }) {
         <button
           aria-label="Close image viewer"
           className="shop-media-dialog-close"
-          onClick={() => dialogRef.current?.close()}
+          onClick={closeViewer}
+          ref={closeButtonRef}
           type="button"
         >
           <X aria-hidden="true" size={23} strokeWidth={1.6} />

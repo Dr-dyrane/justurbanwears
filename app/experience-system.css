@@ -212,6 +212,53 @@
   min-width: 0;
 }
 
+[data-experience-layer="sheet"] {
+  --juw-sheet-drag-y: 0px;
+  overscroll-behavior: contain;
+}
+
+@media (max-width: 680px) and (pointer: coarse) {
+  .shop-sheet-handle[data-sheet-gesture="dismiss"] {
+    background: transparent;
+    cursor: grab;
+    height: 32px;
+    margin: 0;
+    position: relative;
+    touch-action: none;
+    width: 100%;
+  }
+
+  .shop-sheet-handle[data-sheet-gesture="dismiss"]::after {
+    background: color-mix(in srgb, currentColor 30%, transparent);
+    border-radius: 999px;
+    content: "";
+    height: 4px;
+    left: 50%;
+    position: absolute;
+    top: 10px;
+    transform: translateX(-50%);
+    width: 42px;
+  }
+
+  .shop-sheet-handle[data-sheet-gesture="dismiss"]:active {
+    cursor: grabbing;
+  }
+
+  .shop-sheet[data-sheet-dragging="true"][open],
+  .shop-sheet[data-sheet-settling="true"][open] {
+    transform: translate3d(0, var(--juw-sheet-drag-y), 0) !important;
+  }
+
+  .shop-sheet[data-sheet-dragging="true"] {
+    transition: none !important;
+    user-select: none;
+  }
+
+  .shop-sheet[data-sheet-settling="true"] {
+    transition: transform var(--juw-motion-state) var(--juw-ease-sheet) !important;
+  }
+}
+
 [data-product-transition] {
   transform-origin: center;
   view-transition-name: none;
@@ -276,6 +323,10 @@
 }
 
 @media (forced-colors: active) {
+  .shop-sheet-handle[data-sheet-gesture="dismiss"]::after {
+    background: CanvasText;
+  }
+
   [data-experience-action="primary"]::after {
     display: none;
   }

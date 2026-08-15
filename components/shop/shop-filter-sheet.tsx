@@ -1,7 +1,15 @@
 "use client";
 
 import { Check, SlidersHorizontal, X } from "lucide-react";
-import { useEffect, useId, useRef, useState } from "react";
+import {
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type MouseEvent,
+} from "react";
+import { useDocumentScrollLock } from "../../hooks/use-document-scroll-lock";
+import { useSheetDismissGesture } from "../../hooks/use-sheet-dismiss-gesture";
 import {
   formatNaira,
   shopCategories,
@@ -200,39 +208,11 @@ export function ShopFilterSheet({
   const dialogId = useId();
   const titleId = `${dialogId}-title`;
 
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const dialog = dialogRef.current;
-    const bodyOverflow = document.body.style.overflow;
-    const documentOverflow = document.documentElement.style.overflow;
-    const closeFromBackdrop = (event: MouseEvent) => {
-      if (!dialog || event.target !== dialog) return;
-      const bounds = dialog.getBoundingClientRect();
-      const clickedOutside = event.clientX < bounds.left
-        || event.clientX > bounds.right
-        || event.clientY < bounds.top
-        || event.clientY > bounds.bottom;
-      if (clickedOutside) {
-        pendingApplyRef.current = null;
-        if (window.history.state?.shopFilterSheet === dialogId) {
-          window.history.back();
-          return;
-        }
-        setIsOpen(false);
-        dialog.close();
-      }
-    };
-    document.body.style.overflow = "hidden";
-    document.documentElement.style.overflow = "hidden";
-    dialog?.addEventListener("click", closeFromBackdrop);
-
-    return () => {
-      document.body.style.overflow = bodyOverflow;
-      document.documentElement.style.overflow = documentOverflow;
-      dialog?.removeEventListener("click", closeFromBackdrop);
-    };
-  }, [dialogId, isOpen]);
+  useDocumentScrollLock(isOpen);
+  const sheetGesture = useSheetDismissGesture({
+    dialogRef,
+    onDismiss: closeSheet,
+  });
 
   useEffect(() => {
     if (!isOpen) return;
@@ -248,6 +228,16 @@ export function ShopFilterSheet({
     window.addEventListener("popstate", closeFromHistory);
     return () => window.removeEventListener("popstate", closeFromHistory);
   }, [isOpen, onApply]);
+
+  function closeFromBackdrop(event: MouseEvent<HTMLDialogElement>) {
+    if (event.target !== event.currentTarget) return;
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const clickedOutside = event.clientX < bounds.left
+      || event.clientX > bounds.right
+      || event.clientY < bounds.top
+      || event.clientY > bounds.bottom;
+    if (clickedOutside) closeSheet();
+  }
 
   function openSheet() {
     const dialog = dialogRef.current;
@@ -314,13 +304,14 @@ export function ShopFilterSheet({
           event.preventDefault();
           closeSheet();
         }}
+        onClick={closeFromBackdrop}
         onClose={() => {
           setIsOpen(false);
           triggerRef.current?.focus();
         }}
         ref={dialogRef}
       >
-        <ShopSheetHandle />
+        <ShopSheetHandle {...sheetGesture} />
         <header className="shop-filter-sheet-header">
           <div>
             <p className="shop-kicker">Search filters</p>

@@ -2,6 +2,7 @@ import {
   forwardRef,
   type ButtonHTMLAttributes,
   type ComponentPropsWithoutRef,
+  type HTMLAttributes,
 } from "react";
 
 export const ShopSheet = forwardRef<
@@ -11,15 +12,26 @@ export const ShopSheet = forwardRef<
   return (
     <dialog
       className={["shop-sheet", className].filter(Boolean).join(" ")}
+      data-experience-layer="sheet"
       ref={ref}
       {...props}
     />
   );
 });
 
-export function ShopSheetHandle() {
-  return <div className="shop-sheet-handle" aria-hidden="true" />;
-}
+export const ShopSheetHandle = forwardRef<
+  HTMLDivElement,
+  HTMLAttributes<HTMLDivElement>
+>(function ShopSheetHandle({ className, ...props }, ref) {
+  return (
+    <div
+      aria-hidden="true"
+      className={["shop-sheet-handle", className].filter(Boolean).join(" ")}
+      ref={ref}
+      {...props}
+    />
+  );
+});
 
 export const ShopSheetCloseButton = forwardRef<
   HTMLButtonElement,
