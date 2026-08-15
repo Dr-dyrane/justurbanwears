@@ -81,8 +81,16 @@ jobs:
             body: JSON.stringify({ email: request.email, otp }),
             redirect: "manual",
           });
+          const signInBody = await signIn.text();
           if (!signIn.ok) {
-            throw new Error(`Email-code sign-in failed with HTTP ${signIn.status}.`);
+            let detail = "unknown authentication error";
+            try {
+              const parsed = JSON.parse(signInBody);
+              detail = parsed.code ?? parsed.error?.code ?? parsed.message ?? parsed.error?.message ?? detail;
+            } catch {
+              if (signInBody && !signInBody.includes(otp)) detail = signInBody.slice(0, 160);
+            }
+            throw new Error(`Email-code sign-in failed with HTTP ${signIn.status}: ${detail}.`);
           }
 
           const setCookies = typeof signIn.headers.getSetCookie === "function"
@@ -131,7 +139,15 @@ jobs:
 
           const studioResponse = await authenticatedGet("/api/studio/wardrobe");
           if (studioResponse.status !== 200) {
-            throw new Error(`Studio operator boundary returned HTTP ${studioResponse.status}.`);
+            const studioBody = await studioResponse.text();
+            let detail = "unknown Studio authorization error";
+            try {
+              const parsed = JSON.parse(studioBody);
+              detail = parsed.code ?? parsed.error?.code ?? parsed.message ?? parsed.error?.message ?? detail;
+            } catch {
+              if (studioBody) detail = studioBody.slice(0, 160);
+            }
+            throw new Error(`Studio operator boundary returned HTTP ${studioResponse.status}: ${detail}.`);
           }
           console.log("Studio operator allowlist and membership boundary passed.");
           NODE
