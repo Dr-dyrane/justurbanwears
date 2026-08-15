@@ -18,6 +18,17 @@ approved garment evidence
 
 The public experience stays editorial and simple. The private Studio carries operational complexity and preserves the distinction between direct photography, derived garment media, and model-reference imagery.
 
+## Experience canon
+
+The approved cross-surface design and interaction system is documented in [`docs/experience/EXPERIENCE-SYSTEM.md`](docs/experience/EXPERIENCE-SYSTEM.md).
+
+Its governing position is:
+
+> **JustUrbanWears is calm until intent appears.**  
+> The Site invites. The Shop focuses. The Studio resolves.
+
+The canon defines the focus budget, warm ink/paper material system, nude-versus-coral roles, scan-first typography, X/Y/Z spatial semantics, motion timing, contextual bottom island, mobile sheets and route stacks, product photography hierarchy, loading policy, accessibility requirements, and the different tempo required by each surface.
+
 ## Current system
 
 The public shop has a server-derived catalogue, live one-off availability, search, saves, bag, checkout, passwordless customer accounts, server-authoritative orders, returns, PWA installation, manual payment evidence, and product JSON-LD. Browser storage holds recoverable customer projections only; it is not authoritative for stock, orders, payment, or fulfilment.
@@ -40,7 +51,7 @@ drizzle/shop-postgres/       reviewed database migrations
 scripts/shop-db/             guarded catalogue and release operations
 ```
 
-See [`docs/architecture/STATE-MACHINES.md`](docs/architecture/STATE-MACHINES.md), [`docs/operations/RELEASE-CHECKLIST.md`](docs/operations/RELEASE-CHECKLIST.md), and [`docs/performance/BUDGETS.md`](docs/performance/BUDGETS.md).
+See [`docs/experience/EXPERIENCE-SYSTEM.md`](docs/experience/EXPERIENCE-SYSTEM.md), [`docs/architecture/STATE-MACHINES.md`](docs/architecture/STATE-MACHINES.md), [`docs/operations/RELEASE-CHECKLIST.md`](docs/operations/RELEASE-CHECKLIST.md), and [`docs/performance/BUDGETS.md`](docs/performance/BUDGETS.md).
 
 ## Local setup
 
