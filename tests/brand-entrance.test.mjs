@@ -22,7 +22,7 @@ async function renderRoot() {
   );
 }
 
-test("publishes the editorial brand entrance at the root", async () => {
+test("publishes the scan-first editorial brand entrance at the root", async () => {
   const response = await renderRoot();
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
@@ -33,23 +33,27 @@ test("publishes the editorial brand entrance at the root", async () => {
   assert.match(html, /more than one/);
   assert.match(html, /first impression/);
   assert.match(html, /Enter the wardrobe/);
-  assert.match(html, /In this issue/);
-  assert.match(html, /Curator(?:’|&#x2019;)s note/);
-  assert.match(html, /Style does not expire when ownership changes/);
-  assert.match(html, /One real piece/);
-  assert.match(html, /A complete digital identity/);
+  assert.match(html, /Inside/);
+  assert.match(html, /Style changes hands/);
+  assert.match(html, /One piece/);
+  assert.match(html, /Fully seen/);
+  assert.match(html, /Real garment/);
+  assert.match(html, /Reviewed frames/);
+  assert.match(html, /AI disclosed/);
   assert.match(html, /Capture/);
   assert.match(html, /Confirm/);
   assert.match(html, /Complete/);
   assert.match(html, /Publish/);
   assert.match(html, /Reserve/);
   assert.match(html, /Deliver/);
-  assert.match(html, /Curated by/);
-  assert.match(html, /Digital direction/);
+  assert.match(html, /Curator/);
+  assert.match(html, /Direction/);
   assert.match(html, /href="\/shop"/);
   assert.match(html, /href="\/shop\/products\//);
   assert.match(html, /aria-label="Primary"/);
   assert.match(html, /aria-label="Issue credits"/);
+  assert.doesNotMatch(html, /Supporting views may be completed/i);
+  assert.doesNotMatch(html, /Availability remains governed/i);
   assert.doesNotMatch(html, /NEXT_REDIRECT|url=\/shop/i);
   assert.doesNotMatch(html, /\[object Object\]/);
 });
