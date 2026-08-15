@@ -15,12 +15,14 @@ test("Studio home resolves around one dominant task and quieter business context
 });
 
 test("Atelier wave finishes desktop, mobile, dark, and reduced-motion treatment", async () => {
-  const [css, layout] = await Promise.all([
+  const [css, rootLayout, studioLayout] = await Promise.all([
     read("app/studio-atelier.css"),
     read("app/layout.tsx"),
+    read("app/(studio)/layout.tsx"),
   ]);
 
-  assert.match(layout, /\.\/studio-atelier\.css/);
+  assert.doesNotMatch(rootLayout, /\.\/studio-atelier\.css/);
+  assert.match(studioLayout, /\.\.\/studio-atelier\.css/);
   assert.match(css, /\.studio-attention-primary/);
   assert.match(css, /\.studio-garment-grid/);
   assert.match(css, /\.studio-model-layout/);

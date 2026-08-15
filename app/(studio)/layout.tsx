@@ -1,3 +1,4 @@
+import "../studio-atelier.css";
 import { AppShell } from "../../components/studio/app-shell";
 import { requireStudioOperator } from "../../lib/server/studio-operator";
 import { StudioEngineError } from "../../lib/studio/engine/errors";
