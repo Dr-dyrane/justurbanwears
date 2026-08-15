@@ -1,0 +1,39 @@
+name: Repair dependency lock
+
+on:
+  push:
+    branches: [agent/phase-0-release-foundation]
+    paths:
+      - .github/workflows/repair-lockfile.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: repair-juw-dependency-lock
+  cancel-in-progress: false
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/phase-0-release-foundation
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.14.0
+      - name: Reconcile package-lock.json with package.json
+        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+      - name: Prove the repaired lock installs cleanly
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Retain the repaired lock and remove this one-shot workflow
+        run: |
+          rm .github/workflows/repair-lockfile.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json .github/workflows/repair-lockfile.yml
+          git commit -m "chore: reconcile the dependency lock"
+          git push origin HEAD:agent/phase-0-release-foundation

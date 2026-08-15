@@ -18,6 +18,6 @@ test("publishes concrete icon and social metadata values", async () => {
   const html = await response.text();
   assert.doesNotMatch(html, /\[object Object\]/);
   assert.match(html, /rel="shortcut icon" href="\/favicon\.ico\?v=2026\.3-seal"/);
-  assert.match(html, /property="og:image" content="https:\/\/www\.justurbanwears\.com\/brand\/social-og\.png\?v=2026\.3-seal"/);
+  assert.match(html, /property="og:image" content="https:\/\/www\.justurbanwears\.com\/brand\/social-og\.png\?v=2026\.2-owner-signage"/);
   assert.match(html, /rel="manifest" href="\/manifest\.webmanifest"/);
 });
