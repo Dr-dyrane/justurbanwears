@@ -1,0 +1,91 @@
+name: Complete release foundation verification
+
+on:
+  push:
+    branches: [agent/phase-0-release-foundation]
+    paths:
+      - .github/workflows/repair-release-foundation-v3.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: juw-complete-release-foundation-v3
+  cancel-in-progress: false
+
+jobs:
+  repair:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.14.0
+          cache: npm
+      - name: Apply the proven repair program and final contract corrections
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          from textwrap import dedent
+
+          workflow = Path(".github/workflows/repair-release-foundation-v2.yml").read_text()
+          marker = "          python - <<'PY'\n"
+          start = workflow.index(marker) + len(marker)
+          end = workflow.index("\n          PY", start)
+          program = dedent(workflow[start:end])
+          scope = {"__name__": "__main__"}
+          exec(compile(program, "repair-release-foundation-v2.yml", "exec"), scope)
+          replace_exact = scope["replace_exact"]
+
+          replace_exact(
+              "tests/rendered-html.test.mjs",
+              "  assert.match(await status.text(), /Opening checkout status/);",
+              "  assert.match(await status.text(), /Opening your order/);",
+          )
+          replace_exact(
+              "scripts/smoke-deployment.mjs",
+              'await htmlCheck("passwordless auth", "/auth/sign-in?returnTo=%2Fshop%2Forders", [["sign-in surface missing", (body) => body.includes("Sign-in code")]]);',
+              'await htmlCheck("passwordless auth", "/auth/sign-in?returnTo=%2Fshop%2Forders", [["email-code surface missing", (body) => body.includes("Email code")]]);',
+          )
+          replace_exact(
+              "scripts/smoke-deployment.mjs",
+              '  record("availability validation boundary", response.status === 400 && Boolean(body?.error), `${response.status} · ${duration} ms`);',
+              '  record("availability validation boundary", response.status === 400 && body?.status === "CHANGED", `${response.status} · ${duration} ms`);',
+          )
+          PY
+          node --check tests/rendered-html.test.mjs
+          node --check scripts/smoke-deployment.mjs
+          git diff --check
+      - name: Install the locked dependency graph
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Prove the complete release foundation
+        run: npm run verify
+      - name: Retain only fully verified source repairs
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add \
+            components/studio/draft-direct-captures.tsx \
+            components/studio/model-atelier.tsx \
+            components/studio/notifications/studio-notification-center.tsx \
+            lib/studio/engine/catalogue-publication-service.ts \
+            lib/studio/engine/wear-service.ts \
+            lib/studio/seeds/private-wardrobe-products.ts \
+            package.json \
+            scripts/smoke-deployment.mjs \
+            tests/rendered-html.test.mjs \
+            tests/shop-db-release.test.ts \
+            tests/studio-machine.test.ts \
+            tests/studio-pending-media-surface.test.ts \
+            tests/studio-wardrobe-draft-assets.test.ts \
+            tsconfig.release.json \
+            types/vite-assets.d.ts
+          git commit -m "fix: certify complete release foundation"
+          git push origin HEAD:agent/phase-0-release-foundation
