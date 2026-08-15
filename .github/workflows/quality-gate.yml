@@ -22,7 +22,7 @@ jobs:
         with:
           node-version: 22.14.0
           cache: npm
-      - name: Install without running project lifecycle scripts
-        run: npm install --package-lock=false --ignore-scripts --no-audit --no-fund
+      - name: Install the locked dependency graph
+        run: npm ci --ignore-scripts --no-audit --no-fund
       - name: Validate repository, contracts, and production build
         run: npm run verify
