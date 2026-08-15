@@ -41,14 +41,6 @@ jobs:
                   raise SystemExit(f"expected one match in {pathname}, found {count}: {old!r}")
               path.write_text(source.replace(old, new, 1))
 
-          def replace_count(pathname: str, old: str, new: str, expected: int) -> None:
-              path = Path(pathname)
-              source = path.read_text()
-              count = source.count(old)
-              if count != expected:
-                  raise SystemExit(f"expected {expected} matches in {pathname}, found {count}: {old!r}")
-              path.write_text(source.replace(old, new))
-
           replace_once(
               "components/studio/draft-direct-captures.tsx",
               '    canRetry: typeof candidate.canRetry === "boolean" ? candidate.canRetry : candidate.state === "COMPLETE" && candidate.attempt < 2,',
@@ -61,10 +53,27 @@ jobs:
               '  if (!task) {\n    return <dialog className="studio-intake-sheet studio-model-task-sheet" ref={dialogRef} />;\n  }\n  const activeTask = task;\n\n  const activeIndex = taskSteps.indexOf(step);',
           )
           replace_once("components/studio/model-atelier.tsx", "model.id !== task?.modelId", "model.id !== activeTask.modelId")
-          replace_count("components/studio/model-atelier.tsx", "task.mode", "activeTask.mode", 2)
-          replace_count("components/studio/model-atelier.tsx", "task.modelId", "activeTask.modelId", 3)
-          replace_once("components/studio/model-atelier.tsx", "task.returnFocus", "activeTask.returnFocus")
-          replace_once("components/studio/model-atelier.tsx", "task.draft.name", "activeTask.draft.name")
+          replace_once(
+              "components/studio/model-atelier.tsx",
+              '    if (task.mode === "create") {\n      const id = createModel({ name: draft.name });',
+              '    if (activeTask.mode === "create") {\n      const id = createModel({ name: draft.name });',
+          )
+          replace_once(
+              "components/studio/model-atelier.tsx",
+              '    } else if (task.modelId) {\n      updateModel(task.modelId, update);\n      onSelect(task.modelId);\n    }',
+              '    } else if (activeTask.modelId) {\n      updateModel(activeTask.modelId, update);\n      onSelect(activeTask.modelId);\n    }',
+          )
+          replace_once("components/studio/model-atelier.tsx", "task.returnFocus?.focus", "activeTask.returnFocus?.focus")
+          replace_once(
+              "components/studio/model-atelier.tsx",
+              '<h2 id="studio-model-task-title">{task.mode === "create" ? "Add model" : `Edit ${task.draft.name}`}</h2>',
+              '<h2 id="studio-model-task-title">{activeTask.mode === "create" ? "Add model" : `Edit ${activeTask.draft.name}`}</h2>',
+          )
+          replace_once(
+              "components/studio/model-atelier.tsx",
+              '{step === "review" ? (task.mode === "create" ? "Add model" : "Save changes") : editingFromReview ? "Done" : "Continue"}',
+              '{step === "review" ? (activeTask.mode === "create" ? "Add model" : "Save changes") : editingFromReview ? "Done" : "Continue"}',
+          )
 
           replace_once(
               "components/studio/notifications/studio-notification-center.tsx",
