@@ -10,6 +10,7 @@ const wardrobe = readFileSync(`${root}/components/studio/wardrobe-workbench.tsx`
 const directCaptures = readFileSync(`${root}/components/studio/draft-direct-captures.tsx`, "utf8");
 const operations = readFileSync(`${root}/components/studio/operations-desk.tsx`, "utf8");
 const css = readFileSync(`${root}/app/foundation.css`, "utf8");
+const atelierCss = readFileSync(`${root}/app/studio-atelier.css`, "utf8");
 
 test("Studio mobile chrome keeps one state-aware action between navigation and its matching FAB", () => {
   assert.match(shell, /studio-mobile-fab/);
@@ -30,15 +31,17 @@ test("Studio mobile chrome keeps one state-aware action between navigation and i
   assert.doesNotMatch(shell, /className="shop-mobile-fab[\s\S]*?href="\/shop"/);
 });
 
-test("compact records, garments, and inventory use approved media", () => {
+test("task-first records, garments, and inventory use approved media", () => {
   assert.match(home, /studioGarmentCover/);
-  assert.match(home, /SquareArrowOutUpRight/);
+  assert.match(home, /studio-attention-primary/);
+  assert.match(home, /studio-recent-row/);
   assert.match(wardrobe, /studioGarmentCover/);
   assert.match(operations, /studioGarmentCover/);
-  assert.match(css, /\.studio-queue-grid \{ gap: 9px; grid-template-columns: repeat\(2/);
-  assert.match(css, /\.studio-record-row \{ gap: 9px; grid-template-columns:/);
-  assert.match(css, /\.studio-garment-card \{[\s\S]*?grid-template-columns: 82px/);
-  assert.match(css, /\.studio-table-row \{ background: var\(--studio-panel\);[\s\S]*?grid-template-columns: 58px/);
+  assert.match(atelierCss, /\.studio-attention-layout/);
+  assert.match(atelierCss, /\.studio-recent-row/);
+  assert.match(atelierCss, /\.studio-garment-grid/);
+  assert.match(atelierCss, /\.studio-inventory-row-trigger/);
+  assert.match(atelierCss, /@media \(max-width: 620px\)/);
 });
 
 test("compact garment rows expose preview and one Piece workspace", () => {
@@ -61,6 +64,8 @@ test("model segmented content can render without the portrait obstruction", () =
   assert.match(models, /pending=\{viewPending\}/);
   assert.match(models, /studio-model-receipt-visual/);
   assert.match(models, /studio-receipt-copy/);
+  assert.match(atelierCss, /\.studio-model-layout/);
+  assert.match(atelierCss, /\.studio-model-list[\s\S]*?scroll-snap-type: x proximity/);
 });
 
 test("operator copy and recovery stay action-led", () => {
@@ -92,6 +97,7 @@ test("operator copy and recovery stay action-led", () => {
   assert.match(css, /padding: 30px 16px calc\(104px \+ env\(safe-area-inset-bottom, 0px\)\)/);
   assert.match(css, /\.studio-lifecycle-step \+ \.studio-lifecycle-step::before \{[\s\S]*?var\(--studio-on-cocoa\) 16%/);
   assert.doesNotMatch(css, /html\[data-theme="dark"\] \.studio-shell \.studio-lifecycle-track,[\s\S]*?color: #1d1512/);
+  assert.match(atelierCss, /@media \(prefers-reduced-motion: reduce\)/);
 });
 
 test("documented browser evidence is complete", () => {
