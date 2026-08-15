@@ -1,8 +1,16 @@
 "use client";
 
-import { useCallback, useEffect, useId, useRef, useSyncExternalStore } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  useSyncExternalStore,
+} from "react";
 import { createPortal } from "react-dom";
 import { ArrowLeft, X } from "lucide-react";
+import { useDocumentScrollLock } from "../../../hooks/use-document-scroll-lock";
+import { useHistoryBackedDialog } from "../../../hooks/use-history-backed-dialog";
 
 const subscribeToClientReady = () => () => {};
 const getClientReady = () => true;
@@ -14,7 +22,7 @@ interface StudioTaskSheetProps {
   eyebrow: string;
   footer?: React.ReactNode;
   onBack?: () => void;
-  onDismiss(): void;
+  onDismiss(): boolean | void;
   open: boolean;
   progress?: number;
   progressLabel?: string;
@@ -37,18 +45,24 @@ export function StudioTaskSheet({
 }: StudioTaskSheetProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
-  const dismissedRef = useRef(false);
+  const fallbackReturnFocusRef = useRef<HTMLElement | null>(null);
   const mounted = useSyncExternalStore(subscribeToClientReady, getClientReady, getServerReady);
   const titleId = useId();
+  useDocumentScrollLock(open);
 
-  const dismiss = useCallback(() => {
-    if (dismissedRef.current) return;
-    dismissedRef.current = true;
+  const acceptDismiss = useCallback(() => {
+    const accepted = onDismiss();
+    if (accepted === false) return false;
     const dialog = dialogRef.current;
     if (dialog?.open) dialog.close();
-    onDismiss();
-    requestAnimationFrame(() => returnFocus?.focus({ preventScroll: true }));
-  }, [onDismiss, returnFocus]);
+    return true;
+  }, [onDismiss]);
+
+  const { openWithHistory, requestClose } = useHistoryBackedDialog({
+    isOpen: open,
+    marker: `studio-task:${titleId}`,
+    onDismiss: acceptDismiss,
+  });
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -58,47 +72,55 @@ export function StudioTaskSheet({
       return;
     }
 
-    dismissedRef.current = false;
-    const bodyOverflow = document.body.style.overflow;
-    const documentOverflow = document.documentElement.style.overflow;
-    document.body.style.overflow = "hidden";
-    document.documentElement.style.overflow = "hidden";
-    if (!dialog.open) dialog.showModal();
-    requestAnimationFrame(() => closeButtonRef.current?.focus({ preventScroll: true }));
-
-    return () => {
-      document.body.style.overflow = bodyOverflow;
-      document.documentElement.style.overflow = documentOverflow;
-    };
-  }, [open]);
+    if (!dialog.open) {
+      const activeElement = document.activeElement;
+      fallbackReturnFocusRef.current = returnFocus
+        ?? (activeElement instanceof HTMLElement ? activeElement : null);
+      openWithHistory();
+      dialog.showModal();
+    }
+    window.requestAnimationFrame(() => {
+      closeButtonRef.current?.focus({ preventScroll: true });
+    });
+  }, [open, openWithHistory, returnFocus]);
 
   useEffect(() => {
     const dialog = dialogRef.current;
     if (!dialog || !open) return;
-    const handleBackdropClick = (event: MouseEvent) => {
-      if (event.target === dialog) dismiss();
+
+    const closeFromBackdrop = (event: globalThis.MouseEvent) => {
+      if (event.target !== dialog) return;
+      const bounds = dialog.getBoundingClientRect();
+      const outside = event.clientX < bounds.left
+        || event.clientX > bounds.right
+        || event.clientY < bounds.top
+        || event.clientY > bounds.bottom;
+      if (outside) requestClose();
     };
-    const handleEscape = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
-      event.preventDefault();
-      dismiss();
-    };
-    dialog.addEventListener("click", handleBackdropClick);
-    dialog.addEventListener("keydown", handleEscape);
-    return () => {
-      dialog.removeEventListener("click", handleBackdropClick);
-      dialog.removeEventListener("keydown", handleEscape);
-    };
-  }, [dismiss, open]);
+
+    dialog.addEventListener("click", closeFromBackdrop);
+    return () => dialog.removeEventListener("click", closeFromBackdrop);
+  }, [open, requestClose]);
+
+  const restoreFocus = useCallback(() => {
+    const target = returnFocus ?? fallbackReturnFocusRef.current;
+    window.requestAnimationFrame(() => target?.focus({ preventScroll: true }));
+  }, [returnFocus]);
 
   if (!mounted) return null;
 
   return createPortal(
     <dialog
       aria-labelledby={titleId}
+      aria-modal="true"
       className={`studio-intake-sheet studio-task-sheet ${className}`.trim()}
-      onCancel={(event) => { event.preventDefault(); dismiss(); }}
-      onClose={dismiss}
+      data-experience-layer="sheet"
+      data-studio-sheet-safety="guarded"
+      onCancel={(event) => {
+        event.preventDefault();
+        requestClose();
+      }}
+      onClose={restoreFocus}
       ref={dialogRef}
     >
       <div className="studio-task-sheet-frame">
@@ -114,7 +136,13 @@ export function StudioTaskSheet({
               <h2 id={titleId}>{title}</h2>
             </div>
           </div>
-          <button aria-label="Close" className="studio-icon-action" onClick={dismiss} ref={closeButtonRef} type="button">
+          <button
+            aria-label={`Close ${title}`}
+            className="studio-icon-action"
+            onClick={requestClose}
+            ref={closeButtonRef}
+            type="button"
+          >
             <X aria-hidden="true" size={19} />
           </button>
         </header>

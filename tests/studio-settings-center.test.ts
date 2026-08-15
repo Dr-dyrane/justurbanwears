@@ -32,14 +32,16 @@ test("settings links directly to the visual guide", () => {
   assert.match(wardrobe, /url\.searchParams\.delete\("guide"\)/);
 });
 
-test("navbar sheets share one state-first dismissal path", () => {
+test("navbar sheets share one guarded state-first dismissal path", () => {
   assert.match(taskSheet, /createPortal/);
   assert.match(taskSheet, /document\.body/);
-  assert.match(taskSheet, /const dismiss = useCallback/);
-  assert.match(taskSheet, /dialog\.addEventListener\("click", handleBackdropClick\)/);
-  assert.match(taskSheet, /dialog\.addEventListener\("keydown", handleEscape\)/);
-  assert.match(taskSheet, /onCancel=\{\(event\) => \{ event\.preventDefault\(\); dismiss\(\); \}\}/);
-  assert.match(taskSheet, /onClick=\{dismiss\}/);
-  assert.match(taskSheet, /onClose=\{dismiss\}/);
-  assert.match(taskSheet, /if \(dismissedRef\.current\) return/);
+  assert.match(taskSheet, /useHistoryBackedDialog/);
+  assert.match(taskSheet, /useDocumentScrollLock/);
+  assert.match(taskSheet, /const acceptDismiss = useCallback/);
+  assert.match(taskSheet, /dialog\.addEventListener\("click", closeFromBackdrop\)/);
+  assert.match(taskSheet, /onCancel=\{\(event\) => \{[\s\S]*requestClose\(\)/);
+  assert.match(taskSheet, /onClick=\{requestClose\}/);
+  assert.match(taskSheet, /onClose=\{restoreFocus\}/);
+  assert.match(taskSheet, /data-studio-sheet-safety="guarded"/);
+  assert.doesNotMatch(taskSheet, /dismissedRef/);
 });

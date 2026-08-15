@@ -1,7 +1,16 @@
 "use client";
 
-import { FormEvent, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type FormEvent,
+} from "react";
 import { Camera, Check, X } from "lucide-react";
+import { useDocumentScrollLock } from "../../../hooks/use-document-scroll-lock";
+import { useHistoryBackedDialog } from "../../../hooks/use-history-backed-dialog";
 import type { GarmentCategory } from "../../../lib/studio/domain/entities";
 import { useStudio } from "../studio-provider";
 
@@ -13,6 +22,10 @@ interface LocalGarmentIntakeDialogProps {
   returnFocus?: HTMLElement | null;
 }
 
+function emptyCaptures(): Record<CaptureKey, File | null> {
+  return { front: null, back: null, detail: null };
+}
+
 export function LocalGarmentIntakeDialog({
   onDismiss,
   open,
@@ -20,27 +33,87 @@ export function LocalGarmentIntakeDialog({
 }: LocalGarmentIntakeDialogProps) {
   const { createGarment } = useStudio();
   const dialogRef = useRef<HTMLDialogElement>(null);
-  const [files, setFiles] = useState<Record<CaptureKey, File | null>>({
-    front: null,
-    back: null,
-    detail: null,
+  const formRef = useRef<HTMLFormElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const fallbackReturnFocusRef = useRef<HTMLElement | null>(null);
+  const committedRef = useRef(false);
+  const dialogId = useId();
+  const [dirty, setDirty] = useState(false);
+  const [files, setFiles] = useState<Record<CaptureKey, File | null>>(emptyCaptures);
+  useDocumentScrollLock(open);
+
+  const resetDraft = useCallback(() => {
+    formRef.current?.reset();
+    setFiles(emptyCaptures());
+    setDirty(false);
+  }, []);
+
+  const acceptDismiss = useCallback(() => {
+    if (
+      !committedRef.current
+      && dirty
+      && !window.confirm("Discard this garment draft? Photos and entered details will be cleared.")
+    ) {
+      return false;
+    }
+
+    committedRef.current = false;
+    resetDraft();
+    const dialog = dialogRef.current;
+    if (dialog?.open) dialog.close();
+    onDismiss();
+    return true;
+  }, [dirty, onDismiss, resetDraft]);
+
+  const { openWithHistory, requestClose } = useHistoryBackedDialog({
+    isOpen: open,
+    marker: `studio-local-intake:${dialogId}`,
+    onDismiss: acceptDismiss,
   });
 
   useEffect(() => {
     const dialog = dialogRef.current;
     if (!dialog) return;
-    if (open && !dialog.open) dialog.showModal();
-    if (!open && dialog.open) dialog.close();
-  }, [open]);
+    if (!open) {
+      if (dialog.open) dialog.close();
+      return;
+    }
 
-  function close() {
-    dialogRef.current?.close();
-  }
+    if (!dialog.open) {
+      const activeElement = document.activeElement;
+      fallbackReturnFocusRef.current = returnFocus
+        ?? (activeElement instanceof HTMLElement ? activeElement : null);
+      committedRef.current = false;
+      openWithHistory();
+      dialog.showModal();
+    }
+    window.requestAnimationFrame(() => {
+      closeButtonRef.current?.focus({ preventScroll: true });
+    });
+  }, [open, openWithHistory, returnFocus]);
 
-  function closed() {
-    onDismiss();
-    window.requestAnimationFrame(() => returnFocus?.focus());
-  }
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog || !open) return;
+
+    const closeFromBackdrop = (event: globalThis.MouseEvent) => {
+      if (event.target !== dialog) return;
+      const bounds = dialog.getBoundingClientRect();
+      const outside = event.clientX < bounds.left
+        || event.clientX > bounds.right
+        || event.clientY < bounds.top
+        || event.clientY > bounds.bottom;
+      if (outside) requestClose();
+    };
+
+    dialog.addEventListener("click", closeFromBackdrop);
+    return () => dialog.removeEventListener("click", closeFromBackdrop);
+  }, [open, requestClose]);
+
+  const restoreFocus = useCallback(() => {
+    const target = returnFocus ?? fallbackReturnFocusRef.current;
+    window.requestAnimationFrame(() => target?.focus({ preventScroll: true }));
+  }, [returnFocus]);
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -70,25 +143,42 @@ export function LocalGarmentIntakeDialog({
       hasBack: Boolean(files.back),
       hasDetail: Boolean(files.detail),
     });
-    event.currentTarget.reset();
-    setFiles({ front: null, back: null, detail: null });
-    close();
+    committedRef.current = true;
+    requestClose();
   }
 
   return (
     <dialog
       aria-labelledby="studio-local-intake-title"
+      aria-modal="true"
       className="studio-intake-sheet"
-      onClose={closed}
+      data-experience-layer="sheet"
+      data-studio-sheet-safety="dirty-form"
+      id={dialogId}
+      onCancel={(event) => {
+        event.preventDefault();
+        requestClose();
+      }}
+      onClose={restoreFocus}
       ref={dialogRef}
     >
-      <form onSubmit={submit}>
+      <form
+        onInput={() => setDirty(true)}
+        onSubmit={submit}
+        ref={formRef}
+      >
         <header>
           <div>
             <p className="eyebrow">Garment pipeline</p>
             <h2 id="studio-local-intake-title">Snap. Classify. Wardrobe.</h2>
           </div>
-          <button aria-label="Close garment intake" className="studio-icon-action" onClick={close} type="button">
+          <button
+            aria-label="Close garment intake"
+            className="studio-icon-action"
+            onClick={requestClose}
+            ref={closeButtonRef}
+            type="button"
+          >
             <X aria-hidden="true" size={20} />
           </button>
         </header>
@@ -104,10 +194,13 @@ export function LocalGarmentIntakeDialog({
                 <input
                   accept="image/*"
                   capture="environment"
-                  onChange={(event) => setFiles((current) => ({
-                    ...current,
-                    [key]: event.target.files?.[0] ?? null,
-                  }))}
+                  onChange={(event) => {
+                    setDirty(true);
+                    setFiles((current) => ({
+                      ...current,
+                      [key]: event.target.files?.[0] ?? null,
+                    }));
+                  }}
                   type="file"
                 />
                 {files[key] ? <Check aria-hidden="true" size={22} /> : <Camera aria-hidden="true" size={22} />}
@@ -148,7 +241,7 @@ export function LocalGarmentIntakeDialog({
         </section>
 
         <footer>
-          <button className="button button-secondary" onClick={close} type="button">Cancel</button>
+          <button className="button button-secondary" onClick={requestClose} type="button">Cancel</button>
           <button className="button button-primary" type="submit">Create garment</button>
         </footer>
       </form>

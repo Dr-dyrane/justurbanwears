@@ -141,6 +141,38 @@ export function WearSheet({ onDismiss, open, returnFocus, wardrobeItemId }: {
     await run(selected.operation, model, parent);
   }
 
+  function finishDismiss() {
+    setExpanded(false);
+    onDismiss();
+    return true;
+  }
+
+  function requestDismiss() {
+    if (expanded) {
+      setExpanded(false);
+      return false;
+    }
+
+    if (
+      step === "working"
+      && !window.confirm("Leave this Wear task? Studio may continue processing the private view.")
+    ) {
+      return false;
+    }
+
+    const hasModelDraft = step === "add-model"
+      && Boolean(file || name.trim() || licenseUrl.trim() || authorityConfirmed);
+    const hasCorrectionDraft = step === "edit" && Boolean(note.trim());
+    if (
+      (hasModelDraft || hasCorrectionDraft)
+      && !window.confirm("Discard these unsaved Wear changes?")
+    ) {
+      return false;
+    }
+
+    return finishDismiss();
+  }
+
   const footer = step === "review" ? (
     <>
       <button className="button button-secondary" onClick={() => void decide("EDIT")} type="button">Edit</button>
@@ -164,7 +196,7 @@ export function WearSheet({ onDismiss, open, returnFocus, wardrobeItemId }: {
       <button className="button button-primary" disabled={!file || !name.trim() || !licenseUrl.trim() || !authorityConfirmed} onClick={() => void addModel()} type="button">Add & try on</button>
     </>
   ) : step === "saved" ? (
-    <button className="button button-primary" onClick={onDismiss} type="button">Done</button>
+    <button className="button button-primary" onClick={finishDismiss} type="button">Done</button>
   ) : step === "failed" ? (
     <button className="button button-primary" disabled={!selected?.retryAvailable} onClick={() => void retry()} type="button">Try once</button>
   ) : undefined;
@@ -175,7 +207,7 @@ export function WearSheet({ onDismiss, open, returnFocus, wardrobeItemId }: {
       eyebrow="Private media"
       footer={footer}
       onBack={["add-model", "review", "edit"].includes(step) ? () => setStep(step === "add-model" ? "choose" : "choose") : undefined}
-      onDismiss={onDismiss}
+      onDismiss={requestDismiss}
       open={open}
       progress={step === "choose" ? 18 : step === "working" ? 58 : step === "review" || step === "edit" ? 82 : 100}
       progressLabel="Wear media progress"

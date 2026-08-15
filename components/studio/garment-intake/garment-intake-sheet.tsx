@@ -163,9 +163,35 @@ export function GarmentIntakeSheet({ onDismiss, onOpenWear, open, returnFocus }:
     setReceiptPreviewOpen(false);
   }
 
-  function dismiss() {
+  function finishDismiss() {
     reset();
     onDismiss();
+    return true;
+  }
+
+  function requestDismiss() {
+    if (receiptPreviewOpen) {
+      setReceiptPreviewOpen(false);
+      return false;
+    }
+
+    if (
+      (working || step === "build")
+      && !window.confirm("Leave this Studio task? The active request may still finish, but this intake view will close.")
+    ) {
+      return false;
+    }
+
+    const garmentSaved = Boolean(wardrobeItemId) || step === "wear" || step === "receipt";
+    if (
+      !garmentSaved
+      && step !== "start"
+      && !window.confirm("Discard this garment intake? The current source and edits will be cleared.")
+    ) {
+      return false;
+    }
+
+    return finishDismiss();
   }
 
   function back() {
@@ -293,8 +319,8 @@ export function GarmentIntakeSheet({ onDismiss, onOpenWear, open, returnFocus }:
     <button className="button button-primary" onClick={() => setStep("receipt")} type="button">Not now</button>
   ) : step === "receipt" ? (
     <>
-      <a className="button button-secondary" href="#garments" onClick={dismiss}>Open garment</a>
-      <button className="button button-primary" onClick={dismiss} type="button">Done</button>
+      <a className="button button-secondary" href="#garments" onClick={finishDismiss}>Open garment</a>
+      <button className="button button-primary" onClick={finishDismiss} type="button">Done</button>
     </>
   ) : undefined;
 
@@ -304,7 +330,7 @@ export function GarmentIntakeSheet({ onDismiss, onOpenWear, open, returnFocus }:
       eyebrow={sourceMode ? sourceLabel : "New garment"}
       footer={footer}
       onBack={["source", "confirm", "edit", "wear"].includes(step) ? back : undefined}
-      onDismiss={dismiss}
+      onDismiss={requestDismiss}
       open={open}
       progress={step === "receipt" ? undefined : progress}
       progressLabel={`Garment intake ${progress}% complete`}

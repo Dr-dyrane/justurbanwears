@@ -217,6 +217,17 @@
   overscroll-behavior: contain;
 }
 
+[data-experience-layer="sheet"][data-studio-sheet-safety] {
+  --juw-sheet-motion: var(--juw-motion-resolve);
+  overscroll-behavior: contain;
+  scroll-behavior: auto;
+  transition-duration: var(--juw-sheet-motion);
+}
+
+[data-experience-layer="sheet"][data-studio-sheet-safety]::backdrop {
+  transition-duration: var(--juw-sheet-motion);
+}
+
 @media (max-width: 680px) and (pointer: coarse) {
   .shop-sheet-handle[data-sheet-gesture="dismiss"] {
     background: transparent;

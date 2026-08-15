@@ -5,7 +5,7 @@ import { useCallback, useEffect, useRef } from "react";
 interface HistoryBackedDialogOptions {
   isOpen: boolean;
   marker: string;
-  onDismiss(): void;
+  onDismiss(): boolean | void;
 }
 
 function currentHistoryState() {
@@ -21,6 +21,7 @@ export function useHistoryBackedDialog({
 }: HistoryBackedDialogOptions) {
   const dismissRef = useRef(onDismiss);
   const isOpenRef = useRef(isOpen);
+  const markerRef = useRef(marker);
   const openedHereRef = useRef(false);
 
   useEffect(() => {
@@ -32,17 +33,44 @@ export function useHistoryBackedDialog({
   }, [isOpen]);
 
   useEffect(() => {
+    markerRef.current = marker;
+  }, [marker]);
+
+  useEffect(() => {
     function closeFromHistory() {
       if (!isOpenRef.current) return;
+      const accepted = dismissRef.current();
+      if (accepted === false) {
+        window.history.pushState(
+          { ...currentHistoryState(), justUrbanDialog: markerRef.current },
+          "",
+          window.location.href,
+        );
+        openedHereRef.current = true;
+        return;
+      }
       openedHereRef.current = false;
-      dismissRef.current();
     }
 
     window.addEventListener("popstate", closeFromHistory);
     return () => window.removeEventListener("popstate", closeFromHistory);
   }, []);
 
+  useEffect(() => {
+    if (isOpen) return;
+    if (
+      !openedHereRef.current
+      || window.history.state?.justUrbanDialog !== marker
+    ) return;
+    openedHereRef.current = false;
+    window.history.back();
+  }, [isOpen, marker]);
+
   const openWithHistory = useCallback(() => {
+    if (window.history.state?.justUrbanDialog === marker) {
+      openedHereRef.current = true;
+      return;
+    }
     window.history.pushState(
       { ...currentHistoryState(), justUrbanDialog: marker },
       "",
