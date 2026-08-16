@@ -1,0 +1,75 @@
+          </dl>
+ 
+diff --git a/components/shop/shop-shell.tsx b/components/shop/shop-shell.tsx
+index d7da997..32372af 100644
+--- a/components/shop/shop-shell.tsx
++++ b/components/shop/shop-shell.tsx
+@@ -11,7 +11,7 @@ import {
+   type LucideIcon,
+ } from "lucide-react";
+ import { usePathname } from "next/navigation";
+-import { useMemo } from "react";
++import { useEffect, useMemo, useState } from "react";
+ import { useMobileChrome } from "../../hooks/use-mobile-chrome";
+ import { createBrowserCommerceService } from "../../lib/shop/services/commerce-service";
+ import type { ShopProduct } from "../../lib/shop/domain/entities";
+@@ -62,6 +62,40 @@ function ShopChrome({ children }: { children: React.ReactNode }) {
+   const currentProduct = pathname.startsWith("/shop/products/")
+     ? getProduct(pathname.slice("/shop/products/".length))
+     : undefined;
++  const contextRevealTarget = pathname === "/shop"
++    ? "#discover"
++    : pathname.startsWith("/shop/products/")
++      ? "#shop-purchase"
++      : null;
++  const [contextActionVisible, setContextActionVisible] = useState(contextRevealTarget === null);
++
++  useEffect(() => {
++    if (!contextRevealTarget) {
++      setContextActionVisible(true);
++      return;
++    }
++
++    setContextActionVisible(false);
++    let frame = 0;
++    const update = () => {
++      window.cancelAnimationFrame(frame);
++      frame = window.requestAnimationFrame(() => {
++        const target = document.querySelector(contextRevealTarget);
++        setContextActionVisible(Boolean(
++          target && target.getBoundingClientRect().top <= window.innerHeight * 0.72,
++        ));
++      });
++    };
++
++    update();
++    window.addEventListener("resize", update);
++    window.addEventListener("scroll", update, { passive: true });
++    return () => {
++      window.cancelAnimationFrame(frame);
++      window.removeEventListener("resize", update);
++      window.removeEventListener("scroll", update);
++    };
++  }, [contextRevealTarget]);
+   const checkoutAvailable = isBagCheckoutAvailable(bag, products);
+   const productAction = currentProduct?.availabilityConfirmed && currentProduct.availability === "AVAILABLE"
+     ? { eyebrow: "This piece", label: "Choose size and buy", href: "#shop-purchase" }
+@@ -177,6 +211,7 @@ function ShopChrome({ children }: { children: React.ReactNode }) {
+         aria-hidden={mobileChromeMode === "suspended" || undefined}
+         aria-label="Mobile shop controls"
+         className="shop-mobile-shell"
++        data-context-action-visible={contextActionVisible}
+         data-experience-layer="island"
+         data-mobile-chrome-mode={mobileChromeMode}
+         inert={mobileChromeMode === "suspended" || undefined}
+@@ -195,11 +230,11 @@ function ShopChrome({ children }: { children: React.ReactNode }) {
+             <span><MobileDestinationIcon aria-hidden="true" size={25} strokeWidth={2.2} /></span>
+           </button>
+           <Link
+-            aria-hidden={mobileChromeMode === "navigation" || mobileChromeMode === "suspended" || undefined}
++            aria-hidden={!contextActionVisible || mobileChromeMode === "navigation" || mobileChromeMode === "suspended" || undefined}
+             className={`shop-mobile-context shop-dock-lens ${chromeStyles.contextAction}`}
+             data-experience-action="primary"
+             href={contextAction.href}
+-            tabIndex={mobileChromeMode === "navigation" || mobileChromeMode === "suspended" ? -1 : undefined}
++            tabIndex={!contextActionVis
