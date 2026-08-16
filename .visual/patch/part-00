@@ -1,0 +1,123 @@
+diff --git a/app/experience-system.css b/app/experience-system.css
+index 6d22a7f..6bb2ca1 100644
+--- a/app/experience-system.css
++++ b/app/experience-system.css
+@@ -355,3 +355,57 @@
+     outline-offset: 3px;
+   }
+ }
++
++/* Final visual polish — the contextual island stays quiet until intent exists. */
++@media (max-width: 680px) {
++  .shop-mobile-shell[data-mobile-chrome-mode="compact"][data-context-action-visible="false"]
++  .shop-mobile-composition {
++    gap: 10px;
++    grid-template-columns: 58px 58px;
++    margin-inline: auto;
++    max-width: 126px;
++    width: 126px;
++  }
++
++  .shop-mobile-shell[data-mobile-chrome-mode="compact"][data-context-action-visible="false"]
++  .shop-mobile-context {
++    display: none;
++  }
++
++  .shop-mobile-shell[data-mobile-chrome-mode="compact"][data-context-action-visible="false"]
++  .shop-mobile-fab {
++    grid-column: 2;
++  }
++
++  .shop-mobile-shell[data-mobile-chrome-mode="compact"][data-context-action-visible="true"]
++  .shop-mobile-context {
++    animation: juw-context-action-enter var(--juw-motion-state) var(--juw-ease-focus) both;
++  }
++}
++
++@media (max-width: 379px) {
++  .shop-mobile-shell[data-mobile-chrome-mode="compact"][data-context-action-visible="false"]
++  .shop-mobile-composition {
++    gap: 6px;
++    grid-template-columns: 50px 50px;
++    max-width: 106px;
++    width: 106px;
++  }
++}
++
++@keyframes juw-context-action-enter {
++  from {
++    opacity: 0;
++    transform: translate3d(0, 8px, 0) scale(0.985);
++  }
++  to {
++    opacity: 1;
++    transform: translate3d(0, 0, 0) scale(1);
++  }
++}
++
++@media (prefers-reduced-motion: reduce) {
++  .shop-mobile-shell[data-context-action-visible="true"] .shop-mobile-context {
++    animation: none;
++  }
++}
+diff --git a/app/page.tsx b/app/page.tsx
+index 2da7361..a1b5b40 100644
+--- a/app/page.tsx
++++ b/app/page.tsx
+@@ -215,7 +215,12 @@ export default async function Home() {
+           </div>
+         </div>
+ 
+-        <div className={styles.evidenceGrid}>
++        <div
++          aria-label="Garment evidence views. Swipe or use the arrow keys to browse."
++          className={styles.evidenceGrid}
++          role="region"
++          tabIndex={0}
++        >
+           {evidenceMedia.map((media, index) => (
+             <figure className={`${styles.evidenceFrame} ${editorial.editorialReveal}`} key={`${media.id}-${index}`}>
+               <ProductImage media={media} />
+diff --git a/app/shop-editorial-hero.css b/app/shop-editorial-hero.css
+index 56d7647..95c52ae 100644
+--- a/app/shop-editorial-hero.css
++++ b/app/shop-editorial-hero.css
+@@ -272,7 +272,7 @@
+ }
+ 
+ .shop-home .shop-catalogue-notice {
+-  color: var(--text-soft);
++  color: var(--shop-muted);
+   font-size: 12px;
+   line-height: 1.6;
+   margin: 0;
+@@ -286,7 +286,7 @@
+   background: transparent;
+   border: 0;
+   border-radius: 0;
+-  box-shadow: inset 0 -1px color-mix(in srgb, var(--text, #241814) 16%, transparent);
++  box-shadow: inset 0 -1px color-mix(in srgb, var(--shop-ink, #241814) 16%, transparent);
+   display: grid;
+   gap: 16px;
+   grid-template-columns: minmax(0, 1fr) auto;
+@@ -305,14 +305,14 @@
+ }
+ 
+ .shop-home .shop-search svg {
+-  color: var(--text-soft);
++  color: var(--shop-muted);
+   flex: 0 0 auto;
+ }
+ 
+ .shop-home .shop-search input {
+   background: transparent;
+   border: 0;
+-  color: var(--text);
++  color: var(--shop-ink);
+   font-family: var(--font-ui);
+   font-size: clamp(16px, 1.5vw, 19px);
+   min-height: 44px;
+@@ -322,11 +322,11 @@
+ }
+ 
+ .shop-home .shop-search input::placeholder 
