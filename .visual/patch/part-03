@@ -1,0 +1,134 @@
+page .shop-related .product-card-action-row {
+   bottom: 12px;
++  margin: 0;
++  min-height: 0;
+   opacity: 0;
+   pointer-events: none;
+   position: absolute;
+@@ -155,8 +157,13 @@
+   border-radius: 999px;
+   color: #211713;
+   display: inline-flex;
++  flex: 0 0 44px;
+   height: 44px;
+   justify-content: center;
++  max-width: 44px;
++  min-height: 44px;
++  min-width: 44px;
++  padding: 0;
+   width: 44px;
+ }
+ 
+diff --git a/app/studio-atelier.css b/app/studio-atelier.css
+index e50e37f..c53344b 100644
+--- a/app/studio-atelier.css
++++ b/app/studio-atelier.css
+@@ -1567,3 +1567,338 @@ html[data-theme="dark"] .studio-shell .studio-atelier-pulse {
+     transition-duration: 0.01ms !important;
+   }
+ }
++
++/* Final visual QA — stronger authorship, contrast, and mobile containment. */
++.studio-shell,
++body:has(.studio-shell) {
++  --atelier-muted: #665c55;
++  --atelier-faint: #746962;
++  --atelier-accent-deep: #a93f2b;
++}
++
++html[data-theme="dark"] .studio-shell,
++html[data-theme="dark"] body:has(.studio-shell) {
++  --atelier-muted: #c4b9b2;
++  --atelier-faint: #a79c95;
++}
++
++.studio-shell,
++.studio-shell .workspace,
++.studio-shell .page-canvas,
++.studio-shell .studio-premium-surface,
++.studio-shell .studio-ops-page,
++.studio-shell .studio-connected-orders-page,
++.studio-shell .studio-atelier-home,
++.studio-shell .studio-stack-panel,
++.studio-shell .studio-operation-section,
++.studio-shell .studio-publishing-section,
++.studio-shell .studio-garment-grid,
++.studio-shell .studio-table,
++.studio-shell .studio-inventory-list {
++  max-width: 100%;
++  min-width: 0;
++}
++
++.studio-shell {
++  overflow-x: clip;
++}
++
++.studio-shell .studio-wordmark > small {
++  color: var(--atelier-muted);
++}
++
++.studio-shell .studio-segmented-view button small {
++  color: var(--atelier-accent-deep);
++}
++
++.studio-shell .studio-connected-orders-heading > span,
++.studio-shell .studio-section-title > span,
++.studio-shell .studio-atelier-section-heading > span,
++.studio-shell .studio-atelier-section-heading > a {
++  color: var(--atelier-muted);
++}
++
++.studio-shell .studio-ops-heading > div:first-child,
++.studio-shell .studio-ops-hero > div:first-child,
++.studio-shell .studio-connected-orders-heading > div:first-child,
++.studio-shell .studio-atelier-hero-copy {
++  min-width: 0;
++}
++
++.studio-shell .studio-ops-heading h1,
++.studio-shell .studio-ops-hero h1,
++.studio-shell .studio-connected-orders-heading h1,
++.studio-shell .studio-atelier-hero h1,
++.studio-shell .studio-section-title h2,
++.studio-shell .studio-atelier-section-heading h2 {
++  max-width: 100%;
++  overflow-wrap: anywhere;
++  text-wrap: balance;
++}
++
++/* A tab panel is a room, not another card. */
++.studio-shell .studio-premium-surface > section[role="tabpanel"] {
++  background: transparent;
++  border-radius: 0;
++  box-shadow: none;
++  min-width: 0;
++  padding: 0;
++  width: 100%;
++}
++
++html[data-theme="dark"] .studio-shell .studio-premium-surface > section[role="tabpanel"] {
++  background: transparent;
++}
++
++/* Business pulse: typography and rhythm replace a dashboard container. */
++.studio-shell .studio-atelier-pulse {
++  background: transparent;
++  border-radius: 0;
++  box-shadow: none;
++  padding: 0;
++}
++
++html[data-theme="dark"] .studio-shell .studio-atelier-pulse {
++  box-shadow: none;
++}
++
++.studio-shell .studio-pulse-grid {
++  border-bottom: 1px solid var(--atelier-line);
++  border-top: 1px solid var(--atelier-line);
++  gap: 0;
++}
++
++.studio-shell .studio-pulse-item {
++  border-radius: 0;
++  min-height: 136px;
++  pa
