@@ -1,0 +1,122 @@
+px);
+@@ -12,7 +12,7 @@
+   background: transparent;
+   border: 0;
+   border-radius: 999px;
+-  color: var(--text-soft);
++  color: var(--shop-muted);
+   display: inline-flex;
+   font-family: var(--font-code);
+   font-size: 12px;
+@@ -30,7 +30,7 @@
+ .shop-product-page .shop-detail-utility:focus-visible,
+ .shop-product-page .shop-detail-utility.is-saved {
+   background: var(--juw-material-nude-soft, rgba(234, 209, 197, 0.42));
+-  color: var(--text);
++  color: var(--shop-ink);
+ }
+ 
+ .shop-product-page .shop-detail-utility.is-saved {
+@@ -44,13 +44,13 @@
+ }
+ 
+ .shop-detail-facts > div {
+-  border-bottom: 1px solid color-mix(in srgb, var(--text, #241814) 12%, transparent);
++  border-bottom: 1px solid color-mix(in srgb, var(--shop-ink, #241814) 12%, transparent);
+   min-width: 0;
+   padding: 22px 18px 22px 0;
+ }
+ 
+ .shop-detail-facts > div:nth-child(2) {
+-  border-left: 1px solid color-mix(in srgb, var(--text, #241814) 12%, transparent);
++  border-left: 1px solid color-mix(in srgb, var(--shop-ink, #241814) 12%, transparent);
+   padding-left: 18px;
+   padding-right: 0;
+ }
+@@ -62,7 +62,7 @@
+ }
+ 
+ .shop-detail-facts dt {
+-  color: var(--text-soft);
++  color: var(--shop-muted);
+   font-family: var(--font-code);
+   font-size: 12px;
+   font-weight: 680;
+@@ -72,7 +72,7 @@
+ }
+ 
+ .shop-detail-facts dd {
+-  color: var(--text);
++  color: var(--shop-ink);
+   font-family: var(--font-display);
+   font-size: clamp(21px, 2vw, 29px);
+   font-weight: 500;
+@@ -82,7 +82,7 @@
+ }
+ 
+ .shop-detail-facts small {
+-  color: var(--text-soft);
++  color: var(--shop-muted);
+   display: block;
+   font-size: 12px;
+   line-height: 1.45;
+@@ -92,10 +92,10 @@
+ .shop-detail-availability dd {
+   align-items: center;
+   display: flex;
+-  gap: 10px;
++  gap: 12px;
+ }
+ 
+-.shop-detail-availability dd > span {
++.shop-detail-availability .shop-detail-availability-dot {
+   background: var(--positive, #687453);
+   border-radius: 999px;
+   box-shadow: 0 0 0 5px color-mix(in srgb, var(--positive, #687453) 12%, transparent);
+@@ -103,15 +103,25 @@
+   width: 8px;
+ }
+ 
+-.shop-detail-availability[data-state="reserved"] dd > span {
++.shop-detail-availability[data-state="reserved"] .shop-detail-availability-dot {
+   background: var(--caution, #a56737);
+   box-shadow: 0 0 0 5px color-mix(in srgb, var(--caution, #a56737) 12%, transparent);
+ }
+ 
+-.shop-detail-availability[data-state="sold"] dd > span,
+-.shop-detail-availability[data-state="unconfirmed"] dd > span {
+-  background: var(--text-soft);
+-  box-shadow: 0 0 0 5px color-mix(in srgb, var(--text-soft) 12%, transparent);
++.shop-detail-availability[data-state="sold"] .shop-detail-availability-dot,
++.shop-detail-availability[data-state="unconfirmed"] .shop-detail-availability-dot {
++  background: var(--shop-muted);
++  box-shadow: 0 0 0 5px color-mix(in srgb, var(--shop-muted) 12%, transparent);
++}
++
++.shop-detail-availability .shop-detail-availability-copy {
++  display: grid;
++  gap: 0;
++  min-width: 0;
++}
++
++.shop-detail-availability .shop-detail-availability-copy small {
++  margin-top: 7px;
+ }
+ 
+ .shop-product-page .shop-purchase-actions {
+@@ -143,7 +153,7 @@
+ }
+ 
+ .shop-product-page .shop-delivery-note {
+-  color: var(--text-soft);
++  color: var(--shop-muted);
+   font-family: var(--font-code);
+   font-size: 12px;
+   letter-spacing: 0.02em;
+diff --git a/app/shop-product-detail-c.css b/app/shop-product-detail-c.css
+index f84ce09..b374a6a 100644
+--- a/app/shop-product-detail-c.css
++++ b/app/shop-product-detail-c.css
+@@ -128,6 +128,8 @@
+ 
+ .shop-product-
