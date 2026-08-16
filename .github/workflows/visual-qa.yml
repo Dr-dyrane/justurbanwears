@@ -9,6 +9,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: visual-qa-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   visual-audit:
     runs-on: ubuntu-latest
@@ -39,10 +43,16 @@ jobs:
 
       - name: Start the application in Studio seed mode
         run: |
+          mkdir -p visual-qa
           npm run dev -- --host 127.0.0.1 --port 3000 > /tmp/justurbanwears-dev.log 2>&1 &
-          echo $! > /tmp/justurbanwears-dev.pid
+          APP_PID=$!
+          echo "$APP_PID" > /tmp/justurbanwears-dev.pid
           for attempt in $(seq 1 90); do
-            if curl --fail --silent http://127.0.0.1:3000/ >/dev/null; then
+            if ! kill -0 "$APP_PID" 2>/dev/null; then
+              cat /tmp/justurbanwears-dev.log
+              exit 1
+            fi
+            if curl --fail --silent --max-time 4 http://127.0.0.1:3000/ >/dev/null; then
               exit 0
             fi
             sleep 2
@@ -55,7 +65,9 @@ jobs:
 
       - name: Preserve application log
         if: always()
-        run: cp /tmp/justurbanwears-dev.log visual-qa/dev-server.log || true
+        run: |
+          mkdir -p visual-qa
+          cp /tmp/justurbanwears-dev.log visual-qa/dev-server.log || true
 
       - name: Upload visual evidence
         if: always()
