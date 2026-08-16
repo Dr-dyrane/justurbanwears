@@ -25,6 +25,7 @@ jobs:
       DATABASE_URL_UNPOOLED: ""
       PUBLIC_BLOB_READ_WRITE_TOKEN: ""
       PRIVATE_BLOB_READ_WRITE_TOKEN: ""
+      VISUAL_QA_BASE_URL: http://localhost:3000
     steps:
       - uses: actions/checkout@v4
 
@@ -44,7 +45,7 @@ jobs:
       - name: Start the application in Studio seed mode
         run: |
           mkdir -p visual-qa
-          npm run dev -- --host 127.0.0.1 --port 3000 > /tmp/justurbanwears-dev.log 2>&1 &
+          npm run dev -- --port 3000 > /tmp/justurbanwears-dev.log 2>&1 &
           APP_PID=$!
           echo "$APP_PID" > /tmp/justurbanwears-dev.pid
           for attempt in $(seq 1 45); do
@@ -52,7 +53,7 @@ jobs:
               cat /tmp/justurbanwears-dev.log
               exit 1
             fi
-            if curl --fail --silent --max-time 3 http://127.0.0.1:3000/favicon.svg >/dev/null; then
+            if curl --fail --silent --max-time 3 http://localhost:3000/favicon.svg >/dev/null; then
               exit 0
             fi
             sleep 2
