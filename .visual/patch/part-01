@@ -1,0 +1,128 @@
+{
+-  color: color-mix(in srgb, var(--text-soft) 76%, transparent);
++  color: color-mix(in srgb, var(--shop-muted) 76%, transparent);
+ }
+ 
+ .shop-home .shop-results-line {
+-  color: var(--text-soft);
++  color: var(--shop-muted);
+   display: flex;
+   font-family: var(--font-code);
+   font-size: 12px;
+@@ -475,8 +475,12 @@
+   border-radius: 999px;
+   color: #fffaf7;
+   display: inline-flex;
++  flex: 0 0 46px;
+   height: 46px;
+   justify-content: center;
++  max-width: 46px;
++  min-height: 46px;
++  min-width: 46px;
+   padding: 0;
+   position: absolute;
+   right: 14px;
+@@ -520,6 +524,8 @@
+ 
+ .shop-home .product-card-action-row {
+   bottom: 14px;
++  margin: 0;
++  min-height: 0;
+   opacity: 0;
+   pointer-events: none;
+   position: absolute;
+@@ -548,8 +554,12 @@
+   box-shadow: 0 10px 28px rgba(18, 11, 9, 0.16);
+   color: #211713;
+   display: inline-flex;
++  flex: 0 0 46px;
+   height: 46px;
+   justify-content: center;
++  max-width: 46px;
++  min-height: 46px;
++  min-width: 46px;
+   padding: 0;
+   text-decoration: none;
+   transition:
+@@ -586,7 +596,7 @@
+ }
+ 
+ .shop-home .shop-product-copy {
+-  color: var(--text);
++  color: var(--shop-ink);
+   display: grid;
+   gap: 6px 18px;
+   grid-template-areas:
+@@ -598,7 +608,7 @@
+ }
+ 
+ .shop-home .shop-product-copy > span {
+-  color: var(--text-soft);
++  color: var(--shop-muted);
+   font-family: var(--font-code);
+   font-size: 12px;
+   font-weight: 650;
+@@ -620,7 +630,7 @@
+ 
+ .shop-home .shop-product-copy p {
+   align-self: end;
+-  color: var(--text);
++  color: var(--shop-ink);
+   font-family: var(--font-code);
+   font-size: 13px;
+   font-weight: 700;
+diff --git a/app/shop-product-detail-a.css b/app/shop-product-detail-a.css
+index de45581..3b64eac 100644
+--- a/app/shop-product-detail-a.css
++++ b/app/shop-product-detail-a.css
+@@ -6,8 +6,8 @@
+ 
+ .shop-product-page .shop-product-topline {
+   align-items: center;
+-  border-bottom: 1px solid color-mix(in srgb, var(--text, #241814) 13%, transparent);
+-  color: var(--text-soft);
++  border-bottom: 1px solid color-mix(in srgb, var(--shop-ink, #241814) 13%, transparent);
++  color: var(--shop-muted);
+   display: flex;
+   font-family: var(--font-code);
+   font-size: 12px;
+@@ -98,7 +98,7 @@
+ 
+ .shop-product-page .shop-media-controls {
+   align-items: center;
+-  color: var(--text-soft);
++  color: var(--shop-muted);
+   display: flex;
+   font-family: var(--font-code);
+   justify-content: space-between;
+@@ -166,7 +166,7 @@
+ }
+ 
+ .shop-product-page .shop-detail-price {
+-  color: var(--text);
++  color: var(--shop-ink);
+   font-family: var(--font-code);
+   font-size: clamp(18px, 1.7vw, 24px);
+   font-weight: 700;
+@@ -175,7 +175,7 @@
+ }
+ 
+ .shop-product-page .shop-detail-note {
+-  color: var(--text-soft);
++  color: var(--shop-muted);
+   font-family: var(--font-display);
+   font-size: clamp(20px, 2vw, 29px);
+   letter-spacing: -0.026em;
+diff --git a/app/shop-product-detail-b.css b/app/shop-product-detail-b.css
+index 6f0b731..e6a529f 100644
+--- a/app/shop-product-detail-b.css
++++ b/app/shop-product-detail-b.css
+@@ -1,6 +1,6 @@
+ .shop-product-page .shop-detail-utility-row {
+-  border-bottom: 1px solid color-mix(in srgb, var(--text, #241814) 12%, transparent);
+-  border-top: 1px solid color-mix(in srgb, var(--text, #241814) 12%, transparent);
++  border-bottom: 1px solid color-mix(in srgb, var(--shop-ink, #241814) 12%, transparent);
++  border-top: 1px solid color-mix(in srgb, var(--shop-ink, #241814) 12%, transparent);
+   display: flex;
+   gap: 4px;
+   margin-top: clamp(30px, 3.5vw, 46
