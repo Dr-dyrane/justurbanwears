@@ -1,0 +1,28 @@
+        route: route.path,
+@@ -240,7 +264,7 @@ try {
+           viewport,
+           theme,
+           title: await page.title(),
+-          documentHeight: await page.evaluate(() => document.documentElement.scrollHeight),
++          ...layout,
+           contrast,
+           axe,
+           errors,
+@@ -260,6 +284,7 @@ report.summary = {
+   consoleErrors: report.runs.reduce((sum, run) => sum + run.errors.length, 0),
+   contrastFindings: report.runs.reduce((sum, run) => sum + run.contrast.length, 0),
+   axeViolations: report.runs.reduce((sum, run) => sum + run.axe.length, 0),
++  horizontalOverflowRuns: report.runs.filter((run) => run.overflowX > 1).length,
+ };
+ 
+ await writeFile(path.join(outputDir, "report.json"), JSON.stringify(report, null, 2));
+@@ -271,8 +296,8 @@ await writeFile(
+     `Console errors: ${report.summary.consoleErrors}`,
+     `Contrast findings: ${report.summary.contrastFindings}`,
+     `Axe violations: ${report.summary.axeViolations}`,
++    `Horizontal overflow runs: ${report.summary.horizontalOverflowRuns}`,
+   ].join("\n") + "\n",
+ );
+ 
+ console.log(JSON.stringify(report.summary, null, 2));
+-if (report.summary.failedResponses > 0) process.exitCode = 1;
