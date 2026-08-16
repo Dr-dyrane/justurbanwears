@@ -1,0 +1,76 @@
+ible || mobileChromeMode === "navigation" || mobileChromeMode === "suspended" ? -1 : undefined}
+           >
+             <span>
+               <small>{contextAction.eyebrow}</small>
+diff --git a/scripts/visual-qa.mjs b/scripts/visual-qa.mjs
+index 1bd2364..a8518f0 100644
+--- a/scripts/visual-qa.mjs
++++ b/scripts/visual-qa.mjs
+@@ -12,12 +12,18 @@ await mkdir(outputDir, { recursive: true });
+ const routes = [
+   { name: "site-home", path: "/", fold: true },
+   { name: "shop-home", path: "/shop", fold: true },
++  { name: "shop-search", path: "/shop/search", fold: true },
++  { name: "shop-saved", path: "/shop/saved", fold: true },
++  { name: "shop-bag", path: "/shop/bag", fold: true },
++  { name: "shop-checkout", path: "/shop/checkout", fold: true },
++  { name: "shop-orders", path: "/shop/orders", fold: true },
++  { name: "shop-account", path: "/shop/account", fold: true },
+   { name: "garment-dossier", path: "/shop/products/coral-drift-dress", fold: true },
+   { name: "studio-home", path: "/studio", fold: true },
+-  { name: "studio-wardrobe", path: "/studio/wardrobe" },
+-  { name: "studio-models", path: "/studio/models" },
+-  { name: "studio-operations", path: "/studio/operations" },
+-  { name: "studio-orders", path: "/studio/orders" },
++  { name: "studio-wardrobe", path: "/studio/wardrobe", fold: true },
++  { name: "studio-models", path: "/studio/models", fold: true },
++  { name: "studio-operations", path: "/studio/operations", fold: true },
++  { name: "studio-orders", path: "/studio/orders", fold: true },
+ ];
+ 
+ const viewports = [
+@@ -39,15 +45,27 @@ function safeName(value) {
+ 
+ async function settle(page) {
+   await page.waitForLoadState("domcontentloaded");
+-  await page.waitForTimeout(900);
++  await page.waitForTimeout(700);
++  await page.waitForFunction(() => !/Opening (Lulu Studio|operations|orders|the wardrobe|model atelier)/i.test(document.body.innerText), null, {
++    timeout: 8_000,
++  }).catch(() => {});
+   await page.evaluate(async () => {
+     const height = Math.max(document.body.scrollHeight, document.documentElement.scrollHeight);
+-    for (let y = 0; y < height; y += Math.max(420, window.innerHeight * 0.72)) {
++    for (let y = 0; y < height; y += Math.max(520, window.innerHeight * 0.82)) {
+       window.scrollTo(0, y);
+-      await new Promise((resolve) => setTimeout(resolve, 45));
++      await new Promise((resolve) => setTimeout(resolve, 90));
+     }
++    await Promise.race([
++      Promise.all(Array.from(document.images).map((image) => image.complete
++        ? Promise.resolve()
++        : new Promise((resolve) => {
++            image.addEventListener("load", resolve, { once: true });
++            image.addEventListener("error", resolve, { once: true });
++          }))),
++      new Promise((resolve) => setTimeout(resolve, 8_000)),
++    ]);
+     window.scrollTo(0, 0);
+-    await new Promise((resolve) => setTimeout(resolve, 350));
++    await new Promise((resolve) => setTimeout(resolve, 500));
+   });
+   await page.evaluate(() => document.fonts?.ready);
+ }
+@@ -232,6 +250,12 @@ try {
+           }));
+         });
+ 
++        const layout = await page.evaluate(() => ({
++          clientWidth: document.documentElement.clientWidth,
++          scrollWidth: document.documentElement.scrollWidth,
++          overflowX: Math.max(0, document.documentElement.scrollWidth - document.documentElement.clientWidth),
++          documentHeight: document.documentElement.scrollHeight,
++        }));
+         report.runs.push({
+           id,
+   
