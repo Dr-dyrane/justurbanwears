@@ -29,6 +29,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Apply the visual polish candidate
+        run: |
+          cat .visual/patch/part-* > /tmp/visual-polish.patch
+          git apply --check /tmp/visual-polish.patch
+          git apply /tmp/visual-polish.patch
+          git diff --check
+
       - uses: actions/setup-node@v4
         with:
           node-version: 22.19.0
