@@ -1,0 +1,67 @@
+name: Visual QA
+
+on:
+  push:
+    branches:
+      - agent/visual-qa
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  visual-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      CI: true
+      NEXT_TELEMETRY_DISABLED: "1"
+      STUDIO_AI_ENGINE_AUTH_MODE: ""
+      DATABASE_URL: ""
+      DATABASE_URL_UNPOOLED: ""
+      PUBLIC_BLOB_READ_WRITE_TOKEN: ""
+      PRIVATE_BLOB_READ_WRITE_TOKEN: ""
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.19.0
+          cache: npm
+
+      - name: Install application dependencies
+        run: npm ci
+
+      - name: Install visual-audit browser
+        run: |
+          npm install --no-save --no-package-lock playwright@1.54.2 axe-core@4.10.3
+          npx playwright install --with-deps chromium
+
+      - name: Start the application in Studio seed mode
+        run: |
+          npm run dev -- --host 127.0.0.1 --port 3000 > /tmp/justurbanwears-dev.log 2>&1 &
+          echo $! > /tmp/justurbanwears-dev.pid
+          for attempt in $(seq 1 90); do
+            if curl --fail --silent http://127.0.0.1:3000/ >/dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+          cat /tmp/justurbanwears-dev.log
+          exit 1
+
+      - name: Capture and audit every experience surface
+        run: node scripts/visual-qa.mjs
+
+      - name: Preserve application log
+        if: always()
+        run: cp /tmp/justurbanwears-dev.log visual-qa/dev-server.log || true
+
+      - name: Upload visual evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: justurbanwears-visual-qa-${{ github.run_id }}
+          path: visual-qa
+          if-no-files-found: error
+          retention-days: 7
