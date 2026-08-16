@@ -1,0 +1,33 @@
+name: Source export
+
+on:
+  push:
+    branches:
+      - agent/visual-qa
+    paths:
+      - .github/workflows/source-export.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Package source snapshot
+        run: |
+          tar \
+            --exclude=.git \
+            --exclude=node_modules \
+            --exclude=dist \
+            --exclude=.next \
+            --exclude=.wrangler \
+            --exclude=visual-qa \
+            -czf /tmp/justurbanwears-source.tgz .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: justurbanwears-source-${{ github.sha }}
+          path: /tmp/justurbanwears-source.tgz
+          retention-days: 1
