@@ -1,0 +1,146 @@
+dding: 22px 24px;
++  position: relative;
++}
++
++.studio-shell .studio-pulse-item + .studio-pulse-item::before {
++  background: var(--atelier-line);
++  content: "";
++  inset: 22px auto 22px 0;
++  position: absolute;
++  width: 1px;
++}
++
++.studio-shell .studio-pulse-item:hover {
++  background: var(--atelier-panel-soft);
++  transform: none;
++}
++
++/* Recent garment state reads as an atelier ledger, not stacked cards. */
++.studio-shell .studio-recent-list {
++  border-top: 1px solid var(--atelier-line);
++  gap: 0;
++}
++
++.studio-shell .studio-recent-row {
++  background: transparent;
++  border-bottom: 1px solid var(--atelier-line);
++  border-radius: 0;
++  box-shadow: none;
++  min-height: 88px;
++  padding: 10px 4px;
++}
++
++.studio-shell .studio-recent-row:hover {
++  background: var(--atelier-panel-soft);
++  box-shadow: none;
++  transform: none;
++}
++
++/* Operations pulse only occupies the space its live states require. */
++.studio-shell .studio-operation-summary {
++  background: transparent;
++  box-shadow: none;
++  gap: 10px;
++  grid-template-columns: repeat(auto-fit, minmax(190px, 236px));
++  justify-content: start;
++  margin-top: -28px;
++  overflow: visible;
++  padding: 0;
++}
++
++.studio-shell .studio-operation-summary > div {
++  background: var(--atelier-panel-soft);
++  border-radius: 20px;
++  grid-template-columns: auto minmax(0, 1fr);
++  min-height: 76px;
++  padding: 13px 15px;
++}
++
++.studio-shell .studio-operation-summary > div > span {
++  height: 38px;
++  margin-right: 11px;
++  width: 38px;
++}
++
++.studio-shell .studio-operation-summary strong {
++  align-self: end;
++  font-size: 28px;
++}
++
++.studio-shell .studio-operation-summary small {
++  align-self: start;
++  color: var(--atelier-muted);
++}
++
++.studio-shell .studio-operation-summary > div + div::before {
++  content: none;
++}
++
++.studio-shell .studio-private-chip {
++  align-items: center;
++  display: inline-flex;
++  gap: 7px;
++  justify-self: start;
++  min-height: 32px;
++  padding: 7px 10px;
++  width: fit-content;
++}
++
++.studio-shell .studio-quiet-empty {
++  background: var(--atelier-panel-soft);
++  border-radius: 20px;
++  box-shadow: none;
++  min-height: 96px;
++  padding: 20px;
++}
++
++.studio-shell .studio-filter-bar,
++.studio-shell .studio-segmented-view,
++.studio-shell .studio-model-list {
++  max-width: 100%;
++}
++
++@media (max-width: 620px) {
++  .studio-shell .page-canvas {
++    overflow-x: clip;
++    padding-inline: 14px;
++  }
++
++  .studio-shell .studio-ops-page,
++  .studio-shell .studio-connected-orders-page,
++  .studio-shell .studio-atelier-home,
++  .studio-shell .studio-premium-surface {
++    width: 100%;
++  }
++
++  .studio-shell .studio-ops-heading,
++  .studio-shell .studio-ops-hero,
++  .studio-shell .studio-connected-orders-heading,
++  .studio-shell .studio-atelier-hero,
++  .studio-shell .studio-atelier-hero-copy,
++  .studio-shell .studio-section-title,
++  .studio-shell .studio-atelier-section-heading {
++    min-width: 0;
++    width: 100%;
++  }
++
++  .studio-shell .studio-ops-heading h1,
++  .studio-shell .studio-ops-hero h1,
++  .studio-shell .studio-connected-orders-heading h1,
++  .studio-shell .studio-atelier-hero h1 {
++    font-size: clamp(43px, 13.2vw, 60px);
++    hyphens: auto;
++    letter-spacing: -0.058em;
++    overflow-wrap: normal;
++    text-wrap: balance;
++    word-break: normal;
++  }
++
++  .studio-shell .studio-ops-heading > .button,
++  .studio-shell .studio-ops-hero > .button {
++    justify-self: start;
++  }
++
++  .studio-shell .studio-segmented-view {
++    margin-inline: 0;
++  
