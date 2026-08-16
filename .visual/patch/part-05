@@ -1,0 +1,120 @@
+   padding-inline: 0;
++    width: 100%;
++  }
++
++  .studio-shell .studio-filter-bar {
++    box-sizing: border-box;
++    margin-inline: 0;
++    width: 100%;
++  }
++
++  .studio-shell .studio-filter-bar button {
++    min-width: max-content;
++  }
++
++  .studio-shell .studio-premium-surface > section[role="tabpanel"] {
++    border-radius: 0;
++    padding: 0;
++  }
++
++  .studio-shell .studio-pulse-grid {
++    grid-template-columns: 1fr;
++  }
++
++  .studio-shell .studio-pulse-item {
++    min-height: 78px;
++    padding: 15px 4px;
++  }
++
++  .studio-shell .studio-pulse-item + .studio-pulse-item::before {
++    inset: 0 0 auto;
++    height: 1px;
++    width: auto;
++  }
++
++  .studio-shell .studio-recent-row {
++    grid-template-columns: 58px minmax(0, 1fr) auto;
++    min-height: 80px;
++    padding-inline: 0;
++  }
++
++  .studio-shell .studio-operation-summary {
++    grid-template-columns: minmax(0, 1fr);
++    margin-top: -22px;
++    width: 100%;
++  }
++
++  .studio-shell .studio-operation-summary > div {
++    grid-template-columns: auto minmax(0, 1fr);
++    min-height: 70px;
++    width: 100%;
++  }
++
++  .studio-shell .studio-operation-summary > div > span {
++    grid-row: 1 / span 2;
++    margin: 0 11px 0 0;
++  }
++
++  .studio-shell .studio-operation-summary strong {
++    font-size: 27px;
++  }
++
++  .studio-shell .studio-garment-grid,
++  .studio-shell .studio-garment-card,
++  .studio-shell .studio-garment-disclosure,
++  .studio-shell .studio-garment-body,
++  .studio-shell .studio-publishing-queue,
++  .studio-shell .studio-publishing-row,
++  .studio-shell .studio-table,
++  .studio-shell .studio-inventory-list,
++  .studio-shell .studio-inventory-row-trigger,
++  .studio-shell .studio-connected-order-list,
++  .studio-shell .studio-connected-order-card {
++    min-width: 0;
++    width: 100%;
++  }
++
++  .studio-shell .studio-quiet-empty {
++    grid-template-columns: auto minmax(0, 1fr);
++    padding: 18px;
++  }
++
++  .studio-shell .studio-quiet-empty .button {
++    grid-column: 1 / -1;
++    width: 100%;
++  }
++}
+diff --git a/components/shop/product-detail.tsx b/components/shop/product-detail.tsx
+index 9f36d3a..c5d31b9 100644
+--- a/components/shop/product-detail.tsx
++++ b/components/shop/product-detail.tsx
+@@ -259,21 +259,24 @@ export function ProductDetail() {
+           <dl className="shop-detail-facts" id="shop-purchase">
+             <div>
+               <dt>Size</dt>
+-              <dd>{product.taggedSize}</dd>
+-              <small>{product.fit}</small>
++              <dd>{product.taggedSize}<small>{product.fit}</small></dd>
+             </div>
+             <div>
+               <dt>Colour</dt>
+-              <dd>{product.colour}</dd>
+-              <small>{product.condition}</small>
++              <dd>{product.colour}<small>{product.condition}</small></dd>
+             </div>
+             <div
+               className="shop-detail-availability"
+               data-state={product.availabilityConfirmed ? product.availability.toLowerCase() : "unconfirmed"}
+             >
+               <dt>Availability</dt>
+-              <dd><span aria-hidden="true" />{availabilityCopy.title}</dd>
+-              <small>{availabilityCopy.note}</small>
++              <dd>
++                <span aria-hidden="true" className="shop-detail-availability-dot" />
++                <span className="shop-detail-availability-copy">
++                  {availabilityCopy.title}
++                  <small>{availabilityCopy.note}</small>
++                </span>
++              </dd>
+             </div>
+  
