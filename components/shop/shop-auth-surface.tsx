@@ -51,7 +51,6 @@ export function ShopAuthSurface({ returnTo }: { path: string; returnTo: string }
                 error: styles.error,
                 input: styles.input,
                 label: styles.label,
-                otpInput: styles.otpInput,
                 otpInputContainer: styles.otpInputContainer,
                 primaryButton: styles.primaryButton,
               },

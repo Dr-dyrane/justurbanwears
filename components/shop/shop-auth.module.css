@@ -155,7 +155,6 @@
 .authFooterLink { color: var(--accent-text, #a33e2b) !important; font-weight: 780 !important; }
 .error { color: #a13a2b !important; font-size: 9px !important; }
 .otpInputContainer { justify-content: center !important; width: 100% !important; }
-.otpInput { color: var(--shop-auth-ink) !important; }
 
 :global(html[data-theme="dark"]) .shell {
   --shop-auth-canvas: #0b0908;

@@ -120,7 +120,6 @@
 .studio-auth-primary { background: var(--studio-auth-action) !important; color: var(--studio-auth-action-ink) !important; }
 .studio-auth-error { color: #a13a2b !important; font-size: 9px !important; }
 .studio-auth-otp-container { justify-content: center !important; width: 100% !important; }
-.studio-auth-otp-input { color: var(--studio-auth-ink) !important; }
 
 [data-theme="dark"] .studio-auth-shell {
   background: radial-gradient(circle at 78% 10%, rgba(221, 96, 66, 0.22), transparent 27rem), #18120f;

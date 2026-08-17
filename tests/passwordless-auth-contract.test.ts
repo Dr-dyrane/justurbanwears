@@ -39,3 +39,10 @@ test("both passwordless surfaces declare light and dark semantic states", () => 
   assert.match(shopStyles, /--shop-auth-field/);
   assert.match(shopStyles, /:global\(html\[data-theme="dark"\]\) \.shell/);
 });
+
+test("both themes leave the native OTP input visually transparent", () => {
+  assert.doesNotMatch(studio, /otpInput:/);
+  assert.doesNotMatch(shop, /otpInput:/);
+  assert.doesNotMatch(foundation, /studio-auth-otp-input/);
+  assert.doesNotMatch(shopStyles, /\.otpInput\s*\{/);
+});

@@ -23,7 +23,6 @@ export function StudioAuthSurface({ returnTo }: { path: string; returnTo: string
               error: "studio-auth-error",
               input: "studio-auth-input",
               label: "studio-auth-label",
-              otpInput: "studio-auth-otp-input",
               otpInputContainer: "studio-auth-otp-container",
               primaryButton: "studio-auth-primary",
             },
