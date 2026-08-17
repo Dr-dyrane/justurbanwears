@@ -106,8 +106,11 @@ test("keeps the private Studio and public shop visibly distinct", async () => {
   assert.match(visibleBody, /href="\/studio\/wardrobe"/);
   assert.match(visibleBody, /href="\/studio\/operations"/);
   assert.match(visibleBody, /data-mobile-chrome-mode="compact"/);
-  assert.match(visibleBody, /aria-label="Show navigation\. Business home selected"/);
-  assert.match(visibleBody, /id="studio-mobile-navigation"/);
+  assert.match(visibleBody, /aria-label="Profile &amp; settings — Lulu’s Studio spaces"/);
+  assert.match(visibleBody, /aria-label="Studio tabs"/);
+  assert.match(visibleBody, /aria-label="Add garment"/);
+  assert.match(visibleBody, /class="studio-mobile-tabs shop-dock-lens"/);
+  assert.doesNotMatch(visibleBody, /Show navigation|id="studio-mobile-navigation"/);
   assert.doesNotMatch(visibleBody, /Clothes with a second first impression/);
 });
 

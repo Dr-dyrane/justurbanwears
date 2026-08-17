@@ -21,7 +21,6 @@ import {
 } from "../../lib/studio/simulator";
 import { BrandIcon } from "../brand/brand-icon";
 import { BrandWordmark } from "../brand/brand-wordmark";
-import { ThemeToggle } from "../theme/theme-toggle";
 import { StudioLink as Link } from "./atoms/studio-link";
 import { StudioNotificationCenter } from "./notifications/studio-notification-center";
 import { StudioSettingsCenter } from "./settings/studio-settings-center";
@@ -191,36 +190,24 @@ function AppShellContent({ children, operator }: { children: React.ReactNode; op
         inert={chromeHidden || mobileChromeSuspended || undefined}
       >
         <nav className="shop-floating-nav studio-floating-nav glass-surface" aria-label="Studio navigation">
-          <Link className="shop-wordmark studio-wordmark" href="/studio" aria-label="justurban wears Studio home">
-            <span className="studio-brand-mark" aria-hidden="true">
-              <BrandIcon className="studio-brand-icon" size={38} />
-            </span>
-            <BrandWordmark className="shop-wordmark-lockup" />
-            <small>Studio · Lulu</small>
-          </Link>
+          <div className="studio-nav-identity">
+            <StudioSettingsCenter operator={operator} />
+            <Link className="shop-wordmark studio-wordmark" href="/studio" aria-label="justurban wears Studio home">
+              <span className="studio-brand-mark" aria-hidden="true">
+                <BrandIcon className="studio-brand-icon" size={38} />
+              </span>
+              <BrandWordmark className="shop-wordmark-lockup" />
+              <small>Studio · Lulu</small>
+            </Link>
+          </div>
           <span className="studio-mobile-nav-title">{mobileTitle}</span>
           <div className="shop-nav-links studio-nav-links">
-            {primaryNavigation.map((item) => (
+            {mobileNavigation.map((item) => (
               <NavigationLink item={item} pathname={pathname} key={item.href} />
             ))}
           </div>
           <div className="shop-header-actions studio-header-actions">
             <StudioNotificationCenter />
-            <StudioSettingsCenter operator={operator} />
-            <ThemeToggle className="shop-theme-toggle studio-top-theme-toggle" />
-            <Link
-              aria-current={pathname.startsWith("/studio/media") ? "page" : undefined}
-              aria-label="Media lab"
-              className={`shop-account-link studio-shoot-link${pathname.startsWith("/studio/media") ? " is-active" : ""}`}
-              href="/studio/media"
-            >
-              <Camera aria-hidden="true" size={18} strokeWidth={1.8} />
-              <span>Media</span>
-            </Link>
-            <Link className="shop-bag-link studio-public-action" href="/shop">
-              <ExternalLink aria-hidden="true" size={16} strokeWidth={1.9} />
-              <span>Shop</span>
-            </Link>
           </div>
         </nav>
       </header>
