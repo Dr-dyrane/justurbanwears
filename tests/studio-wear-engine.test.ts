@@ -71,7 +71,7 @@ test("Wear sheet recovers running work, exposes one retry, and avoids nested she
   assert.match(sheet, /aria-live="assertive"/);
   assert.match(sheet, /parentGenerationId/);
   assert.doesNotMatch(intake, /<WearSheet/);
-  assert.match(workbench, /onOpenWear=\{\(id\) => \{\s*finishIntake\(\)/);
+  assert.match(workbench, /onOpenWear=\{studio\.scenario \? undefined : \(id\) => \{\s*finishIntake\(\)/);
   assert.match(css, /min-height: 44px/);
   assert.doesNotMatch(sheet, /<select/);
 });
