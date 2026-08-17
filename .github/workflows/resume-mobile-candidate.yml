@@ -1,0 +1,60 @@
+name: Resume mobile completion candidate
+
+on:
+  push:
+    branches:
+      - agent/mobile-source-export
+    paths:
+      - .github/workflows/resume-mobile-candidate.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/mobile-source-export
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.19.0
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Recover and apply the reviewed patch
+        run: |
+          python - <<'PY'
+          import base64, gzip, re
+          from pathlib import Path
+          source = Path('.github/workflows/apply-mobile-candidate.yml').read_text()
+          match = re.search(r'^\s*PATCH_GZ_B64:\s*([A-Za-z0-9+/=]+)\s*$', source, re.MULTILINE)
+          if not match:
+              raise SystemExit('Reviewed patch payload was not found.')
+          Path('/tmp/mobile.patch').write_bytes(gzip.decompress(base64.b64decode(match.group(1))))
+          PY
+          git apply --check /tmp/mobile.patch
+          git apply /tmp/mobile.patch
+      - name: Validate the candidate
+        run: |
+          npm run typecheck
+          npx tsx --test tests/studio-mobile-ux-contract.test.ts tests/mobile-commerce-focus.test.ts
+      - name: Commit candidate
+        run: |
+          git config user.name "Dr Dyrane Alexander"
+          git config user.email "Ogranya.Alex@gmail.com"
+          git add \
+            app/mobile-experience.css \
+            app/studio-mobile-final.css \
+            'app/(studio)/layout.tsx' \
+            components/shop/product-detail.tsx \
+            components/shop/product-media-gallery.tsx \
+            components/studio/app-shell.tsx \
+            tests/mobile-commerce-focus.test.ts \
+            tests/studio-mobile-ux-contract.test.ts
+          git commit -m "Finish the mobile Shop and Studio"
+          git push origin HEAD:agent/mobile-source-export
