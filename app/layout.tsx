@@ -7,6 +7,7 @@ import { ServiceWorkerRegistration } from "../components/pwa/service-worker-regi
 import { ThemeProvider } from "../components/theme/theme-provider";
 import { BRAND_ASSETS } from "../lib/brand/assets";
 import { shopFocusTransitionScript } from "../lib/ui/shop-focus-transition-script";
+import mobileExperienceCss from "./mobile-experience.css?raw";
 import "./globals.css";
 import "./foundation.css";
 import "./shop-editorial-hero.css";
@@ -116,6 +117,7 @@ export default function RootLayout({
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
         <script dangerouslySetInnerHTML={{ __html: shopFocusTransitionScript }} />
+        <style data-mobile-experience>{mobileExperienceCss}</style>
       </head>
       <body className="antialiased">
         <ThemeProvider>
