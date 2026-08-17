@@ -1,0 +1,26 @@
+name: Mobile source export
+
+on:
+  push:
+    branches:
+      - agent/mobile-source-export
+    paths:
+      - .github/workflows/mobile-source-export.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Package current source
+        run: |
+          tar --exclude=.git --exclude=node_modules --exclude=dist --exclude=.next --exclude=.wrangler --exclude=visual-qa -czf /tmp/justurbanwears-current-source.tgz .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: justurbanwears-current-source-${{ github.sha }}
+          path: /tmp/justurbanwears-current-source.tgz
+          retention-days: 1
