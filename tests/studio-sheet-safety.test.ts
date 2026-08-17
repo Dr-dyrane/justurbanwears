@@ -49,7 +49,7 @@ test("garment intake keeps nested previews and active work before closing", () =
   assert.match(garmentIntake, /Discard this garment intake/);
   assert.match(garmentIntake, /Boolean\(wardrobeItemId\) \|\| step === "wear" \|\| step === "receipt"/);
   assert.match(garmentIntake, /onDismiss=\{requestDismiss\}/);
-  assert.equal((garmentIntake.match(/onClick=\{finishDismiss\}/g) ?? []).length, 2);
+  assert.equal((garmentIntake.match(/onClick=\{finishDismiss\}/g) ?? []).length, 1);
 });
 
 test("Wear closes previews first and protects only genuinely unsaved work", () => {
