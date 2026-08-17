@@ -1,0 +1,11 @@
+name: Find mobile contract
+on:
+  push:
+    branches: [agent/apple-bars-final]
+    paths: [.github/workflows/find-mobile-contract.yml]
+jobs:
+  find:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: grep -Rni "mobile navigation must render all routes\|shop shell mobile navigation" tests . || true

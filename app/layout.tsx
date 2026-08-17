@@ -8,6 +8,7 @@ import { ThemeProvider } from "../components/theme/theme-provider";
 import { BRAND_ASSETS } from "../lib/brand/assets";
 import { shopFocusTransitionScript } from "../lib/ui/shop-focus-transition-script";
 import mobileExperienceCss from "./mobile-experience.css?raw";
+import appleMobileBarsCss from "./apple-mobile-bars.css?raw";
 import "./globals.css";
 import "./foundation.css";
 import "./shop-editorial-hero.css";
@@ -32,9 +33,7 @@ const themeBootScript = `(() => {
     const key = "justurban-wears.theme";
     const stored = localStorage.getItem(key);
     const preference = stored === "light" || stored === "dark" || stored === "system" ? stored : "system";
-    const resolved = preference === "system"
-      ? (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
-      : preference;
+    const resolved = preference === "system" ? (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light") : preference;
     const root = document.documentElement;
     root.dataset.theme = resolved;
     root.dataset.themePreference = preference;
@@ -50,12 +49,8 @@ const themeBootScript = `(() => {
 export const metadata: Metadata = {
   metadataBase: siteUrl,
   applicationName: "justurban wears",
-  title: {
-    default: "justurban wears · Urban ladies’ wear",
-    template: "%s · justurban wears",
-  },
-  description:
-    "Urban ladies’ wear curated in Lagos, with a private operator studio behind every clearly described piece.",
+  title: { default: "justurban wears · Urban ladies’ wear", template: "%s · justurban wears" },
+  description: "Urban ladies’ wear curated in Lagos, with a private operator studio behind every clearly described piece.",
   manifest: "/manifest.webmanifest",
   icons: {
     icon: [
@@ -65,67 +60,15 @@ export const metadata: Metadata = {
       { url: BRAND_ASSETS.icon.runtimeApp512, sizes: "512x512", type: "image/png" },
     ],
     shortcut: BRAND_ASSETS.favicon.runtimeIco,
-    apple: [
-      {
-        url: BRAND_ASSETS.icon.runtimeAppleTouch,
-        sizes: "180x180",
-        type: "image/png",
-      },
-    ],
+    apple: [{ url: BRAND_ASSETS.icon.runtimeAppleTouch, sizes: "180x180", type: "image/png" }],
   },
-  appleWebApp: {
-    capable: true,
-    title: "justurban wears",
-    statusBarStyle: "default",
-  },
-  formatDetection: {
-    telephone: false,
-  },
-  other: {
-    "apple-mobile-web-app-capable": "yes",
-  },
-  openGraph: {
-    title: "justurban wears · Clothes with a second first impression.",
-    description: "One-off urban womenswear from Lulu’s wardrobe, ready to move through the city.",
-    siteName: "JustUrbanWears",
-    locale: "en_NG",
-    images: [
-      {
-        url: socialImage,
-        width: 1122,
-        height: 1402,
-        alt: "JustUrbanWears by Lulu illuminated boutique wall signage.",
-      },
-    ],
-    type: "website",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "justurban wears · Clothes with a second first impression.",
-    description: "One-off urban womenswear from Lulu’s wardrobe, ready to move through the city.",
-    images: [socialImage],
-  },
+  appleWebApp: { capable: true, title: "justurban wears", statusBarStyle: "default" },
+  formatDetection: { telephone: false },
+  other: { "apple-mobile-web-app-capable": "yes" },
+  openGraph: { title: "justurban wears · Clothes with a second first impression.", description: "One-off urban womenswear from Lulu’s wardrobe, ready to move through the city.", siteName: "JustUrbanWears", locale: "en_NG", images: [{ url: socialImage, width: 1122, height: 1402, alt: "JustUrbanWears by Lulu illuminated boutique wall signage." }], type: "website" },
+  twitter: { card: "summary_large_image", title: "justurban wears · Clothes with a second first impression.", description: "One-off urban womenswear from Lulu’s wardrobe, ready to move through the city.", images: [socialImage] },
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
-  return (
-    <html lang="en-NG" suppressHydrationWarning>
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
-        <script dangerouslySetInnerHTML={{ __html: shopFocusTransitionScript }} />
-        <style data-mobile-experience>{mobileExperienceCss}</style>
-      </head>
-      <body className="antialiased">
-        <ThemeProvider>
-          <ServiceWorkerRegistration />
-          {children}
-        </ThemeProvider>
-        <Analytics />
-      </body>
-    </html>
-  );
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  return <html lang="en-NG" suppressHydrationWarning><head><script dangerouslySetInnerHTML={{ __html: themeBootScript }} /><script dangerouslySetInnerHTML={{ __html: shopFocusTransitionScript }} /><style data-mobile-experience>{mobileExperienceCss}</style><style data-apple-mobile-bars>{appleMobileBarsCss}</style></head><body className="antialiased"><ThemeProvider><ServiceWorkerRegistration />{children}</ThemeProvider><Analytics /></body></html>;
 }
