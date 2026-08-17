@@ -78,6 +78,8 @@ test("model segmented content can render without the portrait obstruction", () =
 });
 
 test("operator copy and recovery stay action-led", () => {
+  assert.match(home, /scenario[\s\S]*?Simulator · not saved/);
+  assert.match(home, /!scenario && persistence === "available"/);
   assert.match(home, /Workspace saved/);
   assert.match(home, /studio\/wardrobe\/\$\{encodeURIComponent/);
   assert.match(directCaptures, /studio-magic-capture-shortcut/);

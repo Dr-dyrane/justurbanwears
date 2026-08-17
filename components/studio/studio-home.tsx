@@ -27,6 +27,7 @@ export function StudioHome() {
     returns,
     hydration,
     persistence,
+    scenario,
   } = useStudio();
 
   const modelDrafts = models.filter((model) => model.state === "DRAFT").length;
@@ -47,8 +48,9 @@ export function StudioHome() {
     {
       action: "Review returns",
       count: returnWork,
-      detail: "Choose restock or write-off while the stock record is still open.",
+      detail: "Inspect each return, then restock it or remove it from sale.",
       eyebrow: "Return waiting",
+      hero: "Start with the return.",
       href: "/studio/operations?view=returns",
       icon: RotateCcw,
       key: "returns",
@@ -60,6 +62,7 @@ export function StudioHome() {
       count: orderWork,
       detail: "Confirm each piece and move the reservation toward fulfilment.",
       eyebrow: "Order waiting",
+      hero: "Start with the order.",
       href: "/studio/orders",
       icon: PackageCheck,
       key: "orders",
@@ -71,6 +74,7 @@ export function StudioHome() {
       count: listingWork,
       detail: "Clear the remaining gate and make each piece ready for the Shop.",
       eyebrow: "Publishing",
+      hero: "Start with the Shop preview.",
       href: "/studio/wardrobe?view=publishing",
       icon: Sparkles,
       key: "publishing",
@@ -82,6 +86,7 @@ export function StudioHome() {
       count: garmentDrafts,
       detail: "Add the missing photos or details before the piece enters the wardrobe.",
       eyebrow: "Garment draft",
+      hero: "Start with the garment.",
       href: "/studio/wardrobe",
       icon: Shirt,
       key: "garments",
@@ -93,6 +98,7 @@ export function StudioHome() {
       count: modelDrafts,
       detail: "Complete identity and styling readiness before the next try-on.",
       eyebrow: "Model readiness",
+      hero: "Start with the model.",
       href: "/studio/models",
       icon: Users,
       key: "models",
@@ -106,6 +112,7 @@ export function StudioHome() {
     count: 0,
     detail: "The lifecycle is clear. Start with one piece and let the Studio carry it forward.",
     eyebrow: "Studio clear",
+    hero: "The Studio is clear.",
     href: "/studio/wardrobe?intake=1",
     icon: CheckCircle2,
     key: "clear",
@@ -121,12 +128,14 @@ export function StudioHome() {
       <header className="studio-atelier-hero">
         <div className="studio-atelier-hero-copy">
           <p className="eyebrow">Business home</p>
-          <h1>{workCount ? "Lulu, this is what needs you." : "Lulu, the studio is clear."}</h1>
-          <p>{workCount ? "One next action. Everything else stays quiet until you need it." : "No loose ends. The wardrobe, Shop, and stock records are aligned."}</p>
+          <h1>{primaryTask.hero}</h1>
+          {!workCount ? <p>No work is waiting.</p> : null}
         </div>
         <div className="studio-atelier-hero-actions">
-          <div className={`studio-atelier-save-state ${persistence === "available" ? "is-saved" : "is-memory"}`} role="status">
-            {persistence === "available"
+          <div className={`studio-atelier-save-state ${!scenario && persistence === "available" ? "is-saved" : "is-memory"}`} role="status">
+            {scenario
+              ? <><RotateCcw aria-hidden="true" size={15} />Simulator · not saved</>
+              : persistence === "available"
               ? <><CheckCircle2 aria-hidden="true" size={15} />Workspace saved</>
               : <><RotateCcw aria-hidden="true" size={15} />Temporary session</>}
           </div>
@@ -138,7 +147,7 @@ export function StudioHome() {
         <div className="studio-atelier-section-heading">
           <div>
             <p className="eyebrow">Now</p>
-            <h2 id="studio-attention-title">What needs Lulu</h2>
+            <h2 id="studio-attention-title">Next</h2>
           </div>
           <span>{workCount ? `${workCount} open decision${workCount === 1 ? "" : "s"}` : "Nothing waiting"}</span>
         </div>
@@ -195,12 +204,12 @@ export function StudioHome() {
           <Link className="studio-pulse-item" href="/studio/wardrobe?view=publishing" role="listitem">
             <small>Live in Shop</small>
             <strong>{liveListings}</strong>
-            <span>listing{liveListings === 1 ? "" : "s"} in catalogue state</span>
+            <span>piece{liveListings === 1 ? "" : "s"} visible to customers</span>
           </Link>
           <Link className="studio-pulse-item" href="/studio/models" role="listitem">
             <small>Models ready</small>
             <strong>{readyModels}</strong>
-            <span>approved or tracked profile{readyModels === 1 ? "" : "s"}</span>
+            <span>model{readyModels === 1 ? "" : "s"} ready for try-ons</span>
           </Link>
         </div>
       </section>
@@ -209,7 +218,7 @@ export function StudioHome() {
         <div className="studio-atelier-section-heading">
           <div>
             <p className="eyebrow">Changed</p>
-            <h2 id="studio-recent-title">Latest garment state</h2>
+            <h2 id="studio-recent-title">Recent pieces</h2>
           </div>
           <Link href="/studio/wardrobe">Open wardrobe <ArrowRight aria-hidden="true" size={14} /></Link>
         </div>

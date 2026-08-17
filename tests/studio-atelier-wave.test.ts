@@ -8,9 +8,9 @@ test("Studio home resolves around one dominant task and quieter business context
   const home = await read("components/studio/studio-home.tsx");
 
   assert.match(home, /studio-attention-primary/);
-  assert.match(home, /What needs Lulu/);
+  assert.match(home, />Next</);
   assert.match(home, /studio-pulse-grid/);
-  assert.match(home, /Latest garment state/);
+  assert.match(home, /Recent pieces/);
   assert.doesNotMatch(home, /studio-queue-grid/);
 });
 
