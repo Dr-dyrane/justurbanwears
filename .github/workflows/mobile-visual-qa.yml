@@ -1,0 +1,60 @@
+name: Mobile visual QA
+
+on:
+  push:
+    branches:
+      - agent/mobile-source-export
+    paths:
+      - .github/workflows/mobile-visual-qa.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      CI: true
+      NEXT_TELEMETRY_DISABLED: "1"
+      STUDIO_AI_ENGINE_AUTH_MODE: ""
+      DATABASE_URL: ""
+      DATABASE_URL_UNPOOLED: ""
+      PUBLIC_BLOB_READ_WRITE_TOKEN: ""
+      PRIVATE_BLOB_READ_WRITE_TOKEN: ""
+      VISUAL_QA_BASE_URL: http://127.0.0.1:3000
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.19.0
+          cache: npm
+      - name: Install application and browser
+        run: |
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm install --no-save --no-package-lock playwright@1.54.2
+          npx playwright install --with-deps chromium
+      - name: Start Studio simulator
+        run: |
+          npm run dev -- --port 3000 > /tmp/juw-mobile-dev.log 2>&1 &
+          echo $! > /tmp/juw-mobile-dev.pid
+          for attempt in $(seq 1 60); do
+            if curl --fail --silent --max-time 3 http://127.0.0.1:3000/favicon.svg >/dev/null; then exit 0; fi
+            sleep 2
+          done
+          cat /tmp/juw-mobile-dev.log
+          exit 1
+      - name: Capture mobile surfaces
+        run: node scripts/mobile-visual-qa.mjs
+      - name: Preserve server log
+        if: always()
+        run: cp /tmp/juw-mobile-dev.log mobile-visual-qa/dev-server.log || true
+      - name: Upload evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: justurbanwears-mobile-visual-${{ github.run_id }}
+          path: mobile-visual-qa
+          if-no-files-found: error
+          retention-days: 3
