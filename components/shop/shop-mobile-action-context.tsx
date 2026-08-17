@@ -12,6 +12,7 @@ import {
 export interface ShopMobileAction {
   eyebrow: string;
   href: string;
+  invokeTargetId?: string;
   label: string;
 }
 
@@ -40,11 +41,14 @@ export function useShopMobileAction(action: ShopMobileAction | null) {
   const setAction = context?.setAction;
   const eyebrow = action?.eyebrow ?? null;
   const href = action?.href ?? null;
+  const invokeTargetId = action?.invokeTargetId ?? null;
   const label = action?.label ?? null;
 
   useEffect(() => {
     if (!setAction) return;
-    setAction(eyebrow && href && label ? { eyebrow, href, label } : null);
+    setAction(eyebrow && href && label
+      ? { eyebrow, href, invokeTargetId: invokeTargetId ?? undefined, label }
+      : null);
     return () => setAction(null);
-  }, [setAction, eyebrow, href, label]);
+  }, [setAction, eyebrow, href, invokeTargetId, label]);
 }
