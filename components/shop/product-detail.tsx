@@ -11,9 +11,11 @@ import { ProductCard } from "./product-card";
 import { ProductMediaGallery } from "./product-media-gallery";
 import { ProductInfoSheet } from "./product-info-sheet";
 import { ProductModelTryout } from "./product-model-tryout";
+import { useShopMobileAction } from "./shop-mobile-action-context";
 import { useShop } from "./shop-provider";
 
 const MODEL_VIEW_EVENT = "shop:model-view-url-changed";
+const PRODUCT_BUY_TARGET_ID = "shop-product-buy-now";
 
 function subscribeToModelViewUrl(listener: () => void) {
   window.addEventListener("popstate", listener);
@@ -66,6 +68,25 @@ export function ProductDetail() {
     serverModelViewSnapshot,
   );
   const isModelTryoutOpen = Boolean(approvedModelTryout && isModelViewRequested);
+  const canBuy = Boolean(
+    product
+    && isOnline
+    && product.availabilityConfirmed
+    && product.availability === "AVAILABLE",
+  );
+
+  useShopMobileAction(product ? {
+    eyebrow: `${product.taggedSize} · ${formatNaira(product.price)}`,
+    href: "#shop-purchase",
+    invokeTargetId: canBuy ? PRODUCT_BUY_TARGET_ID : undefined,
+    label: canBuy
+      ? "Buy now"
+      : !isOnline
+        ? "Reconnect to buy"
+        : product.availabilityConfirmed
+          ? product.availability === "RESERVED" ? "Currently reserved" : "Sold"
+          : "Review availability",
+  } : null);
 
   if (!product) {
     return (
@@ -283,6 +304,7 @@ export function ProductDetail() {
                 aria-busy={isPreparingCheckout}
                 data-experience-action="primary"
                 disabled={!isOnline || isPreparingCheckout}
+                id={PRODUCT_BUY_TARGET_ID}
                 onClick={buyProduct}
               >
                 {isPreparingCheckout ? (
