@@ -10,6 +10,7 @@ import {
   PackageCheck,
   Plus,
   RotateCcw,
+  ScanLine,
   Shirt,
   Users,
   type LucideIcon,
@@ -39,7 +40,7 @@ interface NavigationItem {
   icon: LucideIcon;
 }
 
-interface ShootViewTab {
+interface MediaViewTab {
   current: boolean;
   href: string;
   label: string;
@@ -51,16 +52,17 @@ const primaryNavigation: NavigationItem[] = [
   { href: "/studio/wardrobe", label: "Wardrobe", mobileLabel: "Wardrobe", icon: Shirt },
   { href: "/studio/orders", label: "Orders", mobileLabel: "Orders", icon: PackageCheck },
   { href: "/studio/operations", label: "Operations", mobileLabel: "Operations", icon: ClipboardList },
+  { href: "/studio/stocktake", label: "Stocktake", mobileLabel: "Stocktake", icon: ScanLine },
 ];
 
 function isActive(pathname: string, href: string) {
   return href === "/studio" ? pathname === href : pathname.startsWith(href);
 }
 
-function shootViewTabs(pathname: string): ShootViewTab[] {
-  const tabs = [{ current: pathname === "/shoots", href: "/shoots", label: "Shoot gallery" }];
-  if (pathname === "/shoots/new") tabs.push({ current: true, href: pathname, label: "Composer" });
-  else if (pathname.startsWith("/shoots/")) tabs.push({ current: true, href: pathname, label: "Shoot record" });
+function mediaViewTabs(pathname: string): MediaViewTab[] {
+  const tabs = [{ current: pathname === "/studio/media", href: "/studio/media", label: "Media archive" }];
+  if (pathname === "/studio/media/new") tabs.push({ current: true, href: pathname, label: "Composer" });
+  else if (pathname.startsWith("/studio/media/")) tabs.push({ current: true, href: pathname, label: "Media record" });
   return tabs;
 }
 
@@ -85,7 +87,7 @@ function AppShellContent({ children, operator }: { children: React.ReactNode; op
   const searchParams = useSearchParams();
   const studio = useStudio();
   const scenarioRouteSupported = !studio.scenario || studioScenarioRouteSupported(pathname);
-  const shootTabs = pathname.startsWith("/shoots") ? shootViewTabs(pathname) : [];
+  const mediaTabs = pathname.startsWith("/studio/media") ? mediaViewTabs(pathname) : [];
   const {
     chromeHidden,
     closeNavigation,
@@ -96,9 +98,11 @@ function AppShellContent({ children, operator }: { children: React.ReactNode; op
   } = useMobileChrome(pathname);
   const activeMobileDestination = primaryNavigation.find((item) => isActive(pathname, item.href));
   const mobileDestination = activeMobileDestination
-    ?? (pathname.startsWith("/shoots")
-      ? { label: "Shoots", icon: Camera }
-      : { label: "Studio", icon: House });
+    ?? (pathname.startsWith("/studio/scan")
+      ? { label: "Scan piece", icon: ScanLine }
+      : pathname.startsWith("/studio/media")
+        ? { label: "Media", icon: Camera }
+        : { label: "Studio", icon: House });
   const MobileDestinationIcon = mobileDestination.icon;
   const registeredMobileAction = useRegisteredStudioMobileAction();
   const operationsView = searchParams.get("view") ?? "inventory";
@@ -121,13 +125,22 @@ function AppShellContent({ children, operator }: { children: React.ReactNode; op
           : { label: "All orders", href: "/studio/orders", icon: PackageCheck }
       : pathname.startsWith("/studio/operations")
         ? operationsAction
-        : pathname === "/shoots/new"
-          ? { label: "Shoot gallery", href: "/shoots", icon: Camera }
-          : pathname.startsWith("/shoots")
-          ? { label: "New shoot", href: "/shoots/new", icon: Camera }
+        : pathname.startsWith("/studio/scan")
+          ? { label: "Open stocktake", href: "/studio/stocktake", icon: ScanLine }
+        : pathname.startsWith("/studio/stocktake")
+          ? { label: "Scan piece", href: "#stocktake-scan", icon: ScanLine }
+        : pathname === "/studio/media/new"
+          ? { label: "Media archive", href: "/studio/media", icon: Camera }
+          : pathname.startsWith("/studio/media")
+          ? { label: "New shoot", href: "/studio/media/new", icon: Camera }
           : { label: "Intake garment", href: "/studio/wardrobe?intake=1", icon: Plus };
   const contextAction = registeredMobileAction
-    ? { ...registeredMobileAction, icon: PackageCheck }
+    ? {
+        ...registeredMobileAction,
+        icon: pathname.startsWith("/studio/stocktake") || pathname.startsWith("/studio/scan")
+          ? ScanLine
+          : PackageCheck,
+      }
     : routeAction;
   const ContextActionIcon = contextAction.icon;
 
@@ -174,13 +187,13 @@ function AppShellContent({ children, operator }: { children: React.ReactNode; op
               <StudioSettingsCenter operator={operator} />
               <ThemeToggle className="shop-theme-toggle studio-top-theme-toggle" />
               <Link
-                aria-current={pathname.startsWith("/shoots") ? "page" : undefined}
-                aria-label="Shoot desk"
-                className={`shop-account-link studio-shoot-link${pathname.startsWith("/shoots") ? " is-active" : ""}`}
-                href="/shoots"
+                aria-current={pathname.startsWith("/studio/media") ? "page" : undefined}
+                aria-label="Media lab"
+                className={`shop-account-link studio-shoot-link${pathname.startsWith("/studio/media") ? " is-active" : ""}`}
+                href="/studio/media"
               >
                 <Camera aria-hidden="true" size={18} strokeWidth={1.8} />
-                <span>Shoots</span>
+                <span>Media</span>
               </Link>
               <Link className="shop-bag-link studio-public-action" href="/shop">
                 <ExternalLink aria-hidden="true" size={16} strokeWidth={1.9} />
@@ -196,12 +209,12 @@ function AppShellContent({ children, operator }: { children: React.ReactNode; op
               <span>{STUDIO_SCENARIO_LABELS[studio.scenario]} · In memory only · Reload resets this scenario</span>
             </div>
           ) : null}
-          {shootTabs.length ? (
+          {mediaTabs.length ? (
             <div className="studio-view-nav-wrap">
-              <nav className="studio-view-navigation glass-surface" aria-label="Shoots views">
-                <span className="studio-view-context"><small>View</small><strong>Shoots</strong></span>
+              <nav className="studio-view-navigation glass-surface" aria-label="Media views">
+                <span className="studio-view-context"><small>View</small><strong>Media</strong></span>
                 <span className="studio-view-tabs">
-                  {shootTabs.map((tab) => <Link aria-current={tab.current ? "page" : undefined} className={tab.current ? "is-active" : undefined} href={tab.href} key={tab.href}>{tab.label}</Link>)}
+                  {mediaTabs.map((tab) => <Link aria-current={tab.current ? "page" : undefined} className={tab.current ? "is-active" : undefined} href={tab.href} key={tab.href}>{tab.label}</Link>)}
                 </span>
                 <Link className="studio-view-action" data-experience-action="primary" href={contextAction.href} onClick={invokeContextAction}><span>{contextAction.label}</span><ContextActionIcon aria-hidden="true" size={15} strokeWidth={1.9} /></Link>
               </nav>

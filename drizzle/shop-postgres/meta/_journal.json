@@ -64,6 +64,13 @@
       "when": 1786732272467,
       "tag": "0008_studio_media_completions",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1786942770461,
+      "tag": "0009_studio_stocktakes",
+      "breakpoints": true
     }
   ]
 }

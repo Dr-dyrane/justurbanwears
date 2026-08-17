@@ -16,7 +16,7 @@ export function ShootDetail() {
   const [decision, setDecision] = useState<ReviewDecision>("PENDING");
   const [reasons, setReasons] = useState<string[]>([]);
   const [note, setNote] = useState("");
-  if (!shoot) return <div className="empty-state"><h1>Shoot not found</h1><Link href="/shoots">Return to shoots</Link></div>;
+  if (!shoot) return <div className="empty-state"><h1>Shoot not found</h1><Link href="/studio/media">Return to Media</Link></div>;
   const garment = garments.find((item) => item.id === shoot.garmentId)!;
   const selected = shoot.generations.find((generation) => generation.id === selectedId) ?? shoot.generations[0];
 
@@ -39,9 +39,9 @@ export function ShootDetail() {
   return (
     <div className="review-page">
       <div className="detail-topbar">
-        <Link className="back-link" href="/shoots">← Shoots</Link>
+        <Link className="back-link" href="/studio/media">← Media</Link>
         <div className="shoot-titlebar"><span>{shoot.id}</span><strong>{garment.title}</strong><StatusPill status="MOCK" /></div>
-        <Link className="button button-secondary" href="/shoots/new">New shoot</Link>
+        <Link className="button button-secondary" href="/studio/media/new">New shoot</Link>
       </div>
       <div className="review-workspace">
         <section className="review-stage">

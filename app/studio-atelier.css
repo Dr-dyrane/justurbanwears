@@ -1648,6 +1648,793 @@ html[data-theme="dark"] .studio-shell .studio-atelier-pulse {
   }
 }
 
+/* Wave 6 — physical truth, scan first ----------------------------------- */
+
+.studio-shell .studio-stocktake-page,
+.studio-shell .studio-scan-page {
+  color: var(--atelier-ink);
+  display: grid;
+  gap: clamp(28px, 4vw, 52px);
+  margin: 0 auto;
+  width: min(100%, 1180px);
+}
+
+.studio-shell .studio-stocktake-heading {
+  align-items: end;
+  display: flex;
+  gap: 28px;
+  justify-content: space-between;
+}
+
+.studio-shell .studio-stocktake-heading > div {
+  max-width: 760px;
+}
+
+.studio-shell .studio-stocktake-heading h1,
+.studio-shell .studio-scan-piece-hero h1 {
+  color: var(--atelier-ink);
+  font-family: var(--font-display);
+  font-size: clamp(50px, 7vw, 92px);
+  font-weight: 450;
+  letter-spacing: -0.06em;
+  line-height: 0.92;
+  margin: 0;
+}
+
+.studio-shell .studio-stocktake-heading p:last-child {
+  color: var(--atelier-muted);
+  font-size: 15px;
+  line-height: 1.6;
+  margin: 18px 0 0;
+}
+
+.studio-shell .studio-stocktake-heading > span,
+.studio-shell .studio-stocktake-heading > svg {
+  align-items: center;
+  background: var(--atelier-panel-strong);
+  border-radius: 999px;
+  box-shadow: var(--atelier-shadow);
+  color: var(--atelier-accent);
+  display: inline-flex;
+  flex: 0 0 auto;
+  font-family: var(--font-display);
+  font-size: 30px;
+  height: 72px;
+  justify-content: center;
+  min-width: 72px;
+  padding: 0 22px;
+}
+
+.studio-shell .studio-stocktake-receipt {
+  align-items: start;
+  background: color-mix(in srgb, var(--atelier-positive-soft) 78%, var(--atelier-panel));
+  border-radius: 26px;
+  box-shadow: var(--atelier-shadow);
+  display: grid;
+  gap: 18px;
+  grid-template-columns: auto minmax(0, 1fr);
+  padding: clamp(22px, 3vw, 34px);
+}
+
+.studio-shell .studio-stocktake-receipt[data-result="mismatch"] {
+  background: color-mix(in srgb, var(--atelier-accent-soft) 76%, var(--atelier-panel));
+}
+
+.studio-shell .studio-stocktake-receipt > span {
+  align-items: center;
+  background: var(--atelier-panel-strong);
+  border-radius: 999px;
+  color: var(--atelier-positive);
+  display: inline-flex;
+  height: 46px;
+  justify-content: center;
+  width: 46px;
+}
+
+.studio-shell .studio-stocktake-receipt[data-result="mismatch"] > span {
+  color: var(--atelier-accent);
+}
+
+.studio-shell .studio-stocktake-receipt h2,
+.studio-shell .studio-stocktake-list h2,
+.studio-shell .studio-stocktake-recent h2,
+.studio-shell .studio-stocktake-close h2,
+.studio-shell .studio-scan-truth h2,
+.studio-shell .studio-scan-action h2 {
+  color: var(--atelier-ink);
+  font-family: var(--font-display);
+  font-size: clamp(28px, 3.2vw, 42px);
+  font-weight: 480;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  margin: 3px 0 10px;
+}
+
+.studio-shell .studio-stocktake-receipt p:not(.eyebrow) {
+  color: var(--atelier-ink);
+  line-height: 1.5;
+  margin: 0;
+}
+
+.studio-shell .studio-stocktake-receipt small {
+  color: var(--atelier-muted);
+  display: block;
+  line-height: 1.5;
+  margin-top: 6px;
+}
+
+.studio-shell .studio-stocktake-locations {
+  background: var(--atelier-panel);
+  border-radius: 28px;
+  box-shadow: var(--atelier-shadow);
+  display: grid;
+  padding: 7px 24px;
+}
+
+.studio-shell .studio-stocktake-locations button {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  color: var(--atelier-ink);
+  cursor: pointer;
+  display: grid;
+  gap: 16px;
+  grid-template-columns: 42px minmax(0, 1fr) auto auto;
+  min-height: 78px;
+  padding: 12px 4px;
+  text-align: left;
+}
+
+.studio-shell .studio-stocktake-locations button + button {
+  box-shadow: inset 0 1px var(--atelier-line);
+}
+
+.studio-shell .studio-stocktake-locations button:hover {
+  color: var(--atelier-accent);
+}
+
+.studio-shell .studio-stocktake-locations button > span {
+  align-items: center;
+  background: var(--atelier-panel-strong);
+  border-radius: 15px;
+  color: var(--atelier-accent);
+  display: inline-flex;
+  height: 42px;
+  justify-content: center;
+  width: 42px;
+}
+
+.studio-shell .studio-stocktake-locations strong {
+  font-size: 16px;
+  font-weight: 620;
+}
+
+.studio-shell .studio-stocktake-locations small {
+  color: var(--atelier-muted);
+  font-size: 12px;
+}
+
+.studio-shell .studio-stocktake-start {
+  justify-self: start;
+}
+
+.studio-shell .studio-stocktake-progress {
+  display: grid;
+  gap: 12px;
+}
+
+.studio-shell .studio-stocktake-progress > div {
+  background: var(--atelier-panel-strong);
+  border-radius: 999px;
+  height: 7px;
+  overflow: hidden;
+}
+
+.studio-shell .studio-stocktake-progress > div span {
+  background: var(--atelier-positive);
+  border-radius: inherit;
+  display: block;
+  height: 100%;
+  transition: width 280ms ease-out;
+}
+
+.studio-shell .studio-stocktake-progress p {
+  align-items: center;
+  color: var(--atelier-muted);
+  display: flex;
+  font-size: 12px;
+  justify-content: space-between;
+  margin: 0;
+}
+
+.studio-shell .studio-stocktake-progress strong {
+  color: var(--atelier-ink);
+  font-weight: 620;
+}
+
+.studio-shell .studio-stocktake-scan-form {
+  display: grid;
+  gap: 9px;
+  scroll-margin-top: 120px;
+}
+
+.studio-shell .studio-stocktake-scan-form > label {
+  color: var(--atelier-muted);
+  font-size: 12px;
+  font-weight: 620;
+}
+
+.studio-shell .studio-stocktake-scan-form > div {
+  align-items: center;
+  background: var(--atelier-panel-strong);
+  border-radius: 22px;
+  box-shadow: var(--atelier-shadow);
+  color: var(--atelier-accent);
+  display: grid;
+  gap: 13px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  min-height: 66px;
+  padding: 8px 9px 8px 20px;
+}
+
+.studio-shell .studio-stocktake-scan-form input {
+  background: transparent;
+  border: 0;
+  color: var(--atelier-ink);
+  font: inherit;
+  min-width: 0;
+  outline: 0;
+}
+
+.studio-shell .studio-stocktake-scan-form input::placeholder {
+  color: var(--atelier-faint);
+}
+
+.studio-shell .studio-stocktake-scan-form button {
+  background: var(--atelier-ink);
+  border: 0;
+  border-radius: 16px;
+  color: var(--atelier-canvas);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+  min-height: 48px;
+  padding: 0 20px;
+}
+
+.studio-shell .studio-stocktake-list,
+.studio-shell .studio-stocktake-recent {
+  display: grid;
+}
+
+.studio-shell .studio-stocktake-list > header,
+.studio-shell .studio-stocktake-recent > header {
+  align-items: end;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 15px;
+}
+
+.studio-shell .studio-stocktake-list > header > span {
+  color: var(--atelier-muted);
+  font-size: 12px;
+}
+
+.studio-shell .studio-stocktake-piece-row,
+.studio-shell .studio-stocktake-recent > a {
+  align-items: center;
+  color: var(--atelier-ink);
+  display: grid;
+  gap: 15px;
+  grid-template-columns: 64px minmax(0, 1fr) auto;
+  min-height: 82px;
+  padding: 10px 4px;
+  text-decoration: none;
+}
+
+.studio-shell .studio-stocktake-piece-row + .studio-stocktake-piece-row,
+.studio-shell .studio-stocktake-recent > a + a {
+  box-shadow: inset 0 1px var(--atelier-line);
+}
+
+.studio-shell .studio-stocktake-piece-row:hover,
+.studio-shell .studio-stocktake-recent > a:hover {
+  color: var(--atelier-accent);
+}
+
+.studio-shell .studio-stocktake-piece-mark {
+  align-items: center;
+  background: var(--atelier-panel-strong);
+  border-radius: 18px;
+  color: var(--atelier-accent);
+  display: inline-flex;
+  height: 64px;
+  justify-content: center;
+  overflow: hidden;
+  width: 64px;
+}
+
+.studio-shell .studio-stocktake-piece-mark img {
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.studio-shell .studio-stocktake-piece-row > span:nth-child(2),
+.studio-shell .studio-stocktake-recent > a > span:nth-child(2) {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.studio-shell .studio-stocktake-piece-row small,
+.studio-shell .studio-stocktake-recent small {
+  color: var(--atelier-muted);
+  font-size: 11px;
+}
+
+.studio-shell .studio-stocktake-piece-row strong,
+.studio-shell .studio-stocktake-recent strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.studio-shell .studio-stocktake-piece-row em {
+  color: var(--atelier-muted);
+  font-size: 12px;
+  font-style: normal;
+}
+
+.studio-shell .studio-stocktake-piece-state {
+  align-items: center;
+  color: var(--atelier-faint);
+  display: inline-flex;
+  gap: 8px;
+}
+
+.studio-shell .studio-stocktake-piece-row[data-state="exception"] .studio-stocktake-piece-state {
+  color: var(--atelier-accent);
+}
+
+.studio-shell .studio-stocktake-recent > p {
+  color: var(--atelier-muted);
+  margin: 0;
+  padding: 20px 4px;
+}
+
+.studio-shell .studio-stocktake-close {
+  align-items: center;
+  background: var(--atelier-positive-soft);
+  border-radius: 28px;
+  display: grid;
+  gap: 20px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  padding: clamp(22px, 3vw, 34px);
+}
+
+.studio-shell .studio-stocktake-close > span {
+  align-items: center;
+  background: var(--atelier-panel-strong);
+  border-radius: 999px;
+  color: var(--atelier-positive);
+  display: inline-flex;
+  height: 48px;
+  justify-content: center;
+  width: 48px;
+}
+
+.studio-shell .studio-stocktake-close p:not(.eyebrow) {
+  color: var(--atelier-muted);
+  margin: 0;
+}
+
+.studio-shell .studio-stocktake-error {
+  background: var(--atelier-accent-soft);
+  border-radius: 18px;
+  color: var(--atelier-accent-deep);
+  line-height: 1.45;
+  margin: 0;
+  padding: 15px 18px;
+}
+
+.studio-shell .studio-scan-piece-hero {
+  align-items: end;
+  display: grid;
+  gap: clamp(28px, 5vw, 72px);
+  grid-template-columns: minmax(280px, 0.82fr) minmax(300px, 1.18fr);
+  min-height: min(72vh, 760px);
+}
+
+.studio-shell .studio-scan-piece-hero figure {
+  align-items: center;
+  align-self: stretch;
+  background:
+    radial-gradient(circle at 50% 30%, var(--atelier-accent-soft), transparent 52%),
+    var(--atelier-panel);
+  border-radius: 34px;
+  color: var(--atelier-accent);
+  display: flex;
+  justify-content: center;
+  margin: 0;
+  min-height: 520px;
+  overflow: hidden;
+  position: relative;
+}
+
+.studio-shell .studio-scan-piece-hero figure.is-photo::after {
+  background: linear-gradient(to top, var(--atelier-canvas), transparent 24%);
+  bottom: 0;
+  content: "";
+  height: 34%;
+  left: 0;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+}
+
+.studio-shell .studio-scan-piece-hero figure img {
+  height: 100%;
+  object-fit: cover;
+  width: 100%;
+}
+
+.studio-shell .studio-scan-piece-hero > div {
+  padding-bottom: clamp(30px, 8vh, 96px);
+}
+
+.studio-shell .studio-scan-piece-hero > div > p:not(.eyebrow) {
+  color: var(--atelier-muted);
+  font-size: 15px;
+  margin: 20px 0;
+}
+
+.studio-shell .studio-scan-piece-hero > div > span {
+  background: var(--atelier-panel-strong);
+  border-radius: 999px;
+  color: var(--atelier-muted);
+  display: inline-flex;
+  font-size: 11px;
+  font-weight: 650;
+  padding: 8px 12px;
+  text-transform: capitalize;
+}
+
+.studio-shell .studio-scan-truth,
+.studio-shell .studio-scan-action {
+  background: var(--atelier-panel);
+  border-radius: 30px;
+  box-shadow: var(--atelier-shadow);
+  padding: clamp(24px, 4vw, 44px);
+}
+
+.studio-shell .studio-scan-truth dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 24px 0 0;
+}
+
+.studio-shell .studio-scan-truth dl > div {
+  display: grid;
+  gap: 6px;
+  min-height: 74px;
+  padding: 14px 18px 14px 0;
+}
+
+.studio-shell .studio-scan-truth dl > div:nth-child(even) {
+  box-shadow: inset 1px 0 var(--atelier-line);
+  padding-left: 24px;
+}
+
+.studio-shell .studio-scan-truth dt {
+  color: var(--atelier-muted);
+  font-size: 11px;
+}
+
+.studio-shell .studio-scan-truth dd {
+  color: var(--atelier-ink);
+  font-size: 15px;
+  font-weight: 620;
+  margin: 0;
+}
+
+.studio-shell .studio-scan-action {
+  display: grid;
+  gap: 20px;
+  scroll-margin-top: 110px;
+}
+
+.studio-shell .studio-scan-action > header {
+  align-items: center;
+  display: flex;
+  gap: 15px;
+}
+
+.studio-shell .studio-scan-action > header > span {
+  align-items: center;
+  background: var(--atelier-accent-soft);
+  border-radius: 16px;
+  color: var(--atelier-accent);
+  display: inline-flex;
+  height: 48px;
+  justify-content: center;
+  width: 48px;
+}
+
+.studio-shell .studio-scan-action > label {
+  display: grid;
+  gap: 8px;
+}
+
+.studio-shell .studio-scan-action > label > span {
+  color: var(--atelier-muted);
+  font-size: 12px;
+  font-weight: 620;
+}
+
+.studio-shell .studio-scan-action > label small {
+  color: var(--atelier-faint);
+  font-weight: 450;
+}
+
+.studio-shell .studio-scan-action input,
+.studio-shell .studio-scan-action select {
+  appearance: none;
+  background: var(--atelier-panel-strong);
+  border: 0;
+  border-radius: 17px;
+  color: var(--atelier-ink);
+  font: inherit;
+  min-height: 54px;
+  outline: 0;
+  padding: 0 16px;
+}
+
+.studio-shell .studio-scan-action input:focus-visible,
+.studio-shell .studio-scan-action select:focus-visible,
+.studio-shell .studio-stocktake-scan-form input:focus-visible {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--atelier-accent) 34%, transparent);
+}
+
+.studio-shell .studio-scan-action select:disabled {
+  color: var(--atelier-muted);
+  opacity: 1;
+}
+
+.studio-shell .studio-scan-consequence {
+  display: grid;
+  gap: 4px;
+}
+
+.studio-shell .studio-scan-consequence strong {
+  color: var(--atelier-ink);
+  font-size: 13px;
+}
+
+.studio-shell .studio-scan-consequence small {
+  color: var(--atelier-muted);
+  font-size: 12px;
+}
+
+.studio-shell .studio-scan-action > .button {
+  justify-self: start;
+}
+
+.studio-shell .studio-stocktake-receipt-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.studio-shell .studio-stocktake-unavailable {
+  color: var(--atelier-ink);
+  display: grid;
+  gap: 16px;
+  justify-items: start;
+  margin: 12vh auto 0;
+  max-width: 620px;
+}
+
+.studio-shell .studio-stocktake-unavailable > svg {
+  color: var(--atelier-accent);
+}
+
+.studio-shell .studio-stocktake-unavailable h1 {
+  font-family: var(--font-display);
+  font-size: clamp(42px, 7vw, 72px);
+  font-weight: 450;
+  letter-spacing: -0.05em;
+  line-height: 0.95;
+  margin: 0;
+}
+
+.studio-stocktake-start-sheet .studio-task-sheet-frame {
+  background: var(--atelier-panel-strong);
+  color: var(--atelier-ink);
+}
+
+.studio-stocktake-location-picker {
+  border: 0;
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+}
+
+.studio-stocktake-location-picker legend {
+  color: var(--atelier-muted);
+  font-size: 12px;
+  font-weight: 650;
+  margin-bottom: 10px;
+}
+
+.studio-stocktake-location-picker label {
+  align-items: center;
+  background: var(--atelier-panel-soft);
+  border-radius: 20px;
+  cursor: pointer;
+  display: grid;
+  gap: 13px;
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
+  min-height: 68px;
+  padding: 10px 15px;
+}
+
+.studio-stocktake-location-picker label[data-selected] {
+  background: var(--atelier-accent-soft);
+}
+
+.studio-stocktake-location-picker input {
+  accent-color: var(--atelier-accent);
+  height: 18px;
+  width: 18px;
+}
+
+.studio-stocktake-location-picker label > span {
+  align-items: center;
+  background: var(--atelier-panel-strong);
+  border-radius: 13px;
+  color: var(--atelier-accent);
+  display: inline-flex;
+  height: 38px;
+  justify-content: center;
+  width: 38px;
+}
+
+.studio-stocktake-location-picker small,
+.studio-stocktake-sheet-note {
+  color: var(--atelier-muted);
+  font-size: 12px;
+}
+
+.studio-stocktake-sheet-note {
+  line-height: 1.5;
+  margin: 20px 0 0;
+}
+
+@media (max-width: 720px) {
+  .studio-shell .studio-stocktake-page,
+  .studio-shell .studio-scan-page {
+    gap: 28px;
+  }
+
+  .studio-shell .studio-stocktake-heading {
+    align-items: start;
+  }
+
+  .studio-shell .studio-stocktake-heading h1,
+  .studio-shell .studio-scan-piece-hero h1 {
+    font-size: clamp(46px, 14vw, 64px);
+  }
+
+  .studio-shell .studio-stocktake-heading > span,
+  .studio-shell .studio-stocktake-heading > svg {
+    font-size: 22px;
+    height: 54px;
+    min-width: 54px;
+    padding: 0 15px;
+  }
+
+  .studio-shell .studio-stocktake-locations {
+    border-radius: 24px;
+    padding: 5px 17px;
+  }
+
+  .studio-shell .studio-stocktake-locations button {
+    gap: 11px;
+    grid-template-columns: 42px minmax(0, 1fr) auto;
+  }
+
+  .studio-shell .studio-stocktake-locations button > small {
+    display: none;
+  }
+
+  .studio-shell .studio-stocktake-start {
+    justify-self: stretch;
+  }
+
+  .studio-shell .studio-stocktake-piece-row,
+  .studio-shell .studio-stocktake-recent > a {
+    grid-template-columns: 58px minmax(0, 1fr) auto;
+  }
+
+  .studio-shell .studio-stocktake-piece-mark {
+    border-radius: 16px;
+    height: 58px;
+    width: 58px;
+  }
+
+  .studio-shell .studio-stocktake-progress p {
+    align-items: start;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .studio-shell .studio-stocktake-close {
+    align-items: start;
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .studio-shell .studio-stocktake-close .button {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .studio-shell .studio-scan-piece-hero {
+    display: block;
+    margin-inline: -22px;
+    min-height: 0;
+  }
+
+  .studio-shell .studio-scan-piece-hero figure {
+    border-radius: 0 0 34px 34px;
+    height: min(62vh, 580px);
+    min-height: 430px;
+  }
+
+  .studio-shell .studio-scan-piece-hero > div {
+    margin-top: -92px;
+    padding: 118px 22px 18px;
+    position: relative;
+  }
+
+  .studio-shell .studio-scan-truth,
+  .studio-shell .studio-scan-action {
+    border-radius: 26px;
+    padding: 23px 20px;
+  }
+
+  .studio-shell .studio-scan-truth dl {
+    grid-template-columns: 1fr;
+  }
+
+  .studio-shell .studio-scan-truth dl > div,
+  .studio-shell .studio-scan-truth dl > div:nth-child(even) {
+    box-shadow: inset 0 1px var(--atelier-line);
+    min-height: 64px;
+    padding: 13px 0;
+  }
+
+  .studio-shell .studio-scan-action > .button,
+  .studio-shell .studio-stocktake-receipt-actions .button {
+    justify-self: stretch;
+    width: 100%;
+  }
+
+  .studio-shell .studio-stocktake-receipt-actions {
+    display: grid;
+  }
+
+  .studio-stocktake-location-picker label {
+    grid-template-columns: auto auto minmax(0, 1fr);
+  }
+
+  .studio-stocktake-location-picker label > small {
+    display: none;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .studio-shell *,
   .studio-shell *::before,

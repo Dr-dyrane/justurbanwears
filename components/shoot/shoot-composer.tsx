@@ -34,7 +34,7 @@ export function ShootComposer() {
     setBusy(true);
     window.setTimeout(() => {
       const shootId = createMockShoot(input);
-      router.push(`/shoots/${shootId}`);
+      router.push(`/studio/media/${shootId}`);
     }, 950);
   }
 

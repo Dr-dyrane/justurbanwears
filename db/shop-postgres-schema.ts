@@ -940,3 +940,100 @@ export const studioCataloguePublications = pgTable("studio_catalogue_publication
   check("studio_catalogue_publications_facts_object", sql`jsonb_typeof(${table.facts}) = 'object'`),
   check("studio_catalogue_publications_media_array", sql`jsonb_typeof(${table.media}) = 'array'`),
 ]);
+
+// A stocktake freezes the pieces expected at one Studio location. Physical
+// observations are stored separately and append-only so a count never rewrites
+// commerce availability or erases an earlier mismatch.
+export const studioStocktakes = pgTable("studio_stocktakes", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  operatorSubject: text("operator_subject").notNull(),
+  idempotencyKey: varchar("idempotency_key", { length: 160 }).notNull(),
+  locationKey: varchar("location_key", { length: 40 }).notNull(),
+  locationLabel: text("location_label").notNull(),
+  state: varchar("state", { length: 24 }).default("OPEN").notNull(),
+  expectedPieces: jsonb("expected_pieces").$type<Array<{
+    pieceKey: string;
+    wardrobeItemId: string | null;
+    sku: string | null;
+    title: string;
+    expectedLocationKey: string;
+    expectedLocationLabel: string;
+    expectedCustody: "STUDIO" | "COURIER" | "CUSTOMER" | "UNKNOWN";
+    availability: "PRIVATE" | "AVAILABLE" | "RESERVED" | "SOLD" | "ARCHIVED";
+    orderReference: string | null;
+  }>>().notNull(),
+  version: integer("version").default(1).notNull(),
+  startedAt: timestamp("started_at", { withTimezone: true }).defaultNow().notNull(),
+  closedAt: timestamp("closed_at", { withTimezone: true }),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("studio_stocktakes_operator_idempotency_unique").on(
+    table.operatorSubject,
+    table.idempotencyKey,
+  ),
+  uniqueIndex("studio_stocktakes_operator_open_unique")
+    .on(table.operatorSubject)
+    .where(sql`${table.state} = 'OPEN'`),
+  index("studio_stocktakes_operator_started_idx").on(table.operatorSubject, table.startedAt),
+  check("studio_stocktakes_location_known", sql`
+    ${table.locationKey} in ('WARDROBE_RAIL', 'PACKING_SHELF', 'RETURN_INSPECTION')
+  `),
+  check("studio_stocktakes_state_known", sql`${table.state} in ('OPEN', 'CLOSED')`),
+  check("studio_stocktakes_expected_array", sql`jsonb_typeof(${table.expectedPieces}) = 'array'`),
+  check("studio_stocktakes_expected_nonempty", sql`jsonb_array_length(${table.expectedPieces}) > 0`),
+  check("studio_stocktakes_version_positive", sql`${table.version} > 0`),
+  check("studio_stocktakes_close_pair", sql`
+    (${table.state} = 'OPEN' and ${table.closedAt} is null)
+    or (${table.state} = 'CLOSED' and ${table.closedAt} is not null)
+  `),
+]);
+
+export const studioPhysicalObservations = pgTable("studio_physical_observations", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  stocktakeId: uuid("stocktake_id").references(() => studioStocktakes.id, { onDelete: "restrict" }),
+  operatorSubject: text("operator_subject").notNull(),
+  idempotencyKey: varchar("idempotency_key", { length: 160 }).notNull(),
+  pieceKey: varchar("piece_key", { length: 96 }).notNull(),
+  wardrobeItemId: uuid("wardrobe_item_id").references(() => studioWardrobeItems.id, { onDelete: "restrict" }),
+  sku: varchar("sku", { length: 40 }).references(() => shopCatalogueItems.sku, {
+    onDelete: "restrict",
+    onUpdate: "cascade",
+  }),
+  command: varchar("command", { length: 32 }).default("CONFIRM_IN_HAND").notNull(),
+  expectedLocationKey: varchar("expected_location_key", { length: 40 }).notNull(),
+  expectedLocationLabel: text("expected_location_label").notNull(),
+  expectedCustody: varchar("expected_custody", { length: 24 }).notNull(),
+  observedLocationKey: varchar("observed_location_key", { length: 40 }).notNull(),
+  observedLocationLabel: text("observed_location_label").notNull(),
+  observedCustody: varchar("observed_custody", { length: 24 }).default("STUDIO").notNull(),
+  result: varchar("result", { length: 24 }).notNull(),
+  orderReference: varchar("order_reference", { length: 40 }),
+  note: text("note"),
+  occurredAt: timestamp("occurred_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("studio_physical_observations_operator_idempotency_unique").on(
+    table.operatorSubject,
+    table.idempotencyKey,
+  ),
+  index("studio_physical_observations_piece_time_idx").on(table.pieceKey, table.occurredAt),
+  index("studio_physical_observations_stocktake_time_idx").on(table.stocktakeId, table.occurredAt),
+  check("studio_physical_observations_identity", sql`
+    ${table.wardrobeItemId} is not null or ${table.sku} is not null
+  `),
+  check("studio_physical_observations_piece_key_nonempty", sql`length(trim(${table.pieceKey})) > 0`),
+  check("studio_physical_observations_command_known", sql`${table.command} = 'CONFIRM_IN_HAND'`),
+  check("studio_physical_observations_expected_location_known", sql`
+    ${table.expectedLocationKey} in ('WARDROBE_RAIL', 'PACKING_SHELF', 'RETURN_INSPECTION', 'COURIER', 'CUSTOMER', 'RETIRED')
+  `),
+  check("studio_physical_observations_observed_location_known", sql`
+    ${table.observedLocationKey} in ('WARDROBE_RAIL', 'PACKING_SHELF', 'RETURN_INSPECTION')
+  `),
+  check("studio_physical_observations_expected_custody_known", sql`
+    ${table.expectedCustody} in ('STUDIO', 'COURIER', 'CUSTOMER', 'UNKNOWN')
+  `),
+  check("studio_physical_observations_observed_custody_studio", sql`${table.observedCustody} = 'STUDIO'`),
+  check("studio_physical_observations_result_known", sql`${table.result} in ('MATCH', 'MISMATCH')`),
+  check("studio_physical_observations_note_length", sql`
+    ${table.note} is null or length(${table.note}) <= 240
+  `),
+]);

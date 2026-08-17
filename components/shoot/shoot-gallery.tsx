@@ -23,7 +23,7 @@ export function ShootGallery() {
         eyebrow="Visual history"
         title="Every frame stays accountable."
         description="Approved, rejected, and pending outputs remain together so identity and garment decisions never lose their context."
-        action={<Link className="button button-primary" href="/shoots/new">＋ Create shoot</Link>}
+        action={<Link className="button button-primary" href="/studio/media/new">＋ Create shoot</Link>}
       />
       <div className="filter-bar" role="group" aria-label="Filter shoots">
         {galleryFilters.map((item) => <button className={filter === item ? "filter-chip active" : "filter-chip"} onClick={() => setFilter(item)} key={item}>{item.toLowerCase()}</button>)}
@@ -39,7 +39,7 @@ export function ShootGallery() {
               ? "MIXED"
               : "PENDING";
           return (
-            <Link className="shoot-card" href={`/shoots/${shoot.id}`} key={shoot.id}>
+            <Link className="shoot-card" href={`/studio/media/${shoot.id}`} key={shoot.id}>
               <VisualAsset kind="generation" variant={hero.visual} label={`${shoot.id} ${shoot.preset}`} />
               <div className="shoot-card-overlay"><StatusPill status={decision} /><span>{shoot.generations.length} frames</span></div>
               <div className="shoot-card-copy">

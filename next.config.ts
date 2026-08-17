@@ -10,6 +10,17 @@ const nextConfig: NextConfig = {
     // recover with one full navigation instead of leaving a partial UI behind.
     appNavFailHandling: true,
   },
+  async redirects() {
+    return [
+      { source: "/garments/new", destination: "/studio/wardrobe?intake=1", permanent: true },
+      { source: "/garments/:id", destination: "/studio/wardrobe/:id", permanent: true },
+      { source: "/garments", destination: "/studio/wardrobe", permanent: true },
+      { source: "/konan", destination: "/studio/models", permanent: true },
+      { source: "/shoots/new", destination: "/studio/media/new", permanent: true },
+      { source: "/shoots/:id", destination: "/studio/media/:id", permanent: true },
+      { source: "/shoots", destination: "/studio/media", permanent: true },
+    ];
+  },
 };
 
 export default nextConfig;
