@@ -12,9 +12,10 @@ const directCaptures = readFileSync(`${root}/components/studio/draft-direct-capt
 const operations = readFileSync(`${root}/components/studio/operations-desk.tsx`, "utf8");
 const css = readFileSync(`${root}/app/foundation.css`, "utf8");
 const atelierCss = readFileSync(`${root}/app/studio-atelier.css`, "utf8");
+const mobileCss = readFileSync(`${root}/app/mobile-experience.css`, "utf8");
+const rootLayout = readFileSync(`${root}/app/layout.tsx`, "utf8");
 
-test("Studio mobile chrome keeps one state-aware action between navigation and its matching FAB", () => {
-  assert.match(shell, /studio-mobile-fab/);
+test("Studio mobile chrome keeps one visible state-aware action beside navigation", () => {
   assert.match(shell, /Add model/);
   assert.match(shell, /Intake garment/);
   assert.match(shell, /Open inventory/);
@@ -24,15 +25,16 @@ test("Studio mobile chrome keeps one state-aware action between navigation and i
   assert.match(shell, /useStudio/);
   assert.match(shell, /href=\{contextAction\.href\}/);
   assert.match(shell, /<strong>\{contextAction\.label\}<\/strong>/);
-  assert.match(shell, /<ContextActionIcon aria-hidden="true"/);
   assert.match(shell, /className="shop-mobile-context shop-dock-lens studio-mobile-context"/);
-  assert.match(shell, /aria-label=\{contextAction\.label\}/);
   assert.match(shell, /StudioMobileActionProvider/);
   assert.match(shell, /useRegisteredStudioMobileAction/);
   assert.match(shell, /registeredMobileAction\?\.invokeTargetId/);
-  assert.equal(shell.match(/onClick=\{invokeContextAction\}/g)?.length, 3);
   assert.match(wardrobe, /invokeTargetId: "piece-primary-action"/);
-  assert.doesNotMatch(shell, /className="shop-mobile-fab[\s\S]*?href="\/shop"/);
+  assert.match(mobileCss, /\.studio-mobile-fab\s*\{[\s\S]*?display: none !important/);
+  assert.match(mobileCss, /grid-template-columns: 54px minmax\(0, 1fr\)/);
+  assert.match(mobileCss, /--juw-mobile-island-clearance/);
+  assert.match(rootLayout, /mobile-experience\.css\?raw/);
+  assert.match(rootLayout, /<style data-mobile-experience>\{mobileExperienceCss\}<\/style>/);
 });
 
 test("task-first records, garments, and inventory use approved media", () => {
@@ -46,6 +48,7 @@ test("task-first records, garments, and inventory use approved media", () => {
   assert.match(atelierCss, /\.studio-garment-grid/);
   assert.match(atelierCss, /\.studio-inventory-row-trigger/);
   assert.match(atelierCss, /@media \(max-width: 620px\)/);
+  assert.match(mobileCss, /studio-atelier-home > \.studio-atelier-hero[\s\S]*?display: none/);
 });
 
 test("compact garment rows expose preview and one Piece workspace", () => {
@@ -54,6 +57,8 @@ test("compact garment rows expose preview and one Piece workspace", () => {
   assert.match(wardrobe, /className="studio-garment-disclosure"/);
   assert.match(wardrobe, /garmentDossierHref/);
   assert.doesNotMatch(wardrobe, /Manage draft|Prepare listing|Open listing/);
+  assert.match(mobileCss, /studio-garment-disclosure > span:first-child small/);
+  assert.match(mobileCss, /font-size: 10\.5px/);
 });
 
 test("garments open one Piece workspace with one truthful next action", () => {
@@ -112,6 +117,7 @@ test("operator copy and recovery stay action-led", () => {
   assert.match(css, /\.studio-lifecycle-step \+ \.studio-lifecycle-step::before \{[\s\S]*?var\(--studio-on-cocoa\) 16%/);
   assert.doesNotMatch(css, /html\[data-theme="dark"\] \.studio-shell \.studio-lifecycle-track,[\s\S]*?color: #1d1512/);
   assert.match(atelierCss, /@media \(prefers-reduced-motion: reduce\)/);
+  assert.match(mobileCss, /mask-image: linear-gradient/);
 });
 
 test("documented browser evidence is complete", () => {
