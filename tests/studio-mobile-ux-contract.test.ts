@@ -99,6 +99,9 @@ test("operator copy and recovery stay action-led", () => {
   assert.doesNotMatch(directCaptures, /disabled=\{!aiFlow\.source \|\| !aiFlow\.confirmed\}/);
   assert.match(directCaptures, /Only Lulu sees this/);
   assert.doesNotMatch(wardrobe, /truth gates|catalogue projection/i);
+  assert.doesNotMatch(wardrobe, /Public projection|catalogue state|model anchor|Listing readiness/);
+  assert.match(wardrobe, /Shop preview/);
+  assert.match(wardrobe, /Live in Shop/);
   assert.match(operations, /Manage stock and returns\./);
   assert.match(operations, /summaryItems/);
   assert.match(operations, /studio-operation-card-trigger/);

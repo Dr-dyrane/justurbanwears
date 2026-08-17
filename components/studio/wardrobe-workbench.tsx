@@ -444,7 +444,7 @@ function ApprovedPublicMedia({ sku, slug, title }: {
         {contract.modelAnchor.src
           ? <img alt="" height={42} src={contract.modelAnchor.src} width={42} />
           : <ShieldCheck aria-hidden="true" size={22} strokeWidth={1.7} />}
-        <span><small>Approved model anchor</small><strong>{contract.modelAnchor.id}</strong></span>
+        <span><small>Approved model</small><strong>{contract.modelAnchor.id}</strong></span>
         <ShieldCheck aria-hidden="true" size={17} strokeWidth={1.8} />
       </div>
       <div className="studio-public-media-grid" aria-label={`${title} approved public frames`}>
@@ -484,7 +484,7 @@ function ListingEditor({ listing }: { listing: StudioListing }) {
   return (
     <article className="studio-listing-card" id={listing.id}>
       <div className="studio-listing-preview">
-        <span className="studio-public-label"><Send aria-hidden="true" size={13} />Public projection</span>
+        <span className="studio-public-label"><Send aria-hidden="true" size={13} />Shop preview</span>
         <ApprovedPublicMedia sku={garment.sku} slug={listing.slug} title={title} />
         <small>{listing.slug}</small>
         <h3>{title}</h3>
@@ -493,22 +493,22 @@ function ListingEditor({ listing }: { listing: StudioListing }) {
         <span>{garment.sizeLabel} · {garment.color} · {garment.condition}</span>
       </div>
       <form className="studio-listing-editor" onSubmit={save}>
-        <div className="studio-card-heading"><div><small>{garment.sku}</small><h3>Listing readiness</h3></div><LifecycleBadge state={listing.state} /></div>
+        <div className="studio-card-heading"><div><small>{garment.sku}</small><h3>Ready for Shop</h3></div><LifecycleBadge state={listing.state} /></div>
         <div className="studio-form-grid studio-listing-fields">
-          <label className="studio-field"><span>Public title</span><input value={title} disabled={!['DRAFT', 'READY'].includes(listing.state)} onChange={(event) => setTitle(event.target.value)} /></label>
+          <label className="studio-field"><span>Shop title</span><input value={title} disabled={!['DRAFT', 'READY'].includes(listing.state)} onChange={(event) => setTitle(event.target.value)} /></label>
           <label className="studio-field"><span>Price (₦)</span><input type="number" min="1" value={price} disabled={!['DRAFT', 'READY'].includes(listing.state)} onChange={(event) => setPrice(event.target.value)} /></label>
           <label className="studio-field"><span>Model</span><select value={modelId} disabled={!['DRAFT', 'READY'].includes(listing.state)} onChange={(event) => setModelId(event.target.value)}>{studio.models.map((model) => <option value={model.id} key={model.id}>{model.name} · {model.state.toLowerCase()}</option>)}</select></label>
-          <label className="studio-field studio-field-wide"><span>Public description</span><textarea rows={3} value={description} disabled={!['DRAFT', 'READY'].includes(listing.state)} onChange={(event) => setDescription(event.target.value)} /></label>
+          <label className="studio-field studio-field-wide"><span>Shop description</span><textarea rows={3} value={description} disabled={!['DRAFT', 'READY'].includes(listing.state)} onChange={(event) => setDescription(event.target.value)} /></label>
         </div>
         <ReadinessList gates={gates} />
         <div className="studio-card-actions">
           {listing.state === "DRAFT" ? <button className="button button-secondary" type="submit">Save details</button> : null}
           {listing.state === "DRAFT" && approvedContract ? <button className="button button-primary" disabled={!allReady} onClick={() => studio.confirmListingReady(listing.id)} type="button">Approve Shop preview</button> : null}
           {listing.state === "READY" && approvedContract ? <button className="button button-primary" onClick={() => studio.publishListing(listing.id)} type="button">Publish</button> : null}
-          {!approvedContract && ["DRAFT", "READY"].includes(listing.state) ? <span className="studio-inline-state"><LockKeyhole aria-hidden="true" size={16} />Private · public media approval required</span> : null}
-          {listing.state === "PUBLISHED" ? <span className="studio-inline-state"><Check aria-hidden="true" size={16} />Available in catalogue state</span> : null}
+          {!approvedContract && ["DRAFT", "READY"].includes(listing.state) ? <span className="studio-inline-state"><LockKeyhole aria-hidden="true" size={16} />Private · photos still need approval</span> : null}
+          {listing.state === "PUBLISHED" ? <span className="studio-inline-state"><Check aria-hidden="true" size={16} />Live in Shop</span> : null}
           {listing.state === "RESERVED" ? <span className="studio-inline-state">Reserved by an open order</span> : null}
-          {listing.state === "SOLD" ? <span className="studio-inline-state">Sold · return actions live in Operations</span> : null}
+          {listing.state === "SOLD" ? <span className="studio-inline-state">Sold · manage the return in Operations</span> : null}
         </div>
       </form>
     </article>
