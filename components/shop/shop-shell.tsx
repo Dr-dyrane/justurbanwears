@@ -19,6 +19,10 @@ import { isBagCheckoutAvailable } from "../../lib/shop/domain/state";
 import { BrandWordmark } from "../brand/brand-wordmark";
 import { ThemeToggle } from "../theme/theme-toggle";
 import { ShopLink as Link } from "./atoms/shop-link";
+import {
+  ShopMobileActionProvider,
+  useRegisteredShopMobileAction,
+} from "./shop-mobile-action-context";
 import { ShopProvider, useShop } from "./shop-provider";
 import chromeStyles from "./shop-mobile-chrome.module.css";
 
@@ -59,6 +63,7 @@ function ShopChrome({ children }: { children: React.ReactNode }) {
         ? { label: "Account", icon: CircleUserRound }
         : { label: "Shop", icon: House });
   const MobileDestinationIcon = mobileDestination.icon;
+  const registeredMobileAction = useRegisteredShopMobileAction();
   const currentProduct = pathname.startsWith("/shop/products/")
     ? getProduct(pathname.slice("/shop/products/".length))
     : undefined;
@@ -70,14 +75,12 @@ function ShopChrome({ children }: { children: React.ReactNode }) {
     : currentProduct
       ? { eyebrow: currentProduct.availability === "SOLD" ? "Archive" : "Unavailable", label: "See similar pieces", href: "/shop/search" }
       : undefined;
-  const contextAction = !isOnline
-    ? { eyebrow: "Offline", label: "Review app connection and local state", href: "/shop/account" }
-    : pathname === "/shop/bag"
-      ? bag.length
-        ? checkoutAvailable
-          ? { eyebrow: "Ready to continue", label: "Continue to checkout", href: "/shop/checkout" }
-          : { eyebrow: "Checkout paused", label: "Availability is not confirmed", href: "#shop-content" }
-        : { eyebrow: "Drop 01", label: "Find a piece", href: "/shop/search" }
+  const routeAction = pathname === "/shop/bag"
+    ? bag.length
+      ? checkoutAvailable
+        ? { eyebrow: "Ready to continue", label: "Continue to checkout", href: "/shop/checkout" }
+        : { eyebrow: "Checkout paused", label: "Availability is not confirmed", href: "#shop-content" }
+      : { eyebrow: "Drop 01", label: "Find a piece", href: "/shop/search" }
     : pathname === "/shop/checkout"
       ? checkoutAvailable
         ? { eyebrow: "Your bag", label: `${bag.length} ${bag.length === 1 ? "piece" : "pieces"} selected`, href: "/shop/bag" }
@@ -85,7 +88,7 @@ function ShopChrome({ children }: { children: React.ReactNode }) {
     : pathname === "/shop/orders"
       ? { eyebrow: "The wardrobe", label: "Find another piece", href: "/shop/search" }
     : pathname.startsWith("/shop/orders/")
-      ? { eyebrow: "Your orders", label: "View all orders", href: "/shop/orders" }
+      ? { eyebrow: "Order status", label: "Review this order", href: "#shop-content" }
     : pathname.startsWith("/shop/products/")
       ? productAction ?? { eyebrow: "The wardrobe", label: "Find a piece", href: "/shop/search" }
     : bag.length
@@ -99,6 +102,9 @@ function ShopChrome({ children }: { children: React.ReactNode }) {
     : pathname === "/shop/search"
         ? { eyebrow: "Drop 01", label: "Browse available pieces", href: "/shop#discover" }
       : { eyebrow: "Drop 01", label: "Search the wardrobe", href: "/shop/search" };
+  const contextAction = !isOnline
+    ? { eyebrow: "Offline", label: "Review app connection and local state", href: "/shop/account" }
+    : registeredMobileAction ?? routeAction;
 
   return (
     <div
@@ -262,8 +268,10 @@ export function ShopShell({
     [initialProducts],
   );
   return (
-    <ShopProvider service={service}>
-      <ShopChrome>{children}</ShopChrome>
-    </ShopProvider>
+    <ShopMobileActionProvider>
+      <ShopProvider service={service}>
+        <ShopChrome>{children}</ShopChrome>
+      </ShopProvider>
+    </ShopMobileActionProvider>
   );
 }

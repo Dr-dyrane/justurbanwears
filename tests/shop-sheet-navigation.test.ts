@@ -8,6 +8,7 @@ const filterSheet = await readFile(new URL("../components/shop/shop-filter-sheet
 const productInfo = await readFile(new URL("../components/shop/product-info-sheet.tsx", import.meta.url), "utf8");
 const modelTryout = await readFile(new URL("../components/shop/product-model-tryout.tsx", import.meta.url), "utf8");
 const mediaGallery = await readFile(new URL("../components/shop/product-media-gallery.tsx", import.meta.url), "utf8");
+const returnRequest = await readFile(new URL("../components/shop/return-request.tsx", import.meta.url), "utf8");
 const historyHook = await readFile(new URL("../hooks/use-history-backed-dialog.ts", import.meta.url), "utf8");
 const scrollHook = await readFile(new URL("../hooks/use-document-scroll-lock.ts", import.meta.url), "utf8");
 const gestureHook = await readFile(new URL("../hooks/use-sheet-dismiss-gesture.ts", import.meta.url), "utf8");
@@ -25,7 +26,7 @@ test("Shop sheets expose one layer and optional handle-only dismissal grammar", 
 });
 
 test("every Shop overlay keeps a non-gesture close path and restores document control", () => {
-  for (const source of [filterSheet, productInfo, modelTryout]) {
+  for (const source of [filterSheet, productInfo, modelTryout, returnRequest]) {
     assert.match(source, /ShopSheetCloseButton/);
     assert.match(source, /onCancel=/);
     assert.match(source, /useDocumentScrollLock/);
@@ -38,14 +39,14 @@ test("every Shop overlay keeps a non-gesture close path and restores document co
   assert.match(scrollHook, /previousDocumentOverflow/);
 });
 
-test("product information and expanded media close on browser Back", () => {
+test("contextual Shop sheets close on browser Back", () => {
   assert.match(historyHook, /history\.pushState/);
   assert.match(historyHook, /history\.back/);
   assert.match(historyHook, /popstate/);
   assert.match(historyHook, /window\.location\.href/);
   assert.doesNotMatch(historyHook, /pathname|searchParams/);
 
-  for (const source of [productInfo, mediaGallery]) {
+  for (const source of [productInfo, mediaGallery, returnRequest]) {
     assert.match(source, /useHistoryBackedDialog/);
     assert.match(source, /aria-controls=/);
     assert.match(source, /aria-haspopup="dialog"/);
@@ -54,4 +55,7 @@ test("product information and expanded media close on browser Back", () => {
   assert.match(productInfo, /returnFocusRef\.current\?\.focus/);
   assert.match(mediaGallery, /returnFocusRef\.current\?\.focus/);
   assert.match(mediaGallery, /className="shop-media-dialog-close"[\s\S]*onClick=\{closeViewer\}/);
+  assert.match(returnRequest, /triggerRef\.current\?\.focus/);
+  assert.match(returnRequest, /if \(pendingRef\.current\) return false/);
+  assert.match(returnRequest, /aria-modal="true"/);
 });

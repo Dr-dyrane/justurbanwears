@@ -1,11 +1,9 @@
 "use client";
 
 import { ArrowUpRight, PackageSearch } from "lucide-react";
-import { useEffect, useState } from "react";
 import { formatNaira } from "../../lib/shop/catalog";
 import { formatConnectedOrderDate, orderStateLabel } from "../../lib/shop/order-presentation";
 import type { ShopServerOrder } from "../../lib/shop/server-order/types";
-import { authSignInPath } from "../../lib/auth/return-to";
 import { ShopActionLink } from "./atoms/action";
 import { ShopLink as Link } from "./atoms/shop-link";
 import { ProductVisual } from "./product-visual";
@@ -32,39 +30,13 @@ function OrderCard({ order }: { order: ShopServerOrder }) {
     </Link>
   );
 }
-export function ShopOrders() {
-  const [orders, setOrders] = useState<ShopServerOrder[]>([]);
-  const [state, setState] = useState<"loading" | "ready" | "error">("loading");
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    const controller = new AbortController();
-    void fetch("/api/shop/orders", {
-      cache: "no-store",
-      credentials: "same-origin",
-      signal: controller.signal,
-    }).then(async (response) => {
-      const body = await response.json().catch(() => ({})) as {
-        ok?: boolean;
-        orders?: ShopServerOrder[];
-      };
-      if (response.status === 401) {
-        window.location.assign(authSignInPath("/shop/orders"));
-        return;
-      }
-      if (!response.ok || !body.ok || !Array.isArray(body.orders)) {
-        throw new Error("Your orders could not be opened. Try again.");
-      }
-      setOrders(body.orders);
-      setState("ready");
-    }).catch((cause: unknown) => {
-      if (controller.signal.aborted) return;
-      setError(cause instanceof Error ? cause.message : "Your orders could not be opened. Try again.");
-      setState("error");
-    });
-    return () => controller.abort();
-  }, []);
-
+export function ShopOrders({
+  initialError = "",
+  initialOrders,
+}: {
+  initialError?: string;
+  initialOrders: readonly ShopServerOrder[];
+}) {
   return (
     <div className="shop-list-page shop-orders-page">
       <header className="shop-list-heading">
@@ -72,19 +44,15 @@ export function ShopOrders() {
         <h1>Track every order.</h1>
       </header>
 
-      {state === "loading" ? (
-        <div className="shop-route-empty" aria-live="polite" role="status">
-          <h2>Opening your orders…</h2>
-        </div>
-      ) : state === "error" ? (
+      {initialError ? (
         <div className="shop-route-empty" role="alert">
           <span aria-hidden="true"><PackageSearch size={34} strokeWidth={1.65} /></span>
-          <h2>{error}</h2>
+          <h2>{initialError}</h2>
           <ShopActionLink href="/shop/orders">Try again</ShopActionLink>
         </div>
-      ) : orders.length ? (
+      ) : initialOrders.length ? (
         <section className="shop-orders-list" aria-label="Your orders">
-          {orders.map((order) => <OrderCard key={order.reference} order={order} />)}
+          {initialOrders.map((order) => <OrderCard key={order.reference} order={order} />)}
         </section>
       ) : (
         <div className="shop-route-empty">

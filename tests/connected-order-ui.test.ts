@@ -85,22 +85,43 @@ test("checkout preserves a recovery draft and clears the bag only after server a
 });
 
 test("customer list, receipt, tracking, evidence, and return surfaces use shared server truth", () => {
+  const listPage = source("app/shop/orders/page.tsx");
+  const detailPage = source("app/shop/orders/[id]/page.tsx");
   const list = source("components/shop/shop-orders.tsx");
   const detail = source("components/shop/order-status.tsx");
   const evidence = source("components/shop/payment-evidence-upload.tsx");
   const returns = source("components/shop/return-request.tsx");
 
-  assert.match(list, /fetch\("\/api\/shop\/orders"/);
+  assert.match(listPage, /getShopCustomerSession/);
+  assert.match(listPage, /listCustomerOrders/);
+  assert.match(listPage, /<ShopOrders[^>]*initialOrders=\{orders\}/);
+  assert.match(detailPage, /getCustomerOrder/);
+  assert.match(detailPage, /initialOrder=\{initialOrder\}/);
+  assert.match(detailPage, /initialState=\{initialState\}/);
+  assert.match(detailPage, /error instanceof ShopOrderError && error\.code === "NOT_FOUND"/);
+  assert.match(list, /initialOrders: readonly ShopServerOrder\[\]/);
+  assert.doesNotMatch(list, /fetch\(|Opening your orders|useEffect/);
   assert.doesNotMatch(list, /orders \} = useShop|Saved checkouts/);
+  assert.match(detail, /initialOrder: ShopServerOrder \| null/);
+  assert.doesNotMatch(detail, /Opening your order/);
+  assert.match(detail, /Showing the last confirmed order state/);
+  assert.match(detail, /response\.status === 404[\s\S]*setOrder\(null\)/);
   assert.match(detail, /Payment confirmed\./);
   assert.match(detail, /Tracking reference/);
   assert.match(detail, /Studio pickup/);
   assert.match(detail, /Collected\./);
-  assert.match(detail, /<ReturnRequest order=\{order\}/);
+  assert.match(detail, /<ReturnRequest[\s\S]*?order=\{order\}/);
   assert.match(evidence, /crypto\.subtle\.digest\("SHA-256"/);
   assert.match(evidence, /Selected: \{selectedFile\.name\}/);
   assert.match(evidence, /Receipt sent\. Lulu will check it and confirm your payment/);
-  assert.match(returns, /role="dialog"/);
+  assert.match(returns, /<ShopSheet/);
+  assert.match(returns, /useHistoryBackedDialog/);
+  assert.match(returns, /useSheetDismissGesture/);
+  assert.match(returns, /useDocumentScrollLock/);
+  assert.match(returns, /aria-modal="true"/);
+  assert.match(returns, /if \(pendingRef\.current\) return false/);
+  assert.match(returns, /focusResultRef\.current = true/);
+  assert.match(returns, /resultRef\.current\?\.focus/);
   assert.match(returns, /shop-return-reasons/);
   assert.match(returns, /type="radio"/);
   assert.doesNotMatch(returns, /<select|<option/);
@@ -133,10 +154,20 @@ test("Studio posts structured facts, role-gates finance UX, and covers return re
 
 test("route shells and account expose authoritative orders without relabelling local drafts", () => {
   const shopShell = source("components/shop/shop-shell.tsx");
+  const shopMobileAction = source("components/shop/shop-mobile-action-context.tsx");
   const studioShell = source("components/studio/app-shell.tsx");
   const account = source("components/shop/shop-account.tsx");
+  const ordersPage = source("app/shop/orders/page.tsx");
+  const orderPage = source("app/shop/orders/[id]/page.tsx");
 
   assert.match(shopShell, /href: "\/shop\/orders", label: "Orders"/);
+  assert.match(shopShell, /useRegisteredShopMobileAction/);
+  assert.match(shopShell, /registeredMobileAction \?\? routeAction/);
+  assert.match(shopShell, /ShopMobileActionProvider/);
+  assert.match(shopMobileAction, /useShopMobileAction/);
+  assert.match(ordersPage, /title: "Your orders"/);
+  assert.match(orderPage, /title: "Order status"/);
+  assert.doesNotMatch(`${ordersPage}\n${orderPage}`, /Checkout drafts|checkout draft/i);
   assert.match(studioShell, /href: "\/studio\/orders", label: "Orders"/);
   assert.match(account, /Your orders/);
   assert.match(account, /Sign in to open your orders/);

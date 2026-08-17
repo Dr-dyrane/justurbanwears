@@ -1,8 +1,7 @@
 "use client";
 
 import { ArrowLeft, BellRing, PackageSearch, RefreshCw } from "lucide-react";
-import { useParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { authSignInPath } from "../../lib/auth/return-to";
 import { formatNaira } from "../../lib/shop/catalog";
 import {
@@ -19,72 +18,140 @@ import { ShopLink as Link } from "./atoms/shop-link";
 import { PaymentEvidenceUpload } from "./payment-evidence-upload";
 import { ProductVisual } from "./product-visual";
 import { ReturnRequest } from "./return-request";
+import {
+  useShopMobileAction,
+  type ShopMobileAction,
+} from "./shop-mobile-action-context";
 import { useShop } from "./shop-provider";
 
-export function OrderStatus() {
-  const params = useParams<{ id: string }>();
-  const reference = params.id;
+type OrderStatusState = "ready" | "not-found" | "error";
+
+function orderMobileAction(order: ShopServerOrder): ShopMobileAction {
+  if (orderNeedsEvidence(order)) {
+    return {
+      eyebrow: "Payment required",
+      href: "#shop-order-payment",
+      label: order.paymentReviewStatus === "REVIEW_REJECTED" ? "Send a clearer receipt" : "Send your receipt",
+    };
+  }
+  if (order.canRequestReturn) {
+    return {
+      eyebrow: "Return window",
+      href: "#shop-order-return",
+      label: "Request a return",
+    };
+  }
+  if (order.return && order.return.status !== "REJECTED" && order.return.status !== "RESOLVED") {
+    return {
+      eyebrow: "Return update",
+      href: "#shop-order-return",
+      label: "Review your return",
+    };
+  }
+  if (order.lifecycleStatus === "ACTIVE") {
+    return {
+      eyebrow: "Order status",
+      href: "#shop-order-updates",
+      label: "Check for updates",
+    };
+  }
+  if (order.lifecycleStatus === "CANCELLED" || order.lifecycleStatus === "EXPIRED") {
+    return {
+      eyebrow: "The wardrobe",
+      href: "/shop/search",
+      label: "Find another piece",
+    };
+  }
+  return { eyebrow: "Your orders", href: "/shop/orders", label: "View all orders" };
+}
+
+export function OrderStatus({
+  initialError = "",
+  initialOrder,
+  initialState,
+  reference,
+}: {
+  initialError?: string;
+  initialOrder: ShopServerOrder | null;
+  initialState: OrderStatusState;
+  reference: string;
+}) {
   const { getProduct } = useShop();
-  const [order, setOrder] = useState<ShopServerOrder | null>(null);
-  const [state, setState] = useState<"loading" | "ready" | "not-found" | "error">("loading");
-  const [error, setError] = useState("");
+  const [order, setOrder] = useState<ShopServerOrder | null>(initialOrder);
+  const [state, setState] = useState<OrderStatusState>(initialState);
+  const [error, setError] = useState(initialError);
   const [evidenceNotice, setEvidenceNotice] = useState("");
-  const [refreshNonce, setRefreshNonce] = useState(0);
+  const [refreshError, setRefreshError] = useState("");
   const [refreshing, setRefreshing] = useState(false);
+  const manualRefreshControllerRef = useRef<AbortController | null>(null);
+
+  const refreshOrder = useCallback(async (signal: AbortSignal, announce: boolean) => {
+    try {
+      const response = await fetch(`/api/shop/orders/${encodeURIComponent(reference)}`, {
+        cache: "no-store",
+        credentials: "same-origin",
+        signal,
+      });
+      const body = await response.json().catch(() => ({})) as { ok?: boolean; order?: ShopServerOrder };
+      if (response.status === 401) {
+        window.location.assign(authSignInPath(`/shop/orders/${reference}`));
+        return;
+      }
+      if (response.status === 404) {
+        setOrder(null);
+        setState("not-found");
+        setRefreshError("");
+        return;
+      }
+      if (!response.ok || !body.ok || !body.order) {
+        throw new Error("Updates could not be checked.");
+      }
+      setOrder(body.order);
+      setState("ready");
+      setError("");
+      setRefreshError("");
+    } catch {
+      if (signal.aborted) return;
+      setRefreshError("Updates could not be checked. Showing the last confirmed order state.");
+    } finally {
+      if (announce && !signal.aborted) setRefreshing(false);
+    }
+  }, [reference]);
 
   useEffect(() => {
+    if (state !== "ready") return;
     const controller = new AbortController();
-    async function load(showFailure: boolean) {
-      try {
-        const response = await fetch(`/api/shop/orders/${encodeURIComponent(reference)}`, {
-          cache: "no-store",
-          credentials: "same-origin",
-          signal: controller.signal,
-        });
-        const body = await response.json().catch(() => ({})) as { ok?: boolean; order?: ShopServerOrder };
-        if (response.status === 401) {
-          window.location.assign(authSignInPath(`/shop/orders/${reference}`));
-          return;
-        }
-        if (response.status === 404) {
-          setState("not-found");
-          return;
-        }
-        if (!response.ok || !body.ok || !body.order) throw new Error("This order could not be opened. Try again.");
-        setOrder(body.order);
-        setState("ready");
-        setError("");
-      } catch (cause) {
-        if (controller.signal.aborted) return;
-        if (showFailure) {
-          setError(cause instanceof Error ? cause.message : "This order could not be opened. Try again.");
-          setState("error");
-        }
-      } finally {
-        setRefreshing(false);
-      }
-    }
-    void load(true);
+    let pollInFlight = false;
     const interval = window.setInterval(() => {
-      if (document.visibilityState === "visible") void load(false);
+      if (document.visibilityState !== "visible" || pollInFlight) return;
+      pollInFlight = true;
+      void refreshOrder(controller.signal, false).finally(() => {
+        pollInFlight = false;
+      });
     }, 15_000);
     return () => {
       window.clearInterval(interval);
       controller.abort();
     };
-  }, [reference, refreshNonce]);
+  }, [refreshOrder, state]);
+
+  useEffect(() => () => manualRefreshControllerRef.current?.abort(), []);
 
   const timeline = useMemo(
     () => [...(order?.events ?? [])].sort((left, right) => left.occurredAt.localeCompare(right.occurredAt)),
     [order?.events],
   );
+  const mobileAction = useMemo(() => order ? orderMobileAction(order) : null, [order]);
+  useShopMobileAction(mobileAction);
 
-  if (state === "loading") {
-    return (
-      <div className="shop-list-page">
-        <div className="shop-route-empty" aria-live="polite" role="status"><h1>Opening your order…</h1></div>
-      </div>
-    );
+  function checkForUpdates() {
+    if (refreshing) return;
+    manualRefreshControllerRef.current?.abort();
+    const controller = new AbortController();
+    manualRefreshControllerRef.current = controller;
+    setRefreshing(true);
+    setRefreshError("");
+    void refreshOrder(controller.signal, true);
   }
 
   if (state === "not-found" || state === "error" || !order) {
@@ -92,7 +159,7 @@ export function OrderStatus() {
       <div className="shop-list-page">
         <div className="shop-route-empty" role={state === "error" ? "alert" : undefined}>
           <span aria-hidden="true"><PackageSearch size={34} strokeWidth={1.65} /></span>
-          <p className="shop-kicker">Order not found</p>
+          <p className="shop-kicker">{state === "error" ? "Order unavailable" : "Order not found"}</p>
           <h1>{state === "error" ? error : "That order is not available to this account."}</h1>
           <ShopActionLink href="/shop/orders">Your orders</ShopActionLink>
         </div>
@@ -130,15 +197,23 @@ export function OrderStatus() {
 
       <div className="shop-status-layout">
         <div className="shop-connected-order-main">
+          {refreshError ? (
+            <p className="shop-order-refresh-feedback is-error" role="alert">
+              {refreshError}
+            </p>
+          ) : null}
           {evidenceNotice ? <p className="shop-evidence-feedback shop-evidence-persistent-feedback" aria-live="polite" role="status">{evidenceNotice}</p> : null}
           {orderNeedsEvidence(order) ? (
-            <PaymentEvidenceUpload
-              reference={order.reference}
-              onReceived={(nextOrder) => {
-                setOrder(nextOrder);
-                setEvidenceNotice("Transfer receipt received. Lulu will confirm your payment.");
-              }}
-            />
+            <div id="shop-order-payment">
+              <PaymentEvidenceUpload
+                reference={order.reference}
+                onReceived={(nextOrder) => {
+                  setOrder(nextOrder);
+                  setRefreshError("");
+                  setEvidenceNotice("Transfer receipt received. Lulu will confirm your payment.");
+                }}
+              />
+            </div>
           ) : order.evidence.length ? (
             <section className="shop-evidence-received" aria-labelledby="evidence-state-title">
               <p className="shop-kicker">Transfer receipt</p>
@@ -205,19 +280,22 @@ export function OrderStatus() {
                       </section>
                     ) : null}
 
-                    <ReturnRequest order={order} onUpdated={setOrder} />
+                    <ReturnRequest
+                      order={order}
+                      onUpdated={(nextOrder) => {
+                        setOrder(nextOrder);
+                        setRefreshError("");
+                      }}
+                    />
 
-          <section className="shop-timeline shop-connected-timeline" aria-labelledby="timeline-title">
+          <section className="shop-timeline shop-connected-timeline" id="shop-order-updates" aria-labelledby="timeline-title">
             <div className="shop-connected-section-heading">
               <div><p className="shop-kicker">Recorded updates</p><h2 id="timeline-title">Order timeline</h2></div>
               <button
                 aria-busy={refreshing}
                 className="shop-timeline-refresh"
                 disabled={refreshing}
-                onClick={() => {
-                  setRefreshing(true);
-                  setRefreshNonce((value) => value + 1);
-                }}
+                onClick={checkForUpdates}
                 type="button"
               >
                 <RefreshCw aria-hidden="true" size={15} />
