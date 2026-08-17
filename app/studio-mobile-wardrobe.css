@@ -1,0 +1,154 @@
+/* Mobile Wardrobe containment and navigation correction.
+   Short workspace tabs fit the viewport; long filters scroll inside it;
+   pagination always remains reachable above the contextual island. */
+
+@media (max-width: 680px) {
+  .studio-shell .studio-ops-page,
+  .studio-shell #studio-view-garments,
+  .studio-shell #studio-view-publishing {
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .studio-shell .page-canvas {
+    overflow-x: clip;
+  }
+
+  /* Wardrobe has two top-level views. They are navigation, not a carousel. */
+  .studio-shell .studio-ops-page > #garments + .studio-segmented-view {
+    -webkit-mask-image: none;
+    display: grid;
+    gap: 6px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin: -8px 0 0;
+    mask-image: none;
+    max-width: 100%;
+    overflow: visible;
+    padding: 4px;
+    scroll-padding-inline: 0;
+    width: 100%;
+  }
+
+  .studio-shell .studio-ops-page > #garments + .studio-segmented-view button {
+    align-items: center;
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    min-height: 44px;
+    min-width: 0;
+    overflow: visible;
+    padding: 0 10px;
+    width: 100%;
+  }
+
+  .studio-shell .studio-ops-page > #garments + .studio-segmented-view button > span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .studio-shell .studio-ops-page > #garments + .studio-segmented-view button > small {
+    align-items: center;
+    display: inline-flex;
+    flex: 0 0 auto;
+    font-size: 11px;
+    height: 24px;
+    justify-content: center;
+    min-width: 24px;
+    padding: 0 7px;
+    white-space: nowrap;
+  }
+
+  /* Status filters may scroll, but they must never widen the page. */
+  .studio-shell #studio-view-garments > .studio-filter-bar {
+    box-sizing: border-box;
+    margin-inline: 0;
+    max-width: 100%;
+    overscroll-behavior-inline: contain;
+    padding: 0 54px 10px 0;
+    scroll-padding-inline: 0 54px;
+    width: 100%;
+  }
+
+  .studio-shell #studio-view-garments > .studio-filter-bar > span {
+    align-items: center;
+    background: var(--atelier-canvas);
+    box-shadow: -18px 0 18px var(--atelier-canvas);
+    display: inline-flex;
+    flex: 0 0 auto;
+    font-size: 11px;
+    margin-left: 0;
+    min-height: 44px;
+    padding: 0 2px 0 10px;
+    position: sticky;
+    right: 0;
+    white-space: nowrap;
+    z-index: 2;
+  }
+
+  /* Pagination remains fully visible and has Apple-sized targets. */
+  .studio-shell .studio-pager {
+    align-items: center;
+    box-sizing: border-box;
+    display: grid;
+    gap: 12px;
+    grid-template-columns: minmax(0, 1fr) auto;
+    margin-top: 24px;
+    max-width: 100%;
+    min-width: 0;
+    padding: 0 0 12px;
+    position: relative;
+    scroll-margin-bottom: calc(var(--juw-mobile-island-clearance) + 24px);
+    width: 100%;
+    z-index: 1;
+  }
+
+  .studio-shell .studio-pager > span {
+    color: var(--atelier-muted);
+    font-size: 11px;
+    min-width: 0;
+    white-space: nowrap;
+  }
+
+  .studio-shell .studio-pager > div {
+    align-items: center;
+    display: grid;
+    gap: 8px;
+    grid-template-columns: 44px minmax(56px, auto) 44px;
+    justify-self: end;
+    min-width: 0;
+  }
+
+  .studio-shell .studio-pager button {
+    align-items: center;
+    display: inline-flex;
+    height: 44px;
+    justify-content: center;
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0;
+    width: 44px;
+  }
+
+  .studio-shell .studio-pager strong {
+    color: var(--atelier-ink);
+    font-size: 11px;
+    min-width: 56px;
+    text-align: center;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 390px) {
+  .studio-shell .studio-pager {
+    align-items: stretch;
+    grid-template-columns: 1fr;
+  }
+
+  .studio-shell .studio-pager > div {
+    grid-template-columns: 44px minmax(0, 1fr) 44px;
+    justify-self: stretch;
+    width: 100%;
+  }
+}

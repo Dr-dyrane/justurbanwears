@@ -14,6 +14,7 @@ import "./shop-editorial-hero.css";
 import "./shop-product-detail.css";
 import "./experience-system.css";
 import "./shop-dark-contrast.css";
+import "./studio-mobile-wardrobe.css";
 
 const siteUrl = new URL("https://www.justurbanwears.com");
 const socialImage = new URL(BRAND_ASSETS.social.runtimeOg, siteUrl).toString();
