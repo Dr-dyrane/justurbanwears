@@ -13,7 +13,9 @@ const operations = readFileSync(`${root}/components/studio/operations-desk.tsx`,
 const css = readFileSync(`${root}/app/foundation.css`, "utf8");
 const atelierCss = readFileSync(`${root}/app/studio-atelier.css`, "utf8");
 const mobileCss = readFileSync(`${root}/app/mobile-experience.css`, "utf8");
+const studioMobileCss = readFileSync(`${root}/app/studio-mobile-final.css`, "utf8");
 const rootLayout = readFileSync(`${root}/app/layout.tsx`, "utf8");
+const studioLayout = readFileSync(`${root}/app/(studio)/layout.tsx`, "utf8");
 
 test("Studio mobile chrome keeps one visible state-aware action beside navigation", () => {
   assert.match(shell, /Add model/);
@@ -30,11 +32,14 @@ test("Studio mobile chrome keeps one visible state-aware action beside navigatio
   assert.match(shell, /useRegisteredStudioMobileAction/);
   assert.match(shell, /registeredMobileAction\?\.invokeTargetId/);
   assert.match(wardrobe, /invokeTargetId: "piece-primary-action"/);
-  assert.match(mobileCss, /\.studio-mobile-fab\s*\{[\s\S]*?display: none !important/);
-  assert.match(mobileCss, /grid-template-columns: 54px minmax\(0, 1fr\)/);
-  assert.match(mobileCss, /--juw-mobile-island-clearance/);
+  assert.doesNotMatch(shell, /className="shop-mobile-fab shop-dock-lens studio-mobile-fab"/);
+  assert.match(shell, /<small>Next<\/small>/);
+  assert.match(studioMobileCss, /grid-template-columns: 54px minmax\(0, 1fr\)/);
+  assert.match(studioMobileCss, /--studio-mobile-clearance/);
   assert.match(rootLayout, /mobile-experience\.css\?raw/);
   assert.match(rootLayout, /<style data-mobile-experience>\{mobileExperienceCss\}<\/style>/);
+  assert.match(studioLayout, /studio-mobile-final\.css\?raw/);
+  assert.match(studioLayout, /<style data-studio-mobile-final>\{studioMobileFinalCss\}<\/style>/);
 });
 
 test("task-first records, garments, and inventory use approved media", () => {
@@ -48,7 +53,7 @@ test("task-first records, garments, and inventory use approved media", () => {
   assert.match(atelierCss, /\.studio-garment-grid/);
   assert.match(atelierCss, /\.studio-inventory-row-trigger/);
   assert.match(atelierCss, /@media \(max-width: 620px\)/);
-  assert.match(mobileCss, /studio-atelier-home > \.studio-atelier-hero[\s\S]*?display: none/);
+  assert.match(studioMobileCss, /studio-atelier-home > \.studio-atelier-hero[\s\S]*?display: none/);
 });
 
 test("compact garment rows expose preview and one Piece workspace", () => {
@@ -57,8 +62,8 @@ test("compact garment rows expose preview and one Piece workspace", () => {
   assert.match(wardrobe, /className="studio-garment-disclosure"/);
   assert.match(wardrobe, /garmentDossierHref/);
   assert.doesNotMatch(wardrobe, /Manage draft|Prepare listing|Open listing/);
-  assert.match(mobileCss, /studio-garment-disclosure > span:first-child small/);
-  assert.match(mobileCss, /font-size: 10\.5px/);
+  assert.match(studioMobileCss, /studio-garment-disclosure > span:first-child small/);
+  assert.match(studioMobileCss, /font-size: 11px/);
 });
 
 test("garments open one Piece workspace with one truthful next action", () => {
@@ -117,7 +122,7 @@ test("operator copy and recovery stay action-led", () => {
   assert.match(css, /\.studio-lifecycle-step \+ \.studio-lifecycle-step::before \{[\s\S]*?var\(--studio-on-cocoa\) 16%/);
   assert.doesNotMatch(css, /html\[data-theme="dark"\] \.studio-shell \.studio-lifecycle-track,[\s\S]*?color: #1d1512/);
   assert.match(atelierCss, /@media \(prefers-reduced-motion: reduce\)/);
-  assert.match(mobileCss, /mask-image: linear-gradient/);
+  assert.match(studioMobileCss, /mask-image: linear-gradient/);
 });
 
 test("documented browser evidence is complete", () => {

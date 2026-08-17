@@ -1,4 +1,5 @@
 import studioAtelierCss from "../studio-atelier.css?raw";
+import studioMobileFinalCss from "../studio-mobile-final.css?raw";
 import { AppShell } from "../../components/studio/app-shell";
 import { requireStudioOperator } from "../../lib/server/studio-operator";
 import { StudioEngineError } from "../../lib/studio/engine/errors";
@@ -42,6 +43,7 @@ export default async function StudioLayout({ children }: { children: React.React
   return (
     <>
       <style data-studio-atelier>{studioAtelierCss}</style>
+      <style data-studio-mobile-final>{studioMobileFinalCss}</style>
       <AppShell operator={operator} scenariosEnabled={scenariosEnabled}>{children}</AppShell>
     </>
   );

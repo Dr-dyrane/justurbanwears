@@ -259,21 +259,18 @@ export function ProductDetail() {
           <dl className="shop-detail-facts" id="shop-purchase">
             <div>
               <dt>Size</dt>
-              <dd>{product.taggedSize}</dd>
-              <small>{product.fit}</small>
+              <dd>{product.taggedSize}<small>{product.fit}</small></dd>
             </div>
             <div>
               <dt>Colour</dt>
-              <dd>{product.colour}</dd>
-              <small>{product.condition}</small>
+              <dd>{product.colour}<small>{product.condition}</small></dd>
             </div>
             <div
               className="shop-detail-availability"
               data-state={product.availabilityConfirmed ? product.availability.toLowerCase() : "unconfirmed"}
             >
               <dt>Availability</dt>
-              <dd><span aria-hidden="true" />{availabilityCopy.title}</dd>
-              <small>{availabilityCopy.note}</small>
+              <dd><span aria-hidden="true" />{availabilityCopy.title}<small>{availabilityCopy.note}</small></dd>
             </div>
           </dl>
 

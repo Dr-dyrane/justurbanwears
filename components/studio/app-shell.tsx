@@ -263,12 +263,12 @@ function AppShellContent({ children, operator }: { children: React.ReactNode; op
               tabIndex={mobileChromeMode === "navigation" || mobileChromeMode === "suspended" ? -1 : undefined}
             >
               <span>
-                <small>Action</small>
+                <small>Next</small>
                 <strong>{contextAction.label}</strong>
               </span>
               <ArrowRight aria-hidden="true" size={17} strokeWidth={1.9} />
             </Link>
-            <div className="shop-mobile-row">
+            <div className="shop-mobile-row studio-mobile-navigation-row">
               <nav
                 aria-hidden={mobileChromeMode === "compact" || mobileChromeMode === "suspended" || undefined}
                 aria-label="Mobile Studio navigation"
@@ -295,14 +295,6 @@ function AppShellContent({ children, operator }: { children: React.ReactNode; op
                   );
                 })}
               </nav>
-              <Link
-                aria-label={contextAction.label}
-                className="shop-mobile-fab shop-dock-lens studio-mobile-fab"
-                href={contextAction.href}
-                onClick={invokeContextAction}
-              >
-                <ContextActionIcon aria-hidden="true" size={24} strokeWidth={2.1} />
-              </Link>
             </div>
           </div>
         </aside>

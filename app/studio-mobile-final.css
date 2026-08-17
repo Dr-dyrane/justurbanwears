@@ -1,0 +1,429 @@
+/* JustUrbanWears Studio mobile sign-off
+   Loaded after the atelier layer so operational hierarchy wins the cascade. */
+
+@media (max-width: 920px) {
+  .studio-shell .studio-ops-heading,
+  .studio-shell .studio-ops-hero,
+  .studio-shell .studio-connected-orders-heading,
+  .studio-shell .studio-atelier-hero,
+  .studio-shell .studio-dossier-heading {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .studio-shell .studio-ops-heading > div:first-child,
+  .studio-shell .studio-ops-hero > div:first-child,
+  .studio-shell .studio-connected-orders-heading > div:first-child,
+  .studio-shell .studio-atelier-hero-copy,
+  .studio-shell .studio-dossier-heading > div:first-child {
+    max-width: 100%;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .studio-shell .studio-ops-heading h1,
+  .studio-shell .studio-ops-hero h1,
+  .studio-shell .studio-connected-orders-heading h1,
+  .studio-shell .studio-atelier-hero h1,
+  .studio-shell .studio-dossier-heading h1 {
+    hyphens: none;
+    max-inline-size: 100%;
+    min-width: 0;
+    overflow: visible;
+    overflow-wrap: anywhere;
+    text-wrap: balance;
+    white-space: normal;
+    word-break: normal;
+  }
+}
+
+@media (max-width: 680px) {
+  :root {
+    --studio-mobile-island-height: 68px;
+    --studio-mobile-island-gap: 22px;
+    --studio-mobile-clearance: calc(
+      var(--studio-mobile-island-height)
+      + var(--studio-mobile-island-gap)
+      + env(safe-area-inset-bottom, 0px)
+    );
+  }
+
+  html:has(.studio-shell) {
+    scroll-padding-bottom: calc(var(--studio-mobile-clearance) + 18px);
+  }
+
+  .studio-shell .page-canvas,
+  .studio-shell:has(.studio-premium-surface) .page-canvas {
+    max-width: 100%;
+    padding:
+      14px
+      max(14px, env(safe-area-inset-left, 0px))
+      calc(var(--studio-mobile-clearance) + 28px)
+      max(14px, env(safe-area-inset-right, 0px)) !important;
+    scroll-padding-bottom: calc(var(--studio-mobile-clearance) + 18px);
+  }
+
+  .studio-shell .demo-ribbon {
+    font-size: 10px;
+    gap: 7px;
+    min-height: 34px;
+    padding: 7px 12px;
+  }
+
+  /* One contextual action. Navigation is revealed from the left control. */
+  .studio-shell .studio-mobile-fab {
+    display: none !important;
+  }
+
+  .studio-mobile-shell {
+    padding:
+      0
+      max(12px, env(safe-area-inset-right, 0px))
+      calc(10px + env(safe-area-inset-bottom, 0px))
+      max(12px, env(safe-area-inset-left, 0px)) !important;
+  }
+
+  .studio-mobile-shell[data-mobile-chrome-mode="compact"] .shop-mobile-composition {
+    align-items: stretch;
+    display: grid;
+    gap: 9px;
+    grid-template-columns: 54px minmax(0, 1fr) !important;
+    min-height: 56px;
+  }
+
+  .studio-mobile-shell[data-mobile-chrome-mode="compact"] .shop-mobile-nav-reveal {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .studio-mobile-shell[data-mobile-chrome-mode="compact"] .studio-mobile-context {
+    grid-column: 2;
+    grid-row: 1;
+    margin: 0 !important;
+    min-height: 56px;
+    min-width: 0;
+    width: 100%;
+  }
+
+  .studio-mobile-shell[data-mobile-chrome-mode="compact"] .studio-mobile-navigation-row {
+    display: none !important;
+  }
+
+  .studio-mobile-shell[data-mobile-chrome-mode="navigation"] .shop-mobile-composition {
+    min-height: 56px;
+  }
+
+  .studio-mobile-shell[data-mobile-chrome-mode="navigation"] .studio-mobile-navigation-row,
+  .studio-mobile-shell[data-mobile-chrome-mode="navigation"] .shop-mobile-dock {
+    display: block;
+    width: 100%;
+  }
+
+  .studio-mobile-shell[data-mobile-chrome-mode="navigation"] .shop-mobile-dock {
+    display: grid;
+  }
+
+  .studio-mobile-context > span {
+    min-width: 0;
+  }
+
+  .studio-mobile-context small {
+    color: color-mix(in srgb, currentColor 72%, transparent);
+    font-size: 9px !important;
+    letter-spacing: 0.12em;
+    line-height: 1.1;
+  }
+
+  .studio-mobile-context strong {
+    display: block;
+    font-size: 13px !important;
+    line-height: 1.15 !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* The home opens on the decision, not a second cover page. */
+  .studio-shell .studio-atelier-home {
+    gap: 30px !important;
+  }
+
+  .studio-shell .studio-atelier-home > .studio-atelier-hero {
+    display: none !important;
+  }
+
+  .studio-shell .studio-atelier-home > .studio-atelier-attention {
+    order: -1;
+  }
+
+  .studio-shell .studio-atelier-section-heading,
+  .studio-shell .studio-section-title {
+    align-items: flex-end;
+    gap: 12px;
+    margin-bottom: 13px;
+    min-width: 0;
+  }
+
+  .studio-shell .studio-atelier-section-heading > div,
+  .studio-shell .studio-section-title > div {
+    min-width: 0;
+  }
+
+  .studio-shell .studio-atelier-section-heading h2,
+  .studio-shell .studio-section-title h2 {
+    font-size: clamp(31px, 9.5vw, 42px);
+    letter-spacing: -0.048em;
+    line-height: 0.96;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    text-wrap: balance;
+  }
+
+  .studio-shell .studio-atelier-section-heading > span,
+  .studio-shell .studio-section-title > span {
+    flex: 0 0 auto;
+    font-size: 10px;
+  }
+
+  .studio-shell .studio-attention-layout {
+    gap: 11px;
+    grid-template-columns: 1fr;
+  }
+
+  .studio-shell .studio-attention-primary {
+    border-radius: 24px;
+    gap: 14px;
+    grid-template-columns: 1fr;
+    min-height: 0;
+    padding: 20px 18px;
+  }
+
+  .studio-shell .studio-attention-primary-icon {
+    height: 46px;
+    width: 46px;
+  }
+
+  .studio-shell .studio-attention-primary-copy small {
+    margin-bottom: 8px;
+  }
+
+  .studio-shell .studio-attention-primary-copy h3 {
+    font-size: clamp(32px, 10.2vw, 45px);
+    letter-spacing: -0.052em;
+    line-height: 0.94;
+    max-width: 11ch;
+    text-wrap: balance;
+  }
+
+  .studio-shell .studio-attention-primary-copy p {
+    font-size: 13px;
+    line-height: 1.5;
+    margin-top: 10px;
+  }
+
+  .studio-shell .studio-attention-primary-action {
+    align-items: center;
+    border-top: 1px solid rgba(255, 250, 246, 0.13);
+    flex-direction: row;
+    margin-top: 2px;
+    min-width: 0;
+    padding-top: 13px;
+    width: 100%;
+  }
+
+  .studio-shell .studio-attention-primary-action strong {
+    font-size: 36px;
+  }
+
+  .studio-shell .studio-attention-primary-action span {
+    font-size: 12px;
+  }
+
+  .studio-shell .studio-attention-row,
+  .studio-shell .studio-attention-clear {
+    border-radius: 17px;
+    min-height: 74px;
+    padding: 13px 14px;
+  }
+
+  .studio-shell .studio-atelier-pulse {
+    border-radius: 21px;
+    padding: 18px 14px;
+  }
+
+  .studio-shell .studio-pulse-grid {
+    gap: 4px;
+  }
+
+  .studio-shell .studio-pulse-item {
+    min-height: 64px;
+    padding: 10px 11px;
+  }
+
+  .studio-shell .studio-pulse-item strong {
+    font-size: 36px;
+  }
+
+  /* Long route titles remain bounded at 360px and below. */
+  .studio-shell .studio-ops-heading,
+  .studio-shell .studio-ops-hero,
+  .studio-shell .studio-connected-orders-heading,
+  .studio-shell .studio-dossier-heading {
+    align-items: start;
+    display: grid;
+    gap: 13px;
+    grid-template-columns: minmax(0, 1fr);
+    max-width: 100%;
+    overflow: visible;
+    width: 100%;
+  }
+
+  .studio-shell .studio-ops-heading h1,
+  .studio-shell .studio-ops-hero h1,
+  .studio-shell .studio-connected-orders-heading h1,
+  .studio-shell .studio-dossier-heading h1 {
+    font-size: clamp(38px, 11.8vw, 52px) !important;
+    letter-spacing: -0.055em;
+    line-height: 0.93;
+    max-inline-size: 100% !important;
+    overflow: visible !important;
+    overflow-wrap: anywhere;
+    text-wrap: balance;
+    white-space: normal !important;
+  }
+
+  .studio-shell .studio-ops-heading p:last-child,
+  .studio-shell .studio-ops-hero p:last-child,
+  .studio-shell .studio-connected-orders-heading p:last-child,
+  .studio-shell .studio-dossier-heading p:last-child {
+    font-size: 14px;
+    line-height: 1.52;
+    margin-top: 10px;
+  }
+
+  /* Scroll rows disclose continuation instead of looking complete. */
+  .studio-shell .studio-filter-bar,
+  .studio-shell .studio-segmented-view {
+    -webkit-mask-image: linear-gradient(
+      90deg,
+      transparent 0,
+      #000 12px,
+      #000 calc(100% - 44px),
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      90deg,
+      transparent 0,
+      #000 12px,
+      #000 calc(100% - 44px),
+      transparent 100%
+    );
+    margin-inline: -14px;
+    max-width: none;
+    padding-inline: 14px 52px;
+    scroll-padding-inline: 14px 52px;
+    width: calc(100% + 28px);
+  }
+
+  .studio-shell .studio-segmented-view {
+    margin-top: -5px;
+  }
+
+  .studio-shell .studio-filter-bar button,
+  .studio-shell .studio-segmented-view button {
+    min-height: 44px;
+  }
+
+  /* Fashion-small becomes operationally readable. */
+  .studio-shell .studio-garment-disclosure > span:first-child small,
+  .studio-shell .studio-recent-copy small,
+  .studio-shell .studio-recent-copy em,
+  .studio-shell .studio-inventory-copy small,
+  .studio-shell .studio-inventory-copy em,
+  .studio-shell .studio-inventory-stock small,
+  .studio-shell .studio-connected-order-reference small,
+  .studio-shell .studio-connected-order-reference p,
+  .studio-shell .studio-connected-order-next small,
+  .studio-shell .studio-connected-order-next time,
+  .studio-shell .studio-operation-card dt,
+  .studio-shell .studio-connected-order-card dt,
+  .studio-shell .studio-dossier-fact dt,
+  .studio-shell .studio-dossier-meta,
+  .studio-shell .studio-piece-status small {
+    color: var(--atelier-muted);
+    font-size: 11px !important;
+    line-height: 1.45;
+  }
+
+  .studio-shell .studio-garment-disclosure > span:first-child strong,
+  .studio-shell .studio-recent-copy strong,
+  .studio-shell .studio-inventory-copy strong,
+  .studio-shell .studio-inventory-stock strong,
+  .studio-shell .studio-connected-order-reference h2 {
+    font-size: 15px !important;
+    line-height: 1.3;
+  }
+
+  .studio-shell .studio-operation-card dd,
+  .studio-shell .studio-connected-order-card dd,
+  .studio-shell .studio-dossier-fact dd {
+    font-size: 12px;
+    line-height: 1.4;
+  }
+
+  .studio-shell .studio-piece-stage,
+  .studio-shell .status-pill {
+    font-size: 9.5px;
+    min-height: 28px;
+  }
+
+  .studio-shell .studio-recent-row,
+  .studio-shell .studio-inventory-row-trigger {
+    min-height: 86px;
+  }
+
+  /* Focused work fills the screen; quick decisions remain in sheets. */
+  .studio-task-sheet[open],
+  .studio-intake-sheet[open],
+  .studio-draft-sheet[open] {
+    border-radius: 26px 26px 0 0;
+    max-height: calc(100dvh - 10px);
+  }
+
+  .studio-task-sheet .studio-task-sheet-frame,
+  .studio-draft-sheet .studio-task-sheet-frame {
+    max-height: calc(100dvh - 10px);
+    min-height: min(78dvh, 660px);
+  }
+
+  .studio-task-sheet .studio-task-sheet-body,
+  .studio-draft-sheet .studio-task-sheet-body {
+    overscroll-behavior: contain;
+  }
+}
+
+@media (max-width: 379px) {
+  .studio-mobile-shell[data-mobile-chrome-mode="compact"] .shop-mobile-composition {
+    gap: 6px;
+    grid-template-columns: 50px minmax(0, 1fr) !important;
+    min-height: 50px;
+  }
+
+  .studio-mobile-shell[data-mobile-chrome-mode="compact"] .studio-mobile-context {
+    min-height: 50px;
+  }
+
+  .studio-shell .studio-ops-heading h1,
+  .studio-shell .studio-ops-hero h1,
+  .studio-shell .studio-connected-orders-heading h1,
+  .studio-shell .studio-dossier-heading h1 {
+    font-size: clamp(36px, 11.8vw, 46px) !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .studio-shell .studio-filter-bar,
+  .studio-shell .studio-segmented-view {
+    scroll-behavior: auto;
+  }
+}

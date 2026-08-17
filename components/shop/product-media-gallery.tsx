@@ -130,6 +130,7 @@ export function ProductMediaGallery({ product }: { product: ShopProduct }) {
         onScroll={trackVisibleFrame}
         ref={railRef}
         role="region"
+        tabIndex={0}
       >
         {media.map((item, index) => (
           <figure
