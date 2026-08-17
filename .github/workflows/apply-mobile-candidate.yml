@@ -1,0 +1,70 @@
+name: Apply mobile completion candidate
+
+on:
+  push:
+    branches:
+      - agent/mobile-source-export
+    paths:
+      - .github/workflows/apply-mobile-candidate.yml
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/mobile-source-export
+          fetch-depth: 0
+      - name: Apply the exact reviewed mobile patch
+        env:
+          PATCH_GZ_B64: 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
+        run: |
+          python - <<'PY'
+          import os, base64, gzip
+          from pathlib import Path
+          Path('/tmp/mobile.patch').write_bytes(gzip.decompress(base64.b64decode(os.environ['PATCH_GZ_B64'])))
+          PY
+          git apply --check /tmp/mobile.patch
+          git apply /tmp/mobile.patch
+      - name: Validate source syntax
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const ts = require('/opt/hostedtoolcache/node/22.19.0/x64/lib/node_modules/typescript/lib/typescript.js');
+          const files = [
+            'components/studio/app-shell.tsx',
+            'components/shop/product-media-gallery.tsx',
+            'components/shop/product-detail.tsx',
+            'app/(studio)/layout.tsx',
+            'tests/studio-mobile-ux-contract.test.ts',
+            'tests/mobile-commerce-focus.test.ts',
+          ];
+          for (const file of files) {
+            const result = ts.transpileModule(fs.readFileSync(file, 'utf8'), {
+              fileName: file,
+              compilerOptions: { jsx: ts.JsxEmit.ReactJSX, module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
+              reportDiagnostics: true,
+            });
+            const errors = (result.diagnostics || []).filter((item) => item.category === ts.DiagnosticCategory.Error);
+            if (errors.length) throw new Error(`${file}: ${errors.map((item) => ts.flattenDiagnosticMessageText(item.messageText, '\n')).join('\n')}`);
+          }
+          NODE
+      - name: Commit candidate
+        run: |
+          git config user.name "Dr Dyrane Alexander"
+          git config user.email "Ogranya.Alex@gmail.com"
+          git add \
+            app/mobile-experience.css \
+            app/studio-mobile-final.css \
+            'app/(studio)/layout.tsx' \
+            components/shop/product-detail.tsx \
+            components/shop/product-media-gallery.tsx \
+            components/studio/app-shell.tsx \
+            tests/mobile-commerce-focus.test.ts \
+            tests/studio-mobile-ux-contract.test.ts
+          git commit -m "Finish the mobile Shop and Studio"
+          git push origin HEAD:agent/mobile-source-export
