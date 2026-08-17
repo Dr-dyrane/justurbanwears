@@ -1,0 +1,16 @@
+/* Dark-theme contrast correction for editorial product cards.
+   The editorial layer uses global text tokens that remain light-theme values.
+   Bind product copy to Shop-scoped tokens without changing the light palette. */
+
+html[data-theme="dark"] .shop-home .shop-product-copy,
+html[data-theme="dark"] .shop-home .shop-product-copy h3 {
+  color: var(--shop-ink);
+}
+
+html[data-theme="dark"] .shop-home .shop-product-copy > span {
+  color: var(--shop-faint);
+}
+
+html[data-theme="dark"] .shop-home .shop-product-copy p {
+  color: var(--shop-muted);
+}
