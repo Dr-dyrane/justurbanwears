@@ -46,7 +46,7 @@ export function StudioSettingsCenter({ operator }: { operator: StudioOperator | 
     <button
       aria-controls="studio-settings-centre"
       aria-expanded={open}
-      aria-label="Lulu profile and Studio spaces"
+      aria-label="Profile & settings — Lulu’s Studio spaces"
       className="studio-settings-trigger studio-profile-orb"
       onClick={(event) => { setReturnFocus(event.currentTarget); setOpen(true); }}
       type="button"
