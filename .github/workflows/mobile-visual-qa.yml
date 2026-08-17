@@ -1,5 +1,6 @@
 name: Mobile visual QA
 
+# Candidate: 218627265171e5263cc27eef45f0f58c8959e294
 on:
   push:
     branches:
