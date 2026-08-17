@@ -8,6 +8,7 @@ import { WearSheet } from "./garment-intake/wear-sheet";
 import { StudioMediaViewerProvider } from "./media-viewer";
 import { useStudio } from "./studio-provider";
 import { PieceWorkspaceView } from "./wardrobe-workbench";
+import { studioScenarioHref } from "../../lib/studio/simulator";
 
 export function GarmentDossier() {
   const params = useParams<{ id: string }>();
@@ -41,7 +42,7 @@ export function GarmentDossier() {
         </StudioLink>
         <PieceWorkspaceView
           garment={garment}
-          onDismiss={() => window.location.assign("/studio/wardrobe")}
+          onDismiss={() => window.location.assign(studioScenarioHref("/studio/wardrobe", studio.scenario))}
           onContinueMedia={(piece) => setWearWardrobeItemId(piece.privateWardrobeItemId ?? null)}
         />
         {wearWardrobeItemId ? (

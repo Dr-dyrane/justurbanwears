@@ -31,6 +31,21 @@ export interface IntakeSnapshot {
   wardrobeItemId?: string;
 }
 
+export type IntakeDecision = "KEEP" | "EDIT" | "REJECT" | "RETRY";
+
+export interface GarmentIntakeClient {
+  createIntake(sourceMode: IntakeSourceMode, description?: string): Promise<{ intake: IntakeSnapshot }>;
+  addSource(intakeId: string, file: File): Promise<{ intake: IntakeSnapshot }>;
+  analyzeIntake(intake: IntakeSnapshot, description?: string): Promise<{ intake: IntakeSnapshot }>;
+  generateGarment(intake: IntakeSnapshot, correction?: string): Promise<{ intake: IntakeSnapshot; reused: boolean }>;
+  decideIntake(intake: IntakeSnapshot, decision: IntakeDecision, note?: string): Promise<{ intake: IntakeSnapshot }>;
+  commitIntake(intake: IntakeSnapshot, facts: IntakeFacts): Promise<{
+    intake: IntakeSnapshot;
+    wardrobeItem: { id: string; state: "DRAFT" };
+  }>;
+  candidateUrl(intake: IntakeSnapshot): string | undefined;
+}
+
 interface EngineErrorBody {
   error?: {
     code?: string;
@@ -114,7 +129,7 @@ export async function generateGarment(intake: IntakeSnapshot, correction?: strin
 
 export async function decideIntake(
   intake: IntakeSnapshot,
-  decision: "KEEP" | "EDIT" | "REJECT" | "RETRY",
+  decision: IntakeDecision,
   note?: string,
 ) {
   return engineRequest<{ intake: IntakeSnapshot }>(`/api/studio/intakes/${intake.id}/decision`, {
@@ -135,3 +150,13 @@ export function candidateUrl(intake: IntakeSnapshot) {
     ? `/api/studio/intakes/${intake.id}/assets/${intake.candidate.assetId}`
     : undefined;
 }
+
+export const studioEngineIntakeClient: GarmentIntakeClient = {
+  createIntake,
+  addSource,
+  analyzeIntake,
+  generateGarment,
+  decideIntake,
+  commitIntake,
+  candidateUrl,
+};

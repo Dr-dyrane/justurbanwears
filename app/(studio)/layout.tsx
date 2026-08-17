@@ -9,6 +9,7 @@ import { redirect } from "next/navigation";
 export const dynamic = "force-dynamic";
 
 export default async function StudioLayout({ children }: { children: React.ReactNode }) {
+  const scenariosEnabled = process.env.NODE_ENV === "development";
   const requestHeaders = await headers();
   const candidateReturnTo = requestHeaders.get("x-justurbanwears-studio-return-to");
   const returnToHasControlCharacter = candidateReturnTo
@@ -41,7 +42,7 @@ export default async function StudioLayout({ children }: { children: React.React
   return (
     <>
       <style data-studio-atelier>{studioAtelierCss}</style>
-      <AppShell operator={operator}>{children}</AppShell>
+      <AppShell operator={operator} scenariosEnabled={scenariosEnabled}>{children}</AppShell>
     </>
   );
 }

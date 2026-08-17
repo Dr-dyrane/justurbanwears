@@ -23,17 +23,13 @@ import {
 } from "lucide-react";
 import type { GarmentCategory } from "../../../lib/studio/domain/entities";
 import { LifecycleBadge } from "../atoms/lifecycle-badge";
+import { StudioLink } from "../atoms/studio-link";
 import { StudioDisclosureRow } from "../atoms/studio-disclosure-row";
 import { StudioTaskSheet } from "../atoms/studio-task-sheet";
 import {
-  addSource,
-  analyzeIntake,
-  candidateUrl,
-  commitIntake,
-  createIntake,
-  decideIntake,
-  generateGarment,
+  studioEngineIntakeClient,
   StudioEngineError,
+  type GarmentIntakeClient,
   type IntakeFacts,
   type IntakeSnapshot,
   type IntakeSourceMode,
@@ -43,6 +39,7 @@ type IntakeStep = "start" | "source" | "build" | "confirm" | "edit" | "wear" | "
 type BuildStage = "READING" | "GARMENT" | "VIEWS" | "READY";
 
 interface GarmentIntakeSheetProps {
+  client?: GarmentIntakeClient;
   onDismiss(): void;
   onOpenWear?(wardrobeItemId: string): void;
   open: boolean;
@@ -93,7 +90,13 @@ function isExplicitlyUnavailable(error: unknown) {
     && ["ENGINE_DISABLED", "ENGINE_UNAVAILABLE"].includes(error.code);
 }
 
-export function GarmentIntakeSheet({ onDismiss, onOpenWear, open, returnFocus }: GarmentIntakeSheetProps) {
+export function GarmentIntakeSheet({
+  client = studioEngineIntakeClient,
+  onDismiss,
+  onOpenWear,
+  open,
+  returnFocus,
+}: GarmentIntakeSheetProps) {
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const receiptExpandRef = useRef<HTMLButtonElement>(null);
   const receiptPreviewCloseRef = useRef<HTMLButtonElement>(null);
@@ -111,7 +114,7 @@ export function GarmentIntakeSheet({ onDismiss, onOpenWear, open, returnFocus }:
   const [wardrobeItemId, setWardrobeItemId] = useState<string>();
   const [receiptPreviewOpen, setReceiptPreviewOpen] = useState(false);
 
-  const candidatePreview = intake ? candidateUrl(intake) : undefined;
+  const candidatePreview = intake ? client.candidateUrl(intake) : undefined;
   const progress = ({ start: 8, source: 24, build: 54, confirm: 70, edit: 70, wear: 88, receipt: 100 } satisfies Record<IntakeStep, number>)[step];
   const canKeep = Boolean(facts.title && facts.category && facts.colour);
   const sourceLabel = sourceMode === "DESCRIBE" ? "Description" : sourceMode === "CAMERA" ? "Camera" : "Photos";
@@ -227,14 +230,14 @@ export function GarmentIntakeSheet({ onDismiss, onOpenWear, open, returnFocus }:
     try {
       let nextIntake = intake;
       if (!nextIntake || correction === undefined) {
-        nextIntake = (await createIntake(sourceMode, description.trim() || undefined)).intake;
-        if (file) nextIntake = (await addSource(nextIntake.id, file)).intake;
-        nextIntake = (await analyzeIntake(nextIntake, description.trim() || undefined)).intake;
+        nextIntake = (await client.createIntake(sourceMode, description.trim() || undefined)).intake;
+        if (file) nextIntake = (await client.addSource(nextIntake.id, file)).intake;
+        nextIntake = (await client.analyzeIntake(nextIntake, description.trim() || undefined)).intake;
         setFacts(normalizeFacts(nextIntake.facts));
       }
       setIntake(nextIntake);
       setBuildStage("GARMENT");
-      const generated = await generateGarment(nextIntake, correction);
+      const generated = await client.generateGarment(nextIntake, correction);
       setIntake(generated.intake);
       setFacts((current) => normalizeFacts({ ...current, ...generated.intake.facts }));
       setBuildStage("VIEWS");
@@ -263,8 +266,8 @@ export function GarmentIntakeSheet({ onDismiss, onOpenWear, open, returnFocus }:
     setError(undefined);
     try {
       if (intake) {
-        const decided = await decideIntake(intake, "KEEP");
-        const committed = await commitIntake(decided.intake, facts);
+        const decided = await client.decideIntake(intake, "KEEP");
+        const committed = await client.commitIntake(decided.intake, facts);
         setIntake(committed.intake);
         setWardrobeItemId(committed.wardrobeItem.id);
       }
@@ -284,7 +287,7 @@ export function GarmentIntakeSheet({ onDismiss, onOpenWear, open, returnFocus }:
     setWorking(true);
     setError(undefined);
     try {
-      const decision = await decideIntake(intake, "RETRY", "One operator-requested correction");
+      const decision = await client.decideIntake(intake, "RETRY", "One operator-requested correction");
       setIntake(decision.intake);
       setWorking(false);
       await runBuild("Keep the garment truth. Improve the clean product-front view.");
@@ -319,7 +322,7 @@ export function GarmentIntakeSheet({ onDismiss, onOpenWear, open, returnFocus }:
     <button className="button button-primary" onClick={() => setStep("receipt")} type="button">Not now</button>
   ) : step === "receipt" ? (
     <>
-      <a className="button button-secondary" href={wardrobeItemId ? `/studio/wardrobe/${encodeURIComponent(wardrobeItemId)}` : "/studio/wardrobe"} onClick={finishDismiss}>Open garment</a>
+      <StudioLink className="button button-secondary" href={wardrobeItemId ? `/studio/wardrobe/${encodeURIComponent(wardrobeItemId)}` : "/studio/wardrobe"}>Open garment</StudioLink>
       <button className="button button-primary" onClick={finishDismiss} type="button">Done</button>
     </>
   ) : undefined;
@@ -450,9 +453,11 @@ export function GarmentIntakeSheet({ onDismiss, onOpenWear, open, returnFocus }:
         <section className="studio-task-question">
           <p className="eyebrow">Wear</p>
           <h3>Put it on?</h3>
-          <div className="studio-disclosure-group studio-wear-options">
-            <StudioDisclosureRow detail="Private media" icon={<Shirt size={19} />} label="Open Wear" onClick={() => wardrobeItemId && onOpenWear?.(wardrobeItemId)} />
-          </div>
+          {onOpenWear ? (
+            <div className="studio-disclosure-group studio-wear-options">
+              <StudioDisclosureRow detail="Private media" icon={<Shirt size={19} />} label="Open Wear" onClick={() => wardrobeItemId && onOpenWear(wardrobeItemId)} />
+            </div>
+          ) : <p>This simulator stops before private media work.</p>}
         </section>
       ) : null}
 

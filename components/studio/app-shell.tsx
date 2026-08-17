@@ -15,6 +15,10 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useMobileChrome } from "../../hooks/use-mobile-chrome";
+import {
+  STUDIO_SCENARIO_LABELS,
+  studioScenarioRouteSupported,
+} from "../../lib/studio/simulator";
 import { BrandIcon } from "../brand/brand-icon";
 import { BrandWordmark } from "../brand/brand-wordmark";
 import { ThemeToggle } from "../theme/theme-toggle";
@@ -80,6 +84,7 @@ function AppShellContent({ children, operator }: { children: React.ReactNode; op
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const studio = useStudio();
+  const scenarioRouteSupported = !studio.scenario || studioScenarioRouteSupported(pathname);
   const shootTabs = pathname.startsWith("/shoots") ? shootViewTabs(pathname) : [];
   const {
     chromeHidden,
@@ -143,6 +148,7 @@ function AppShellContent({ children, operator }: { children: React.ReactNode; op
         data-experience-tempo="resolve"
         data-mobile-chrome-hidden={chromeHidden || undefined}
         data-mobile-chrome-suspended={mobileChromeSuspended || undefined}
+        data-studio-scenario={studio.scenario ?? undefined}
       >
         <a className="shop-skip-link studio-skip-link" href="#studio-content">Skip to Studio content</a>
         <header
@@ -184,6 +190,12 @@ function AppShellContent({ children, operator }: { children: React.ReactNode; op
           </nav>
         </header>
         <div className="workspace">
+          {studio.scenario ? (
+            <div className="demo-ribbon" role="status">
+              <span>Simulator</span>
+              <span>{STUDIO_SCENARIO_LABELS[studio.scenario]} · In memory only · Reload resets this scenario</span>
+            </div>
+          ) : null}
           {shootTabs.length ? (
             <div className="studio-view-nav-wrap">
               <nav className="studio-view-navigation glass-surface" aria-label="Shoots views">
@@ -195,7 +207,18 @@ function AppShellContent({ children, operator }: { children: React.ReactNode; op
               </nav>
             </div>
           ) : null}
-          <main className="page-canvas" id="studio-content">{children}</main>
+          <main className="page-canvas" id="studio-content">
+            {scenarioRouteSupported ? children : (
+              <section className="studio-quiet-empty" role="status">
+                <ClipboardList aria-hidden="true" size={24} />
+                <div>
+                  <strong>This route is outside the simulator.</strong>
+                  <p>Connected services were not opened. Use simulated Operations for order and return states.</p>
+                </div>
+                <Link className="button button-primary" href="/studio/operations?view=orders">Open simulated orders</Link>
+              </section>
+            )}
+          </main>
         </div>
         <aside
           aria-hidden={mobileChromeMode === "suspended" || undefined}
@@ -274,10 +297,16 @@ function AppShellContent({ children, operator }: { children: React.ReactNode; op
   );
 }
 
-export function AppShell({ children, operator }: { children: React.ReactNode; operator: StudioOperator | null }) {
+export function AppShell({ children, operator, scenariosEnabled }: {
+  children: React.ReactNode;
+  operator: StudioOperator | null;
+  scenariosEnabled: boolean;
+}) {
   return (
     <StudioMobileActionProvider>
-      <StudioProvider><AppShellContent operator={operator}>{children}</AppShellContent></StudioProvider>
+      <StudioProvider scenariosEnabled={scenariosEnabled}>
+        <AppShellContent operator={operator}>{children}</AppShellContent>
+      </StudioProvider>
     </StudioMobileActionProvider>
   );
 }

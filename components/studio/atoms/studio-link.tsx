@@ -1,6 +1,7 @@
 "use client";
 
 import type { AnchorHTMLAttributes, MouseEvent } from "react";
+import { studioScenarioHref } from "../../../lib/studio/simulator";
 import { useStudio } from "../studio-provider";
 
 export type StudioLinkProps = Omit<AnchorHTMLAttributes<HTMLAnchorElement>, "href"> & {
@@ -11,9 +12,10 @@ export type StudioLinkProps = Omit<AnchorHTMLAttributes<HTMLAnchorElement>, "hre
  * Studio navigation crosses the browser document boundary because the current
  * production adapter can intercept client links without completing the route.
  */
-export function StudioLink({ children, href, ...props }: StudioLinkProps) {
-  const { persistence } = useStudio();
+export function StudioLink({ children, href: requestedHref, ...props }: StudioLinkProps) {
+  const { persistence, scenario } = useStudio();
   const { onClick, ...anchorProps } = props;
+  const href = studioScenarioHref(requestedHref, scenario);
 
   function follow(event: MouseEvent<HTMLAnchorElement>) {
     onClick?.(event);

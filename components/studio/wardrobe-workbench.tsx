@@ -64,6 +64,7 @@ import {
   StudioMediaViewerProvider,
   type StudioMediaItem,
 } from "./media-viewer";
+import { studioScenarioHref } from "../../lib/studio/simulator";
 
 const filters: Array<"ALL" | StudioLifecycleState> = [
   "ALL",
@@ -361,7 +362,7 @@ export function PieceWorkspaceView({ garment, onDismiss, onContinueMedia }: { ga
     } else if (workspace.nextAction.kind === "VIEW_SHOP" && listing) {
       window.location.assign(`/shop/products/${listing.slug}`);
     } else if (workspace.nextAction.kind === "VIEW_OPERATIONS") {
-      window.location.assign("/studio/operations");
+      window.location.assign(studioScenarioHref("/studio/operations", studio.scenario));
     } else if (workspace.nextAction.kind === "KEEP_PRIVATE") {
       onDismiss();
     }
@@ -692,8 +693,9 @@ export function WardrobeWorkbench() {
       </StudioTaskSheet>
 
       <GarmentIntakeSheet
+        client={studio.intakeClient}
         onDismiss={finishIntake}
-        onOpenWear={(id) => {
+        onOpenWear={studio.scenario ? undefined : (id) => {
           finishIntake();
           window.setTimeout(() => setWearWardrobeItemId(id), 180);
         }}
