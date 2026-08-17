@@ -11,100 +11,100 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMobileChrome } from "../../hooks/use-mobile-chrome";
 import { createBrowserCommerceService } from "../../lib/shop/services/commerce-service";
 import type { ShopProduct } from "../../lib/shop/domain/entities";
 import { isBagCheckoutAvailable } from "../../lib/shop/domain/state";
 import { BrandWordmark } from "../brand/brand-wordmark";
-import { ThemeToggle } from "../theme/theme-toggle";
 import { ShopLink as Link } from "./atoms/shop-link";
 import {
   ShopMobileActionProvider,
   useRegisteredShopMobileAction,
 } from "./shop-mobile-action-context";
 import { ShopProvider, useShop } from "./shop-provider";
-import chromeStyles from "./shop-mobile-chrome.module.css";
 
 const nav: Array<{ href: string; label: string; icon: LucideIcon }> = [
   { href: "/shop", label: "Home", icon: House },
   { href: "/shop/search", label: "Search", icon: Search },
   { href: "/shop/saved", label: "Saved", icon: Heart },
   { href: "/shop/orders", label: "Orders", icon: ReceiptText },
+  { href: "/shop/bag", label: "Bag", icon: ShoppingBag },
 ];
 
 function destinationState(href: string, pathname: string) {
   const exact = pathname === href;
   const nested = href === "/shop"
     ? pathname.startsWith("/shop/products/")
-    : pathname.startsWith(`${href}/`);
+    : href === "/shop/bag"
+      ? pathname === "/shop/checkout"
+      : pathname.startsWith(`${href}/`);
   return {
     active: exact || nested,
     current: exact ? "page" as const : nested ? "location" as const : undefined,
   };
 }
 
+function useTargetVisibility(targetId?: string) {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    if (!targetId) {
+      setVisible(false);
+      return;
+    }
+    const target = document.getElementById(targetId);
+    if (!target) {
+      setVisible(false);
+      return;
+    }
+    const observer = new IntersectionObserver(([entry]) => {
+      setVisible(entry.isIntersecting && entry.intersectionRatio >= 0.55);
+    }, { threshold: [0, 0.55, 1] });
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [targetId]);
+
+  return visible;
+}
+
 function ShopChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { bag, getProduct, isOnline, products, saved } = useShop();
+  const { bag, isOnline, products, saved } = useShop();
   const {
     chromeHidden,
-    closeNavigation,
+    chromeScrolled,
     mode: mobileChromeMode,
-    navigationRef,
-    revealNavigation,
     suspended: mobileChromeSuspended,
   } = useMobileChrome(pathname);
-  const activeMobileDestination = nav.find((item) => destinationState(item.href, pathname).active);
-  const mobileDestination = activeMobileDestination
-    ?? (pathname === "/shop/bag" || pathname === "/shop/checkout"
-      ? { label: "Bag", icon: ShoppingBag }
-      : pathname === "/shop/account"
-        ? { label: "Account", icon: CircleUserRound }
-        : { label: "Shop", icon: House });
-  const MobileDestinationIcon = mobileDestination.icon;
   const registeredMobileAction = useRegisteredShopMobileAction();
-  const currentProduct = pathname.startsWith("/shop/products/")
-    ? getProduct(pathname.slice("/shop/products/".length))
-    : undefined;
+  const targetVisible = useTargetVisibility(registeredMobileAction?.invokeTargetId);
   const checkoutAvailable = isBagCheckoutAvailable(bag, products);
-  const productAction = currentProduct?.availabilityConfirmed && currentProduct.availability === "AVAILABLE"
-    ? { eyebrow: "This piece", label: "Choose size and buy", href: "#shop-purchase" }
-    : currentProduct && !currentProduct.availabilityConfirmed
-      ? { eyebrow: "Live check paused", label: "View purchase status", href: "#shop-purchase" }
-    : currentProduct
-      ? { eyebrow: currentProduct.availability === "SOLD" ? "Archive" : "Unavailable", label: "See similar pieces", href: "/shop/search" }
-      : undefined;
   const routeAction = pathname === "/shop/bag"
     ? bag.length
       ? checkoutAvailable
-        ? { eyebrow: "Ready to continue", label: "Continue to checkout", href: "/shop/checkout" }
-        : { eyebrow: "Checkout paused", label: "Availability is not confirmed", href: "#shop-content" }
-      : { eyebrow: "Drop 01", label: "Find a piece", href: "/shop/search" }
+        ? { eyebrow: "Bag ready", label: "Continue to checkout", href: "/shop/checkout" }
+        : { eyebrow: "Bag needs review", label: "Check availability", href: "#shop-content" }
+      : null
     : pathname === "/shop/checkout"
-      ? checkoutAvailable
-        ? { eyebrow: "Your bag", label: `${bag.length} ${bag.length === 1 ? "piece" : "pieces"} selected`, href: "/shop/bag" }
-        : { eyebrow: "Checkout paused", label: "Return to your bag", href: "/shop/bag" }
-    : pathname === "/shop/orders"
-      ? { eyebrow: "The wardrobe", label: "Find another piece", href: "/shop/search" }
-    : pathname.startsWith("/shop/orders/")
-      ? { eyebrow: "Order status", label: "Review this order", href: "#shop-content" }
-    : pathname.startsWith("/shop/products/")
-      ? productAction ?? { eyebrow: "The wardrobe", label: "Find a piece", href: "/shop/search" }
-    : bag.length
-    ? checkoutAvailable
-      ? {
-          eyebrow: "Bag ready",
-          label: `${bag.length} one-off ${bag.length === 1 ? "piece" : "pieces"} to review`,
-          href: "/shop/bag",
-        }
-      : { eyebrow: "Bag needs review", label: "Availability is not confirmed", href: "/shop/bag" }
-    : pathname === "/shop/search"
-        ? { eyebrow: "Drop 01", label: "Browse available pieces", href: "/shop#discover" }
-      : { eyebrow: "Drop 01", label: "Search the wardrobe", href: "/shop/search" };
+      ? { eyebrow: "Your bag", label: "Review bag", href: "/shop/bag" }
+      : pathname.startsWith("/shop/orders/")
+        ? { eyebrow: "Order", label: "Review status", href: "#shop-content" }
+        : null;
   const contextAction = !isOnline
-    ? { eyebrow: "Offline", label: "Review app connection and local state", href: "/shop/account" }
+    ? { eyebrow: "Offline", label: "Review connection", href: "/shop/account" }
     : registeredMobileAction ?? routeAction;
+  const accessoryVisible = Boolean(contextAction && !targetVisible && !mobileChromeSuspended);
+
+  function invokeContextAction(event: React.MouseEvent<HTMLAnchorElement>) {
+    const targetId = registeredMobileAction?.invokeTargetId;
+    if (!targetId) return;
+    const target = document.getElementById(targetId);
+    if (!(target instanceof HTMLButtonElement)) return;
+    event.preventDefault();
+    target.focus({ preventScroll: true });
+    if (!target.disabled) target.click();
+  }
 
   return (
     <div
@@ -112,6 +112,7 @@ function ShopChrome({ children }: { children: React.ReactNode }) {
       data-experience-surface="shop"
       data-experience-tempo="focus"
       data-mobile-chrome-hidden={chromeHidden || undefined}
+      data-mobile-chrome-scrolled={chromeScrolled || undefined}
       data-mobile-chrome-suspended={mobileChromeSuspended || undefined}
     >
       <a className="shop-skip-link" href="#shop-content">Skip to shop content</a>
@@ -125,7 +126,7 @@ function ShopChrome({ children }: { children: React.ReactNode }) {
             <BrandWordmark className="shop-wordmark-lockup" />
           </Link>
           <div className="shop-nav-links">
-            {nav.map((item) => {
+            {nav.filter((item) => item.href !== "/shop/bag").map((item) => {
               const destination = destinationState(item.href, pathname);
               return (
                 <Link
@@ -135,26 +136,23 @@ function ShopChrome({ children }: { children: React.ReactNode }) {
                   key={item.href}
                 >
                   {item.label}
-                  {item.href === "/shop/saved" && saved.length ? (
-                    <span className="nav-count">{saved.length}</span>
-                  ) : null}
+                  {item.href === "/shop/saved" && saved.length ? <span className="nav-count">{saved.length}</span> : null}
                 </Link>
               );
             })}
           </div>
           <div className="shop-header-actions">
-            <ThemeToggle className="shop-theme-toggle" />
             <Link
               aria-current={pathname === "/shop/account" ? "page" : undefined}
-              aria-label="Account and orders"
+              aria-label="Account and preferences"
               className={`shop-account-link${pathname === "/shop/account" ? " is-active" : ""}`}
               href="/shop/account"
             >
-              <CircleUserRound aria-hidden="true" size={19} strokeWidth={1.75} />
+              <CircleUserRound aria-hidden="true" size={20} strokeWidth={1.75} />
               <span>Account</span>
             </Link>
             <Link
-              aria-current={pathname === "/shop/bag" ? "page" : pathname === "/shop/checkout" ? "location" : undefined}
+              aria-current={destinationState("/shop/bag", pathname).current}
               aria-label={`Bag, ${bag.length} items`}
               className="shop-bag-link"
               href="/shop/bag"
@@ -166,16 +164,10 @@ function ShopChrome({ children }: { children: React.ReactNode }) {
           </div>
         </nav>
       </header>
-      {!isOnline ? (
-        <div className="shop-offline-banner" role="status">
-          You’re offline. Shopping actions resume when you reconnect.
-        </div>
-      ) : null}
+      {!isOnline ? <div className="shop-offline-banner" role="status">You’re offline. Shopping actions resume when you reconnect.</div> : null}
       <main id="shop-content">{children}</main>
       <footer className="shop-footer">
-        <Link className="shop-footer-mark" href="/shop" aria-label="justurban wears shop home">
-          <BrandWordmark className="shop-footer-wordmark" />
-        </Link>
+        <Link className="shop-footer-mark" href="/shop" aria-label="justurban wears shop home"><BrandWordmark className="shop-footer-wordmark" /></Link>
         <p>Urban ladies’ wear, clearly described.</p>
         <span>Curated in Lagos · 2026</span>
       </footer>
@@ -183,95 +175,50 @@ function ShopChrome({ children }: { children: React.ReactNode }) {
         aria-hidden={mobileChromeMode === "suspended" || undefined}
         aria-label="Mobile shop controls"
         className="shop-mobile-shell"
+        data-accessory-visible={accessoryVisible || undefined}
         data-experience-layer="island"
         data-mobile-chrome-mode={mobileChromeMode}
         inert={mobileChromeMode === "suspended" || undefined}
       >
-        <div className={`shop-mobile-composition ${chromeStyles.composition}`}>
-          <button
-            aria-controls="shop-mobile-navigation"
-            aria-expanded={mobileChromeMode === "navigation"}
-            aria-hidden={mobileChromeMode !== "compact" || undefined}
-            aria-label={`Show navigation. ${mobileDestination.label} selected`}
-            className={`shop-mobile-nav-reveal shop-dock-lens ${chromeStyles.edgeAction}`}
-            onClick={revealNavigation}
-            tabIndex={mobileChromeMode === "compact" ? 0 : -1}
-            type="button"
-          >
-            <span><MobileDestinationIcon aria-hidden="true" size={25} strokeWidth={2.2} /></span>
-          </button>
-          <Link
-            aria-hidden={mobileChromeMode === "navigation" || mobileChromeMode === "suspended" || undefined}
-            className={`shop-mobile-context shop-dock-lens ${chromeStyles.contextAction}`}
-            data-experience-action="primary"
-            href={contextAction.href}
-            tabIndex={mobileChromeMode === "navigation" || mobileChromeMode === "suspended" ? -1 : undefined}
-          >
-            <span>
-              <small>{contextAction.eyebrow}</small>
-              <strong>{contextAction.label}</strong>
-            </span>
-            <ArrowRight aria-hidden="true" size={17} strokeWidth={1.9} />
-          </Link>
-          <div className={`shop-mobile-row ${chromeStyles.row}`}>
-            <nav
-              aria-hidden={mobileChromeMode === "compact" || mobileChromeMode === "suspended" || undefined}
-              aria-label="Mobile shop navigation"
-              className="shop-mobile-dock shop-dock-lens"
-              id="shop-mobile-navigation"
-              inert={mobileChromeMode === "compact" || mobileChromeMode === "suspended" || undefined}
-              ref={navigationRef}
-            >
-              {nav.map((item) => {
-                const destination = destinationState(item.href, pathname);
-                const Icon = item.icon;
-                return (
-                  <Link
-                    aria-current={destination.current}
-                    aria-label={item.label}
-                    className={destination.active ? "is-active" : undefined}
-                    href={item.href}
-                    key={item.href}
-                    onClick={closeNavigation}
-                  >
-                    <Icon aria-hidden="true" size={22} strokeWidth={destination.active ? 2.2 : 1.65} />
-                    <span>{item.label}{item.href === "/shop/saved" && saved.length ? ` · ${saved.length}` : ""}</span>
-                  </Link>
-                );
-              })}
-            </nav>
+        <div className="shop-mobile-composition">
+          {contextAction ? (
             <Link
-              aria-current={pathname === "/shop/bag" ? "page" : pathname === "/shop/checkout" ? "location" : undefined}
-              aria-label={`Bag, ${bag.length} items`}
-              className={`shop-mobile-fab shop-dock-lens ${chromeStyles.edgeAction}${pathname === "/shop/bag" || pathname === "/shop/checkout" ? " is-active" : ""}`}
-              href="/shop/bag"
+              aria-hidden={!accessoryVisible || undefined}
+              className="shop-mobile-context shop-dock-lens"
+              data-experience-action="primary"
+              href={contextAction.href}
+              onClick={invokeContextAction}
+              tabIndex={accessoryVisible ? undefined : -1}
             >
-              <ShoppingBag aria-hidden="true" size={25} strokeWidth={2.05} />
-              {bag.length ? <span aria-hidden="true">{bag.length}</span> : null}
+              <span><small>{contextAction.eyebrow}</small><strong>{contextAction.label}</strong></span>
+              <ArrowRight aria-hidden="true" size={17} strokeWidth={1.9} />
             </Link>
-          </div>
+          ) : null}
+          <nav aria-label="Shop tabs" className="shop-mobile-dock shop-dock-lens">
+            {nav.map((item) => {
+              const destination = destinationState(item.href, pathname);
+              const Icon = item.icon;
+              return (
+                <Link
+                  aria-current={destination.current}
+                  aria-label={item.label}
+                  className={destination.active ? "is-active" : undefined}
+                  href={item.href}
+                  key={item.href}
+                >
+                  <Icon aria-hidden="true" size={21} strokeWidth={destination.active ? 2.2 : 1.65} />
+                  <span>{item.label}{item.href === "/shop/saved" && saved.length ? ` · ${saved.length}` : item.href === "/shop/bag" && bag.length ? ` · ${bag.length}` : ""}</span>
+                </Link>
+              );
+            })}
+          </nav>
         </div>
       </aside>
     </div>
   );
 }
 
-export function ShopShell({
-  children,
-  initialProducts,
-}: {
-  children: React.ReactNode;
-  initialProducts: readonly ShopProduct[];
-}) {
-  const service = useMemo(
-    () => createBrowserCommerceService(initialProducts),
-    [initialProducts],
-  );
-  return (
-    <ShopMobileActionProvider>
-      <ShopProvider service={service}>
-        <ShopChrome>{children}</ShopChrome>
-      </ShopProvider>
-    </ShopMobileActionProvider>
-  );
+export function ShopShell({ children, initialProducts }: { children: React.ReactNode; initialProducts: readonly ShopProduct[] }) {
+  const service = useMemo(() => createBrowserCommerceService(initialProducts), [initialProducts]);
+  return <ShopMobileActionProvider><ShopProvider service={service}><ShopChrome>{children}</ShopChrome></ShopProvider></ShopMobileActionProvider>;
 }
