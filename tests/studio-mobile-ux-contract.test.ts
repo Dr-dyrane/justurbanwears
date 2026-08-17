@@ -4,6 +4,8 @@ import test from "node:test";
 
 const root = process.cwd();
 const shell = readFileSync(`${root}/components/studio/app-shell.tsx`, "utf8");
+const settings = readFileSync(`${root}/components/studio/settings/studio-settings-center.tsx`, "utf8");
+const productCard = readFileSync(`${root}/components/shop/product-card.tsx`, "utf8");
 const home = readFileSync(`${root}/components/studio/studio-home.tsx`, "utf8");
 const models = readFileSync(`${root}/components/studio/model-atelier.tsx`, "utf8");
 const wardrobe = readFileSync(`${root}/components/studio/wardrobe-workbench.tsx`, "utf8");
@@ -13,28 +15,39 @@ const operations = readFileSync(`${root}/components/studio/operations-desk.tsx`,
 const css = readFileSync(`${root}/app/foundation.css`, "utf8");
 const atelierCss = readFileSync(`${root}/app/studio-atelier.css`, "utf8");
 const mobileCss = readFileSync(`${root}/app/mobile-experience.css`, "utf8");
+const controlCss = readFileSync(`${root}/app/control-refinement.css`, "utf8");
 const rootLayout = readFileSync(`${root}/app/layout.tsx`, "utf8");
 
-test("Studio mobile chrome keeps one visible state-aware action beside navigation", () => {
-  assert.match(shell, /Add model/);
-  assert.match(shell, /Intake garment/);
-  assert.match(shell, /Open inventory/);
-  assert.match(shell, /Review returns/);
-  assert.match(shell, /Review orders/);
-  assert.match(shell, /operationsView !== "inventory"/);
-  assert.match(shell, /useStudio/);
-  assert.match(shell, /href=\{contextAction\.href\}/);
-  assert.match(shell, /<strong>\{contextAction\.label\}<\/strong>/);
-  assert.match(shell, /className="shop-mobile-context shop-dock-lens studio-mobile-context"/);
-  assert.match(shell, /StudioMobileActionProvider/);
-  assert.match(shell, /useRegisteredStudioMobileAction/);
+test("Studio mobile chrome exposes four direct tabs, one contextual FAB, and one profile-sheet entrance", () => {
+  assert.match(shell, /const mobileNavigation: NavigationItem\[]/);
+  for (const label of ["Home", "Wardrobe", "Orders", "Ops"]) {
+    assert.match(shell, new RegExp(`mobileLabel: "${label}"`));
+  }
+  assert.match(shell, /className="studio-mobile-tabs shop-dock-lens"/);
+  assert.match(shell, /mobileNavigation\.map/);
+  assert.match(shell, /className="shop-mobile-fab shop-dock-lens studio-mobile-fab"/);
+  assert.match(shell, /data-experience-action="primary"/);
   assert.match(shell, /registeredMobileAction\?\.invokeTargetId/);
   assert.match(wardrobe, /invokeTargetId: "piece-primary-action"/);
-  assert.match(mobileCss, /\.studio-mobile-fab\s*\{[\s\S]*?display: none !important/);
-  assert.match(mobileCss, /grid-template-columns: 54px minmax\(0, 1fr\)/);
-  assert.match(mobileCss, /--juw-mobile-island-clearance/);
-  assert.match(rootLayout, /mobile-experience\.css\?raw/);
-  assert.match(rootLayout, /<style data-mobile-experience>\{mobileExperienceCss\}<\/style>/);
+  assert.doesNotMatch(shell, /shop-mobile-nav-reveal/);
+  assert.doesNotMatch(shell, /className="shop-mobile-context shop-dock-lens studio-mobile-context"/);
+  assert.match(settings, /studio-profile-orb/);
+  assert.match(settings, /Studio spaces and helpers/);
+  assert.match(settings, /\/studio\/models/);
+  assert.match(settings, /\/studio\/media/);
+  assert.match(settings, /\/studio\/stocktake/);
+  assert.match(controlCss, /grid-template-columns: repeat\(4, minmax\(0, 1fr\)\)/);
+  assert.match(controlCss, /\.studio-mobile-shell \.studio-mobile-fab[\s\S]*?display: inline-flex !important/);
+  assert.match(controlCss, /\.studio-profile-orb-mobile/);
+  assert.match(controlCss, /\.studio-mobile-nav-title/);
+  assert.match(rootLayout, /control-refinement\.css/);
+});
+
+test("product quick add keeps a complete circular icon and an understandable reveal", () => {
+  assert.match(productCard, /className="product-card-action-icon"/);
+  assert.match(controlCss, /\.product-card-action-icon[\s\S]*?border-radius: 50%/);
+  assert.match(controlCss, /shop-product-card:hover \.product-card-action-row/);
+  assert.match(controlCss, /@media \(hover: none\), \(pointer: coarse\)/);
 });
 
 test("task-first records, garments, and inventory use approved media", () => {

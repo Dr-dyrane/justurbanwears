@@ -2,7 +2,6 @@
 
 import { usePathname, useSearchParams } from "next/navigation";
 import {
-  ArrowRight,
   Camera,
   ClipboardList,
   ExternalLink,
@@ -51,8 +50,15 @@ const primaryNavigation: NavigationItem[] = [
   { href: "/studio/models", label: "Model atelier", mobileLabel: "Models", icon: Users },
   { href: "/studio/wardrobe", label: "Wardrobe", mobileLabel: "Wardrobe", icon: Shirt },
   { href: "/studio/orders", label: "Orders", mobileLabel: "Orders", icon: PackageCheck },
-  { href: "/studio/operations", label: "Operations", mobileLabel: "Operations", icon: ClipboardList },
+  { href: "/studio/operations", label: "Operations", mobileLabel: "Ops", icon: ClipboardList },
   { href: "/studio/stocktake", label: "Stocktake", mobileLabel: "Stocktake", icon: ScanLine },
+];
+
+const mobileNavigation: NavigationItem[] = [
+  { href: "/studio", label: "Business home", mobileLabel: "Home", icon: House },
+  { href: "/studio/wardrobe", label: "Wardrobe", mobileLabel: "Wardrobe", icon: Shirt },
+  { href: "/studio/orders", label: "Orders", mobileLabel: "Orders", icon: PackageCheck },
+  { href: "/studio/operations", label: "Operations", mobileLabel: "Ops", icon: ClipboardList },
 ];
 
 function isActive(pathname: string, href: string) {
@@ -82,6 +88,27 @@ function NavigationLink({ item, pathname }: {
   );
 }
 
+function registeredActionIcon(label: string, pathname: string): LucideIcon {
+  const signature = `${pathname} ${label}`.toLowerCase();
+  if (signature.includes("scan") || signature.includes("stocktake")) return ScanLine;
+  if (signature.includes("model")) return Users;
+  if (signature.includes("shop")) return ExternalLink;
+  if (signature.includes("return")) return RotateCcw;
+  if (
+    signature.includes("order")
+    || signature.includes("receipt")
+    || signature.includes("payment")
+    || signature.includes("handoff")
+  ) return PackageCheck;
+  if (
+    signature.includes("garment")
+    || signature.includes("photo")
+    || signature.includes("media")
+    || signature.includes("shoot")
+  ) return Camera;
+  return Plus;
+}
+
 function AppShellContent({ children, operator }: { children: React.ReactNode; operator: StudioOperator | null }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -90,20 +117,16 @@ function AppShellContent({ children, operator }: { children: React.ReactNode; op
   const mediaTabs = pathname.startsWith("/studio/media") ? mediaViewTabs(pathname) : [];
   const {
     chromeHidden,
-    closeNavigation,
     mode: mobileChromeMode,
-    navigationRef,
-    revealNavigation,
     suspended: mobileChromeSuspended,
   } = useMobileChrome(pathname);
   const activeMobileDestination = primaryNavigation.find((item) => isActive(pathname, item.href));
-  const mobileDestination = activeMobileDestination
+  const mobileTitle = activeMobileDestination?.mobileLabel
     ?? (pathname.startsWith("/studio/scan")
-      ? { label: "Scan piece", icon: ScanLine }
+      ? "Scan"
       : pathname.startsWith("/studio/media")
-        ? { label: "Media", icon: Camera }
-        : { label: "Studio", icon: House });
-  const MobileDestinationIcon = mobileDestination.icon;
+        ? "Media"
+        : "Studio");
   const registeredMobileAction = useRegisteredStudioMobileAction();
   const operationsView = searchParams.get("view") ?? "inventory";
   const reservedOrders = studio.orders.filter((order) => order.state === "RESERVED").length;
@@ -114,32 +137,30 @@ function AppShellContent({ children, operator }: { children: React.ReactNode; op
       ? { label: "Review orders", href: "/studio/operations?view=orders", icon: ClipboardList }
       : operationsView !== "inventory"
         ? { label: "Open inventory", href: "/studio/operations?view=inventory", icon: ClipboardList }
-        : { label: "Intake garment", href: "/studio/wardrobe?intake=1", icon: Plus };
+        : { label: "Add garment", href: "/studio/wardrobe?intake=1", icon: Camera };
   const routeAction = pathname.startsWith("/studio/models")
     ? { label: "Add model", href: "/studio/models?intake=model", icon: Plus }
     : pathname.startsWith("/studio/wardrobe")
-      ? { label: "Intake garment", href: "/studio/wardrobe?intake=1", icon: Plus }
+      ? { label: "Add garment", href: "/studio/wardrobe?intake=1", icon: Camera }
       : pathname.startsWith("/studio/orders")
         ? pathname === "/studio/orders"
-          ? { label: "Open wardrobe", href: "/studio/wardrobe", icon: Shirt }
+          ? { label: "Add garment", href: "/studio/wardrobe?intake=1", icon: Camera }
           : { label: "All orders", href: "/studio/orders", icon: PackageCheck }
-      : pathname.startsWith("/studio/operations")
-        ? operationsAction
-        : pathname.startsWith("/studio/scan")
-          ? { label: "Open stocktake", href: "/studio/stocktake", icon: ScanLine }
-        : pathname.startsWith("/studio/stocktake")
-          ? { label: "Scan piece", href: "#stocktake-scan", icon: ScanLine }
-        : pathname === "/studio/media/new"
-          ? { label: "Media archive", href: "/studio/media", icon: Camera }
-          : pathname.startsWith("/studio/media")
-          ? { label: "New shoot", href: "/studio/media/new", icon: Camera }
-          : { label: "Intake garment", href: "/studio/wardrobe?intake=1", icon: Plus };
+        : pathname.startsWith("/studio/operations")
+          ? operationsAction
+          : pathname.startsWith("/studio/scan")
+            ? { label: "Open stocktake", href: "/studio/stocktake", icon: ScanLine }
+            : pathname.startsWith("/studio/stocktake")
+              ? { label: "Scan piece", href: "#stocktake-scan", icon: ScanLine }
+              : pathname === "/studio/media/new"
+                ? { label: "Media archive", href: "/studio/media", icon: Camera }
+                : pathname.startsWith("/studio/media")
+                  ? { label: "New shoot", href: "/studio/media/new", icon: Camera }
+                  : { label: "Add garment", href: "/studio/wardrobe?intake=1", icon: Camera };
   const contextAction = registeredMobileAction
     ? {
         ...registeredMobileAction,
-        icon: pathname.startsWith("/studio/stocktake") || pathname.startsWith("/studio/scan")
-          ? ScanLine
-          : PackageCheck,
+        icon: registeredActionIcon(registeredMobileAction.label, pathname),
       }
     : routeAction;
   const ContextActionIcon = contextAction.icon;
@@ -156,156 +177,140 @@ function AppShellContent({ children, operator }: { children: React.ReactNode; op
 
   return (
     <div
-        className="app-shell studio-shell"
-        data-experience-surface="studio"
-        data-experience-tempo="resolve"
-        data-mobile-chrome-hidden={chromeHidden || undefined}
-        data-mobile-chrome-suspended={mobileChromeSuspended || undefined}
-        data-studio-scenario={studio.scenario ?? undefined}
+      className="app-shell studio-shell"
+      data-experience-surface="studio"
+      data-experience-tempo="resolve"
+      data-mobile-chrome-hidden={chromeHidden || undefined}
+      data-mobile-chrome-suspended={mobileChromeSuspended || undefined}
+      data-studio-scenario={studio.scenario ?? undefined}
+    >
+      <a className="shop-skip-link studio-skip-link" href="#studio-content">Skip to Studio content</a>
+      <header
+        aria-hidden={chromeHidden || mobileChromeSuspended || undefined}
+        className="shop-header studio-header"
+        inert={chromeHidden || mobileChromeSuspended || undefined}
       >
-        <a className="shop-skip-link studio-skip-link" href="#studio-content">Skip to Studio content</a>
-        <header
-          aria-hidden={chromeHidden || mobileChromeSuspended || undefined}
-          className="shop-header studio-header"
-          inert={chromeHidden || mobileChromeSuspended || undefined}
-        >
-          <nav className="shop-floating-nav studio-floating-nav glass-surface" aria-label="Studio navigation">
-            <Link className="shop-wordmark studio-wordmark" href="/studio" aria-label="justurban wears Studio home">
-              <span className="studio-brand-mark" aria-hidden="true">
-                <BrandIcon className="studio-brand-icon" size={38} />
-              </span>
-              <BrandWordmark className="shop-wordmark-lockup" />
-              <small>Studio · Lulu</small>
-            </Link>
-            <div className="shop-nav-links studio-nav-links">
-              {primaryNavigation.map((item) => (
-                <NavigationLink item={item} pathname={pathname} key={item.href} />
-              ))}
-            </div>
-            <div className="shop-header-actions studio-header-actions">
-              <StudioNotificationCenter />
-              <StudioSettingsCenter operator={operator} />
-              <ThemeToggle className="shop-theme-toggle studio-top-theme-toggle" />
-              <Link
-                aria-current={pathname.startsWith("/studio/media") ? "page" : undefined}
-                aria-label="Media lab"
-                className={`shop-account-link studio-shoot-link${pathname.startsWith("/studio/media") ? " is-active" : ""}`}
-                href="/studio/media"
-              >
-                <Camera aria-hidden="true" size={18} strokeWidth={1.8} />
-                <span>Media</span>
-              </Link>
-              <Link className="shop-bag-link studio-public-action" href="/shop">
-                <ExternalLink aria-hidden="true" size={16} strokeWidth={1.9} />
-                <span>Shop</span>
-              </Link>
-            </div>
-          </nav>
-        </header>
-        <div className="workspace">
-          {studio.scenario ? (
-            <div className="demo-ribbon" role="status">
-              <span>Simulator</span>
-              <span>{STUDIO_SCENARIO_LABELS[studio.scenario]} · In memory only · Reload resets this scenario</span>
-            </div>
-          ) : null}
-          {mediaTabs.length ? (
-            <div className="studio-view-nav-wrap">
-              <nav className="studio-view-navigation glass-surface" aria-label="Media views">
-                <span className="studio-view-context"><small>View</small><strong>Media</strong></span>
-                <span className="studio-view-tabs">
-                  {mediaTabs.map((tab) => <Link aria-current={tab.current ? "page" : undefined} className={tab.current ? "is-active" : undefined} href={tab.href} key={tab.href}>{tab.label}</Link>)}
-                </span>
-                <Link className="studio-view-action" data-experience-action="primary" href={contextAction.href} onClick={invokeContextAction}><span>{contextAction.label}</span><ContextActionIcon aria-hidden="true" size={15} strokeWidth={1.9} /></Link>
-              </nav>
-            </div>
-          ) : null}
-          <main className="page-canvas" id="studio-content">
-            {scenarioRouteSupported ? children : (
-              <section className="studio-quiet-empty" role="status">
-                <ClipboardList aria-hidden="true" size={24} />
-                <div>
-                  <strong>This route is outside the simulator.</strong>
-                  <p>Connected services were not opened. Use simulated Operations for order and return states.</p>
-                </div>
-                <Link className="button button-primary" href="/studio/operations?view=orders">Open simulated orders</Link>
-              </section>
-            )}
-          </main>
-        </div>
-        <aside
-          aria-hidden={mobileChromeMode === "suspended" || undefined}
-          aria-label="Mobile Studio controls"
-          className="shop-mobile-shell studio-mobile-shell"
-          data-experience-layer="island"
-          data-mobile-chrome-mode={mobileChromeMode}
-          inert={mobileChromeMode === "suspended" || undefined}
-        >
-          <div className="shop-mobile-composition">
-            <button
-              aria-controls="studio-mobile-navigation"
-              aria-expanded={mobileChromeMode === "navigation"}
-              aria-hidden={mobileChromeMode !== "compact" || undefined}
-              aria-label={`Show navigation. ${mobileDestination.label} selected`}
-              className="shop-mobile-nav-reveal shop-dock-lens"
-              onClick={revealNavigation}
-              tabIndex={mobileChromeMode === "compact" ? 0 : -1}
-              type="button"
-            >
-              <span><MobileDestinationIcon aria-hidden="true" size={25} strokeWidth={2.2} /></span>
-            </button>
+        <nav className="shop-floating-nav studio-floating-nav glass-surface" aria-label="Studio navigation">
+          <Link className="shop-wordmark studio-wordmark" href="/studio" aria-label="justurban wears Studio home">
+            <span className="studio-brand-mark" aria-hidden="true">
+              <BrandIcon className="studio-brand-icon" size={38} />
+            </span>
+            <BrandWordmark className="shop-wordmark-lockup" />
+            <small>Studio · Lulu</small>
+          </Link>
+          <span className="studio-mobile-nav-title">{mobileTitle}</span>
+          <div className="shop-nav-links studio-nav-links">
+            {primaryNavigation.map((item) => (
+              <NavigationLink item={item} pathname={pathname} key={item.href} />
+            ))}
+          </div>
+          <div className="shop-header-actions studio-header-actions">
+            <StudioNotificationCenter />
+            <StudioSettingsCenter operator={operator} />
+            <ThemeToggle className="shop-theme-toggle studio-top-theme-toggle" />
             <Link
-              aria-hidden={mobileChromeMode === "navigation" || mobileChromeMode === "suspended" || undefined}
-              className="shop-mobile-context shop-dock-lens studio-mobile-context"
-              data-experience-action="primary"
-              href={contextAction.href}
-              onClick={invokeContextAction}
-              tabIndex={mobileChromeMode === "navigation" || mobileChromeMode === "suspended" ? -1 : undefined}
+              aria-current={pathname.startsWith("/studio/media") ? "page" : undefined}
+              aria-label="Media lab"
+              className={`shop-account-link studio-shoot-link${pathname.startsWith("/studio/media") ? " is-active" : ""}`}
+              href="/studio/media"
             >
-              <span>
-                <small>Action</small>
-                <strong>{contextAction.label}</strong>
-              </span>
-              <ArrowRight aria-hidden="true" size={17} strokeWidth={1.9} />
+              <Camera aria-hidden="true" size={18} strokeWidth={1.8} />
+              <span>Media</span>
             </Link>
-            <div className="shop-mobile-row">
-              <nav
-                aria-hidden={mobileChromeMode === "compact" || mobileChromeMode === "suspended" || undefined}
-                aria-label="Mobile Studio navigation"
-                className="shop-mobile-dock shop-dock-lens"
-                id="studio-mobile-navigation"
-                inert={mobileChromeMode === "compact" || mobileChromeMode === "suspended" || undefined}
-                ref={navigationRef}
-              >
-                {primaryNavigation.map((item) => {
-                  const active = isActive(pathname, item.href);
-                  const Icon = item.icon;
-                  return (
-                    <Link
-                      aria-current={active ? "page" : undefined}
-                      aria-label={item.label}
-                      className={active ? "is-active" : undefined}
-                      href={item.href}
-                      key={item.href}
-                      onClick={closeNavigation}
-                    >
-                      <Icon aria-hidden="true" size={22} strokeWidth={active ? 2.2 : 1.65} />
-                      <span>{item.mobileLabel}</span>
-                    </Link>
-                  );
-                })}
-              </nav>
+            <Link className="shop-bag-link studio-public-action" href="/shop">
+              <ExternalLink aria-hidden="true" size={16} strokeWidth={1.9} />
+              <span>Shop</span>
+            </Link>
+          </div>
+        </nav>
+      </header>
+      <div className="workspace">
+        {studio.scenario ? (
+          <div className="demo-ribbon" role="status">
+            <span>Simulator</span>
+            <span>{STUDIO_SCENARIO_LABELS[studio.scenario]} · In memory only · Reload resets this scenario</span>
+          </div>
+        ) : null}
+        {mediaTabs.length ? (
+          <div className="studio-view-nav-wrap">
+            <nav className="studio-view-navigation glass-surface" aria-label="Media views">
+              <span className="studio-view-context"><small>View</small><strong>Media</strong></span>
+              <span className="studio-view-tabs">
+                {mediaTabs.map((tab) => (
+                  <Link
+                    aria-current={tab.current ? "page" : undefined}
+                    className={tab.current ? "is-active" : undefined}
+                    href={tab.href}
+                    key={tab.href}
+                  >
+                    {tab.label}
+                  </Link>
+                ))}
+              </span>
               <Link
-                aria-label={contextAction.label}
-                className="shop-mobile-fab shop-dock-lens studio-mobile-fab"
+                className="studio-view-action"
+                data-experience-action="primary"
                 href={contextAction.href}
                 onClick={invokeContextAction}
               >
-                <ContextActionIcon aria-hidden="true" size={24} strokeWidth={2.1} />
+                <span>{contextAction.label}</span>
+                <ContextActionIcon aria-hidden="true" size={15} strokeWidth={1.9} />
               </Link>
-            </div>
+            </nav>
           </div>
-        </aside>
+        ) : null}
+        <main className="page-canvas" id="studio-content">
+          {scenarioRouteSupported ? children : (
+            <section className="studio-quiet-empty" role="status">
+              <ClipboardList aria-hidden="true" size={24} />
+              <div>
+                <strong>This route is outside the simulator.</strong>
+                <p>Connected services were not opened. Use simulated Operations for order and return states.</p>
+              </div>
+              <Link className="button button-primary" href="/studio/operations?view=orders">Open simulated orders</Link>
+            </section>
+          )}
+        </main>
+      </div>
+      <aside
+        aria-hidden={mobileChromeSuspended || undefined}
+        aria-label="Mobile Studio controls"
+        className="shop-mobile-shell studio-mobile-shell"
+        data-experience-layer="island"
+        data-mobile-chrome-mode={mobileChromeMode}
+        inert={mobileChromeSuspended || undefined}
+      >
+        <div className="studio-mobile-bar">
+          <nav aria-label="Studio tabs" className="studio-mobile-tabs shop-dock-lens">
+            {mobileNavigation.map((item) => {
+              const active = isActive(pathname, item.href);
+              const Icon = item.icon;
+              return (
+                <Link
+                  aria-current={active ? "page" : undefined}
+                  aria-label={item.label}
+                  className={active ? "is-active" : undefined}
+                  href={item.href}
+                  key={item.href}
+                >
+                  <Icon aria-hidden="true" size={21} strokeWidth={active ? 2.2 : 1.65} />
+                  <span>{item.mobileLabel}</span>
+                </Link>
+              );
+            })}
+          </nav>
+          <Link
+            aria-label={contextAction.label}
+            className="shop-mobile-fab shop-dock-lens studio-mobile-fab"
+            data-experience-action="primary"
+            href={contextAction.href}
+            onClick={invokeContextAction}
+            title={contextAction.label}
+          >
+            <ContextActionIcon aria-hidden="true" size={24} strokeWidth={2.05} />
+          </Link>
+        </div>
+      </aside>
     </div>
   );
 }
