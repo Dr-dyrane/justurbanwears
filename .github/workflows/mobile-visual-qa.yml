@@ -1,0 +1,85 @@
+name: Mobile visual QA
+
+on:
+  push:
+    branches:
+      - agent/visual-qa
+    paths:
+      - scripts/mobile-visual-qa.mjs
+      - .github/workflows/mobile-visual-qa.yml
+      - app/**
+      - components/**
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mobile-visual-qa-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  visual-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      CI: true
+      NEXT_TELEMETRY_DISABLED: "1"
+      STUDIO_AI_ENGINE_AUTH_MODE: ""
+      DATABASE_URL: ""
+      DATABASE_URL_UNPOOLED: ""
+      PUBLIC_BLOB_READ_WRITE_TOKEN: ""
+      PRIVATE_BLOB_READ_WRITE_TOKEN: ""
+      MOBILE_VISUAL_QA_BASE_URL: http://localhost:3000
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.19.0
+          cache: npm
+
+      - name: Install application dependencies
+        run: npm ci --ignore-scripts --no-audit --no-fund
+
+      - name: Install visual browser
+        run: |
+          npm install --no-save --no-package-lock playwright@1.54.2
+          npx playwright install --with-deps chromium
+
+      - name: Start the application in safe Studio simulator mode
+        run: |
+          mkdir -p mobile-visual-qa
+          npm run dev -- --port 3000 > /tmp/justurbanwears-mobile-dev.log 2>&1 &
+          APP_PID=$!
+          echo "$APP_PID" > /tmp/justurbanwears-mobile-dev.pid
+          for attempt in $(seq 1 60); do
+            if ! kill -0 "$APP_PID" 2>/dev/null; then
+              cat /tmp/justurbanwears-mobile-dev.log
+              exit 1
+            fi
+            if curl --fail --silent --max-time 3 http://localhost:3000/favicon.svg >/dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+          cat /tmp/justurbanwears-mobile-dev.log
+          exit 1
+
+      - name: Capture and audit the mobile experience matrix
+        run: node scripts/mobile-visual-qa.mjs
+
+      - name: Preserve application log
+        if: always()
+        run: |
+          mkdir -p mobile-visual-qa
+          cp /tmp/justurbanwears-mobile-dev.log mobile-visual-qa/dev-server.log || true
+
+      - name: Upload visual evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: justurbanwears-mobile-visual-qa-${{ github.run_id }}
+          path: mobile-visual-qa
+          if-no-files-found: error
+          retention-days: 7
