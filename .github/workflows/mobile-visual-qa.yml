@@ -6,10 +6,22 @@ on:
       - agent/mobile-source-export
     paths:
       - .github/workflows/mobile-visual-qa.yml
+      - app/mobile-experience.css
+      - app/studio-mobile-final.css
+      - app/(studio)/layout.tsx
+      - components/shop/product-detail.tsx
+      - components/shop/product-media-gallery.tsx
+      - components/studio/app-shell.tsx
+      - tests/mobile-commerce-focus.test.ts
+      - tests/studio-mobile-ux-contract.test.ts
   workflow_dispatch:
 
 permissions:
   contents: read
+
+concurrency:
+  group: mobile-visual-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   audit:
@@ -23,7 +35,7 @@ jobs:
       DATABASE_URL_UNPOOLED: ""
       PUBLIC_BLOB_READ_WRITE_TOKEN: ""
       PRIVATE_BLOB_READ_WRITE_TOKEN: ""
-      VISUAL_QA_BASE_URL: http://127.0.0.1:3000
+      VISUAL_QA_BASE_URL: http://localhost:3000
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -34,13 +46,21 @@ jobs:
         run: |
           npm ci --ignore-scripts --no-audit --no-fund
           npm install --no-save --no-package-lock playwright@1.54.2
-          npx playwright install --with-deps chromium
+          npx playwright install chromium
       - name: Start Studio simulator
         run: |
+          mkdir -p mobile-visual-qa
           npm run dev -- --port 3000 > /tmp/juw-mobile-dev.log 2>&1 &
-          echo $! > /tmp/juw-mobile-dev.pid
-          for attempt in $(seq 1 60); do
-            if curl --fail --silent --max-time 3 http://127.0.0.1:3000/favicon.svg >/dev/null; then exit 0; fi
+          APP_PID=$!
+          echo "$APP_PID" > /tmp/juw-mobile-dev.pid
+          for attempt in $(seq 1 150); do
+            if ! kill -0 "$APP_PID" 2>/dev/null; then
+              cat /tmp/juw-mobile-dev.log
+              exit 1
+            fi
+            if curl --fail --silent --max-time 3 http://localhost:3000/favicon.svg >/dev/null; then
+              exit 0
+            fi
             sleep 2
           done
           cat /tmp/juw-mobile-dev.log
@@ -49,7 +69,9 @@ jobs:
         run: node scripts/mobile-visual-qa.mjs
       - name: Preserve server log
         if: always()
-        run: cp /tmp/juw-mobile-dev.log mobile-visual-qa/dev-server.log || true
+        run: |
+          mkdir -p mobile-visual-qa
+          cp /tmp/juw-mobile-dev.log mobile-visual-qa/dev-server.log || true
       - name: Upload evidence
         if: always()
         uses: actions/upload-artifact@v4
