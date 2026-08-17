@@ -229,7 +229,7 @@ test("server-renders product studies plus only identity-cleared model views", as
   }
 });
 
-test("server-renders the public commerce route grammar", async () => {
+test("server-renders public commerce and guards customer order history", async () => {
   const [search, saved, bag, checkout, orders, status, account] = await Promise.all([
     render("/shop/search"),
     render("/shop/saved"),
@@ -240,9 +240,19 @@ test("server-renders the public commerce route grammar", async () => {
     render("/shop/account"),
   ]);
 
-  for (const response of [search, saved, bag, checkout, orders, status, account]) {
+  for (const response of [search, saved, bag, checkout, account]) {
     assert.equal(response.status, 200);
   }
+  assert.equal(orders.status, 307);
+  assert.equal(status.status, 307);
+  assert.equal(
+    orders.headers.get("location"),
+    "/auth/sign-in?returnTo=%2Fshop%2Forders",
+  );
+  assert.equal(
+    status.headers.get("location"),
+    "/auth/sign-in?returnTo=%2Fshop%2Forders%2FJUW-NOT-ON-THIS-DEVICE",
+  );
 
   const searchHtml = await search.text();
   const visibleSearch = visibleMarkup(searchHtml);
@@ -253,8 +263,6 @@ test("server-renders the public commerce route grammar", async () => {
   assert.match(await saved.text(), /Opening saved pieces/);
   assert.match(await bag.text(), /Opening your bag/);
   assert.match(await checkout.text(), /Opening checkout/);
-  assert.match(await orders.text(), /Opening your orders/);
-  assert.match(await status.text(), /Opening your order/);
   assert.match(await account.text(), /Your space/);
 });
 
