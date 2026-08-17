@@ -7589,7 +7589,6 @@ html[data-theme="dark"] .studio-shell .button-secondary {
 
 html[data-theme="dark"] .studio-shell .button-secondary:hover { background: var(--studio-panel-hover); color: var(--studio-ink); }
 html[data-theme="dark"] .studio-shell .button-primary { background: linear-gradient(145deg, var(--studio-accent), #a64632); color: white; }
-html[data-theme="dark"] .studio-shell .studio-listing-preview { color: #1d1512; }
 
 @media (max-width: 1240px) {
   .studio-floating-nav { gap: 14px; }

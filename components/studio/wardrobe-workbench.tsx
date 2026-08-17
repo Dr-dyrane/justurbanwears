@@ -40,12 +40,14 @@ import {
 import { LifecycleBadge } from "./atoms/lifecycle-badge";
 import { ReadinessList } from "./atoms/readiness-list";
 import { StudioPager, StudioSegmentedView, useStudioSegment } from "./atoms/studio-segmented-view";
+import { StudioLink } from "./atoms/studio-link";
 import { StudioTaskSheet } from "./atoms/studio-task-sheet";
 import { GarmentIntakeSheet } from "./garment-intake/garment-intake-sheet";
 import { WearSheet } from "./garment-intake/wear-sheet";
 import { DraftDirectCaptures } from "./draft-direct-captures";
 import type { DirectCaptureTarget } from "./draft-direct-captures";
 import { useStudio } from "./studio-provider";
+import { useStudioMobileAction } from "./mobile-action-context";
 import { studioGarmentCover } from "./garment-cover";
 import {
   isPendingDirectCaptureRole,
@@ -144,7 +146,11 @@ function PendingProductMedia({
   );
 }
 
-function GarmentCard({ garment, onOpenPiece }: { garment: Garment; onOpenPiece(garment: Garment, origin: HTMLElement): void }) {
+function garmentDossierHref(garment: Garment) {
+  return `/studio/wardrobe/${encodeURIComponent(garment.privateWardrobeItemId ?? garment.id)}`;
+}
+
+function GarmentCard({ garment }: { garment: Garment }) {
   const { listings } = useStudio();
   const listing = listings.find((candidate) => candidate.garmentId === garment.id);
   const cover = studioGarmentCover(garment, listing);
@@ -165,17 +171,17 @@ function GarmentCard({ garment, onOpenPiece }: { garment: Garment; onOpenPiece(g
         <small>{garment.sku}</small>
       </div>
       <div className="studio-garment-body">
-        <button aria-label={`Open ${garment.title}`} className="studio-garment-disclosure" onClick={(event) => onOpenPiece(garment, event.currentTarget)} type="button">
+        <StudioLink aria-label={`Open ${garment.title}`} className="studio-garment-disclosure" href={garmentDossierHref(garment)}>
           <span><small>{garment.sku} · {garment.sizeLabel}</small><strong>{garment.title}</strong><small>{garment.color} · {garment.price > 0 ? formatNaira(garment.price) : "Price pending"}</small></span>
           <span className="studio-piece-stage" data-stage={workspace.stage}>{workspace.stageLabel}</span>
           <ArrowRight aria-hidden="true" size={17} />
-        </button>
+        </StudioLink>
       </div>
     </article>
   );
 }
 
-function PieceWorkspaceView({ garment, onDismiss, onContinueMedia }: { garment: Garment; onDismiss(): void; onContinueMedia(garment: Garment): void }) {
+export function PieceWorkspaceView({ garment, onDismiss, onContinueMedia }: { garment: Garment; onDismiss(): void; onContinueMedia(garment: Garment): void }) {
   const studio = useStudio();
   const [captures, setCaptures] = useState<OperatorSafePendingCapture[]>([]);
   const [publicationReview, setPublicationReview] = useState<StudioPublicationReview | null>(
@@ -237,6 +243,17 @@ function PieceWorkspaceView({ garment, onDismiss, onContinueMedia }: { garment: 
   const visibleBlockers = dynamicReview?.state === "READY" || dynamicReview?.state === "PUBLISHED"
     ? []
     : dynamicReview?.state === "BLOCKED" ? dynamicReview.blockers : workspace.blockers;
+  const mobileAction = reviewOpen
+    ? { href: "#piece-publication-review", label: publishing ? "Publishing…" : "Review Shop preview" }
+    : nextAction.kind === "DYNAMIC_LIVE" && dynamicReview?.state === "PUBLISHED"
+      ? { href: dynamicReview.receipt.shopUrl, label: nextAction.label }
+      : workspace.nextAction.kind === "VIEW_SHOP" && listing
+        ? { href: `/shop/products/${listing.slug}`, label: nextAction.label }
+        : workspace.nextAction.kind === "VIEW_OPERATIONS"
+          ? { href: "/studio/operations", label: nextAction.label }
+          : { href: "#piece-primary-action", invokeTargetId: "piece-primary-action", label: nextAction.label };
+
+  useStudioMobileAction(mobileAction);
 
   useEffect(() => {
     if (!garment.privateWardrobeItemId) return;
@@ -322,8 +339,13 @@ function PieceWorkspaceView({ garment, onDismiss, onContinueMedia }: { garment: 
     } else if (nextAction.kind === "DYNAMIC_RETRY") {
       setPublicationReload((value) => value + 1);
     } else if (workspace.nextAction.kind === "CAPTURE") {
-      captureSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-      captureSectionRef.current?.focus({ preventScroll: true });
+      const captureSection = captureSectionRef.current;
+      const behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
+      window.setTimeout(() => {
+        const firstAction = captureSection?.querySelector<HTMLElement>("button:not([disabled]), a[href], input:not([disabled])");
+        (firstAction ?? captureSection)?.scrollIntoView({ behavior, block: firstAction ? "center" : "start" });
+        (firstAction ?? captureSection)?.focus({ preventScroll: true });
+      }, 0);
     } else if (workspace.nextAction.kind === "FINISH") {
       studio.moveGarmentToWardrobe(garment.id);
     } else if (workspace.nextAction.kind === "TRY_ON") {
@@ -363,11 +385,11 @@ function PieceWorkspaceView({ garment, onDismiss, onContinueMedia }: { garment: 
         {!reviewOpen ? <section className="studio-piece-next" aria-label={`Next action for ${garment.title}`}>
           <span>{workspace.nextAction.kind === "CAPTURE" ? <Camera aria-hidden="true" size={19} /> : dynamicReview?.state === "READY" || workspace.canPublish ? <Eye aria-hidden="true" size={19} /> : <LockKeyhole aria-hidden="true" size={19} />}</span>
           <div><small>Next</small><strong>{nextAction.label}</strong><p>{nextAction.detail}</p></div>
-          <button className="button button-primary" disabled={nextAction.kind === "DYNAMIC_LOADING"} onClick={runNextAction} type="button">{nextAction.label}{nextAction.kind === "DYNAMIC_LOADING" ? null : <ArrowRight aria-hidden="true" size={15} />}</button>
+          <button className="button button-primary" disabled={nextAction.kind === "DYNAMIC_LOADING"} id="piece-primary-action" onClick={runNextAction} type="button">{nextAction.label}{nextAction.kind === "DYNAMIC_LOADING" ? null : <ArrowRight aria-hidden="true" size={15} />}</button>
         </section> : null}
         {pendingContract ? <PendingProductMedia capturedViews={capturedRoles} contract={pendingContract} title={garment.title} /> : null}
         {captureTarget ? <section id={`piece-captures-${garment.id}`} ref={captureSectionRef} tabIndex={-1}><DraftDirectCaptures garment={garment} onCapturesChange={setCaptures} target={captureTarget} /></section> : null}
-        {reviewOpen && dynamicReview?.state === "READY" ? <section className="studio-piece-shop studio-publication-review" ref={publicationSectionRef} tabIndex={-1}>
+        {reviewOpen && dynamicReview?.state === "READY" ? <section className="studio-piece-shop studio-publication-review" id="piece-publication-review" ref={publicationSectionRef} tabIndex={-1}>
           <div className="studio-card-heading"><div><small>Shop preview</small><h3>{dynamicReview.title}</h3></div><strong>{formatNaira(dynamicReview.price)}</strong></div>
           <div className="studio-publication-media">
             {dynamicReview.media.map((item) => <StudioMediaButton items={[{
@@ -385,8 +407,8 @@ function PieceWorkspaceView({ garment, onDismiss, onContinueMedia }: { garment: 
           {publicationError ? <p className="studio-engine-error" role="alert">{publicationError}</p> : null}
           <div className="studio-sheet-actions"><button className="button button-secondary" onClick={() => setReviewOpen(false)} type="button">Back</button><button className="button button-primary" disabled={!publicationConfirmed || publishing} onClick={() => void publishDynamicPiece()} type="button">{publishing ? "Publishing…" : "Publish"}</button></div>
         </section> : null}
-        {reviewOpen && publicationLoading ? <section className="studio-piece-shop studio-publication-review" aria-live="polite"><small>Refreshing Shop preview…</small></section> : null}
-        {reviewOpen && !publicationLoading && publicationLoadError ? <section className="studio-piece-shop studio-publication-review"><p className="studio-engine-error" role="alert">{publicationLoadError}</p><button className="button button-primary" onClick={() => setPublicationReload((value) => value + 1)} type="button">Check again</button></section> : null}
+        {reviewOpen && publicationLoading ? <section className="studio-piece-shop studio-publication-review" id="piece-publication-review" aria-live="polite"><small>Refreshing Shop preview…</small></section> : null}
+        {reviewOpen && !publicationLoading && publicationLoadError ? <section className="studio-piece-shop studio-publication-review" id="piece-publication-review"><p className="studio-engine-error" role="alert">{publicationLoadError}</p><button className="button button-primary" onClick={() => setPublicationReload((value) => value + 1)} type="button">Check again</button></section> : null}
         {visibleBlockers.length ? <section className="studio-piece-blockers" aria-label={`${garment.title} still needs`}><small>Still needed</small><div>{visibleBlockers.map((blocker) => <span key={blocker}>{blocker}</span>)}</div></section> : null}
         {listing ? <section className="studio-piece-shop" ref={listingSectionRef} tabIndex={-1}><ListingEditor listing={listing} /></section> : null}
       </div>
@@ -615,7 +637,7 @@ export function WardrobeWorkbench() {
             <span>{visibleGarments.length} shown</span>
           </div>
           <h2 className="sr-only" id="garments-view-title">Garments</h2>
-          {visibleGarments.length ? <><div className="studio-garment-grid">{pagedGarments.map((garment) => <GarmentCard garment={garment} key={garment.id} onOpenPiece={(piece, origin) => { setPieceReturnFocus(origin); setOpenPieceId(piece.id); }} />)}</div><StudioPager label="Garment pages" onPageChange={setGarmentPage} page={safeGarmentPage} pageSize={garmentPageSize} total={visibleGarments.length} /></> : (
+          {visibleGarments.length ? <><div className="studio-garment-grid">{pagedGarments.map((garment) => <GarmentCard garment={garment} key={garment.id} />)}</div><StudioPager label="Garment pages" onPageChange={setGarmentPage} page={safeGarmentPage} pageSize={garmentPageSize} total={visibleGarments.length} /></> : (
             <div className="studio-quiet-empty studio-wardrobe-empty"><PackageOpen aria-hidden="true" size={26} strokeWidth={1.5} /><div><strong>{studio.garments.length ? "No garments in this state" : "Your wardrobe is empty"}</strong><p>{studio.garments.length ? "Choose another filter." : "Add your first garment."}</p></div>{studio.garments.length ? null : <button className="button button-primary" onClick={(event) => openIntake(event.currentTarget)} type="button">Add garment</button>}</div>
           )}
         </section>
@@ -624,7 +646,7 @@ export function WardrobeWorkbench() {
           <div className="studio-section-title"><div><p className="eyebrow">Publishing</p><h2 id="publishing-title">Listing review</h2></div><span>{studio.listings.length} listing{studio.listings.length === 1 ? "" : "s"}</span></div>
           {studio.listings.length ? <><div className="studio-publishing-queue">{pagedListings.map((listing) => {
             const garment = studio.garments.find((candidate) => candidate.id === listing.garmentId);
-            return <button className="studio-publishing-row" key={listing.id} onClick={(event) => { if (!garment) return; setPieceReturnFocus(event.currentTarget); setOpenPieceId(garment.id); }} type="button"><span><small>{garment?.sku}</small><strong>{listing.title}</strong></span><LifecycleBadge state={listing.state} /><ArrowRight aria-hidden="true" size={17} /></button>;
+            return garment ? <StudioLink className="studio-publishing-row" href={garmentDossierHref(garment)} key={listing.id}><span><small>{garment.sku}</small><strong>{listing.title}</strong></span><LifecycleBadge state={listing.state} /><ArrowRight aria-hidden="true" size={17} /></StudioLink> : null;
           })}</div><StudioPager label="Publishing pages" onPageChange={setPublishingPage} page={safePublishingPage} pageSize={publishingPageSize} total={studio.listings.length} /></> : <div className="studio-quiet-empty"><Send aria-hidden="true" size={24} strokeWidth={1.5} /><div><strong>No Shop previews</strong><p>Approved Shop previews appear here.</p></div></div>}
         </section>
       )}

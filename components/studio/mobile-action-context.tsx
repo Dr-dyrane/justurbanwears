@@ -11,6 +11,7 @@ import {
 
 export interface StudioMobileAction {
   href: string;
+  invokeTargetId?: string;
   label: string;
 }
 
@@ -33,11 +34,12 @@ export function useStudioMobileAction(action: StudioMobileAction | null) {
   const context = useContext(StudioMobileActionContext);
   const setAction = context?.setAction;
   const href = action?.href ?? null;
+  const invokeTargetId = action?.invokeTargetId ?? null;
   const label = action?.label ?? null;
 
   useEffect(() => {
     if (!setAction) return;
-    setAction(href && label ? { href, label } : null);
+    setAction(href && label ? { href, invokeTargetId: invokeTargetId ?? undefined, label } : null);
     return () => setAction(null);
-  }, [setAction, href, label]);
+  }, [setAction, href, invokeTargetId, label]);
 }

@@ -7,6 +7,7 @@ const shell = readFileSync(`${root}/components/studio/app-shell.tsx`, "utf8");
 const home = readFileSync(`${root}/components/studio/studio-home.tsx`, "utf8");
 const models = readFileSync(`${root}/components/studio/model-atelier.tsx`, "utf8");
 const wardrobe = readFileSync(`${root}/components/studio/wardrobe-workbench.tsx`, "utf8");
+const dossier = readFileSync(`${root}/components/studio/garment-dossier.tsx`, "utf8");
 const directCaptures = readFileSync(`${root}/components/studio/draft-direct-captures.tsx`, "utf8");
 const operations = readFileSync(`${root}/components/studio/operations-desk.tsx`, "utf8");
 const css = readFileSync(`${root}/app/foundation.css`, "utf8");
@@ -28,6 +29,9 @@ test("Studio mobile chrome keeps one state-aware action between navigation and i
   assert.match(shell, /aria-label=\{contextAction\.label\}/);
   assert.match(shell, /StudioMobileActionProvider/);
   assert.match(shell, /useRegisteredStudioMobileAction/);
+  assert.match(shell, /registeredMobileAction\?\.invokeTargetId/);
+  assert.equal(shell.match(/onClick=\{invokeContextAction\}/g)?.length, 3);
+  assert.match(wardrobe, /invokeTargetId: "piece-primary-action"/);
   assert.doesNotMatch(shell, /className="shop-mobile-fab[\s\S]*?href="\/shop"/);
 });
 
@@ -48,6 +52,7 @@ test("compact garment rows expose preview and one Piece workspace", () => {
   assert.match(wardrobe, /label=\{`Preview \$\{garment\.title\}`\}/);
   assert.match(wardrobe, /aria-label=\{`Open \$\{garment\.title\}`\}/);
   assert.match(wardrobe, /className="studio-garment-disclosure"/);
+  assert.match(wardrobe, /garmentDossierHref/);
   assert.doesNotMatch(wardrobe, /Manage draft|Prepare listing|Open listing/);
 });
 
@@ -55,6 +60,10 @@ test("garments open one Piece workspace with one truthful next action", () => {
   assert.match(wardrobe, /className="studio-draft-sheet studio-piece-sheet"/);
   assert.match(wardrobe, /<PieceWorkspaceView/);
   assert.match(wardrobe, /nextAction\.label/);
+  assert.match(dossier, /<PieceWorkspaceView/);
+  assert.doesNotMatch(dossier, /useStudioMobileAction|selectPieceWorkspace/);
+  assert.match(wardrobe, /useStudioMobileAction\(mobileAction\)/);
+  assert.match(dossier, /candidate\.privateWardrobeItemId === requestedId/);
   assert.doesNotMatch(wardrobe, /Move to wardrobe|Clear gates|Create media/);
 });
 
@@ -70,7 +79,7 @@ test("model segmented content can render without the portrait obstruction", () =
 
 test("operator copy and recovery stay action-led", () => {
   assert.match(home, /Workspace saved/);
-  assert.match(home, /wardrobe\?garment=/);
+  assert.match(home, /studio\/wardrobe\/\$\{encodeURIComponent/);
   assert.match(directCaptures, /studio-magic-capture-shortcut/);
   assert.match(directCaptures, /Magic Wand/);
   assert.match(wardrobe, /aiSourceMode: "APPROVED_FRONT"/);

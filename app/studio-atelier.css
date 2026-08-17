@@ -856,6 +856,77 @@ html[data-theme="dark"] .studio-shell .studio-atelier-pulse {
   transform: translateY(-1px);
 }
 
+/* Garment dossier ------------------------------------------------------- */
+
+.studio-shell .studio-dossier-page {
+  display: grid;
+  gap: 24px;
+  margin: 0 auto;
+  width: min(100%, 1240px);
+}
+
+.studio-shell .studio-dossier-back {
+  align-items: center;
+  color: var(--atelier-muted);
+  display: inline-flex;
+  font-size: 12px;
+  font-weight: 720;
+  gap: 8px;
+  min-height: 44px;
+  transition: color 140ms ease, transform 140ms ease;
+  width: fit-content;
+}
+
+.studio-shell .studio-dossier-back:hover {
+  color: var(--atelier-ink);
+  transform: translateX(-2px);
+}
+
+.studio-shell .studio-dossier-page .studio-piece-workspace {
+  align-items: start;
+  gap: clamp(28px, 4vw, 64px);
+  grid-template-columns: minmax(300px, .78fr) minmax(0, 1.22fr);
+}
+
+.studio-shell .studio-dossier-page .studio-draft-visual {
+  box-shadow: var(--atelier-shadow-raised);
+  position: sticky;
+  top: 120px;
+}
+
+.studio-shell .studio-dossier-page .studio-draft-content {
+  gap: 22px;
+}
+
+.studio-shell .studio-dossier-empty {
+  align-content: center;
+  color: var(--atelier-ink);
+  display: grid;
+  justify-items: start;
+  margin: 0 auto;
+  min-height: min(70vh, 680px);
+  width: min(100%, 720px);
+}
+
+.studio-shell .studio-dossier-empty > svg {
+  color: var(--atelier-accent);
+  margin-bottom: 24px;
+}
+
+.studio-shell .studio-dossier-empty h1 {
+  font-family: var(--font-display);
+  font-size: clamp(52px, 8vw, 92px);
+  font-weight: 450;
+  letter-spacing: -.055em;
+  line-height: .94;
+  margin: 0;
+}
+
+.studio-shell .studio-dossier-empty > p:not(.eyebrow) {
+  color: var(--atelier-muted);
+  margin: 18px 0 28px;
+}
+
 .studio-shell .studio-model-layout {
   align-items: start;
   display: grid;
@@ -1390,6 +1461,15 @@ html[data-theme="dark"] .studio-shell .studio-atelier-pulse {
     grid-template-columns: 1fr;
   }
 
+  .studio-shell .studio-dossier-page .studio-piece-workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .studio-shell .studio-dossier-page .studio-draft-visual {
+    position: relative;
+    top: auto;
+  }
+
   .studio-shell .studio-model-portrait {
     min-height: min(720px, 76vh);
   }
@@ -1415,6 +1495,20 @@ html[data-theme="dark"] .studio-shell .studio-atelier-pulse {
   .studio-shell .studio-connected-orders-page,
   .studio-shell .studio-atelier-home {
     gap: 48px;
+  }
+
+  .studio-shell .studio-dossier-page {
+    gap: 4px;
+  }
+
+  .studio-shell .studio-dossier-back {
+    margin-inline: 4px;
+  }
+
+  .studio-shell .studio-dossier-page .studio-draft-visual .studio-media-expand {
+    bottom: auto;
+    right: 12px;
+    top: 12px;
   }
 
   .studio-shell .studio-ops-heading h1,

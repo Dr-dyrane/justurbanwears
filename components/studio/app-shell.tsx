@@ -125,6 +125,17 @@ function AppShellContent({ children, operator }: { children: React.ReactNode; op
     ? { ...registeredMobileAction, icon: PackageCheck }
     : routeAction;
   const ContextActionIcon = contextAction.icon;
+
+  function invokeContextAction(event: React.MouseEvent<HTMLAnchorElement>) {
+    const targetId = registeredMobileAction?.invokeTargetId;
+    if (!targetId) return;
+    const target = document.getElementById(targetId);
+    if (!(target instanceof HTMLButtonElement)) return;
+    event.preventDefault();
+    target.focus({ preventScroll: true });
+    if (!target.disabled) target.click();
+  }
+
   return (
     <div
         className="app-shell studio-shell"
@@ -180,7 +191,7 @@ function AppShellContent({ children, operator }: { children: React.ReactNode; op
                 <span className="studio-view-tabs">
                   {shootTabs.map((tab) => <Link aria-current={tab.current ? "page" : undefined} className={tab.current ? "is-active" : undefined} href={tab.href} key={tab.href}>{tab.label}</Link>)}
                 </span>
-                <Link className="studio-view-action" data-experience-action="primary" href={contextAction.href}><span>{contextAction.label}</span><ContextActionIcon aria-hidden="true" size={15} strokeWidth={1.9} /></Link>
+                <Link className="studio-view-action" data-experience-action="primary" href={contextAction.href} onClick={invokeContextAction}><span>{contextAction.label}</span><ContextActionIcon aria-hidden="true" size={15} strokeWidth={1.9} /></Link>
               </nav>
             </div>
           ) : null}
@@ -212,6 +223,7 @@ function AppShellContent({ children, operator }: { children: React.ReactNode; op
               className="shop-mobile-context shop-dock-lens studio-mobile-context"
               data-experience-action="primary"
               href={contextAction.href}
+              onClick={invokeContextAction}
               tabIndex={mobileChromeMode === "navigation" || mobileChromeMode === "suspended" ? -1 : undefined}
             >
               <span>
@@ -251,6 +263,7 @@ function AppShellContent({ children, operator }: { children: React.ReactNode; op
                 aria-label={contextAction.label}
                 className="shop-mobile-fab shop-dock-lens studio-mobile-fab"
                 href={contextAction.href}
+                onClick={invokeContextAction}
               >
                 <ContextActionIcon aria-hidden="true" size={24} strokeWidth={2.1} />
               </Link>

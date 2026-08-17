@@ -131,10 +131,18 @@ function inferredReviewCopy(role: PendingDirectCaptureRole) {
     : { heading: "Does this match the real fabric?", detail: "Suggested from the product front. Check the garment." };
 }
 
-function errorMessage(value: unknown) {
+function errorMessage(value: unknown, fallback = "The photo could not be saved.") {
   if (isRecord(value) && typeof value.error === "string") return value.error;
   if (isRecord(value) && isRecord(value.error) && typeof value.error.message === "string") return value.error.message;
-  return "The photo could not be saved.";
+  return fallback;
+}
+
+async function responseJson(response: Response) {
+  try {
+    return await response.json() as unknown;
+  } catch {
+    return null;
+  }
 }
 
 export function DraftDirectCaptures({
@@ -191,8 +199,8 @@ export function DraftDirectCaptures({
       headers: { accept: "application/json" },
       signal: controller.signal,
     }).then(async (response) => {
-      const body: unknown = await response.json();
-      if (!response.ok) throw new Error(errorMessage(body));
+      const body = await responseJson(response);
+      if (!response.ok) throw new Error(errorMessage(body, "Saved photos are unavailable. Try again."));
       const workspace = parseWorkspace(body);
       if (!workspace) throw new Error("The saved photos could not be read.");
       applyWorkspace(workspace);
@@ -251,7 +259,7 @@ export function DraftDirectCaptures({
         credentials: "same-origin",
         body: form,
       });
-      const body: unknown = await response.json();
+      const body = await responseJson(response);
       if (!response.ok) throw new Error(errorMessage(body));
       const workspace = parseWorkspace(body);
       if (!workspace) throw new Error("The saved photo could not be read.");
@@ -298,8 +306,8 @@ export function DraftDirectCaptures({
           headers: { accept: "application/json" },
           signal: controller.signal,
         });
-        const body: unknown = await response.json();
-        if (!response.ok) throw new Error(errorMessage(body));
+        const body = await responseJson(response);
+        if (!response.ok) throw new Error(errorMessage(body, "AI views are unavailable. Try again."));
         const job = parseCompletionJob(body);
         if (!job || job.state === "REJECTED" || job.state === "APPROVED") {
           setAiFlow((current) => current?.role === role ? { ...current, job: null, step: "SOURCE" } : current);
@@ -379,8 +387,8 @@ export function DraftDirectCaptures({
       })();
     try {
       const response = await fetch(target.completionEndpoint, requestInit);
-      const body: unknown = await response.json();
-      if (!response.ok) throw new Error(errorMessage(body));
+      const body = await responseJson(response);
+      if (!response.ok) throw new Error(errorMessage(body, "The new view could not be made. Try again."));
       const job = parseCompletionJob(body);
       if (!job || job.state !== "COMPLETE" || !job.assetUrl) throw new Error("The new view is not ready yet.");
       setAiFlow((current) => current && current.role === role ? { ...current, job, step: "REVIEW" } : current);
@@ -406,8 +414,8 @@ export function DraftDirectCaptures({
           ...(decision === "KEEP" && aiFlow.sourceMode === "APPROVED_FRONT" ? { truthConfirmed: true } : {}),
         }),
       });
-      const body: unknown = await response.json();
-      if (!response.ok) throw new Error(errorMessage(body));
+      const body = await responseJson(response);
+      if (!response.ok) throw new Error(errorMessage(body, "The view could not be updated. Try again."));
       if (decision === "REJECT") {
         if (aiFlow.source) URL.revokeObjectURL(aiFlow.source.url);
         setAiFlow(null);

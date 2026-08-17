@@ -1,5 +1,4 @@
 import { get } from "@vercel/blob";
-import sharp from "sharp";
 import {
   buildMediaCompletionPrompt,
   generateMediaCompletionImage,
@@ -75,7 +74,15 @@ type SharpPipeline = {
   toBuffer(): Promise<Uint8Array>;
 };
 
-const sharpImage = sharp as unknown as (bytes: Uint8Array) => SharpPipeline;
+async function normalizeGeneratedImage(bytes: Uint8Array) {
+  const { default: sharp } = await import("sharp");
+  const sharpImage = sharp as unknown as (input: Uint8Array) => SharpPipeline;
+  return new Uint8Array(await sharpImage(bytes)
+    .rotate()
+    .toColourspace("srgb")
+    .webp({ quality: 92, alphaQuality: 100, effort: 4 })
+    .toBuffer());
+}
 
 function intakeCategory(value: string): IntakeFacts["category"] {
   return (["Dress", "Shirt", "Set", "Knitwear", "Skirt", "Trousers", "Other"] as const)
@@ -458,11 +465,7 @@ async function executeCompletion(input: {
         "Use the source photo instead.",
       );
     }
-    const normalizedBytes = new Uint8Array(await sharpImage(generated.bytes)
-      .rotate()
-      .toColourspace("srgb")
-      .webp({ quality: 92, alphaQuality: 100, effort: 4 })
-      .toBuffer());
+    const normalizedBytes = await normalizeGeneratedImage(generated.bytes);
     const verified = verifyStudioImage(normalizedBytes, "image/webp");
     const outputHash = sha256(verified.bytes);
     const operatorKey = sha256(input.operator.subject).slice(0, 20);

@@ -319,7 +319,7 @@ export function GarmentIntakeSheet({ onDismiss, onOpenWear, open, returnFocus }:
     <button className="button button-primary" onClick={() => setStep("receipt")} type="button">Not now</button>
   ) : step === "receipt" ? (
     <>
-      <a className="button button-secondary" href="#garments" onClick={finishDismiss}>Open garment</a>
+      <a className="button button-secondary" href={wardrobeItemId ? `/studio/wardrobe/${encodeURIComponent(wardrobeItemId)}` : "/studio/wardrobe"} onClick={finishDismiss}>Open garment</a>
       <button className="button button-primary" onClick={finishDismiss} type="button">Done</button>
     </>
   ) : undefined;
