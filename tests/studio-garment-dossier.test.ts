@@ -37,7 +37,9 @@ test("the live Piece workspace registers a one-tap state-aware mobile action", (
   assert.match(mobileActions, /invokeTargetId\?: string/);
   assert.match(shell, /registeredMobileAction\?\.invokeTargetId/);
   assert.match(shell, /target\.click\(\)/);
-  assert.equal(shell.match(/onClick=\{invokeContextAction\}/g)?.length, 3);
+  assert.match(shell, /className="studio-view-action"/);
+  assert.match(shell, /className="shop-mobile-fab shop-dock-lens studio-mobile-fab"/);
+  assert.equal(shell.match(/onClick=\{invokeContextAction\}/g)?.length, 2);
 });
 
 test("the dossier keeps media controls visible and public projection readable in both themes", () => {
