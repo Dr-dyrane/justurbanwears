@@ -1,41 +1,21 @@
-/* Final control refinement
-   1. A clear, complete quick-add control on product cards.
-   2. Four direct Studio tabs, one contextual FAB, and one profile-sheet entrance. */
-
-/* Shop quick-add --------------------------------------------------------- */
+/* Product-card quick add and Apple-grade Studio mobile controls. */
 
 .product-card-action {
-  align-items: center;
   border-radius: 999px;
   gap: 9px;
-  min-height: 50px;
-  overflow: visible;
   padding: 5px 14px 5px 5px;
-  transform-origin: left center;
 }
 
 .product-card-action-icon {
   align-items: center;
-  aspect-ratio: 1;
   background: color-mix(in srgb, var(--shop-paper) 86%, transparent);
   border-radius: 50%;
-  box-shadow:
-    0 8px 20px color-mix(in srgb, var(--shop-ink) 12%, transparent),
-    inset 0 1px 0 color-mix(in srgb, white 68%, transparent);
+  box-shadow: 0 8px 20px color-mix(in srgb, var(--shop-ink) 12%, transparent);
   display: inline-flex;
   flex: 0 0 40px;
   height: 40px;
   justify-content: center;
-  overflow: hidden;
-  transition:
-    background 160ms ease,
-    box-shadow 200ms ease,
-    color 160ms ease,
-    transform 200ms var(--ease-liquid);
-}
-
-.product-card-action-icon svg {
-  transition: transform 200ms var(--ease-liquid);
+  transition: background 160ms ease, color 160ms ease, transform 200ms var(--ease-liquid);
 }
 
 .product-card-action.is-added .product-card-action-icon {
@@ -47,37 +27,22 @@
   .product-card-action-row[data-visibility="intent"] {
     opacity: 0;
     pointer-events: none;
-    transform: translate3d(0, 9px, 0) scale(0.985);
-    transition:
-      opacity 160ms ease,
-      transform 220ms var(--ease-liquid);
+    transform: translateY(9px) scale(.985);
+    transition: opacity 160ms ease, transform 220ms var(--ease-liquid);
   }
 
   .shop-product-card:hover .product-card-action-row[data-visibility="intent"],
   .shop-product-card:focus-within .product-card-action-row[data-visibility="intent"] {
     opacity: 1;
     pointer-events: auto;
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-
-  .product-card-action:hover,
-  .product-card-action:focus-visible {
-    transform: translateY(-1px);
+    transform: none;
   }
 
   .product-card-action:hover .product-card-action-icon,
   .product-card-action:focus-visible .product-card-action-icon {
     background: color-mix(in srgb, var(--peach) 72%, var(--shop-paper));
-    box-shadow:
-      0 11px 24px color-mix(in srgb, var(--shop-ink) 16%, transparent),
-      inset 0 1px 0 color-mix(in srgb, white 78%, transparent);
     color: var(--accent-text);
     transform: translateX(2px) scale(1.025);
-  }
-
-  .product-card-action:hover .product-card-action-icon svg,
-  .product-card-action:focus-visible .product-card-action-icon svg {
-    transform: translateY(-1px);
   }
 }
 
@@ -89,8 +54,6 @@
   }
 }
 
-/* Studio profile sheet --------------------------------------------------- */
-
 .studio-profile-orb-mobile,
 .studio-mobile-nav-title {
   display: none;
@@ -98,16 +61,12 @@
 
 .studio-profile-card-avatar {
   align-items: center;
-  background:
-    radial-gradient(circle at 30% 24%, rgba(255, 255, 255, 0.52), transparent 38%),
-    linear-gradient(145deg, var(--atelier-accent), var(--atelier-accent-deep));
+  background: linear-gradient(145deg, var(--atelier-accent), var(--atelier-accent-deep));
   border-radius: 50%;
-  box-shadow: 0 12px 28px color-mix(in srgb, var(--atelier-accent) 25%, transparent);
   color: #fffaf6;
   display: inline-flex;
   font-family: var(--font-display);
   font-size: 25px;
-  font-weight: 560;
   height: 54px;
   justify-content: center;
   width: 54px;
@@ -118,11 +77,8 @@
   gap: 4px;
 }
 
-.studio-helper-stack > a,
-.studio-helper-stack > button {
+.studio-helper-stack > a {
   align-items: center;
-  background: transparent;
-  border: 0;
   border-radius: 16px;
   color: var(--atelier-ink);
   display: grid;
@@ -130,29 +86,19 @@
   grid-template-columns: 36px minmax(0, 1fr) auto;
   min-height: 62px;
   padding: 8px 10px;
-  text-align: left;
-  transition:
-    background 160ms ease,
-    transform 160ms var(--ease-liquid);
-  width: 100%;
 }
 
 .studio-helper-stack > a:hover,
-.studio-helper-stack > button:hover,
-.studio-helper-stack > a:focus-visible,
-.studio-helper-stack > button:focus-visible {
+.studio-helper-stack > a:focus-visible {
   background: var(--atelier-panel-soft);
-  transform: translateX(2px);
 }
 
-.studio-helper-stack > a > svg:first-child,
-.studio-helper-stack > button > svg:first-child {
+.studio-helper-stack > a > svg:first-child {
   color: var(--atelier-accent);
   justify-self: center;
 }
 
-.studio-helper-stack > a > span,
-.studio-helper-stack > button > span {
+.studio-helper-stack > a > span {
   display: grid;
   gap: 2px;
   min-width: 0;
@@ -168,12 +114,9 @@
   line-height: 1.35;
 }
 
-.studio-helper-stack > a > svg:last-child,
-.studio-helper-stack > button > svg:last-child {
+.studio-helper-stack > a > svg:last-child {
   color: var(--atelier-faint);
 }
-
-/* Studio mobile navigation ---------------------------------------------- */
 
 @media (max-width: 680px) {
   .studio-floating-nav {
@@ -207,8 +150,6 @@
     height: 48px;
     justify-content: center;
     left: 6px;
-    min-height: 48px;
-    min-width: 48px;
     padding: 0;
     position: absolute;
     top: 6px;
@@ -221,13 +162,9 @@
 
   .studio-profile-orb-mobile {
     align-items: center;
-    background:
-      radial-gradient(circle at 30% 24%, rgba(255, 255, 255, 0.58), transparent 38%),
-      linear-gradient(145deg, var(--atelier-accent), var(--atelier-accent-deep));
+    background: linear-gradient(145deg, var(--atelier-accent), var(--atelier-accent-deep));
     border-radius: 50%;
-    box-shadow:
-      0 10px 24px color-mix(in srgb, var(--atelier-accent) 24%, transparent),
-      inset 0 1px 0 rgba(255, 255, 255, 0.32);
+    box-shadow: 0 10px 24px color-mix(in srgb, var(--atelier-accent) 24%, transparent);
     color: #fffaf6;
     display: inline-flex;
     height: 44px;
@@ -239,7 +176,6 @@
   .studio-profile-orb-mobile b {
     font-family: var(--font-display);
     font-size: 20px;
-    font-weight: 560;
     line-height: 1;
   }
 
@@ -259,10 +195,8 @@
     display: block;
     font-size: 12px;
     font-weight: 760;
-    letter-spacing: -0.01em;
     max-width: 48vw;
     overflow: hidden;
-    text-align: center;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
@@ -279,9 +213,6 @@
     margin: 0 auto;
     max-width: 430px;
     pointer-events: none;
-    transition:
-      opacity 160ms ease,
-      transform 200ms var(--ease-liquid);
     width: 100%;
   }
 
@@ -304,10 +235,6 @@
     min-height: 54px;
     min-width: 44px;
     padding: 4px 1px;
-    transition:
-      background 160ms ease,
-      color 160ms ease,
-      transform 160ms var(--ease-liquid);
   }
 
   .studio-mobile-tabs > a > span {
@@ -331,40 +258,29 @@
     background: var(--atelier-ink);
     border: 0;
     border-radius: 50%;
-    box-shadow:
-      0 18px 38px color-mix(in srgb, var(--atelier-ink) 25%, transparent),
-      inset 0 1px 0 color-mix(in srgb, white 18%, transparent);
+    box-shadow: 0 18px 38px color-mix(in srgb, var(--atelier-ink) 25%, transparent);
     color: var(--atelier-panel-strong);
     display: inline-flex !important;
     height: 58px;
     justify-content: center;
-    min-height: 58px;
-    min-width: 58px;
     pointer-events: auto;
     position: static;
     transform: none;
-    transition:
-      background 160ms ease,
-      box-shadow 180ms ease,
-      transform 180ms var(--ease-liquid);
     width: 58px;
   }
 
   .studio-mobile-shell .studio-mobile-fab:hover,
   .studio-mobile-shell .studio-mobile-fab:focus-visible {
     background: color-mix(in srgb, var(--atelier-ink) 86%, var(--atelier-accent));
-    box-shadow:
-      0 22px 44px color-mix(in srgb, var(--atelier-ink) 30%, transparent),
-      inset 0 1px 0 color-mix(in srgb, white 24%, transparent);
     transform: translateY(-2px) scale(1.02);
   }
 
   .studio-mobile-shell .studio-mobile-fab:active {
-    transform: scale(0.96);
+    transform: scale(.96);
   }
 
   .studio-mobile-shell[data-mobile-chrome-mode="hidden"] .studio-mobile-bar {
-    opacity: 0.94;
+    opacity: .94;
     transform: translateY(42px);
   }
 
@@ -381,48 +297,19 @@
 
   .studio-profile-card {
     border-radius: 24px;
-    min-height: 94px;
     padding: 16px;
   }
 
-  .studio-settings-spaces {
-    margin-top: 4px;
-  }
-
-  .studio-helper-stack > a,
-  .studio-helper-stack > button {
+  .studio-helper-stack > a {
     min-height: 66px;
-  }
-}
-
-@media (max-width: 370px) {
-  .studio-mobile-bar {
-    gap: 7px;
-    grid-template-columns: minmax(0, 1fr) 54px;
-  }
-
-  .studio-mobile-shell .studio-mobile-fab {
-    height: 54px;
-    min-height: 54px;
-    min-width: 54px;
-    width: 54px;
-  }
-
-  .studio-mobile-tabs > a > span {
-    font-size: 10.5px;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .product-card-action-row,
-  .product-card-action,
   .product-card-action-icon,
-  .product-card-action-icon svg,
   .studio-mobile-bar,
-  .studio-mobile-tabs > a,
-  .studio-mobile-fab,
-  .studio-helper-stack > a,
-  .studio-helper-stack > button {
-    transition-duration: 1ms !important;
+  .studio-mobile-fab {
+    transition: none !important;
   }
 }
