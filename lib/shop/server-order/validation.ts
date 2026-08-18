@@ -10,7 +10,10 @@ import {
   type ShopOrderTransitionDetails,
   type ShopOperatorTransition,
   type ShopOperatorReturnTransition,
+  type ShopOrderListFilter,
+  type ShopOrderListQuery,
   type ShopPaymentEvidenceContentType,
+  type ShopReturnLineDisposition,
   type ShopReturnReason,
 } from "./types";
 
@@ -81,7 +84,7 @@ export function parseExpectedVersion(value: unknown): number {
   return value as number;
 }
 
-function parseContact(value: unknown) {
+export function parseContact(value: unknown) {
   if (!isObject(value) || !hasOnlyKeys(value, ["name", "email", "phone"])) {
     throw new ShopOrderError("INVALID_REQUEST", "The checkout contact is invalid.");
   }
@@ -97,7 +100,49 @@ function parseContact(value: unknown) {
   return { name, email, phone };
 }
 
-function parseFulfillment(value: unknown): ShopCheckoutFulfillment {
+export function parseCustomerOrderMutation(value: unknown) {
+  if (!isObject(value) || !hasOnlyKeys(value, ["expectedVersion", "action", "reason", "contact", "fulfillment"])) {
+    throw new ShopOrderError("INVALID_REQUEST", "The order update is invalid.");
+  }
+  const expectedVersion = parseExpectedVersion(value.expectedVersion);
+  if (value.action === "CANCEL") {
+    if (value.contact !== undefined || value.fulfillment !== undefined) {
+      throw new ShopOrderError("INVALID_REQUEST", "The cancellation is invalid.");
+    }
+    return {
+      expectedVersion,
+      mutation: { action: "CANCEL" as const, reason: cleanText(value.reason, 500, 4) },
+    };
+  }
+  if (value.action === "UPDATE_CONTACT") {
+    if (value.reason !== undefined || value.fulfillment !== undefined) throw new ShopOrderError("INVALID_REQUEST", "The contact update is invalid.");
+    return {
+      expectedVersion,
+      mutation: { action: "UPDATE_CONTACT" as const, contact: parseContact(value.contact) },
+    };
+  }
+  if (value.action === "UPDATE_FULFILLMENT") {
+    if (value.reason !== undefined || value.contact !== undefined) {
+      throw new ShopOrderError("INVALID_REQUEST", "The handoff update is invalid.");
+    }
+    return {
+      expectedVersion,
+      mutation: { action: "UPDATE_FULFILLMENT" as const, fulfillment: parseFulfillment(value.fulfillment) },
+    };
+  }
+  if (value.action === "REQUEST_PAID_CANCELLATION") {
+    if (value.contact !== undefined || value.fulfillment !== undefined) {
+      throw new ShopOrderError("INVALID_REQUEST", "The cancellation request is invalid.");
+    }
+    return {
+      expectedVersion,
+      mutation: { action: "REQUEST_PAID_CANCELLATION" as const, reason: cleanText(value.reason, 500, 4) },
+    };
+  }
+  throw new ShopOrderError("INVALID_REQUEST", "The order update action is invalid.");
+}
+
+export function parseFulfillment(value: unknown): ShopCheckoutFulfillment {
   if (!isObject(value) || typeof value.kind !== "string") {
     throw new ShopOrderError("INVALID_REQUEST", "The fulfillment selection is invalid.");
   }
@@ -169,6 +214,29 @@ export function parseCheckoutIntent(value: unknown): ShopCheckoutSubmissionInten
   };
 }
 
+export function parseAssistedOrder(value: unknown): {
+  intent: ShopCheckoutSubmissionIntent;
+  source: "PHONE" | "DM" | "IN_PERSON";
+  sourceNote: string | null;
+} {
+  if (
+    !isObject(value)
+    || !hasOnlyKeys(value, ["version", "idempotencyKey", "lines", "contact", "fulfillment", "source", "note"])
+    || (value.source !== "PHONE" && value.source !== "DM" && value.source !== "IN_PERSON")
+  ) throw new ShopOrderError("INVALID_REQUEST", "The assisted order is invalid.");
+  return {
+    intent: parseCheckoutIntent({
+      version: value.version,
+      idempotencyKey: value.idempotencyKey,
+      lines: value.lines,
+      contact: value.contact,
+      fulfillment: value.fulfillment,
+    }),
+    source: value.source,
+    sourceNote: parseOptionalNote(value.note),
+  };
+}
+
 function canonicalize(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(canonicalize);
   if (isObject(value)) {
@@ -213,8 +281,20 @@ export function parseOperatorTransition(value: unknown): ShopOperatorTransition 
   ) {
     return { dimension: "FULFILLMENT", target: value.target };
   }
-  if (value.dimension === "FUNDS_CONFIRMATION" && value.target === "CONFIRMED") {
-    return { dimension: "FUNDS_CONFIRMATION", target: "CONFIRMED" };
+  if (
+    value.dimension === "FUNDS_CONFIRMATION"
+    && (value.target === "CONFIRMED" || value.target === "CORRECTED")
+  ) {
+    return { dimension: "FUNDS_CONFIRMATION", target: value.target };
+  }
+  if (value.dimension === "PICKUP" && value.target === "SCHEDULED") {
+    return { dimension: "PICKUP", target: "SCHEDULED" };
+  }
+  if (
+    value.dimension === "CANCELLATION_REFUND"
+    && (value.target === "PENDING" || value.target === "COMPLETED" || value.target === "FAILED")
+  ) {
+    return { dimension: "CANCELLATION_REFUND", target: value.target };
   }
   if (
     value.dimension === "LIFECYCLE"
@@ -232,13 +312,18 @@ export function parseOrderTransitionDetails(
   if (transition.dimension === "FUNDS_CONFIRMATION") {
     if (
       !isObject(value)
-      || !hasOnlyKeys(value, ["kind", "transferReference", "receivingAccountLabel"])
+      || !hasOnlyKeys(value, ["kind", "transferReference", "receivingAccountLabel", "paidAmount", "paidCurrency"])
       || value.kind !== "FUNDS_CONFIRMATION"
+      || !Number.isSafeInteger(value.paidAmount)
+      || (value.paidAmount as number) <= 0
+      || value.paidCurrency !== "NGN"
     ) throw new ShopOrderError("INVALID_REQUEST", "Settlement confirmation details are required.");
     return {
       kind: "FUNDS_CONFIRMATION",
       transferReference: cleanText(value.transferReference, 120, 4),
       receivingAccountLabel: cleanText(value.receivingAccountLabel, 120, 3),
+      paidAmount: value.paidAmount as number,
+      paidCurrency: "NGN",
     };
   }
   if (transition.dimension === "FULFILLMENT" && transition.target === "IN_TRANSIT") {
@@ -301,6 +386,39 @@ export function parseOrderTransitionDetails(
     }
     throw new ShopOrderError("INVALID_REQUEST", "Delivery or pickup completion facts are invalid.");
   }
+  if (transition.dimension === "PICKUP") {
+    if (
+      !isObject(value)
+      || !hasOnlyKeys(value, ["kind", "pickupAppointment"])
+      || value.kind !== "PICKUP_SCHEDULE"
+    ) throw new ShopOrderError("INVALID_REQUEST", "A pickup time is required.");
+    return {
+      kind: "PICKUP_SCHEDULE",
+      pickupAppointment: parseIsoDate(value.pickupAppointment, "pickup appointment"),
+    };
+  }
+  if (transition.dimension === "CANCELLATION_REFUND") {
+    if (transition.target !== "COMPLETED") {
+      if (value !== undefined && value !== null) {
+        throw new ShopOrderError("INVALID_REQUEST", "Refund details apply only after the refund is sent.");
+      }
+      return null;
+    }
+    if (
+      !isObject(value)
+      || !hasOnlyKeys(value, ["kind", "refundReference", "refundAmount", "refundCurrency"])
+      || value.kind !== "CANCELLATION_REFUND"
+      || !Number.isSafeInteger(value.refundAmount)
+      || (value.refundAmount as number) <= 0
+      || value.refundCurrency !== "NGN"
+    ) throw new ShopOrderError("INVALID_REQUEST", "Exact cancellation refund details are required.");
+    return {
+      kind: "CANCELLATION_REFUND",
+      refundReference: cleanText(value.refundReference, 160, 4),
+      refundAmount: value.refundAmount as number,
+      refundCurrency: "NGN",
+    };
+  }
   if (value !== undefined && value !== null) {
     throw new ShopOrderError("INVALID_REQUEST", "This transition does not accept structured details.");
   }
@@ -331,18 +449,32 @@ export function parseReturnRequest(value: unknown): {
   requestFingerprint: string;
   reason: ShopReturnReason;
   detail: string;
+  lineSkus: string[];
+  expectedVersion: number | null;
+  correction: boolean;
 } {
   if (
     !isObject(value)
-    || !hasOnlyKeys(value, ["version", "idempotencyKey", "reason", "detail"])
-    || value.version !== 1
+    || !hasOnlyKeys(value, ["version", "idempotencyKey", "reason", "detail", "lineSkus", "expectedVersion", "correction"])
+    || (value.version !== 1 && value.version !== 2)
     || typeof value.reason !== "string"
     || !returnReasons.has(value.reason as ShopReturnReason)
   ) throw new ShopOrderError("INVALID_REQUEST", "The return request is invalid.");
+  const lineSkus = value.version === 1
+    ? []
+    : parseLineSkus(value.lineSkus);
+  const expectedVersion = value.version === 1 ? null : parseExpectedVersion(value.expectedVersion);
+  const correction = value.version === 2 && value.correction === true;
+  if (value.version === 1 && (value.lineSkus !== undefined || value.expectedVersion !== undefined || value.correction !== undefined)) {
+    throw new ShopOrderError("INVALID_REQUEST", "The return request version is invalid.");
+  }
   const request = {
     idempotencyKey: parseIdempotencyKey(value.idempotencyKey),
     reason: value.reason as ShopReturnReason,
     detail: cleanText(value.detail, 500, 10),
+    lineSkus,
+    expectedVersion,
+    correction,
   };
   return { ...request, requestFingerprint: sha256Fingerprint(request) };
 }
@@ -361,9 +493,67 @@ export function parseReturnTransition(value: unknown): ShopOperatorReturnTransit
   ) return { dimension: "REFUND", target: value.target };
   if (
     value.dimension === "RETURN_RESOLUTION"
-    && (value.target === "RESTOCK" || value.target === "WRITE_OFF")
-  ) return { dimension: "RETURN_RESOLUTION", target: value.target };
+    && value.target === "RESOLVE_ITEMS"
+  ) return { dimension: "RETURN_RESOLUTION", target: "RESOLVE_ITEMS" };
   throw new ShopOrderError("INVALID_REQUEST", "The return transition target is invalid.");
+}
+
+function parseLineSkus(value: unknown): string[] {
+  if (!Array.isArray(value) || value.length < 1 || value.length > 10) {
+    throw new ShopOrderError("INVALID_REQUEST", "Choose at least one piece.");
+  }
+  const skus = value.map((item) => cleanText(item, 80, 3));
+  if (new Set(skus).size !== skus.length) {
+    throw new ShopOrderError("INVALID_REQUEST", "A returned piece was selected more than once.");
+  }
+  return skus.sort();
+}
+
+export function parseReturnLineDispositions(value: unknown, required: boolean): ShopReturnLineDisposition[] {
+  if (value === undefined || value === null) {
+    if (required) throw new ShopOrderError("INVALID_REQUEST", "Choose what happens to every returned piece.");
+    return [];
+  }
+  if (!Array.isArray(value) || value.length < 1 || value.length > 10) {
+    throw new ShopOrderError("INVALID_REQUEST", "The returned-piece decisions are invalid.");
+  }
+  const decisions = value.map((item) => {
+    if (
+      !isObject(item)
+      || !hasOnlyKeys(item, ["sku", "disposition"])
+      || (item.disposition !== "RESTOCK" && item.disposition !== "WRITE_OFF")
+    ) throw new ShopOrderError("INVALID_REQUEST", "A returned-piece decision is invalid.");
+    return {
+      sku: cleanText(item.sku, 80, 3),
+      disposition: item.disposition,
+    } as ShopReturnLineDisposition;
+  });
+  if (new Set(decisions.map((item) => item.sku)).size !== decisions.length) {
+    throw new ShopOrderError("INVALID_REQUEST", "A returned piece has more than one decision.");
+  }
+  return decisions.sort((left, right) => left.sku.localeCompare(right.sku));
+}
+
+const orderFilters = new Set<ShopOrderListFilter>([
+  "ALL", "ACTIVE", "COMPLETED", "CANCELLED", "RETURNS", "NEEDS_ACTION",
+]);
+
+export function parseOrderListQuery(searchParams: URLSearchParams): ShopOrderListQuery {
+  const page = Number(searchParams.get("page") ?? "1");
+  const limit = Number(searchParams.get("limit") ?? "20");
+  const rawFilter = (searchParams.get("filter") ?? "ALL").toUpperCase();
+  if (!Number.isSafeInteger(page) || page < 1 || page > 10_000) {
+    throw new ShopOrderError("INVALID_REQUEST", "The order page is invalid.");
+  }
+  if (!Number.isSafeInteger(limit) || limit < 1 || limit > 50) {
+    throw new ShopOrderError("INVALID_REQUEST", "The order page size is invalid.");
+  }
+  if (!orderFilters.has(rawFilter as ShopOrderListFilter)) {
+    throw new ShopOrderError("INVALID_REQUEST", "The order filter is invalid.");
+  }
+  const rawSearch = searchParams.get("search") ?? "";
+  const search = rawSearch ? cleanText(rawSearch, 100) : "";
+  return { page, limit, search, filter: rawFilter as ShopOrderListFilter };
 }
 
 export function parseRefundReference(value: unknown, required: boolean): string | null {

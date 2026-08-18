@@ -248,10 +248,35 @@ function physicalPieceAuthorityCtes(operatorSubject: string) {
           where publication.wardrobe_item_id = wardrobe.id
         )
     ),
-    piece_authority as (
+    base_piece_authority as (
       select * from public_pieces
       union all
       select * from private_pieces
+    ),
+    piece_authority as (
+      select
+        piece.piece_key,
+        piece.wardrobe_item_id,
+        piece.sku,
+        piece.title,
+        piece.category,
+        piece.colour,
+        piece.condition,
+        piece.size_label,
+        piece.availability,
+        piece.image_src,
+        coalesce(custody.location_key, piece.expected_location_key) as expected_location_key,
+        coalesce(custody.location_label, piece.expected_location_label) as expected_location_label,
+        coalesce(custody.custody, piece.expected_custody) as expected_custody,
+        piece.order_reference
+      from base_piece_authority as piece
+      left join studio_piece_custody as custody
+        on custody.operator_subject = ${operatorSubject}
+        and custody.piece_key = piece.piece_key
+        and piece.expected_custody = 'STUDIO'
+        and custody.custody = 'STUDIO'
+        and custody.availability = piece.availability
+        and custody.order_reference is not distinct from piece.order_reference
     )
   `;
 }

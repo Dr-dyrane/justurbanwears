@@ -23,6 +23,8 @@
     ".next",
     "tests",
     "worker",
-    "db/index.ts"
+    "db/index.ts",
+    "**/* 2.ts",
+    "**/* 2.tsx"
   ]
 }

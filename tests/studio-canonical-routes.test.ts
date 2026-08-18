@@ -25,15 +25,15 @@ test("the compatibility media archive stays inside the canonical namespace", () 
   const detail = readFileSync(`${root}/components/shoot/shoot-detail.tsx`, "utf8");
   assert.doesNotMatch(gallery + composer + detail, /href="\/shoots|push\(`\/shoots/);
   assert.match(gallery, /\/studio\/media\/new/);
-  assert.match(composer, /\/studio\/media\/\$\{shootId\}/);
+  assert.match(composer, /generated \? `\/studio\/media\/\$\{generated\.id\}`/);
   assert.match(detail, /Return to Media/);
 });
 
 test("Studio shell treats Media as canonical on desktop and mobile", () => {
   const shell = readFileSync(`${root}/components/studio/app-shell.tsx`, "utf8");
   assert.match(shell, /pathname\.startsWith\("\/studio\/media"\)/);
-  assert.match(shell, /href="\/studio\/media"/);
-  assert.match(shell, /aria-label="Media lab"/);
+  assert.match(shell, /href: "\/studio\/media"/);
+  assert.match(shell, /label: "Media archive"/);
   assert.match(shell, /aria-label="Media views"/);
   assert.doesNotMatch(shell, /pathname\.startsWith\("\/shoots"\)|href="\/shoots"|>Shoots</);
 });

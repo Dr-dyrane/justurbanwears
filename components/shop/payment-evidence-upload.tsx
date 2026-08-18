@@ -5,6 +5,7 @@ import { useRef, useState, type FormEvent } from "react";
 import { authSignInPath } from "../../lib/auth/return-to";
 import { mapConnectedOrderFailure } from "../../lib/shop/connected-order-client";
 import type { ShopServerOrder } from "../../lib/shop/server-order/types";
+import type { ShopBankTransferInstructions } from "../../lib/shop/server-order/commerce-guidance";
 
 const MAX_BYTES = 5_000_000;
 const acceptedTypes = new Set(["image/jpeg", "image/png", "image/webp", "application/pdf"]);
@@ -15,9 +16,11 @@ async function sha256(file: File): Promise<string> {
 }
 
 export function PaymentEvidenceUpload({
+  paymentInstructions,
   reference,
   onReceived,
 }: {
+  paymentInstructions: ShopBankTransferInstructions;
   reference: string;
   onReceived(order: ShopServerOrder): void;
 }) {
@@ -140,7 +143,10 @@ export function PaymentEvidenceUpload({
           <h2 id="payment-evidence-title">Send your receipt.</h2>
         </div>
       </div>
-      <p>Upload the receipt from your bank. Lulu will check it and confirm when the payment arrives.</p>
+      <p>
+        Transfer to <strong>{paymentInstructions.bankName} · {paymentInstructions.accountNumber}</strong>,
+        {" "}account name <strong>{paymentInstructions.accountName}</strong>. Then upload the receipt from your bank.
+      </p>
       <form aria-busy={pending} onSubmit={submit}>
         <label>
           <span>Image or PDF · 5 MB maximum</span>

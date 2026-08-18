@@ -1,10 +1,19 @@
-import { createOrReuseIntake } from "../../../../lib/server/studio-intake-repository";
+import { createOrReuseIntake, listRecoverableIntakes } from "../../../../lib/server/studio-intake-repository";
 import { requireStudioOperator } from "../../../../lib/server/studio-operator";
 import { createIntakeSchema } from "../../../../lib/studio/engine/contracts";
 import { engineErrorResponse } from "../../../../lib/studio/engine/errors";
 import { engineJson, parseEngineJson } from "../../../../lib/studio/engine/http";
 
 export const dynamic = "force-dynamic";
+
+export async function GET(): Promise<Response> {
+  try {
+    const operator = await requireStudioOperator();
+    return engineJson({ intakes: await listRecoverableIntakes(operator.subject) });
+  } catch (error) {
+    return engineErrorResponse(error);
+  }
+}
 
 export async function POST(request: Request): Promise<Response> {
   try {

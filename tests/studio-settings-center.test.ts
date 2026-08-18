@@ -17,7 +17,7 @@ test("Studio exposes one global profile and settings centre", () => {
   assert.match(settings, /PwaInstallControl/);
   assert.match(settings, /authClient\.signOut\(\)/);
   assert.match(settings, /AI intake/);
-  assert.match(settings, /Saved on this device/);
+  assert.match(settings, /Preferences stay on this device/);
   assert.match(operator, /role: membership\.role/);
 });
 

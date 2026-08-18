@@ -15,6 +15,7 @@ export interface IntakeSnapshot {
   sourceMode: IntakeSourceMode;
   state: string;
   version: number;
+  description?: string | null;
   facts?: Partial<IntakeFacts>;
   assets: Array<{
     id: string;
@@ -34,6 +35,8 @@ export interface IntakeSnapshot {
 export type IntakeDecision = "KEEP" | "EDIT" | "REJECT" | "RETRY";
 
 export interface GarmentIntakeClient {
+  listActiveIntakes?(): Promise<{ intakes: IntakeSnapshot[] }>;
+  getIntake?(intakeId: string): Promise<{ intake: IntakeSnapshot }>;
   createIntake(sourceMode: IntakeSourceMode, description?: string): Promise<{ intake: IntakeSnapshot }>;
   addSource(intakeId: string, file: File): Promise<{ intake: IntakeSnapshot }>;
   analyzeIntake(intake: IntakeSnapshot, description?: string): Promise<{ intake: IntakeSnapshot }>;
@@ -44,6 +47,7 @@ export interface GarmentIntakeClient {
     wardrobeItem: { id: string; state: "DRAFT" };
   }>;
   candidateUrl(intake: IntakeSnapshot): string | undefined;
+  sourceUrl?(intake: IntakeSnapshot): string | undefined;
 }
 
 interface EngineErrorBody {
@@ -106,6 +110,14 @@ export async function createIntake(sourceMode: IntakeSourceMode, description?: s
   });
 }
 
+export async function listActiveIntakes() {
+  return engineRequest<{ intakes: IntakeSnapshot[] }>("/api/studio/intakes");
+}
+
+export async function getIntake(intakeId: string) {
+  return engineRequest<{ intake: IntakeSnapshot }>(`/api/studio/intakes/${intakeId}`);
+}
+
 export async function addSource(intakeId: string, file: File) {
   const body = new FormData();
   body.set("file", file);
@@ -151,7 +163,14 @@ export function candidateUrl(intake: IntakeSnapshot) {
     : undefined;
 }
 
+export function sourceUrl(intake: IntakeSnapshot) {
+  const source = intake.assets.find((asset) => asset.role === "SOURCE");
+  return source ? `/api/studio/intakes/${intake.id}/assets/${source.id}` : undefined;
+}
+
 export const studioEngineIntakeClient: GarmentIntakeClient = {
+  listActiveIntakes,
+  getIntake,
   createIntake,
   addSource,
   analyzeIntake,
@@ -159,4 +178,5 @@ export const studioEngineIntakeClient: GarmentIntakeClient = {
   decideIntake,
   commitIntake,
   candidateUrl,
+  sourceUrl,
 };

@@ -1,83 +1,92 @@
 "use client";
 
+/* Protected Studio media uses runtime asset URLs. */
+/* eslint-disable @next/next/no-img-element */
+
 import { useParams } from "next/navigation";
-import { useState } from "react";
-import { REJECTION_REASONS, type ReviewDecision } from "../../lib/data/types";
+import { useId, useState } from "react";
+import { Check, CircleAlert, RotateCcw, Shirt } from "lucide-react";
 import { StudioLink as Link } from "../studio/atoms/studio-link";
 import { useStudio } from "../studio/studio-provider";
-import { VisualAsset } from "../studio/visual-asset";
 import { StatusPill } from "../ui/status-pill";
+
+type ApiFailure = { error?: { message?: string; recovery?: string } };
+
+async function responseBody<T>(response: Response): Promise<T> {
+  const body = await response.json().catch(() => ({})) as T | ApiFailure;
+  if (response.ok) return body as T;
+  const failure = body as ApiFailure;
+  throw new Error([failure.error?.message, failure.error?.recovery].filter(Boolean).join(" ") || "That decision could not be saved.");
+}
+
+function label(value: string) {
+  return value.toLowerCase().replaceAll("_", " ");
+}
 
 export function ShootDetail() {
   const params = useParams<{ id: string }>();
-  const { shoots, garments, reviewGeneration, setHero } = useStudio();
-  const shoot = shoots.find((item) => item.id === params.id);
-  const [selectedId, setSelectedId] = useState(shoot?.generations[0]?.id ?? "");
-  const [decision, setDecision] = useState<ReviewDecision>("PENDING");
-  const [reasons, setReasons] = useState<string[]>([]);
+  const { authority } = useStudio();
+  const media = authority.snapshot?.media.find((item) => item.id === params.id);
   const [note, setNote] = useState("");
-  if (!shoot) return <div className="empty-state"><h1>Shoot not found</h1><Link href="/studio/media">Return to Media</Link></div>;
-  const garment = garments.find((item) => item.id === shoot.garmentId)!;
-  const selected = shoot.generations.find((generation) => generation.id === selectedId) ?? shoot.generations[0];
+  const [truthConfirmed, setTruthConfirmed] = useState(false);
+  const [pending, setPending] = useState(false);
+  const [receipt, setReceipt] = useState("");
+  const [error, setError] = useState("");
+  const truthConfirmationId = useId();
 
-  function chooseGeneration(id: string) {
-    setSelectedId(id);
-    const generation = shoot!.generations.find((item) => item.id === id)!;
-    setDecision(generation.review.decision);
-    setReasons(generation.review.reasons);
-    setNote(generation.review.note ?? "");
-  }
+  if (authority.status === "idle" || authority.status === "loading") return <div className="studio-loading" role="status">Opening media…</div>;
+  if (!media) return <div className="empty-state"><h1>Media not found</h1><Link href="/studio/media">Return to Media</Link></div>;
+  const completion = ["GARMENT_FRONT", "GARMENT_BACK", "FABRIC_DETAIL"].includes(media.operation);
+  const canDecide = media.state === "COMPLETE";
+  const canRetry = completion && ["COMPLETE", "FAILED", "REJECTED"].includes(media.state);
 
-  function toggleReason(reason: string) {
-    setReasons((current) => current.includes(reason) ? current.filter((item) => item !== reason) : [...current, reason]);
-  }
-
-  function saveReview() {
-    reviewGeneration(selected.id, decision, reasons, note);
+  async function decide(decision: "KEEP" | "REJECT" | "RETRY") {
+    if (!media) return;
+    setPending(true);
+    setError("");
+    setReceipt("");
+    try {
+      const path = completion
+        ? `/api/studio/wardrobe/${media.wardrobeItemId}/completions/${media.id}/decision`
+        : `/api/studio/wardrobe/${media.wardrobeItemId}/wear/${media.id}/decision`;
+      const body = completion
+        ? { decision, correction: decision === "RETRY" ? note.trim() || undefined : undefined, truthConfirmed: decision === "KEEP" ? truthConfirmed : undefined }
+        : { decision, note: note.trim() || undefined };
+      const response = await fetch(path, {
+        body: JSON.stringify(body),
+        credentials: "same-origin",
+        headers: { accept: "application/json", "content-type": "application/json" },
+        method: "POST",
+      });
+      await responseBody<unknown>(response);
+      setReceipt(decision === "KEEP" ? "View kept in the private garment record." : decision === "REJECT" ? "View rejected. Its history remains." : "One corrected retry is running.");
+      await authority.refresh();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "That decision could not be saved.");
+    } finally {
+      setPending(false);
+    }
   }
 
   return (
     <div className="review-page">
-      <div className="detail-topbar">
-        <Link className="back-link" href="/studio/media">← Media</Link>
-        <div className="shoot-titlebar"><span>{shoot.id}</span><strong>{garment.title}</strong><StatusPill status="MOCK" /></div>
-        <Link className="button button-secondary" href="/studio/media/new">New shoot</Link>
-      </div>
+      <div className="detail-topbar"><Link className="back-link" href="/studio/media">← Media</Link><div className="shoot-titlebar"><span>{media.sku ?? "Private piece"}</span><strong>{media.title}</strong><StatusPill status={media.state} /></div><Link className="button button-secondary" href={`/studio/wardrobe/${media.wardrobeItemId}`}>Open piece</Link></div>
       <div className="review-workspace">
-        <section className="review-stage">
-          <div className="stage-main"><VisualAsset kind="generation" variant={selected.visual} label={`${shoot.id} ${selected.label}`} /></div>
-          <div className="frame-filmstrip" aria-label="Generated frames">
-            {shoot.generations.map((generation) => <button className={selected.id === generation.id ? "film-frame active" : "film-frame"} onClick={() => chooseGeneration(generation.id)} key={generation.id}><VisualAsset kind="generation" variant={generation.visual} label={generation.label} ratio="square" quiet /><span>{generation.label}</span><StatusPill status={generation.review.decision} /></button>)}
-          </div>
-        </section>
-
-        <aside className="review-panel">
-          <div className="review-scroll">
-            <p className="eyebrow">Compare & decide</p>
-            <h1>{selected.label}</h1>
-            <div className="score-pair">
-              <div><span>Identity match</span><strong>{selected.identityMatch}</strong><span className="score-track"><i style={{ width: `${selected.identityMatch}%` }} /></span></div>
-              <div><span>Garment match</span><strong>{selected.garmentMatch}</strong><span className="score-track"><i style={{ width: `${selected.garmentMatch}%` }} /></span></div>
-            </div>
-            <div className="compare-pair">
-              <div><VisualAsset kind="identity" variant="plum" label="Lulu model" ratio="square" quiet /><span>Identity authority</span></div>
-              <div><VisualAsset kind="garment" variant={garment.visual} label={garment.sku} ratio="square" quiet /><span>Garment authority</span></div>
-            </div>
-            <fieldset className="decision-group">
-              <legend>Human decision</legend>
-              {(["APPROVED", "NEEDS RETRY", "REJECTED"] as ReviewDecision[]).map((item) => <label className={decision === item ? "decision-option active" : "decision-option"} key={item}><input type="radio" name="decision" checked={decision === item} onChange={() => setDecision(item)} /><span className="decision-dot" />{item.toLowerCase().replace(" ", " ")}</label>)}
-            </fieldset>
-            {decision !== "APPROVED" ? <div className="reason-picker"><strong>Reason</strong><div>{REJECTION_REASONS.map((reason) => <button className={reasons.includes(reason) ? "reason-chip active" : "reason-chip"} type="button" onClick={() => toggleReason(reason)} key={reason}>{reason}</button>)}</div></div> : null}
-            <label className="review-note"><span>Review note</span><textarea value={note} onChange={(event) => setNote(event.target.value)} rows={3} placeholder="Optional comparison note…" /></label>
-            <button className="button button-primary button-full" onClick={saveReview}>Save decision</button>
-            {decision === "APPROVED" ? <button className="button button-secondary button-full" onClick={() => setHero(selected.id)}>Set as garment hero</button> : null}
-          </div>
-        </aside>
+        <section className="review-stage"><div className="stage-main">{media.outputUrl ? <img alt={`${media.title}, ${label(media.operation)} review`} className="visual-asset ratio-portrait" height={1280} src={media.outputUrl} style={{ objectFit: "contain" }} width={1024} /> : <div className="empty-authority"><Shirt aria-hidden="true" size={52} /><span>{media.state === "FAILED" ? "View failed" : "View is building"}</span></div>}</div></section>
+        <aside className="review-panel"><div className="review-scroll">
+          <p className="eyebrow">Review</p><h1>{label(media.operation)}</h1>
+          <div className="compare-pair"><div><span className="empty-authority"><Shirt aria-hidden="true" size={26} /></span><span>Garment authority</span></div><div><span className="empty-authority">{media.modelName ?? "AI"}</span><span>{media.modelName ? "Model authority" : "Generated view"}</span></div></div>
+          <dl className="studio-model-facts"><div><dt>Piece</dt><dd>{media.title}</dd></div><div><dt>State</dt><dd>{label(media.state)}</dd></div><div><dt>Created</dt><dd>{new Intl.DateTimeFormat("en-NG", { dateStyle: "medium", timeStyle: "short" }).format(new Date(media.createdAt))}</dd></div></dl>
+          {canDecide && completion ? <label className="studio-settings-switch" htmlFor={truthConfirmationId}><span className="sr-only">Matches the real garment</span><span><strong>Matches the real garment</strong><small>Unseen construction stays unverified.</small></span><input checked={truthConfirmed} id={truthConfirmationId} onChange={(event) => setTruthConfirmed(event.target.checked)} type="checkbox" /><i aria-hidden="true"><b /></i></label> : null}
+          {(canDecide || canRetry) ? <label className="review-note"><span>{canRetry ? "Correction or note" : "Review note"}</span><textarea maxLength={500} onChange={(event) => setNote(event.target.value)} rows={3} value={note} /></label> : null}
+          {canDecide ? <div className="studio-inventory-decision-grid"><button className="button button-primary button-full" disabled={pending || (completion && !truthConfirmed)} onClick={() => void decide("KEEP")} type="button"><Check aria-hidden="true" size={17} />Keep view</button><button className="button button-secondary button-full" disabled={pending} onClick={() => void decide("REJECT")} type="button">Reject</button></div> : null}
+          {canRetry ? <button className="button button-secondary button-full" disabled={pending} onClick={() => void decide("RETRY")} type="button"><RotateCcw aria-hidden="true" size={17} />Retry once</button> : null}
+          {!completion && ["FAILED", "REJECTED"].includes(media.state) ? <Link className="button button-primary button-full" href={`/studio/wardrobe/${media.wardrobeItemId}`}>Retry in Piece</Link> : null}
+          {receipt ? <div className="studio-quiet-empty" aria-live="polite" role="status"><Check aria-hidden="true" size={20} /><div><strong>Saved</strong><p>{receipt}</p></div></div> : null}
+          {error ? <div className="studio-quiet-empty" role="alert"><CircleAlert aria-hidden="true" size={20} /><div><strong>Couldn’t save</strong><p>{error}</p></div></div> : null}
+        </div></aside>
       </div>
-      <section className="shoot-record">
-        <div><p className="eyebrow">Reproducibility</p><h2>Shoot record</h2></div>
-        <dl><div><dt>Identity</dt><dd>{shoot.identityVersion}</dd></div><div><dt>Garment</dt><dd>{garment.sku}</dd></div><div><dt>Preset</dt><dd>{shoot.preset}</dd></div><div><dt>Pose</dt><dd>{shoot.pose}</dd></div><div><dt>Crop</dt><dd>{shoot.crop}</dd></div><div><dt>Engine</dt><dd>{shoot.generationEngine}</dd></div><div><dt>Created</dt><dd>{shoot.createdAt}</dd></div><div><dt>Output</dt><dd>{shoot.outputFormat}</dd></div></dl>
-      </section>
+      <section className="shoot-record"><div><p className="eyebrow">Record</p><h2>Generation history</h2></div><dl><div><dt>Garment</dt><dd>{media.sku ?? media.wardrobeItemId}</dd></div><div><dt>Operation</dt><dd>{label(media.operation)}</dd></div><div><dt>Model</dt><dd>{media.modelName ?? "No model"}</dd></div><div><dt>State</dt><dd>{label(media.state)}</dd></div><div><dt>Cost</dt><dd>{media.costUsd ? `$${media.costUsd}` : "Not recorded"}</dd></div><div><dt>Updated</dt><dd>{new Date(media.updatedAt).toLocaleString("en-NG")}</dd></div></dl></section>
     </div>
   );
 }

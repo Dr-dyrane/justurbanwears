@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ShopCheckout } from "../../../components/shop/shop-checkout";
+import { getShopCommerceGuidance } from "../../../lib/shop/server-order/commerce-guidance";
 
 export const metadata: Metadata = {
   title: "Checkout",
@@ -9,6 +10,7 @@ export const metadata: Metadata = {
 export default function CheckoutPage() {
   return (
     <ShopCheckout
+      commerceGuidance={getShopCommerceGuidance()}
       mapboxAccessToken={process.env.NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN ?? ""}
     />
   );

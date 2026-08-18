@@ -9,8 +9,6 @@ import {
   PackageCheck,
   RotateCcw,
   Shirt,
-  Sparkles,
-  Users,
 } from "lucide-react";
 import { LifecycleBadge } from "./atoms/lifecycle-badge";
 import { StudioLink as Link } from "./atoms/studio-link";
@@ -19,28 +17,35 @@ import { useStudio } from "./studio-provider";
 
 export function StudioHome() {
   const {
-    models,
     garments,
     listings,
-    inventory,
-    orders,
-    returns,
+    authority,
     hydration,
-    persistence,
     scenario,
   } = useStudio();
 
-  const modelDrafts = models.filter((model) => model.state === "DRAFT").length;
-  const garmentDrafts = garments.filter((garment) => garment.state === "DRAFT").length;
-  const listingWork = listings.filter((listing) => ["DRAFT", "READY"].includes(listing.state)).length;
-  const orderWork = orders.filter((order) => order.state === "RESERVED").length;
-  const returnWork = returns.filter((returnCase) => returnCase.state === "DRAFT").length;
-  const workCount = modelDrafts + garmentDrafts + listingWork + orderWork + returnWork;
-  const liveListings = listings.filter((listing) => ["PUBLISHED", "RESERVED"].includes(listing.state)).length;
-  const availableUnits = inventory.reduce((total, record) => total + Math.max(0, record.onHand - record.reserved), 0);
-  const readyModels = models.filter((model) => model.state !== "DRAFT").length;
+  const connected = authority.snapshot;
+  const garmentDrafts = connected
+    ? connected.pieces.filter((piece) => piece.availability === "PRIVATE").length
+    : garments.filter((garment) => garment.state === "DRAFT").length;
+  const orderWork = connected
+    ? connected.orders.filter((order) => order.allowedTransitions.length > 0 && !order.return).length
+    : 0;
+  const returnWork = connected
+    ? connected.orders.filter((order) => Boolean(order.return && order.allowedReturnTransitions.length)).length
+    : 0;
+  const workCount = garmentDrafts + orderWork + returnWork;
+  const liveListings = connected
+    ? connected.pieces.filter((piece) => piece.sku && piece.availability !== "ARCHIVED").length
+    : listings.filter((listing) => ["PUBLISHED", "RESERVED"].includes(listing.state)).length;
+  const availableUnits = connected
+    ? connected.pieces.filter((piece) => piece.availability === "AVAILABLE").length
+    : 0;
+  const readyModels = connected
+    ? connected.models.filter((model) => model.state === "READY").length
+    : 0;
 
-  if (hydration === "idle" || hydration === "restoring") {
+  if (hydration === "idle" || hydration === "restoring" || (!scenario && (authority.status === "idle" || authority.status === "loading"))) {
     return <div className="studio-loading" role="status">Opening Lulu Studio…</div>;
   }
 
@@ -70,18 +75,6 @@ export function StudioHome() {
       tone: "active",
     },
     {
-      action: "Finish listings",
-      count: listingWork,
-      detail: "Clear the remaining gate and make each piece ready for the Shop.",
-      eyebrow: "Publishing",
-      hero: "Start with the Shop preview.",
-      href: "/studio/wardrobe?view=publishing",
-      icon: Sparkles,
-      key: "publishing",
-      title: `Finish ${listingWork} listing${listingWork === 1 ? "" : "s"}.`,
-      tone: "active",
-    },
-    {
       action: "Complete intake",
       count: garmentDrafts,
       detail: "Add the missing photos or details before the piece enters the wardrobe.",
@@ -91,18 +84,6 @@ export function StudioHome() {
       icon: Shirt,
       key: "garments",
       title: `Complete ${garmentDrafts} garment draft${garmentDrafts === 1 ? "" : "s"}.`,
-      tone: "active",
-    },
-    {
-      action: "Finish profiles",
-      count: modelDrafts,
-      detail: "Complete identity and styling readiness before the next try-on.",
-      eyebrow: "Model readiness",
-      hero: "Start with the model.",
-      href: "/studio/models",
-      icon: Users,
-      key: "models",
-      title: `Finish ${modelDrafts} model profile${modelDrafts === 1 ? "" : "s"}.`,
       tone: "active",
     },
   ].filter((task) => task.count > 0);
@@ -132,16 +113,24 @@ export function StudioHome() {
           {!workCount ? <p>No work is waiting.</p> : null}
         </div>
         <div className="studio-atelier-hero-actions">
-          <div className={`studio-atelier-save-state ${!scenario && persistence === "available" ? "is-saved" : "is-memory"}`} role="status">
+          <div className={`studio-atelier-save-state ${!scenario && authority.status === "ready" ? "is-saved" : "is-memory"}`} role="status">
             {scenario
               ? <><RotateCcw aria-hidden="true" size={15} />Simulator · not saved</>
-              : persistence === "available"
-              ? <><CheckCircle2 aria-hidden="true" size={15} />Workspace saved</>
-              : <><RotateCcw aria-hidden="true" size={15} />Temporary session</>}
+              : authority.status === "ready"
+              ? <><CheckCircle2 aria-hidden="true" size={15} />Live state</>
+              : <><RotateCcw aria-hidden="true" size={15} />Live check paused</>}
           </div>
           <Link className="button button-primary" href="/studio/wardrobe?intake=1">Intake garment</Link>
         </div>
       </header>
+
+      {!scenario && authority.status === "error" ? (
+        <div className="studio-quiet-empty" role="alert">
+          <RotateCcw aria-hidden="true" size={22} />
+          <div><strong>Live state unavailable</strong><p>{authority.error}</p></div>
+          <button className="button button-secondary" onClick={() => void authority.refresh()} type="button">Try again</button>
+        </div>
+      ) : null}
 
       <section className="studio-atelier-attention" aria-labelledby="studio-attention-title">
         <div className="studio-atelier-section-heading">
@@ -227,7 +216,9 @@ export function StudioHome() {
           <div className="studio-recent-list">
             {recentGarments.map((garment) => {
               const listing = listings.find((candidate) => candidate.garmentId === garment.id);
-              const stock = inventory.find((candidate) => candidate.garmentId === garment.id);
+              const stock = connected?.pieces.find((piece) => (
+                piece.wardrobeItemId === garment.privateWardrobeItemId || piece.sku === garment.sku
+              ));
               const cover = studioGarmentCover(garment, listing);
               return (
                 <Link className="studio-recent-row" href={`/studio/wardrobe/${encodeURIComponent(garment.privateWardrobeItemId ?? garment.id)}`} key={garment.id}>
@@ -237,7 +228,7 @@ export function StudioHome() {
                   <span className="studio-recent-copy">
                     <small>{garment.sku} · {garment.category}</small>
                     <strong>{garment.title}</strong>
-                    <em>{stock ? `${Math.max(0, stock.onHand - stock.reserved)} available` : "No stock record"} · {garment.sizeLabel}</em>
+                    <em>{stock ? `${stock.activeHold ? "Held" : stock.availability.toLowerCase()} · ${stock.expectedLocationLabel}` : "Private draft"} · {garment.sizeLabel}</em>
                   </span>
                   <span className="studio-recent-state">
                     <LifecycleBadge state={listing?.state ?? garment.state} />

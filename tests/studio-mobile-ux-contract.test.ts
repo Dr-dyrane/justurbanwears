@@ -62,7 +62,8 @@ test("task-first records, garments, and inventory use approved media", () => {
   assert.match(home, /studio-attention-primary/);
   assert.match(home, /studio-recent-row/);
   assert.match(wardrobe, /studioGarmentCover/);
-  assert.match(operations, /studioGarmentCover/);
+  assert.match(operations, /piece\.imageSrc/);
+  assert.match(operations, /inventory view/);
   assert.match(atelierCss, /\.studio-attention-layout/);
   assert.match(atelierCss, /\.studio-recent-row/);
   assert.match(atelierCss, /\.studio-garment-grid/);
@@ -96,16 +97,16 @@ test("model segmented content can render without the portrait obstruction", () =
   assert.match(models, /activeView === "profile" \? <div className=/);
   assert.match(models, /is-panel-only/);
   assert.match(models, /pending=\{viewPending\}/);
-  assert.match(models, /studio-model-receipt-visual/);
-  assert.match(models, /studio-receipt-copy/);
+  assert.match(models, /studio-model-approved-image/);
+  assert.match(models, /studio-model-profile/);
   assert.match(atelierCss, /\.studio-model-layout/);
   assert.match(atelierCss, /\.studio-model-list[\s\S]*?scroll-snap-type: x proximity/);
 });
 
 test("operator copy and recovery stay action-led", () => {
   assert.match(home, /scenario[\s\S]*?Simulator · not saved/);
-  assert.match(home, /!scenario && persistence === "available"/);
-  assert.match(home, /Workspace saved/);
+  assert.match(home, /!scenario && authority\.status === "ready"/);
+  assert.match(home, /Live state/);
   assert.match(home, /studio\/wardrobe\/\$\{encodeURIComponent/);
   assert.match(directCaptures, /studio-magic-capture-shortcut/);
   assert.match(directCaptures, /Magic Wand/);
@@ -127,11 +128,12 @@ test("operator copy and recovery stay action-led", () => {
   assert.doesNotMatch(wardrobe, /Public projection|catalogue state|model anchor|Listing readiness/);
   assert.match(wardrobe, /Shop preview/);
   assert.match(wardrobe, /Live in Shop/);
-  assert.match(operations, /Manage stock and returns\./);
-  assert.match(operations, /summaryItems/);
+  assert.match(operations, /Inventory, holds, orders and returns share one live record\./);
+  assert.match(operations, /summary/);
   assert.match(operations, /studio-operation-card-trigger/);
-  assert.match(operations, /setPendingInventoryDecision\("WRITE_OFF"\)/);
-  assert.doesNotMatch(operations, /onClick=\{\(\) => studio\.disposeReturn/);
+  assert.match(operations, /authority\.createHold/);
+  assert.match(operations, /authority\.recordLocation/);
+  assert.doesNotMatch(operations, /studio\.reserveOrder|studio\.disposeReturn/);
   assert.doesNotMatch(operations, /Listing-linked stock|named stock disposition/i);
   assert.match(css, /padding: 30px 16px calc\(104px \+ env\(safe-area-inset-bottom, 0px\)\)/);
   assert.match(css, /\.studio-lifecycle-step \+ \.studio-lifecycle-step::before \{[\s\S]*?var\(--studio-on-cocoa\) 16%/);

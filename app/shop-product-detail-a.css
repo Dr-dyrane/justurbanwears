@@ -6,8 +6,8 @@
 
 .shop-product-page .shop-product-topline {
   align-items: center;
-  border-bottom: 1px solid color-mix(in srgb, var(--text, #241814) 13%, transparent);
-  color: var(--text-soft);
+  border-bottom: 1px solid color-mix(in srgb, var(--shop-ink, #241814) 13%, transparent);
+  color: var(--shop-muted);
   display: flex;
   font-family: var(--font-code);
   font-size: 12px;
@@ -98,7 +98,7 @@
 
 .shop-product-page .shop-media-controls {
   align-items: center;
-  color: var(--text-soft);
+  color: var(--shop-muted);
   display: flex;
   font-family: var(--font-code);
   justify-content: space-between;
@@ -166,7 +166,7 @@
 }
 
 .shop-product-page .shop-detail-price {
-  color: var(--text);
+  color: var(--shop-ink);
   font-family: var(--font-code);
   font-size: clamp(18px, 1.7vw, 24px);
   font-weight: 700;
@@ -175,7 +175,7 @@
 }
 
 .shop-product-page .shop-detail-note {
-  color: var(--text-soft);
+  color: var(--shop-muted);
   font-family: var(--font-display);
   font-size: clamp(20px, 2vw, 29px);
   letter-spacing: -0.026em;

@@ -1,16 +1,22 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import type { ShopOrderStatus } from "../domain/entities";
+import { trackingUrlForOrder } from "./commerce-guidance";
 import {
   PAYMENT_EVIDENCE_RECEIVED_NOTICE,
   PAYMENT_EVIDENCE_REVIEWED_NOTICE,
   ShopOrderError,
   type AuthorizePaymentEvidenceCommand,
   type CompletePaymentEvidenceCommand,
+  type CreateAssistedShopOrderCommand,
   type CreateShopOrderCommand,
   type PaymentEvidenceAuthorization,
+  type MutateCustomerOrderCommand,
   type RequestShopReturnCommand,
   type ShopNotificationOutboxMessage,
+  type ShopCustomerActor,
   type ShopOrderAuditEvent,
+  type ShopOrderListQuery,
+  type ShopOrderPage,
   type ShopOperatorReturnTransition,
   type ShopOperatorTransition,
   type ShopOrderStore,
@@ -82,8 +88,22 @@ function projectedStatus(order: ShopServerOrder): ShopOrderStatus {
 }
 
 function allowedTransitionsFor(order: ShopServerOrder, now: Date): ShopOperatorTransition[] {
-  if (order.lifecycleStatus !== "ACTIVE") return [];
   const transitions: ShopOperatorTransition[] = [];
+  if (order.fundsConfirmationStatus === "CONFIRMED") {
+    transitions.push({ dimension: "FUNDS_CONFIRMATION", target: "CORRECTED" });
+  }
+  if (order.lifecycleStatus !== "ACTIVE") return transitions;
+  if (order.cancellationRecovery?.status === "PENDING") {
+    transitions.push(
+      { dimension: "CANCELLATION_REFUND", target: "COMPLETED" },
+      { dimension: "CANCELLATION_REFUND", target: "FAILED" },
+    );
+    return transitions;
+  }
+  if (order.cancellationRecovery?.status === "FAILED") {
+    transitions.push({ dimension: "CANCELLATION_REFUND", target: "PENDING" });
+    return transitions;
+  }
   if (
     order.fulfillmentStatus === "NOT_STARTED"
     && order.fundsConfirmationStatus === "UNCONFIRMED"
@@ -121,15 +141,19 @@ function allowedTransitionsFor(order: ShopServerOrder, now: Date): ShopOperatorT
     order.paymentReviewStatus === "REVIEW_APPROVED"
     && order.fundsConfirmationStatus === "CONFIRMED"
   ) {
+    if (order.fulfillment.kind === "PICKUP" && order.fulfillmentStatus === "READY_FOR_HANDOFF") {
+      transitions.push({ dimension: "PICKUP", target: "SCHEDULED" });
+    }
     if (order.fulfillmentStatus === "NOT_STARTED") {
       transitions.push({ dimension: "FULFILLMENT", target: "QUALITY_CHECK" });
     } else if (order.fulfillmentStatus === "QUALITY_CHECK") {
       transitions.push({ dimension: "FULFILLMENT", target: "READY_FOR_HANDOFF" });
     } else if (order.fulfillmentStatus === "READY_FOR_HANDOFF") {
-      transitions.push({
-        dimension: "FULFILLMENT",
-        target: order.fulfillment.kind === "DELIVERY" ? "IN_TRANSIT" : "DELIVERED",
-      });
+      if (order.fulfillment.kind === "DELIVERY") {
+        transitions.push({ dimension: "FULFILLMENT", target: "IN_TRANSIT" });
+      } else if (order.fulfillmentFacts.pickupAppointment) {
+        transitions.push({ dimension: "FULFILLMENT", target: "DELIVERED" });
+      }
     } else if (order.fulfillmentStatus === "IN_TRANSIT") {
       transitions.push({ dimension: "FULFILLMENT", target: "DELIVERED" });
     }
@@ -159,10 +183,7 @@ function allowedReturnTransitionsFor(order: ShopServerOrder): ShopOperatorReturn
       ];
     }
     if (order.return.refundStatus === "COMPLETED") {
-      return [
-        { dimension: "RETURN_RESOLUTION", target: "RESTOCK" },
-        { dimension: "RETURN_RESOLUTION", target: "WRITE_OFF" },
-      ];
+      return [{ dimension: "RETURN_RESOLUTION", target: "RESOLVE_ITEMS" }];
     }
   }
   return [];
@@ -174,6 +195,45 @@ function customerCanRequestReturn(order: ShopServerOrder, now: Date): boolean {
     && !order.return
     && Boolean(order.returnEligibleUntil)
     && new Date(order.returnEligibleUntil!) >= now;
+}
+
+function customerCanRequestPaidCancellation(order: ShopServerOrder): boolean {
+  return order.lifecycleStatus === "ACTIVE"
+    && order.fundsConfirmationStatus === "CONFIRMED"
+    && order.fulfillmentStatus !== "IN_TRANSIT"
+    && order.fulfillmentStatus !== "DELIVERED"
+    && !order.cancellationRecovery;
+}
+
+function deliveryFor(fulfillment: ShopServerOrder["fulfillment"]) {
+  return fulfillment.optionId === "lagos"
+    ? { fee: 2500, label: "Lagos delivery", estimate: "1–3 working days" }
+    : fulfillment.optionId === "nationwide"
+      ? { fee: 4500, label: "Nationwide delivery", estimate: "3–7 working days" }
+      : { fee: 0, label: "Studio pickup", estimate: "After payment" };
+}
+
+function orderMatchesQuery(order: ShopServerOrder, query: ShopOrderListQuery): boolean {
+  const search = query.search.toLowerCase();
+  const matchesSearch = !search || [
+    order.reference,
+    order.contact.name,
+    order.contact.email,
+    order.contact.phone,
+    ...order.lines.flatMap((line) => [line.name, line.sku]),
+  ].some((value) => value.toLowerCase().includes(search));
+  if (!matchesSearch) return false;
+  if (query.filter === "ALL") return true;
+  if (query.filter === "ACTIVE") return order.lifecycleStatus === "ACTIVE";
+  if (query.filter === "COMPLETED") return order.lifecycleStatus === "COMPLETED";
+  if (query.filter === "CANCELLED") return order.lifecycleStatus === "CANCELLED" || order.lifecycleStatus === "EXPIRED";
+  if (query.filter === "RETURNS") return Boolean(order.return);
+  return Boolean(
+    order.allowedTransitions.length
+    || order.allowedReturnTransitions.length
+    || order.cancellationRecovery?.status === "PENDING"
+    || order.cancellationRecovery?.status === "FAILED",
+  );
 }
 
 export class MemoryShopOrderStore implements ShopOrderStore {
@@ -241,6 +301,8 @@ export class MemoryShopOrderStore implements ShopOrderStore {
       id,
       orderId: order.databaseId,
       customerId: order.customerId,
+      recipientEmail: order.contact.email,
+      recipientName: order.contact.name,
       topic,
       dedupeKey,
       payload: copy(payload),
@@ -257,12 +319,34 @@ export class MemoryShopOrderStore implements ShopOrderStore {
     this.outboxByDedupe.set(dedupeKey, id);
   }
 
+  claimCustomerIdentity(actor: ShopCustomerActor): Promise<void> {
+    return this.transact(() => {
+      if (this.customersBySubject.has(actor.subject) || !actor.email) return;
+      const normalizedEmail = actor.email.toLowerCase();
+      const assisted = [...this.customersBySubject.values()].find((customer) => (
+        customer.authSubject.startsWith("assisted:")
+        && customer.email?.toLowerCase() === normalizedEmail
+      ));
+      if (!assisted) return;
+      this.customersBySubject.delete(assisted.authSubject);
+      const previousSubject = assisted.authSubject;
+      assisted.authSubject = actor.subject;
+      assisted.displayName = actor.displayName ?? assisted.displayName;
+      this.customersBySubject.set(actor.subject, assisted);
+      for (const order of this.ordersByReference.values()) {
+        if (order.authSubject === previousSubject) order.authSubject = actor.subject;
+      }
+    });
+  }
+
   private project(order: InternalOrder, includePrivate: boolean, now = new Date()): ShopServerOrder {
     const projected = copy(order) as InternalOrder;
     projected.status = projectedStatus(projected);
     projected.allowedTransitions = includePrivate ? allowedTransitionsFor(projected, now) : [];
     projected.allowedReturnTransitions = includePrivate ? allowedReturnTransitionsFor(projected) : [];
     projected.canRequestReturn = !includePrivate && customerCanRequestReturn(projected, now);
+    projected.canRequestPaidCancellation = !includePrivate && customerCanRequestPaidCancellation(projected);
+    projected.fulfillmentFacts.trackingUrl = trackingUrlForOrder(projected);
     if (!includePrivate && projected.fundsConfirmation) {
       delete projected.fundsConfirmation.verifierSubject;
     }
@@ -315,8 +399,16 @@ export class MemoryShopOrderStore implements ShopOrderStore {
     }
   }
 
-  private resolveReturnedInventory(order: InternalOrder, disposition: "RESTOCK" | "WRITE_OFF") {
-    for (const line of order.lines) {
+  private resolveReturnedInventory(
+    order: InternalOrder,
+    decisions: Array<{ sku: string; disposition: "RESTOCK" | "WRITE_OFF" }>,
+  ) {
+    const bySku = new Map(decisions.map((decision) => [decision.sku, decision.disposition]));
+    const lines = order.lines.filter((line) => bySku.has(line.sku));
+    if (!lines.length || lines.length !== decisions.length) {
+      throw new ShopOrderError("INVALID_REQUEST", "Every returned piece needs one inventory decision.");
+    }
+    for (const line of lines) {
       const inventory = this.inventory.get(line.sku);
       if (
         !inventory
@@ -326,10 +418,10 @@ export class MemoryShopOrderStore implements ShopOrderStore {
         || inventory.sold - inventory.returned !== 1
       ) throw new ShopOrderError("INVENTORY_UNAVAILABLE", "The sold inventory no longer matches this return.");
     }
-    for (const line of order.lines) {
+    for (const line of lines) {
       const inventory = this.inventory.get(line.sku)!;
       inventory.returned += 1;
-      if (disposition === "RESTOCK") {
+      if (bySku.get(line.sku) === "RESTOCK") {
         inventory.availability = "AVAILABLE";
         inventory.onHand = 1;
       } else {
@@ -388,11 +480,7 @@ export class MemoryShopOrderStore implements ShopOrderStore {
         inventory.reserved = 1;
       }
 
-      const delivery = command.intent.fulfillment.optionId === "lagos"
-        ? { fee: 2500, label: "Lagos delivery", estimate: "1–3 working days" }
-        : command.intent.fulfillment.optionId === "nationwide"
-          ? { fee: 4500, label: "Nationwide delivery", estimate: "3–7 working days" }
-          : { fee: 0, label: "Studio pickup", estimate: "After payment" };
+      const delivery = deliveryFor(command.intent.fulfillment);
       const databaseId = randomUUID();
       const subtotal = items.reduce((sum, item) => sum + item.price, 0);
       const reference = referenceFor(command.now, databaseId);
@@ -425,6 +513,7 @@ export class MemoryShopOrderStore implements ShopOrderStore {
         returnEligibleUntil: null,
         status: "PAYMENT_REQUIRED",
         transmission: "SUBMITTED",
+        source: command.source ?? "ONLINE",
         lifecycleStatus: "ACTIVE",
         paymentReviewStatus: "AWAITING_EVIDENCE",
         fundsConfirmationStatus: "UNCONFIRMED",
@@ -434,6 +523,7 @@ export class MemoryShopOrderStore implements ShopOrderStore {
           kind: command.intent.fulfillment.kind,
           carrierName: null,
           trackingReference: null,
+          trackingUrl: null,
           pickupAppointment: null,
           recipientName: null,
           dispatchReference: null,
@@ -441,6 +531,7 @@ export class MemoryShopOrderStore implements ShopOrderStore {
           deliveredAt: null,
           deliveryProofReference: null,
         },
+        cancellationRecovery: null,
         return: null,
         version: 0,
         evidence: [],
@@ -448,25 +539,67 @@ export class MemoryShopOrderStore implements ShopOrderStore {
         allowedTransitions: [],
         allowedReturnTransitions: [],
         canRequestReturn: false,
+        canRequestPaidCancellation: false,
       };
       this.event(order, {
         eventType: "ORDER_CREATED",
-        actorKind: "CUSTOMER",
-        actorSubject: command.actor.subject,
+        actorKind: command.createdBy ? "OPERATOR" : "CUSTOMER",
+        actorSubject: command.createdBy?.subject ?? command.actor.subject,
         visibility: "CUSTOMER",
         lifecycleStatus: "ACTIVE",
         paymentReviewStatus: "AWAITING_EVIDENCE",
         fundsConfirmationStatus: "UNCONFIRMED",
         fulfillmentStatus: "NOT_STARTED",
-        note: "Order received; payment evidence has not been received.",
-        metadata: { reservationExpiresAt: order.reservationExpiresAt },
+        note: command.createdBy
+          ? `Order created from ${order.source.toLowerCase().replace("_", " ")}. Payment evidence has not been received.`
+          : "Order received; payment evidence has not been received.",
+        metadata: {
+          reservationExpiresAt: order.reservationExpiresAt,
+          source: order.source,
+        },
       }, command.now);
+      if (command.sourceNote) {
+        this.event(order, {
+          eventType: "ORDER_SOURCE_NOTE",
+          actorKind: "OPERATOR",
+          actorSubject: command.createdBy?.subject ?? "studio:assisted-order",
+          visibility: "OPERATOR",
+          lifecycleStatus: "ACTIVE",
+          paymentReviewStatus: "AWAITING_EVIDENCE",
+          fundsConfirmationStatus: "UNCONFIRMED",
+          fulfillmentStatus: "NOT_STARTED",
+          note: command.sourceNote,
+          metadata: { source: order.source },
+        }, command.now);
+      }
       this.ordersByReference.set(reference, order);
       this.enqueue(order, "ORDER_CREATED", `order:${databaseId}:created`, {
         orderReference: reference,
         lifecycleStatus: "ACTIVE",
       }, command.now);
       return this.project(order, false);
+    });
+  }
+
+  createAssistedOrder(command: CreateAssistedShopOrderCommand): Promise<ShopServerOrder> {
+    const contactKey = createHash("sha256")
+      .update(command.intent.contact.email.toLowerCase())
+      .digest("hex")
+      .slice(0, 32);
+    return this.createOrder({
+      actor: {
+        kind: "CUSTOMER",
+        subject: `assisted:${contactKey}`,
+        email: command.intent.contact.email,
+        displayName: command.intent.contact.name,
+      },
+      intent: command.intent,
+      requestFingerprint: command.requestFingerprint,
+      now: command.now,
+      reservationExpiresAt: command.reservationExpiresAt,
+      source: command.source,
+      createdBy: command.actor,
+      sourceNote: command.sourceNote,
     });
   }
 
@@ -479,10 +612,184 @@ export class MemoryShopOrderStore implements ShopOrderStore {
       .map((order) => this.project(order, false));
   }
 
+  async pageCustomerOrders(authSubject: string, query: ShopOrderListQuery): Promise<ShopOrderPage> {
+    await this.serial;
+    const matching = [...this.ordersByReference.values()]
+      .filter((order) => order.authSubject === authSubject)
+      .sort((left, right) => right.savedAt.localeCompare(left.savedAt))
+      .map((order) => this.project(order, false))
+      .filter((order) => orderMatchesQuery(order, query));
+    const offset = (query.page - 1) * query.limit;
+    const orders = matching.slice(offset, offset + query.limit);
+    return {
+      orders,
+      page: query.page,
+      nextPage: matching.length > offset + orders.length ? query.page + 1 : null,
+    };
+  }
+
   async getCustomerOrder(authSubject: string, reference: string): Promise<ShopServerOrder | null> {
     await this.serial;
     const order = this.ordersByReference.get(reference);
     return order?.authSubject === authSubject ? this.project(order, false) : null;
+  }
+
+  mutateCustomerOrder(command: MutateCustomerOrderCommand): Promise<ShopServerOrder> {
+    return this.transact(() => {
+      const order = this.order(command.reference);
+      if (order.authSubject !== command.actor.subject) {
+        throw new ShopOrderError("NOT_FOUND", "The order was not found.");
+      }
+      this.assertVersion(order, command.expectedVersion);
+      if (order.lifecycleStatus !== "ACTIVE" || order.fulfillmentStatus !== "NOT_STARTED") {
+        throw new ShopOrderError("INVALID_TRANSITION", "This order can no longer be changed by the customer.");
+      }
+
+      if (command.mutation.action === "CANCEL") {
+        if (order.fundsConfirmationStatus !== "UNCONFIRMED" || order.paymentReviewStatus !== "AWAITING_EVIDENCE") {
+          throw new ShopOrderError("INVALID_TRANSITION", "Contact Lulu because payment activity already exists on this order.");
+        }
+        this.releaseInventory(order);
+        order.lifecycleStatus = "CANCELLED";
+        order.version += 1;
+        this.event(order, {
+          eventType: "LIFECYCLE_CANCELLED",
+          actorKind: "CUSTOMER",
+          actorSubject: command.actor.subject,
+          visibility: "CUSTOMER",
+          lifecycleStatus: "CANCELLED",
+          paymentReviewStatus: order.paymentReviewStatus,
+          fundsConfirmationStatus: order.fundsConfirmationStatus,
+          fulfillmentStatus: order.fulfillmentStatus,
+          note: command.mutation.reason,
+          metadata: { previous: "ACTIVE", releasedInventory: true },
+        }, command.now);
+        this.enqueue(order, "LIFECYCLE_CANCELLED", `order:${order.databaseId}:customer-cancelled`, {
+          orderReference: order.reference,
+          target: "CANCELLED",
+        }, command.now);
+      } else if (command.mutation.action === "UPDATE_CONTACT") {
+        const previous = copy(order.contact);
+        order.contact = copy(command.mutation.contact);
+        order.version += 1;
+        this.event(order, {
+          eventType: "CONTACT_UPDATED",
+          actorKind: "CUSTOMER",
+          actorSubject: command.actor.subject,
+          visibility: "CUSTOMER",
+          lifecycleStatus: order.lifecycleStatus,
+          paymentReviewStatus: order.paymentReviewStatus,
+          fundsConfirmationStatus: order.fundsConfirmationStatus,
+          fulfillmentStatus: order.fulfillmentStatus,
+          note: "Order contact details updated.",
+          metadata: { previousEmail: previous.email, email: order.contact.email },
+        }, command.now);
+      } else if (command.mutation.action === "UPDATE_FULFILLMENT") {
+        const previous = copy(order.fulfillment);
+        const priceChanged = previous.optionId !== command.mutation.fulfillment.optionId;
+        if (
+          priceChanged
+          && (order.fundsConfirmationStatus !== "UNCONFIRMED" || order.paymentReviewStatus !== "AWAITING_EVIDENCE")
+        ) {
+          throw new ShopOrderError("INVALID_TRANSITION", "Contact Lulu because this handoff change affects an active payment.");
+        }
+        const delivery = deliveryFor(command.mutation.fulfillment);
+        order.fulfillment = copy(command.mutation.fulfillment);
+        order.deliveryFee = delivery.fee;
+        order.deliveryLabel = delivery.label;
+        order.deliveryEstimate = delivery.estimate;
+        order.total = order.subtotal + delivery.fee;
+        order.fulfillmentFacts.kind = command.mutation.fulfillment.kind;
+        order.fulfillmentFacts.pickupAppointment = null;
+        order.version += 1;
+        this.event(order, {
+          eventType: "FULFILLMENT_DETAILS_UPDATED",
+          actorKind: "CUSTOMER",
+          actorSubject: command.actor.subject,
+          visibility: "CUSTOMER",
+          lifecycleStatus: order.lifecycleStatus,
+          paymentReviewStatus: order.paymentReviewStatus,
+          fundsConfirmationStatus: order.fundsConfirmationStatus,
+          fulfillmentStatus: order.fulfillmentStatus,
+          note: "Delivery or pickup details updated before preparation started.",
+          metadata: {
+            previousKind: previous.kind,
+            previousOptionId: previous.optionId,
+            kind: order.fulfillment.kind,
+            optionId: order.fulfillment.optionId,
+            total: order.total,
+          },
+        }, command.now);
+      } else {
+        if (!customerCanRequestPaidCancellation(order)) {
+          throw new ShopOrderError("INVALID_TRANSITION", "This paid order can no longer enter cancellation recovery.");
+        }
+        order.cancellationRecovery = {
+          status: "PENDING",
+          reason: command.mutation.reason,
+          requestedAt: command.now.toISOString(),
+          updatedAt: command.now.toISOString(),
+          refundReference: null,
+          refundAmount: null,
+          refundCurrency: null,
+        };
+        order.version += 1;
+        this.event(order, {
+          eventType: "CANCELLATION_REFUND_PENDING",
+          actorKind: "CUSTOMER",
+          actorSubject: command.actor.subject,
+          visibility: "CUSTOMER",
+          lifecycleStatus: order.lifecycleStatus,
+          paymentReviewStatus: order.paymentReviewStatus,
+          fundsConfirmationStatus: order.fundsConfirmationStatus,
+          fulfillmentStatus: order.fulfillmentStatus,
+          note: command.mutation.reason,
+          metadata: { releasedInventory: false },
+        }, command.now);
+        this.enqueue(order, "CANCELLATION_REFUND_PENDING", `order:${order.databaseId}:cancellation-refund:pending`, {
+          orderReference: order.reference,
+          target: "PENDING",
+        }, command.now);
+      }
+      return this.project(order, false, command.now);
+    });
+  }
+
+  expireReservations(now: Date, limit: number): Promise<number> {
+    return this.transact(() => {
+      const due = [...this.ordersByReference.values()]
+        .filter((order) => (
+          order.lifecycleStatus === "ACTIVE"
+          && order.fulfillmentStatus === "NOT_STARTED"
+          && order.fundsConfirmationStatus === "UNCONFIRMED"
+          && Boolean(order.reservationExpiresAt)
+          && new Date(order.reservationExpiresAt!) <= now
+        ))
+        .sort((left, right) => (left.reservationExpiresAt ?? "").localeCompare(right.reservationExpiresAt ?? ""))
+        .slice(0, Math.min(Math.max(limit, 1), 100));
+      for (const order of due) {
+        this.releaseInventory(order);
+        order.lifecycleStatus = "EXPIRED";
+        order.version += 1;
+        this.event(order, {
+          eventType: "LIFECYCLE_EXPIRED",
+          actorKind: "SYSTEM",
+          actorSubject: "system:reservation-expiry",
+          visibility: "CUSTOMER",
+          lifecycleStatus: "EXPIRED",
+          paymentReviewStatus: order.paymentReviewStatus,
+          fundsConfirmationStatus: order.fundsConfirmationStatus,
+          fulfillmentStatus: order.fulfillmentStatus,
+          note: "The reservation expired and the pieces were released.",
+          metadata: { previous: "ACTIVE", releasedInventory: true },
+        }, now);
+        this.enqueue(order, "LIFECYCLE_EXPIRED", `order:${order.databaseId}:system-expired`, {
+          orderReference: order.reference,
+          target: "EXPIRED",
+        }, now);
+      }
+      return due.length;
+    });
   }
 
   async listOperatorOrders(limit: number): Promise<ShopServerOrder[]> {
@@ -491,6 +798,21 @@ export class MemoryShopOrderStore implements ShopOrderStore {
       .sort((left, right) => right.savedAt.localeCompare(left.savedAt))
       .slice(0, limit)
       .map((order) => this.project(order, true));
+  }
+
+  async pageOperatorOrders(query: ShopOrderListQuery): Promise<ShopOrderPage> {
+    await this.serial;
+    const matching = [...this.ordersByReference.values()]
+      .sort((left, right) => right.savedAt.localeCompare(left.savedAt))
+      .map((order) => this.project(order, true))
+      .filter((order) => orderMatchesQuery(order, query));
+    const offset = (query.page - 1) * query.limit;
+    const orders = matching.slice(offset, offset + query.limit);
+    return {
+      orders,
+      page: query.page,
+      nextPage: matching.length > offset + orders.length ? query.page + 1 : null,
+    };
   }
 
   async getOperatorOrder(reference: string): Promise<ShopServerOrder | null> {
@@ -529,6 +851,10 @@ export class MemoryShopOrderStore implements ShopOrderStore {
           ? order.fundsConfirmationStatus
         : command.transition.dimension === "FULFILLMENT"
           ? order.fulfillmentStatus
+          : command.transition.dimension === "PICKUP"
+            ? order.fulfillmentFacts.pickupAppointment
+            : command.transition.dimension === "CANCELLATION_REFUND"
+              ? order.cancellationRecovery?.status ?? null
           : order.lifecycleStatus;
       let note = command.note;
       if (command.transition.dimension === "PAYMENT_REVIEW") {
@@ -541,15 +867,35 @@ export class MemoryShopOrderStore implements ShopOrderStore {
         if (command.details?.kind !== "FUNDS_CONFIRMATION") {
           throw new ShopOrderError("INVALID_REQUEST", "Settlement confirmation details are required.");
         }
+        const refundedAmount = order.cancellationRecovery?.status === "COMPLETED"
+          ? order.cancellationRecovery.refundAmount ?? 0
+          : order.return?.refundStatus === "COMPLETED"
+            ? order.return.refundAmount ?? 0
+            : 0;
+        if (command.details.paidAmount < refundedAmount) {
+          throw new ShopOrderError("INVALID_REQUEST", "The corrected payment cannot be lower than money already refunded.");
+        }
+        if (
+          command.transition.target === "CORRECTED"
+          && order.lifecycleStatus === "CANCELLED"
+          && refundedAmount > 0
+          && command.details.paidAmount !== refundedAmount
+        ) {
+          throw new ShopOrderError("INVALID_REQUEST", "A fully refunded cancellation must keep the paid and refunded amounts equal.");
+        }
+        const originalConfirmation = order.fundsConfirmation;
         order.fundsConfirmationStatus = "CONFIRMED";
         order.fundsConfirmation = {
           transferReference: command.details.transferReference,
           receivingAccountLabel: command.details.receivingAccountLabel,
-          confirmedAt: command.now.toISOString(),
+          paidAmount: command.details.paidAmount,
+          paidCurrency: command.details.paidCurrency,
+          confirmedAt: originalConfirmation?.confirmedAt ?? command.now.toISOString(),
+          updatedAt: command.now.toISOString(),
           verifierSubject: command.actor.subject,
           verifierDisplayName: command.actor.displayName ?? command.actor.email ?? "Studio operator",
         };
-        note = `Payment confirmed against ${command.details.receivingAccountLabel}; transfer reference ${command.details.transferReference}.${note ? ` ${note}` : ""}`;
+        note = `${command.transition.target === "CORRECTED" ? "Payment record corrected" : "Payment confirmed"}: NGN ${command.details.paidAmount}; transfer reference ${command.details.transferReference}.${note ? ` ${note}` : ""}`;
       } else if (command.transition.dimension === "FULFILLMENT") {
         if (command.transition.target === "IN_TRANSIT") {
           if (order.fulfillment.kind !== "DELIVERY" || command.details?.kind !== "DELIVERY_DISPATCH") {
@@ -567,7 +913,10 @@ export class MemoryShopOrderStore implements ShopOrderStore {
             order.fulfillmentFacts.deliveryProofReference = command.details.deliveryProofReference;
             note = note ?? `Delivered to ${command.details.recipientName}; proof ${command.details.deliveryProofReference}.`;
           } else if (order.fulfillment.kind === "PICKUP" && command.details?.kind === "PICKUP_COMPLETE") {
-            order.fulfillmentFacts.pickupAppointment = command.details.pickupAppointment;
+            if (
+              !order.fulfillmentFacts.pickupAppointment
+              || order.fulfillmentFacts.pickupAppointment !== command.details.pickupAppointment
+            ) throw new ShopOrderError("INVALID_REQUEST", "Use the pickup appointment already agreed with the customer.");
             order.fulfillmentFacts.recipientName = command.details.recipientName;
             order.fulfillmentFacts.deliveredAt = command.details.deliveredAt;
             order.fulfillmentFacts.deliveryProofReference = command.details.deliveryProofReference;
@@ -581,6 +930,41 @@ export class MemoryShopOrderStore implements ShopOrderStore {
           this.sellInventory(order);
           order.lifecycleStatus = "COMPLETED";
           order.returnEligibleUntil = command.returnEligibleUntil!.toISOString();
+        }
+      } else if (command.transition.dimension === "PICKUP") {
+        if (order.fulfillment.kind !== "PICKUP" || command.details?.kind !== "PICKUP_SCHEDULE") {
+          throw new ShopOrderError("INVALID_REQUEST", "A pickup time is required.");
+        }
+        order.fulfillmentFacts.pickupAppointment = command.details.pickupAppointment;
+        note = note ?? `Pickup scheduled for ${command.details.pickupAppointment}.`;
+      } else if (command.transition.dimension === "CANCELLATION_REFUND") {
+        const recovery = order.cancellationRecovery;
+        if (!recovery) throw new ShopOrderError("INVALID_TRANSITION", "No cancellation refund is pending.");
+        if (command.transition.target === "COMPLETED") {
+          if (
+            command.details?.kind !== "CANCELLATION_REFUND"
+            || !command.details.refundReference
+            || !command.details.refundAmount
+            || command.details.refundCurrency !== "NGN"
+            || !order.fundsConfirmation?.paidAmount
+            || command.details.refundAmount !== order.fundsConfirmation.paidAmount
+          ) throw new ShopOrderError("INVALID_REQUEST", "Record the full refund amount and reference before cancelling.");
+          this.releaseInventory(order);
+          recovery.status = "COMPLETED";
+          recovery.refundReference = command.details.refundReference;
+          recovery.refundAmount = command.details.refundAmount;
+          recovery.refundCurrency = command.details.refundCurrency;
+          recovery.updatedAt = command.now.toISOString();
+          order.lifecycleStatus = "CANCELLED";
+          note = note ?? `Refund of NGN ${command.details.refundAmount} completed; reference ${command.details.refundReference}. The pieces were released.`;
+        } else if (command.transition.target === "FAILED") {
+          if (!note) throw new ShopOrderError("INVALID_REQUEST", "Record why the refund failed.");
+          recovery.status = "FAILED";
+          recovery.updatedAt = command.now.toISOString();
+        } else {
+          recovery.status = "PENDING";
+          recovery.updatedAt = command.now.toISOString();
+          note = note ?? "Cancellation refund is being retried.";
         }
       } else {
         if (command.transition.target === "CANCELLED" && !note) {
@@ -599,10 +983,17 @@ export class MemoryShopOrderStore implements ShopOrderStore {
           ? order.fundsConfirmationStatus
         : command.transition.dimension === "FULFILLMENT"
           ? order.fulfillmentStatus
+          : command.transition.dimension === "PICKUP"
+            ? "SCHEDULED"
+            : command.transition.dimension === "CANCELLATION_REFUND"
+              ? order.cancellationRecovery?.status ?? command.transition.target
           : order.lifecycleStatus;
+      const eventTarget = command.transition.dimension === "FUNDS_CONFIRMATION"
+        ? command.transition.target
+        : target;
       const eventType = `${command.transition.dimension === "PAYMENT_REVIEW"
         ? "PAYMENT"
-        : command.transition.dimension}_${target}`;
+        : command.transition.dimension}_${eventTarget}`;
       this.event(order, {
         eventType,
         actorKind: "OPERATOR",
@@ -616,13 +1007,20 @@ export class MemoryShopOrderStore implements ShopOrderStore {
         metadata: {
           previous,
           ...(command.details ? { details: command.details } : {}),
-          ...(command.transition.dimension === "LIFECYCLE" ? { releasedInventory: true } : {}),
+          ...(command.details?.kind === "FUNDS_CONFIRMATION" ? {
+            paidAmount: command.details.paidAmount,
+            paidCurrency: command.details.paidCurrency,
+          } : {}),
+          ...(command.transition.dimension === "LIFECYCLE"
+            || (command.transition.dimension === "CANCELLATION_REFUND" && command.transition.target === "COMPLETED")
+            ? { releasedInventory: true }
+            : {}),
         },
       }, command.now);
-      this.enqueue(order, eventType, `order:${order.databaseId}:${command.transition.dimension.toLowerCase()}:${order.version}:${target.toLowerCase()}`, {
+      this.enqueue(order, eventType, `order:${order.databaseId}:${command.transition.dimension.toLowerCase()}:${order.version}:${eventTarget.toLowerCase()}`, {
         orderReference: order.reference,
         dimension: command.transition.dimension,
-        target,
+        target: eventTarget,
       }, command.now);
       return this.project(order, true, command.now);
     });
@@ -634,6 +1032,21 @@ export class MemoryShopOrderStore implements ShopOrderStore {
       if (order.authSubject !== command.actor.subject) {
         throw new ShopOrderError("FORBIDDEN", "The customer does not own this order.");
       }
+      if (command.expectedVersion !== null) this.assertVersion(order, command.expectedVersion);
+      const selectedLines = command.lineSkus.length
+        ? command.lineSkus.map((sku) => order.lines.find((line) => line.sku === sku))
+        : order.lines;
+      if (selectedLines.some((line) => !line) || !selectedLines.length) {
+        throw new ShopOrderError("INVALID_REQUEST", "Every selected return piece must belong to this order.");
+      }
+      const returnItems = selectedLines.map((line) => ({
+        orderItemId: null,
+        sku: line!.sku,
+        name: line!.name,
+        unitPrice: line!.unitPrice,
+        refundCapAmount: line!.unitPrice,
+        disposition: null,
+      }));
       if (order.return) {
         if (
           order.returnIdempotencyKey === command.idempotencyKey
@@ -642,8 +1055,40 @@ export class MemoryShopOrderStore implements ShopOrderStore {
         if (order.returnIdempotencyKey === command.idempotencyKey) {
           throw new ShopOrderError("IDEMPOTENCY_MISMATCH", "The return idempotency key was reused.");
         }
-        throw new ShopOrderError("INVALID_TRANSITION", "This order already has a return request.");
+        if (
+          !command.correction
+          || order.return.status !== "REJECTED"
+          || order.return.correctionCount >= 1
+        ) throw new ShopOrderError("INVALID_TRANSITION", "This return request cannot be reopened.");
+        order.returnIdempotencyKey = command.idempotencyKey;
+        order.returnRequestFingerprint = command.requestFingerprint;
+        order.return.status = "REQUESTED";
+        order.return.reason = command.reason;
+        order.return.detail = command.detail;
+        order.return.requestedAt = command.now.toISOString();
+        order.return.rejectedAt = null;
+        order.return.items = returnItems;
+        order.return.correctionCount += 1;
+        order.version += 1;
+        this.event(order, {
+          eventType: "RETURN_CORRECTED",
+          actorKind: "CUSTOMER",
+          actorSubject: command.actor.subject,
+          visibility: "CUSTOMER",
+          lifecycleStatus: order.lifecycleStatus,
+          paymentReviewStatus: order.paymentReviewStatus,
+          fundsConfirmationStatus: order.fundsConfirmationStatus,
+          fulfillmentStatus: order.fulfillmentStatus,
+          note: "Return request corrected and reopened for one more review.",
+          metadata: { returnId: order.return.id, lineSkus: returnItems.map((item) => item.sku) },
+        }, command.now);
+        this.enqueue(order, "RETURN_CORRECTED", `order:${order.databaseId}:return:corrected`, {
+          orderReference: order.reference,
+          returnId: order.return.id,
+        }, command.now);
+        return this.project(order, false, command.now);
       }
+      if (command.correction) throw new ShopOrderError("INVALID_TRANSITION", "There is no rejected return to correct.");
       if (
         order.lifecycleStatus !== "COMPLETED"
         || order.fulfillmentStatus !== "DELIVERED"
@@ -671,6 +1116,8 @@ export class MemoryShopOrderStore implements ShopOrderStore {
         refundCurrency: null,
         refundUpdatedAt: null,
         disposition: null,
+        items: returnItems,
+        correctionCount: 0,
       };
       order.version += 1;
       this.event(order, {
@@ -683,7 +1130,11 @@ export class MemoryShopOrderStore implements ShopOrderStore {
         fundsConfirmationStatus: order.fundsConfirmationStatus,
         fulfillmentStatus: order.fulfillmentStatus,
         note: "Return requested. Lulu will review eligibility and next steps.",
-        metadata: { reason: command.reason, returnId: order.return.id },
+        metadata: {
+          reason: command.reason,
+          returnId: order.return.id,
+          lineSkus: returnItems.map((item) => item.sku),
+        },
       }, command.now);
       this.enqueue(order, "RETURN_REQUESTED", `order:${order.databaseId}:return:requested`, {
         orderReference: order.reference,
@@ -728,7 +1179,10 @@ export class MemoryShopOrderStore implements ShopOrderStore {
           if (
             !command.refundReference
             || !command.refundAmount
-            || command.refundAmount > order.total
+            || command.refundAmount > currentReturn.items.reduce(
+              (sum, item) => sum + (item.refundCapAmount ?? item.unitPrice),
+              0,
+            )
             || command.refundCurrency !== "NGN"
           ) {
             throw new ShopOrderError("INVALID_REQUEST", "Exact refund amount, currency, and reference are required.");
@@ -746,14 +1200,21 @@ export class MemoryShopOrderStore implements ShopOrderStore {
         currentReturn.refundUpdatedAt = command.now.toISOString();
         eventType = `REFUND_${command.transition.target}`;
       } else {
-        this.resolveReturnedInventory(order, command.transition.target);
-        currentReturn.disposition = command.transition.target;
+        const expectedSkus = currentReturn.items.map((item) => item.sku).sort();
+        const actualSkus = command.lineDispositions.map((item) => item.sku).sort();
+        if (expectedSkus.length !== actualSkus.length || expectedSkus.some((sku, index) => sku !== actualSkus[index])) {
+          throw new ShopOrderError("INVALID_REQUEST", "Choose one inventory result for every returned piece.");
+        }
+        this.resolveReturnedInventory(order, command.lineDispositions);
+        for (const item of currentReturn.items) {
+          item.disposition = command.lineDispositions.find((decision) => decision.sku === item.sku)!.disposition;
+        }
+        const dispositions = new Set(command.lineDispositions.map((item) => item.disposition));
+        currentReturn.disposition = dispositions.size === 1 ? command.lineDispositions[0].disposition : null;
         currentReturn.status = "RESOLVED";
         currentReturn.resolvedAt = command.now.toISOString();
-        eventType = `RETURN_RESOLVED_${command.transition.target}`;
-        note = note ?? (command.transition.target === "RESTOCK"
-          ? "Return resolved and the piece is available again."
-          : "Return resolved and the piece was written off.");
+        eventType = "RETURN_RESOLVED";
+        note = note ?? "Every returned piece was inspected and its inventory result recorded.";
         currentReturn.resolutionNote = note;
       }
 
@@ -778,6 +1239,9 @@ export class MemoryShopOrderStore implements ShopOrderStore {
             refundCurrency: currentReturn.refundCurrency,
           } : {}),
           ...(currentReturn.disposition ? { disposition: currentReturn.disposition } : {}),
+          ...(command.transition.dimension === "RETURN_RESOLUTION" ? {
+            lineDispositions: command.lineDispositions,
+          } : {}),
         },
       }, command.now);
       this.enqueue(order, eventType, `order:${order.databaseId}:return:${order.version}:${eventType.toLowerCase()}`, {
@@ -985,6 +1449,8 @@ export class MemoryShopOrderStore implements ShopOrderStore {
         id: message.id,
         orderId: message.orderId,
         customerId: message.customerId,
+        recipientEmail: message.recipientEmail,
+        recipientName: message.recipientName,
         topic: message.topic,
         dedupeKey: message.dedupeKey,
         payload: copy(message.payload),

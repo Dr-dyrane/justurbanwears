@@ -10,6 +10,7 @@ import {
   type ShopRouteContext,
 } from "@/lib/shop/server-order/http";
 import { getShopOrderService } from "@/lib/shop/server-order/runtime";
+import { flushOrderNotificationsAfterMutation } from "@/lib/shop/server-order/email-notifications";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +22,7 @@ export async function POST(request: Request, context: ShopRouteContext): Promise
       await routeParam(context, "reference"),
       await readShopJson(request),
     );
+    await flushOrderNotificationsAfterMutation();
     return shopJson({ ok: true, order, timeline: order.events });
   });
 }

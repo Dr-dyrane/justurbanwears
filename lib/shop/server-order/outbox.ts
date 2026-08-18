@@ -3,12 +3,14 @@ import type {
   ShopOrderStore,
 } from "./types";
 
-export interface PreviewNotificationSink {
-  readonly kind: "PREVIEW";
+export interface NotificationSink {
+  readonly kind: "EMAIL" | "PREVIEW";
   deliver(message: ShopNotificationOutboxMessage): Promise<void>;
 }
 
-export interface DispatchPreviewOutboxOptions {
+export type PreviewNotificationSink = NotificationSink & { readonly kind: "PREVIEW" };
+
+export interface DispatchNotificationOutboxOptions {
   workerId: string;
   limit?: number;
   now?: () => Date;
@@ -16,18 +18,18 @@ export interface DispatchPreviewOutboxOptions {
 }
 
 /**
- * At-least-once preview dispatcher. Sinks must deduplicate on `dedupeKey`;
- * delivery state remains durable in Postgres and no external provider is wired.
+ * At-least-once dispatcher. Sinks must deduplicate on `dedupeKey`; delivery
+ * state remains durable in Postgres and changes only after provider acceptance.
  */
-export async function dispatchPreviewNotificationOutbox(
+export async function dispatchNotificationOutbox(
   store: ShopOrderStore,
-  sink: PreviewNotificationSink,
+  sink: NotificationSink,
   {
     workerId,
     limit = 20,
     now = () => new Date(),
     retryDelayMs = 60_000,
-  }: DispatchPreviewOutboxOptions,
+  }: DispatchNotificationOutboxOptions,
 ): Promise<{ delivered: number; failed: number }> {
   const claimedAt = now();
   const messages = await store.claimPreviewOutbox(workerId, Math.min(Math.max(limit, 1), 100), claimedAt);
@@ -39,7 +41,7 @@ export async function dispatchPreviewNotificationOutbox(
       await store.markPreviewOutboxDelivered(message.id, workerId, now());
       delivered += 1;
     } catch (error) {
-      const messageText = error instanceof Error ? error.message : "Preview notification failed.";
+      const messageText = error instanceof Error ? error.message : "Notification delivery failed.";
       const retryAt = new Date(now().getTime() + retryDelayMs);
       await store.markPreviewOutboxFailed(
         message.id,
@@ -52,3 +54,5 @@ export async function dispatchPreviewNotificationOutbox(
   }
   return { delivered, failed };
 }
+
+export const dispatchPreviewNotificationOutbox = dispatchNotificationOutbox;

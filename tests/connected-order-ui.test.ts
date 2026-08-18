@@ -100,7 +100,9 @@ test("customer list, receipt, tracking, evidence, and return surfaces use shared
   assert.match(detailPage, /initialState=\{initialState\}/);
   assert.match(detailPage, /error instanceof ShopOrderError && error\.code === "NOT_FOUND"/);
   assert.match(list, /initialOrders: readonly ShopServerOrder\[\]/);
-  assert.doesNotMatch(list, /fetch\(|Opening your orders|useEffect/);
+  assert.doesNotMatch(list, /Opening your orders|useEffect/);
+  assert.match(list, /submitSearch[\s\S]*void load\(1, false\)/);
+  assert.match(list, /Load more/);
   assert.doesNotMatch(list, /orders \} = useShop|Saved checkouts/);
   assert.match(detail, /initialOrder: ShopServerOrder \| null/);
   assert.doesNotMatch(detail, /Opening your order/);
@@ -128,7 +130,8 @@ test("customer list, receipt, tracking, evidence, and return surfaces use shared
   assert.match(returns, /orderStateLabel\(order\.return\.status\)/);
   assert.match(returns, /reasonLabel/);
   assert.match(returns, /refundAmount/);
-  assert.match(returns, /one return request/);
+  assert.match(returns, /Choose the pieces to return/);
+  assert.match(returns, /correctingRejectedReturn/);
 });
 
 test("Studio posts structured facts, role-gates finance UX, and covers return resolution", () => {
@@ -143,7 +146,8 @@ test("Studio posts structured facts, role-gates finance UX, and covers return re
   assert.match(detail, /refundAmount: transition\.dimension/);
   assert.match(detail, /refundCurrency: transition\.dimension/);
   assert.match(detail, /operatorRole !== "admin"/);
-  assert.match(detail, /Enter the amount actually returned/);
+  assert.match(detail, /Exact refund amount \(NGN\)/);
+  assert.match(detail, /Selected pieces cap/);
   assert.match(detail, /RETURN_RESOLUTION/);
   assert.match(detail, /onVersionConflict/);
   assert.match(detail, /Prepare for collection/);

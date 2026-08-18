@@ -94,6 +94,14 @@ export async function getIntakeSnapshot(id: string, subject: string): Promise<Op
   };
 }
 
+export async function listRecoverableIntakes(subject: string): Promise<OperatorSafeIntake[]> {
+  const rows = await (await getStudioDb()).select({ id: studioIntakes.id }).from(studioIntakes).where(and(
+    eq(studioIntakes.operatorSubject, subject),
+    inArray(studioIntakes.state, ["DRAFT", "ANALYZING", "REVIEW", "GENERATING", "DECISION", "FAILED"]),
+  )).orderBy(desc(studioIntakes.updatedAt)).limit(8);
+  return Promise.all(rows.map((row) => getIntakeSnapshot(row.id, subject)));
+}
+
 export async function getOwnedIntakeRow(id: string, subject: string): Promise<IntakeRow> {
   return ownedIntake(id, subject);
 }
@@ -222,6 +230,17 @@ export async function commitWardrobeItem(input: {
   }).onConflictDoNothing();
   const [item] = await db.select().from(studioWardrobeItems).where(eq(studioWardrobeItems.intakeId, input.intakeId)).limit(1);
   if (!item) throw new StudioEngineError("ENGINE_UNAVAILABLE", 503, "The garment could not be saved.", "Try again.");
+  await db.execute(sql`
+    insert into studio_garment_events (
+      wardrobe_item_id, operator_subject, event_type, summary, details, occurred_at
+    )
+    select ${item.id}::uuid, ${input.operatorSubject}, 'COMMITTED', 'Saved to Wardrobe',
+      jsonb_build_object('intakeId', ${input.intakeId}), ${item.createdAt}
+    where not exists (
+      select 1 from studio_garment_events
+      where wardrobe_item_id = ${item.id}::uuid and event_type = 'COMMITTED'
+    )
+  `);
   return mapWardrobeItem(item);
 }
 

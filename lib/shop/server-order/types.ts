@@ -52,11 +52,16 @@ export type ShopReturnReason =
 export type ShopReturnStatus = "REQUESTED" | "APPROVED" | "REJECTED" | "RECEIVED" | "RESOLVED";
 export type ShopRefundStatus = "NOT_STARTED" | "PENDING" | "COMPLETED" | "FAILED";
 export type ShopReturnDisposition = "RESTOCK" | "WRITE_OFF";
+export type ShopOrderSource = "ONLINE" | "PHONE" | "DM" | "IN_PERSON";
+export type ShopCancellationRecoveryStatus = "PENDING" | "FAILED" | "COMPLETED";
 
 export interface ShopFundsConfirmation {
   transferReference: string;
   receivingAccountLabel: string;
+  paidAmount: number | null;
+  paidCurrency: "NGN" | null;
   confirmedAt: string;
+  updatedAt: string;
   verifierSubject?: string;
   verifierDisplayName: string;
 }
@@ -65,12 +70,32 @@ export interface ShopFulfillmentFacts {
   kind: "DELIVERY" | "PICKUP";
   carrierName: string | null;
   trackingReference: string | null;
+  trackingUrl: string | null;
   pickupAppointment: string | null;
   recipientName: string | null;
   dispatchReference: string | null;
   dispatchedAt: string | null;
   deliveredAt: string | null;
   deliveryProofReference: string | null;
+}
+
+export interface ShopReturnLineView {
+  orderItemId?: string | null;
+  sku: string;
+  name: string;
+  unitPrice: number;
+  refundCapAmount?: number;
+  disposition: ShopReturnDisposition | null;
+}
+
+export interface ShopCancellationRecovery {
+  status: ShopCancellationRecoveryStatus;
+  reason: string;
+  requestedAt: string;
+  updatedAt: string;
+  refundReference: string | null;
+  refundAmount: number | null;
+  refundCurrency: "NGN" | null;
 }
 
 export interface ShopReturnView {
@@ -91,6 +116,8 @@ export interface ShopReturnView {
   refundCurrency: "NGN" | null;
   refundUpdatedAt: string | null;
   disposition: ShopReturnDisposition | null;
+  items: ShopReturnLineView[];
+  correctionCount: number;
 }
 
 export interface ShopServerOrderLine {
@@ -150,12 +177,14 @@ export interface ShopServerOrder {
   returnEligibleUntil: string | null;
   status: ShopOrderStatus;
   transmission: "SUBMITTED";
+  source: ShopOrderSource;
   lifecycleStatus: ShopOrderLifecycleStatus;
   paymentReviewStatus: ShopPaymentReviewStatus;
   fundsConfirmationStatus: ShopFundsConfirmationStatus;
   fundsConfirmation: ShopFundsConfirmation | null;
   fulfillmentStatus: ShopFulfillmentStatus;
   fulfillmentFacts: ShopFulfillmentFacts;
+  cancellationRecovery: ShopCancellationRecovery | null;
   return: ShopReturnView | null;
   version: number;
   evidence: ShopPaymentEvidenceView[];
@@ -163,6 +192,7 @@ export interface ShopServerOrder {
   allowedTransitions: ShopOperatorTransition[];
   allowedReturnTransitions: ShopOperatorReturnTransition[];
   canRequestReturn: boolean;
+  canRequestPaidCancellation: boolean;
 }
 
 export interface CreateShopOrderCommand {
@@ -171,12 +201,41 @@ export interface CreateShopOrderCommand {
   requestFingerprint: string;
   now: Date;
   reservationExpiresAt: Date;
+  source?: ShopOrderSource;
+  createdBy?: ShopOperatorActor;
+  sourceNote?: string | null;
+}
+
+export interface CreateAssistedShopOrderCommand {
+  actor: ShopOperatorActor;
+  intent: ShopCheckoutSubmissionIntent;
+  source: Exclude<ShopOrderSource, "ONLINE">;
+  sourceNote: string | null;
+  requestFingerprint: string;
+  now: Date;
+  reservationExpiresAt: Date;
+}
+
+export type ShopCustomerOrderAction =
+  | { action: "CANCEL"; reason: string }
+  | { action: "UPDATE_CONTACT"; contact: { name: string; email: string; phone: string } }
+  | { action: "UPDATE_FULFILLMENT"; fulfillment: ShopCheckoutFulfillment }
+  | { action: "REQUEST_PAID_CANCELLATION"; reason: string };
+
+export interface MutateCustomerOrderCommand {
+  actor: ShopCustomerActor;
+  reference: string;
+  expectedVersion: number;
+  mutation: ShopCustomerOrderAction;
+  now: Date;
 }
 
 export type ShopOperatorTransition =
   | { dimension: "PAYMENT_REVIEW"; target: Exclude<ShopPaymentReviewStatus, "AWAITING_EVIDENCE" | "EVIDENCE_RECEIVED"> }
   | { dimension: "FULFILLMENT"; target: "QUALITY_CHECK" | "READY_FOR_HANDOFF" | "IN_TRANSIT" | "DELIVERED" }
-  | { dimension: "FUNDS_CONFIRMATION"; target: "CONFIRMED" }
+  | { dimension: "FUNDS_CONFIRMATION"; target: "CONFIRMED" | "CORRECTED" }
+  | { dimension: "PICKUP"; target: "SCHEDULED" }
+  | { dimension: "CANCELLATION_REFUND"; target: "PENDING" | "COMPLETED" | "FAILED" }
   | { dimension: "LIFECYCLE"; target: "CANCELLED" | "EXPIRED" };
 
 export type ShopOrderTransitionDetails =
@@ -184,6 +243,8 @@ export type ShopOrderTransitionDetails =
       kind: "FUNDS_CONFIRMATION";
       transferReference: string;
       receivingAccountLabel: string;
+      paidAmount: number;
+      paidCurrency: "NGN";
     }
   | {
       kind: "DELIVERY_DISPATCH";
@@ -204,6 +265,16 @@ export type ShopOrderTransitionDetails =
       recipientName: string;
       deliveredAt: string;
       deliveryProofReference: string;
+    }
+  | {
+      kind: "PICKUP_SCHEDULE";
+      pickupAppointment: string;
+    }
+  | {
+      kind: "CANCELLATION_REFUND";
+      refundReference: string | null;
+      refundAmount: number | null;
+      refundCurrency: "NGN" | null;
     };
 
 export interface TransitionShopOrderCommand {
@@ -224,13 +295,21 @@ export interface RequestShopReturnCommand {
   requestFingerprint: string;
   reason: ShopReturnReason;
   detail: string;
+  lineSkus: string[];
+  expectedVersion: number | null;
+  correction: boolean;
   now: Date;
 }
 
 export type ShopOperatorReturnTransition =
   | { dimension: "RETURN"; target: "APPROVED" | "REJECTED" | "RECEIVED" }
   | { dimension: "REFUND"; target: "PENDING" | "COMPLETED" | "FAILED" }
-  | { dimension: "RETURN_RESOLUTION"; target: ShopReturnDisposition };
+  | { dimension: "RETURN_RESOLUTION"; target: "RESOLVE_ITEMS" };
+
+export interface ShopReturnLineDisposition {
+  sku: string;
+  disposition: ShopReturnDisposition;
+}
 
 export interface TransitionShopReturnCommand {
   actor: ShopOperatorActor;
@@ -240,6 +319,7 @@ export interface TransitionShopReturnCommand {
   refundReference: string | null;
   refundAmount: number | null;
   refundCurrency: "NGN" | null;
+  lineDispositions: ShopReturnLineDisposition[];
   note: string | null;
   now: Date;
 }
@@ -299,6 +379,8 @@ export interface ShopNotificationOutboxMessage {
   id: string;
   orderId: string;
   customerId: string;
+  recipientEmail: string;
+  recipientName: string | null;
   topic: string;
   dedupeKey: string;
   payload: Record<string, unknown>;
@@ -306,11 +388,38 @@ export interface ShopNotificationOutboxMessage {
   createdAt: string;
 }
 
+export type ShopOrderListFilter =
+  | "ALL"
+  | "ACTIVE"
+  | "COMPLETED"
+  | "CANCELLED"
+  | "RETURNS"
+  | "NEEDS_ACTION";
+
+export interface ShopOrderListQuery {
+  page: number;
+  limit: number;
+  search: string;
+  filter: ShopOrderListFilter;
+}
+
+export interface ShopOrderPage {
+  orders: ShopServerOrder[];
+  page: number;
+  nextPage: number | null;
+}
+
 export interface ShopOrderStore {
+  claimCustomerIdentity(actor: ShopCustomerActor, now: Date): Promise<void>;
   createOrder(command: CreateShopOrderCommand): Promise<ShopServerOrder>;
+  createAssistedOrder(command: CreateAssistedShopOrderCommand): Promise<ShopServerOrder>;
   listCustomerOrders(authSubject: string, limit: number): Promise<ShopServerOrder[]>;
+  pageCustomerOrders(authSubject: string, query: ShopOrderListQuery): Promise<ShopOrderPage>;
   getCustomerOrder(authSubject: string, reference: string): Promise<ShopServerOrder | null>;
+  mutateCustomerOrder(command: MutateCustomerOrderCommand): Promise<ShopServerOrder>;
+  expireReservations(now: Date, limit: number): Promise<number>;
   listOperatorOrders(limit: number): Promise<ShopServerOrder[]>;
+  pageOperatorOrders(query: ShopOrderListQuery): Promise<ShopOrderPage>;
   getOperatorOrder(reference: string): Promise<ShopServerOrder | null>;
   transitionOrder(command: TransitionShopOrderCommand): Promise<ShopServerOrder>;
   requestReturn(command: RequestShopReturnCommand): Promise<ShopServerOrder>;
@@ -340,6 +449,7 @@ export type ShopOrderErrorCode =
   | "EVIDENCE_AUTHORIZATION_EXPIRED"
   | "EVIDENCE_MISMATCH"
   | "PAYLOAD_TOO_LARGE"
+  | "PAYMENT_CONFIGURATION_UNAVAILABLE"
   | "PERSISTENCE_UNAVAILABLE";
 
 export class ShopOrderError extends Error {

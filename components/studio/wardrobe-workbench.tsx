@@ -65,6 +65,9 @@ import {
   type StudioMediaItem,
 } from "./media-viewer";
 import { studioScenarioHref } from "../../lib/studio/simulator";
+import { GarmentLifecyclePanel } from "./garment-lifecycle-panel";
+import type { GarmentLifecycleWorkspace } from "../../lib/studio/engine/garment-lifecycle-contracts";
+import { GarmentSetBuilder } from "./garment-set-builder";
 
 const filters: Array<"ALL" | StudioLifecycleState> = [
   "ALL",
@@ -182,7 +185,7 @@ function GarmentCard({ garment }: { garment: Garment }) {
   );
 }
 
-export function PieceWorkspaceView({ garment, onDismiss, onContinueMedia }: { garment: Garment; onDismiss(): void; onContinueMedia(garment: Garment): void }) {
+export function PieceWorkspaceView({ garment, onBuildSet, onDismiss, onContinueMedia }: { garment: Garment; onBuildSet(garment: Garment): void; onDismiss(): void; onContinueMedia(garment: Garment): void }) {
   const studio = useStudio();
   const [captures, setCaptures] = useState<OperatorSafePendingCapture[]>([]);
   const [publicationReview, setPublicationReview] = useState<StudioPublicationReview | null>(
@@ -195,10 +198,12 @@ export function PieceWorkspaceView({ garment, onDismiss, onContinueMedia }: { ga
   const [publicationConfirmed, setPublicationConfirmed] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [publicationError, setPublicationError] = useState("");
+  const [lifecycleWorkspace, setLifecycleWorkspace] = useState<GarmentLifecycleWorkspace>();
   const publicationConfirmationId = useId();
   const captureSectionRef = useRef<HTMLElement>(null);
   const listingSectionRef = useRef<HTMLElement>(null);
   const publicationSectionRef = useRef<HTMLElement>(null);
+  const lifecycleSectionRef = useRef<HTMLDivElement>(null);
   const publicationKeyRef = useRef(`studio-publish:${garment.privateWardrobeItemId ?? garment.id}:${crypto.randomUUID()}`);
   const listing = studio.listings.find((candidate) => candidate.garmentId === garment.id);
   const pendingContract = getPendingWardrobeProductContract(garment.sku);
@@ -227,16 +232,31 @@ export function PieceWorkspaceView({ garment, onDismiss, onContinueMedia }: { ga
   const coverItems: StudioMediaItem[] = cover ? [{ alt: cover.alt, label: "Garment front", src: cover.src }] : [];
   const captureRevision = captures.map((capture) => `${capture.id}:${capture.approvedAt}`).join("|");
   const dynamicReview = garment.privateWardrobeItemId ? publicationReview : null;
-  const nextAction = publicationLoading
+  const lifecycleOwnsMedia = dynamicReview?.state === "PUBLISHED"
+    || lifecycleWorkspace?.state === "PUBLISHED"
+    || lifecycleWorkspace?.state === "UNPUBLISHED";
+  const nextAction = lifecycleWorkspace?.state === "ARCHIVED"
+    ? { kind: "DYNAMIC_MANAGE", label: "View history", detail: "This piece is archived." }
+    : lifecycleWorkspace?.state === "UNPUBLISHED"
+      ? { kind: "DYNAMIC_MANAGE", label: "Manage listing", detail: "Edit it or return it to Shop." }
+      : lifecycleWorkspace?.state === "PUBLISHED" || dynamicReview?.state === "PUBLISHED"
+        ? { kind: "DYNAMIC_MANAGE", label: "Manage listing", detail: "Change price, photos, or visibility." }
+        : garment.privateWardrobeItemId && (workspace.nextAction.kind === "CAPTURE" || workspace.nextAction.kind === "TRY_ON")
+          ? { kind: "BUILD_SET", label: "Build missing views", detail: "Make the set, then approve each image." }
+        : publicationLoading
     ? { kind: "DYNAMIC_LOADING", label: "Checking readiness…", detail: "" }
     : publicationLoadError
       ? { kind: "DYNAMIC_RETRY", label: "Check again", detail: publicationLoadError }
       : dynamicReview?.state === "READY"
     ? { kind: "DYNAMIC_REVIEW", label: "Review Shop preview", detail: "Confirm the piece and its three public photos." }
-    : dynamicReview?.state === "PUBLISHED"
-      ? { kind: "DYNAMIC_LIVE", label: "View in Shop", detail: "This piece is live." }
-      : workspace.nextAction;
-  const dynamicStage = dynamicReview?.state === "READY"
+    : workspace.nextAction;
+  const dynamicStage = lifecycleWorkspace?.state === "ARCHIVED"
+    ? { stage: "ARCHIVED", label: "Archived" }
+    : lifecycleWorkspace?.state === "UNPUBLISHED"
+      ? { stage: "PRIVATE", label: "Off Shop" }
+      : lifecycleWorkspace?.state === "PUBLISHED"
+        ? { stage: "LIVE", label: "Live" }
+        : dynamicReview?.state === "READY"
     ? { stage: "READY", label: "Ready to publish" }
     : dynamicReview?.state === "PUBLISHED"
       ? { stage: "LIVE", label: "Live" }
@@ -246,8 +266,8 @@ export function PieceWorkspaceView({ garment, onDismiss, onContinueMedia }: { ga
     : dynamicReview?.state === "BLOCKED" ? dynamicReview.blockers : workspace.blockers;
   const mobileAction = reviewOpen
     ? { href: "#piece-publication-review", label: publishing ? "Publishing…" : "Review Shop preview" }
-    : nextAction.kind === "DYNAMIC_LIVE" && dynamicReview?.state === "PUBLISHED"
-      ? { href: dynamicReview.receipt.shopUrl, label: nextAction.label }
+    : nextAction.kind === "DYNAMIC_MANAGE"
+      ? { href: "#garment-lifecycle", label: nextAction.label }
       : workspace.nextAction.kind === "VIEW_SHOP" && listing
         ? { href: `/shop/products/${listing.slug}`, label: nextAction.label }
         : workspace.nextAction.kind === "VIEW_OPERATIONS"
@@ -329,14 +349,16 @@ export function PieceWorkspaceView({ garment, onDismiss, onContinueMedia }: { ga
   }
 
   function runNextAction() {
-    if (nextAction.kind === "DYNAMIC_REVIEW") {
+    if (nextAction.kind === "BUILD_SET") {
+      onBuildSet(garment);
+    } else if (nextAction.kind === "DYNAMIC_REVIEW") {
       setReviewOpen(true);
       window.setTimeout(() => {
         publicationSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
         publicationSectionRef.current?.focus({ preventScroll: true });
       }, 0);
-    } else if (nextAction.kind === "DYNAMIC_LIVE" && dynamicReview?.state === "PUBLISHED") {
-      window.location.assign(dynamicReview.receipt.shopUrl);
+    } else if (nextAction.kind === "DYNAMIC_MANAGE") {
+      lifecycleSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     } else if (nextAction.kind === "DYNAMIC_RETRY") {
       setPublicationReload((value) => value + 1);
     } else if (workspace.nextAction.kind === "CAPTURE") {
@@ -389,7 +411,7 @@ export function PieceWorkspaceView({ garment, onDismiss, onContinueMedia }: { ga
           <button className="button button-primary" disabled={nextAction.kind === "DYNAMIC_LOADING"} id="piece-primary-action" onClick={runNextAction} type="button">{nextAction.label}{nextAction.kind === "DYNAMIC_LOADING" ? null : <ArrowRight aria-hidden="true" size={15} />}</button>
         </section> : null}
         {pendingContract ? <PendingProductMedia capturedViews={capturedRoles} contract={pendingContract} title={garment.title} /> : null}
-        {captureTarget ? <section id={`piece-captures-${garment.id}`} ref={captureSectionRef} tabIndex={-1}><DraftDirectCaptures garment={garment} onCapturesChange={setCaptures} target={captureTarget} /></section> : null}
+        {captureTarget && !lifecycleOwnsMedia ? <section id={`piece-captures-${garment.id}`} ref={captureSectionRef} tabIndex={-1}><DraftDirectCaptures garment={garment} onCapturesChange={setCaptures} target={captureTarget} /></section> : null}
         {reviewOpen && dynamicReview?.state === "READY" ? <section className="studio-piece-shop studio-publication-review" id="piece-publication-review" ref={publicationSectionRef} tabIndex={-1}>
           <div className="studio-card-heading"><div><small>Shop preview</small><h3>{dynamicReview.title}</h3></div><strong>{formatNaira(dynamicReview.price)}</strong></div>
           <div className="studio-publication-media">
@@ -411,6 +433,7 @@ export function PieceWorkspaceView({ garment, onDismiss, onContinueMedia }: { ga
         {reviewOpen && publicationLoading ? <section className="studio-piece-shop studio-publication-review" id="piece-publication-review" aria-live="polite"><small>Refreshing Shop preview…</small></section> : null}
         {reviewOpen && !publicationLoading && publicationLoadError ? <section className="studio-piece-shop studio-publication-review" id="piece-publication-review"><p className="studio-engine-error" role="alert">{publicationLoadError}</p><button className="button button-primary" onClick={() => setPublicationReload((value) => value + 1)} type="button">Check again</button></section> : null}
         {visibleBlockers.length ? <section className="studio-piece-blockers" aria-label={`${garment.title} still needs`}><small>Still needed</small><div>{visibleBlockers.map((blocker) => <span key={blocker}>{blocker}</span>)}</div></section> : null}
+        {garment.privateWardrobeItemId ? <div ref={lifecycleSectionRef}><GarmentLifecyclePanel onWorkspaceChange={setLifecycleWorkspace} wardrobeItemId={garment.privateWardrobeItemId} /></div> : null}
         {listing ? <section className="studio-piece-shop" ref={listingSectionRef} tabIndex={-1}><ListingEditor listing={listing} /></section> : null}
       </div>
     </section>
@@ -529,6 +552,8 @@ export function WardrobeWorkbench() {
   const [publishingPage, setPublishingPage] = useState(0);
   const [wearWardrobeItemId, setWearWardrobeItemId] = useState<string | null>(null);
   const [wearReturnFocus, setWearReturnFocus] = useState<HTMLElement | null>(null);
+  const [setWardrobeItemId, setSetWardrobeItemId] = useState<string | null>(null);
+  const [setReturnFocus, setSetReturnFocus] = useState<HTMLElement | null>(null);
   const [guideOpen, setGuideOpen] = useState(false);
   const [guideReturnFocus, setGuideReturnFocus] = useState<HTMLElement | null>(null);
   const segments = useMemo(() => [
@@ -659,6 +684,13 @@ export function WardrobeWorkbench() {
         wardrobeItemId={wearWardrobeItemId}
       /> : null}
 
+      {setWardrobeItemId ? <GarmentSetBuilder
+        onDismiss={() => { setSetWardrobeItemId(null); setSetReturnFocus(null); }}
+        open
+        returnFocus={setReturnFocus}
+        wardrobeItemId={setWardrobeItemId}
+      /> : null}
+
       <StudioTaskSheet
         className="studio-guide-sheet"
         eyebrow="Lulu's guide"
@@ -695,6 +727,10 @@ export function WardrobeWorkbench() {
       <GarmentIntakeSheet
         client={studio.intakeClient}
         onDismiss={finishIntake}
+        onBuildSet={studio.scenario ? undefined : (id) => {
+          finishIntake();
+          window.setTimeout(() => setSetWardrobeItemId(id), 180);
+        }}
         onOpenWear={studio.scenario ? undefined : (id) => {
           finishIntake();
           window.setTimeout(() => setWearWardrobeItemId(id), 180);
@@ -713,6 +749,11 @@ export function WardrobeWorkbench() {
       >
         {openPiece ? <PieceWorkspaceView
           garment={openPiece}
+          onBuildSet={(garment) => {
+            setOpenPieceId(null);
+            setSetReturnFocus(pieceReturnFocus);
+            window.setTimeout(() => setSetWardrobeItemId(garment.privateWardrobeItemId ?? null), 180);
+          }}
           onDismiss={() => setOpenPieceId(null)}
           onContinueMedia={(garment) => {
             setOpenPieceId(null);

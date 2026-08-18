@@ -1,538 +1,248 @@
 "use client";
 
-import { FormEvent, useEffect, useRef, useState } from "react";
+/* Private Studio model assets use protected runtime URLs. */
+/* eslint-disable @next/next/no-img-element */
+
+import { FormEvent, useEffect, useId, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import {
-  ArrowLeft,
-  Check,
-  CheckCircle2,
+  Archive,
   ChevronRight,
+  CircleAlert,
   Lock,
   Pencil,
   Plus,
   ShieldCheck,
-  Sparkles,
   UserRound,
-  X,
 } from "lucide-react";
-import type { StudioModel } from "../../lib/studio/domain/entities";
-import { modelReadiness } from "../../lib/studio/domain/readiness";
-import { LULU_NEUTRAL_MASTER_PROFILE } from "../../lib/studio/domain/state";
+import type { StudioAuthorityModel } from "../../lib/studio/services/studio-authority-client";
 import { APPROVED_PUBLIC_MODEL_PREVIEW } from "../../lib/studio/projections/approved-catalogue";
 import { LifecycleBadge } from "./atoms/lifecycle-badge";
-import { ReadinessList } from "./atoms/readiness-list";
 import { StudioSegmentedView, useStudioSegment } from "./atoms/studio-segmented-view";
+import { StudioTaskSheet } from "./atoms/studio-task-sheet";
 import { useStudio } from "./studio-provider";
 
-type ModelTaskStep = "name" | "styling" | "readiness" | "review" | "receipt";
+type ApiFailure = { error?: { message?: string; recovery?: string } };
 
-interface ModelTaskDraft {
-  name: string;
-  hair: string;
-  makeup: string;
-  direction: string;
-  identityApproved: boolean;
-  consentConfirmed: boolean;
+async function responseBody<T>(response: Response): Promise<T> {
+  const body = await response.json().catch(() => ({})) as T | ApiFailure;
+  if (response.ok) return body as T;
+  const failure = body as ApiFailure;
+  throw new Error([failure.error?.message, failure.error?.recovery].filter(Boolean).join(" ") || "Studio could not save that model.");
 }
 
-interface ModelTask {
-  mode: "create" | "edit";
-  modelId?: string;
-  draft: ModelTaskDraft;
-  origin: "query" | "trigger";
-  returnFocus: HTMLElement | null;
-}
-
-const taskSteps: ModelTaskStep[] = ["name", "styling", "readiness", "review"];
-
-function modelDraft(model?: StudioModel): ModelTaskDraft {
-  if (model) {
-    return {
-      name: model.name,
-      hair: model.styling.hair,
-      makeup: model.styling.makeup,
-      direction: model.styling.direction,
-      identityApproved: model.readiness.identityApproved,
-      consentConfirmed: model.readiness.consentConfirmed,
-    };
-  }
-
+function styling(model: StudioAuthorityModel) {
+  const value = model.authority.styling;
   return {
-    name: "",
-    hair: LULU_NEUTRAL_MASTER_PROFILE.styling.hair,
-    makeup: LULU_NEUTRAL_MASTER_PROFILE.styling.makeup,
-    direction: LULU_NEUTRAL_MASTER_PROFILE.styling.direction,
-    identityApproved: false,
-    consentConfirmed: false,
+    hair: value?.hair || "Natural, softly shaped",
+    makeup: value?.makeup || "Fresh skin, quiet definition",
+    direction: value?.direction || "Neutral posture, product first",
   };
 }
 
-function ModelTaskSheet({
+function ModelTask({
+  mode,
+  model,
   onDismiss,
-  onSelect,
-  task,
+  onSaved,
+  open,
+  returnFocus,
 }: {
+  mode: "create" | "edit";
+  model: StudioAuthorityModel | null;
   onDismiss(): void;
-  onSelect(id: string): void;
-  task: ModelTask | null;
+  onSaved(model: StudioAuthorityModel): void;
+  open: boolean;
+  returnFocus: HTMLElement | null;
 }) {
-  const { createModel, models, updateModel } = useStudio();
-  const dialogRef = useRef<HTMLDialogElement>(null);
-  const closeButtonRef = useRef<HTMLButtonElement>(null);
-  const questionRef = useRef<HTMLHeadingElement>(null);
-  const [draft, setDraft] = useState<ModelTaskDraft>(() => task?.draft ?? modelDraft());
-  const [step, setStep] = useState<ModelTaskStep>("name");
-  const [editingFromReview, setEditingFromReview] = useState(false);
+  const currentStyling = model ? styling(model) : { hair: "", makeup: "", direction: "" };
+  const [name, setName] = useState(model?.name ?? "");
+  const [hair, setHair] = useState(currentStyling.hair);
+  const [makeup, setMakeup] = useState(currentStyling.makeup);
+  const [direction, setDirection] = useState(currentStyling.direction);
+  const [licenseUrl, setLicenseUrl] = useState("");
+  const [file, setFile] = useState<File | null>(null);
+  const [authorityConfirmed, setAuthorityConfirmed] = useState(false);
+  const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
-  const [receiptState, setReceiptState] = useState<"DRAFT" | "READY">("DRAFT");
+  const authorityConfirmationId = useId();
 
   useEffect(() => {
-    if (!task) return;
-    const dialog = dialogRef.current;
-    const bodyOverflow = document.body.style.overflow;
-    const documentOverflow = document.documentElement.style.overflow;
-    const closeFromBackdrop = (event: MouseEvent) => {
-      if (!dialog || event.target !== dialog) return;
-      const bounds = dialog.getBoundingClientRect();
-      const outside = event.clientX < bounds.left
-        || event.clientX > bounds.right
-        || event.clientY < bounds.top
-        || event.clientY > bounds.bottom;
-      if (outside) dialog.close();
-    };
-    const closeWhenQueryLeaves = () => {
-      if (task.origin !== "query") return;
-      const params = new URLSearchParams(window.location.search);
-      if (params.get("intake") !== "model") dialog?.close();
-    };
-
-    document.body.style.overflow = "hidden";
-    document.documentElement.style.overflow = "hidden";
-    dialog?.addEventListener("click", closeFromBackdrop);
-    window.addEventListener("popstate", closeWhenQueryLeaves);
-    if (dialog && !dialog.open) dialog.showModal();
-    requestAnimationFrame(() => closeButtonRef.current?.focus({ preventScroll: true }));
-
-    return () => {
-      document.body.style.overflow = bodyOverflow;
-      document.documentElement.style.overflow = documentOverflow;
-      dialog?.removeEventListener("click", closeFromBackdrop);
-      window.removeEventListener("popstate", closeWhenQueryLeaves);
-    };
-  }, [task]);
-
-  useEffect(() => {
-    if (!task) return;
-    requestAnimationFrame(() => questionRef.current?.focus({ preventScroll: true }));
-  }, [step, task]);
-
-  if (!task) {
-    return <dialog className="studio-intake-sheet studio-model-task-sheet" ref={dialogRef} />;
-  }
-  const activeTask = task;
-
-  const activeIndex = taskSteps.indexOf(step);
-  const progress = step === "receipt" || editingFromReview
-    ? 100
-    : Math.round(((Math.max(activeIndex, 0) + 1) / taskSteps.length) * 100);
-  const stylingComplete = Boolean(draft.hair.trim() && draft.makeup.trim() && draft.direction.trim());
-  const ready = stylingComplete && draft.identityApproved && draft.consentConfirmed;
-
-  function close() {
-    dialogRef.current?.close();
-  }
-
-  function validateName() {
-    const name = draft.name.trim();
-    if (!name) {
-      setError("Add the name Studio should use.");
-      return false;
-    }
-    const duplicate = models.some((model) => (
-      model.id !== activeTask.modelId
-      && model.name.trim().toLocaleLowerCase() === name.toLocaleLowerCase()
-    ));
-    if (duplicate) {
-      setError("That model name is already in Studio.");
-      return false;
-    }
+    setName(model?.name ?? "");
+    const next = model ? styling(model) : { hair: "", makeup: "", direction: "" };
+    setHair(next.hair);
+    setMakeup(next.makeup);
+    setDirection(next.direction);
+    setLicenseUrl("");
+    setFile(null);
+    setAuthorityConfirmed(false);
     setError("");
-    return true;
-  }
+  }, [model, open]);
 
-  function enterStep(next: ModelTaskStep, fromReview = false) {
-    setError("");
-    setEditingFromReview(fromReview);
-    setStep(next);
-  }
-
-  function advance() {
-    if (step === "name" && !validateName()) return;
-    if (editingFromReview) {
-      setEditingFromReview(false);
-      setStep("review");
-      return;
-    }
-    if (step === "name") setStep("styling");
-    if (step === "styling") setStep("readiness");
-    if (step === "readiness") setStep("review");
-    if (step === "review") save();
-  }
-
-  function back() {
-    if (editingFromReview) {
-      setEditingFromReview(false);
-      setStep("review");
-      return;
-    }
-    const previous = taskSteps[Math.max(0, activeIndex - 1)];
-    if (previous) setStep(previous);
-  }
-
-  function save() {
-    if (!validateName()) {
-      setEditingFromReview(true);
-      setStep("name");
-      return;
-    }
-    const update = {
-      name: draft.name,
-      styling: {
-        hair: draft.hair,
-        makeup: draft.makeup,
-        direction: draft.direction,
-      },
-      readiness: {
-        identityApproved: draft.identityApproved,
-        consentConfirmed: draft.consentConfirmed,
-        stylingComplete,
-      },
-    };
-
-    if (activeTask.mode === "create") {
-      const id = createModel({ name: draft.name });
-      if (!id) {
-        setError("Studio could not create this model. Check the name and try again.");
-        setStep("name");
-        return;
-      }
-      updateModel(id, update);
-      onSelect(id);
-    } else if (activeTask.modelId) {
-      updateModel(activeTask.modelId, update);
-      onSelect(activeTask.modelId);
-    }
-
-    setReceiptState(ready ? "READY" : "DRAFT");
-    setStep("receipt");
-    setEditingFromReview(false);
-  }
-
-  function submit(event: FormEvent<HTMLFormElement>) {
+  async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (step !== "receipt") advance();
+    setPending(true);
+    setError("");
+    try {
+      if (mode === "create") {
+        if (!file || !authorityConfirmed) throw new Error("Choose one adult model photo and confirm its usage authority.");
+        const form = new FormData();
+        form.set("name", name);
+        form.set("licenseUrl", licenseUrl);
+        form.set("authorityConfirmed", "true");
+        form.set("file", file);
+        const response = await fetch("/api/studio/models", { body: form, credentials: "same-origin", method: "POST" });
+        const result = await responseBody<{ model: StudioAuthorityModel }>(response);
+        onSaved(result.model);
+      } else if (model) {
+        const response = await fetch(`/api/studio/models/${model.id}`, {
+          body: JSON.stringify({ action: "UPDATE", name, styling: { hair, makeup, direction } }),
+          credentials: "same-origin",
+          headers: { accept: "application/json", "content-type": "application/json" },
+          method: "PATCH",
+        });
+        const result = await responseBody<{ model: StudioAuthorityModel }>(response);
+        onSaved(result.model);
+      }
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "The model could not be saved.");
+    } finally {
+      setPending(false);
+    }
   }
 
   return (
-    <dialog
-      aria-labelledby="studio-model-task-title"
-      aria-modal="true"
-      className="studio-intake-sheet studio-model-task-sheet"
-      onCancel={(event) => {
-        event.preventDefault();
-        close();
-      }}
-      onClose={() => {
-        onDismiss();
-        activeTask.returnFocus?.focus({ preventScroll: true });
-      }}
-      ref={dialogRef}
-    >
-      <form onSubmit={submit}>
-        <header className="studio-task-sheet-header">
-          <div className="studio-task-sheet-leading">
-            {(editingFromReview || step !== "name") && step !== "receipt" ? (
-              <button aria-label="Back" className="studio-icon-action" onClick={back} type="button">
-                <ArrowLeft aria-hidden="true" size={20} />
-              </button>
-            ) : null}
-            <div>
-              <p className="eyebrow">Model intake</p>
-              <h2 id="studio-model-task-title">{activeTask.mode === "create" ? "Add model" : `Edit ${activeTask.draft.name}`}</h2>
-            </div>
+    <StudioTaskSheet eyebrow={mode === "create" ? "Model authority" : "Model styling"} onDismiss={onDismiss} open={open} returnFocus={returnFocus} title={mode === "create" ? "Add model" : `Edit ${model?.name ?? "model"}`}>
+      <form className="studio-task-sheet-body" onSubmit={save}>
+        <section className="studio-task-question">
+          <h3>{mode === "create" ? "Who can wear the piece?" : "How should this model present it?"}</h3>
+          <div className="studio-form-grid studio-task-fields">
+            <label className="studio-field"><span>Model name</span><input autoComplete="off" maxLength={80} onChange={(event) => setName(event.target.value)} required value={name} /></label>
+            {mode === "create" ? <>
+              <label className="studio-field"><span>Adult model photo</span><input accept="image/jpeg,image/png,image/webp" onChange={(event) => setFile(event.target.files?.[0] ?? null)} required type="file" /></label>
+              <label className="studio-field studio-field-wide"><span>Usage source</span><input inputMode="url" maxLength={500} onChange={(event) => setLicenseUrl(event.target.value)} placeholder="https://…" required type="url" value={licenseUrl} /></label>
+              <label className="studio-settings-switch studio-field-wide" htmlFor={authorityConfirmationId}><span className="sr-only">Usage authority confirmed</span><span><strong>Usage authority confirmed</strong><small>I may use this adult photo for private Studio try-ons.</small></span><input checked={authorityConfirmed} id={authorityConfirmationId} onChange={(event) => setAuthorityConfirmed(event.target.checked)} type="checkbox" /><i aria-hidden="true"><b /></i></label>
+            </> : <>
+              <label className="studio-field"><span>Hair</span><input maxLength={120} onChange={(event) => setHair(event.target.value)} value={hair} /></label>
+              <label className="studio-field"><span>Makeup</span><input maxLength={120} onChange={(event) => setMakeup(event.target.value)} value={makeup} /></label>
+              <label className="studio-field studio-field-wide"><span>Direction</span><textarea maxLength={240} onChange={(event) => setDirection(event.target.value)} rows={3} value={direction} /></label>
+            </>}
           </div>
-          <button aria-label="Close model intake" className="studio-icon-action" onClick={close} ref={closeButtonRef} type="button">
-            <X aria-hidden="true" size={20} />
-          </button>
-        </header>
-
-        {step !== "receipt" ? (
-          <div className="studio-task-progress" aria-label={`Model intake ${progress}% complete`} role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progress}>
-            <span style={{ width: `${progress}%` }} />
-          </div>
-        ) : null}
-
-        <div className="studio-task-sheet-body">
-          {step === "name" ? (
-            <section className="studio-task-question">
-              <p className="eyebrow">Name</p>
-              <h3 ref={questionRef} tabIndex={-1}>What should Studio call this model?</h3>
-              <p>Use the working name you will recognise when preparing a listing.</p>
-              <label className="studio-field studio-task-primary-field">
-                <span>Model name</span>
-                <input
-                  aria-describedby={error ? "studio-model-task-error" : undefined}
-                  aria-invalid={Boolean(error)}
-                  autoComplete="off"
-                  onChange={(event) => { setDraft((current) => ({ ...current, name: event.target.value })); setError(""); }}
-                  placeholder="Model name"
-                  value={draft.name}
-                />
-              </label>
-            </section>
-          ) : null}
-
-          {step === "styling" ? (
-            <section className="studio-task-question">
-              <p className="eyebrow">Styling</p>
-              <h3 ref={questionRef} tabIndex={-1}>How should this model present the clothes?</h3>
-              <p>Studio starts with Lulu’s quiet, product-first direction. Change only what this model needs.</p>
-              <div className="studio-form-grid studio-task-fields">
-                <label className="studio-field"><span>Hair direction</span><input value={draft.hair} onChange={(event) => setDraft((current) => ({ ...current, hair: event.target.value }))} /></label>
-                <label className="studio-field"><span>Makeup direction</span><input value={draft.makeup} onChange={(event) => setDraft((current) => ({ ...current, makeup: event.target.value }))} /></label>
-                <label className="studio-field studio-field-wide"><span>Presentation direction</span><textarea rows={4} value={draft.direction} onChange={(event) => setDraft((current) => ({ ...current, direction: event.target.value }))} /></label>
-              </div>
-            </section>
-          ) : null}
-
-          {step === "readiness" ? (
-            <section className="studio-task-question">
-              <p className="eyebrow">Readiness</p>
-              <h3 ref={questionRef} tabIndex={-1}>What is already cleared?</h3>
-              <p>You can save a draft now and finish approval later.</p>
-              <fieldset className="studio-readiness-controls studio-task-readiness">
-                <legend className="sr-only">Model readiness</legend>
-                <label className={draft.identityApproved ? "is-checked" : undefined}>
-                  <input type="checkbox" checked={draft.identityApproved} onChange={(event) => setDraft((current) => ({ ...current, identityApproved: event.target.checked }))} />
-                  <span><ShieldCheck aria-hidden="true" size={19} /><strong>Identity approved</strong><small>The controlled identity set is ready for Studio use</small></span>
-                </label>
-                <label className={draft.consentConfirmed ? "is-checked" : undefined}>
-                  <input type="checkbox" checked={draft.consentConfirmed} onChange={(event) => setDraft((current) => ({ ...current, consentConfirmed: event.target.checked }))} />
-                  <span><Check aria-hidden="true" size={19} /><strong>Commercial use confirmed</strong><small>The current Studio use is cleared</small></span>
-                </label>
-              </fieldset>
-            </section>
-          ) : null}
-
-          {step === "review" ? (
-            <section className="studio-task-question studio-task-review">
-              <p className="eyebrow">Review</p>
-              <h3 ref={questionRef} tabIndex={-1}>Save this model profile?</h3>
-              <p>{ready ? "Everything needed for listings is ready." : "This profile will stay in draft until every readiness item is complete."}</p>
-              <div className="studio-review-rows">
-                <button onClick={() => enterStep("name", true)} type="button"><span><small>Name</small><strong>{draft.name || "Not added"}</strong></span><Pencil aria-hidden="true" size={16} /></button>
-                <button onClick={() => enterStep("styling", true)} type="button"><span><small>Styling</small><strong>{stylingComplete ? "Product direction set" : "Needs direction"}</strong></span><Pencil aria-hidden="true" size={16} /></button>
-                <button onClick={() => enterStep("readiness", true)} type="button"><span><small>Readiness</small><strong>{ready ? "Ready for listings" : "Save as draft"}</strong></span><Pencil aria-hidden="true" size={16} /></button>
-              </div>
-            </section>
-          ) : null}
-
-          {step === "receipt" ? (
-            <section className="studio-task-receipt" aria-live="polite" role="status">
-              <div className="studio-model-receipt-visual" aria-hidden="true">
-                <span><UserRound size={52} strokeWidth={1.2} /></span>
-                <small>{receiptState === "READY" ? "Ready" : "Draft"}</small>
-              </div>
-              <div className="studio-receipt-copy">
-                <span><CheckCircle2 aria-hidden="true" size={24} /></span>
-                <p className="eyebrow">Saved</p>
-                <h3 ref={questionRef} tabIndex={-1}>{draft.name} is in Studio.</h3>
-                <p>{receiptState === "READY" ? "Ready for approved try-ons." : "Saved privately. Finish approval when ready."}</p>
-                <div className="studio-receipt-state"><LifecycleBadge state={receiptState} /><small>Private Studio profile</small></div>
-              </div>
-            </section>
-          ) : null}
-
-          <p className="studio-task-error" id="studio-model-task-error" role={error ? "alert" : undefined}>{error}</p>
-        </div>
-
-        <footer className="studio-task-sheet-footer">
-          {step === "receipt" ? (
-            <button className="button button-primary" onClick={close} type="button">Done</button>
-          ) : (
-            <>
-              <button className="button button-secondary" onClick={close} type="button">Cancel</button>
-              <button className="button button-primary" type="submit">
-                {step === "review" ? (activeTask.mode === "create" ? "Add model" : "Save changes") : editingFromReview ? "Done" : "Continue"}
-              </button>
-            </>
-          )}
-        </footer>
+        </section>
+        {error ? <p className="studio-task-error" role="alert">{error}</p> : null}
+        <footer className="studio-task-sheet-footer"><button className="button button-secondary" onClick={onDismiss} type="button">Cancel</button><button className="button button-primary" disabled={pending} type="submit">{pending ? "Saving…" : mode === "create" ? "Add model" : "Save changes"}</button></footer>
       </form>
-    </dialog>
-  );
-}
-
-function ModelProfile({ model, onEdit, view }: { model: StudioModel; onEdit(event: React.MouseEvent<HTMLButtonElement>): void; view: string }) {
-  const gates = modelReadiness(model);
-  return (
-    <section className="studio-model-profile studio-stack-panel" id={`studio-view-${view}`} aria-labelledby={`studio-tab-${view}`} role="tabpanel">
-      <div className="studio-editor-heading">
-        <div>
-          <p className="eyebrow">{model.isDefault ? "Approved default" : "Model profile"}</p>
-          <h2 id="studio-model-profile-title">{model.name}</h2>
-        </div>
-        <LifecycleBadge state={model.state} />
-      </div>
-
-      {view === "profile" && model.isDefault ? (
-        <div className="studio-approved-prefill" role="note">
-          <ShieldCheck aria-hidden="true" size={18} strokeWidth={1.8} />
-          <span><strong>Lulu approved profile</strong><small>Approved portrait and product-first direction</small></span>
-        </div>
-      ) : null}
-
-      {view === "styling" ? <section className="studio-model-profile-section" id="model-styling" aria-labelledby="studio-model-styling-title">
-        <div className="studio-profile-section-heading"><div><p className="eyebrow">Styling</p><h3 id="studio-model-styling-title">How {model.name} presents the clothes</h3></div>{model.isDefault ? <span><Lock aria-hidden="true" size={14} />Approved profile</span> : null}</div>
-        <dl className="studio-model-facts">
-          <div><dt>Hair</dt><dd>{model.styling.hair || "Not set"}</dd></div>
-          <div><dt>Makeup</dt><dd>{model.styling.makeup || "Not set"}</dd></div>
-          <div><dt>Direction</dt><dd>{model.styling.direction || "Not set"}</dd></div>
-        </dl>
-      </section> : null}
-
-      {view === "readiness" ? <section className="studio-model-profile-section" id="model-readiness" aria-labelledby="studio-model-readiness-title">
-        <div className="studio-profile-section-heading"><div><p className="eyebrow">Readiness</p><h3 id="studio-model-readiness-title">{model.state === "READY" ? "Ready for listings" : "What still needs attention"}</h3></div><strong>{model.completeness}%</strong></div>
-        <ReadinessList gates={gates} />
-      </section> : null}
-
-      <div className="studio-model-profile-actions">
-        {model.isDefault ? (
-          <div className="studio-model-lock-note"><Lock aria-hidden="true" size={16} /><span><strong>Lulu stays consistent.</strong><small>Add another model for a different identity or styling profile.</small></span></div>
-        ) : (
-          <button className="button button-primary" onClick={onEdit} type="button"><Pencil aria-hidden="true" size={16} />Edit model</button>
-        )}
-      </div>
-    </section>
+    </StudioTaskSheet>
   );
 }
 
 export function ModelAtelier() {
-  const { models, defaultModelId, hydration } = useStudio();
+  const { authority } = useStudio();
   const searchParams = useSearchParams();
   const intakeHandledRef = useRef(false);
-  const [selectedId, setSelectedId] = useState(defaultModelId);
-  const [task, setTask] = useState<ModelTask | null>(null);
-  const selected = models.find((model) => model.id === selectedId)
-    ?? models.find((model) => model.id === defaultModelId)
+  const models = authority.snapshot?.models ?? [];
+  const readyModels = models.filter((model) => model.state === "READY");
+  const [selectedId, setSelectedId] = useState("");
+  const [task, setTask] = useState<"create" | "edit" | null>(null);
+  const [returnFocus, setReturnFocus] = useState<HTMLElement | null>(null);
+  const [archiveOpen, setArchiveOpen] = useState(false);
+  const [archiveReason, setArchiveReason] = useState("");
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState("");
+  const selected = readyModels.find((model) => model.id === selectedId)
+    ?? readyModels.find((model) => model.kind === "LULU_V3")
+    ?? readyModels[0]
     ?? models[0];
-  const modelSegments = [
+  const segments = [
     { key: "profile", label: "Profile" },
     { key: "styling", label: "Styling" },
-    { key: "readiness", label: "Readiness", count: selected?.completeness },
+    { key: "authority", label: "Authority" },
   ];
-  const { active: activeView, isPending: viewPending, select: selectView } = useStudioSegment(modelSegments, "profile");
+  const { active: activeView, isPending: viewPending, select: selectView } = useStudioSegment(segments, "profile");
+
+  useEffect(() => {
+    if (!selectedId && selected) setSelectedId(selected.id);
+  }, [selected, selectedId]);
 
   useEffect(() => {
     if (searchParams.get("intake") !== "model") {
       intakeHandledRef.current = false;
       return;
     }
-    if (intakeHandledRef.current || hydration === "idle" || hydration === "restoring") return;
+    if (intakeHandledRef.current || authority.status !== "ready") return;
     intakeHandledRef.current = true;
-    const frame = window.requestAnimationFrame(() => {
-      setTask({ mode: "create", draft: modelDraft(), origin: "query", returnFocus: null });
-    });
-    return () => window.cancelAnimationFrame(frame);
-  }, [hydration, searchParams]);
+    setTask("create");
+  }, [authority.status, searchParams]);
 
-  function openCreate(returnFocus: HTMLElement | null) {
-    setTask({ mode: "create", draft: modelDraft(), origin: "trigger", returnFocus });
-  }
-
-  function openEdit(model: StudioModel, returnFocus: HTMLElement | null) {
-    setTask({ mode: "edit", modelId: model.id, draft: modelDraft(model), origin: "trigger", returnFocus });
+  function openTask(mode: "create" | "edit", focus: HTMLElement | null) {
+    setReturnFocus(focus);
+    setTask(mode);
+    setError("");
   }
 
   function dismissTask() {
-    if (window.location.search.includes("intake=model")) {
-      window.history.replaceState(window.history.state, "", "/studio/models");
-    }
+    if (window.location.search.includes("intake=model")) window.history.replaceState(window.history.state, "", "/studio/models");
     setTask(null);
   }
 
-  if (hydration === "idle" || hydration === "restoring" || !selected) {
-    return <div className="studio-loading" role="status">Opening model atelier…</div>;
+  async function archiveModel(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!selected || selected.kind === "LULU_V3") return;
+    setPending(true);
+    setError("");
+    try {
+      const response = await fetch(`/api/studio/models/${selected.id}`, {
+        body: JSON.stringify({ action: "ARCHIVE", reason: archiveReason }),
+        credentials: "same-origin",
+        headers: { accept: "application/json", "content-type": "application/json" },
+        method: "PATCH",
+      });
+      await responseBody<{ model: StudioAuthorityModel }>(response);
+      setArchiveOpen(false);
+      setArchiveReason("");
+      setSelectedId("");
+      await authority.refresh();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "The model could not be archived.");
+    } finally {
+      setPending(false);
+    }
   }
+
+  if (authority.status === "idle" || authority.status === "loading") return <div className="studio-loading" role="status">Opening model atelier…</div>;
+  if (authority.status === "error" || !authority.snapshot) return <div className="studio-quiet-empty" role="alert"><CircleAlert aria-hidden="true" size={24} /><div><strong>Models unavailable</strong><p>{authority.error}</p></div><button className="button button-secondary" onClick={() => void authority.refresh()} type="button">Try again</button></div>;
 
   return (
     <div className="studio-ops-page">
       <header className="studio-ops-heading" id="models">
-        <div><p className="eyebrow">Model atelier</p><h1>Choose who wears the piece.</h1><p>Lulu is your approved default. Add another model only when you need a distinct identity or styling profile.</p></div>
-        <div className="studio-model-heading-actions">
-          <span className="studio-private-chip"><ShieldCheck aria-hidden="true" size={15} />Private readiness only</span>
-          <button className="button button-primary" onClick={(event) => openCreate(event.currentTarget)} type="button"><Plus aria-hidden="true" size={17} />Add model</button>
-        </div>
+        <div><p className="eyebrow">Model atelier</p><h1>Choose who wears the piece.</h1><p>Every model keeps its image, usage source and authority together.</p></div>
+        <div className="studio-model-heading-actions"><span className="studio-private-chip"><ShieldCheck aria-hidden="true" size={15} />Private authority</span><button className="button button-primary" onClick={(event) => openTask("create", event.currentTarget)} type="button"><Plus aria-hidden="true" size={17} />Add model</button></div>
       </header>
 
-      <StudioSegmentedView active={activeView} label="Model workspace" onSelect={selectView} pending={viewPending} segments={modelSegments} />
+      <StudioSegmentedView active={activeView} label="Model workspace" onSelect={selectView} pending={viewPending} segments={segments} />
 
       <div className="studio-model-layout">
         <aside className="studio-model-index">
-          <div className="studio-index-heading"><span>Models</span><strong>{models.length}</strong></div>
-          <div className="studio-model-list" role="group" aria-label="Studio models">
-            {models.map((model) => (
-              <button
-                aria-pressed={selected.id === model.id}
-                className={selected.id === model.id ? "studio-model-option is-selected" : "studio-model-option"}
-                key={model.id}
-                onClick={() => setSelectedId(model.id)}
-                type="button"
-              >
-                <span className="studio-model-avatar" aria-hidden="true"><UserRound size={21} strokeWidth={1.6} /></span>
-                <span><strong>{model.name}</strong><small>{model.isDefault ? "Approved default" : `${model.completeness}% ready`}</small></span>
-                <LifecycleBadge state={model.state} />
-              </button>
-            ))}
-          </div>
-          <button className="studio-model-create" id="new-model" onClick={(event) => openCreate(event.currentTarget)} type="button"><Plus aria-hidden="true" size={18} /><span><strong>Add another model</strong><small>Guided name, styling and readiness</small></span><ChevronRight aria-hidden="true" size={16} /></button>
+          <div className="studio-index-heading"><span>Models</span><strong>{readyModels.length}</strong></div>
+          <div className="studio-model-list" role="group" aria-label="Studio models">{readyModels.map((model) => <button aria-pressed={selected?.id === model.id} className={selected?.id === model.id ? "studio-model-option is-selected" : "studio-model-option"} key={model.id} onClick={() => setSelectedId(model.id)} type="button"><span className="studio-model-avatar" aria-hidden="true"><UserRound size={21} /></span><span><strong>{model.name}</strong><small>{model.kind === "LULU_V3" ? "Approved default" : "Authority confirmed"}</small></span><LifecycleBadge state="READY" /></button>)}</div>
+          <button className="studio-model-create" onClick={(event) => openTask("create", event.currentTarget)} type="button"><Plus aria-hidden="true" size={18} /><span><strong>Add another model</strong><small>Photo and usage source required</small></span><ChevronRight aria-hidden="true" size={16} /></button>
         </aside>
-        <div className={`studio-model-stage${activeView === "profile" ? "" : " is-panel-only"}`}>
-          {activeView === "profile" ? <div className={`studio-model-portrait${selected.isDefault ? " is-approved" : ""}`}>
-            {selected.isDefault ? (
-              <>
-                {/* Approved public V3 try-on only; the private V3 identity master never enters this bundle. */}
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  alt={`${selected.name}, approved V3 public try-on preview`}
-                  className="studio-model-approved-image"
-                  height={1619}
-                  src={APPROVED_PUBLIC_MODEL_PREVIEW.src}
-                  width={972}
-                />
-                <span className="studio-model-anchor-badge">
-                  <ShieldCheck aria-hidden="true" size={17} strokeWidth={1.8} />
-                  <span><small>Approved V3 profile</small><strong>Lulu</strong></span>
-                </span>
-                <div className="studio-model-master-caption">
-                  <small>V3 public try-on preview</small>
-                  <strong>{selected.name}</strong>
-                  <span>Ready for approved try-ons</span>
-                </div>
-              </>
-            ) : (
-              <>
-                <span aria-hidden="true"><Sparkles size={22} strokeWidth={1.5} /></span>
-                <div className="studio-model-silhouette" aria-hidden="true"><i /><b /></div>
-                <small>{selected.version}</small>
-              </>
-            )}
-          </div> : null}
-          <ModelProfile model={selected} onEdit={(event) => openEdit(selected, event.currentTarget)} view={activeView} />
-        </div>
+
+        {selected ? <div className={`studio-model-stage${activeView === "profile" ? "" : " is-panel-only"}`}>
+          {activeView === "profile" ? <div className={`studio-model-portrait${selected.kind === "LULU_V3" ? " is-approved" : ""}`}><img alt={`${selected.name}, private approved model authority`} className="studio-model-approved-image" height={1619} src={selected.kind === "LULU_V3" ? APPROVED_PUBLIC_MODEL_PREVIEW.src : selected.sourceAssetUrl} width={972} /><span className="studio-model-anchor-badge"><ShieldCheck aria-hidden="true" size={17} /><span><small>{selected.kind === "LULU_V3" ? "Approved V3 profile" : "Usage confirmed"}</small><strong>{selected.name}</strong></span></span><div className="studio-model-master-caption"><small>Private model authority</small><strong>{selected.name}</strong><span>Ready for try-ons</span></div></div> : null}
+          <section className="studio-model-profile studio-stack-panel" role="tabpanel">
+            <div className="studio-editor-heading"><div><p className="eyebrow">{selected.kind === "LULU_V3" ? "Approved default" : "Model profile"}</p><h2>{selected.name}</h2></div><LifecycleBadge state={selected.state === "READY" ? "READY" : "DRAFT"} /></div>
+            {activeView === "profile" ? <div className="studio-approved-prefill" role="note"><ShieldCheck aria-hidden="true" size={18} /><span><strong>Ready for private Wear work</strong><small>Authority confirmed {new Intl.DateTimeFormat("en-NG", { dateStyle: "medium" }).format(new Date(selected.authorityConfirmedAt))}</small></span></div> : null}
+            {activeView === "styling" ? <section className="studio-model-profile-section"><div className="studio-profile-section-heading"><div><p className="eyebrow">Styling</p><h3>How {selected.name} presents the clothes</h3></div></div><dl className="studio-model-facts"><div><dt>Hair</dt><dd>{styling(selected).hair}</dd></div><div><dt>Makeup</dt><dd>{styling(selected).makeup}</dd></div><div><dt>Direction</dt><dd>{styling(selected).direction}</dd></div></dl></section> : null}
+            {activeView === "authority" ? <section className="studio-model-profile-section"><div className="studio-profile-section-heading"><div><p className="eyebrow">Authority</p><h3>Evidence and limits</h3></div><ShieldCheck aria-label="Confirmed" size={18} /></div><dl className="studio-model-facts"><div><dt>Source</dt><dd>{selected.licenseUrl ? <a href={selected.licenseUrl} rel="noreferrer" target="_blank">Open usage source</a> : "Lulu private authority"}</dd></div><div><dt>Allowed</dt><dd>{String(selected.authority.allowedUse ?? "Private Studio try-on generation")}</dd></div><div><dt>Restricted</dt><dd>{String(selected.authority.restrictedUse ?? "No public use without separate approval")}</dd></div></dl></section> : null}
+            <div className="studio-model-profile-actions">{selected.kind === "LULU_V3" ? <div className="studio-model-lock-note"><Lock aria-hidden="true" size={16} /><span><strong>Lulu stays consistent.</strong><small>Add another model for a different identity.</small></span></div> : <div className="studio-inventory-decision-grid"><button className="button button-primary" onClick={(event) => openTask("edit", event.currentTarget)} type="button"><Pencil aria-hidden="true" size={16} />Edit styling</button><button className="button button-secondary" onClick={(event) => { setReturnFocus(event.currentTarget); setArchiveOpen(true); }} type="button"><Archive aria-hidden="true" size={16} />Withdraw</button></div>}</div>
+          </section>
+        </div> : <div className="studio-quiet-empty"><UserRound aria-hidden="true" size={24} /><div><strong>No model authority yet</strong><p>Add one adult photo and its usage source.</p></div></div>}
       </div>
 
-      <ModelTaskSheet key={task ? `${task.mode}-${task.modelId ?? "new"}` : "closed"} onDismiss={dismissTask} onSelect={setSelectedId} task={task} />
+      <ModelTask key={`${task ?? "closed"}-${selected?.id ?? "none"}`} mode={task ?? "create"} model={task === "edit" ? selected ?? null : null} onDismiss={dismissTask} onSaved={async (model) => { setSelectedId(model.id); setTask(null); await authority.refresh(); }} open={Boolean(task)} returnFocus={returnFocus} />
+
+      <StudioTaskSheet eyebrow="Withdraw authority" onDismiss={() => setArchiveOpen(false)} open={archiveOpen} returnFocus={returnFocus} title={selected ? `Withdraw ${selected.name}` : "Withdraw model"}><form className="studio-task-sheet-body" onSubmit={archiveModel}><section className="studio-task-question"><h3>Stop using this model?</h3><p>Existing generated media stays in history. New try-ons will no longer offer this model.</p><label className="studio-field"><span>Reason</span><textarea maxLength={240} onChange={(event) => setArchiveReason(event.target.value)} required rows={3} value={archiveReason} /></label></section>{error ? <p className="studio-task-error" role="alert">{error}</p> : null}<footer className="studio-task-sheet-footer"><button className="button button-secondary" onClick={() => setArchiveOpen(false)} type="button">Keep model</button><button className="button button-primary" disabled={pending} type="submit">{pending ? "Withdrawing…" : "Withdraw authority"}</button></footer></form></StudioTaskSheet>
     </div>
   );
 }

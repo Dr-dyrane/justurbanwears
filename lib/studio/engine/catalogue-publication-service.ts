@@ -35,7 +35,7 @@ type PublicationImagePipeline = {
 
 const createPublicationImagePipeline = sharp as unknown as (input: Uint8Array) => PublicationImagePipeline;
 
-type PublicationSource = {
+export type PublicationSource = {
   id: string;
   slot: PublicationMediaSlot;
   label: string;
@@ -47,7 +47,7 @@ type PublicationSource = {
   assetUrl: string;
 };
 
-type ReadyContext = {
+export type ReadyPublicationContext = {
   item: WardrobeItem;
   front: StudioAsset;
   back: PendingCaptureRow;
@@ -126,10 +126,10 @@ export function studioPublicationBlockers(item: WardrobeItem, sources: Publicati
   return [...new Set(blockers)];
 }
 
-async function publicationContext(wardrobeItemId: string, operator: StudioOperator): Promise<{
+export async function getStudioPublicationContext(wardrobeItemId: string, operator: StudioOperator): Promise<{
   item: WardrobeItem;
   sources: PublicationSource[];
-  ready?: ReadyContext;
+  ready?: ReadyPublicationContext;
   blockers: string[];
 }> {
   const item = await getOwnedWardrobeItem(wardrobeItemId, operator.subject);
@@ -218,8 +218,13 @@ export async function getStudioPublicationReview(
   operator: StudioOperator,
 ): Promise<StudioPublicationReview> {
   const existing = await findCataloguePublication({ wardrobeItemId, operatorSubject: operator.subject });
-  if (existing) return { state: "PUBLISHED", receipt: cataloguePublicationReceipt(existing) };
-  const context = await publicationContext(wardrobeItemId, operator);
+  if (existing?.state === "PUBLISHED") return { state: "PUBLISHED", receipt: cataloguePublicationReceipt(existing) };
+  if (existing) return {
+    state: "BLOCKED",
+    wardrobeItemId,
+    blockers: [existing.state === "ARCHIVED" ? "Archived" : "Off Shop · use listing controls"],
+  };
+  const context = await getStudioPublicationContext(wardrobeItemId, operator);
   if (!context.ready) return { state: "BLOCKED", wardrobeItemId, blockers: context.blockers };
   return {
     state: "READY",
@@ -268,7 +273,7 @@ export async function normalizeStudioPublicationImage(bytes: Uint8Array) {
   return verifyStudioImage(normalizedBytes, "image/webp");
 }
 
-async function publishMedia(slug: string, source: PublicationSource): Promise<PublicPublicationMedia> {
+export async function publishStudioPublicationMedia(slug: string, source: PublicationSource): Promise<PublicPublicationMedia> {
   const sourceImage = await verifiedPrivateSource(source);
   const normalized = await normalizeStudioPublicationImage(sourceImage.bytes);
   if (!normalized.width || !normalized.height) {
@@ -334,10 +339,10 @@ export async function publishStudioPiece(input: {
     operatorSubject: input.operator.subject,
   });
   if (existing) {
-    if (existing.idempotencyKey === input.idempotencyKey) return cataloguePublicationReceipt(existing);
-    throw new StudioEngineError("INVALID_TRANSITION", 409, "This piece is already published.", "Open its Shop page.");
+    if (existing.state === "PUBLISHED" && existing.idempotencyKey === input.idempotencyKey) return cataloguePublicationReceipt(existing);
+    throw new StudioEngineError("INVALID_TRANSITION", 409, "This piece was published before.", "Use its listing controls.");
   }
-  const context = await publicationContext(input.wardrobeItemId, input.operator);
+  const context = await getStudioPublicationContext(input.wardrobeItemId, input.operator);
   if (!context.ready) {
     throw new StudioEngineError("INVALID_TRANSITION", 409, "This piece is not ready.", context.blockers.join(", "));
   }
@@ -345,8 +350,8 @@ export async function publishStudioPiece(input: {
     throw new StudioEngineError("VERSION_CONFLICT", 409, "This piece changed during review.", "Review it again before publishing.");
   }
   const slug = dynamicStudioSlug(context.item);
-  const media = await Promise.all(context.sources.map((source) => publishMedia(slug, source)));
-  const current = await publicationContext(input.wardrobeItemId, input.operator);
+  const media = await Promise.all(context.sources.map((source) => publishStudioPublicationMedia(slug, source)));
+  const current = await getStudioPublicationContext(input.wardrobeItemId, input.operator);
   if (!current.ready || current.ready.sourceRevision !== input.expectedRevision) {
     throw new StudioEngineError("VERSION_CONFLICT", 409, "This piece changed during review.", "Review it again before publishing.");
   }
@@ -396,7 +401,7 @@ export async function publishStudioPiece(input: {
       wardrobeItemId: input.wardrobeItemId,
       operatorSubject: input.operator.subject,
     });
-    if (concurrent?.idempotencyKey === input.idempotencyKey) {
+    if (concurrent?.state === "PUBLISHED" && concurrent.idempotencyKey === input.idempotencyKey) {
       invalidateServerShopCatalogue();
       return cataloguePublicationReceipt(concurrent);
     }

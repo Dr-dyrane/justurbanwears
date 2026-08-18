@@ -11,6 +11,8 @@ import { ShopOrderError } from "./types";
 import {
   checkoutRequestFingerprint,
   parseCheckoutIntent,
+  parseAssistedOrder,
+  parseCustomerOrderMutation,
   parseEvidenceMetadata,
   parseExpectedVersion,
   parseOperatorTransition,
@@ -19,11 +21,14 @@ import {
   parseRefundAmount,
   parseRefundCurrency,
   parseRefundReference,
+  parseReturnLineDispositions,
   parseReturnRequest,
   parseReturnTransition,
   parseOrderReference,
   parseUuid,
+  sha256Fingerprint,
 } from "./validation";
+import type { ShopOrderListQuery, ShopOrderPage } from "./types";
 
 type CommandBody = Record<string, unknown>;
 
@@ -72,13 +77,30 @@ export class ShopOrderService {
     this.returnWindowMs = options.returnWindowMs ?? configuredReturnWindowMs();
   }
 
-  createOrder(actor: ShopCustomerActor, value: unknown): Promise<ShopServerOrder> {
+  async createOrder(actor: ShopCustomerActor, value: unknown): Promise<ShopServerOrder> {
     const intent = parseCheckoutIntent(value);
     const now = this.now();
+    await this.store.claimCustomerIdentity(actor, now);
     return this.store.createOrder({
       actor,
       intent,
       requestFingerprint: checkoutRequestFingerprint(intent),
+      now,
+      reservationExpiresAt: new Date(now.getTime() + this.reservationTtlMs),
+    });
+  }
+
+  createAssistedOrder(actor: ShopOperatorActor, value: unknown): Promise<ShopServerOrder> {
+    const order = parseAssistedOrder(value);
+    const now = this.now();
+    return this.store.createAssistedOrder({
+      actor,
+      ...order,
+      requestFingerprint: sha256Fingerprint({
+        checkout: checkoutRequestFingerprint(order.intent),
+        source: order.source,
+        sourceNote: order.sourceNote,
+      }),
       now,
       reservationExpiresAt: new Date(now.getTime() + this.reservationTtlMs),
     });
@@ -92,23 +114,59 @@ export class ShopOrderService {
     return this.createOrder(actor, intent);
   }
 
-  listCustomerOrders(actor: ShopCustomerActor): Promise<ShopServerOrder[]> {
+  async listCustomerOrders(actor: ShopCustomerActor): Promise<ShopServerOrder[]> {
+    const now = this.now();
+    await this.store.claimCustomerIdentity(actor, now);
+    await this.store.expireReservations(now, 100);
     return this.store.listCustomerOrders(actor.subject, 50);
   }
 
+  async pageCustomerOrders(actor: ShopCustomerActor, query: ShopOrderListQuery): Promise<ShopOrderPage> {
+    const now = this.now();
+    await this.store.claimCustomerIdentity(actor, now);
+    await this.store.expireReservations(now, 100);
+    return this.store.pageCustomerOrders(actor.subject, query);
+  }
+
   async getCustomerOrder(actor: ShopCustomerActor, rawReference: unknown): Promise<ShopServerOrder> {
+    const now = this.now();
+    await this.store.claimCustomerIdentity(actor, now);
+    await this.store.expireReservations(now, 100);
     const reference = parseOrderReference(rawReference);
     const order = await this.store.getCustomerOrder(actor.subject, reference);
     if (!order) throw new ShopOrderError("NOT_FOUND", "The order was not found.");
     return order;
   }
 
-  listOperatorOrders(actor: ShopOperatorActor): Promise<ShopServerOrder[]> {
+  async mutateCustomerOrder(
+    actor: ShopCustomerActor,
+    rawReference: unknown,
+    value: unknown,
+  ): Promise<ShopServerOrder> {
+    const parsed = parseCustomerOrderMutation(value);
+    const now = this.now();
+    await this.store.claimCustomerIdentity(actor, now);
+    return this.store.mutateCustomerOrder({
+      actor,
+      reference: parseOrderReference(rawReference),
+      ...parsed,
+      now,
+    });
+  }
+
+  async listOperatorOrders(actor: ShopOperatorActor): Promise<ShopServerOrder[]> {
     void actor;
+    await this.store.expireReservations(this.now(), 100);
     return this.store.listOperatorOrders(100);
   }
 
+  async pageOperatorOrders(_actor: ShopOperatorActor, query: ShopOrderListQuery): Promise<ShopOrderPage> {
+    await this.store.expireReservations(this.now(), 100);
+    return this.store.pageOperatorOrders(query);
+  }
+
   async getOperatorOrder(_actor: ShopOperatorActor, rawReference: unknown): Promise<ShopServerOrder> {
+    await this.store.expireReservations(this.now(), 100);
     const reference = parseOrderReference(rawReference);
     const order = await this.store.getOperatorOrder(reference);
     if (!order) throw new ShopOrderError("NOT_FOUND", "The order was not found.");
@@ -122,8 +180,12 @@ export class ShopOrderService {
   ): Promise<ShopServerOrder> {
     const body = commandBody(value, ["expectedVersion", "transition", "details", "note"]);
     const transition = parseOperatorTransition(body.transition);
-    if (transition.dimension === "FUNDS_CONFIRMATION" && actor.role !== "admin") {
-      throw new ShopOrderError("FORBIDDEN", "Admin access is required to confirm settled funds.");
+    if (
+      (transition.dimension === "FUNDS_CONFIRMATION"
+        || (transition.dimension === "CANCELLATION_REFUND" && transition.target === "COMPLETED"))
+      && actor.role !== "admin"
+    ) {
+      throw new ShopOrderError("FORBIDDEN", "Admin access is required to record settled money.");
     }
     const now = this.now();
     const note = parseOptionalNote(body.note);
@@ -139,6 +201,11 @@ export class ShopOrderService {
       }
       returnEligibleUntil = new Date(handoffAt.getTime() + this.returnWindowMs);
     }
+    if (transition.dimension === "PICKUP") {
+      if (details?.kind !== "PICKUP_SCHEDULE" || new Date(details.pickupAppointment) <= now) {
+        throw new ShopOrderError("INVALID_REQUEST", "Choose a future pickup time.");
+      }
+    }
     return this.store.transitionOrder({
       actor,
       reference: parseOrderReference(rawReference),
@@ -151,17 +218,19 @@ export class ShopOrderService {
     });
   }
 
-  requestReturn(
+  async requestReturn(
     actor: ShopCustomerActor,
     rawReference: unknown,
     value: unknown,
   ): Promise<ShopServerOrder> {
     const request = parseReturnRequest(value);
+    const now = this.now();
+    await this.store.claimCustomerIdentity(actor, now);
     return this.store.requestReturn({
       actor,
       reference: parseOrderReference(rawReference),
       ...request,
-      now: this.now(),
+      now,
     });
   }
 
@@ -176,6 +245,7 @@ export class ShopOrderService {
       "refundReference",
       "refundAmount",
       "refundCurrency",
+      "lineDispositions",
       "note",
     ]);
     const transition = parseReturnTransition(body.transition);
@@ -194,12 +264,16 @@ export class ShopOrderService {
       ),
       refundAmount: parseRefundAmount(body.refundAmount, completedRefund),
       refundCurrency: parseRefundCurrency(body.refundCurrency, completedRefund),
+      lineDispositions: parseReturnLineDispositions(
+        body.lineDispositions,
+        transition.dimension === "RETURN_RESOLUTION",
+      ),
       note: parseOptionalNote(body.note),
       now: this.now(),
     });
   }
 
-  authorizePaymentEvidence(
+  async authorizePaymentEvidence(
     actor: ShopCustomerActor,
     rawReference: unknown,
     value: unknown,
@@ -207,6 +281,7 @@ export class ShopOrderService {
     const reference = parseOrderReference(rawReference);
     const evidence = parseEvidenceMetadata(value);
     const now = this.now();
+    await this.store.claimCustomerIdentity(actor, now);
     return this.store.authorizePaymentEvidence({
       actor,
       reference,
@@ -221,6 +296,7 @@ export class ShopOrderService {
     rawReference: unknown,
     rawAuthorizationId: unknown,
   ): Promise<PaymentEvidenceAuthorization> {
+    await this.store.claimCustomerIdentity(actor, this.now());
     const authorization = await this.store.getPaymentEvidenceAuthorization(
       actor.subject,
       parseOrderReference(rawReference),
@@ -232,14 +308,16 @@ export class ShopOrderService {
     return authorization;
   }
 
-  completePaymentEvidence(
+  async completePaymentEvidence(
     actor: ShopCustomerActor,
     command: Omit<CompletePaymentEvidenceCommand, "actor" | "now">,
   ): Promise<ShopServerOrder> {
+    const now = this.now();
+    await this.store.claimCustomerIdentity(actor, now);
     return this.store.completePaymentEvidence({
       ...command,
       actor,
-      now: this.now(),
+      now,
     });
   }
 

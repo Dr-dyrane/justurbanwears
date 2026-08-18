@@ -35,6 +35,12 @@ const labelByState: Record<string, string> = {
   FAILED: "Refund needs attention",
   RESTOCK: "Restocked",
   WRITE_OFF: "Written off",
+  ONLINE: "Online",
+  PHONE: "Phone",
+  DM: "Direct message",
+  IN_PERSON: "In person",
+  SCHEDULED: "Scheduled",
+  RESOLVE_ITEMS: "Resolve pieces",
 };
 
 export function orderStateLabel(value: string): string {
@@ -60,6 +66,26 @@ export function orderEventLabel(
       return "A clearer receipt is needed.";
     case "FUNDS_CONFIRMATION_CONFIRMED":
       return "Payment confirmed.";
+    case "FUNDS_CONFIRMATION_CORRECTED":
+      return "Payment record corrected.";
+    case "PICKUP_SCHEDULED":
+      return "Pickup scheduled.";
+    case "PICKUP_RESCHEDULED":
+      return "Pickup time changed.";
+    case "CANCELLATION_REFUND_PENDING":
+      return "Cancellation refund requested.";
+    case "CANCELLATION_REFUND_FAILED":
+      return "Cancellation refund needs attention.";
+    case "CANCELLATION_REFUND_COMPLETED":
+      return "Full refund recorded. Order cancelled.";
+    case "ORDER_CONTACT_UPDATED":
+    case "CONTACT_UPDATED":
+      return "Contact details updated.";
+    case "ORDER_FULFILLMENT_UPDATED":
+    case "FULFILLMENT_DETAILS_UPDATED":
+      return "Handoff details updated.";
+    case "RETURN_CORRECTED":
+      return "Return request corrected.";
     case "FULFILLMENT_QUALITY_CHECK":
       return "The piece was checked.";
     case "FULFILLMENT_READY_FOR_HANDOFF":
@@ -86,6 +112,8 @@ export function orderEventLabel(
       return "Piece returned to wardrobe.";
     case "RETURN_RESOLVED_WRITE_OFF":
       return "Piece removed from sale.";
+    case "RETURN_RESOLVED":
+      return "Returned pieces resolved.";
     default:
       return event.note ?? orderStateLabel(event.eventType);
   }
@@ -103,6 +131,12 @@ export function formatConnectedOrderDate(value: string, includeTime = true): str
 }
 
 export function customerNextAction(order: ShopServerOrder): { title: string; detail: string } {
+  if (order.cancellationRecovery?.status === "PENDING") {
+    return { title: "Refund is being arranged", detail: "Your pieces stay reserved until Lulu records the full refund." };
+  }
+  if (order.cancellationRecovery?.status === "FAILED") {
+    return { title: "Refund needs another attempt", detail: "Lulu still has the pieces reserved and will update this page." };
+  }
   if (order.return?.status === "REQUESTED") {
     return { title: "Return requested", detail: "Lulu is reviewing your request and will record the next step here." };
   }
@@ -145,6 +179,9 @@ export function customerNextAction(order: ShopServerOrder): { title: string; det
     return { title: "Your piece is being prepared", detail: "The Studio will update this page when it is ready." };
   }
   if (order.fulfillmentStatus === "READY_FOR_HANDOFF") {
+    if (order.fulfillment.kind === "PICKUP" && order.fulfillmentFacts.pickupAppointment) {
+      return { title: "Pickup scheduled", detail: `Come at ${formatConnectedOrderDate(order.fulfillmentFacts.pickupAppointment)}.` };
+    }
     return { title: order.fulfillment.kind === "PICKUP" ? "Ready for pickup" : "Ready to send", detail: order.deliveryEstimate };
   }
   return { title: "Track your order", detail: "Your piece is on its way." };
@@ -180,7 +217,9 @@ export function studioOrderActionLabel(
   fulfillmentKind: "DELIVERY" | "PICKUP" = "DELIVERY",
 ): string {
   if (!transition) return "Open order";
-  if (transition.dimension === "FUNDS_CONFIRMATION") return "Confirm payment";
+  if (transition.dimension === "FUNDS_CONFIRMATION") {
+    return transition.target === "CORRECTED" ? "Correct payment record" : "Confirm payment";
+  }
   if (transition.dimension === "PAYMENT_REVIEW") {
     if (transition.target === "UNDER_REVIEW") return "Check transfer receipt";
     return transition.target === "REVIEW_APPROVED" ? "Accept receipt" : "Ask for a clearer receipt";
@@ -204,7 +243,13 @@ export function studioOrderActionLabel(
     if (transition.target === "COMPLETED") return "Mark refund sent";
     return "Flag refund problem";
   }
-  return transition.target === "RESTOCK" ? "Return piece to wardrobe" : "Remove piece from sale";
+  if (transition.dimension === "PICKUP") return "Schedule pickup";
+  if (transition.dimension === "CANCELLATION_REFUND") {
+    if (transition.target === "PENDING") return "Retry cancellation refund";
+    if (transition.target === "COMPLETED") return "Record full refund";
+    return "Flag refund problem";
+  }
+  return "Resolve returned pieces";
 }
 
 export function nextStudioOrderTransition(order: ShopServerOrder): StudioOrderTransition | undefined {
@@ -212,6 +257,8 @@ export function nextStudioOrderTransition(order: ShopServerOrder): StudioOrderTr
     ?? order.allowedTransitions.find((item) => item.dimension === "LIFECYCLE" && item.target === "EXPIRED")
     ?? order.allowedTransitions.find((item) => item.dimension === "PAYMENT_REVIEW")
     ?? order.allowedTransitions.find((item) => item.dimension === "FUNDS_CONFIRMATION")
+    ?? order.allowedTransitions.find((item) => item.dimension === "CANCELLATION_REFUND")
+    ?? order.allowedTransitions.find((item) => item.dimension === "PICKUP")
     ?? order.allowedTransitions.find((item) => item.dimension === "FULFILLMENT")
     ?? order.allowedTransitions.find((item) => item.dimension === "LIFECYCLE");
 }

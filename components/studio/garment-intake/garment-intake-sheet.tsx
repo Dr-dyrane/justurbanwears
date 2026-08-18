@@ -40,6 +40,7 @@ type BuildStage = "READING" | "GARMENT" | "VIEWS" | "READY";
 
 interface GarmentIntakeSheetProps {
   client?: GarmentIntakeClient;
+  onBuildSet?(wardrobeItemId: string): void;
   onDismiss(): void;
   onOpenWear?(wardrobeItemId: string): void;
   open: boolean;
@@ -92,6 +93,7 @@ function isExplicitlyUnavailable(error: unknown) {
 
 export function GarmentIntakeSheet({
   client = studioEngineIntakeClient,
+  onBuildSet,
   onDismiss,
   onOpenWear,
   open,
@@ -113,6 +115,8 @@ export function GarmentIntakeSheet({
   const [retryUsed, setRetryUsed] = useState(false);
   const [wardrobeItemId, setWardrobeItemId] = useState<string>();
   const [receiptPreviewOpen, setReceiptPreviewOpen] = useState(false);
+  const [recoverableIntakes, setRecoverableIntakes] = useState<IntakeSnapshot[]>([]);
+  const [recoveryLoading, setRecoveryLoading] = useState(false);
 
   const candidatePreview = intake ? client.candidateUrl(intake) : undefined;
   const progress = ({ start: 8, source: 24, build: 54, confirm: 70, edit: 70, wear: 88, receipt: 100 } satisfies Record<IntakeStep, number>)[step];
@@ -120,11 +124,37 @@ export function GarmentIntakeSheet({
   const sourceLabel = sourceMode === "DESCRIBE" ? "Description" : sourceMode === "CAMERA" ? "Camera" : "Photos";
 
   const preview = useMemo(() => file ? URL.createObjectURL(file) : undefined, [file]);
-  const currentImage = candidatePreview ?? preview;
+  const currentImage = candidatePreview ?? (intake ? client.sourceUrl?.(intake) : undefined) ?? preview;
+  const hasDurableSource = Boolean(intake?.assets.some((asset) => asset.role === "SOURCE"));
 
   useEffect(() => () => {
     if (preview) URL.revokeObjectURL(preview);
   }, [preview]);
+
+  useEffect(() => {
+    if (!open || step !== "start" || !client.listActiveIntakes) return;
+    let current = true;
+    setRecoveryLoading(true);
+    void client.listActiveIntakes().then((result) => {
+      if (current) setRecoverableIntakes(result.intakes);
+    }).catch(() => undefined).finally(() => {
+      if (current) setRecoveryLoading(false);
+    });
+    return () => { current = false; };
+  }, [client, open, step]);
+
+  useEffect(() => {
+    if (!open || !intake || !client.getIntake || !["ANALYZING", "GENERATING"].includes(intake.state)) return;
+    const timeout = window.setTimeout(() => {
+      void client.getIntake!(intake.id).then(({ intake: refreshed }) => {
+        setIntake(refreshed);
+        setFacts(normalizeFacts(refreshed.facts));
+        if (refreshed.candidate) setStep("confirm");
+        else if (refreshed.state === "FAILED") setStep("source");
+      }).catch(() => undefined);
+    }, 1_800);
+    return () => window.clearTimeout(timeout);
+  }, [client, intake, open]);
 
   useEffect(() => {
     if (!receiptPreviewOpen) return;
@@ -164,6 +194,8 @@ export function GarmentIntakeSheet({
     setRetryUsed(false);
     setWardrobeItemId(undefined);
     setReceiptPreviewOpen(false);
+    setRecoverableIntakes([]);
+    setRecoveryLoading(false);
   }
 
   function finishDismiss() {
@@ -211,6 +243,19 @@ export function GarmentIntakeSheet({
     setStep("source");
   }
 
+  function resumeIntake(next: IntakeSnapshot) {
+    setIntake(next);
+    setSourceMode(next.sourceMode);
+    setDescription(next.description ?? "");
+    setFacts(normalizeFacts(next.facts));
+    setWardrobeItemId(next.wardrobeItemId);
+    setError(undefined);
+    if (next.wardrobeItemId || next.state === "COMMITTED") setStep("receipt");
+    else if (next.candidate) setStep("confirm");
+    else if (["ANALYZING", "GENERATING"].includes(next.state)) setStep("build");
+    else setStep("source");
+  }
+
   function chooseFile(mode: Extract<IntakeSourceMode, "CAMERA" | "UPLOAD">, nextFile: File | null) {
     if (!nextFile) return;
     setSourceMode(mode);
@@ -221,7 +266,7 @@ export function GarmentIntakeSheet({
   }
 
   async function runBuild(correction?: string) {
-    if (!sourceMode || (sourceMode === "DESCRIBE" ? !description.trim() : !file)) return;
+    if (!sourceMode || (sourceMode === "DESCRIBE" ? !description.trim() : !file && !hasDurableSource)) return;
     setWorking(true);
     setError(undefined);
     setBuildStage("READING");
@@ -229,9 +274,11 @@ export function GarmentIntakeSheet({
 
     try {
       let nextIntake = intake;
-      if (!nextIntake || correction === undefined) {
+      if (!nextIntake) {
         nextIntake = (await client.createIntake(sourceMode, description.trim() || undefined)).intake;
         if (file) nextIntake = (await client.addSource(nextIntake.id, file)).intake;
+      }
+      if (["DRAFT", "FAILED"].includes(nextIntake.state) && !Object.keys(nextIntake.facts ?? {}).length) {
         nextIntake = (await client.analyzeIntake(nextIntake, description.trim() || undefined)).intake;
         setFacts(normalizeFacts(nextIntake.facts));
       }
@@ -302,7 +349,7 @@ export function GarmentIntakeSheet({
   const footer = step === "source" ? (
     <>
       <button className="button button-secondary" onClick={back} type="button">Back</button>
-      <button className="button button-primary" disabled={working || (sourceMode === "DESCRIBE" ? !description.trim() : !file)} onClick={() => void runBuild()} type="button">
+      <button className="button button-primary" disabled={working || (sourceMode === "DESCRIBE" ? !description.trim() : !file && !hasDurableSource)} onClick={() => void runBuild()} type="button">
         Build garment
       </button>
     </>
@@ -344,6 +391,11 @@ export function GarmentIntakeSheet({
         <section className="studio-task-question">
           <p className="eyebrow">Start</p>
           <h3>Show us the piece.</h3>
+          {recoverableIntakes.length ? (
+            <div className="studio-disclosure-group studio-intake-start-options" aria-label="Unfinished garment intakes">
+              {recoverableIntakes.map((recoverable) => <StudioDisclosureRow detail={recoverable.facts?.title || "Unfinished garment"} icon={<RotateCcw size={19} />} key={recoverable.id} label="Continue" onClick={() => resumeIntake(recoverable)} />)}
+            </div>
+          ) : recoveryLoading ? <p className="studio-inline-state"><LoaderCircle aria-hidden="true" className="studio-spin" size={15} />Checking unfinished work…</p> : null}
           <div className="studio-disclosure-group studio-intake-start-options">
             <StudioDisclosureRow detail="Take photo" icon={<Camera size={19} />} label="Camera" onClick={() => cameraInputRef.current?.click()} />
             <StudioDisclosureRow detail="Choose photo" icon={<Upload size={19} />} label="Photos" onClick={() => uploadInputRef.current?.click()} />
@@ -451,11 +503,12 @@ export function GarmentIntakeSheet({
 
       {step === "wear" ? (
         <section className="studio-task-question">
-          <p className="eyebrow">Wear</p>
-          <h3>Put it on?</h3>
-          {onOpenWear ? (
+          <p className="eyebrow">Create</p>
+          <h3>Build the garment set?</h3>
+          {onBuildSet || onOpenWear ? (
             <div className="studio-disclosure-group studio-wear-options">
-              <StudioDisclosureRow detail="Private media" icon={<Shirt size={19} />} label="Open Wear" onClick={() => wardrobeItemId && onOpenWear(wardrobeItemId)} />
+              {onBuildSet ? <StudioDisclosureRow detail="Back · detail · mannequin · Lulu · editorial" icon={<Sparkles size={19} />} label="Build missing views" onClick={() => wardrobeItemId && onBuildSet(wardrobeItemId)} /> : null}
+              {onOpenWear ? <StudioDisclosureRow detail="Choose one presentation view" icon={<Shirt size={19} />} label="Open Wear" onClick={() => wardrobeItemId && onOpenWear(wardrobeItemId)} /> : null}
             </div>
           ) : <p>This simulator stops before private media work.</p>}
         </section>

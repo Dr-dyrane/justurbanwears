@@ -1,6 +1,6 @@
 .shop-product-page .shop-detail-utility-row {
-  border-bottom: 1px solid color-mix(in srgb, var(--text, #241814) 12%, transparent);
-  border-top: 1px solid color-mix(in srgb, var(--text, #241814) 12%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--shop-ink, #241814) 12%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--shop-ink, #241814) 12%, transparent);
   display: flex;
   gap: 4px;
   margin-top: clamp(30px, 3.5vw, 46px);
@@ -12,7 +12,7 @@
   background: transparent;
   border: 0;
   border-radius: 999px;
-  color: var(--text-soft);
+  color: var(--shop-muted);
   display: inline-flex;
   font-family: var(--font-code);
   font-size: 12px;
@@ -30,7 +30,7 @@
 .shop-product-page .shop-detail-utility:focus-visible,
 .shop-product-page .shop-detail-utility.is-saved {
   background: var(--juw-material-nude-soft, rgba(234, 209, 197, 0.42));
-  color: var(--text);
+  color: var(--shop-ink);
 }
 
 .shop-product-page .shop-detail-utility.is-saved {
@@ -44,13 +44,13 @@
 }
 
 .shop-detail-facts > div {
-  border-bottom: 1px solid color-mix(in srgb, var(--text, #241814) 12%, transparent);
+  border-bottom: 1px solid color-mix(in srgb, var(--shop-ink, #241814) 12%, transparent);
   min-width: 0;
   padding: 22px 18px 22px 0;
 }
 
 .shop-detail-facts > div:nth-child(2) {
-  border-left: 1px solid color-mix(in srgb, var(--text, #241814) 12%, transparent);
+  border-left: 1px solid color-mix(in srgb, var(--shop-ink, #241814) 12%, transparent);
   padding-left: 18px;
   padding-right: 0;
 }
@@ -62,7 +62,7 @@
 }
 
 .shop-detail-facts dt {
-  color: var(--text-soft);
+  color: var(--shop-muted);
   font-family: var(--font-code);
   font-size: 12px;
   font-weight: 680;
@@ -72,7 +72,7 @@
 }
 
 .shop-detail-facts dd {
-  color: var(--text);
+  color: var(--shop-ink);
   font-family: var(--font-display);
   font-size: clamp(21px, 2vw, 29px);
   font-weight: 500;
@@ -82,7 +82,7 @@
 }
 
 .shop-detail-facts small {
-  color: var(--text-soft);
+  color: var(--shop-muted);
   display: block;
   font-size: 12px;
   line-height: 1.45;
@@ -110,8 +110,8 @@
 
 .shop-detail-availability[data-state="sold"] dd > span,
 .shop-detail-availability[data-state="unconfirmed"] dd > span {
-  background: var(--text-soft);
-  box-shadow: 0 0 0 5px color-mix(in srgb, var(--text-soft) 12%, transparent);
+  background: var(--shop-muted);
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--shop-muted) 12%, transparent);
 }
 
 .shop-product-page .shop-purchase-actions {
@@ -143,7 +143,7 @@
 }
 
 .shop-product-page .shop-delivery-note {
-  color: var(--text-soft);
+  color: var(--shop-muted);
   font-family: var(--font-code);
   font-size: 12px;
   letter-spacing: 0.02em;

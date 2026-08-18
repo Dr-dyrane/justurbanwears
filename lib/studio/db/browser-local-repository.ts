@@ -18,6 +18,7 @@ import { mergeWardrobeAuthoritySeeds } from "../seeds/wardrobe-authority";
 
 export const STUDIO_STORAGE_KEY = "justurban-wears:studio:v2";
 export const LEGACY_STUDIO_STORAGE_KEY = "justurban-wears:studio:v1";
+export const LEGACY_STUDIO_AUTHORITY_BACKUP_KEY = "justurban-wears:studio:legacy-authority-backup:v1";
 export const WARDROBE_PUBLIC_VIEW_PROJECTION_SCHEMA_VERSION = WARDROBE_PUBLIC_VIEW_SCHEMA_VERSION;
 export { WARDROBE_PUBLIC_VIEW_STORAGE_KEY };
 
@@ -171,6 +172,45 @@ function browserStorage() {
   return window.localStorage;
 }
 
+function hasLegacyLocalAuthority(snapshot: StudioSnapshot): boolean {
+  return snapshot.models.some((model) => model.id !== snapshot.defaultModelId)
+    || snapshot.orders.length > 0
+    || snapshot.returns.length > 0
+    || snapshot.shoots.length > 0;
+}
+
+function preserveLegacyLocalAuthority(snapshot: StudioSnapshot): void {
+  if (!hasLegacyLocalAuthority(snapshot)) return;
+  browserStorage().setItem(LEGACY_STUDIO_AUTHORITY_BACKUP_KEY, JSON.stringify({
+    version: 1,
+    savedAt: new Date().toISOString(),
+    data: {
+      defaultModelId: snapshot.defaultModelId,
+      models: snapshot.models,
+      orders: snapshot.orders,
+      returns: snapshot.returns,
+      shoots: snapshot.shoots,
+    },
+  }));
+}
+
+/** Compatibility export for a deliberate server import or operator recovery. */
+export function readLegacyStudioAuthorityBackup(): unknown {
+  return parseJson(browserStorage().getItem(LEGACY_STUDIO_AUTHORITY_BACKUP_KEY));
+}
+
+function transientStudioSnapshot(snapshot: StudioSnapshot): StudioSnapshot {
+  const approvedDefault = createDefaultModel();
+  return {
+    ...snapshot,
+    defaultModelId: approvedDefault.id,
+    models: [approvedDefault],
+    orders: [],
+    returns: [],
+    shoots: [],
+  };
+}
+
 export function createBrowserLocalStudioRepository(): StudioRepository {
   return {
     async read() {
@@ -178,7 +218,8 @@ export function createBrowserLocalStudioRepository(): StudioRepository {
       const currentRaw = storage.getItem(STUDIO_STORAGE_KEY);
       if (currentRaw) {
         const restored = parseStoredStudioState(currentRaw) ?? createEmptyStudioSnapshot();
-        const merged = mergeWardrobeAuthoritySeeds(restored);
+        preserveLegacyLocalAuthority(restored);
+        const merged = mergeWardrobeAuthoritySeeds(transientStudioSnapshot(restored));
         const normalizedEnvelope: StoredStudioStateV2 = {
           version: STUDIO_STATE_SCHEMA_VERSION,
           data: merged,
@@ -193,9 +234,10 @@ export function createBrowserLocalStudioRepository(): StudioRepository {
       return seeded;
     },
     async write(snapshot) {
+      preserveLegacyLocalAuthority(snapshot);
       const envelope: StoredStudioStateV2 = {
         version: STUDIO_STATE_SCHEMA_VERSION,
-        data: snapshot,
+        data: transientStudioSnapshot(snapshot),
       };
       browserStorage().setItem(STUDIO_STORAGE_KEY, JSON.stringify(envelope));
     },
@@ -204,7 +246,7 @@ export function createBrowserLocalStudioRepository(): StudioRepository {
       const receiveStorage = (event: StorageEvent) => {
         if (event.key !== STUDIO_STORAGE_KEY || !event.newValue) return;
         const snapshot = parseStoredStudioState(event.newValue);
-        if (snapshot) listener(mergeWardrobeAuthoritySeeds(snapshot));
+        if (snapshot) listener(mergeWardrobeAuthoritySeeds(transientStudioSnapshot(snapshot)));
       };
       window.addEventListener("storage", receiveStorage);
       return () => window.removeEventListener("storage", receiveStorage);

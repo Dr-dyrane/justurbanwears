@@ -19,6 +19,7 @@ import {
   type ShopCustomerActor,
   type ShopOperatorActor,
 } from "../lib/shop/server-order/types";
+import type { ShopCheckoutSubmissionIntent } from "../lib/shop/domain/entities";
 
 const catalogue = [{
   sku: "JUW-001",
@@ -137,6 +138,8 @@ async function settleAndDeliverPickup(
       kind: "FUNDS_CONFIRMATION",
       transferReference: `TRF-${suffix}`,
       receivingAccountLabel: "JUW Operations · 0123",
+      paidAmount: order.total,
+      paidCurrency: "NGN",
     },
   });
   order = await service.transitionOrder(operator, order.reference, {
@@ -147,16 +150,63 @@ async function settleAndDeliverPickup(
     expectedVersion: order.version,
     transition: { dimension: "FULFILLMENT", target: "READY_FOR_HANDOFF" },
   });
+  const pickupAppointment = handoff.pickupAppointment ?? "2026-08-11T12:30:00.000Z";
+  order = await service.transitionOrder(operator, order.reference, {
+    expectedVersion: order.version,
+    transition: { dimension: "PICKUP", target: "SCHEDULED" },
+    details: { kind: "PICKUP_SCHEDULE", pickupAppointment },
+  });
   handoff.beforeDelivery?.();
   return service.transitionOrder(operator, order.reference, {
     expectedVersion: order.version,
     transition: { dimension: "FULFILLMENT", target: "DELIVERED" },
     details: {
       kind: "PICKUP_COMPLETE",
-      pickupAppointment: handoff.pickupAppointment ?? "2026-08-11T11:30:00.000Z",
+      pickupAppointment,
       recipientName: "Customer One",
       deliveredAt: handoff.deliveredAt ?? "2026-08-11T12:00:00.000Z",
       deliveryProofReference: `PICKUP-${suffix}`,
+    },
+  });
+}
+
+async function confirmPaidOrder(
+  service: ShopOrderService,
+  intent: ShopCheckoutSubmissionIntent,
+  suffix: string,
+) {
+  let order = await service.createOrder(customer, intent);
+  const bytes = new TextEncoder().encode(`paid-${suffix}`);
+  const sha256 = createHash("sha256").update(bytes).digest("hex");
+  const authorization = await service.authorizePaymentEvidence(customer, order.reference, {
+    idempotencyKey: `evidence:${suffix}`,
+    originalFileName: "receipt.pdf",
+    contentType: "application/pdf",
+    byteSize: bytes.byteLength,
+    sha256,
+  });
+  order = await service.completePaymentEvidence(customer, {
+    reference: order.reference,
+    authorizationId: authorization.id,
+    contentType: authorization.contentType,
+    byteSize: authorization.byteSize,
+    sha256,
+    blobPathname: `shop/payment-evidence/${authorization.orderId}/${authorization.id}.pdf`,
+    blobUrl: `https://private.example/${authorization.id}`,
+  });
+  order = await service.transitionOrder(operator, order.reference, {
+    expectedVersion: order.version,
+    transition: { dimension: "PAYMENT_REVIEW", target: "REVIEW_APPROVED" },
+  });
+  return service.transitionOrder(operator, order.reference, {
+    expectedVersion: order.version,
+    transition: { dimension: "FUNDS_CONFIRMATION", target: "CONFIRMED" },
+    details: {
+      kind: "FUNDS_CONFIRMATION",
+      transferReference: `TRF-${suffix}`,
+      receivingAccountLabel: "JUW Operations · 0123",
+      paidAmount: order.total,
+      paidCurrency: "NGN",
     },
   });
 }
@@ -227,6 +277,28 @@ test("enforces customer ownership and records private actor attribution", async 
   ]);
 });
 
+test("creates an assisted connected order and pages the operator inbox", async () => {
+  const { service } = setup();
+  const order = await service.createAssistedOrder(operator, {
+    ...pickupIntent("assisted:dm-0001"),
+    source: "DM",
+    note: "Customer confirmed the piece in a direct message.",
+  });
+  assert.equal(order.source, "DM");
+  assert.equal(order.lifecycleStatus, "ACTIVE");
+  assert.equal(order.events[0].actorKind, "OPERATOR");
+  const claimed = await service.getCustomerOrder(customer, order.reference);
+  assert.equal(claimed.reference, order.reference);
+  const page = await service.pageOperatorOrders(operator, {
+    page: 1,
+    limit: 1,
+    search: order.contact.email,
+    filter: "ACTIVE",
+  });
+  assert.deepEqual(page.orders.map((item) => item.reference), [order.reference]);
+  assert.equal(page.nextPage, null);
+});
+
 test("separates evidence review, funds confirmation, fulfillment, versioning, and final sale", async () => {
   const { store, service } = setup();
   let order = await service.createOrder(customer, deliveryIntent());
@@ -285,6 +357,8 @@ test("separates evidence review, funds confirmation, fulfillment, versioning, an
       kind: "FUNDS_CONFIRMATION",
       transferReference: "TRF-20260811-0001",
       receivingAccountLabel: "JUW Operations · 0123",
+      paidAmount: order.total,
+      paidCurrency: "NGN",
     },
   }), (error: unknown) => error instanceof ShopOrderError && error.code === "FORBIDDEN");
   order = await service.transitionOrder(operator, order.reference, {
@@ -294,6 +368,8 @@ test("separates evidence review, funds confirmation, fulfillment, versioning, an
       kind: "FUNDS_CONFIRMATION",
       transferReference: "TRF-20260811-0001",
       receivingAccountLabel: "JUW Operations · 0123",
+      paidAmount: order.total,
+      paidCurrency: "NGN",
     },
   });
   assert.equal(order.fundsConfirmationStatus, "CONFIRMED");
@@ -342,7 +418,9 @@ test("separates evidence review, funds confirmation, fulfillment, versioning, an
   });
   assert.equal(order.lifecycleStatus, "COMPLETED");
   assert.equal(order.fulfillmentStatus, "DELIVERED");
-  assert.deepEqual(order.allowedTransitions, []);
+  assert.deepEqual(order.allowedTransitions, [
+    { dimension: "FUNDS_CONFIRMATION", target: "CORRECTED" },
+  ], "an admin can correct the immutable payment audit after fulfillment");
   assert.equal(order.canRequestReturn, false, "operator projection never advertises customer actions");
   const customerDelivered = await service.getCustomerOrder(customer, order.reference);
   assert.equal(customerDelivered.canRequestReturn, true);
@@ -357,6 +435,143 @@ test("separates evidence review, funds confirmation, fulfillment, versioning, an
     writeOff: 0,
   });
   assert.equal(inventory.onHand + inventory.sold - inventory.returned + inventory.writeOff, 1);
+});
+
+test("records the amount received and corrects the payment audit without rewriting the original confirmation", async () => {
+  const { service, setNow } = setup();
+  let order = await settleAndDeliverPickup(service, "payment-correction");
+  const confirmedAt = order.fundsConfirmation?.confirmedAt;
+  assert.equal(order.fundsConfirmation?.paidAmount, order.total);
+  assert.equal(order.fundsConfirmation?.paidCurrency, "NGN");
+  assert.ok(order.allowedTransitions.some((transition) => (
+    transition.dimension === "FUNDS_CONFIRMATION" && transition.target === "CORRECTED"
+  )));
+
+  setNow("2026-08-12T12:00:00.000Z");
+  order = await service.transitionOrder(operator, order.reference, {
+    expectedVersion: order.version,
+    transition: { dimension: "FUNDS_CONFIRMATION", target: "CORRECTED" },
+    details: {
+      kind: "FUNDS_CONFIRMATION",
+      transferReference: "TRF-CORRECTED-0001",
+      receivingAccountLabel: "JUW Operations · 9876",
+      paidAmount: 31_500,
+      paidCurrency: "NGN",
+    },
+    note: "Corrected from the bank statement.",
+  });
+
+  assert.equal(order.lifecycleStatus, "COMPLETED");
+  assert.equal(order.fundsConfirmation?.confirmedAt, confirmedAt);
+  assert.equal(order.fundsConfirmation?.updatedAt, "2026-08-12T12:00:00.000Z");
+  assert.equal(order.fundsConfirmation?.paidAmount, 31_500);
+  assert.equal(order.fundsConfirmation?.transferReference, "TRF-CORRECTED-0001");
+  assert.equal(order.events.at(-1)?.eventType, "FUNDS_CONFIRMATION_CORRECTED");
+  assert.match(order.events.at(-1)?.note ?? "", /bank statement/i);
+
+  const customerView = await service.getCustomerOrder(customer, order.reference);
+  assert.deepEqual(customerView.allowedTransitions, []);
+  assert.equal(customerView.fundsConfirmation?.paidAmount, 31_500);
+});
+
+test("keeps paid cancellation reserved until the full refund is recorded", async () => {
+  const { store, service } = setup();
+  let order = await confirmPaidOrder(service, pickupIntent("checkout:paid-cancel"), "paid-cancel");
+  const customerView = await service.getCustomerOrder(customer, order.reference);
+  assert.equal(customerView.canRequestPaidCancellation, true);
+
+  order = await service.mutateCustomerOrder(customer, order.reference, {
+    expectedVersion: order.version,
+    action: "REQUEST_PAID_CANCELLATION",
+    reason: "The customer no longer needs the piece.",
+  });
+  assert.equal(order.cancellationRecovery?.status, "PENDING");
+  assert.equal(store.inventorySnapshot()["JUW-001"].availability, "RESERVED");
+
+  await rejectsCode(service.transitionOrder(operator, order.reference, {
+    expectedVersion: order.version,
+    transition: { dimension: "CANCELLATION_REFUND", target: "COMPLETED" },
+    details: {
+      kind: "CANCELLATION_REFUND",
+      refundReference: "RFND-PARTIAL",
+      refundAmount: order.total - 1,
+      refundCurrency: "NGN",
+    },
+  }), "INVALID_REQUEST");
+  assert.equal(store.inventorySnapshot()["JUW-001"].availability, "RESERVED");
+
+  order = await service.transitionOrder(operator, order.reference, {
+    expectedVersion: order.version,
+    transition: { dimension: "CANCELLATION_REFUND", target: "COMPLETED" },
+    details: {
+      kind: "CANCELLATION_REFUND",
+      refundReference: "RFND-FULL-0001",
+      refundAmount: order.total,
+      refundCurrency: "NGN",
+    },
+  });
+  assert.equal(order.lifecycleStatus, "CANCELLED");
+  assert.equal(order.cancellationRecovery?.status, "COMPLETED");
+  assert.equal(store.inventorySnapshot()["JUW-001"].availability, "AVAILABLE");
+});
+
+test("keeps payment corrections and paid cancellation refunds in parity", async () => {
+  const { service } = setup();
+  let order = await confirmPaidOrder(service, pickupIntent("checkout:paid-cancel-correction"), "paid-cancel-correction");
+  order = await service.mutateCustomerOrder(customer, order.reference, {
+    expectedVersion: order.version,
+    action: "REQUEST_PAID_CANCELLATION",
+    reason: "The customer no longer needs the piece.",
+  });
+
+  order = await service.transitionOrder(operator, order.reference, {
+    expectedVersion: order.version,
+    transition: { dimension: "FUNDS_CONFIRMATION", target: "CORRECTED" },
+    details: {
+      kind: "FUNDS_CONFIRMATION",
+      transferReference: "TRF-CANCEL-CORRECTED",
+      receivingAccountLabel: "JUW Operations · 9876",
+      paidAmount: order.total + 1_000,
+      paidCurrency: "NGN",
+    },
+    note: "Corrected from the bank statement before refund.",
+  });
+
+  await rejectsCode(service.transitionOrder(operator, order.reference, {
+    expectedVersion: order.version,
+    transition: { dimension: "CANCELLATION_REFUND", target: "COMPLETED" },
+    details: {
+      kind: "CANCELLATION_REFUND",
+      refundReference: "RFND-OLD-CAP",
+      refundAmount: order.total,
+      refundCurrency: "NGN",
+    },
+  }), "INVALID_REQUEST");
+
+  order = await service.transitionOrder(operator, order.reference, {
+    expectedVersion: order.version,
+    transition: { dimension: "CANCELLATION_REFUND", target: "COMPLETED" },
+    details: {
+      kind: "CANCELLATION_REFUND",
+      refundReference: "RFND-CORRECTED-CAP",
+      refundAmount: order.fundsConfirmation!.paidAmount!,
+      refundCurrency: "NGN",
+    },
+  });
+  assert.equal(order.lifecycleStatus, "CANCELLED");
+  assert.equal(order.cancellationRecovery?.refundAmount, order.fundsConfirmation?.paidAmount);
+
+  await rejectsCode(service.transitionOrder(operator, order.reference, {
+    expectedVersion: order.version,
+    transition: { dimension: "FUNDS_CONFIRMATION", target: "CORRECTED" },
+    details: {
+      kind: "FUNDS_CONFIRMATION",
+      transferReference: "TRF-UNDER-REFUNDED",
+      receivingAccountLabel: "JUW Operations · 9876",
+      paidAmount: order.fundsConfirmation!.paidAmount! + 1,
+      paidCurrency: "NGN",
+    },
+  }), "INVALID_REQUEST");
 });
 
 test("uses the configured return window and resolves one return with an audited refund and conserved inventory", async () => {
@@ -419,7 +634,8 @@ test("uses the configured return window and resolves one return with an audited 
 
   order = await service.transitionReturn(operator, order.reference, {
     expectedVersion: order.version,
-    transition: { dimension: "RETURN_RESOLUTION", target: "RESTOCK" },
+    transition: { dimension: "RETURN_RESOLUTION", target: "RESOLVE_ITEMS" },
+    lineDispositions: [{ sku: "JUW-001", disposition: "RESTOCK" }],
   });
   assert.equal(order.return?.status, "RESOLVED");
   assert.equal(order.return?.disposition, "RESTOCK");
@@ -486,7 +702,8 @@ test("writes off a received return atomically without reopening pickup as in tra
   });
   order = await service.transitionReturn(operator, order.reference, {
     expectedVersion: order.version,
-    transition: { dimension: "RETURN_RESOLUTION", target: "WRITE_OFF" },
+    transition: { dimension: "RETURN_RESOLUTION", target: "RESOLVE_ITEMS" },
+    lineDispositions: [{ sku: "JUW-001", disposition: "WRITE_OFF" }],
     note: "Inspection confirmed irreversible damage.",
   });
   assert.equal(order.return?.disposition, "WRITE_OFF");
@@ -498,6 +715,106 @@ test("writes off a received return atomically without reopening pickup as in tra
     returned: 1,
     writeOff: 1,
   });
+});
+
+test("corrects one rejected partial return and resolves each selected line independently", async () => {
+  const items = [
+    { sku: "JUW-101", slug: "first-piece", name: "First Piece", taggedSize: "S", price: 10_000 },
+    { sku: "JUW-102", slug: "second-piece", name: "Second Piece", taggedSize: "M", price: 20_000 },
+    { sku: "JUW-103", slug: "third-piece", name: "Third Piece", taggedSize: "L", price: 30_000 },
+  ];
+  const store = new MemoryShopOrderStore(items);
+  const service = new ShopOrderService(store, { now: () => new Date("2026-08-11T12:00:00.000Z") });
+  const intent: ShopCheckoutSubmissionIntent = {
+    ...pickupIntent("checkout:partial-return"),
+    lines: items.map((item) => ({ slug: item.slug, taggedSize: item.taggedSize, quantity: 1 })),
+  };
+  let order = await confirmPaidOrder(service, intent, "partial-return");
+  for (const target of ["QUALITY_CHECK", "READY_FOR_HANDOFF"] as const) {
+    order = await service.transitionOrder(operator, order.reference, {
+      expectedVersion: order.version,
+      transition: { dimension: "FULFILLMENT", target },
+    });
+  }
+  order = await service.transitionOrder(operator, order.reference, {
+    expectedVersion: order.version,
+    transition: { dimension: "PICKUP", target: "SCHEDULED" },
+    details: { kind: "PICKUP_SCHEDULE", pickupAppointment: "2026-08-11T12:30:00.000Z" },
+  });
+  order = await service.transitionOrder(operator, order.reference, {
+    expectedVersion: order.version,
+    transition: { dimension: "FULFILLMENT", target: "DELIVERED" },
+    details: {
+      kind: "PICKUP_COMPLETE",
+      pickupAppointment: "2026-08-11T12:30:00.000Z",
+      recipientName: "Customer One",
+      deliveredAt: "2026-08-11T12:00:00.000Z",
+      deliveryProofReference: "PICKUP-PARTIAL",
+    },
+  });
+
+  order = await service.requestReturn(customer, order.reference, {
+    version: 2,
+    idempotencyKey: "return:partial-0001",
+    expectedVersion: order.version,
+    correction: false,
+    reason: "WRONG_SIZE",
+    detail: "Only the first piece needs to come back.",
+    lineSkus: ["JUW-101"],
+  });
+  order = await service.transitionReturn(operator, order.reference, {
+    expectedVersion: order.version,
+    transition: { dimension: "RETURN", target: "REJECTED" },
+    note: "The selected piece does not match the message.",
+  });
+  order = await service.requestReturn(customer, order.reference, {
+    version: 2,
+    idempotencyKey: "return:partial-0002",
+    expectedVersion: order.version,
+    correction: true,
+    reason: "OTHER",
+    detail: "The first and second pieces are the ones coming back.",
+    lineSkus: ["JUW-101", "JUW-102"],
+  });
+  assert.equal(order.return?.correctionCount, 1);
+  assert.deepEqual(order.return?.items.map((item) => item.sku), ["JUW-101", "JUW-102"]);
+
+  for (const target of ["APPROVED", "RECEIVED"] as const) {
+    order = await service.transitionReturn(operator, order.reference, {
+      expectedVersion: order.version,
+      transition: { dimension: "RETURN", target },
+    });
+  }
+  order = await service.transitionReturn(operator, order.reference, {
+    expectedVersion: order.version,
+    transition: { dimension: "REFUND", target: "PENDING" },
+  });
+  await rejectsCode(service.transitionReturn(operator, order.reference, {
+    expectedVersion: order.version,
+    transition: { dimension: "REFUND", target: "COMPLETED" },
+    refundReference: "RFND-TOO-HIGH",
+    refundAmount: 30_001,
+    refundCurrency: "NGN",
+  }), "INVALID_REQUEST");
+  order = await service.transitionReturn(operator, order.reference, {
+    expectedVersion: order.version,
+    transition: { dimension: "REFUND", target: "COMPLETED" },
+    refundReference: "RFND-PARTIAL-0001",
+    refundAmount: 30_000,
+    refundCurrency: "NGN",
+  });
+  order = await service.transitionReturn(operator, order.reference, {
+    expectedVersion: order.version,
+    transition: { dimension: "RETURN_RESOLUTION", target: "RESOLVE_ITEMS" },
+    lineDispositions: [
+      { sku: "JUW-101", disposition: "RESTOCK" },
+      { sku: "JUW-102", disposition: "WRITE_OFF" },
+    ],
+  });
+  assert.equal(order.return?.disposition, null);
+  assert.equal(store.inventorySnapshot()["JUW-101"].availability, "AVAILABLE");
+  assert.equal(store.inventorySnapshot()["JUW-102"].availability, "ARCHIVED");
+  assert.equal(store.inventorySnapshot()["JUW-103"].availability, "SOLD");
 });
 
 test("authorizes only owned, exact MIME/size/SHA evidence and writes through the private Blob contract", async () => {
@@ -650,6 +967,8 @@ test("does not let a stale evidence authorization reopen reviewed or settled fun
       kind: "FUNDS_CONFIRMATION",
       transferReference: "TRF-STALE-EVIDENCE",
       receivingAccountLabel: "JUW Operations · 0123",
+      paidAmount: order.total,
+      paidCurrency: "NGN",
     },
   });
 
@@ -774,8 +1093,26 @@ test("migration and routes pin the executable Neon one-shot contract", () => {
     "shop_complete_outbox_v2",
   ]) {
     assert.match(migration, new RegExp(`CREATE FUNCTION "${functionName}"`));
-    assert.match(store, new RegExp(functionName));
   }
+  for (const functionName of [
+    "shop_create_order_v2",
+    "shop_authorize_payment_evidence_v2",
+    "shop_receive_payment_evidence_v2",
+    "shop_claim_outbox_v2",
+    "shop_complete_outbox_v2",
+    "shop_create_assisted_order_v3",
+    "shop_mutate_customer_order_v3",
+    "shop_transition_order_v3",
+    "shop_schedule_pickup_v3",
+    "shop_transition_pre_handoff_recovery_v3",
+    "shop_request_return_v3",
+    "shop_transition_return_v3",
+    "shop_order_document_v3",
+  ]) assert.match(store, new RegExp(functionName));
+  assert.match(store, /orders\.contact_email as email/);
+  assert.doesNotMatch(store, /select email, display_name\s+from shop_customers/);
+  assert.match(store, /'paidAmount', \$\{command\.details\.paidAmount\}::integer/);
+  assert.match(store, /'target', \$\{target\}::text/);
   assert.match(migration, /CREATE FUNCTION "shop_resolve_return_inventory_v2"/);
   assert.match(migration, /FOR UPDATE OF catalogue, inventory/);
   assert.match(migration, /FOR UPDATE SKIP LOCKED/);

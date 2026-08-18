@@ -13,11 +13,13 @@ import {
   orderStateSummary,
 } from "../../lib/shop/order-presentation";
 import type { ShopServerOrder } from "../../lib/shop/server-order/types";
+import type { ShopCommerceGuidance } from "../../lib/shop/server-order/commerce-guidance";
 import { ShopActionLink } from "./atoms/action";
 import { ShopLink as Link } from "./atoms/shop-link";
 import { PaymentEvidenceUpload } from "./payment-evidence-upload";
 import { ProductVisual } from "./product-visual";
 import { ReturnRequest } from "./return-request";
+import { OrderCustomerActions } from "./order-customer-actions";
 import {
   useShopMobileAction,
   type ShopMobileAction,
@@ -66,11 +68,13 @@ function orderMobileAction(order: ShopServerOrder): ShopMobileAction {
 }
 
 export function OrderStatus({
+  commerceGuidance,
   initialError = "",
   initialOrder,
   initialState,
   reference,
 }: {
+  commerceGuidance: ShopCommerceGuidance;
   initialError?: string;
   initialOrder: ShopServerOrder | null;
   initialState: OrderStatusState;
@@ -205,14 +209,23 @@ export function OrderStatus({
           {evidenceNotice ? <p className="shop-evidence-feedback shop-evidence-persistent-feedback" aria-live="polite" role="status">{evidenceNotice}</p> : null}
           {orderNeedsEvidence(order) ? (
             <div id="shop-order-payment">
-              <PaymentEvidenceUpload
-                reference={order.reference}
-                onReceived={(nextOrder) => {
-                  setOrder(nextOrder);
-                  setRefreshError("");
-                  setEvidenceNotice("Transfer receipt received. Lulu will confirm your payment.");
-                }}
-              />
+              {commerceGuidance.payment.available ? (
+                <PaymentEvidenceUpload
+                  paymentInstructions={commerceGuidance.payment}
+                  reference={order.reference}
+                  onReceived={(nextOrder) => {
+                    setOrder(nextOrder);
+                    setRefreshError("");
+                    setEvidenceNotice("Transfer receipt received. Lulu will confirm your payment.");
+                  }}
+                />
+              ) : (
+                <section className="shop-evidence-upload" role="alert">
+                  <p className="shop-kicker">Payment paused</p>
+                  <h2>Do not transfer yet.</h2>
+                  <p>{commerceGuidance.payment.message}</p>
+                </section>
+              )}
             </div>
           ) : order.evidence.length ? (
             <section className="shop-evidence-received" aria-labelledby="evidence-state-title">
@@ -241,12 +254,15 @@ export function OrderStatus({
                         <p className="shop-kicker">Payment receipt</p>
                         <h2 id="payment-confirmed-title">Payment confirmed.</h2>
                         <p>
-                          Lulu confirmed your payment of <strong>{formatNaira(order.total)}</strong>.
+                          {order.fundsConfirmation.paidAmount && order.fundsConfirmation.paidCurrency
+                            ? <>Lulu confirmed receiving <strong>{formatNaira(order.fundsConfirmation.paidAmount)}</strong>.</>
+                            : "The exact amount was not recorded on the original confirmation."}
                         </p>
                         <dl>
                           <div><dt>Transfer reference</dt><dd>{order.fundsConfirmation.transferReference}</dd></div>
                           <div><dt>Receiving account</dt><dd>{order.fundsConfirmation.receivingAccountLabel}</dd></div>
                           <div><dt>Confirmed</dt><dd><time dateTime={order.fundsConfirmation.confirmedAt}>{formatConnectedOrderDate(order.fundsConfirmation.confirmedAt)}</time></dd></div>
+                          {order.fundsConfirmation.updatedAt !== order.fundsConfirmation.confirmedAt ? <div><dt>Last corrected</dt><dd><time dateTime={order.fundsConfirmation.updatedAt}>{formatConnectedOrderDate(order.fundsConfirmation.updatedAt)}</time></dd></div> : null}
                           <div><dt>Verified by</dt><dd>{order.fundsConfirmation.verifierDisplayName}</dd></div>
                         </dl>
                       </section>
@@ -263,28 +279,39 @@ export function OrderStatus({
                         <dl>
                           {order.fulfillmentFacts.carrierName ? <div><dt>Carrier</dt><dd>{order.fulfillmentFacts.carrierName}</dd></div> : null}
                           {order.fulfillmentFacts.trackingReference ? <div><dt>Tracking reference</dt><dd>{order.fulfillmentFacts.trackingReference}</dd></div> : null}
+                          {order.fulfillmentFacts.trackingUrl ? <div><dt>Track online</dt><dd><a href={order.fulfillmentFacts.trackingUrl} rel="noreferrer" target="_blank">Open carrier tracking</a></dd></div> : null}
                           {order.fulfillmentFacts.dispatchedAt ? <div><dt>Dispatched</dt><dd><time dateTime={order.fulfillmentFacts.dispatchedAt}>{formatConnectedOrderDate(order.fulfillmentFacts.dispatchedAt)}</time></dd></div> : null}
                           {order.fulfillmentFacts.recipientName ? <div><dt>Recipient</dt><dd>{order.fulfillmentFacts.recipientName}</dd></div> : null}
                           {order.fulfillmentFacts.deliveredAt ? <div><dt>Delivered</dt><dd><time dateTime={order.fulfillmentFacts.deliveredAt}>{formatConnectedOrderDate(order.fulfillmentFacts.deliveredAt)}</time></dd></div> : null}
                         </dl>
                       </section>
-                    ) : order.fulfillment.kind === "PICKUP" && order.fulfillmentFacts.deliveredAt ? (
+                    ) : order.fulfillment.kind === "PICKUP" && (order.fulfillmentFacts.pickupAppointment || order.fulfillmentFacts.deliveredAt) ? (
                       <section className="shop-tracking-card" aria-labelledby="pickup-record-title">
                         <p className="shop-kicker">Studio pickup</p>
-                        <h2 id="pickup-record-title">Collected.</h2>
+                        <h2 id="pickup-record-title">{order.fulfillmentFacts.deliveredAt ? "Collected." : "Pickup scheduled."}</h2>
                         <dl>
                           {order.fulfillmentFacts.pickupAppointment ? <div><dt>Appointment</dt><dd><time dateTime={order.fulfillmentFacts.pickupAppointment}>{formatConnectedOrderDate(order.fulfillmentFacts.pickupAppointment)}</time></dd></div> : null}
                           {order.fulfillmentFacts.recipientName ? <div><dt>Collected by</dt><dd>{order.fulfillmentFacts.recipientName}</dd></div> : null}
-                          <div><dt>Collected</dt><dd><time dateTime={order.fulfillmentFacts.deliveredAt}>{formatConnectedOrderDate(order.fulfillmentFacts.deliveredAt)}</time></dd></div>
+                          {order.fulfillmentFacts.deliveredAt ? <div><dt>Collected</dt><dd><time dateTime={order.fulfillmentFacts.deliveredAt}>{formatConnectedOrderDate(order.fulfillmentFacts.deliveredAt)}</time></dd></div> : null}
                         </dl>
                       </section>
                     ) : null}
 
                     <ReturnRequest
+                      commerceGuidance={commerceGuidance}
                       order={order}
                       onUpdated={(nextOrder) => {
                         setOrder(nextOrder);
                         setRefreshError("");
+                      }}
+                    />
+
+                    <OrderCustomerActions
+                      order={order}
+                      onUpdated={(nextOrder, notice) => {
+                        setOrder(nextOrder);
+                        setRefreshError("");
+                        setEvidenceNotice(notice);
                       }}
                     />
 
@@ -308,6 +335,7 @@ export function OrderStatus({
                   <span aria-hidden="true">{String(index + 1).padStart(2, "0")}</span>
                   <div>
                     <strong>{orderEventLabel(event, order.fulfillment.kind)}</strong>
+                    {event.note ? <p>{event.note}</p> : null}
                     <p>{event.actorKind === "CUSTOMER" ? "Customer" : event.actorKind === "OPERATOR" ? "Lulu · Studio" : "Order system"}</p>
                     <time dateTime={event.occurredAt}>{formatConnectedOrderDate(event.occurredAt)}</time>
                   </div>

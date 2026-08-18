@@ -12,6 +12,7 @@ import {
   ShopOrderError,
   type ShopServerOrder,
 } from "../../../../lib/shop/server-order/types";
+import { getShopCommerceGuidance } from "../../../../lib/shop/server-order/commerce-guidance";
 
 export const metadata: Metadata = {
   title: "Order status",
@@ -52,6 +53,7 @@ export default async function OrderStatusPage({
       initialError={initialError}
       initialOrder={initialOrder}
       initialState={initialState}
+      commerceGuidance={getShopCommerceGuidance()}
       reference={id}
     />
   );

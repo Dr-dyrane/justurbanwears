@@ -16,6 +16,7 @@ import { authSignInPath } from "../../lib/auth/return-to";
 import { mapConnectedOrderFailure } from "../../lib/shop/connected-order-client";
 import { orderStateLabel } from "../../lib/shop/order-presentation";
 import type { ShopReturnReason, ShopServerOrder } from "../../lib/shop/server-order/types";
+import type { ShopCommerceGuidance } from "../../lib/shop/server-order/commerce-guidance";
 import {
   ShopSheet,
   ShopSheetCloseButton,
@@ -31,16 +32,21 @@ const reasons: Array<{ value: ShopReturnReason; label: string }> = [
 ];
 
 export function ReturnRequest({
+  commerceGuidance,
   order,
   onUpdated,
 }: {
+  commerceGuidance: ShopCommerceGuidance;
   order: ShopServerOrder;
   onUpdated(order: ShopServerOrder): void;
 }) {
   const [open, setOpen] = useState(false);
   const [pending, setPending] = useState(false);
-  const [reason, setReason] = useState<ShopReturnReason>("WRONG_SIZE");
-  const [detail, setDetail] = useState("");
+  const [reason, setReason] = useState<ShopReturnReason>(order.return?.reason ?? "WRONG_SIZE");
+  const [detail, setDetail] = useState(order.return?.detail ?? "");
+  const [lineSkus, setLineSkus] = useState<string[]>(() => (
+    order.return?.items.map((item) => item.sku) ?? order.lines.map((line) => line.sku)
+  ));
   const [confirmed, setConfirmed] = useState(false);
   const [feedback, setFeedback] = useState("");
   const [feedbackIsError, setFeedbackIsError] = useState(false);
@@ -54,6 +60,8 @@ export function ReturnRequest({
   const dialogId = useId();
   const titleId = `${dialogId}-title`;
   const descriptionId = `${dialogId}-description`;
+  const correctingRejectedReturn = order.return?.status === "REJECTED"
+    && order.return.correctionCount < 1;
 
   useDocumentScrollLock(open);
   const { openWithHistory, requestClose } = useHistoryBackedDialog({
@@ -83,6 +91,7 @@ export function ReturnRequest({
     const dialog = dialogRef.current;
     if (!dialog || dialog.open) return;
     setOpen(true);
+    idempotencyKeyRef.current = "";
     openWithHistory();
     dialog.showModal();
     window.requestAnimationFrame(() => closeButtonRef.current?.focus());
@@ -121,10 +130,13 @@ export function ReturnRequest({
           credentials: "same-origin",
           headers: { "content-type": "application/json" },
           body: JSON.stringify({
-            version: 1,
+            version: 2,
             idempotencyKey: idempotencyKeyRef.current,
             reason,
             detail,
+            lineSkus,
+            expectedVersion: order.version,
+            correction: correctingRejectedReturn,
           }),
         },
       );
@@ -147,7 +159,9 @@ export function ReturnRequest({
       pendingRef.current = false;
       setPending(false);
       setFeedbackIsError(false);
-      setFeedback("Return request received. Lulu will review it.");
+      setFeedback(correctingRejectedReturn
+        ? "Return request corrected. Lulu will review it again."
+        : "Return request received. Lulu will review it.");
       dialogRef.current?.close();
       setOpen(false);
       focusResultRef.current = true;
@@ -161,7 +175,7 @@ export function ReturnRequest({
     }
   }
 
-  if (order.return) {
+  if (order.return && !correctingRejectedReturn) {
     const reasonLabel = reasons.find((item) => item.value === order.return?.reason)?.label
       ?? order.return.reason.replaceAll("_", " ").toLowerCase();
     return (
@@ -178,23 +192,36 @@ export function ReturnRequest({
           {order.return.refundReference ? <div><dt>Refund reference</dt><dd>{order.return.refundReference}</dd></div> : null}
           {order.return.disposition ? <div><dt>Resolution</dt><dd>{orderStateLabel(order.return.disposition)}</dd></div> : null}
         </dl>
+        <ul className="shop-return-items" aria-label="Pieces in this return">
+          {order.return.items.map((item) => (
+            <li key={item.sku}><span>{item.name}</span><strong>{item.disposition ? orderStateLabel(item.disposition) : "Included"}</strong></li>
+          ))}
+        </ul>
+        {order.return.status === "APPROVED" ? (
+          <div className="shop-return-handoff">
+            <strong>Return handoff</strong>
+            <p>{commerceGuidance.returns.instructions ?? "Contact Lulu before sending or bringing back the piece."}</p>
+            {commerceGuidance.returns.location ? <p>{commerceGuidance.returns.location}</p> : null}
+            {commerceGuidance.returns.contact ? <p>Arrange it with {commerceGuidance.returns.contact}.</p> : null}
+          </div>
+        ) : null}
         {feedback ? <p aria-live="polite" role="status">{feedback}</p> : null}
       </section>
     );
   }
 
-  if (!order.canRequestReturn) return null;
+  if (!order.canRequestReturn && !correctingRejectedReturn) return null;
 
   return (
     <section className="shop-return-card" id="shop-order-return" aria-labelledby="return-request-title">
       <p className="shop-kicker">Return window</p>
-      <h2 id="return-request-title">Need to return this order?</h2>
-      <p>
-        Send one return request before{" "}
-        <time dateTime={order.returnEligibleUntil ?? undefined}>
-          {order.returnEligibleUntil ? new Date(order.returnEligibleUntil).toLocaleString("en-NG") : "the window closes"}
-        </time>.
-      </p>
+      <h2 id="return-request-title">{correctingRejectedReturn ? "Correct your return once." : "Need to return something?"}</h2>
+      {correctingRejectedReturn ? <p>Lulu rejected the first request. Change the pieces or details, then send it once more.</p> : <p>
+          Choose the pieces to return before{" "}
+          <time dateTime={order.returnEligibleUntil ?? undefined}>
+            {order.returnEligibleUntil ? new Date(order.returnEligibleUntil).toLocaleString("en-NG") : "the window closes"}
+          </time>.
+        </p>}
       <button
         aria-controls={dialogId}
         aria-expanded={open}
@@ -205,7 +232,7 @@ export function ReturnRequest({
         type="button"
       >
         <RotateCcw aria-hidden="true" size={16} />
-        Review return request
+        {correctingRejectedReturn ? "Correct return request" : "Review return request"}
       </button>
 
       <ShopSheet
@@ -225,9 +252,9 @@ export function ReturnRequest({
         <ShopSheetHandle {...sheetGesture} />
         <header className="shop-return-sheet-heading">
           <div>
-            <p className="shop-kicker">Return request</p>
-            <h3 id={titleId}>Tell Lulu what happened.</h3>
-            <p id={descriptionId}>One request for order {order.reference}.</p>
+            <p className="shop-kicker">{correctingRejectedReturn ? "Return correction" : "Return request"}</p>
+            <h3 id={titleId}>{correctingRejectedReturn ? "Make the request accurate." : "Tell Lulu what happened."}</h3>
+            <p id={descriptionId}>Choose only the pieces coming back.</p>
           </div>
           <ShopSheetCloseButton
             aria-label="Close return request"
@@ -241,6 +268,22 @@ export function ReturnRequest({
 
         <div className="shop-return-sheet-body">
           <form aria-busy={pending} onSubmit={submit}>
+            <fieldset className="shop-return-reasons">
+              <legend>Pieces</legend>
+              {order.lines.map((line) => (
+                <label key={line.sku}>
+                  <input
+                    checked={lineSkus.includes(line.sku)}
+                    disabled={pending}
+                    onChange={(event) => setLineSkus((current) => event.target.checked
+                      ? [...current, line.sku]
+                      : current.filter((sku) => sku !== line.sku))}
+                    type="checkbox"
+                  />
+                  <span>{line.name} · {line.taggedSize}</span>
+                </label>
+              ))}
+            </fieldset>
             <fieldset className="shop-return-reasons">
               <legend>Reason</legend>
               {reasons.map((item) => (
@@ -278,10 +321,10 @@ export function ReturnRequest({
                 required
                 type="checkbox"
               />
-              <span>I confirm this is the one return request for this delivered order.</span>
+              <span>{correctingRejectedReturn ? "I confirm this correction replaces my rejected request." : "I confirm these are the pieces I am returning."}</span>
             </label>
-            <button className="shop-action shop-action-primary" disabled={pending || !confirmed || detail.trim().length < 10} type="submit">
-              {pending ? "Sending request…" : "Send return request"}
+            <button className="shop-action shop-action-primary" disabled={pending || !confirmed || !lineSkus.length || detail.trim().length < 10} type="submit">
+              {pending ? "Sending request…" : correctingRejectedReturn ? "Send correction" : "Send return request"}
             </button>
           </form>
           {feedback ? (

@@ -12,25 +12,24 @@ test("inventory rows open one named detail sheet instead of mutating stock inlin
   const inventoryList = operations.slice(listStart, listEnd);
 
   assert.match(inventoryList, /aria-haspopup="dialog"/);
-  assert.match(inventoryList, /openInventoryDetail/);
+  assert.match(inventoryList, /openPiece/);
   assert.match(inventoryList, /studio-inventory-row-trigger/);
   assert.doesNotMatch(inventoryList, /studio\.reserveOrder/);
   assert.doesNotMatch(inventoryList, /Mark sold/);
 });
 
-test("the sheet exposes facts and only lifecycle-backed actions", () => {
+test("the sheet exposes facts and only authority-backed physical actions", () => {
   assert.match(operations, /studio-inventory-detail-facts/);
-  assert.match(operations, /Reserve 1 unit/);
-  assert.match(operations, /Mark sold/);
-  assert.match(operations, /Release reservation/);
-  assert.match(operations, /Open return/);
-  assert.match(operations, /Review return/);
-  assert.match(operations, /View listing/);
+  assert.match(operations, /Confirm at \$\{location\.label\}/);
+  assert.match(operations, /Move to \$\{location\.label\}/);
+  assert.match(operations, /Hold for customer/);
+  assert.match(operations, /Release hold/);
+  assert.match(operations, /Open order/);
+  assert.match(operations, /Open piece/);
   assert.match(css, /\.studio-inventory-detail-sheet/);
   assert.match(css, /\.studio-inventory-decision-grid/);
-  assert.match(operations, /pendingInventoryDecision/);
-  assert.match(operations, /confirmInventoryDecision/);
-  assert.match(operations, /Reserve this piece\?/);
-  assert.match(operations, /Release this reservation\?/);
-  assert.match(css, /\.studio-inventory-confirmation/);
+  assert.match(operations, /authority\.recordLocation/);
+  assert.match(operations, /authority\.createHold/);
+  assert.match(operations, /authority\.releaseHold/);
+  assert.doesNotMatch(operations, /Reserve 1 unit|Mark sold|studio\.reserveOrder/);
 });

@@ -40,7 +40,7 @@ export function StudioSettingsCenter({ operator }: { operator: StudioOperator | 
     ? operator.displayName
     : "Lulu";
   const avatarInitial = displayName.trim().slice(0, 1).toUpperCase() || "L";
-  const workspaceAvailable = studio.persistence === "available";
+  const workspaceAvailable = studio.scenario ? true : studio.authority.status === "ready";
 
   return <>
     <button
@@ -116,7 +116,7 @@ export function StudioSettingsCenter({ operator }: { operator: StudioOperator | 
           <div className="studio-settings-heading"><span><Database aria-hidden="true" size={18} /></span><div><p className="eyebrow">Workspace</p><h3 id="studio-workspace-title">Data & access</h3></div></div>
           <div className="studio-settings-status-list">
             <div><span><Cloud aria-hidden="true" size={17} /><span><strong>AI intake</strong><small>Private server drafts</small></span></span><Check aria-label="Available" size={17} /></div>
-            <div><span><Database aria-hidden="true" size={17} /><span><strong>Workspace</strong><small>{workspaceAvailable ? "Saved on this device" : "Saving unavailable"}</small></span></span><b data-tone={workspaceAvailable ? "positive" : "critical"}>{workspaceAvailable ? "Ready" : "Check"}</b></div>
+            <div><span><Database aria-hidden="true" size={17} /><span><strong>Workspace</strong><small>{studio.scenario ? "Read-only scenario" : workspaceAvailable ? "Connected Studio record" : "Live state unavailable"}</small></span></span><b data-tone={workspaceAvailable ? "positive" : "critical"}>{workspaceAvailable ? "Ready" : "Check"}</b></div>
           </div>
         </section>
 

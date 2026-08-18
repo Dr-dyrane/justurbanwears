@@ -1,188 +1,204 @@
 "use client";
 
-/* Fixed public catalogue paths and protected Studio previews do not use the Next image optimizer. */
+/* Protected Studio and catalogue media use stable runtime URLs. */
 /* eslint-disable @next/next/no-img-element */
 
-import { useState } from "react";
+import { FormEvent, useMemo, useState } from "react";
 import {
   ArrowRight,
   Boxes,
   Check,
   ChevronRight,
+  CircleAlert,
   ClipboardCheck,
-  ExternalLink,
-  PackageOpen,
+  MapPin,
   PackageCheck,
   RotateCcw,
-  ShieldAlert,
   Shirt,
+  UserRound,
 } from "lucide-react";
+import type { StudioLifecycleState } from "../../lib/studio/domain/entities";
+import type { StudioAuthorityPiece } from "../../lib/studio/services/studio-authority-client";
 import { LifecycleBadge } from "./atoms/lifecycle-badge";
 import { StudioLink as Link } from "./atoms/studio-link";
-import { StudioPager, StudioSegmentedView, useStudioSegment } from "./atoms/studio-segmented-view";
+import { StudioSegmentedView, useStudioSegment } from "./atoms/studio-segmented-view";
 import { StudioTaskSheet } from "./atoms/studio-task-sheet";
-import { studioGarmentCover } from "./garment-cover";
 import { useStudio } from "./studio-provider";
+
+const locations = [
+  { key: "WARDROBE_RAIL", label: "Wardrobe rail" },
+  { key: "PACKING_SHELF", label: "Packing shelf" },
+  { key: "RETURN_INSPECTION", label: "Return inspection" },
+] as const;
 
 function shortDate(value: string) {
   const date = new Date(value);
-  return Number.isNaN(date.getTime())
-    ? value
-    : new Intl.DateTimeFormat("en-NG", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }).format(date);
+  return Number.isFinite(date.getTime())
+    ? new Intl.DateTimeFormat("en-NG", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }).format(date)
+    : value;
 }
 
-const currency = new Intl.NumberFormat("en-NG", {
-  currency: "NGN",
-  maximumFractionDigits: 0,
-  style: "currency",
-});
+function lifecycle(piece: StudioAuthorityPiece): StudioLifecycleState {
+  if (piece.activeHold) return "RESERVED";
+  if (piece.availability === "PRIVATE") return "DRAFT";
+  if (piece.availability === "AVAILABLE") return "PUBLISHED";
+  if (piece.availability === "ARCHIVED") return "CANCELLED";
+  return piece.availability;
+}
 
-type InventoryDecision = "RESERVE" | "FULFILL" | "RELEASE" | "RETURN" | "RESTOCK" | "WRITE_OFF";
-
-const inventoryDecisionCopy: Record<InventoryDecision, { confirm: string; description: string; title: string }> = {
-  RESERVE: { confirm: "Reserve unit", description: "This creates an order and removes one unit from available stock.", title: "Reserve this piece?" },
-  FULFILL: { confirm: "Mark sold", description: "This fulfils the linked order and records the reserved unit as sold.", title: "Complete this sale?" },
-  RELEASE: { confirm: "Release", description: "This cancels the linked order hold and restores the unit to published availability.", title: "Release this reservation?" },
-  RETURN: { confirm: "Open return", description: "This creates a return record. Restock or write-off remains a separate decision.", title: "Open a return?" },
-  RESTOCK: { confirm: "Restock", description: "This returns the piece to wardrobe review before it can be published again.", title: "Restock this piece?" },
-  WRITE_OFF: { confirm: "Write off", description: "This removes the returned piece from sellable stock.", title: "Write off this piece?" },
-};
+function nextDayValue() {
+  const next = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  const local = new Date(next.getTime() - next.getTimezoneOffset() * 60_000);
+  return local.toISOString().slice(0, 16);
+}
 
 export function OperationsDesk() {
-  const studio = useStudio();
-  const [inventoryPage, setInventoryPage] = useState(0);
-  const [ordersPage, setOrdersPage] = useState(0);
-  const [returnsPage, setReturnsPage] = useState(0);
-  const [selectedInventoryId, setSelectedInventoryId] = useState<string | null>(null);
-  const [inventoryReturnFocus, setInventoryReturnFocus] = useState<HTMLButtonElement | null>(null);
-  const [inventoryNotice, setInventoryNotice] = useState("");
-  const [pendingInventoryDecision, setPendingInventoryDecision] = useState<InventoryDecision | null>(null);
-
-  const reservedOrders = studio.orders.filter((order) => order.state === "RESERVED").length;
-  const soldOrders = studio.orders.filter((order) => order.state === "SOLD").length;
-  const openReturns = studio.returns.filter((returnCase) => returnCase.state === "DRAFT").length;
-  const availableUnits = studio.inventory.reduce((total, record) => total + Math.max(0, record.onHand - record.reserved), 0);
-  const summaryItems = [
-    { key: "available", icon: Boxes, value: availableUnits, label: "available units" },
-    { key: "reserved", icon: ClipboardCheck, value: reservedOrders, label: "orders to fulfil" },
-    { key: "sold", icon: PackageCheck, value: soldOrders, label: "sold orders" },
-    { key: "returns", icon: RotateCcw, value: openReturns, label: "returns to dispose" },
-  ].filter((item) => item.key === "available" || item.value > 0);
+  const { authority, scenario } = useStudio();
+  const snapshot = authority.snapshot;
+  const pieces = snapshot?.pieces ?? [];
+  const holds = snapshot?.holds ?? [];
+  const orders = snapshot?.orders ?? [];
+  const returns = orders.filter((order) => order.return);
+  const activeHolds = holds.filter((hold) => hold.status === "ACTIVE");
+  const actionOrders = orders.filter((order) => order.allowedTransitions.length || order.allowedReturnTransitions.length);
+  const mismatches = pieces.filter((piece) => piece.hasLocationMismatch);
+  const available = pieces.filter((piece) => piece.availability === "AVAILABLE" && !piece.activeHold).length;
   const segments = [
-    { key: "inventory", label: "Inventory", count: studio.inventory.length },
-    { key: "orders", label: "Orders", count: studio.orders.length },
-    { key: "returns", label: "Returns", count: studio.returns.length },
+    { key: "inventory", label: "Inventory", count: pieces.length },
+    { key: "holds", label: "Holds", count: activeHolds.length },
+    { key: "orders", label: "Orders", count: actionOrders.length },
+    { key: "returns", label: "Returns", count: returns.length },
   ];
   const { active: activeView, isPending: viewPending, select: selectView } = useStudioSegment(segments, "inventory");
-  const pageSize = 8;
-  const safeInventoryPage = Math.min(inventoryPage, Math.max(0, Math.ceil(studio.inventory.length / pageSize) - 1));
-  const safeOrdersPage = Math.min(ordersPage, Math.max(0, Math.ceil(studio.orders.length / pageSize) - 1));
-  const safeReturnsPage = Math.min(returnsPage, Math.max(0, Math.ceil(studio.returns.length / pageSize) - 1));
-  const selectedInventory = selectedInventoryId
-    ? studio.inventory.find((record) => record.id === selectedInventoryId)
-    : undefined;
-  const selectedGarment = selectedInventory
-    ? studio.garments.find((garment) => garment.id === selectedInventory.garmentId)
-    : undefined;
-  const selectedListing = selectedInventory?.listingId
-    ? studio.listings.find((listing) => listing.id === selectedInventory.listingId)
-    : undefined;
-  const selectedOrder = selectedInventory
-    ? studio.orders.find((order) => order.inventoryId === selectedInventory.id && ["RESERVED", "SOLD"].includes(order.state))
-    : undefined;
-  const selectedReturn = selectedOrder
-    ? studio.returns.find((returnCase) => returnCase.orderId === selectedOrder.id)
-    : undefined;
-  const selectedCover = selectedGarment
-    ? studioGarmentCover(selectedGarment, selectedListing)
-    : undefined;
+  const [selectedKey, setSelectedKey] = useState<string | null>(null);
+  const [returnFocus, setReturnFocus] = useState<HTMLButtonElement | null>(null);
+  const [holdOpen, setHoldOpen] = useState(false);
+  const [holdPieceKey, setHoldPieceKey] = useState<string | null>(null);
+  const [holdReturnFocus, setHoldReturnFocus] = useState<HTMLButtonElement | null>(null);
+  const [customerName, setCustomerName] = useState("");
+  const [contact, setContact] = useState("");
+  const [reason, setReason] = useState("");
+  const [expiresAt, setExpiresAt] = useState(nextDayValue);
+  const [pending, setPending] = useState(false);
+  const [notice, setNotice] = useState("");
+  const [error, setError] = useState("");
+  const selected = pieces.find((piece) => piece.pieceKey === selectedKey) ?? null;
+  const holdPiece = pieces.find((piece) => piece.pieceKey === holdPieceKey) ?? null;
 
-  function closeInventoryDetail() {
-    setSelectedInventoryId(null);
-    setInventoryNotice("");
-    setPendingInventoryDecision(null);
+  const summary = useMemo(() => [
+    { key: "available", icon: Boxes, value: available, label: "available now" },
+    { key: "orders", icon: PackageCheck, value: actionOrders.length, label: "orders needing action" },
+    { key: "holds", icon: ClipboardCheck, value: activeHolds.length, label: "customer holds" },
+    { key: "mismatch", icon: CircleAlert, value: mismatches.length, label: "location differences" },
+  ], [actionOrders.length, activeHolds.length, available, mismatches.length]);
+
+  function openPiece(piece: StudioAuthorityPiece, trigger: HTMLButtonElement) {
+    setSelectedKey(piece.pieceKey);
+    setReturnFocus(trigger);
+    setNotice("");
+    setError("");
   }
 
-  function openInventoryDetail(recordId: string, trigger: HTMLButtonElement) {
-    setInventoryReturnFocus(trigger);
-    setInventoryNotice("");
-    setPendingInventoryDecision(null);
-    setSelectedInventoryId(recordId);
+  function closePiece() {
+    setSelectedKey(null);
+    setNotice("");
+    setError("");
   }
 
-  function reserveSelectedListing() {
-    if (!selectedListing) return;
-    const orderId = studio.reserveOrder(selectedListing.id);
-    setInventoryNotice(orderId ? "One unit reserved. The order is ready to review." : "This unit could not be reserved.");
-    setPendingInventoryDecision(null);
+  function openHold() {
+    if (!selected) return;
+    setHoldPieceKey(selected.pieceKey);
+    setHoldReturnFocus(returnFocus);
+    setSelectedKey(null);
+    setHoldOpen(true);
+    setCustomerName("");
+    setContact("");
+    setReason("");
+    setExpiresAt(nextDayValue());
+    setError("");
   }
 
-  function fulfillSelectedOrder() {
-    if (!selectedOrder) return;
-    studio.fulfillOrder(selectedOrder.id);
-    setInventoryNotice("Reservation marked sold.");
-    setPendingInventoryDecision(null);
+  async function saveHold(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!holdPiece?.sku) return;
+    setPending(true);
+    setError("");
+    try {
+      const consequence = await authority.createHold({
+        sku: holdPiece.sku,
+        customerName,
+        contact,
+        reason,
+        expiresAt: new Date(expiresAt).toISOString(),
+        idempotencyKey: `hold:${crypto.randomUUID()}`,
+      });
+      setNotice(consequence);
+      setHoldOpen(false);
+      setSelectedKey(holdPiece.pieceKey);
+      setHoldPieceKey(null);
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "The hold could not be saved.");
+    } finally {
+      setPending(false);
+    }
   }
 
-  function releaseSelectedReservation() {
-    if (!selectedOrder) return;
-    const released = studio.cancelOrder(selectedOrder.id);
-    setInventoryNotice(released ? "Reservation released. The piece is published and available again." : "This reservation could not be released.");
-    setPendingInventoryDecision(null);
+  async function releaseHold() {
+    if (!selected?.activeHold) return;
+    setPending(true);
+    setError("");
+    try {
+      setNotice(await authority.releaseHold(selected.activeHold.id));
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "The hold could not be released.");
+    } finally {
+      setPending(false);
+    }
   }
 
-  function openSelectedReturn() {
-    if (!selectedOrder) return;
-    const returnId = studio.openReturn(selectedOrder.id);
-    setInventoryNotice(returnId ? "Return opened for review." : "A return already exists for this order.");
-    setPendingInventoryDecision(null);
+  async function recordLocation(
+    locationKey: typeof locations[number]["key"],
+    command: "CONFIRM" | "MOVE",
+  ) {
+    if (!selected) return;
+    setPending(true);
+    setError("");
+    try {
+      setNotice(await authority.recordLocation({
+        command,
+        pieceKey: selected.pieceKey,
+        locationKey,
+        idempotencyKey: `location:${crypto.randomUUID()}`,
+      }));
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "The location could not be saved.");
+    } finally {
+      setPending(false);
+    }
   }
 
-  function disposeSelectedReturn(disposition: "RESTOCK" | "WRITE_OFF") {
-    if (!selectedReturn) return;
-    studio.disposeReturn(selectedReturn.id, disposition);
-    setInventoryNotice(disposition === "RESTOCK" ? "Returned to wardrobe review." : "Removed from sellable stock.");
-    setPendingInventoryDecision(null);
-  }
-
-  function confirmInventoryDecision() {
-    if (pendingInventoryDecision === "RESERVE") reserveSelectedListing();
-    if (pendingInventoryDecision === "FULFILL") fulfillSelectedOrder();
-    if (pendingInventoryDecision === "RELEASE") releaseSelectedReservation();
-    if (pendingInventoryDecision === "RETURN") openSelectedReturn();
-    if (pendingInventoryDecision === "RESTOCK") disposeSelectedReturn("RESTOCK");
-    if (pendingInventoryDecision === "WRITE_OFF") disposeSelectedReturn("WRITE_OFF");
-  }
-
-  function showSelectedOrder() {
-    if (!selectedOrder) return;
-    const orderIndex = studio.orders.findIndex((order) => order.id === selectedOrder.id);
-    setOrdersPage(Math.max(0, Math.floor(orderIndex / pageSize)));
-    closeInventoryDetail();
-    selectView("orders");
-  }
-
-  function showSelectedReturn() {
-    if (!selectedReturn) return;
-    const returnIndex = studio.returns.findIndex((returnCase) => returnCase.id === selectedReturn.id);
-    setReturnsPage(Math.max(0, Math.floor(returnIndex / pageSize)));
-    closeInventoryDetail();
-    selectView("returns");
-  }
-
-  if (studio.hydration === "idle" || studio.hydration === "restoring") {
+  if (authority.status === "idle" || authority.status === "loading") {
     return <div className="studio-loading" role="status">Opening operations…</div>;
+  }
+
+  if (authority.status === "error" || !snapshot) {
+    return (
+      <div className="studio-ops-page studio-premium-surface">
+        <header className="studio-ops-heading"><div><p className="eyebrow">Operations</p><h1>Live state unavailable.</h1><p>No inventory action is available until current truth returns.</p></div></header>
+        <div className="studio-quiet-empty" role="alert"><CircleAlert aria-hidden="true" size={24} /><div><strong>Couldn’t open Operations</strong><p>{authority.error}</p></div><button className="button button-secondary" onClick={() => void authority.refresh()} type="button">Try again</button></div>
+      </div>
+    );
   }
 
   return (
     <div className="studio-ops-page studio-premium-surface">
       <header className="studio-ops-heading">
-        <div><p className="eyebrow">Operations</p><h1>Manage stock and returns.</h1><p>Reserve it, mark it sold, or return it to the wardrobe.</p></div>
-        <Link className="button button-secondary" href="/studio/wardrobe">Open wardrobe <ArrowRight aria-hidden="true" size={15} /></Link>
+        <div><p className="eyebrow">Operations</p><h1>Know where every piece is.</h1><p>Inventory, holds, orders and returns share one live record.</p></div>
+        <Link className="button button-secondary" href="/studio/stocktake">Start stocktake <ArrowRight aria-hidden="true" size={15} /></Link>
       </header>
 
       <div className="studio-operation-summary" role="list" aria-label="Operations summary">
-        {summaryItems.map((item) => {
+        {summary.map((item) => {
           const Icon = item.icon;
           return <div role="listitem" key={item.key}><span><Icon aria-hidden="true" size={18} /></span><strong>{item.value}</strong><small>{item.label}</small></div>;
         })}
@@ -190,153 +206,92 @@ export function OperationsDesk() {
 
       <StudioSegmentedView active={activeView} label="Operations workspace" onSelect={selectView} pending={viewPending} segments={segments} />
 
-      {activeView === "inventory" ? <section className="studio-operation-section studio-stack-panel" id="studio-view-inventory" aria-labelledby="studio-tab-inventory" role="tabpanel">
-        <div className="studio-section-title"><div><p className="eyebrow">Inventory</p><h2 id="inventory-title">Pieces and availability</h2></div><span>{studio.inventory.length} records</span></div>
-        {studio.inventory.length ? (
-          <div className="studio-table studio-inventory-list" role="list" aria-label="Inventory records">
-            {studio.inventory.slice(safeInventoryPage * pageSize, (safeInventoryPage + 1) * pageSize).map((record) => {
-              const garment = studio.garments.find((candidate) => candidate.id === record.garmentId);
-              const listing = record.listingId ? studio.listings.find((candidate) => candidate.id === record.listingId) : undefined;
-              if (!garment) return null;
-              const cover = studioGarmentCover(garment, listing);
-              return (
-                <article role="listitem" key={record.id}>
-                  <button
-                    aria-haspopup="dialog"
-                    className="studio-table-row studio-inventory-row-trigger"
-                    onClick={(event) => openInventoryDetail(record.id, event.currentTarget)}
-                    type="button"
-                  >
-                    <span className={`studio-inventory-media${cover ? " is-photo" : ""}`} data-variant={garment.visual}>{cover ? <img alt="" height={cover.height} loading="lazy" src={cover.src} width={cover.width} /> : <Shirt aria-hidden="true" size={22} strokeWidth={1.4} />}</span>
-                    <span className="studio-inventory-copy"><small>{garment.sku}</small><strong>{garment.title}</strong><em>{listing ? listing.slug : "Not prepared"}</em></span>
-                    <span className="studio-inventory-stock"><strong>{Math.max(0, record.onHand - record.reserved)} available</strong><small>{record.reserved} reserved</small></span>
-                    <span className="studio-inventory-action"><LifecycleBadge state={record.state} /><ChevronRight aria-hidden="true" size={17} /></span>
-                  </button>
-                </article>
-              );
-            })}
+      {activeView === "inventory" ? (
+        <section className="studio-operation-section studio-stack-panel" id="studio-view-inventory" aria-labelledby="studio-tab-inventory" role="tabpanel">
+          <div className="studio-section-title"><div><p className="eyebrow">Inventory</p><h2>Pieces and physical truth</h2></div><span>{pieces.length} pieces</span></div>
+          {pieces.length ? <div className="studio-table studio-inventory-list" role="list" aria-label="Inventory pieces">
+            {pieces.map((piece) => (
+              <article role="listitem" key={piece.pieceKey}>
+                <button aria-haspopup="dialog" className="studio-table-row studio-inventory-row-trigger" onClick={(event) => openPiece(piece, event.currentTarget)} type="button">
+                  <span className={`studio-inventory-media${piece.imageSrc ? " is-photo" : ""}`}>{piece.imageSrc ? <img alt="" height={160} loading="lazy" src={piece.imageSrc} width={128} /> : <Shirt aria-hidden="true" size={22} />}</span>
+                  <span className="studio-inventory-copy"><small>{piece.sku ?? "Private piece"}</small><strong>{piece.title}</strong><em>{piece.activeHold ? `Held for ${piece.activeHold.customerName}` : piece.orderReference ? `Order ${piece.orderReference}` : piece.expectedCustody.toLowerCase()}</em></span>
+                  <span className="studio-inventory-stock"><strong>{piece.observedLocationLabel ?? piece.expectedLocationLabel}</strong><small>{piece.hasLocationMismatch ? `Expected ${piece.expectedLocationLabel}` : piece.observedAt ? `Confirmed ${shortDate(piece.observedAt)}` : "Expected location"}</small></span>
+                  <span className="studio-inventory-action"><LifecycleBadge state={lifecycle(piece)} />{piece.hasLocationMismatch ? <CircleAlert aria-label="Location differs" size={17} /> : <ChevronRight aria-hidden="true" size={17} />}</span>
+                </button>
+              </article>
+            ))}
+          </div> : <div className="studio-quiet-empty"><Boxes aria-hidden="true" size={24} /><div><strong>No pieces yet</strong><p>Inventory begins with garment intake.</p></div><Link className="button button-primary" href="/studio/wardrobe?intake=1">Intake garment</Link></div>}
+        </section>
+      ) : null}
+
+      {activeView === "holds" ? (
+        <section className="studio-operation-section studio-stack-panel" id="studio-view-holds" aria-labelledby="studio-tab-holds" role="tabpanel">
+          <div className="studio-section-title"><div><p className="eyebrow">Holds</p><h2>People waiting for a piece</h2></div><span>{activeHolds.length} active</span></div>
+          {activeHolds.length ? <div className="studio-operation-cards">{activeHolds.map((hold) => {
+            const piece = pieces.find((candidate) => candidate.sku === hold.sku);
+            return <article className="studio-operation-card" key={hold.id}><button className="studio-operation-card-trigger" onClick={(event) => piece && openPiece(piece, event.currentTarget)} type="button"><div className="studio-card-heading"><div><small>{hold.sku}</small><h3>{piece?.title ?? hold.sku}</h3></div><LifecycleBadge state="RESERVED" /></div><dl><div><dt>For</dt><dd>{hold.customerName}</dd></div><div><dt>Contact</dt><dd>{hold.contact}</dd></div><div><dt>Expires</dt><dd>{shortDate(hold.expiresAt)}</dd></div></dl><span className="studio-operation-card-open">Review <ChevronRight aria-hidden="true" size={17} /></span></button></article>;
+          })}</div> : <div className="studio-quiet-empty"><ClipboardCheck aria-hidden="true" size={24} /><div><strong>No active holds</strong><p>Open an available piece to hold it for a customer.</p></div></div>}
+        </section>
+      ) : null}
+
+      {activeView === "orders" ? (
+        <section className="studio-operation-section studio-stack-panel" id="studio-view-orders" aria-labelledby="studio-tab-orders" role="tabpanel">
+          <div className="studio-section-title"><div><p className="eyebrow">Orders</p><h2>Connected customer orders</h2></div><span>{orders.length} total</span></div>
+          {orders.length ? <div className="studio-operation-cards">{orders.map((order) => <article className="studio-operation-card" key={order.reference}><Link className="studio-operation-card-trigger" href={`/studio/orders/${order.reference}`}><div className="studio-card-heading"><div><small>{order.reference}</small><h3>{order.lines[0]?.name ?? "Wardrobe order"}</h3></div><LifecycleBadge state={order.lifecycleStatus === "ACTIVE" ? "RESERVED" : order.lifecycleStatus === "COMPLETED" ? "SOLD" : "CANCELLED"} /></div><dl><div><dt>Receipt</dt><dd>{order.paymentReviewStatus.toLowerCase().replaceAll("_", " ")}</dd></div><div><dt>Payment</dt><dd>{order.fundsConfirmationStatus.toLowerCase()}</dd></div><div><dt>Handoff</dt><dd>{order.fulfillmentStatus.toLowerCase().replaceAll("_", " ")}</dd></div></dl><span className="studio-operation-card-open">Open order <ChevronRight aria-hidden="true" size={17} /></span></Link></article>)}</div> : <div className="studio-quiet-empty"><PackageCheck aria-hidden="true" size={24} /><div><strong>No customer orders</strong><p>Orders appear here after checkout.</p></div></div>}
+        </section>
+      ) : null}
+
+      {activeView === "returns" ? (
+        <section className="studio-operation-section studio-stack-panel" id="studio-view-returns" aria-labelledby="studio-tab-returns" role="tabpanel">
+          <div className="studio-section-title"><div><p className="eyebrow">Returns</p><h2>Inspect and resolve</h2></div><span>{returns.length} cases</span></div>
+          {returns.length ? <div className="studio-operation-cards">{returns.map((order) => <article className="studio-operation-card" key={order.reference}><Link className="studio-operation-card-trigger" href={`/studio/orders/${order.reference}#studio-order-next-action`}><div className="studio-card-heading"><div><small>{order.reference}</small><h3>{order.lines[0]?.name ?? "Returned piece"}</h3></div><LifecycleBadge state={order.return?.status === "RESOLVED" ? "RETURNED" : "DRAFT"} /></div><dl><div><dt>Return</dt><dd>{order.return!.status.toLowerCase()}</dd></div><div><dt>Refund</dt><dd>{order.return!.refundStatus.toLowerCase().replaceAll("_", " ")}</dd></div><div><dt>Disposition</dt><dd>{order.return!.disposition?.toLowerCase() ?? "waiting"}</dd></div></dl><span className="studio-operation-card-open">Review return <ChevronRight aria-hidden="true" size={17} /></span></Link></article>)}</div> : <div className="studio-quiet-empty"><RotateCcw aria-hidden="true" size={24} /><div><strong>No returns</strong><p>Customer return requests appear here.</p></div></div>}
+        </section>
+      ) : null}
+
+      <StudioTaskSheet className="studio-inventory-detail-sheet" eyebrow={selected?.sku ?? "Private piece"} onDismiss={closePiece} open={Boolean(selected)} returnFocus={returnFocus} title={selected?.title ?? "Piece"}>
+        {selected ? <div className="studio-inventory-detail">
+          <figure className={`studio-inventory-detail-media${selected.imageSrc ? " is-photo" : ""}`}>{selected.imageSrc ? <img alt={`${selected.title} inventory view`} height={1280} src={selected.imageSrc} width={1024} /> : <Shirt aria-hidden="true" size={42} />}<figcaption><LifecycleBadge state={lifecycle(selected)} /><span>{selected.activeHold ? "On hold" : selected.availability.toLowerCase()}</span></figcaption></figure>
+          <section className="studio-inventory-detail-section">
+            <div className="studio-inventory-detail-heading"><div><p className="eyebrow">Truth</p><h3>Where it is now</h3></div></div>
+            <dl className="studio-inventory-detail-facts"><div><dt>Custody</dt><dd>{selected.expectedCustody.toLowerCase()}</dd></div><div><dt>Expected</dt><dd>{selected.expectedLocationLabel}</dd></div><div><dt>Last seen</dt><dd>{selected.observedLocationLabel ?? "Not confirmed"}</dd></div><div><dt>Attached to</dt><dd>{selected.activeHold ? `Hold · ${selected.activeHold.customerName}` : selected.orderReference ? `Order · ${selected.orderReference}` : "Nothing"}</dd></div></dl>
+          </section>
+
+          {selected.hasLocationMismatch ? <div className="studio-quiet-empty" role="alert"><CircleAlert aria-hidden="true" size={22} /><div><strong>Location differs</strong><p>Expected {selected.expectedLocationLabel}; last seen {selected.observedLocationLabel}.</p></div>{selected.orderReference ? <Link className="button button-secondary" href={`/studio/orders/${selected.orderReference}`}>Review order</Link> : null}</div> : null}
+
+          {notice ? <div className="studio-quiet-empty" aria-live="polite" role="status"><Check aria-hidden="true" size={22} /><div><strong>Saved</strong><p>{notice}</p></div></div> : null}
+          {error ? <p className="studio-task-error" role="alert">{error}</p> : null}
+
+          <section className="studio-inventory-detail-section">
+            <div className="studio-inventory-detail-heading"><div><p className="eyebrow">Location</p><h3>Confirm in hand</h3></div></div>
+            {selected.expectedCustody === "STUDIO" ? <div className="studio-inventory-decision-grid">{locations.map((location) => {
+              const confirmsExpected = selected.expectedLocationKey === location.key;
+              return <button className="studio-inventory-decision" disabled={pending || Boolean(scenario)} key={location.key} onClick={() => void recordLocation(location.key, confirmsExpected ? "CONFIRM" : "MOVE")} type="button"><MapPin aria-hidden="true" size={20} /><span><strong>{confirmsExpected ? `Confirm at ${location.label}` : `Move to ${location.label}`}</strong><small>{scenario ? "Read-only scenario" : confirmsExpected ? "Check the piece is here." : `Expected location becomes ${location.label.toLowerCase()}.`}</small></span><ChevronRight aria-hidden="true" size={17} /></button>;
+            })}</div> : <div className="studio-quiet-empty"><MapPin aria-hidden="true" size={22} /><div><strong>{selected.expectedLocationLabel}</strong><p>{selected.orderReference ? "Continue with the connected order." : "Confirm the handoff before moving this piece."}</p></div>{selected.orderReference ? <Link className="button button-secondary" href={`/studio/orders/${selected.orderReference}`}>Open order</Link> : null}</div>}
+          </section>
+
+          <section className="studio-inventory-detail-section">
+            <div className="studio-inventory-detail-heading"><div><p className="eyebrow">Next</p><h3>Legal actions</h3></div></div>
+            <div className="studio-inventory-decision-grid">
+              {selected.orderReference ? <Link className="studio-inventory-decision" href={`/studio/orders/${selected.orderReference}`}><PackageCheck aria-hidden="true" size={20} /><span><strong>Open order</strong><small>Continue with this order.</small></span><ChevronRight aria-hidden="true" size={17} /></Link> : null}
+              {selected.activeHold ? <button className="studio-inventory-decision" disabled={pending || Boolean(scenario)} onClick={() => void releaseHold()} type="button"><RotateCcw aria-hidden="true" size={20} /><span><strong>Release hold</strong><small>{scenario ? "Read-only scenario" : "Make this piece available again."}</small></span><ChevronRight aria-hidden="true" size={17} /></button> : null}
+              {!selected.activeHold && selected.availability === "AVAILABLE" && selected.sku ? <button className="studio-inventory-decision" disabled={pending || Boolean(scenario)} onClick={openHold} type="button"><UserRound aria-hidden="true" size={20} /><span><strong>Hold for customer</strong><small>{scenario ? "Read-only scenario" : "Name, contact and expiry required."}</small></span><ChevronRight aria-hidden="true" size={17} /></button> : null}
+              <Link className="studio-inventory-decision" href={`/studio/wardrobe/${encodeURIComponent(selected.wardrobeItemId ?? selected.sku ?? selected.pieceKey)}`}><Shirt aria-hidden="true" size={20} /><span><strong>Open piece</strong><small>Review garment truth and media.</small></span><ChevronRight aria-hidden="true" size={17} /></Link>
+            </div>
+          </section>
+        </div> : null}
+      </StudioTaskSheet>
+
+      <StudioTaskSheet eyebrow="Customer hold" onDismiss={() => { setHoldOpen(false); setHoldPieceKey(null); }} open={holdOpen} returnFocus={holdReturnFocus} title={holdPiece ? `Hold ${holdPiece.title}` : "Hold piece"}>
+        <form className="studio-task-sheet-body" onSubmit={saveHold}>
+          <div className="studio-form-grid">
+            <label className="studio-field"><span>Customer name</span><input autoComplete="name" maxLength={120} onChange={(event) => setCustomerName(event.target.value)} required value={customerName} /></label>
+            <label className="studio-field"><span>Phone or email</span><input autoComplete="email" maxLength={160} onChange={(event) => setContact(event.target.value)} required value={contact} /></label>
+            <label className="studio-field"><span>Expires</span><input min={new Date().toISOString().slice(0, 16)} onChange={(event) => setExpiresAt(event.target.value)} required type="datetime-local" value={expiresAt} /></label>
+            <label className="studio-field"><span>Reason</span><input maxLength={240} onChange={(event) => setReason(event.target.value)} placeholder="Trying on tomorrow" required value={reason} /></label>
           </div>
-        ) : <div className="studio-quiet-empty"><Boxes aria-hidden="true" size={24} /><div><strong>No stock records</strong><p>Inventory begins when a garment is created.</p></div><Link className="button button-primary" href="/studio/wardrobe?intake=1">Intake garment</Link></div>}
-        <StudioPager label="Inventory pages" onPageChange={setInventoryPage} page={safeInventoryPage} pageSize={pageSize} total={studio.inventory.length} />
-      </section> : null}
-
-      {activeView === "orders" ? <section className="studio-operation-section studio-stack-panel" id="studio-view-orders" aria-labelledby="studio-tab-orders" role="tabpanel">
-        <div className="studio-section-title"><div><p className="eyebrow">Orders</p><h2 id="orders-title">Reserved and sold</h2></div><span>{studio.orders.length} orders</span></div>
-        {studio.orders.length ? (
-          <div className="studio-operation-cards">
-            {studio.orders.slice(safeOrdersPage * pageSize, (safeOrdersPage + 1) * pageSize).map((order) => {
-              const listing = studio.listings.find((candidate) => candidate.id === order.listingId);
-              const garment = listing ? studio.garments.find((candidate) => candidate.id === listing.garmentId) : undefined;
-              return (
-                <article className="studio-operation-card" key={order.id}>
-                  <button aria-label={`Open order for ${garment?.title ?? "listing record"}`} className="studio-operation-card-trigger" disabled={!order.inventoryId} onClick={(event) => order.inventoryId && openInventoryDetail(order.inventoryId, event.currentTarget)} type="button">
-                    <div className="studio-card-heading"><div><small>{order.id}</small><h3>{garment?.title ?? "Listing record"}</h3></div><LifecycleBadge state={order.state} /></div>
-                    <dl><div><dt>Listing</dt><dd>{listing?.slug ?? "Unavailable"}</dd></div><div><dt>Quantity</dt><dd>{order.quantity}</dd></div><div><dt>Reserved</dt><dd>{shortDate(order.createdAt)}</dd></div></dl>
-                    <span className="studio-operation-card-open">Review <ChevronRight aria-hidden="true" size={17} /></span>
-                  </button>
-                </article>
-              );
-            })}
-          </div>
-        ) : <div className="studio-quiet-empty"><ClipboardCheck aria-hidden="true" size={24} /><div><strong>No orders</strong><p>Reserve an available piece to begin.</p></div><button className="button button-primary" onClick={() => selectView("inventory")} type="button">Open inventory</button></div>}
-        <StudioPager label="Order pages" onPageChange={setOrdersPage} page={safeOrdersPage} pageSize={pageSize} total={studio.orders.length} />
-      </section> : null}
-
-      {activeView === "returns" ? <section className="studio-operation-section studio-stack-panel" id="studio-view-returns" aria-labelledby="studio-tab-returns" role="tabpanel">
-        <div className="studio-section-title"><div><p className="eyebrow">Returns</p><h2 id="returns-title">Inspect and decide</h2></div><span>{openReturns} open</span></div>
-        {studio.returns.length ? (
-          <div className="studio-operation-cards">
-            {studio.returns.slice(safeReturnsPage * pageSize, (safeReturnsPage + 1) * pageSize).map((returnCase) => {
-              const order = studio.orders.find((candidate) => candidate.id === returnCase.orderId);
-              const listing = order ? studio.listings.find((candidate) => candidate.id === order.listingId) : undefined;
-              const garment = listing ? studio.garments.find((candidate) => candidate.id === listing.garmentId) : undefined;
-              return (
-                <article className="studio-operation-card" id={returnCase.id} key={returnCase.id}>
-                  <button aria-label={`Open return for ${garment?.title ?? "returned piece"}`} className="studio-operation-card-trigger" disabled={!order?.inventoryId} onClick={(event) => order?.inventoryId && openInventoryDetail(order.inventoryId, event.currentTarget)} type="button">
-                    <div className="studio-card-heading"><div><small>{returnCase.id}</small><h3>{garment?.title ?? "Returned piece"}</h3></div><LifecycleBadge state={returnCase.state} /></div>
-                    <dl><div><dt>Order</dt><dd>{returnCase.orderId}</dd></div><div><dt>Quantity</dt><dd>{returnCase.quantity}</dd></div><div><dt>Disposition</dt><dd>{returnCase.disposition.toLowerCase().replace("_", " ")}</dd></div></dl>
-                    <span className="studio-operation-card-open">Review <ChevronRight aria-hidden="true" size={17} /></span>
-                  </button>
-                </article>
-              );
-            })}
-          </div>
-        ) : <div className="studio-quiet-empty"><RotateCcw aria-hidden="true" size={24} /><div><strong>No return cases</strong><p>Open a return from a sold order when one arrives.</p></div></div>}
-        <StudioPager label="Return pages" onPageChange={setReturnsPage} page={safeReturnsPage} pageSize={pageSize} total={studio.returns.length} />
-      </section> : null}
-
-      <StudioTaskSheet
-        className="studio-inventory-detail-sheet"
-        eyebrow={selectedGarment ? `Inventory · ${selectedGarment.sku}` : "Inventory"}
-        onDismiss={closeInventoryDetail}
-        open={Boolean(selectedInventory && selectedGarment)}
-        returnFocus={inventoryReturnFocus}
-        title={selectedGarment?.title ?? "Inventory detail"}
-      >
-        {selectedInventory && selectedGarment ? (
-          <div className="studio-inventory-detail">
-            <figure className={`studio-inventory-detail-media${selectedCover ? " is-photo" : ""}`} data-variant={selectedGarment.visual}>
-              {selectedCover ? <img alt={`${selectedGarment.title} inventory view`} height={selectedCover.height} src={selectedCover.src} width={selectedCover.width} /> : <Shirt aria-hidden="true" size={42} strokeWidth={1.2} />}
-              <figcaption><LifecycleBadge state={selectedInventory.state} /><span>{Math.max(0, selectedInventory.onHand - selectedInventory.reserved)} available</span></figcaption>
-            </figure>
-
-            <section className="studio-inventory-detail-section" aria-labelledby="inventory-detail-facts">
-              <div className="studio-inventory-detail-heading"><div><p className="eyebrow">Record</p><h3 id="inventory-detail-facts">Piece and stock</h3></div><span>{shortDate(selectedInventory.updatedAt)}</span></div>
-              <dl className="studio-inventory-detail-facts">
-                <div><dt>Price</dt><dd>{currency.format(selectedListing?.price ?? selectedGarment.price)}</dd></div>
-                <div><dt>Size</dt><dd>{selectedGarment.sizeLabel}</dd></div>
-                <div><dt>Listing</dt><dd>{selectedListing?.state ?? "NOT PREPARED"}</dd></div>
-                <div><dt>Inventory</dt><dd>{selectedInventory.state}</dd></div>
-                <div><dt>On hand</dt><dd>{selectedInventory.onHand}</dd></div>
-                <div><dt>Reserved</dt><dd>{selectedInventory.reserved}</dd></div>
-                <div><dt>Sold</dt><dd>{selectedInventory.sold}</dd></div>
-                <div><dt>Returns / write-off</dt><dd>{selectedInventory.returned} / {selectedInventory.writeOff}</dd></div>
-              </dl>
-            </section>
-
-            <section className="studio-inventory-detail-section" aria-labelledby="inventory-detail-actions">
-              <div className="studio-inventory-detail-heading"><div><p className="eyebrow">Decision</p><h3 id="inventory-detail-actions">Stock action</h3></div></div>
-              <div className="studio-inventory-decision-grid">
-                {selectedListing?.state === "PUBLISHED" && selectedInventory.onHand - selectedInventory.reserved > 0 ? (
-                  <button className="studio-inventory-decision" onClick={() => setPendingInventoryDecision("RESERVE")} type="button"><ClipboardCheck aria-hidden="true" size={20} /><span><strong>Reserve 1 unit</strong><small>Create an order and hold this piece.</small></span><ChevronRight aria-hidden="true" size={17} /></button>
-                ) : null}
-                {selectedOrder?.state === "RESERVED" ? (
-                  <button className="studio-inventory-decision" onClick={() => setPendingInventoryDecision("FULFILL")} type="button"><Check aria-hidden="true" size={20} /><span><strong>Mark sold</strong><small>Fulfil the open reservation.</small></span><ChevronRight aria-hidden="true" size={17} /></button>
-                ) : null}
-                {selectedOrder?.state === "RESERVED" ? (
-                  <button className="studio-inventory-decision" onClick={() => setPendingInventoryDecision("RELEASE")} type="button"><RotateCcw aria-hidden="true" size={20} /><span><strong>Release reservation</strong><small>Cancel this order hold and restore availability.</small></span><ChevronRight aria-hidden="true" size={17} /></button>
-                ) : null}
-                {selectedOrder && activeView !== "orders" ? (
-                  <button className="studio-inventory-decision" onClick={showSelectedOrder} type="button"><PackageOpen aria-hidden="true" size={20} /><span><strong>Open order</strong><small>Review the linked reservation record.</small></span><ChevronRight aria-hidden="true" size={17} /></button>
-                ) : null}
-                {selectedOrder?.state === "SOLD" && !selectedReturn ? (
-                  <button className="studio-inventory-decision" onClick={() => setPendingInventoryDecision("RETURN")} type="button"><RotateCcw aria-hidden="true" size={20} /><span><strong>Open return</strong><small>Start a disposition record for this sale.</small></span><ChevronRight aria-hidden="true" size={17} /></button>
-                ) : null}
-                {selectedReturn && activeView !== "returns" ? (
-                  <button className="studio-inventory-decision" onClick={showSelectedReturn} type="button"><RotateCcw aria-hidden="true" size={20} /><span><strong>Review return</strong><small>Choose restock or write-off.</small></span><ChevronRight aria-hidden="true" size={17} /></button>
-                ) : null}
-                {selectedReturn?.state === "DRAFT" ? (
-                  <button className="studio-inventory-decision" onClick={() => setPendingInventoryDecision("RESTOCK")} type="button"><RotateCcw aria-hidden="true" size={20} /><span><strong>Restock to review</strong><small>Return this piece to wardrobe readiness.</small></span><ChevronRight aria-hidden="true" size={17} /></button>
-                ) : null}
-                {selectedReturn?.state === "DRAFT" ? (
-                  <button className="studio-inventory-decision" onClick={() => setPendingInventoryDecision("WRITE_OFF")} type="button"><ShieldAlert aria-hidden="true" size={20} /><span><strong>Write off</strong><small>Remove this piece from sellable stock.</small></span><ChevronRight aria-hidden="true" size={17} /></button>
-                ) : null}
-                {selectedListing ? (
-                  <Link className="studio-inventory-decision" href={`/shop/products/${selectedListing.slug}`}><ExternalLink aria-hidden="true" size={20} /><span><strong>View listing</strong><small>Open the customer-facing product page.</small></span><ChevronRight aria-hidden="true" size={17} /></Link>
-                ) : (
-                  <Link className="studio-inventory-decision" href="/studio/wardrobe"><Shirt aria-hidden="true" size={20} /><span><strong>Open wardrobe</strong><small>Prepare this piece before publishing.</small></span><ChevronRight aria-hidden="true" size={17} /></Link>
-                )}
-              </div>
-              {pendingInventoryDecision ? (
-                <div className="studio-inventory-confirmation" aria-live="polite">
-                  <div><strong>{inventoryDecisionCopy[pendingInventoryDecision].title}</strong><p>{inventoryDecisionCopy[pendingInventoryDecision].description}</p></div>
-                  <div><button className="button button-secondary" onClick={() => setPendingInventoryDecision(null)} type="button">Cancel</button><button className="button button-primary" onClick={confirmInventoryDecision} type="button">{inventoryDecisionCopy[pendingInventoryDecision].confirm}</button></div>
-                </div>
-              ) : null}
-              {inventoryNotice ? <p className="studio-inventory-notice" role="status">{inventoryNotice}</p> : null}
-            </section>
-          </div>
-        ) : null}
+          {error ? <p className="studio-task-error" role="alert">{error}</p> : null}
+          <footer className="studio-task-sheet-footer"><button className="button button-secondary" onClick={() => setHoldOpen(false)} type="button">Cancel</button><button className="button button-primary" disabled={pending} type="submit">{pending ? "Holding…" : "Hold piece"}</button></footer>
+        </form>
       </StudioTaskSheet>
     </div>
   );

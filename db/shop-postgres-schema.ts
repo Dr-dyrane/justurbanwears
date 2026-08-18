@@ -147,6 +147,13 @@ export const shopFulfillmentKind = pgEnum("shop_fulfillment_kind", [
   "PICKUP",
 ]);
 
+export const shopOrderSource = pgEnum("shop_order_source", [
+  "ONLINE",
+  "PHONE",
+  "DM",
+  "IN_PERSON",
+]);
+
 export const shopActorKind = pgEnum("shop_actor_kind", ["CUSTOMER", "OPERATOR", "SYSTEM"]);
 export const shopOrderLifecycleStatus = pgEnum("shop_order_lifecycle_status", [
   "ACTIVE",
@@ -215,7 +222,9 @@ export const shopCustomers = pgTable("shop_customers", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 }, (table) => [
   uniqueIndex("shop_customers_auth_subject_unique").on(table.authSubject),
-  uniqueIndex("shop_customers_email_unique").on(table.email),
+  uniqueIndex("shop_customers_email_unique")
+    .on(sql`lower(${table.email})`)
+    .where(sql`${table.email} is not null`),
 ]);
 
 export const shopSaves = pgTable("shop_saves", {
@@ -274,6 +283,8 @@ export const shopOrders = pgTable("shop_orders", {
     .notNull()
     .references(() => shopCustomers.id, { onDelete: "restrict" }),
   sourceCartId: uuid("source_cart_id").references(() => shopCarts.id, { onDelete: "set null" }),
+  source: shopOrderSource("source").default("ONLINE").notNull(),
+  createdByActorSubject: text("created_by_actor_subject"),
   status: shopOrderStatus("status").default("PAYMENT_REQUIRED").notNull(),
   lifecycleStatus: shopOrderLifecycleStatus("lifecycle_status").default("ACTIVE").notNull(),
   paymentReviewStatus: shopPaymentReviewStatus("payment_review_status")
@@ -307,6 +318,10 @@ export const shopOrders = pgTable("shop_orders", {
   deliveryEstimate: text("delivery_estimate").notNull(),
   fundsTransferReference: text("funds_transfer_reference"),
   fundsReceivingAccountLabel: text("funds_receiving_account_label"),
+  fundsPaidAmount: integer("funds_paid_amount"),
+  fundsPaidCurrency: varchar("funds_paid_currency", { length: 3 }),
+  fundsAmountUpdatedAt: timestamp("funds_amount_updated_at", { withTimezone: true }),
+  fundsRefundedAmount: integer("funds_refunded_amount").default(0).notNull(),
   fundsConfirmedAt: timestamp("funds_confirmed_at", { withTimezone: true }),
   fundsVerifierSubject: text("funds_verifier_subject"),
   fundsVerifierDisplayName: text("funds_verifier_display_name"),
@@ -332,6 +347,12 @@ export const shopOrders = pgTable("shop_orders", {
     table.idempotencyKey,
   ),
   index("shop_orders_customer_saved_idx").on(table.customerId, table.savedAt),
+  index("shop_orders_lifecycle_saved_idx").on(table.lifecycleStatus, table.savedAt),
+  index("shop_orders_fulfillment_saved_idx").on(table.fulfillmentStatus, table.savedAt),
+  check("shop_orders_source_actor", sql`
+    (${table.source} = 'ONLINE' and ${table.createdByActorSubject} is null)
+    or (${table.source} <> 'ONLINE' and length(trim(${table.createdByActorSubject})) > 0)
+  `),
   check("shop_orders_fulfillment_address_matches", sql`
     (${table.fulfillmentKind} = 'PICKUP' and ${table.deliveryAddress} is null)
     or (${table.fulfillmentKind} = 'DELIVERY' and ${table.deliveryAddress} is not null)
@@ -345,6 +366,18 @@ export const shopOrders = pgTable("shop_orders", {
     ${table.requestFingerprint} ~ '^[0-9a-f]{64}$'
   `),
   check("shop_orders_version_nonnegative", sql`${table.version} >= 0`),
+  check("shop_orders_paid_amount_truth", sql`
+    (${table.fundsPaidAmount} is null
+      and ${table.fundsPaidCurrency} is null
+      and ${table.fundsAmountUpdatedAt} is null)
+    or (${table.fundsPaidAmount} > 0
+      and ${table.fundsPaidCurrency} = ${table.currency}
+      and ${table.fundsAmountUpdatedAt} is not null)
+  `),
+  check("shop_orders_refund_cap", sql`
+    ${table.fundsRefundedAmount} >= 0
+    and (${table.fundsPaidAmount} is null or ${table.fundsRefundedAmount} <= ${table.fundsPaidAmount})
+  `),
   check("shop_orders_lifecycle_timestamps", sql`
     (${table.lifecycleStatus} = 'ACTIVE'
       and ${table.completedAt} is null
@@ -506,12 +539,25 @@ export const shopOrderReturns = pgTable("shop_order_returns", {
   refundCurrency: varchar("refund_currency", { length: 3 }),
   refundUpdatedAt: timestamp("refund_updated_at", { withTimezone: true }),
   disposition: shopReturnDisposition("disposition"),
+  correctionCount: integer("correction_count").default(0).notNull(),
+  merchandiseRefundCapAmount: integer("merchandise_refund_cap_amount"),
+  deliveryRefundCapAmount: integer("delivery_refund_cap_amount"),
+  deliveryRefundAllowance: integer("delivery_refund_allowance").default(0).notNull(),
+  refundCapCurrency: varchar("refund_cap_currency", { length: 3 }),
 }, (table) => [
   uniqueIndex("shop_order_returns_order_unique").on(table.orderId),
   uniqueIndex("shop_order_returns_customer_idempotency_unique").on(table.customerId, table.idempotencyKey),
   index("shop_order_returns_status_requested_idx").on(table.status, table.requestedAt),
   check("shop_order_returns_request_fingerprint_sha256", sql`${table.requestFingerprint} ~ '^[0-9a-f]{64}$'`),
   check("shop_order_returns_detail_length", sql`length(trim(${table.detail})) between 10 and 500`),
+  check("shop_order_returns_correction_once", sql`${table.correctionCount} between 0 and 1`),
+  check("shop_order_returns_refund_caps", sql`
+    (${table.merchandiseRefundCapAmount} is null or ${table.merchandiseRefundCapAmount} >= 0)
+    and (${table.deliveryRefundCapAmount} is null or ${table.deliveryRefundCapAmount} >= 0)
+    and ${table.deliveryRefundAllowance} >= 0
+    and (${table.deliveryRefundCapAmount} is null or ${table.deliveryRefundAllowance} <= ${table.deliveryRefundCapAmount})
+    and (${table.refundCapCurrency} is null or ${table.refundCapCurrency} = 'NGN')
+  `),
   check("shop_order_returns_refund_reference", sql`
     (${table.refundStatus} = 'COMPLETED'
       and ${table.refundReference} is not null
@@ -524,11 +570,83 @@ export const shopOrderReturns = pgTable("shop_order_returns", {
   check("shop_order_returns_resolution", sql`
     (${table.status} = 'RESOLVED'
       and ${table.resolvedAt} is not null
-      and ${table.disposition} is not null
       and ${table.refundStatus} = 'COMPLETED')
     or (${table.status} <> 'RESOLVED'
       and ${table.resolvedAt} is null
       and ${table.disposition} is null)
+  `),
+]);
+
+export const shopOrderReturnItems = pgTable("shop_order_return_items", {
+  returnId: uuid("return_id")
+    .notNull()
+    .references(() => shopOrderReturns.id, { onDelete: "cascade" }),
+  orderItemId: uuid("order_item_id")
+    .notNull()
+    .references(() => shopOrderItems.id, { onDelete: "restrict" }),
+  sku: text("sku").notNull(),
+  refundCapAmount: integer("refund_cap_amount").notNull(),
+  disposition: shopReturnDisposition("disposition"),
+  resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+}, (table) => [
+  primaryKey({ columns: [table.returnId, table.orderItemId] }),
+  uniqueIndex("shop_order_return_items_return_sku_unique").on(table.returnId, table.sku),
+  index("shop_order_return_items_order_item_idx").on(table.orderItemId),
+  check("shop_order_return_items_refund_cap_nonnegative", sql`${table.refundCapAmount} >= 0`),
+  check("shop_order_return_items_resolution_pair", sql`
+    (${table.disposition} is null and ${table.resolvedAt} is null)
+    or (${table.disposition} is not null and ${table.resolvedAt} is not null)
+  `),
+]);
+
+export const shopOrderRecoveries = pgTable("shop_order_recoveries", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  orderId: uuid("order_id")
+    .notNull()
+    .references(() => shopOrders.id, { onDelete: "cascade" }),
+  idempotencyKey: varchar("idempotency_key", { length: 160 }).notNull(),
+  requestFingerprint: varchar("request_fingerprint", { length: 64 }).notNull(),
+  status: shopRefundStatus("status").default("PENDING").notNull(),
+  reason: text("reason").notNull(),
+  refundCapAmount: integer("refund_cap_amount").notNull(),
+  refundCurrency: varchar("refund_currency", { length: 3 }).notNull(),
+  refundReference: text("refund_reference"),
+  refundAmount: integer("refund_amount"),
+  requestedBy: text("requested_by").notNull(),
+  requestedAt: timestamp("requested_at", { withTimezone: true }).defaultNow().notNull(),
+  failedAt: timestamp("failed_at", { withTimezone: true }),
+  failureNote: text("failure_note"),
+  completedAt: timestamp("completed_at", { withTimezone: true }),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("shop_order_recoveries_order_unique").on(table.orderId),
+  uniqueIndex("shop_order_recoveries_order_idempotency_unique").on(table.orderId, table.idempotencyKey),
+  index("shop_order_recoveries_status_updated_idx").on(table.status, table.updatedAt),
+  check("shop_order_recoveries_request_fingerprint_sha256", sql`
+    ${table.requestFingerprint} ~ '^[0-9a-f]{64}$'
+  `),
+  check("shop_order_recoveries_reason_length", sql`length(trim(${table.reason})) between 4 and 500`),
+  check("shop_order_recoveries_status_started", sql`${table.status} <> 'NOT_STARTED'`),
+  check("shop_order_recoveries_refund_cap", sql`
+    ${table.refundCapAmount} > 0 and ${table.refundCurrency} = 'NGN'
+  `),
+  check("shop_order_recoveries_state_facts", sql`
+    (${table.status} = 'PENDING'
+      and ${table.refundReference} is null
+      and ${table.refundAmount} is null
+      and ${table.failedAt} is null
+      and ${table.completedAt} is null)
+    or (${table.status} = 'FAILED'
+      and ${table.refundReference} is null
+      and ${table.refundAmount} is null
+      and ${table.failedAt} is not null
+      and ${table.completedAt} is null
+      and length(trim(${table.failureNote})) > 0)
+    or (${table.status} = 'COMPLETED'
+      and ${table.refundReference} is not null
+      and ${table.refundAmount} = ${table.refundCapAmount}
+      and ${table.failedAt} is null
+      and ${table.completedAt} is not null)
   `),
 ]);
 
@@ -936,9 +1054,172 @@ export const studioCataloguePublications = pgTable("studio_catalogue_publication
     table.publishedAt,
   ),
   check("studio_catalogue_publications_source_revision_sha256", sql`${table.sourceRevision} ~ '^[0-9a-f]{64}$'`),
-  check("studio_catalogue_publications_state_known", sql`${table.state} = 'PUBLISHED'`),
+  check("studio_catalogue_publications_state_known", sql`${table.state} in ('PUBLISHED', 'UNPUBLISHED', 'ARCHIVED')`),
   check("studio_catalogue_publications_facts_object", sql`jsonb_typeof(${table.facts}) = 'object'`),
   check("studio_catalogue_publications_media_array", sql`jsonb_typeof(${table.media}) = 'array'`),
+]);
+
+export const studioGarmentRevisions = pgTable("studio_garment_revisions", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  wardrobeItemId: uuid("wardrobe_item_id")
+    .notNull()
+    .references(() => studioWardrobeItems.id, { onDelete: "restrict" }),
+  operatorSubject: text("operator_subject").notNull(),
+  revisionNumber: integer("revision_number").notNull(),
+  version: integer("version").default(1).notNull(),
+  state: varchar("state", { length: 24 }).notNull(),
+  baseSourceRevision: varchar("base_source_revision", { length: 64 }).notNull(),
+  facts: jsonb("facts").$type<Record<string, unknown>>().notNull(),
+  media: jsonb("media").$type<Array<{
+    slot: "GARMENT_FRONT" | "GARMENT_BACK" | "FABRIC_DETAIL";
+    src: string;
+    pathname: string;
+    sourceSha256: string;
+    sha256: string;
+    mimeType: string;
+    width: number;
+    height: number;
+  }>>().notNull(),
+  idempotencyKey: varchar("idempotency_key", { length: 160 }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  publishedAt: timestamp("published_at", { withTimezone: true }),
+}, (table) => [
+  uniqueIndex("studio_garment_revisions_number_unique").on(table.wardrobeItemId, table.revisionNumber),
+  uniqueIndex("studio_garment_revisions_one_draft_unique")
+    .on(table.wardrobeItemId)
+    .where(sql`${table.state} = 'DRAFT'`),
+  uniqueIndex("studio_garment_revisions_one_published_unique")
+    .on(table.wardrobeItemId)
+    .where(sql`${table.state} = 'PUBLISHED'`),
+  uniqueIndex("studio_garment_revisions_operator_idempotency_unique")
+    .on(table.operatorSubject, table.idempotencyKey)
+    .where(sql`${table.idempotencyKey} is not null`),
+  index("studio_garment_revisions_operator_updated_idx").on(table.operatorSubject, table.updatedAt),
+  check("studio_garment_revisions_revision_positive", sql`${table.revisionNumber} > 0 and ${table.version} > 0`),
+  check("studio_garment_revisions_state_known", sql`${table.state} in ('DRAFT', 'PUBLISHED', 'SUPERSEDED', 'DISCARDED')`),
+  check("studio_garment_revisions_base_sha256", sql`${table.baseSourceRevision} ~ '^[0-9a-f]{64}$'`),
+  check("studio_garment_revisions_facts_object", sql`jsonb_typeof(${table.facts}) = 'object'`),
+  check("studio_garment_revisions_media_array", sql`jsonb_typeof(${table.media}) = 'array'`),
+  check("studio_garment_revisions_publish_pair", sql`
+    (${table.state} = 'PUBLISHED' and ${table.publishedAt} is not null)
+    or (${table.state} <> 'PUBLISHED')
+  `),
+]);
+
+export const studioGarmentEvents = pgTable("studio_garment_events", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  wardrobeItemId: uuid("wardrobe_item_id")
+    .notNull()
+    .references(() => studioWardrobeItems.id, { onDelete: "restrict" }),
+  operatorSubject: text("operator_subject").notNull(),
+  eventType: varchar("event_type", { length: 48 }).notNull(),
+  summary: text("summary").notNull(),
+  details: jsonb("details").$type<Record<string, unknown>>().default({}).notNull(),
+  occurredAt: timestamp("occurred_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  index("studio_garment_events_piece_time_idx").on(table.wardrobeItemId, table.occurredAt),
+  check("studio_garment_events_type_known", sql`${table.eventType} in (
+    'COMMITTED', 'FACTS_UPDATED', 'REVISION_STARTED', 'REVISION_DISCARDED',
+    'REVISION_PUBLISHED', 'PUBLISHED', 'UNPUBLISHED', 'REPUBLISHED',
+    'ARCHIVED', 'MEDIA_REPLACED'
+  )`),
+  check("studio_garment_events_summary_nonempty", sql`length(trim(${table.summary})) > 0`),
+  check("studio_garment_events_details_object", sql`jsonb_typeof(${table.details}) = 'object'`),
+]);
+
+export const studioManualHolds = pgTable("studio_manual_holds", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  operatorSubject: text("operator_subject").notNull(),
+  idempotencyKey: varchar("idempotency_key", { length: 160 }).notNull(),
+  sku: varchar("sku", { length: 40 })
+    .notNull()
+    .references(() => shopCatalogueItems.sku, { onDelete: "restrict", onUpdate: "cascade" }),
+  customerName: text("customer_name").notNull(),
+  contact: text("contact").notNull(),
+  reason: text("reason").notNull(),
+  status: varchar("status", { length: 24 }).default("ACTIVE").notNull(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  releasedAt: timestamp("released_at", { withTimezone: true }),
+}, (table) => [
+  uniqueIndex("studio_manual_holds_operator_idempotency_unique").on(table.operatorSubject, table.idempotencyKey),
+  uniqueIndex("studio_manual_holds_active_sku_unique")
+    .on(table.sku)
+    .where(sql`${table.status} = 'ACTIVE'`),
+  index("studio_manual_holds_operator_created_idx").on(table.operatorSubject, table.createdAt),
+  check("studio_manual_holds_status_known", sql`${table.status} in ('ACTIVE', 'RELEASED', 'EXPIRED')`),
+  check("studio_manual_holds_release_pair", sql`
+    (${table.status} = 'ACTIVE' and ${table.releasedAt} is null)
+    or (${table.status} <> 'ACTIVE' and ${table.releasedAt} is not null)
+  `),
+  check("studio_manual_holds_expiry_after_create", sql`${table.expiresAt} > ${table.createdAt}`),
+]);
+
+export const studioNotificationReceipts = pgTable("studio_notification_receipts", {
+  operatorSubject: text("operator_subject").notNull(),
+  notificationId: varchar("notification_id", { length: 240 }).notNull(),
+  dismissedAt: timestamp("dismissed_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  primaryKey({ columns: [table.operatorSubject, table.notificationId] }),
+]);
+
+// A move changes the expected Studio location without rewriting commerce
+// custody. The command is append-only; this projection is the current answer.
+export const studioPieceCustodyCommands = pgTable("studio_piece_custody_commands", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  operatorSubject: text("operator_subject").notNull(),
+  idempotencyKey: varchar("idempotency_key", { length: 160 }).notNull(),
+  pieceKey: varchar("piece_key", { length: 96 }).notNull(),
+  command: varchar("command", { length: 24 }).notNull(),
+  fromLocationKey: varchar("from_location_key", { length: 40 }).notNull(),
+  fromLocationLabel: text("from_location_label").notNull(),
+  toLocationKey: varchar("to_location_key", { length: 40 }).notNull(),
+  toLocationLabel: text("to_location_label").notNull(),
+  custody: varchar("custody", { length: 24 }).notNull(),
+  availability: varchar("availability", { length: 24 }).notNull(),
+  orderReference: varchar("order_reference", { length: 40 }),
+  reason: text("reason"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("studio_piece_custody_command_operator_idempotency_unique").on(
+    table.operatorSubject,
+    table.idempotencyKey,
+  ),
+  index("studio_piece_custody_commands_piece_idx").on(table.operatorSubject, table.pieceKey, table.createdAt),
+  check("studio_piece_custody_command_known", sql`${table.command} = 'MOVE'`),
+  check("studio_piece_custody_command_custody_known", sql`${table.custody} = 'STUDIO'`),
+  check("studio_piece_custody_command_availability_known", sql`
+    ${table.availability} in ('PRIVATE', 'AVAILABLE', 'RESERVED', 'SOLD', 'ARCHIVED')
+  `),
+  check("studio_piece_custody_command_location_known", sql`
+    ${table.toLocationKey} in ('WARDROBE_RAIL', 'PACKING_SHELF', 'RETURN_INSPECTION')
+  `),
+]);
+
+export const studioPieceCustody = pgTable("studio_piece_custody", {
+  operatorSubject: text("operator_subject").notNull(),
+  pieceKey: varchar("piece_key", { length: 96 }).notNull(),
+  locationKey: varchar("location_key", { length: 40 }).notNull(),
+  locationLabel: text("location_label").notNull(),
+  custody: varchar("custody", { length: 24 }).notNull(),
+  availability: varchar("availability", { length: 24 }).notNull(),
+  orderReference: varchar("order_reference", { length: 40 }),
+  lastCommandId: uuid("last_command_id")
+    .notNull()
+    .references(() => studioPieceCustodyCommands.id, { onDelete: "restrict" }),
+  version: integer("version").default(1).notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  primaryKey({ columns: [table.operatorSubject, table.pieceKey] }),
+  check("studio_piece_custody_custody_known", sql`${table.custody} = 'STUDIO'`),
+  check("studio_piece_custody_availability_known", sql`
+    ${table.availability} in ('PRIVATE', 'AVAILABLE', 'RESERVED', 'SOLD', 'ARCHIVED')
+  `),
+  check("studio_piece_custody_location_known", sql`
+    ${table.locationKey} in ('WARDROBE_RAIL', 'PACKING_SHELF', 'RETURN_INSPECTION')
+  `),
+  check("studio_piece_custody_version_positive", sql`${table.version} > 0`),
 ]);
 
 // A stocktake freezes the pieces expected at one Studio location. Physical

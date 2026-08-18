@@ -14,6 +14,7 @@ import {
 } from "@/lib/shop/server-order/payment-evidence";
 import { getShopOrderService } from "@/lib/shop/server-order/runtime";
 import { PAYMENT_EVIDENCE_RECEIVED_NOTICE } from "@/lib/shop/server-order/types";
+import { flushOrderNotificationsAfterMutation } from "@/lib/shop/server-order/email-notifications";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -29,6 +30,7 @@ export async function PUT(request: Request, context: ShopRouteContext): Promise<
       await routeParam(context, "authorizationId"),
       request,
     );
+    await flushOrderNotificationsAfterMutation();
     return shopJson({
       ok: true,
       order,

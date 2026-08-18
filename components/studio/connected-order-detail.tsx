@@ -44,7 +44,9 @@ function transitionKey(transition: StudioTransition): string {
 
 function confirmationCopy(transition: StudioTransition, fulfillmentKind: "DELIVERY" | "PICKUP"): string {
   if (transition.dimension === "FUNDS_CONFIRMATION") {
-    return "I checked the receiving account and the payment arrived.";
+    return transition.target === "CORRECTED"
+      ? "I checked the original payment and confirm these corrected details."
+      : "I checked the receiving account and the payment arrived.";
   }
   if (transition.dimension === "FULFILLMENT" && transition.target === "DELIVERED") {
     return fulfillmentKind === "PICKUP"
@@ -55,9 +57,15 @@ function confirmationCopy(transition: StudioTransition, fulfillmentKind: "DELIVE
     return "I checked the refund amount and reference.";
   }
   if (transition.dimension === "RETURN_RESOLUTION") {
-    return transition.target === "RESTOCK"
-      ? "I inspected the returned piece and it is safe to offer again."
-      : "I inspected the returned piece and confirm it must not return to sale.";
+    return "I inspected every returned piece and recorded its correct outcome.";
+  }
+  if (transition.dimension === "PICKUP") {
+    return "I confirmed this pickup time with the customer.";
+  }
+  if (transition.dimension === "CANCELLATION_REFUND") {
+    return transition.target === "COMPLETED"
+      ? "I checked that the full refund left the account."
+      : "I confirm this refund update is accurate.";
   }
   return `I confirm: ${studioOrderActionLabel(transition, fulfillmentKind).toLowerCase()}.`;
 }
@@ -67,15 +75,16 @@ function requiresNote(transition: StudioTransition): boolean {
     || (transition.dimension === "LIFECYCLE" && transition.target === "CANCELLED")
     || (transition.dimension === "RETURN" && transition.target === "REJECTED")
     || (transition.dimension === "REFUND" && transition.target === "FAILED")
-    || (transition.dimension === "RETURN_RESOLUTION" && transition.target === "WRITE_OFF");
+    || (transition.dimension === "CANCELLATION_REFUND" && transition.target === "FAILED");
 }
 
 function noteLabel(transition: StudioTransition): string {
   if (transition.dimension === "PAYMENT_REVIEW") return "What should the customer correct?";
   if (transition.dimension === "LIFECYCLE") return "Cancellation reason";
   if (transition.dimension === "RETURN") return "Reason for rejecting the return";
+  if (transition.dimension === "CANCELLATION_REFUND") return "What blocked the refund?";
   if (transition.dimension === "REFUND") return "Refund issue";
-  return "Write-off reason";
+  return "Note";
 }
 
 function localDateTimeNow(): string {
@@ -86,6 +95,13 @@ function localDateTimeNow(): string {
 
 function isoDate(value: string): string {
   return new Date(value).toISOString();
+}
+
+function localDateTime(value: string | null): string {
+  if (!value) return localDateTimeNow();
+  const date = new Date(value);
+  date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
+  return date.toISOString().slice(0, 16);
 }
 
 function MutationAction({
@@ -107,28 +123,56 @@ function MutationAction({
   const [confirmed, setConfirmed] = useState(false);
   const [note, setNote] = useState("");
   const [error, setError] = useState("");
-  const [transferReference, setTransferReference] = useState("");
-  const [receivingAccountLabel, setReceivingAccountLabel] = useState("");
+  const [transferReference, setTransferReference] = useState(
+    transition.dimension === "FUNDS_CONFIRMATION" && transition.target === "CORRECTED"
+      ? order.fundsConfirmation?.transferReference ?? ""
+      : "",
+  );
+  const [receivingAccountLabel, setReceivingAccountLabel] = useState(
+    transition.dimension === "FUNDS_CONFIRMATION" && transition.target === "CORRECTED"
+      ? order.fundsConfirmation?.receivingAccountLabel ?? ""
+      : "",
+  );
+  const [paidAmount, setPaidAmount] = useState(
+    transition.dimension === "FUNDS_CONFIRMATION" && transition.target === "CORRECTED"
+      ? String(order.fundsConfirmation?.paidAmount ?? order.total)
+      : String(order.total),
+  );
   const [carrierName, setCarrierName] = useState("");
   const [trackingReference, setTrackingReference] = useState("");
   const [dispatchReference, setDispatchReference] = useState("");
   const [dispatchTime, setDispatchTime] = useState(localDateTimeNow);
   const [recipientName, setRecipientName] = useState("");
   const [handoffTime, setHandoffTime] = useState(localDateTimeNow);
-  const [pickupAppointment, setPickupAppointment] = useState(localDateTimeNow);
+  const [pickupAppointment, setPickupAppointment] = useState(
+    localDateTime(order.fulfillmentFacts.pickupAppointment),
+  );
   const [proofReference, setProofReference] = useState("");
   const [refundReference, setRefundReference] = useState("");
   const [refundAmount, setRefundAmount] = useState("");
+  const [lineDispositions, setLineDispositions] = useState<Record<string, "RESTOCK" | "WRITE_OFF">>(() => (
+    Object.fromEntries((order.return?.items ?? []).map((item) => [item.sku, item.disposition ?? "RESTOCK"]))
+  ));
   const financeAction = (transition.dimension === "FUNDS_CONFIRMATION")
-    || (transition.dimension === "REFUND" && transition.target === "COMPLETED");
+    || (transition.dimension === "REFUND" && transition.target === "COMPLETED")
+    || (transition.dimension === "CANCELLATION_REFUND" && transition.target === "COMPLETED");
   const adminLocked = financeAction && operatorRole !== "admin";
   const label = studioOrderActionLabel(transition, order.fulfillment.kind);
   const confirmationId = `studio-confirm-${transitionKey(transition).toLowerCase().replaceAll(":", "-")}-${order.version}`;
   const noteRequired = requiresNote(transition);
+  const returnRefundCap = order.return?.items.reduce(
+    (sum, item) => sum + (item.refundCapAmount ?? item.unitPrice),
+    0,
+  ) ?? 0;
+  const paidRefundCap = order.fundsConfirmation?.paidAmount ?? 0;
 
   let fieldsValid = !noteRequired || note.trim().length > 0;
   if (transition.dimension === "FUNDS_CONFIRMATION") {
-    fieldsValid = transferReference.trim().length >= 4 && receivingAccountLabel.trim().length >= 3;
+    const amount = Number(paidAmount);
+    fieldsValid = transferReference.trim().length >= 4
+      && receivingAccountLabel.trim().length >= 3
+      && Number.isSafeInteger(amount)
+      && amount > 0;
   } else if (transition.dimension === "FULFILLMENT" && transition.target === "IN_TRANSIT") {
     fieldsValid = carrierName.trim().length >= 2
       && trackingReference.trim().length >= 3
@@ -138,13 +182,24 @@ function MutationAction({
     fieldsValid = recipientName.trim().length >= 2
       && proofReference.trim().length >= 3
       && Boolean(handoffTime)
-      && (order.fulfillment.kind === "DELIVERY" || Boolean(pickupAppointment));
+      && (order.fulfillment.kind === "DELIVERY" || Boolean(order.fulfillmentFacts.pickupAppointment));
+  } else if (transition.dimension === "PICKUP") {
+    fieldsValid = Boolean(pickupAppointment) && new Date(pickupAppointment) > new Date();
   } else if (transition.dimension === "REFUND" && transition.target === "COMPLETED") {
     const amount = Number(refundAmount);
     fieldsValid = refundReference.trim().length >= 4
       && Number.isSafeInteger(amount)
       && amount > 0
-      && amount <= order.total;
+      && amount <= returnRefundCap;
+  } else if (transition.dimension === "CANCELLATION_REFUND" && transition.target === "COMPLETED") {
+    const amount = Number(refundAmount);
+    fieldsValid = refundReference.trim().length >= 4
+      && paidRefundCap > 0
+      && Number.isSafeInteger(amount)
+      && amount === paidRefundCap;
+  } else if (transition.dimension === "RETURN_RESOLUTION") {
+    fieldsValid = Boolean(order.return?.items.length)
+      && order.return!.items.every((item) => Boolean(lineDispositions[item.sku]));
   }
 
   function orderDetails(): ShopOrderTransitionDetails | null {
@@ -153,6 +208,8 @@ function MutationAction({
         kind: "FUNDS_CONFIRMATION",
         transferReference: transferReference.trim(),
         receivingAccountLabel: receivingAccountLabel.trim(),
+        paidAmount: Number(paidAmount),
+        paidCurrency: "NGN",
       };
     }
     if (transition.dimension === "FULFILLMENT" && transition.target === "IN_TRANSIT") {
@@ -168,7 +225,7 @@ function MutationAction({
       if (order.fulfillment.kind === "PICKUP") {
         return {
           kind: "PICKUP_COMPLETE",
-          pickupAppointment: isoDate(pickupAppointment),
+          pickupAppointment: order.fulfillmentFacts.pickupAppointment!,
           recipientName: recipientName.trim(),
           deliveredAt: isoDate(handoffTime),
           deliveryProofReference: proofReference.trim(),
@@ -179,6 +236,17 @@ function MutationAction({
         recipientName: recipientName.trim(),
         deliveredAt: isoDate(handoffTime),
         deliveryProofReference: proofReference.trim(),
+      };
+    }
+    if (transition.dimension === "PICKUP") {
+      return { kind: "PICKUP_SCHEDULE", pickupAppointment: isoDate(pickupAppointment) };
+    }
+    if (transition.dimension === "CANCELLATION_REFUND") {
+      return {
+        kind: "CANCELLATION_REFUND",
+        refundReference: transition.target === "COMPLETED" ? refundReference.trim() : null,
+        refundAmount: transition.target === "COMPLETED" ? Number(refundAmount) : null,
+        refundCurrency: transition.target === "COMPLETED" ? "NGN" : null,
       };
     }
     return null;
@@ -208,6 +276,12 @@ function MutationAction({
                   : null,
                 refundCurrency: transition.dimension === "REFUND" && transition.target === "COMPLETED"
                   ? "NGN"
+                  : null,
+                lineDispositions: transition.dimension === "RETURN_RESOLUTION"
+                  ? order.return?.items.map((item) => ({
+                      sku: item.sku,
+                      disposition: lineDispositions[item.sku],
+                    }))
                   : null,
                 note: note.trim() || null,
               }
@@ -249,6 +323,7 @@ function MutationAction({
 
         {transition.dimension === "FUNDS_CONFIRMATION" ? (
           <div className="studio-transition-fields studio-transition-fields-two">
+            <label><span>Amount received (NGN)</span><input inputMode="numeric" min={1} onChange={(event) => setPaidAmount(event.target.value)} required step={1} type="number" value={paidAmount} /><small>Record the amount that actually reached the account.</small></label>
             <label><span>Bank transfer reference</span><input autoComplete="off" maxLength={120} onChange={(event) => setTransferReference(event.target.value)} required value={transferReference} /></label>
             <label><span>Receiving account label</span><input autoComplete="off" maxLength={120} onChange={(event) => setReceivingAccountLabel(event.target.value)} placeholder="e.g. GTBank · Lulu Studio" required value={receivingAccountLabel} /></label>
           </div>
@@ -266,7 +341,7 @@ function MutationAction({
         {transition.dimension === "FULFILLMENT" && transition.target === "DELIVERED" ? (
           <div className="studio-transition-fields studio-transition-fields-two">
             {order.fulfillment.kind === "PICKUP" ? (
-              <label><span>Pickup appointment</span><input onChange={(event) => setPickupAppointment(event.target.value)} required type="datetime-local" value={pickupAppointment} /></label>
+              <p><strong>Scheduled pickup</strong><br />{order.fulfillmentFacts.pickupAppointment ? formatConnectedOrderDate(order.fulfillmentFacts.pickupAppointment) : "Schedule pickup first."}</p>
             ) : null}
             <label><span>{order.fulfillment.kind === "PICKUP" ? "Collected by" : "Recipient"}</span><input maxLength={120} onChange={(event) => setRecipientName(event.target.value)} required value={recipientName} /></label>
             <label><span>{order.fulfillment.kind === "PICKUP" ? "Collected at" : "Delivered at"}</span><input onChange={(event) => setHandoffTime(event.target.value)} required type="datetime-local" value={handoffTime} /></label>
@@ -274,11 +349,39 @@ function MutationAction({
           </div>
         ) : null}
 
+        {transition.dimension === "PICKUP" ? (
+          <div className="studio-transition-fields">
+            <label><span>Pickup time</span><input min={localDateTimeNow()} onChange={(event) => setPickupAppointment(event.target.value)} required type="datetime-local" value={pickupAppointment} /><small>The customer will see this time.</small></label>
+          </div>
+        ) : null}
+
         {transition.dimension === "REFUND" && transition.target === "COMPLETED" ? (
           <div className="studio-transition-fields studio-transition-fields-two">
-            <label><span>Exact refund amount (NGN)</span><input inputMode="numeric" max={order.total} min={1} onChange={(event) => setRefundAmount(event.target.value)} required step={1} type="number" value={refundAmount} /><small>Enter the amount actually returned, up to {formatNaira(order.total)}.</small></label>
+            <label><span>Exact refund amount (NGN)</span><input inputMode="numeric" max={returnRefundCap} min={1} onChange={(event) => setRefundAmount(event.target.value)} required step={1} type="number" value={refundAmount} /><small>Selected pieces cap: {formatNaira(returnRefundCap)}.</small></label>
             <label><span>Refund reference</span><input maxLength={160} onChange={(event) => setRefundReference(event.target.value)} required value={refundReference} /></label>
           </div>
+        ) : null}
+
+        {transition.dimension === "CANCELLATION_REFUND" && transition.target === "COMPLETED" ? (
+          <div className="studio-transition-fields studio-transition-fields-two">
+            <label><span>Full refund amount (NGN)</span><input inputMode="numeric" max={paidRefundCap || undefined} min={1} onChange={(event) => setRefundAmount(event.target.value)} required step={1} type="number" value={refundAmount} /><small>Must equal the recorded payment: {paidRefundCap ? formatNaira(paidRefundCap) : "record the paid amount first"}.</small></label>
+            <label><span>Refund reference</span><input maxLength={160} onChange={(event) => setRefundReference(event.target.value)} required value={refundReference} /></label>
+          </div>
+        ) : null}
+
+        {transition.dimension === "RETURN_RESOLUTION" && order.return ? (
+          <fieldset className="studio-transition-fields">
+            <legend>Each returned piece</legend>
+            {order.return.items.map((item) => (
+              <label key={item.sku}>
+                <span>{item.name}</span>
+                <select onChange={(event) => setLineDispositions((current) => ({ ...current, [item.sku]: event.target.value as "RESTOCK" | "WRITE_OFF" }))} value={lineDispositions[item.sku] ?? "RESTOCK"}>
+                  <option value="RESTOCK">Return to sale</option>
+                  <option value="WRITE_OFF">Remove from sale</option>
+                </select>
+              </label>
+            ))}
+          </fieldset>
         ) : null}
 
         {noteRequired || transition.dimension === "RETURN_RESOLUTION" ? (
@@ -295,7 +398,7 @@ function MutationAction({
         </label>
         <button
           aria-busy={pending}
-          className={`button ${transition.dimension === "LIFECYCLE" || transition.target === "REVIEW_REJECTED" || transition.target === "REJECTED" || transition.target === "FAILED" || transition.target === "WRITE_OFF" ? "button-secondary" : "button-primary"}`}
+          className={`button ${transition.dimension === "LIFECYCLE" || transition.target === "REVIEW_REJECTED" || transition.target === "REJECTED" || transition.target === "FAILED" ? "button-secondary" : "button-primary"}`}
           disabled={pending || !confirmed || !fieldsValid || adminLocked}
           onClick={() => void applyTransition()}
           type="button"
@@ -392,6 +495,8 @@ export function ConnectedOrderDetail() {
   const paymentTransitions = order.allowedTransitions.filter((item) => item.dimension === "PAYMENT_REVIEW");
   const fundsTransitions = order.allowedTransitions.filter((item) => item.dimension === "FUNDS_CONFIRMATION");
   const fulfillmentTransitions = order.allowedTransitions.filter((item) => item.dimension === "FULFILLMENT");
+  const pickupTransitions = order.allowedTransitions.filter((item) => item.dimension === "PICKUP");
+  const recoveryTransitions = order.allowedTransitions.filter((item) => item.dimension === "CANCELLATION_REFUND");
   const lifecycleTransitions = order.allowedTransitions.filter((item) => item.dimension === "LIFECYCLE");
   const returnTransitions = order.allowedReturnTransitions;
   const applyOrderUpdate = (nextOrder: ShopServerOrder, notice: string) => {
@@ -458,7 +563,9 @@ export function ConnectedOrderDetail() {
               <dl className="studio-order-facts">
                 <div><dt>Transfer reference</dt><dd>{order.fundsConfirmation.transferReference}</dd></div>
                 <div><dt>Receiving account</dt><dd>{order.fundsConfirmation.receivingAccountLabel}</dd></div>
+                <div><dt>Amount received</dt><dd>{order.fundsConfirmation.paidAmount && order.fundsConfirmation.paidCurrency ? formatNaira(order.fundsConfirmation.paidAmount) : "Not recorded on the original confirmation"}</dd></div>
                 <div><dt>Confirmed</dt><dd>{formatConnectedOrderDate(order.fundsConfirmation.confirmedAt)}</dd></div>
+                {order.fundsConfirmation.updatedAt !== order.fundsConfirmation.confirmedAt ? <div><dt>Last corrected</dt><dd>{formatConnectedOrderDate(order.fundsConfirmation.updatedAt)}</dd></div> : null}
                 <div><dt>Verified by</dt><dd>{order.fundsConfirmation.verifierDisplayName}</dd></div>
               </dl>
             ) : null}
@@ -479,10 +586,25 @@ export function ConnectedOrderDetail() {
               </dl>
             ) : null}
             <div className="studio-transition-list">
+              {pickupTransitions.map(action)}
               {fulfillmentTransitions.map(action)}
               {lifecycleTransitions.map(action)}
             </div>
           </section>
+
+          {order.cancellationRecovery ? (
+            <section className="studio-order-action-section studio-funds-section" aria-labelledby="cancellation-refund-title">
+              <div className="studio-order-action-heading"><span><ShieldCheck aria-hidden="true" size={19} /></span><div><p className="eyebrow">Cancellation</p><h2 id="cancellation-refund-title">Refund before release.</h2></div></div>
+              <p>The pieces stay reserved until the full refund reference and amount are recorded.</p>
+              <dl className="studio-order-facts">
+                <div><dt>Status</dt><dd>{orderStateLabel(order.cancellationRecovery.status)}</dd></div>
+                <div><dt>Reason</dt><dd>{order.cancellationRecovery.reason}</dd></div>
+                {order.cancellationRecovery.refundAmount ? <div><dt>Refund</dt><dd>{formatNaira(order.cancellationRecovery.refundAmount)}</dd></div> : null}
+                {order.cancellationRecovery.refundReference ? <div><dt>Reference</dt><dd>{order.cancellationRecovery.refundReference}</dd></div> : null}
+              </dl>
+              <div className="studio-transition-list">{recoveryTransitions.map(action)}</div>
+            </section>
+          ) : null}
 
           {order.return ? (
             <section className="studio-order-action-section studio-return-section" aria-labelledby="return-title">
@@ -497,6 +619,9 @@ export function ConnectedOrderDetail() {
                 {order.return.refundReference ? <div><dt>Refund reference</dt><dd>{order.return.refundReference}</dd></div> : null}
                 {order.return.disposition ? <div><dt>Inventory</dt><dd>{orderStateLabel(order.return.disposition)}</dd></div> : null}
               </dl>
+              <ul className="studio-order-return-items">
+                {order.return.items.map((item) => <li key={item.sku}><span><strong>{item.name}</strong><small>{item.sku}</small></span><b>{item.disposition ? orderStateLabel(item.disposition) : formatNaira(item.unitPrice)}</b></li>)}
+              </ul>
               <div className="studio-transition-list">{returnTransitions.map(action)}</div>
               {!returnTransitions.length ? <p className="studio-order-quiet-note">No return action is currently due.</p> : null}
             </section>
@@ -511,7 +636,7 @@ export function ConnectedOrderDetail() {
               {timeline.map((event, index) => (
                 <li aria-current={index === timeline.length - 1 ? "step" : undefined} key={event.id}>
                   <span>{String(index + 1).padStart(2, "0")}</span>
-                  <div><strong>{orderEventLabel(event, order.fulfillment.kind)}</strong><small>{event.actorKind === "OPERATOR" ? "Studio operator" : event.actorKind === "CUSTOMER" ? "Customer" : "Order system"}</small><time dateTime={event.occurredAt}>{formatConnectedOrderDate(event.occurredAt)}</time></div>
+                  <div><strong>{orderEventLabel(event, order.fulfillment.kind)}</strong>{event.note ? <p>{event.note}</p> : null}<small>{event.actorKind === "OPERATOR" ? "Studio operator" : event.actorKind === "CUSTOMER" ? "Customer" : "Order system"}</small><time dateTime={event.occurredAt}>{formatConnectedOrderDate(event.occurredAt)}</time></div>
                 </li>
               ))}
             </ol>
@@ -522,6 +647,7 @@ export function ConnectedOrderDetail() {
           <p className="eyebrow">Order details</p>
           <dl>
             <div><dt>Reference</dt><dd>{order.reference}</dd></div>
+            <div><dt>Source</dt><dd>{order.source === "ONLINE" ? "Online" : orderStateLabel(order.source)}</dd></div>
             <div><dt>Customer</dt><dd>{order.contact.name}</dd></div>
             <div><dt>Email</dt><dd>{order.contact.email}</dd></div>
             <div><dt>Phone</dt><dd>{order.contact.phone}</dd></div>

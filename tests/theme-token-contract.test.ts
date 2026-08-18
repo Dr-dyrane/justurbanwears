@@ -5,6 +5,9 @@ import test from "node:test";
 
 const globals = readFileSync(join(process.cwd(), "app/globals.css"), "utf8");
 const foundation = readFileSync(join(process.cwd(), "app/foundation.css"), "utf8");
+const productDetail = ["a", "b"]
+  .map((part) => readFileSync(join(process.cwd(), `app/shop-product-detail-${part}.css`), "utf8"))
+  .join("\n");
 
 test("shares one Dyrane dark material contract across Shop and Studio", () => {
   for (const token of [
@@ -45,4 +48,11 @@ test("keeps the shopper dark theme semantic instead of a flat light inversion", 
     /html\[data-theme="dark"\] \.shop-shell \{[\s\S]*?radial-gradient\(circle at 84% -2%[\s\S]*?var\(--dyrane-dark-floor\)/,
   );
   assert.doesNotMatch(foundation, /filter:\s*invert\(/);
+});
+
+test("product details inherit Shop contrast tokens in both themes", () => {
+  assert.match(productDetail, /\.shop-detail-price \{[\s\S]*?color: var\(--shop-ink\)/);
+  assert.match(productDetail, /\.shop-detail-note \{[\s\S]*?color: var\(--shop-muted\)/);
+  assert.match(productDetail, /\.shop-detail-facts dd \{[\s\S]*?color: var\(--shop-ink\)/);
+  assert.doesNotMatch(productDetail, /var\(--text(?:-soft)?(?:[,)]|\s)/);
 });

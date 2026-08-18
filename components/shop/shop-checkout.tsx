@@ -12,6 +12,7 @@ import { shopDeliveryOptions, type ShopDeliveryId } from "../../lib/shop/commerc
 import type { ShopCheckoutRequest } from "../../lib/shop/domain/entities";
 import { isBagCheckoutAvailable } from "../../lib/shop/domain/state";
 import { authSignInPath } from "../../lib/auth/return-to";
+import type { ShopCommerceGuidance } from "../../lib/shop/server-order/commerce-guidance";
 import { ShopActionButton, ShopActionLink } from "./atoms/action";
 import {
   ShopDeliveryLocation,
@@ -57,7 +58,13 @@ function createIdempotencyKey() {
   return `checkout:${globalThis.crypto.randomUUID()}`;
 }
 
-export function ShopCheckout({ mapboxAccessToken }: { mapboxAccessToken: string }) {
+export function ShopCheckout({
+  commerceGuidance,
+  mapboxAccessToken,
+}: {
+  commerceGuidance: ShopCommerceGuidance;
+  mapboxAccessToken: string;
+}) {
   const {
     bag,
     beginCheckout,
@@ -89,6 +96,7 @@ export function ShopCheckout({ mapboxAccessToken }: { mapboxAccessToken: string 
   const delivery = shopDeliveryOptions.find((item) => item.id === deliveryId) ?? shopDeliveryOptions[0];
   const subtotal = lines.reduce((sum, line) => sum + line.product.price, 0);
   const checkoutAvailable = isBagCheckoutAvailable(bag, products);
+  const paymentAvailable = commerceGuidance.payment.available;
 
   useEffect(() => {
     beginCheckout();
@@ -371,7 +379,17 @@ export function ShopCheckout({ mapboxAccessToken }: { mapboxAccessToken: string 
             <div><dt>{delivery.label}</dt><dd>{delivery.fee ? formatNaira(delivery.fee) : "Free"}</dd></div>
             <div className="shop-summary-total"><dt>Total</dt><dd>{formatNaira(subtotal + delivery.fee)}</dd></div>
           </dl>
-          <ShopActionButton disabled={pending || !isOnline} type="submit">
+          {commerceGuidance.payment.available ? (
+            <section aria-label="Bank transfer details" className="shop-pickup-card">
+              <span>
+                <strong>{commerceGuidance.payment.bankName} · {commerceGuidance.payment.accountNumber}</strong>
+                <small>{commerceGuidance.payment.accountName} · Transfer after your piece is reserved.</small>
+              </span>
+            </section>
+          ) : (
+            <p className="shop-action-note is-error" role="alert">{commerceGuidance.payment.message}</p>
+          )}
+          <ShopActionButton disabled={pending || !isOnline || !paymentAvailable} type="submit">
             {pending ? "Reserving your piece…" : "Place order"}
           </ShopActionButton>
           <p className="shop-local-disclosure shop-order-boundary-disclosure">
