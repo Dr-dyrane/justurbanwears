@@ -116,7 +116,8 @@ export interface DynamicPublicationProjection {
   wardrobeItemId: string;
   sku: string;
   slug: string;
-  state: "PUBLISHED";
+  origin: "STUDIO_NATIVE" | "CATALOGUE_ADOPTED";
+  state: "PUBLISHED" | "UNPUBLISHED" | "ARCHIVED";
   publishedAt: string;
   shopUrl: string;
 }

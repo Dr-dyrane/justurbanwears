@@ -316,9 +316,13 @@ test("the full release refreshes renamed legacy rows without changing inventory"
       }
       return { rows: [] };
     }
-    if (text.startsWith('select * from "shop_catalogue_items"')) {
+    if (text.includes('from "shop_catalogue_items" catalogue')) {
       const requested = new Set(values[0] as string[]);
-      return { rows: [...catalogueRows.values()].filter((row) => requested.has(row.sku)) };
+      return { rows: [...catalogueRows.values()].filter((row) => requested.has(row.sku)).map((row) => ({
+        ...row,
+        publication_origin: null,
+        publication_baseline: null,
+      })) };
     }
     if (text.startsWith('select "sku" from "shop_inventory"')) {
       const requested = new Set(values[0] as string[]);
@@ -434,7 +438,11 @@ test("standalone catalogue apply verifies conflict results and writes the ledger
   const queries: string[] = [];
   const transaction = { query: async (text: string) => {
     queries.push(text);
-    if (text.startsWith('select * from "shop_catalogue_items"')) return { rows: databaseCatalogueRows() };
+    if (text.includes('from "shop_catalogue_items" catalogue')) return { rows: databaseCatalogueRows().map((row) => ({
+      ...row,
+      publication_origin: null,
+      publication_baseline: null,
+    })) };
     if (text.startsWith('select "sku" from "shop_inventory"')) {
       return { rows: SHOP_CATALOGUE_MANIFEST.products.map((product) => ({ sku: product.sku })) };
     }
@@ -446,7 +454,7 @@ test("standalone catalogue apply verifies conflict results and writes the ledger
   );
   assert.match(queries[0], /"target" = \$3/);
   assert.equal(queries.at(-1), plan.ledger.text);
-  assert.ok(queries.indexOf('select * from "shop_catalogue_items" where "sku" = any($1::varchar[])') < queries.length - 1);
+  assert.ok(queries.findIndex((query) => query.includes('from "shop_catalogue_items" catalogue')) < queries.length - 1);
 });
 
 test("migration planning verifies every applied hash and only permits a journal prefix", () => {

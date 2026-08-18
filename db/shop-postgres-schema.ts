@@ -1027,18 +1027,27 @@ export const studioCataloguePublications = pgTable("studio_catalogue_publication
     .notNull()
     .references(() => shopCatalogueItems.sku, { onDelete: "restrict", onUpdate: "cascade" }),
   slug: text("slug").notNull(),
+  origin: varchar("origin", { length: 32 }).default("STUDIO_NATIVE").notNull(),
   state: varchar("state", { length: 24 }).default("PUBLISHED").notNull(),
   facts: jsonb("facts").$type<Record<string, unknown>>().notNull(),
-  media: jsonb("media").$type<Array<{
-    slot: "GARMENT_FRONT" | "GARMENT_BACK" | "FABRIC_DETAIL";
-    src: string;
-    pathname: string;
-    sourceSha256: string;
-    sha256: string;
-    mimeType: string;
-    width: number;
-    height: number;
-  }>>().notNull(),
+  media: jsonb("media").$type<Array<
+    | {
+        slot: "GARMENT_FRONT" | "GARMENT_BACK" | "FABRIC_DETAIL";
+        src: string;
+        pathname: string;
+        sourceSha256: string;
+        sha256: string;
+        mimeType: string;
+        width: number;
+        height: number;
+      }
+    | {
+        origin: "CATALOGUE_BASELINE";
+        slot: "GARMENT_FRONT" | "GARMENT_BACK" | "FABRIC_DETAIL";
+        src: string;
+      }
+  >>().notNull(),
+  baseline: jsonb("baseline").$type<Record<string, unknown>>(),
   publishedAt: timestamp("published_at", { withTimezone: true }).defaultNow().notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 }, (table) => [
@@ -1054,6 +1063,11 @@ export const studioCataloguePublications = pgTable("studio_catalogue_publication
     table.publishedAt,
   ),
   check("studio_catalogue_publications_source_revision_sha256", sql`${table.sourceRevision} ~ '^[0-9a-f]{64}$'`),
+  check("studio_catalogue_publications_origin_known", sql`${table.origin} in ('STUDIO_NATIVE', 'CATALOGUE_ADOPTED')`),
+  check("studio_catalogue_publications_origin_baseline", sql`
+    (${table.origin} = 'STUDIO_NATIVE' and ${table.baseline} is null)
+    or (${table.origin} = 'CATALOGUE_ADOPTED' and jsonb_typeof(${table.baseline}) = 'object')
+  `),
   check("studio_catalogue_publications_state_known", sql`${table.state} in ('PUBLISHED', 'UNPUBLISHED', 'ARCHIVED')`),
   check("studio_catalogue_publications_facts_object", sql`jsonb_typeof(${table.facts}) = 'object'`),
   check("studio_catalogue_publications_media_array", sql`jsonb_typeof(${table.media}) = 'array'`),

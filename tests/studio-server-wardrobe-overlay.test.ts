@@ -127,6 +127,7 @@ test("a server publication rehydrates one sanitized Live listing after reload", 
       wardrobeItemId: "11111111-1111-4111-8111-111111111111",
       sku: "JUW-100",
       slug: "coral-bias-dress-11111111111141118111111111111111",
+      origin: "STUDIO_NATIVE",
       state: "PUBLISHED",
       publishedAt: "2026-08-12T01:01:00.000Z",
       shopUrl: "/shop/products/coral-bias-dress-11111111111141118111111111111111",
@@ -147,4 +148,140 @@ test("a server publication rehydrates one sanitized Live listing after reload", 
   assert.equal(persisted.garments.length, 0);
   assert.equal(persisted.inventory.length, 0);
   assert.equal(persisted.listings.length, 0);
+});
+
+test("an adopted catalogue piece enriches its legacy card without duplicating or persisting server truth", async () => {
+  const garment = { ...localGarment, id: "wardrobe-seed-juw-001", sku: "JUW-001", price: 24_500 };
+  const listing = {
+    id: "wardrobe-listing-juw-001",
+    garmentId: garment.id,
+    modelId: "model-lulu",
+    slug: "coral-drift-dress",
+    title: "Coral Drift Dress",
+    description: "Original editorial copy",
+    price: 24_500,
+    state: "PUBLISHED" as const,
+    createdAt: garment.createdAt,
+    publishedAt: garment.createdAt,
+  };
+  const stock = { ...localInventory, id: "wardrobe-stock-juw-001", garmentId: garment.id, listingId: listing.id };
+  const local = { ...createEmptyStudioSnapshot(), garments: [garment], listings: [listing], inventory: [stock] };
+  let persisted = local;
+  const repository = createServerWardrobeOverlayRepository({
+    read: async () => local,
+    write: async (snapshot) => { persisted = snapshot as typeof local; },
+    subscribe: () => () => undefined,
+  }, async () => [{
+    id: "11111111-1111-4111-8111-111111111111",
+    intakeId: "22222222-2222-4222-8222-222222222222",
+    title: "Coral Drift Dress",
+    category: "Dress",
+    colour: "Coral",
+    sizeLabel: "UK 10",
+    condition: "Excellent",
+    price: 25_000,
+    quantity: 1,
+    state: "READY",
+    approvedAssetId: null,
+    createdAt: "2026-08-12T01:00:00.000Z",
+    updatedAt: "2026-08-12T01:01:00.000Z",
+    publication: {
+      publicationId: "44444444-4444-4444-8444-444444444444",
+      wardrobeItemId: "11111111-1111-4111-8111-111111111111",
+      sku: "JUW-001",
+      slug: "coral-drift-dress",
+      origin: "CATALOGUE_ADOPTED",
+      state: "PUBLISHED",
+      publishedAt: "2026-08-12T01:01:00.000Z",
+      shopUrl: "/shop/products/coral-drift-dress",
+      inventory: {
+        availability: "RESERVED",
+        onHand: 1,
+        reserved: 1,
+        sold: 0,
+        returned: 0,
+        writeOff: 0,
+        updatedAt: "2026-08-12T01:02:00.000Z",
+      },
+    },
+  }]);
+
+  const hydrated = await repository.read();
+  assert.equal(hydrated.garments.length, 1);
+  assert.equal(hydrated.listings.length, 1);
+  assert.equal(hydrated.inventory.length, 1);
+  assert.equal(hydrated.garments[0].id, garment.id);
+  assert.equal(hydrated.garments[0].privateWardrobeItemId, "11111111-1111-4111-8111-111111111111");
+  assert.equal(hydrated.garments[0].price, 25_000);
+  assert.equal(hydrated.garments[0].state, "RESERVED");
+  assert.equal(hydrated.listings[0].id, listing.id);
+  assert.equal(hydrated.inventory[0].reserved, 1);
+
+  await repository.write(hydrated);
+  assert.equal(persisted.garments.length, 0);
+  assert.equal(persisted.listings.length, 0);
+  assert.equal(persisted.inventory.length, 0);
+});
+
+test("an archived adopted piece remains archived instead of resurfacing as Ready", async () => {
+  const garment = { ...localGarment, id: "wardrobe-seed-juw-001", sku: "JUW-001", price: 24_500 };
+  const listing = {
+    id: "wardrobe-listing-juw-001",
+    garmentId: garment.id,
+    modelId: "model-lulu",
+    slug: "coral-drift-dress",
+    title: "Coral Drift Dress",
+    description: "Original editorial copy",
+    price: 24_500,
+    state: "PUBLISHED" as const,
+    createdAt: garment.createdAt,
+    publishedAt: garment.createdAt,
+  };
+  const stock = { ...localInventory, id: "wardrobe-stock-juw-001", garmentId: garment.id, listingId: listing.id };
+  const local = { ...createEmptyStudioSnapshot(), garments: [garment], listings: [listing], inventory: [stock] };
+  const repository = createServerWardrobeOverlayRepository({
+    read: async () => local,
+    write: async () => undefined,
+    subscribe: () => () => undefined,
+  }, async () => [{
+    id: "11111111-1111-4111-8111-111111111111",
+    intakeId: "22222222-2222-4222-8222-222222222222",
+    title: "Coral Drift Dress",
+    category: "Dress",
+    colour: "Coral",
+    sizeLabel: "UK 10",
+    condition: "Excellent",
+    price: 24_500,
+    quantity: 0,
+    state: "ARCHIVED",
+    approvedAssetId: null,
+    createdAt: "2026-08-12T01:00:00.000Z",
+    updatedAt: "2026-08-12T01:01:00.000Z",
+    publication: {
+      publicationId: "44444444-4444-4444-8444-444444444444",
+      wardrobeItemId: "11111111-1111-4111-8111-111111111111",
+      sku: "JUW-001",
+      slug: "coral-drift-dress",
+      origin: "CATALOGUE_ADOPTED",
+      state: "ARCHIVED",
+      publishedAt: "2026-08-12T01:01:00.000Z",
+      shopUrl: "/shop/products/coral-drift-dress",
+      inventory: {
+        availability: "ARCHIVED",
+        onHand: 0,
+        reserved: 0,
+        sold: 0,
+        returned: 0,
+        writeOff: 1,
+        updatedAt: "2026-08-12T01:02:00.000Z",
+      },
+    },
+  }]);
+
+  const hydrated = await repository.read();
+  assert.equal(hydrated.garments[0].state, "CANCELLED");
+  assert.equal(hydrated.garments[0].availability, "ARCHIVED");
+  assert.equal(hydrated.garments[0].saleEligible, false);
+  assert.equal(hydrated.listings[0].state, "CANCELLED");
+  assert.equal(hydrated.inventory[0].state, "CANCELLED");
 });

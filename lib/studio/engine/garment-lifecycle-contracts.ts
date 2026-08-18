@@ -84,6 +84,7 @@ export type GarmentLifecycleWorkspace = {
   state: "PRIVATE" | "PUBLISHED" | "UNPUBLISHED" | "ARCHIVED";
   facts: IntakeFacts;
   editableFacts: IntakeFacts;
+  mediaEditable: boolean;
   live?: {
     receipt: Omit<StudioPublicationReceipt, "state">;
     sourceRevision: string;

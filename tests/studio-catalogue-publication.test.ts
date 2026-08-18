@@ -84,10 +84,12 @@ function dynamicRow() {
     media,
     availability: "AVAILABLE" as const,
     publicationId: "12345678-89ab-4cde-8f01-23456789abcd",
+    publicationOrigin: "STUDIO_NATIVE",
     publicationState: "PUBLISHED",
     publicationSourceRevision: "a".repeat(64),
     publicationMedia,
     publicationSlug: slug,
+    publicationBaseline: null,
     publicationFacts: {
       title: "Coral Evening Dress",
       category: "Dresses",

@@ -24,14 +24,25 @@ async function compareStoredRows(transaction, manifest) {
   const skus = manifest.products.map((product) => product.sku);
   const verificationSkus = [...skus, ...LEGACY_CATALOGUE_SKUS];
   const catalogueRows = queryRows(await transaction.query(
-    'select * from "shop_catalogue_items" where "sku" = any($1::varchar[])',
+    `select catalogue.*, publication.origin as publication_origin,
+      publication.baseline as publication_baseline
+     from "shop_catalogue_items" catalogue
+     left join "studio_catalogue_publications" publication on publication.sku = catalogue.sku
+     where catalogue."sku" = any($1::varchar[])`,
     [verificationSkus],
   ));
   const inventoryRows = queryRows(await transaction.query(
     'select "sku" from "shop_inventory" where "sku" = any($1::varchar[])',
     [verificationSkus],
   ));
-  const issues = compareCatalogueRows(manifest, catalogueRows, inventoryRows);
+  const releaseRows = catalogueRows.map((row) => {
+    if (row.publication_origin !== "CATALOGUE_ADOPTED") return row;
+    if (!row.publication_baseline || typeof row.publication_baseline !== "object") {
+      throw new Error(`Catalogue adoption baseline is missing for ${row.sku}.`);
+    }
+    return { ...row, ...row.publication_baseline };
+  });
+  const issues = compareCatalogueRows(manifest, releaseRows, inventoryRows);
   if (issues.length) throw new Error(`Catalogue verification failed:\n- ${issues.join("\n- ")}`);
 }
 
@@ -61,7 +72,13 @@ export async function applyCatalogueInTransaction(transaction, manifest, plan, t
     await compareStoredRows(transaction, manifest);
     return decision;
   }
-  for (const query of plan.catalogue) await transaction.query(query.text, query.values);
+  const adoptedRows = queryRows(await transaction.query(
+    `select sku from studio_catalogue_publications where origin = 'CATALOGUE_ADOPTED'`,
+  ));
+  const adoptedSkus = new Set(adoptedRows.map((row) => row.sku));
+  for (const query of plan.catalogue) {
+    if (!adoptedSkus.has(query.values[0])) await transaction.query(query.text, query.values);
+  }
   for (const query of plan.inventory) await transaction.query(query.text, query.values);
   await compareStoredRows(transaction, manifest);
   await transaction.query(plan.ledger.text, plan.ledger.values);

@@ -5,6 +5,7 @@ import {
 } from "../../server/studio-intake-repository";
 import {
   findCataloguePublication,
+  publishAdoptedCatalogueRevisionAtomically,
   publishCatalogueRevisionAtomically,
 } from "../../server/studio-catalogue-publication-repository";
 import {
@@ -75,7 +76,7 @@ function sourceRecords(sources: PublicationSource[]) {
 function expectedDraftRevision(input: {
   draft: GarmentRevisionRow;
   item: WardrobeItem;
-  sources: PublicationSource[];
+  media: Array<Record<string, unknown>>;
 }) {
   return sha256(JSON.stringify({
     wardrobeItemId: input.item.id,
@@ -85,7 +86,7 @@ function expectedDraftRevision(input: {
     draftVersion: input.draft.version,
     baseSourceRevision: input.draft.baseSourceRevision,
     facts: input.draft.facts,
-    media: sourceRecords(input.sources),
+    media: input.media,
   }));
 }
 
@@ -99,7 +100,7 @@ function revisionDiff(input: {
   liveFacts: IntakeFacts;
   draftFacts: IntakeFacts;
   liveMedia: Publication["media"];
-  sources: PublicationSource[];
+  draftMedia: Array<Record<string, unknown>>;
 }): GarmentRevisionDiff[] {
   const fields = [
     ["title", "Name"],
@@ -119,10 +120,13 @@ function revisionDiff(input: {
       after: formatValue(after),
     } satisfies GarmentRevisionDiff];
   });
-  const liveHashes = new Map(input.liveMedia.map((media) => [media.slot, media.sourceSha256]));
-  const changedMedia = input.sources
-    .filter((source) => liveHashes.get(source.slot) !== source.sha256)
-    .map((source) => labels[source.slot]);
+  const identity = (media: Record<string, unknown>) =>
+    typeof media.sourceSha256 === "string" ? media.sourceSha256
+      : typeof media.src === "string" ? media.src : "";
+  const liveHashes = new Map(input.liveMedia.map((media) => [media.slot, identity(media)]));
+  const changedMedia = input.draftMedia
+    .filter((media) => typeof media.slot === "string" && liveHashes.get(media.slot as keyof typeof labels) !== identity(media))
+    .map((media) => labels[media.slot as keyof typeof labels]);
   return changedMedia.length ? [...facts, {
     field: "media",
     label: "Photos",
@@ -148,7 +152,7 @@ async function ensureDraft(input: {
   publication: Publication;
   operator: StudioOperator;
   facts?: IntakeFacts;
-  sources: PublicationSource[];
+  media: Array<Record<string, unknown>>;
 }) {
   const existing = await findDraftGarmentRevision({
     wardrobeItemId: input.item.id,
@@ -160,7 +164,7 @@ async function ensureDraft(input: {
     operatorSubject: input.operator.subject,
     baseSourceRevision: input.publication.sourceRevision,
     facts: input.facts ?? itemFacts(input.item),
-    media: sourceRecords(input.sources),
+    media: input.media,
   });
   if (created) return created;
   const concurrent = await findDraftGarmentRevision({
@@ -169,6 +173,16 @@ async function ensureDraft(input: {
   });
   if (concurrent) return concurrent;
   throw new StudioEngineError("VERSION_CONFLICT", 409, "This piece changed in another window.", "Reload the piece.");
+}
+
+function isCatalogueAdopted(publication: Publication | null | undefined) {
+  return publication?.origin === "CATALOGUE_ADOPTED";
+}
+
+function revisionMedia(publication: Publication | null, sources: PublicationSource[]) {
+  return publication && isCatalogueAdopted(publication)
+    ? publication.media as Array<Record<string, unknown>>
+    : sourceRecords(sources);
 }
 
 function allowedActions(input: {
@@ -196,13 +210,16 @@ export async function getGarmentLifecycleWorkspace(
     listGarmentEvents({ wardrobeItemId, operatorSubject: operator.subject }),
   ]);
   const baseline = publication ? liveFacts(publication, item) : itemFacts(item);
+  const currentRevisionMedia = publication
+    ? isCatalogueAdopted(publication) ? (draft?.media ?? publication.media) : sourceRecords(context.sources)
+    : sourceRecords(context.sources);
   const draftView: GarmentLifecycleDraft | undefined = draft ? {
     id: draft.id,
     revisionNumber: draft.revisionNumber,
     version: draft.version,
-    expectedRevision: expectedDraftRevision({ draft, item, sources: context.sources }),
+    expectedRevision: expectedDraftRevision({ draft, item, media: currentRevisionMedia as Array<Record<string, unknown>> }),
     facts: draft.facts,
-    media: context.sources.map((source) => ({
+    media: isCatalogueAdopted(publication) ? [] : context.sources.map((source) => ({
       id: source.id,
       slot: source.slot,
       label: source.label,
@@ -214,7 +231,7 @@ export async function getGarmentLifecycleWorkspace(
       liveFacts: baseline,
       draftFacts: draft.facts,
       liveMedia: publication.media,
-      sources: context.sources,
+      draftMedia: currentRevisionMedia as Array<Record<string, unknown>>,
     }) : [],
     updatedAt: draft.updatedAt.toISOString(),
   } : undefined;
@@ -229,6 +246,7 @@ export async function getGarmentLifecycleWorkspace(
     state,
     facts: baseline,
     editableFacts: draft?.facts ?? itemFacts(item),
+    mediaEditable: !isCatalogueAdopted(publication),
     ...(publication ? {
       live: {
         receipt: {
@@ -236,6 +254,7 @@ export async function getGarmentLifecycleWorkspace(
           wardrobeItemId: publication.wardrobeItemId,
           sku: publication.sku,
           slug: publication.slug,
+          origin: publication.origin as "STUDIO_NATIVE" | "CATALOGUE_ADOPTED",
           publishedAt: publication.publishedAt.toISOString(),
           shopUrl: `/shop/products/${publication.slug}`,
         },
@@ -283,7 +302,13 @@ async function saveGarmentFacts(input: {
     if (input.expectedVersion !== item.version) {
       throw new StudioEngineError("VERSION_CONFLICT", 409, "This piece changed in another window.", "Reload the piece.");
     }
-    const created = await ensureDraft({ item, publication, operator: input.operator, facts: input.facts, sources: context.sources });
+    const created = await ensureDraft({
+      item,
+      publication,
+      operator: input.operator,
+      facts: input.facts,
+      media: revisionMedia(publication, context.sources),
+    });
     if (created.facts.title !== input.facts.title || created.version !== 1) {
       throw new StudioEngineError("VERSION_CONFLICT", 409, "A private revision already exists.", "Reload the piece.");
     }
@@ -295,7 +320,7 @@ async function saveGarmentFacts(input: {
     operatorSubject: input.operator.subject,
     expectedVersion: input.expectedVersion,
     facts: input.facts,
-    media: sourceRecords(context.sources),
+    media: revisionMedia(publication, context.sources),
   });
   if (!updated) throw new StudioEngineError("VERSION_CONFLICT", 409, "This revision changed in another window.", "Reload the piece.");
 }
@@ -374,9 +399,45 @@ async function publishGarmentRevision(input: {
   if (!publication || !draft) {
     throw new StudioEngineError("INVALID_TRANSITION", 409, "There is no private revision to publish.", "Edit the piece first.");
   }
-  const currentExpected = expectedDraftRevision({ draft, item, sources: context.sources });
+  const currentExpected = expectedDraftRevision({
+    draft,
+    item,
+    media: isCatalogueAdopted(publication) ? draft.media : sourceRecords(context.sources),
+  });
   if (currentExpected !== input.expectedRevision) {
     throw new StudioEngineError("VERSION_CONFLICT", 409, "This revision changed during review.", "Review it again.");
+  }
+  if (isCatalogueAdopted(publication)) {
+    if (JSON.stringify(draft.media) !== JSON.stringify(publication.media)) {
+      throw new StudioEngineError("INVALID_TRANSITION", 409, "This catalogue photo set changed.", "Review the piece again.");
+    }
+    const facts = draft.facts;
+    const row = await publishAdoptedCatalogueRevisionAtomically({
+      wardrobeItemId: item.id,
+      intakeId: item.intakeId,
+      operatorSubject: input.operator.subject,
+      idempotencyKey: input.idempotencyKey,
+      baseSourceRevision: draft.baseSourceRevision,
+      sourceRevision: input.expectedRevision,
+      expectedVersion: item.version,
+      revisionId: draft.id,
+      revisionVersion: draft.version,
+      sku: publication.sku,
+      slug: publication.slug,
+      title: facts.title,
+      sourceCategory: facts.category,
+      category: shopCategory(facts.category),
+      price: facts.price,
+      taggedSize: facts.sizeLabel,
+      condition: facts.condition,
+      colour: facts.colour,
+      tone: presentationTone(facts.colour),
+      silhouette: shopSilhouette(facts.category),
+      facts: { ...facts, category: shopCategory(facts.category), quantity: 1 },
+    });
+    if (!row) throw new StudioEngineError("VERSION_CONFLICT", 409, "This revision could not replace the live piece.", "Review it again.");
+    invalidateServerShopCatalogue();
+    return;
   }
   const blockers = studioPublicationBlockers({ ...item, ...draft.facts }, context.sources);
   if (blockers.length || !context.ready) {
@@ -388,7 +449,7 @@ async function publishGarmentRevision(input: {
     findDraftGarmentRevision({ wardrobeItemId: input.wardrobeItemId, operatorSubject: input.operator.subject }),
     getStudioPublicationContext(input.wardrobeItemId, input.operator),
   ]);
-  if (!currentDraft || expectedDraftRevision({ draft: currentDraft, item: currentItem, sources: currentContext.sources }) !== input.expectedRevision || !currentContext.ready) {
+  if (!currentDraft || expectedDraftRevision({ draft: currentDraft, item: currentItem, media: sourceRecords(currentContext.sources) }) !== input.expectedRevision || !currentContext.ready) {
     throw new StudioEngineError("VERSION_CONFLICT", 409, "This revision changed during publishing.", "Review it again.");
   }
   const facts = currentDraft.facts;
@@ -440,10 +501,13 @@ export async function replaceGarmentRevisionMedia(input: {
     findCataloguePublication({ wardrobeItemId: input.wardrobeItemId, operatorSubject: input.operator.subject }),
     getStudioPublicationContext(input.wardrobeItemId, input.operator),
   ]);
+  if (isCatalogueAdopted(publication)) {
+    throw new StudioEngineError("INVALID_TRANSITION", 409, "This piece still uses its approved catalogue photo set.", "Use garment intake to replace all three product photos together.");
+  }
   if (item.version !== input.expectedVersion || item.state === "ARCHIVED" || publication?.state === "ARCHIVED") {
     throw new StudioEngineError("VERSION_CONFLICT", 409, "This piece changed in another window.", "Reload the piece.");
   }
-  const draft = publication ? await ensureDraft({ item, publication, operator: input.operator, sources: context.sources }) : null;
+  const draft = publication ? await ensureDraft({ item, publication, operator: input.operator, media: sourceRecords(context.sources) }) : null;
   if (input.role === "GARMENT_FRONT") {
     const verified = verifyStudioImage(input.bytes, input.declaredType);
     const hash = sha256(verified.bytes);

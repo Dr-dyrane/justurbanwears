@@ -212,6 +212,43 @@ test("a complete Neon row becomes a confirmed Shop product with Blob media", () 
   );
 });
 
+test("an adopted catalogue revision changes facts without replacing the authored presentation", () => {
+  const baseline = databaseRow();
+  const baselineProduct = databaseCatalogueRowToShopProduct(baseline);
+  assert.ok(baselineProduct);
+  const revisedPrice = baseline.price + 2_500;
+  const product = databaseCatalogueRowToShopProduct({
+    ...baseline,
+    price: revisedPrice,
+    publicationId: "44444444-4444-4444-8444-444444444444",
+    publicationOrigin: "CATALOGUE_ADOPTED",
+    publicationState: "PUBLISHED",
+    publicationSourceRevision: "a".repeat(64),
+    publicationSlug: baseline.slug,
+    publicationFacts: {
+      title: baseline.name,
+      category: baseline.category,
+      colour: baseline.colour,
+      sizeLabel: baseline.taggedSize,
+      condition: baseline.condition,
+      price: revisedPrice,
+      quantity: 1,
+    },
+    publicationMedia: [
+      { origin: "CATALOGUE_BASELINE", slot: "GARMENT_FRONT", src: String(baseline.media[0]?.src) },
+      { origin: "CATALOGUE_BASELINE", slot: "GARMENT_BACK", src: String(baseline.media[1]?.src) },
+      { origin: "CATALOGUE_BASELINE", slot: "FABRIC_DETAIL", src: String(baseline.media.at(-1)?.src) },
+    ],
+    publicationBaseline: { sku: baseline.sku },
+  });
+  assert.ok(product);
+  assert.equal(product.price, revisedPrice);
+  assert.equal(product.story, baselineProduct.story);
+  assert.deepEqual(product.media, baselineProduct.media);
+  assert.deepEqual(product.details, baselineProduct.details);
+  assert.deepEqual(product.measurements, baselineProduct.measurements);
+});
+
 test("the server accepts JUW-014's truthful construction detail", () => {
   const source = SHOP_CATALOGUE_MANIFEST.products.find((product) => product.sku === "JUW-014");
   assert.ok(source);

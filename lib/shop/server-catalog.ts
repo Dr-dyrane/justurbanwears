@@ -52,11 +52,13 @@ const modelSlots = new Set([
 type DatabaseCatalogueRow = Omit<typeof shopCatalogueItems.$inferSelect, "createdAt" | "updatedAt"> & {
   availability: "AVAILABLE" | "RESERVED" | "SOLD" | "ARCHIVED" | null;
   publicationId?: string | null;
+  publicationOrigin?: string | null;
   publicationState?: string | null;
   publicationSourceRevision?: string | null;
   publicationMedia?: (typeof studioCataloguePublications.$inferSelect)["media"] | null;
   publicationSlug?: string | null;
   publicationFacts?: Record<string, unknown> | null;
+  publicationBaseline?: Record<string, unknown> | null;
 };
 interface CatalogueReleaseLedger {
   revision: string;
@@ -172,6 +174,7 @@ function parseMedia(value: unknown, slug: string): WardrobePublicMedia[] {
 function dynamicCatalogueRowToShopProduct(row: DatabaseCatalogueRow): ShopProduct {
   if (
     !row.publicationId
+    || row.publicationOrigin !== "STUDIO_NATIVE"
     || row.publicationState !== "PUBLISHED"
     || typeof row.publicationSourceRevision !== "string"
     || !/^[0-9a-f]{64}$/.test(row.publicationSourceRevision)
@@ -280,6 +283,38 @@ function dynamicCatalogueRowToShopProduct(row: DatabaseCatalogueRow): ShopProduc
 
 export function databaseCatalogueRowToShopProduct(row: DatabaseCatalogueRow): ShopProduct | null {
   if (row.availability === "ARCHIVED") return null;
+  if (row.publicationId && row.publicationOrigin === "CATALOGUE_ADOPTED") {
+    if (row.publicationState !== "PUBLISHED") return null;
+    if (
+      typeof row.publicationSourceRevision !== "string"
+      || !/^[0-9a-f]{64}$/.test(row.publicationSourceRevision)
+      || !row.publicationBaseline
+      || typeof row.publicationBaseline !== "object"
+      || !row.publicationFacts
+      || typeof row.publicationFacts !== "object"
+    ) throw new Error("Invalid catalogue adoption ledger.");
+    const facts = row.publicationFacts;
+    if (
+      facts.title !== row.name
+      || facts.category !== row.category
+      || facts.colour !== row.colour
+      || facts.sizeLabel !== row.taggedSize
+      || facts.condition !== row.condition
+      || facts.price !== row.price
+      || facts.quantity !== 1
+    ) throw new Error("Catalogue adoption facts drifted from the live row.");
+    return databaseCatalogueRowToShopProduct({
+      ...row,
+      publicationId: null,
+      publicationOrigin: null,
+      publicationState: null,
+      publicationSourceRevision: null,
+      publicationMedia: null,
+      publicationSlug: null,
+      publicationFacts: null,
+      publicationBaseline: null,
+    });
+  }
   if (row.publicationId) return dynamicCatalogueRowToShopProduct(row);
   if (
     row.availability !== "AVAILABLE"
@@ -318,6 +353,35 @@ export function databaseCatalogueRowToShopProduct(row: DatabaseCatalogueRow): Sh
     media: parseMedia(row.media, slug),
   };
   return wardrobePublicProductToShopProduct(publicProduct);
+}
+
+function adoptedBaselineRow(row: DatabaseCatalogueRow): DatabaseCatalogueRow {
+  const baseline = row.publicationBaseline;
+  if (!baseline || typeof baseline !== "object" || baseline.sku !== row.sku) {
+    throw new Error("Invalid catalogue adoption baseline.");
+  }
+  const value = (key: string) => baseline[key];
+  return {
+    ...row,
+    sku: nonEmptyString(value("sku"), "adoption baseline SKU"),
+    slug: nonEmptyString(value("slug"), "adoption baseline slug"),
+    name: nonEmptyString(value("name"), "adoption baseline name"),
+    category: nonEmptyString(value("category"), "adoption baseline category"),
+    price: Number(value("price")),
+    taggedSize: nonEmptyString(value("tagged_size"), "adoption baseline tagged size"),
+    fit: nonEmptyString(value("fit"), "adoption baseline fit"),
+    condition: nonEmptyString(value("condition"), "adoption baseline condition"),
+    colour: nonEmptyString(value("colour"), "adoption baseline colour"),
+    dropLabel: nonEmptyString(value("drop_label"), "adoption baseline drop"),
+    tone: nonEmptyString(value("tone"), "adoption baseline tone"),
+    silhouette: nonEmptyString(value("silhouette"), "adoption baseline silhouette"),
+    note: nonEmptyString(value("note"), "adoption baseline note"),
+    story: nonEmptyString(value("story"), "adoption baseline story"),
+    details: value("details") as string[],
+    measurements: value("measurements") as Array<{ label: string; value: string }>,
+    modelAnchor: value("model_anchor") as DatabaseCatalogueRow["modelAnchor"],
+    media: value("media") as DatabaseCatalogueRow["media"],
+  };
 }
 
 function fallbackProducts(): ShopProduct[] {
@@ -428,11 +492,13 @@ async function readDatabaseCatalogue() {
         media: shopCatalogueItems.media,
         availability: shopInventory.availability,
         publicationId: studioCataloguePublications.id,
+        publicationOrigin: studioCataloguePublications.origin,
         publicationState: studioCataloguePublications.state,
         publicationSourceRevision: studioCataloguePublications.sourceRevision,
         publicationMedia: studioCataloguePublications.media,
         publicationSlug: studioCataloguePublications.slug,
         publicationFacts: studioCataloguePublications.facts,
+        publicationBaseline: studioCataloguePublications.baseline,
       })
       .from(shopCatalogueItems)
       .leftJoin(shopInventory, eq(shopCatalogueItems.sku, shopInventory.sku))
@@ -449,7 +515,11 @@ async function readDatabaseCatalogue() {
       .orderBy(desc(shopSeedLedger.appliedAt))
       .limit(1),
   ]));
-  const releaseRows = rows.filter((row) => !row.publicationId);
+  const releaseRows = rows.flatMap((row) => {
+    if (!row.publicationId) return [row];
+    if (row.publicationOrigin === "CATALOGUE_ADOPTED") return [adoptedBaselineRow(row)];
+    return [];
+  });
   assertCatalogueReleaseLedger(ledgerRows[0], releaseRows.length);
   assertCataloguePresentation(releaseRows);
   return rows;

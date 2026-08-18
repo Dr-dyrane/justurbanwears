@@ -16,7 +16,9 @@ const mobileActions = readFileSync(`${root}/components/studio/mobile-action-cont
 test("every garment entry point resolves to the permanent dossier route", () => {
   assert.equal(existsSync(`${root}/app/(studio)/studio/wardrobe/[id]/page.tsx`), true);
   assert.match(wardrobe, /href=\{garmentDossierHref\(garment\)\}/);
+  assert.match(wardrobe, /encodeURIComponent\(garment\.id\)/);
   assert.match(home, /studio\/wardrobe\/\$\{encodeURIComponent/);
+  assert.match(home, /encodeURIComponent\(garment\.id\)/);
   assert.match(intake, /studio\/wardrobe\/\$\{encodeURIComponent\(wardrobeItemId\)\}/);
 });
 

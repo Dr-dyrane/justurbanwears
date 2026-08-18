@@ -48,10 +48,20 @@ function isPublication(value: unknown, wardrobeItemId: string) {
     && typeof value.sku === "string"
     && /^JUW-[0-9]{3,}$/.test(value.sku)
     && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)
-    && value.state === "PUBLISHED"
+    && ["STUDIO_NATIVE", "CATALOGUE_ADOPTED"].includes(String(value.origin))
+    && ["PUBLISHED", "UNPUBLISHED", "ARCHIVED"].includes(String(value.state))
     && typeof value.publishedAt === "string"
     && Number.isFinite(Date.parse(value.publishedAt))
-    && value.shopUrl === `/shop/products/${slug}`;
+    && value.shopUrl === `/shop/products/${slug}`
+    && (value.inventory === undefined || isPublicationInventory(value.inventory));
+}
+
+function isPublicationInventory(value: unknown) {
+  if (!isRecord(value)) return false;
+  return ["AVAILABLE", "RESERVED", "SOLD", "ARCHIVED"].includes(String(value.availability))
+    && ["onHand", "reserved", "sold", "returned", "writeOff"].every((key) => Number.isInteger(value[key]))
+    && typeof value.updatedAt === "string"
+    && Number.isFinite(Date.parse(value.updatedAt));
 }
 
 function isDirectCapture(value: unknown): value is OperatorSafePendingCapture {
@@ -68,6 +78,15 @@ function studioCategory(category: OperatorSafeWardrobeItem["category"]): Garment
   return category === "Other" ? "Shirt" : category;
 }
 
+function shopCategory(category: OperatorSafeWardrobeItem["category"], fallback: NonNullable<StudioListing["publicProjection"]>["category"]) {
+  if (category === "Dress") return "Dresses" as const;
+  if (category === "Set") return "Sets" as const;
+  if (category === "Shirt") return "Shirts" as const;
+  if (category === "Skirt") return "Skirts" as const;
+  if (category === "Knitwear" || category === "Trousers") return category;
+  return fallback;
+}
+
 function garmentId(itemId: string) {
   return `${SERVER_GARMENT_PREFIX}${itemId}`;
 }
@@ -80,7 +99,19 @@ function listingId(itemId: string) {
   return `${SERVER_LISTING_PREFIX}${itemId}`;
 }
 
-function mapServerGarment(item: OperatorSafeWardrobeItem): Garment {
+function lifecycleState(item: OperatorSafeWardrobeItem): Garment["state"] {
+  if (
+    item.state === "ARCHIVED"
+    || item.publication?.state === "ARCHIVED"
+    || item.publication?.inventory?.availability === "ARCHIVED"
+  ) return "CANCELLED";
+  if (item.publication?.inventory?.availability === "SOLD") return "SOLD";
+  if (item.publication?.inventory?.availability === "RESERVED") return "RESERVED";
+  if (item.publication?.state === "PUBLISHED") return "PUBLISHED";
+  return item.state === "DRAFT" ? "DRAFT" : "READY";
+}
+
+function mapServerGarment(item: OperatorSafeWardrobeItem, legacy?: Garment): Garment {
   const approvedAssetPath = item.approvedAssetId
     ? `/api/studio/intakes/${item.intakeId}/assets/${item.approvedAssetId}` as const
     : undefined;
@@ -97,6 +128,7 @@ function mapServerGarment(item: OperatorSafeWardrobeItem): Garment {
     references.some((reference) => reference.view === view)
   );
   return {
+    ...legacy,
     id: garmentId(item.id),
     sku: item.publication?.sku ?? `INTAKE-${item.id.slice(0, 8).toUpperCase()}`,
     title: item.title,
@@ -106,20 +138,20 @@ function mapServerGarment(item: OperatorSafeWardrobeItem): Garment {
     color: item.colour,
     price: item.price,
     condition: item.condition,
-    source: "Studio intake",
-    notes: "",
-    privateNote: "",
-    publicDescription: "",
+    source: legacy?.source ?? "Studio intake",
+    notes: legacy?.notes ?? "",
+    privateNote: legacy?.privateNote ?? "",
+    publicDescription: legacy?.publicDescription ?? "",
     quantity: item.state === "ARCHIVED" ? 0 : 1,
-    saleEligible: Boolean(item.publication),
-    measurements: [],
+    saleEligible: item.publication?.state === "PUBLISHED",
+    measurements: legacy?.measurements ?? [],
     classificationState: "READY",
-    mediaState: mediaReady ? "READY" : approvedAssetPath ? "DRAFT" : "EMPTY",
-    state: item.publication ? "PUBLISHED" : "DRAFT",
-    availability: item.state === "ARCHIVED" ? "ARCHIVED" : "AVAILABLE",
+    mediaState: legacy?.mediaState ?? (mediaReady ? "READY" : approvedAssetPath ? "DRAFT" : "EMPTY"),
+    state: lifecycleState(item),
+    availability: item.publication?.inventory?.availability ?? (item.state === "ARCHIVED" ? "ARCHIVED" : "AVAILABLE"),
     canonState: item.publication ? "APPROVED" : "REVIEW",
-    visual: "studio",
-    references,
+    visual: legacy?.visual ?? "studio",
+    references: legacy?.references.length ? legacy.references : references,
     ...(approvedAssetPath ? {
       reviewCover: {
         src: approvedAssetPath,
@@ -128,57 +160,79 @@ function mapServerGarment(item: OperatorSafeWardrobeItem): Garment {
         height: 1280,
       },
     } : {}),
-    createdAt: item.createdAt,
+    createdAt: legacy?.createdAt ?? item.createdAt,
     privateWardrobeItemId: item.id,
     ...(item.publication ? { dynamicPublication: {
       publicationId: item.publication.publicationId,
       wardrobeItemId: item.publication.wardrobeItemId,
       sku: item.publication.sku,
       slug: item.publication.slug,
-      state: "PUBLISHED" as const,
+      origin: item.publication.origin,
+      state: item.publication.state,
       publishedAt: item.publication.publishedAt,
       shopUrl: item.publication.shopUrl,
     } } : {}),
+    ...(legacy ? { id: legacy.id, reviewCover: legacy.reviewCover } : {}),
   };
 }
 
-function mapServerListing(item: OperatorSafeWardrobeItem): StudioListing | null {
+function mapServerListing(item: OperatorSafeWardrobeItem, garment: Garment, legacy?: StudioListing): StudioListing | null {
   if (!item.publication) return null;
+  const state = lifecycleState(item);
+  const publicProjection = legacy?.publicProjection ? {
+    ...legacy.publicProjection,
+    name: item.title,
+    category: shopCategory(item.category, legacy.publicProjection.category),
+    price: item.price,
+    taggedSize: item.sizeLabel,
+    condition: item.condition,
+    colour: item.colour,
+    availability: item.publication.inventory?.availability === "ARCHIVED"
+      ? legacy.publicProjection.availability
+      : item.publication.inventory?.availability ?? legacy.publicProjection.availability,
+  } : undefined;
   return {
-    id: listingId(item.id),
-    garmentId: garmentId(item.id),
-    modelId: "",
+    ...legacy,
+    id: legacy?.id ?? listingId(item.id),
+    garmentId: garment.id,
+    modelId: legacy?.modelId ?? "",
     slug: item.publication.slug,
     title: item.title,
     description: `${item.colour} · ${item.condition}`,
     price: item.price,
-    state: "PUBLISHED",
-    createdAt: item.createdAt,
+    state,
+    createdAt: legacy?.createdAt ?? item.createdAt,
     publishedAt: item.publication.publishedAt,
+    ...(publicProjection ? { publicProjection } : {}),
   };
 }
 
-function mapServerInventory(item: OperatorSafeWardrobeItem): InventoryRecord {
+function mapServerInventory(item: OperatorSafeWardrobeItem, garment: Garment, listing: StudioListing | null, legacy?: InventoryRecord): InventoryRecord {
+  const inventory = item.publication?.inventory;
   return {
-    id: inventoryId(item.id),
-    garmentId: garmentId(item.id),
-    ...(item.publication ? { listingId: listingId(item.id) } : {}),
-    onHand: item.state === "ARCHIVED" ? 0 : 1,
-    reserved: 0,
-    sold: 0,
-    returned: 0,
-    writeOff: item.state === "ARCHIVED" ? 1 : 0,
-    state: item.publication ? "PUBLISHED" : "DRAFT",
-    updatedAt: item.updatedAt,
+    ...legacy,
+    id: legacy?.id ?? inventoryId(item.id),
+    garmentId: garment.id,
+    ...(listing ? { listingId: listing.id } : {}),
+    onHand: inventory?.onHand ?? (item.state === "ARCHIVED" ? 0 : 1),
+    reserved: inventory?.reserved ?? 0,
+    sold: inventory?.sold ?? 0,
+    returned: inventory?.returned ?? 0,
+    writeOff: inventory?.writeOff ?? (item.state === "ARCHIVED" ? 1 : 0),
+    state: lifecycleState(item),
+    updatedAt: inventory?.updatedAt ?? item.updatedAt,
   };
 }
 
 export function stripServerWardrobeOverlay(snapshot: StudioSnapshot): StudioSnapshot {
+  const serverGarmentIds = new Set(snapshot.garments
+    .filter((garment) => garment.id.startsWith(SERVER_GARMENT_PREFIX) || Boolean(garment.privateWardrobeItemId))
+    .map((garment) => garment.id));
   return {
     ...snapshot,
-    garments: snapshot.garments.filter((garment) => !garment.id.startsWith(SERVER_GARMENT_PREFIX)),
-    inventory: snapshot.inventory.filter((record) => !record.id.startsWith(SERVER_INVENTORY_PREFIX)),
-    listings: snapshot.listings.filter((listing) => !listing.id.startsWith(SERVER_LISTING_PREFIX)),
+    garments: snapshot.garments.filter((garment) => !serverGarmentIds.has(garment.id)),
+    inventory: snapshot.inventory.filter((record) => !record.id.startsWith(SERVER_INVENTORY_PREFIX) && !serverGarmentIds.has(record.garmentId)),
+    listings: snapshot.listings.filter((listing) => !listing.id.startsWith(SERVER_LISTING_PREFIX) && !serverGarmentIds.has(listing.garmentId)),
   };
 }
 
@@ -187,14 +241,36 @@ export function mergeServerWardrobeOverlay(
   items: OperatorSafeWardrobeItem[],
 ): StudioSnapshot {
   const local = stripServerWardrobeOverlay(snapshot);
+  const garments = [...local.garments];
+  const listings = [...local.listings];
+  const inventory = [...local.inventory];
+  for (const item of items) {
+    const legacyGarment = item.publication?.origin === "CATALOGUE_ADOPTED"
+      ? garments.find((garment) => garment.sku === item.publication?.sku)
+      : undefined;
+    const legacyListing = legacyGarment
+      ? listings.find((listing) => listing.garmentId === legacyGarment.id || listing.slug === item.publication?.slug)
+      : undefined;
+    const legacyInventory = legacyGarment
+      ? inventory.find((record) => record.garmentId === legacyGarment.id || record.listingId === legacyListing?.id)
+      : undefined;
+    const garment = mapServerGarment(item, legacyGarment);
+    const listing = mapServerListing(item, garment, legacyListing);
+    const stock = mapServerInventory(item, garment, listing, legacyInventory);
+    if (legacyGarment) garments[garments.indexOf(legacyGarment)] = garment;
+    else garments.push(garment);
+    if (listing) {
+      if (legacyListing) listings[listings.indexOf(legacyListing)] = listing;
+      else listings.push(listing);
+    }
+    if (legacyInventory) inventory[inventory.indexOf(legacyInventory)] = stock;
+    else inventory.push(stock);
+  }
   return {
     ...local,
-    garments: [...local.garments, ...items.map(mapServerGarment)],
-    inventory: [...local.inventory, ...items.map(mapServerInventory)],
-    listings: [...local.listings, ...items.flatMap((item) => {
-      const listing = mapServerListing(item);
-      return listing ? [listing] : [];
-    })],
+    garments,
+    inventory,
+    listings,
   };
 }
 

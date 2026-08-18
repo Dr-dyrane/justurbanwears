@@ -59,6 +59,23 @@ test("a revision swaps garment truth and Shop projection only after all guards p
   assert.match(lifecycleService, /changed during publishing/);
 });
 
+test("catalogue-adopted revisions update reviewed facts while preserving the authored photo set", () => {
+  const adoptedPublication = publicationRepository.match(
+    /export async function publishAdoptedCatalogueRevisionAtomically[\s\S]*?function resultRows/,
+  )?.[0] ?? "";
+  assert.match(publicationRepository, /publishAdoptedCatalogueRevisionAtomically/);
+  assert.match(publicationRepository, /publication\.origin = 'CATALOGUE_ADOPTED'/);
+  assert.match(publicationRepository, /revision\.media = publication\.media/);
+  assert.match(adoptedPublication, /and item\.version = \$\{input\.expectedVersion\}[\s\S]*?inventory_ready as/);
+  assert.match(publicationRepository, /set name = \$\{input\.title\}, category = \$\{input\.category\}, price = \$\{input\.price\}/);
+  assert.doesNotMatch(
+    adoptedPublication,
+    /media = \$\{JSON\.stringify/,
+  );
+  assert.match(lifecycleService, /isCatalogueAdopted\(publication\)/);
+  assert.match(lifecyclePanel, /approved catalogue photo set stays unchanged/);
+});
+
 test("unpublish and archive fail closed around reservation and sale truth", () => {
   assert.match(lifecycleRepository, /fromInventory = input\.command === "UNPUBLISH" \? "AVAILABLE" : "ARCHIVED"/);
   assert.match(lifecycleRepository, /inventory\.on_hand = 1/);

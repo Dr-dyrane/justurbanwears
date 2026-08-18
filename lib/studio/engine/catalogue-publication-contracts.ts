@@ -23,9 +23,19 @@ export type StudioPublicationReceipt = {
   wardrobeItemId: string;
   sku: string;
   slug: string;
-  state: "PUBLISHED";
+  origin: "STUDIO_NATIVE" | "CATALOGUE_ADOPTED";
+  state: "PUBLISHED" | "UNPUBLISHED" | "ARCHIVED";
   publishedAt: string;
   shopUrl: string;
+  inventory?: {
+    availability: "AVAILABLE" | "RESERVED" | "SOLD" | "ARCHIVED";
+    onHand: number;
+    reserved: number;
+    sold: number;
+    returned: number;
+    writeOff: number;
+    updatedAt: string;
+  };
 };
 
 export type StudioPublicationReview =

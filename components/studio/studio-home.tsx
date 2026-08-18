@@ -221,7 +221,7 @@ export function StudioHome() {
               ));
               const cover = studioGarmentCover(garment, listing);
               return (
-                <Link className="studio-recent-row" href={`/studio/wardrobe/${encodeURIComponent(garment.privateWardrobeItemId ?? garment.id)}`} key={garment.id}>
+                <Link className="studio-recent-row" href={`/studio/wardrobe/${encodeURIComponent(garment.id)}`} key={garment.id}>
                   <span className={`studio-recent-media${cover ? " is-photo" : ""}`} data-variant={garment.visual} aria-hidden="true">
                     {cover ? <img alt="" height={cover.height} loading="lazy" src={cover.src} width={cover.width} /> : <Shirt size={22} strokeWidth={1.4} />}
                   </span>

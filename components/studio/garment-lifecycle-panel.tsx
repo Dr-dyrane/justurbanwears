@@ -210,7 +210,7 @@ export function GarmentLifecyclePanel({
         </form>
       ) : null}
 
-      {editable ? (
+      {editable && workspace.mediaEditable ? (
         <div className="studio-direct-capture-actions" aria-label="Replace garment photos">
           {(["GARMENT_FRONT", "GARMENT_BACK", "FABRIC_DETAIL"] as const).map((role) => (
             <label aria-disabled={Boolean(busy)} className="button button-secondary" key={role}>
@@ -221,6 +221,8 @@ export function GarmentLifecyclePanel({
           ))}
         </div>
       ) : null}
+
+      {editable && !workspace.mediaEditable ? <p className="studio-inline-state">The approved catalogue photo set stays unchanged when you edit these details.</p> : null}
 
       {workspace.draft ? (
         <section className="studio-publication-review" aria-label={`Revision ${workspace.draft.revisionNumber} review`}>

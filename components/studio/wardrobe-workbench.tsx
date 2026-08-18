@@ -151,7 +151,7 @@ function PendingProductMedia({
 }
 
 function garmentDossierHref(garment: Garment) {
-  return `/studio/wardrobe/${encodeURIComponent(garment.privateWardrobeItemId ?? garment.id)}`;
+  return `/studio/wardrobe/${encodeURIComponent(garment.id)}`;
 }
 
 function GarmentCard({ garment }: { garment: Garment }) {
