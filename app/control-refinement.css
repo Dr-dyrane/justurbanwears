@@ -212,6 +212,7 @@
 @media (max-width: 680px) {
   .studio-floating-nav {
     align-items: center;
+    display: flex;
     justify-content: center;
     min-height: 60px;
     padding: 6px;
@@ -279,6 +280,7 @@
   }
 
   .studio-mobile-tabs {
+    border-radius: 32px;
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
     min-height: 62px;

@@ -16,6 +16,7 @@ const css = readFileSync(`${root}/app/foundation.css`, "utf8");
 const atelierCss = readFileSync(`${root}/app/studio-atelier.css`, "utf8");
 const mobileCss = readFileSync(`${root}/app/mobile-experience.css`, "utf8");
 const controlCss = readFileSync(`${root}/app/control-refinement.css`, "utf8");
+const wardrobeMobileCss = readFileSync(`${root}/app/studio-mobile-wardrobe.css`, "utf8");
 const rootLayout = readFileSync(`${root}/app/layout.tsx`, "utf8");
 
 test("Studio mobile chrome exposes four direct tabs, one contextual FAB, and one profile-sheet entrance", () => {
@@ -38,9 +39,15 @@ test("Studio mobile chrome exposes four direct tabs, one contextual FAB, and one
   assert.match(settings, /\/studio\/stocktake/);
   assert.match(controlCss, /grid-template-columns: repeat\(4, minmax\(0, 1fr\)\)/);
   assert.match(controlCss, /\.studio-mobile-shell \.studio-mobile-fab[\s\S]*?display: inline-flex !important/);
+  assert.match(controlCss, /\.studio-mobile-tabs \{[\s\S]*?border-radius: 32px;/);
   assert.match(controlCss, /\.studio-profile-orb-mobile/);
   assert.match(controlCss, /\.studio-mobile-nav-title/);
+  assert.match(controlCss, /\.studio-floating-nav \{[\s\S]*?display: flex;/);
   assert.match(rootLayout, /control-refinement\.css/);
+});
+
+test("Wardrobe mobile filters never place the result count over a status", () => {
+  assert.match(wardrobeMobileCss, /#studio-view-garments > \.studio-filter-bar > span \{\s*display: none;\s*\}/);
 });
 
 test("product quick add keeps a complete circular icon and an understandable reveal", () => {

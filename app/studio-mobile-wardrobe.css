@@ -66,25 +66,13 @@
     margin-inline: 0;
     max-width: 100%;
     overscroll-behavior-inline: contain;
-    padding: 0 54px 10px 0;
-    scroll-padding-inline: 0 54px;
+    padding: 0 0 10px;
+    scroll-padding-inline: 0;
     width: 100%;
   }
 
   .studio-shell #studio-view-garments > .studio-filter-bar > span {
-    align-items: center;
-    background: var(--atelier-canvas);
-    box-shadow: -18px 0 18px var(--atelier-canvas);
-    display: inline-flex;
-    flex: 0 0 auto;
-    font-size: 11px;
-    margin-left: 0;
-    min-height: 44px;
-    padding: 0 2px 0 10px;
-    position: sticky;
-    right: 0;
-    white-space: nowrap;
-    z-index: 2;
+    display: none;
   }
 
   /* Pagination remains fully visible and has Apple-sized targets. */
