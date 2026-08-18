@@ -20,6 +20,19 @@ import "./control-refinement.css";
 const siteUrl = new URL("https://www.justurbanwears.com");
 const socialImage = new URL(BRAND_ASSETS.social.runtimeOg, siteUrl).toString();
 
+const renderedMobileExperienceCss = mobileExperienceCss.replace(
+  `  /* Studio has one contextual primary action. Navigation remains separate. */
+  .studio-mobile-fab {
+    display: none !important;
+  }
+`,
+  `  /* Studio keeps one contextual action beside the four-tab navigation. */
+  .studio-mobile-shell .studio-mobile-fab {
+    display: inline-flex !important;
+  }
+`,
+);
+
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
@@ -120,7 +133,7 @@ export default function RootLayout({
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
         <script dangerouslySetInnerHTML={{ __html: shopFocusTransitionScript }} />
-        <style data-mobile-experience>{mobileExperienceCss}</style>
+        <style data-mobile-experience>{renderedMobileExperienceCss}</style>
       </head>
       <body className="antialiased">
         <ThemeProvider>
