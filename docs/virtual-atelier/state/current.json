@@ -1,12 +1,32 @@
 {
   "schemaVersion": 1,
-  "workflowRevision": "2026-08-19.8",
-  "updatedAt": "2026-08-19T23:10:00Z",
+  "workflowRevision": "2026-08-19.9",
+  "updatedAt": "2026-08-19T23:25:00Z",
   "model": "LULU_V4",
   "activeGarment": "004",
   "activeView": "07",
   "status": "READY_FOR_004_07",
+  "canonicalFlow": {
+    "order": [
+      "GARMENT_INTAKE",
+      "REAL_FACE_AUTHORITY",
+      "BODY_CANON",
+      "LOCKED_ROOM",
+      "05_FRONT_MASTER",
+      "06_OR_07_SIBLING_VIEW"
+    ],
+    "diagram": "GARMENT -> FACE -> BODY -> ROOM -> 05 -> (06 || 07)",
+    "rule": "006 and 007 are independent sibling views branching from accepted 005 and the same canonical stack. Neither may parent, gate, or provide generation authority for the other."
+  },
   "globalLocks": {
+    "garment": {
+      "status": "LOCKED",
+      "primary": [
+        "garment.004.source",
+        "garment.004.view.05.accepted"
+      ],
+      "rule": "004 always means the same black floor-length gown with the white folded neckline. Garment intake is the first input to every view operation."
+    },
     "identity": {
       "status": "LOCKED",
       "primary": [
@@ -14,11 +34,7 @@
         "lulu.face.real.contact",
         "garment.004.view.05.accepted"
       ],
-      "secondary": [
-        "garment.004.view.06.accepted",
-        "packet.g003.v1"
-      ],
-      "rule": "Real Lulu identity and the accepted 004/05 face remain authoritative. The accepted 004/06 is a realism and continuity benchmark, not the dominant 007 generative parent."
+      "rule": "Real Lulu identity and the accepted 004/05 facial translation remain authoritative. No sibling view has identity authority over another sibling."
     },
     "body": {
       "status": "LOCKED",
@@ -44,14 +60,6 @@
         "juw.atelier.empty-plate.v1"
       ],
       "rule": "The wall icon is inherited from the locked room and may not be regenerated."
-    },
-    "garment": {
-      "status": "LOCKED",
-      "primary": [
-        "garment.004.view.05.accepted",
-        "garment.004.source"
-      ],
-      "rule": "004 always means the same black floor-length gown with the white folded neckline. View changes may reveal construction but may not redesign it."
     },
     "viewGrammar": {
       "05": "FRONT_MASTER",
@@ -93,8 +101,8 @@
       "status": "IN_PROGRESS",
       "views": {
         "05": "ACCEPTED_LOCKED",
-        "06": "ACCEPTED_LOCKED",
-        "07": "READY"
+        "06": "ACCEPTED_LOCKED_SIBLING",
+        "07": "READY_SIBLING"
       },
       "accepted05": {
         "assetId": "garment.004.view.05.accepted",
@@ -102,7 +110,8 @@
         "sha256": "a6c2f1a76c116054601b326f92ade5f9adbfd8013a8e270fa877538f76ec75fe",
         "bytes": 2202509,
         "dimensions": "1122x1402",
-        "userDecision": "LOCKED"
+        "userDecision": "LOCKED",
+        "lineageRole": "FRONT_TRANSLATION_MASTER"
       },
       "accepted06": {
         "assetId": "garment.004.view.06.accepted",
@@ -113,7 +122,9 @@
         "dimensions": "1122x1402",
         "provenance": "MODEL_REFERENCE",
         "userDecision": "ACCEPTED_LOCKED",
-        "note": "The user rejected subsequent local contour adjustments and explicitly locked the preceding clean version."
+        "lineageRole": "SIBLING_OUTPUT_ONLY",
+        "mayParent07": false,
+        "note": "The accepted 006 is preserved as its own output. It is not an input, parent, prerequisite or authority for 007."
       },
       "rejected06": [
         {
@@ -137,13 +148,18 @@
     }
   },
   "nextOperation": {
-    "operationId": "g004-v07-r001",
+    "operationId": "g004-v07-r002",
     "garmentId": "004",
     "view": "07",
     "status": "READY",
-    "parentAssets": [
-      "garment.004.view.05.accepted",
+    "lineage": "GARMENT -> FACE -> BODY -> ROOM -> 05 -> 07",
+    "explicitlyExcluded": [
       "garment.004.view.06.accepted",
+      "all rejected 006 candidates"
+    ],
+    "parentAssets": [
+      "garment.004.source",
+      "garment.004.view.05.accepted",
       "lulu.face.real.primary",
       "lulu.face.real.contact",
       "lulu.body.canon.v4",
@@ -152,6 +168,10 @@
       "juw.atelier.empty-plate.v1"
     ],
     "authorityStack": {
+      "garment": [
+        "garment.004.source",
+        "garment.004.view.05.accepted"
+      ],
       "identity": [
         "lulu.face.real.primary",
         "lulu.face.real.contact",
@@ -160,34 +180,27 @@
       "body": [
         "lulu.body.canon.v4"
       ],
-      "garment": [
-        "garment.004.view.05.accepted",
-        "garment.004.source"
-      ],
-      "pose": [
-        "packet.model.05-07.v1",
-        "packet.g003.v1"
-      ],
-      "continuityBenchmarkOnly": [
-        "garment.004.view.06.accepted"
-      ],
       "atelier": [
         "juw.atelier.empty-plate.v1"
       ],
       "brand": [
         "juw.icon.canonical"
+      ],
+      "pose": [
+        "packet.model.05-07.v1",
+        "packet.g003.v1"
       ]
     },
     "changeSet": [
-      "Create the Garment 004 right-rear three-quarter catalogue view.",
+      "Create the Garment 004 right-rear three-quarter sibling view directly from the accepted 004/05 and canonical stack.",
       "Use a garment-specific elegant variation in chin angle, shoulder openness, hand position and weight distribution while staying inside the established 07 family.",
       "Show the white folded neckline continuing correctly across the back and the black gown preserving the accepted 004 construction."
     ],
     "immutableSet": [
+      "Garment 004 identity and construction",
       "real Lulu identity",
       "accepted 004/05 facial translation",
       "Lulu V4 body canon",
-      "Garment 004 fabric, colour, neckline family, length and restrained column silhouette",
       "locked juw_room.png pixels",
       "canonical wall icon",
       "camera family, colour temperature and lighting",
@@ -204,6 +217,7 @@
       "room unchanged"
     ],
     "failureGates": [
+      "006 used as a parent or authority",
       "identity drift",
       "face beautification or substitution",
       "complete-back pose instead of right rear three-quarter",
