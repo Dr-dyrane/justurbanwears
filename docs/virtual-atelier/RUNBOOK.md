@@ -1,10 +1,27 @@
 # Virtual Atelier runbook
 
+## 0. Preflight — mandatory before any generation
+
+Hydrate the private media into a local/sandbox directory, then verify the exact files and hashes declared by the current operation.
+
+```bash
+JUW_ATELIER_MEDIA_ROOT=/mnt/data \
+  node scripts/virtual-atelier/verify-assets.mjs
+```
+
+For a local clone using the gitignored workspace:
+
+```bash
+node scripts/virtual-atelier/verify-assets.mjs --root storage/virtual-atelier
+```
+
+The preflight must return `PASS`. A missing, mismatched, or unresolved authority blocks generation. In particular, the canonical wall mark resolves to `public/brand/icon.svg`; brand campaign boards and full wordmark lockups are not valid substitutes.
+
 ## A. Start or restart a garment
 
 1. Read `AGENTS.md`, `OPERATING-CONTRACT.md`, `state/current.json`, the garment brief, and `assets/current.json`.
-2. Confirm every required logical asset is `available` and the actual operation can see it.
-3. Create the operation declaration.
+2. Run the preflight and confirm every required logical asset is present, hash-valid, and visible to the actual operation.
+3. Resolve the operation declaration.
 4. Start with one clean `05 FRONT MASTER` only.
 5. Do not discuss or generate `06` or `07` until `05` is accepted.
 6. Review the candidate against every acceptance gate.
