@@ -1,12 +1,24 @@
 {
   "schemaVersion": 1,
-  "workflowRevision": "2026-08-19.1",
-  "updatedAt": "2026-08-19T00:00:00Z",
+  "workflowRevision": "2026-08-19.2",
+  "updatedAt": "2026-08-19T16:17:00Z",
   "model": "LULU_V4",
   "activeGarment": "004",
   "activeView": "05",
   "status": "READY_FOR_05",
   "resetReason": "Garment 004 attempts accumulated identity, body, atelier, brand-icon, formatting, and view-state contamination. No 004 output is retained as an accepted parent.",
+  "latestClarification": {
+    "status": "LOCKED",
+    "statement": "The approved light catalogue room shown in accepted Garment 001 and 002 images is the atelier. Logo and identity boards were supplied only to correct the standalone icon geometry; they are not room proposals.",
+    "rejectedConcepts": [
+      "dark luxury showroom",
+      "reception counter",
+      "mirror or backroom",
+      "full logo lockup on wall",
+      "generated room-lock board",
+      "spotlight-heavy cinematic redesign"
+    ]
+  },
   "globalLocks": {
     "identity": {
       "status": "LOCKED",
@@ -22,13 +34,16 @@
     },
     "atelier": {
       "status": "LOCKED",
-      "primary": ["juw.atelier.canon"],
-      "rule": "Fixed accepted JUW set; no redesign or restaging."
+      "canonDocument": "docs/virtual-atelier/ATELIER-CANON.md",
+      "primary": ["juw.atelier.approved.001", "juw.atelier.approved.002"],
+      "continuity": ["juw.atelier.approved.003"],
+      "rule": "Reuse the approved light warm-neutral catalogue room, its composition, prop scale, camera family, colour temperature and ambience. No redesign or restaging."
     },
     "brand": {
       "status": "LOCKED",
       "primary": ["juw.icon.canonical"],
-      "rule": "Standalone canonical icon on wall only; no wordmark or approximate geometry."
+      "scope": "icon-geometry-only",
+      "rule": "Small standalone canonical icon on wall only. Brand boards and full lockups have zero room authority; no wordmark or approximate geometry."
     },
     "viewGrammar": {
       "05": "FRONT_MASTER",
@@ -43,16 +58,19 @@
   "acceptedLineage": {
     "001": {
       "status": "ACCEPTED",
-      "views": { "05": "ACCEPTED", "06": "ACCEPTED", "07": "ACCEPTED" }
+      "views": { "05": "ACCEPTED", "06": "ACCEPTED", "07": "ACCEPTED" },
+      "atelierAuthority": "PRIMARY"
     },
     "002": {
       "status": "ACCEPTED",
-      "views": { "05": "ACCEPTED", "06": "ACCEPTED", "07": "ACCEPTED" }
+      "views": { "05": "ACCEPTED", "06": "ACCEPTED", "07": "ACCEPTED" },
+      "atelierAuthority": "PRIMARY"
     },
     "003": {
       "status": "PACKETED",
       "packet": "packet.g003.v1",
-      "views": { "05": "ACCEPTED", "06": "ACCEPTED", "07": "ACCEPTED" }
+      "views": { "05": "ACCEPTED", "06": "ACCEPTED", "07": "ACCEPTED" },
+      "atelierAuthority": "CONTINUITY_VALIDATION"
     },
     "004": {
       "status": "RESET",
@@ -61,7 +79,7 @@
     }
   },
   "nextOperation": {
-    "operationId": "g004-v05-reset-r001",
+    "operationId": "g004-v05-reset-r002",
     "garmentId": "004",
     "view": "05",
     "status": "READY",
@@ -74,7 +92,7 @@
       "identity": ["lulu.face.real.primary", "lulu.face.real.contact"],
       "body": ["lulu.body.canon.v4"],
       "translation": ["packet.canon.v1.1", "packet.g003.v1"],
-      "atelier": ["juw.atelier.canon"],
+      "atelier": ["juw.atelier.approved.001", "juw.atelier.approved.002", "juw.atelier.approved.003"],
       "brand": ["juw.icon.canonical"],
       "garment": ["garment.004.front-a", "garment.004.front-b", "garment.004.full"],
       "pose": ["packet.model.05-07.v1"]
@@ -85,8 +103,10 @@
       "Lulu V4 body canon",
       "05 front pose",
       "camera distance and framing",
-      "JUW atelier",
-      "standalone canonical wall icon",
+      "approved light JUW catalogue room",
+      "warm-neutral colour temperature and soft ambience",
+      "existing vase, branch, rail, hanger, ottoman, floor and rug composition",
+      "small standalone canonical wall icon",
       "lighting",
       "one-image output format"
     ],
@@ -94,6 +114,8 @@
       "one clean full-body 004/05 image",
       "front-facing catalogue pose",
       "entire feet visible",
+      "same approved light room",
+      "small standalone icon only",
       "no text",
       "no labels",
       "no triptych",
@@ -104,7 +126,10 @@
       "body drift",
       "garment redesign",
       "atelier drift",
+      "dark showroom or reception-room substitution",
+      "colour-temperature or ambience drift",
       "icon mutation",
+      "wordmark or full lockup on wall",
       "wrong view",
       "format contamination",
       "body cropping"
