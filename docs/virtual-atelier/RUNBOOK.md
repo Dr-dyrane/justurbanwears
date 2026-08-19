@@ -15,69 +15,112 @@ For a local clone using the gitignored workspace:
 node scripts/virtual-atelier/verify-assets.mjs --root storage/virtual-atelier
 ```
 
-The preflight must return `PASS`. A missing, mismatched, or unresolved authority blocks generation. In particular, the canonical wall mark resolves to `public/brand/icon.svg`; brand campaign boards and full wordmark lockups are not valid substitutes.
+The preflight must return `PASS`. A missing, mismatched, or unresolved authority blocks generation. The canonical wall mark resolves to `public/brand/icon.svg`; brand campaign boards and full wordmark lockups are not valid substitutes.
+
+## 1. Canonical production hierarchy
+
+Every garment follows this exact authority order:
+
+```text
+GARMENT INTAKE
+→ REAL FACE AUTHORITY
+→ BODY CANON
+→ LOCKED ROOM
+→ 05 FRONT MASTER
+→ 06 OR 07 AS INDEPENDENT SIBLING VIEWS
+```
+
+The garment ID is the first input to the flow. For example, `004` always resolves to the same black floor-length gown with the white folded neckline.
+
+`06` and `07` are sibling outputs. They both branch from the accepted `05` plus the canonical garment, face, body, room and their own pose grammar.
+
+```text
+                    ┌→ 06
+GARMENT→FACE→BODY→ROOM→05
+                    └→ 07
+```
+
+Forbidden lineage:
+
+```text
+06 → 07
+07 → 06
+```
+
+An accepted sibling view may be used after generation for collection-level QA, but it must not be passed as a parent, identity authority, body authority, garment authority or pose authority for the other sibling.
 
 ## A. Start or restart a garment
 
 1. Read `AGENTS.md`, `OPERATING-CONTRACT.md`, `state/current.json`, the garment brief, and `assets/current.json`.
 2. Run the preflight and confirm every required logical asset is present, hash-valid, and visible to the actual operation.
-3. Resolve the operation declaration.
-4. Start with one clean `05 FRONT MASTER` only.
-5. Do not discuss or generate `06` or `07` until `05` is accepted.
-6. Review the candidate against every acceptance gate.
-7. Record `ACCEPTED` or `REJECTED` in state before proceeding.
+3. Resolve the garment intake first.
+4. Resolve face authority.
+5. Resolve body canon.
+6. Resolve the locked room.
+7. Create one clean `05 FRONT MASTER` only.
+8. Do not generate `06` or `07` until `05` is accepted.
+9. After `05` passes, either `06` or `07` may be produced next; they do not depend on one another.
+10. Review each candidate against every acceptance gate and record `ACCEPTED` or `REJECTED` before proceeding.
 
 ## B. Generate view 05
 
 Required authority stack:
 
 ```text
-real face authority
+current garment intake
++ real face authority
 + body canon
-+ accepted 001/002/003 translation lineage
-+ locked atelier
++ locked atelier plate
 + canonical standalone icon
-+ current garment evidence
++ accepted JUW translation lineage
 + 05 front-view grammar
 ```
 
-Mutable layer: garment only, unless the current state explicitly says the model baseline itself is being rebuilt.
+The accepted `05` becomes the current garment’s front translation master. It records how that garment, identity, body and styling resolve together.
 
 Default output: one clean full-body image, no labels or composite layout.
 
-## C. Derive view 06
+## C. Generate view 06 — sibling branch
 
 Precondition: current garment `05` is accepted and locked.
 
 Required authority stack:
 
 ```text
-accepted current-garment 05
-+ accepted 06 pose/body authority
-+ real side-body canon
-+ locked global layers
+current garment intake
++ real face authority
++ body canon
++ locked atelier plate
++ accepted current-garment 05
++ accepted 06 pose grammar
 ```
 
-Mutable layer: pose/angle only.
+Do not use `07` as a parent.
 
-`06` means strict full-body LEFT PROFILE. It is not another front pose, a three-quarter front, or a labelled panel.
+Mutable layer: view-specific pose, chin angle, shoulder openness, hand position and weight distribution, while preserving the garment story and all canonical layers.
 
-## D. Derive view 07
+`06` means a soft left profile / slight three-quarter catalogue view, not a rigid orthographic side cut, another front pose, or a labelled panel.
 
-Precondition: current garment `05` and `06` are accepted and locked.
+## D. Generate view 07 — sibling branch
+
+Precondition: current garment `05` is accepted and locked. `06` is not a precondition.
 
 Required authority stack:
 
 ```text
-accepted current-garment 05 and 06
-+ accepted 07 pose authority
-+ real rear/three-quarter body canon
-+ locked global layers
+current garment intake
++ real face authority
++ body canon
++ locked atelier plate
++ accepted current-garment 05
++ accepted 07 pose grammar
 ```
 
-Mutable layer: pose/angle only.
+Do not use `06` as a parent.
 
-`07` means full-body RIGHT REAR 3Q. It is not a complete back view.
+Mutable layer: view-specific pose, head turn, shoulder openness, hand position and weight distribution, while preserving the garment story and all canonical layers.
+
+`07` means full-body RIGHT REAR 3Q with enough look-back to preserve identity. It is not a complete back view.
 
 ## E. Local correction
 
@@ -122,44 +165,44 @@ After 05, 06, and 07 pass:
 ## G. Operation template
 
 ```yaml
-operation_id: g004-v05-r001
+operation_id: g004-v07-r001
 garment_id: "004"
-view: "05"
+view: "07"
 status: READY
 parent_assets:
-  - translation.g001.05
-  - translation.g002.05
-  - translation.g003.05
+  - garment.004.source
+  - garment.004.view.05.accepted
+  - lulu.face.real.primary
+  - lulu.face.real.contact
+  - lulu.body.canon.v4
+  - juw.atelier.empty-plate.v1
+  - view.07.pose
+# An accepted 004/06 is intentionally absent.
 authority_stack:
+  garment:
+    - garment.004.source
   identity:
     - lulu.face.real.primary
     - lulu.face.real.contact
+    - garment.004.view.05.accepted
   body:
     - lulu.body.canon.v4
-  translation:
-    - translation.g001.05
-    - translation.g002.05
-    - translation.g003.05
   atelier:
-    - juw.atelier.canon
+    - juw.atelier.empty-plate.v1
   brand:
     - juw.icon.canonical
-  garment:
-    - garment.004.front-a
-    - garment.004.front-b
-    - garment.004.full
   pose:
-    - view.05.front
+    - view.07.right-rear-3q
 change_set:
-  - garment transfer
+  - create independent 07 sibling view
 immutable_set:
   - identity
   - body
+  - garment construction
   - atelier
   - wall icon
-  - camera
+  - camera family
   - lighting
-  - 05 pose
 output_contract:
   - one clean full-body image
   - no text
@@ -172,5 +215,5 @@ failure_gates:
   - atelier drift
   - icon mutation
   - wrong view
-  - cropped body
+  - cropped or malformed body
 ```
