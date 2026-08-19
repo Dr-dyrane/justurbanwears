@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "workflowRevision": "2026-08-19.2",
-  "updatedAt": "2026-08-19T16:17:00Z",
+  "workflowRevision": "2026-08-19.3",
+  "updatedAt": "2026-08-19T16:30:00Z",
   "model": "LULU_V4",
   "activeGarment": "004",
   "activeView": "05",
-  "status": "READY_FOR_05",
+  "status": "ATELIER_PLATE_REVIEW",
   "resetReason": "Garment 004 attempts accumulated identity, body, atelier, brand-icon, formatting, and view-state contamination. No 004 output is retained as an accepted parent.",
   "latestClarification": {
     "status": "LOCKED",
@@ -22,26 +22,47 @@
   "globalLocks": {
     "identity": {
       "status": "LOCKED",
-      "primary": ["lulu.face.real.primary", "lulu.face.real.contact"],
-      "secondary": ["packet.canon.v1.1", "packet.g003.v1"],
+      "primary": [
+        "lulu.face.real.primary",
+        "lulu.face.real.contact"
+      ],
+      "secondary": [
+        "packet.canon.v1.1",
+        "packet.g003.v1"
+      ],
       "rule": "Real face authority outranks generated JUW translation references."
     },
     "body": {
       "status": "LOCKED",
-      "primary": ["lulu.body.canon.v4", "packet.model.05-07.v1"],
-      "secondary": ["packet.canon.v1.1", "packet.g003.v1"],
+      "primary": [
+        "lulu.body.canon.v4",
+        "packet.model.05-07.v1"
+      ],
+      "secondary": [
+        "packet.canon.v1.1",
+        "packet.g003.v1"
+      ],
       "rule": "Use balanced canon geometry; never translate it into generic curvy-body prose."
     },
     "atelier": {
-      "status": "LOCKED",
+      "status": "MONITOR_PASS_HUMAN_LOCK_PENDING",
       "canonDocument": "docs/virtual-atelier/ATELIER-CANON.md",
-      "primary": ["juw.atelier.approved.001", "juw.atelier.approved.002"],
-      "continuity": ["juw.atelier.approved.003"],
-      "rule": "Reuse the approved light warm-neutral catalogue room, its composition, prop scale, camera family, colour temperature and ambience. No redesign or restaging."
+      "primary": [
+        "juw.atelier.approved.001",
+        "juw.atelier.approved.002"
+      ],
+      "continuity": [
+        "juw.atelier.approved.003"
+      ],
+      "rule": "The approved room remains authoritative. The monitored empty plate may become the reusable pixel parent only after human approval.",
+      "candidateEmptyPlate": "juw.atelier.empty-plate.v1",
+      "candidateManifest": "docs/virtual-atelier/assets/atelier-empty-plate-v1.json"
     },
     "brand": {
       "status": "LOCKED",
-      "primary": ["juw.icon.canonical"],
+      "primary": [
+        "juw.icon.canonical"
+      ],
       "scope": "icon-geometry-only",
       "rule": "Small standalone canonical icon on wall only. Brand boards and full lockups have zero room authority; no wordmark or approximate geometry."
     },
@@ -58,52 +79,92 @@
   "acceptedLineage": {
     "001": {
       "status": "ACCEPTED",
-      "views": { "05": "ACCEPTED", "06": "ACCEPTED", "07": "ACCEPTED" },
+      "views": {
+        "05": "ACCEPTED",
+        "06": "ACCEPTED",
+        "07": "ACCEPTED"
+      },
       "atelierAuthority": "PRIMARY"
     },
     "002": {
       "status": "ACCEPTED",
-      "views": { "05": "ACCEPTED", "06": "ACCEPTED", "07": "ACCEPTED" },
+      "views": {
+        "05": "ACCEPTED",
+        "06": "ACCEPTED",
+        "07": "ACCEPTED"
+      },
       "atelierAuthority": "PRIMARY"
     },
     "003": {
       "status": "PACKETED",
       "packet": "packet.g003.v1",
-      "views": { "05": "ACCEPTED", "06": "ACCEPTED", "07": "ACCEPTED" },
+      "views": {
+        "05": "ACCEPTED",
+        "06": "ACCEPTED",
+        "07": "ACCEPTED"
+      },
       "atelierAuthority": "CONTINUITY_VALIDATION"
     },
     "004": {
       "status": "RESET",
-      "views": { "05": "NONE", "06": "BLOCKED", "07": "BLOCKED" },
+      "views": {
+        "05": "NONE",
+        "06": "BLOCKED",
+        "07": "BLOCKED"
+      },
       "rejectedCandidatesMayParent": false
     }
   },
   "nextOperation": {
-    "operationId": "g004-v05-reset-r002",
+    "operationId": "g004-v05-reset-r003",
     "garmentId": "004",
     "view": "05",
-    "status": "READY",
+    "status": "BLOCKED_BY_ATELIER_PLATE_HUMAN_LOCK",
     "parentAssets": [
       "packet.canon.v1.1",
       "packet.model.05-07.v1",
-      "packet.g003.v1"
+      "packet.g003.v1",
+      "juw.atelier.empty-plate.v1"
     ],
     "authorityStack": {
-      "identity": ["lulu.face.real.primary", "lulu.face.real.contact"],
-      "body": ["lulu.body.canon.v4"],
-      "translation": ["packet.canon.v1.1", "packet.g003.v1"],
-      "atelier": ["juw.atelier.approved.001", "juw.atelier.approved.002", "juw.atelier.approved.003"],
-      "brand": ["juw.icon.canonical"],
-      "garment": ["garment.004.front-a", "garment.004.front-b", "garment.004.full"],
-      "pose": ["packet.model.05-07.v1"]
+      "identity": [
+        "lulu.face.real.primary",
+        "lulu.face.real.contact"
+      ],
+      "body": [
+        "lulu.body.canon.v4"
+      ],
+      "translation": [
+        "packet.canon.v1.1",
+        "packet.g003.v1"
+      ],
+      "atelier": [
+        "juw.atelier.approved.001",
+        "juw.atelier.approved.002",
+        "juw.atelier.approved.003",
+        "juw.atelier.empty-plate.v1"
+      ],
+      "brand": [
+        "juw.icon.canonical"
+      ],
+      "garment": [
+        "garment.004.front-a",
+        "garment.004.front-b",
+        "garment.004.full"
+      ],
+      "pose": [
+        "packet.model.05-07.v1"
+      ]
     },
-    "changeSet": ["Transfer Garment 004 onto the locked Lulu V4 05 production system"],
+    "changeSet": [
+      "Transfer Garment 004 onto the locked Lulu V4 05 production system after the empty atelier plate is human-locked"
+    ],
     "immutableSet": [
       "real Lulu identity geometry",
       "Lulu V4 body canon",
       "05 front pose",
       "camera distance and framing",
-      "approved light JUW catalogue room",
+      "human-approved empty JUW atelier plate",
       "warm-neutral colour temperature and soft ambience",
       "existing vase, branch, rail, hanger, ottoman, floor and rug composition",
       "small standalone canonical wall icon",
@@ -134,5 +195,26 @@
       "format contamination",
       "body cropping"
     ]
+  },
+  "roomPlateOperation": {
+    "operationId": "atelier-empty-plate-v1-monitor-033",
+    "status": "MONITOR_PASS_HUMAN_LOCK_PENDING",
+    "sourceAuthority": "accepted 002/05 room authority",
+    "candidateAsset": "juw.atelier.empty-plate.v1",
+    "candidateFilename": "JUW_ATELIER_EMPTY_PLATE_v33.png",
+    "monitorScript": "scripts/virtual-atelier/monitor-room-plate.mjs",
+    "monitorStatus": "MONITOR_PASS",
+    "roundtripMae": 1.1430168762207031,
+    "failureGates": [
+      "wrong dimensions",
+      "icon drift",
+      "vase or branch drift",
+      "rail or garment-sequence drift",
+      "ottoman drift",
+      "rug drift",
+      "centre discontinuity",
+      "roundtrip reconstruction failure"
+    ],
+    "humanDecisionRequired": true
   }
 }
