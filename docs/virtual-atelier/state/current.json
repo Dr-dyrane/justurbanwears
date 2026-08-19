@@ -1,41 +1,47 @@
 {
   "schemaVersion": 1,
-  "workflowRevision": "2026-08-19.5",
-  "updatedAt": "2026-08-19T16:28:00Z",
+  "workflowRevision": "2026-08-19.6",
+  "updatedAt": "2026-08-19T21:45:00Z",
   "model": "LULU_V4",
   "activeGarment": "004",
   "activeView": "06",
-  "status": "REVIEW_004_06",
+  "status": "LOCAL_CORRECTION_004_06_BODY_CANON",
   "globalLocks": {
     "identity": {
       "status": "LOCKED",
       "primary": ["lulu.face.real.primary", "lulu.face.real.contact"],
-      "secondary": ["garment.004.view.05.accepted", "packet.g003.v1"]
+      "secondary": ["garment.004.view.05.accepted", "packet.g003.v1"],
+      "rule": "Do not alter the accepted 004/06 face, hairline, expression, complexion or jewelry during the body correction."
     },
     "body": {
-      "status": "LOCKED",
-      "primary": ["lulu.body.canon.v4", "garment.004.view.05.accepted"]
+      "status": "LOCKED_CANON_WITH_ONE_LOCAL_CORRECTION",
+      "primary": ["lulu.body.canon.v4", "packet.model.05-07.v1"],
+      "rule": "Correct posterior projection only to the established Lulu V4 side-body canon. Do not reinterpret the body from prose."
     },
     "atelier": {
       "status": "LOCKED",
       "primary": ["juw.atelier.empty-plate.v1"],
       "filename": "juw_room.png",
       "sha256": "0b591197d2de1b490c4305ac0aed4d1089564562c7b1005411a8340168aabb72",
-      "rule": "Exact locked room pixels outside the model composite."
+      "rule": "The room is a permanent building and must not change."
     },
     "brand": {
       "status": "LOCKED",
       "primary": ["juw.icon.canonical", "juw.atelier.empty-plate.v1"],
-      "rule": "Canonical icon is inherited from the locked room plate and is not regenerated."
+      "rule": "The wall icon is inherited from the locked room and may not be regenerated."
     },
-    "viewGrammar": {
-      "05": "FRONT_MASTER",
-      "06": "LEFT_PROFILE",
-      "07": "RIGHT_REAR_3Q"
+    "garment": {
+      "status": "LOCKED",
+      "primary": ["garment.004.view.05.accepted", "garment.004.source"],
+      "rule": "004 always means the same black floor-length gown with the white folded neckline."
+    },
+    "pose": {
+      "status": "LOCKED",
+      "rule": "Keep the accepted soft left profile / slight three-quarter pose, chin angle, shoulder openness, hand position, stance and complete grounded feet."
     },
     "outputFormat": {
       "status": "LOCKED",
-      "rule": "One clean full-resolution full-body image without labels or composite panels."
+      "rule": "One clean full-resolution image without labels, panels or crops."
     }
   },
   "acceptedLineage": {
@@ -46,7 +52,7 @@
       "status": "IN_PROGRESS",
       "views": {
         "05": "ACCEPTED_LOCKED",
-        "06": "GENERATED_REVIEW",
+        "06": "LOCAL_BODY_CORRECTION",
         "07": "BLOCKED"
       },
       "accepted05": {
@@ -57,41 +63,63 @@
         "dimensions": "1122x1402",
         "userDecision": "LOCKED"
       },
-      "candidate06": {
-        "assetId": "garment.004.view.06.candidate.v1",
-        "filename": "JUW_G004_06_LEFT_PROFILE_LOCKED_ROOM_CANDIDATE_v1.png",
-        "sha256": "be1b9fe8f775a5ad9dd111ad50979bb63d1614b9c3bb2a75b8dce2f5e032abbb",
-        "bytes": 1253856,
-        "dimensions": "1024x1280",
+      "candidate06Base": {
+        "assetId": "garment.004.view.06.candidate.v2",
+        "filename": "elegant_boutique_fashion_portrait.png",
+        "sha256": "ceb10540e81abc732734d94bd0b6508eef8a0beb501917f272dbc0705cc503db",
+        "bytes": 2261885,
+        "dimensions": "1122x1402",
         "provenance": "MODEL_REFERENCE",
-        "operationId": "g004-v06-r001",
-        "roomMethod": "foreground extraction from generated left-profile model composited onto exact locked juw_room.png pixels",
-        "status": "HUMAN_REVIEW_REQUIRED"
+        "userDecision": "PERFECT_EXCEPT_SLIGHT_POSTERIOR_CANON_ADJUSTMENT",
+        "status": "LOCKED_PARENT_FOR_LOCAL_CORRECTION"
       },
       "rejectedCandidatesMayParent": false
     }
   },
   "nextOperation": {
-    "operationId": "g004-v06-r001",
+    "operationId": "g004-v06-body-r002",
     "garmentId": "004",
     "view": "06",
-    "status": "HUMAN_REVIEW_REQUIRED",
-    "candidate": "garment.004.view.06.candidate.v1",
+    "status": "READY",
+    "parentAssets": [
+      "garment.004.view.06.candidate.v2",
+      "lulu.body.canon.v4",
+      "garment.004.view.05.accepted",
+      "juw.atelier.empty-plate.v1"
+    ],
+    "changeSet": [
+      "Adjust only the posterior silhouette from waist through glute into upper thigh to match the Lulu V4 side-body canon",
+      "Slightly soften the exaggerated upper-glute shelf and restore a smooth proportional pelvis-to-glute-to-upper-thigh transition"
+    ],
+    "immutableSet": [
+      "face and identity",
+      "hair and bun",
+      "expression and gaze",
+      "neck, shoulders, bust, arms and hands",
+      "waist position",
+      "pose and chin angle",
+      "both complete legs, feet and clear heels",
+      "Garment 004 construction, white neckline, length, seams and fabric",
+      "all room pixels, wall icon, vase, branches, rail, hanging garments, ottoman, floor and rug",
+      "camera, framing, lighting and colour temperature",
+      "output dimensions"
+    ],
     "outputContract": [
       "one clean full-body 004/06 image",
-      "strict left profile",
-      "exact locked room outside the model",
-      "same Garment 004 construction and styling",
-      "no text, labels, triptych or crop"
+      "same soft left profile / slight three-quarter pose",
+      "posterior projection matched to canon rather than exaggerated or flattened",
+      "no other visible change"
     ],
     "failureGates": [
       "identity drift",
-      "body drift",
+      "face or hair change",
+      "waist reduction",
+      "posterior overcorrection or flattening",
+      "upper-thigh thinning",
+      "pose drift",
       "garment or neckline drift",
-      "profile-angle failure",
-      "mask or compositing edge failure",
-      "floor-contact failure",
-      "room-pixel drift",
+      "feet, heel or floor-contact failure",
+      "room or icon drift",
       "format contamination"
     ]
   }
