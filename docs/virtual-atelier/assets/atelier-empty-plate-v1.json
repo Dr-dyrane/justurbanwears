@@ -1,0 +1,62 @@
+{
+  "schemaVersion": 1,
+  "id": "juw.atelier.empty-plate.v1",
+  "filename": "JUW_ATELIER_EMPTY_PLATE_v33.png",
+  "kind": "generated-output",
+  "role": "Reusable empty JUW atelier authority candidate",
+  "provenance": "MODEL_REFERENCE",
+  "privacy": "private",
+  "storage": "sandbox-transient",
+  "status": "available",
+  "humanApproval": "PENDING",
+  "sha256": "1aecb249fc8bc35b4466a500b73e03b63aaf9d655a221b8c512f29abdf77e9d4",
+  "bytes": 2426092,
+  "dimensions": {
+    "width": 1024,
+    "height": 1280
+  },
+  "authority": [
+    "atelier",
+    "brand"
+  ],
+  "sourceAuthority": {
+    "description": "Approved purple 05 front-master room",
+    "logicalRole": "accepted 002/05 room authority"
+  },
+  "monitor": {
+    "status": "MONITOR_PASS",
+    "roundtripFilename": "JUW_ATELIER_EMPTY_PLATE_v33_roundtrip.png",
+    "roundtripSha256": "9d033065b5aa423e626db53c187d617dc557f9a2d7d843292288180838b2bc8d",
+    "roundtripBytes": 1168542,
+    "roundtripMae": 1.1430168762207031,
+    "roundtripRmse": 3.694234440801469,
+    "protectedRegions": {
+      "icon": {
+        "mae": 0,
+        "ssim": 1
+      },
+      "vaseBranches": {
+        "mae": 0.00006944961337300449,
+        "ssim": 0.9999839456076067
+      },
+      "railGarments": {
+        "mae": 0.1618120298761354,
+        "ssim": 0.9967116633790751
+      },
+      "ottoman": {
+        "mae": 0.09852941176470588,
+        "ssim": 0.9987085860651222
+      },
+      "rug": {
+        "mae": 0.14838484465633334,
+        "ssim": 0.9990467516302445
+      }
+    },
+    "emptyCentreEdgeDensity": {
+      "wall": 0.002445916114790287,
+      "floor": 0.0016433859711664483,
+      "threshold": 0.003
+    }
+  },
+  "notes": "Machine monitor passed. Do not promote to locked atelier authority until the user approves the plate visually."
+}
