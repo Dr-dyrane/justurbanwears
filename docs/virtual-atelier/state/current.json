@@ -1,0 +1,113 @@
+{
+  "schemaVersion": 1,
+  "workflowRevision": "2026-08-19.1",
+  "updatedAt": "2026-08-19T00:00:00Z",
+  "model": "LULU_V4",
+  "activeGarment": "004",
+  "activeView": "05",
+  "status": "READY_FOR_05",
+  "resetReason": "Garment 004 attempts accumulated identity, body, atelier, brand-icon, formatting, and view-state contamination. No 004 output is retained as an accepted parent.",
+  "globalLocks": {
+    "identity": {
+      "status": "LOCKED",
+      "primary": ["lulu.face.real.primary", "lulu.face.real.contact"],
+      "secondary": ["packet.canon.v1.1", "packet.g003.v1"],
+      "rule": "Real face authority outranks generated JUW translation references."
+    },
+    "body": {
+      "status": "LOCKED",
+      "primary": ["lulu.body.canon.v4", "packet.model.05-07.v1"],
+      "secondary": ["packet.canon.v1.1", "packet.g003.v1"],
+      "rule": "Use balanced canon geometry; never translate it into generic curvy-body prose."
+    },
+    "atelier": {
+      "status": "LOCKED",
+      "primary": ["juw.atelier.canon"],
+      "rule": "Fixed accepted JUW set; no redesign or restaging."
+    },
+    "brand": {
+      "status": "LOCKED",
+      "primary": ["juw.icon.canonical"],
+      "rule": "Standalone canonical icon on wall only; no wordmark or approximate geometry."
+    },
+    "viewGrammar": {
+      "05": "FRONT_MASTER",
+      "06": "LEFT_PROFILE",
+      "07": "RIGHT_REAR_3Q"
+    },
+    "outputFormat": {
+      "status": "LOCKED",
+      "rule": "One clean full-resolution full-body image. No labels, triptychs, cards, footers, measurements, text, or crops."
+    }
+  },
+  "acceptedLineage": {
+    "001": {
+      "status": "ACCEPTED",
+      "views": { "05": "ACCEPTED", "06": "ACCEPTED", "07": "ACCEPTED" }
+    },
+    "002": {
+      "status": "ACCEPTED",
+      "views": { "05": "ACCEPTED", "06": "ACCEPTED", "07": "ACCEPTED" }
+    },
+    "003": {
+      "status": "PACKETED",
+      "packet": "packet.g003.v1",
+      "views": { "05": "ACCEPTED", "06": "ACCEPTED", "07": "ACCEPTED" }
+    },
+    "004": {
+      "status": "RESET",
+      "views": { "05": "NONE", "06": "BLOCKED", "07": "BLOCKED" },
+      "rejectedCandidatesMayParent": false
+    }
+  },
+  "nextOperation": {
+    "operationId": "g004-v05-reset-r001",
+    "garmentId": "004",
+    "view": "05",
+    "status": "READY",
+    "parentAssets": [
+      "packet.canon.v1.1",
+      "packet.model.05-07.v1",
+      "packet.g003.v1"
+    ],
+    "authorityStack": {
+      "identity": ["lulu.face.real.primary", "lulu.face.real.contact"],
+      "body": ["lulu.body.canon.v4"],
+      "translation": ["packet.canon.v1.1", "packet.g003.v1"],
+      "atelier": ["juw.atelier.canon"],
+      "brand": ["juw.icon.canonical"],
+      "garment": ["garment.004.front-a", "garment.004.front-b", "garment.004.full"],
+      "pose": ["packet.model.05-07.v1"]
+    },
+    "changeSet": ["Transfer Garment 004 onto the locked Lulu V4 05 production system"],
+    "immutableSet": [
+      "real Lulu identity geometry",
+      "Lulu V4 body canon",
+      "05 front pose",
+      "camera distance and framing",
+      "JUW atelier",
+      "standalone canonical wall icon",
+      "lighting",
+      "one-image output format"
+    ],
+    "outputContract": [
+      "one clean full-body 004/05 image",
+      "front-facing catalogue pose",
+      "entire feet visible",
+      "no text",
+      "no labels",
+      "no triptych",
+      "no wordmark on wall"
+    ],
+    "failureGates": [
+      "identity drift",
+      "body drift",
+      "garment redesign",
+      "atelier drift",
+      "icon mutation",
+      "wrong view",
+      "format contamination",
+      "body cropping"
+    ]
+  }
+}
