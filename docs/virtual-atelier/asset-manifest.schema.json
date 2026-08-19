@@ -15,6 +15,14 @@
         "properties": {
           "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]+$" },
           "filename": { "type": "string", "minLength": 1 },
+          "aliases": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 1 },
+            "uniqueItems": true
+          },
+          "repoPath": { "type": "string", "minLength": 1 },
+          "gitBlobSha": { "type": ["string", "null"], "pattern": "^[a-f0-9]{40}$" },
+          "required": { "type": "boolean", "default": true },
           "kind": { "enum": ["packet", "face-reference", "body-reference", "atelier-reference", "brand-reference", "garment-reference", "pose-reference", "generated-output", "manifest"] },
           "role": { "type": "string", "minLength": 1 },
           "provenance": { "enum": ["DIRECT_CAPTURE", "DERIVED_FROM_DIRECT", "MODEL_REFERENCE", "DOCUMENT"] },
@@ -32,7 +40,11 @@
           "view": { "enum": ["05", "06", "07", null] },
           "notes": { "type": "string" }
         },
-        "additionalProperties": false
+        "additionalProperties": false,
+        "anyOf": [
+          { "required": ["repoPath"] },
+          { "required": ["sha256", "bytes"] }
+        ]
       }
     }
   },
