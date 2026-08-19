@@ -1,70 +1,35 @@
 {
   "schemaVersion": 1,
-  "workflowRevision": "2026-08-19.3",
-  "updatedAt": "2026-08-19T16:30:00Z",
+  "workflowRevision": "2026-08-19.4",
+  "updatedAt": "2026-08-19T16:20:00Z",
   "model": "LULU_V4",
   "activeGarment": "004",
-  "activeView": "05",
-  "status": "ATELIER_PLATE_REVIEW",
-  "resetReason": "Garment 004 attempts accumulated identity, body, atelier, brand-icon, formatting, and view-state contamination. No 004 output is retained as an accepted parent.",
-  "latestClarification": {
-    "status": "LOCKED",
-    "statement": "The approved light catalogue room shown in accepted Garment 001 and 002 images is the atelier. Logo and identity boards were supplied only to correct the standalone icon geometry; they are not room proposals.",
-    "rejectedConcepts": [
-      "dark luxury showroom",
-      "reception counter",
-      "mirror or backroom",
-      "full logo lockup on wall",
-      "generated room-lock board",
-      "spotlight-heavy cinematic redesign"
-    ]
-  },
+  "activeView": "06",
+  "status": "READY_FOR_06",
   "globalLocks": {
     "identity": {
       "status": "LOCKED",
-      "primary": [
-        "lulu.face.real.primary",
-        "lulu.face.real.contact"
-      ],
-      "secondary": [
-        "packet.canon.v1.1",
-        "packet.g003.v1"
-      ],
-      "rule": "Real face authority outranks generated JUW translation references."
+      "primary": ["lulu.face.real.primary", "lulu.face.real.contact"],
+      "secondary": ["garment.004.view.05.accepted", "packet.g003.v1"],
+      "rule": "Real Lulu identity remains primary; accepted 004/05 governs the current garment translation."
     },
     "body": {
       "status": "LOCKED",
-      "primary": [
-        "lulu.body.canon.v4",
-        "packet.model.05-07.v1"
-      ],
-      "secondary": [
-        "packet.canon.v1.1",
-        "packet.g003.v1"
-      ],
-      "rule": "Use balanced canon geometry; never translate it into generic curvy-body prose."
+      "primary": ["lulu.body.canon.v4", "garment.004.view.05.accepted"],
+      "secondary": ["packet.model.05-07.v1", "packet.g003.v1"],
+      "rule": "Preserve the accepted 004/05 body geometry exactly while changing pose to view 06."
     },
     "atelier": {
-      "status": "MONITOR_PASS_HUMAN_LOCK_PENDING",
-      "canonDocument": "docs/virtual-atelier/ATELIER-CANON.md",
-      "primary": [
-        "juw.atelier.approved.001",
-        "juw.atelier.approved.002"
-      ],
-      "continuity": [
-        "juw.atelier.approved.003"
-      ],
-      "rule": "The approved room remains authoritative. The monitored empty plate may become the reusable pixel parent only after human approval.",
-      "candidateEmptyPlate": "juw.atelier.empty-plate.v1",
-      "candidateManifest": "docs/virtual-atelier/assets/atelier-empty-plate-v1.json"
+      "status": "LOCKED",
+      "primary": ["juw.atelier.empty-plate.v1"],
+      "filename": "juw_room.png",
+      "sha256": "0b591197d2de1b490c4305ac0aed4d1089564562c7b1005411a8340168aabb72",
+      "rule": "Use the locked empty JUW room plate without redesign, restaging, relighting or prop movement."
     },
     "brand": {
       "status": "LOCKED",
-      "primary": [
-        "juw.icon.canonical"
-      ],
-      "scope": "icon-geometry-only",
-      "rule": "Small standalone canonical icon on wall only. Brand boards and full lockups have zero room authority; no wordmark or approximate geometry."
+      "primary": ["juw.icon.canonical", "juw.atelier.empty-plate.v1"],
+      "rule": "The room plate already contains the small standalone canonical icon; do not regenerate it."
     },
     "viewGrammar": {
       "05": "FRONT_MASTER",
@@ -73,148 +38,88 @@
     },
     "outputFormat": {
       "status": "LOCKED",
-      "rule": "One clean full-resolution full-body image. No labels, triptychs, cards, footers, measurements, text, or crops."
+      "rule": "One clean full-resolution full-body image. No labels, triptychs, cards, footers, measurements, text or crops."
     }
   },
   "acceptedLineage": {
-    "001": {
-      "status": "ACCEPTED",
-      "views": {
-        "05": "ACCEPTED",
-        "06": "ACCEPTED",
-        "07": "ACCEPTED"
-      },
-      "atelierAuthority": "PRIMARY"
-    },
-    "002": {
-      "status": "ACCEPTED",
-      "views": {
-        "05": "ACCEPTED",
-        "06": "ACCEPTED",
-        "07": "ACCEPTED"
-      },
-      "atelierAuthority": "PRIMARY"
-    },
-    "003": {
-      "status": "PACKETED",
-      "packet": "packet.g003.v1",
-      "views": {
-        "05": "ACCEPTED",
-        "06": "ACCEPTED",
-        "07": "ACCEPTED"
-      },
-      "atelierAuthority": "CONTINUITY_VALIDATION"
-    },
+    "001": {"status": "ACCEPTED", "views": {"05": "ACCEPTED", "06": "ACCEPTED", "07": "ACCEPTED"}},
+    "002": {"status": "ACCEPTED", "views": {"05": "ACCEPTED", "06": "ACCEPTED", "07": "ACCEPTED"}},
+    "003": {"status": "PACKETED", "packet": "packet.g003.v1", "views": {"05": "ACCEPTED", "06": "ACCEPTED", "07": "ACCEPTED"}},
     "004": {
-      "status": "RESET",
+      "status": "IN_PROGRESS",
       "views": {
-        "05": "NONE",
-        "06": "BLOCKED",
+        "05": "ACCEPTED_LOCKED",
+        "06": "READY",
         "07": "BLOCKED"
+      },
+      "accepted05": {
+        "assetId": "garment.004.view.05.accepted",
+        "filename": "elegant_black_dress_boutique_portrait.png",
+        "sha256": "a6c2f1a76c116054601b326f92ade5f9adbfd8013a8e270fa877538f76ec75fe",
+        "bytes": 2202509,
+        "dimensions": "1122x1402",
+        "provenance": "MODEL_REFERENCE",
+        "userDecision": "LOCKED"
       },
       "rejectedCandidatesMayParent": false
     }
   },
   "nextOperation": {
-    "operationId": "g004-v05-reset-r003",
+    "operationId": "g004-v06-r001",
     "garmentId": "004",
-    "view": "05",
-    "status": "BLOCKED_BY_ATELIER_PLATE_HUMAN_LOCK",
+    "view": "06",
+    "status": "READY",
     "parentAssets": [
-      "packet.canon.v1.1",
+      "garment.004.view.05.accepted",
+      "juw.atelier.empty-plate.v1",
       "packet.model.05-07.v1",
-      "packet.g003.v1",
-      "juw.atelier.empty-plate.v1"
+      "packet.g003.v1"
     ],
     "authorityStack": {
-      "identity": [
-        "lulu.face.real.primary",
-        "lulu.face.real.contact"
-      ],
-      "body": [
-        "lulu.body.canon.v4"
-      ],
-      "translation": [
-        "packet.canon.v1.1",
-        "packet.g003.v1"
-      ],
-      "atelier": [
-        "juw.atelier.approved.001",
-        "juw.atelier.approved.002",
-        "juw.atelier.approved.003",
-        "juw.atelier.empty-plate.v1"
-      ],
-      "brand": [
-        "juw.icon.canonical"
-      ],
-      "garment": [
-        "garment.004.front-a",
-        "garment.004.front-b",
-        "garment.004.full"
-      ],
-      "pose": [
-        "packet.model.05-07.v1"
-      ]
+      "identity": ["lulu.face.real.primary", "lulu.face.real.contact", "garment.004.view.05.accepted"],
+      "body": ["lulu.body.canon.v4", "garment.004.view.05.accepted"],
+      "translation": ["garment.004.view.05.accepted", "packet.g003.v1"],
+      "atelier": ["juw.atelier.empty-plate.v1"],
+      "brand": ["juw.atelier.empty-plate.v1", "juw.icon.canonical"],
+      "garment": ["garment.004.view.05.accepted", "garment.004.front-a", "garment.004.front-b", "garment.004.full"],
+      "pose": ["packet.model.05-07.v1"]
     },
     "changeSet": [
-      "Transfer Garment 004 onto the locked Lulu V4 05 production system after the empty atelier plate is human-locked"
+      "Derive one strict full-body LEFT PROFILE 004/06 from the accepted 004/05 front master"
     ],
     "immutableSet": [
-      "real Lulu identity geometry",
-      "Lulu V4 body canon",
-      "05 front pose",
-      "camera distance and framing",
-      "human-approved empty JUW atelier plate",
-      "warm-neutral colour temperature and soft ambience",
-      "existing vase, branch, rail, hanger, ottoman, floor and rug composition",
-      "small standalone canonical wall icon",
-      "lighting",
+      "accepted Lulu face identity",
+      "accepted 004/05 body geometry",
+      "Garment 004 construction, neckline, length and fabric behaviour",
+      "locked juw_room.png pixels and composition",
+      "canonical wall icon",
+      "lighting and colour temperature",
+      "hair, jewellery and clear heels",
+      "camera family and full-body scale",
       "one-image output format"
     ],
     "outputContract": [
-      "one clean full-body 004/05 image",
-      "front-facing catalogue pose",
+      "one clean full-body 004/06 image",
+      "strict LEFT PROFILE",
       "entire feet visible",
-      "same approved light room",
-      "small standalone icon only",
+      "same locked room plate",
+      "same garment and styling",
       "no text",
       "no labels",
       "no triptych",
-      "no wordmark on wall"
+      "no crop"
     ],
     "failureGates": [
+      "not a strict left profile",
       "identity drift",
       "body drift",
       "garment redesign",
+      "neckline drift",
       "atelier drift",
-      "dark showroom or reception-room substitution",
-      "colour-temperature or ambience drift",
       "icon mutation",
-      "wordmark or full lockup on wall",
-      "wrong view",
+      "lighting drift",
       "format contamination",
       "body cropping"
     ]
-  },
-  "roomPlateOperation": {
-    "operationId": "atelier-empty-plate-v1-monitor-033",
-    "status": "MONITOR_PASS_HUMAN_LOCK_PENDING",
-    "sourceAuthority": "accepted 002/05 room authority",
-    "candidateAsset": "juw.atelier.empty-plate.v1",
-    "candidateFilename": "JUW_ATELIER_EMPTY_PLATE_v33.png",
-    "monitorScript": "scripts/virtual-atelier/monitor-room-plate.mjs",
-    "monitorStatus": "MONITOR_PASS",
-    "roundtripMae": 1.1430168762207031,
-    "failureGates": [
-      "wrong dimensions",
-      "icon drift",
-      "vase or branch drift",
-      "rail or garment-sequence drift",
-      "ottoman drift",
-      "rug drift",
-      "centre discontinuity",
-      "roundtrip reconstruction failure"
-    ],
-    "humanDecisionRequired": true
   }
 }
