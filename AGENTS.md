@@ -7,10 +7,11 @@ This file governs every AI-assisted task in this repository. It is especially st
 Before any model, garment, catalogue-media, identity, body, atelier, branding, or view-generation task, read:
 
 1. `docs/virtual-atelier/OPERATING-CONTRACT.md`
-2. `docs/virtual-atelier/state/current.json`
-3. The active garment brief under `docs/virtual-atelier/garments/`
-4. `docs/virtual-atelier/assets/current.json`
-5. `docs/virtual-atelier/RUNBOOK.md`
+2. `docs/virtual-atelier/ATELIER-CANON.md`
+3. `docs/virtual-atelier/state/current.json`
+4. The active garment brief under `docs/virtual-atelier/garments/`
+5. `docs/virtual-atelier/assets/current.json`
+6. `docs/virtual-atelier/RUNBOOK.md`
 
 Do not act from the latest user sentence alone. The repository state is the durable production memory.
 
@@ -18,8 +19,8 @@ Do not act from the latest user sentence alone. The repository state is the dura
 
 1. **Real identity first.** Real Lulu face references are the primary identity authority. Generated JUW faces are translation guidance only.
 2. **Body canon is authoritative.** Do not reinterpret Lulu's body from descriptive words such as “curvy,” “hourglass,” or “full.” Use the approved body canon and its accepted geometry.
-3. **The atelier is a fixed set.** Do not redesign, relight, brighten, restage, or regenerate the accepted JUW room unless the user explicitly unlocks the atelier layer.
-4. **The wall mark is the standalone canonical JUW icon only.** Never add `justurban`, `wears`, `BY LULU`, substitute lettering, circles, triangles, or approximate geometry to the wall.
+3. **The atelier is the approved light catalogue room.** The accepted Garment 001/002 imagery defines its layout, warm-neutral colour temperature, ambience, props and camera family. Never replace it with a dark showroom, reception counter, mirror, backroom, shelving, spotlight board or any newly designed boutique.
+4. **Brand references control the icon only.** The wall mark is the small standalone canonical JUW icon. Never add `justurban`, `wears`, `BY LULU`, substitute lettering, circles, triangles, approximate geometry, or use a full logo-lockup image as room authority.
 5. **Garment references control the garment only.** They have no authority over identity, body, room, branding, camera, pose, or styling unless explicitly granted.
 6. **View grammar is fixed.** `05 = FRONT MASTER`; `06 = LEFT PROFILE`; `07 = RIGHT REAR 3Q`, never a complete back view.
 7. **Accepted means immutable.** A locked layer may not be regenerated to fix another layer. A local correction must list the exact mutable region and preserve all other accepted pixels/concepts.
