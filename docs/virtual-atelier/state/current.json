@@ -1,38 +1,55 @@
 {
   "schemaVersion": 1,
-  "workflowRevision": "2026-08-19.6",
-  "updatedAt": "2026-08-19T21:45:00Z",
+  "workflowRevision": "2026-08-19.7",
+  "updatedAt": "2026-08-19T23:18:00Z",
   "model": "LULU_V4",
   "activeGarment": "004",
   "activeView": "06",
-  "status": "LOCAL_CORRECTION_004_06_BODY_CANON",
+  "status": "REVIEW_004_06_BODY_CANON",
   "globalLocks": {
     "identity": {
       "status": "LOCKED",
-      "primary": ["lulu.face.real.primary", "lulu.face.real.contact"],
-      "secondary": ["garment.004.view.05.accepted", "packet.g003.v1"],
-      "rule": "Do not alter the accepted 004/06 face, hairline, expression, complexion or jewelry during the body correction."
+      "primary": [
+        "lulu.face.real.primary",
+        "lulu.face.real.contact"
+      ],
+      "secondary": [
+        "garment.004.view.05.accepted",
+        "packet.g003.v1"
+      ],
+      "rule": "The accepted 004/06 face, hairline, expression, complexion and jewelry remain unchanged."
     },
     "body": {
-      "status": "LOCKED_CANON_WITH_ONE_LOCAL_CORRECTION",
-      "primary": ["lulu.body.canon.v4", "packet.model.05-07.v1"],
-      "rule": "Correct posterior projection only to the established Lulu V4 side-body canon. Do not reinterpret the body from prose."
+      "status": "LOCKED",
+      "primary": [
+        "lulu.body.canon.v4",
+        "packet.model.05-07.v1"
+      ],
+      "rule": "Posterior geometry is governed by the Lulu V4 side-body canon, not generic body-shape prose."
     },
     "atelier": {
       "status": "LOCKED",
-      "primary": ["juw.atelier.empty-plate.v1"],
+      "primary": [
+        "juw.atelier.empty-plate.v1"
+      ],
       "filename": "juw_room.png",
       "sha256": "0b591197d2de1b490c4305ac0aed4d1089564562c7b1005411a8340168aabb72",
       "rule": "The room is a permanent building and must not change."
     },
     "brand": {
       "status": "LOCKED",
-      "primary": ["juw.icon.canonical", "juw.atelier.empty-plate.v1"],
+      "primary": [
+        "juw.icon.canonical",
+        "juw.atelier.empty-plate.v1"
+      ],
       "rule": "The wall icon is inherited from the locked room and may not be regenerated."
     },
     "garment": {
       "status": "LOCKED",
-      "primary": ["garment.004.view.05.accepted", "garment.004.source"],
+      "primary": [
+        "garment.004.view.05.accepted",
+        "garment.004.source"
+      ],
       "rule": "004 always means the same black floor-length gown with the white folded neckline."
     },
     "pose": {
@@ -45,14 +62,36 @@
     }
   },
   "acceptedLineage": {
-    "001": {"status": "ACCEPTED", "views": {"05": "ACCEPTED", "06": "ACCEPTED", "07": "ACCEPTED"}},
-    "002": {"status": "ACCEPTED", "views": {"05": "ACCEPTED", "06": "ACCEPTED", "07": "ACCEPTED"}},
-    "003": {"status": "PACKETED", "packet": "packet.g003.v1", "views": {"05": "ACCEPTED", "06": "ACCEPTED", "07": "ACCEPTED"}},
+    "001": {
+      "status": "ACCEPTED",
+      "views": {
+        "05": "ACCEPTED",
+        "06": "ACCEPTED",
+        "07": "ACCEPTED"
+      }
+    },
+    "002": {
+      "status": "ACCEPTED",
+      "views": {
+        "05": "ACCEPTED",
+        "06": "ACCEPTED",
+        "07": "ACCEPTED"
+      }
+    },
+    "003": {
+      "status": "PACKETED",
+      "packet": "packet.g003.v1",
+      "views": {
+        "05": "ACCEPTED",
+        "06": "ACCEPTED",
+        "07": "ACCEPTED"
+      }
+    },
     "004": {
       "status": "IN_PROGRESS",
       "views": {
         "05": "ACCEPTED_LOCKED",
-        "06": "LOCAL_BODY_CORRECTION",
+        "06": "GENERATED_REVIEW",
         "07": "BLOCKED"
       },
       "accepted05": {
@@ -71,8 +110,32 @@
         "dimensions": "1122x1402",
         "provenance": "MODEL_REFERENCE",
         "userDecision": "PERFECT_EXCEPT_SLIGHT_POSTERIOR_CANON_ADJUSTMENT",
-        "status": "LOCKED_PARENT_FOR_LOCAL_CORRECTION"
+        "status": "LOCKED_EDIT_PARENT"
       },
+      "candidate06Adjusted": {
+        "assetId": "garment.004.view.06.candidate.v3",
+        "filename": "JUW_G004_06_BODY_CANON_ADJUST_A12.png",
+        "sha256": "3be2385a868ef656558bbcb524d0992d72476ac9d67fff8578171a8d94d9ad6c",
+        "bytes": 2489491,
+        "dimensions": "1122x1402",
+        "provenance": "MODEL_REFERENCE",
+        "operationId": "g004-v06-body-r002",
+        "method": "Deterministic local horizontal mesh warp of the accepted edit parent; maximum displacement 12px, tapered through the lower-back, glute and upper-thigh zone. No generative resynthesis.",
+        "editBounds": {
+          "xMin": 555,
+          "xMax": 820,
+          "yMin": 430,
+          "yMax": 860
+        },
+        "status": "HUMAN_REVIEW_REQUIRED"
+      },
+      "rejected06": [
+        {
+          "filename": "a_well_lit_indoor_studio_retail_fashion_scene_a_w.png",
+          "status": "REJECTED",
+          "reason": "Fresh synthesis changed room, icon and unrelated locked layers."
+        }
+      ],
       "rejectedCandidatesMayParent": false
     }
   },
@@ -80,28 +143,22 @@
     "operationId": "g004-v06-body-r002",
     "garmentId": "004",
     "view": "06",
-    "status": "READY",
-    "parentAssets": [
-      "garment.004.view.06.candidate.v2",
-      "lulu.body.canon.v4",
-      "garment.004.view.05.accepted",
-      "juw.atelier.empty-plate.v1"
-    ],
+    "status": "HUMAN_REVIEW_REQUIRED",
+    "candidate": "garment.004.view.06.candidate.v3",
     "changeSet": [
-      "Adjust only the posterior silhouette from waist through glute into upper thigh to match the Lulu V4 side-body canon",
-      "Slightly soften the exaggerated upper-glute shelf and restore a smooth proportional pelvis-to-glute-to-upper-thigh transition"
+      "Slightly soften the exaggerated upper-glute shelf and match the posterior projection to the Lulu V4 side-body canon.",
+      "Restore a smooth proportional lower-back to pelvis to glute to upper-thigh transition."
     ],
     "immutableSet": [
       "face and identity",
       "hair and bun",
       "expression and gaze",
       "neck, shoulders, bust, arms and hands",
-      "waist position",
+      "waist position and torso length",
       "pose and chin angle",
       "both complete legs, feet and clear heels",
-      "Garment 004 construction, white neckline, length, seams and fabric",
-      "all room pixels, wall icon, vase, branches, rail, hanging garments, ottoman, floor and rug",
-      "camera, framing, lighting and colour temperature",
+      "Garment 004 construction, white neckline, length, seams and fabric outside the local body zone",
+      "all room elements, icon, camera, framing, lighting and colour temperature",
       "output dimensions"
     ],
     "outputContract": [
