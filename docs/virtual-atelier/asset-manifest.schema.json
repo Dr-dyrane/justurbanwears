@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://justurbanwears.com/schemas/virtual-atelier-asset-manifest.schema.json",
+  "title": "JUW Virtual Atelier asset manifest",
+  "type": "object",
+  "required": ["schemaVersion", "updatedAt", "assets"],
+  "properties": {
+    "schemaVersion": { "type": "integer", "minimum": 1 },
+    "updatedAt": { "type": "string", "format": "date-time" },
+    "assets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "filename", "kind", "role", "provenance", "privacy", "storage", "status"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9._-]+$" },
+          "filename": { "type": "string", "minLength": 1 },
+          "kind": { "enum": ["packet", "face-reference", "body-reference", "atelier-reference", "brand-reference", "garment-reference", "pose-reference", "generated-output", "manifest"] },
+          "role": { "type": "string", "minLength": 1 },
+          "provenance": { "enum": ["DIRECT_CAPTURE", "DERIVED_FROM_DIRECT", "MODEL_REFERENCE", "DOCUMENT"] },
+          "privacy": { "enum": ["private", "public-approved"] },
+          "storage": { "enum": ["sandbox-transient", "repo-storage-ignored", "private-vault", "github-public-approved", "missing"] },
+          "status": { "enum": ["available", "missing", "archived", "superseded", "rejected"] },
+          "sha256": { "type": ["string", "null"], "pattern": "^[a-f0-9]{64}$" },
+          "bytes": { "type": ["integer", "null"], "minimum": 0 },
+          "authority": {
+            "type": "array",
+            "items": { "enum": ["identity", "body", "translation", "atelier", "brand", "garment", "pose", "output"] },
+            "uniqueItems": true
+          },
+          "garmentId": { "type": ["string", "null"] },
+          "view": { "enum": ["05", "06", "07", null] },
+          "notes": { "type": "string" }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}
