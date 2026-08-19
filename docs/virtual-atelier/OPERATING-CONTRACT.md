@@ -2,7 +2,52 @@
 
 This is the normative contract for JUW model-reference generation. When another document conflicts with this file, this file and `state/current.json` govern.
 
+## 0. Canonical production hierarchy
+
+Every garment follows this exact order:
+
+```text
+GARMENT INTAKE
+→ REAL FACE AUTHORITY
+→ BODY CANON
+→ LOCKED ROOM
+→ 05 FRONT MASTER
+→ 06 OR 07 AS INDEPENDENT SIBLING VIEWS
+```
+
+The garment ID is the first input to the main flow. It resolves the garment construction before identity, body, room or view generation begins.
+
+`05` is the front translation master for the current garment.
+
+`06` and `07` are sibling branches from the accepted `05` and the same canonical stack:
+
+```text
+                    ┌→ 06
+GARMENT→FACE→BODY→ROOM→05
+                    └→ 07
+```
+
+Neither sibling may parent the other. `06 → 07` and `07 → 06` are forbidden production lineages. An accepted sibling may be inspected later for collection coherence, but it has no generation authority over the other sibling.
+
 ## 1. Authority layers
+
+### Garment intake
+
+The current garment evidence is resolved first and controls:
+
+- garment identity and ID
+- construction
+- neckline
+- sleeve/strap structure
+- seams and panels
+- waist placement
+- hem and length
+- fabric behavior
+- color and surface details
+
+For example, `004` always means the same long black gown with the white folded neckline. A change of view does not create a new garment.
+
+Garment evidence has zero authority over Lulu, her body, the room, the plaque, camera, pose, styling, or lighting unless the operation declaration explicitly grants it.
 
 ### Identity
 
@@ -20,15 +65,9 @@ Controls torso-to-leg ratio, shoulder and arm volume, bust, waist position, wais
 
 Do not convert the canon into prose such as “make her curvier.” Use the canon as geometry. Do not enlarge one characteristic at the expense of proportional balance.
 
-### JUW translation lineage
-
-Accepted Garments 001, 002, and 003 demonstrate the catalogue's stable photographic family: recognizable Lulu, body balance, camera distance, posture, lighting, accessories, and room composition across different garments.
-
-These are consensus examples, not substitutes for the real identity or body canon.
-
 ### Atelier
 
-The atelier is a locked environment:
+The atelier is a locked environment and permanent building:
 
 - warm cream/beige wall
 - restrained warm directional light with natural falloff
@@ -54,25 +93,18 @@ Forbidden on the wall: `justurban`, `wears`, `BY LULU`, `JUW`, `JW`, circles, tr
 
 Brand campaign references control brand geometry only. They do not control room composition or permit a full lockup on the wall.
 
-### Garment
+### JUW translation lineage
 
-Current garment evidence controls:
+Accepted Garments 001, 002, and 003 demonstrate the catalogue's stable photographic family: recognizable Lulu, body balance, camera distance, posture, lighting, accessories, and room composition across different garments.
 
-- garment construction
-- neckline
-- sleeve/strap structure
-- seams and panels
-- waist placement
-- hem and length
-- fabric behavior
-- color and surface details
+For the active garment, accepted `05` is the garment-specific front translation master.
 
-Garment evidence has zero authority over Lulu, her body, the room, the plaque, camera, pose, styling, or lighting unless the operation declaration explicitly grants it.
+Accepted `06` and `07` remain sibling outputs. Neither is a translation authority for generating the other.
 
 ### View grammar
 
 - `05` — clean full-body FRONT MASTER
-- `06` — clean full-body LEFT PROFILE
+- `06` — clean full-body SOFT LEFT PROFILE / SLIGHT 3Q
 - `07` — clean full-body RIGHT REAR 3Q with look-back where established; never a complete back view
 
 A view number is a production instruction, not a label to render into the image.
@@ -85,7 +117,8 @@ Examples:
 
 - Fixing the face may not regenerate body, garment, atelier, icon, pose, or lighting.
 - Fixing the icon may not regenerate Lulu or the room.
-- Creating `06` changes pose/angle only after `05` passes.
+- Creating `06` changes only the view-specific pose after `05` passes.
+- Creating `07` changes only the view-specific pose after `05` passes; `06` is not its parent or precondition.
 - A garment detail correction may not restyle the garment or change accessories.
 
 If the available tool cannot isolate the requested change, stop and disclose the limitation before generation. Do not simulate a local edit with a full-scene synthesis while calling the other layers “locked.”
@@ -100,12 +133,12 @@ garment_id: NNN
 view: "05 | 06 | 07"
 parent_assets: []
 authority_stack:
+  garment: []
   identity: []
   body: []
   translation: []
   atelier: []
   brand: []
-  garment: []
   pose: []
 change_set: []
 immutable_set: []
@@ -114,6 +147,8 @@ failure_gates: []
 ```
 
 No operation proceeds with unresolved required assets.
+
+For `06` and `07`, the sibling view must not appear in `parent_assets` or any authority list.
 
 ## 4. Output contract
 
@@ -135,6 +170,10 @@ Unless the user explicitly requests otherwise:
 
 An output passes only if all applicable gates pass simultaneously.
 
+### Garment gate
+
+Construction matches the garment authority. No simplification, redesign, recoloring, couture upgrade, or mannequin-room inheritance.
+
 ### Identity gate
 
 Immediately reads as Lulu. No generic editorial substitution, facial narrowing, beautification, ethnicity drift, complexion drift, or age drift.
@@ -143,13 +182,9 @@ Immediately reads as Lulu. No generic editorial substitution, facial narrowing, 
 
 Matches the canon as a balanced whole. No elongated torso, reduced thighs, caricatured waist, isolated glute exaggeration, inflated arms, or runway-model reinterpretation.
 
-### Garment gate
-
-Construction matches the garment authority. No simplification, redesign, recoloring, couture upgrade, or mannequin-room inheritance.
-
 ### Atelier gate
 
-Same JUW set, not a newly generated interpretation of a warm boutique.
+Same locked JUW room, not a newly generated interpretation of a warm boutique.
 
 ### Brand gate
 
@@ -158,6 +193,10 @@ Exact standalone canonical icon only.
 ### View gate
 
 The requested 05/06/07 grammar is unambiguous and complete.
+
+### Lineage gate
+
+`06` and `07` must each descend from `05` and the canonical stack, never from each other.
 
 ### Format gate
 
