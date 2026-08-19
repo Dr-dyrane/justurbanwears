@@ -1,35 +1,32 @@
 {
   "schemaVersion": 1,
-  "workflowRevision": "2026-08-19.4",
-  "updatedAt": "2026-08-19T16:20:00Z",
+  "workflowRevision": "2026-08-19.5",
+  "updatedAt": "2026-08-19T16:28:00Z",
   "model": "LULU_V4",
   "activeGarment": "004",
   "activeView": "06",
-  "status": "READY_FOR_06",
+  "status": "REVIEW_004_06",
   "globalLocks": {
     "identity": {
       "status": "LOCKED",
       "primary": ["lulu.face.real.primary", "lulu.face.real.contact"],
-      "secondary": ["garment.004.view.05.accepted", "packet.g003.v1"],
-      "rule": "Real Lulu identity remains primary; accepted 004/05 governs the current garment translation."
+      "secondary": ["garment.004.view.05.accepted", "packet.g003.v1"]
     },
     "body": {
       "status": "LOCKED",
-      "primary": ["lulu.body.canon.v4", "garment.004.view.05.accepted"],
-      "secondary": ["packet.model.05-07.v1", "packet.g003.v1"],
-      "rule": "Preserve the accepted 004/05 body geometry exactly while changing pose to view 06."
+      "primary": ["lulu.body.canon.v4", "garment.004.view.05.accepted"]
     },
     "atelier": {
       "status": "LOCKED",
       "primary": ["juw.atelier.empty-plate.v1"],
       "filename": "juw_room.png",
       "sha256": "0b591197d2de1b490c4305ac0aed4d1089564562c7b1005411a8340168aabb72",
-      "rule": "Use the locked empty JUW room plate without redesign, restaging, relighting or prop movement."
+      "rule": "Exact locked room pixels outside the model composite."
     },
     "brand": {
       "status": "LOCKED",
       "primary": ["juw.icon.canonical", "juw.atelier.empty-plate.v1"],
-      "rule": "The room plate already contains the small standalone canonical icon; do not regenerate it."
+      "rule": "Canonical icon is inherited from the locked room plate and is not regenerated."
     },
     "viewGrammar": {
       "05": "FRONT_MASTER",
@@ -38,7 +35,7 @@
     },
     "outputFormat": {
       "status": "LOCKED",
-      "rule": "One clean full-resolution full-body image. No labels, triptychs, cards, footers, measurements, text or crops."
+      "rule": "One clean full-resolution full-body image without labels or composite panels."
     }
   },
   "acceptedLineage": {
@@ -49,7 +46,7 @@
       "status": "IN_PROGRESS",
       "views": {
         "05": "ACCEPTED_LOCKED",
-        "06": "READY",
+        "06": "GENERATED_REVIEW",
         "07": "BLOCKED"
       },
       "accepted05": {
@@ -58,8 +55,18 @@
         "sha256": "a6c2f1a76c116054601b326f92ade5f9adbfd8013a8e270fa877538f76ec75fe",
         "bytes": 2202509,
         "dimensions": "1122x1402",
-        "provenance": "MODEL_REFERENCE",
         "userDecision": "LOCKED"
+      },
+      "candidate06": {
+        "assetId": "garment.004.view.06.candidate.v1",
+        "filename": "JUW_G004_06_LEFT_PROFILE_LOCKED_ROOM_CANDIDATE_v1.png",
+        "sha256": "be1b9fe8f775a5ad9dd111ad50979bb63d1614b9c3bb2a75b8dce2f5e032abbb",
+        "bytes": 1253856,
+        "dimensions": "1024x1280",
+        "provenance": "MODEL_REFERENCE",
+        "operationId": "g004-v06-r001",
+        "roomMethod": "foreground extraction from generated left-profile model composited onto exact locked juw_room.png pixels",
+        "status": "HUMAN_REVIEW_REQUIRED"
       },
       "rejectedCandidatesMayParent": false
     }
@@ -68,58 +75,24 @@
     "operationId": "g004-v06-r001",
     "garmentId": "004",
     "view": "06",
-    "status": "READY",
-    "parentAssets": [
-      "garment.004.view.05.accepted",
-      "juw.atelier.empty-plate.v1",
-      "packet.model.05-07.v1",
-      "packet.g003.v1"
-    ],
-    "authorityStack": {
-      "identity": ["lulu.face.real.primary", "lulu.face.real.contact", "garment.004.view.05.accepted"],
-      "body": ["lulu.body.canon.v4", "garment.004.view.05.accepted"],
-      "translation": ["garment.004.view.05.accepted", "packet.g003.v1"],
-      "atelier": ["juw.atelier.empty-plate.v1"],
-      "brand": ["juw.atelier.empty-plate.v1", "juw.icon.canonical"],
-      "garment": ["garment.004.view.05.accepted", "garment.004.front-a", "garment.004.front-b", "garment.004.full"],
-      "pose": ["packet.model.05-07.v1"]
-    },
-    "changeSet": [
-      "Derive one strict full-body LEFT PROFILE 004/06 from the accepted 004/05 front master"
-    ],
-    "immutableSet": [
-      "accepted Lulu face identity",
-      "accepted 004/05 body geometry",
-      "Garment 004 construction, neckline, length and fabric behaviour",
-      "locked juw_room.png pixels and composition",
-      "canonical wall icon",
-      "lighting and colour temperature",
-      "hair, jewellery and clear heels",
-      "camera family and full-body scale",
-      "one-image output format"
-    ],
+    "status": "HUMAN_REVIEW_REQUIRED",
+    "candidate": "garment.004.view.06.candidate.v1",
     "outputContract": [
       "one clean full-body 004/06 image",
-      "strict LEFT PROFILE",
-      "entire feet visible",
-      "same locked room plate",
-      "same garment and styling",
-      "no text",
-      "no labels",
-      "no triptych",
-      "no crop"
+      "strict left profile",
+      "exact locked room outside the model",
+      "same Garment 004 construction and styling",
+      "no text, labels, triptych or crop"
     ],
     "failureGates": [
-      "not a strict left profile",
       "identity drift",
       "body drift",
-      "garment redesign",
-      "neckline drift",
-      "atelier drift",
-      "icon mutation",
-      "lighting drift",
-      "format contamination",
-      "body cropping"
+      "garment or neckline drift",
+      "profile-angle failure",
+      "mask or compositing edge failure",
+      "floor-contact failure",
+      "room-pixel drift",
+      "format contamination"
     ]
   }
 }
