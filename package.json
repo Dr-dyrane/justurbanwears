@@ -43,7 +43,8 @@
     "db:shop:sync:descriptive": "node scripts/shop-db/catalogue.mjs descriptive-sync",
     "shop:release:dry-run": "node scripts/shop-db/release.mjs check",
     "shop:db:verify": "node scripts/shop-db/catalogue.mjs verify",
-    "blob:sync:shop": "node scripts/shop-media/blob-sync.mjs --summary"
+    "blob:sync:shop": "node scripts/shop-media/blob-sync.mjs --summary",
+    "atelier:monitor:room": "node scripts/virtual-atelier/monitor-room-plate.mjs"
   },
   "dependencies": {
     "@fontsource-variable/bodoni-moda": "^5.3.0",
