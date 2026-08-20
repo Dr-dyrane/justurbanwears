@@ -33,6 +33,25 @@ Real Lulu material defines identity and body. Approved JUW imagery defines how t
 
 During an active session these may be mounted in the sandbox or placed under the local gitignored `/storage/` directory.
 
+The current private V4 authority is organized as:
+
+```text
+storage/models/konan/canon/v4/
+├── authority-manifest.json
+├── CANON_LOCK.txt
+├── LULU_V4_BODY_ANGLE_CONTACT.jpg
+├── LULU_V4_BODY_CANON_SOURCE.png
+├── LULU_V4_BODY_THREE_VIEW_CANON.png
+└── face/
+    ├── manifest.json
+    ├── FACE_PRIMARY_CONTACT.jpg
+    ├── LULU_V4_FACE_RAW_FRONTAL_CLOSEUP_EYES_CLOSED.jpg
+    ├── LULU_V4_FACE_RAW_LEFT_THREE_QUARTER_OPEN_EYES.jpg
+    └── LULU_V4_FACE_FRONT_LOCK.png
+```
+
+Accepted Drop 2 garment-specific masters remain under `storage/garments/drop-02/<garment>/locked/`. They are continuity references for their garments, not universal real-person identity evidence.
+
 **Sandbox is not archival storage.** It is a transient working cache. Before ending a production cycle, canonical private media must be copied to a durable private vault such as encrypted Drive/object storage or a private media repository. This public repository should retain only the logical ID, filename, byte size, SHA-256 checksum, provenance, role, privacy class, and storage status.
 
 ## Directory map
@@ -83,7 +102,7 @@ Running the same operation declaration should target the same production state. 
 
 ## Current restart position
 
-Garments 001, 002, and 003 remain accepted lineage. Garment 004 is intentionally reset to `READY_FOR_05`; none of the prior 004 candidates is an accepted parent. The next valid operation is a single clean `004/05 FRONT MASTER` generated from the documented authority stack.
+Garments 001, 002, and 003 remain accepted lineage. Garment 004 is `COMPLETE_LOCKED` and packeted: `004/05` is the front master, while `004/06` and `004/07` are accepted sibling views branching independently from `004/05`. There is no pending Garment 004 generation operation. The neutral V4 face-front candidate is now explicitly approved and locked as the public translation asset at `/lulu.png`. It may parent downstream V4 renders, while the verified real Lulu photographs remain the dominant identity truth.
 
 ## Human approval
 

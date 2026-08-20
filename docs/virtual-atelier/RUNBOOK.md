@@ -17,6 +17,8 @@ node scripts/virtual-atelier/verify-assets.mjs --root storage/virtual-atelier
 
 The preflight must return `PASS`. A missing, mismatched, or unresolved authority blocks generation. The canonical wall mark resolves to `public/brand/icon.svg`; brand campaign boards and full wordmark lockups are not valid substitutes.
 
+For private V4 work, also read and hash-check `storage/models/konan/canon/v4/authority-manifest.json`. The private manifest is authoritative for pixel paths, lineage and permissions; `docs/virtual-atelier/assets/current.json` is the public logical index.
+
 ## 1. Canonical production hierarchy
 
 Every garment follows this exact authority order:
@@ -54,13 +56,15 @@ An accepted sibling view may be used after generation for collection-level QA, b
 1. Read `AGENTS.md`, `OPERATING-CONTRACT.md`, `state/current.json`, the garment brief, and `assets/current.json`.
 2. Run the preflight and confirm every required logical asset is present, hash-valid, and visible to the actual operation.
 3. Resolve the garment intake first.
-4. Resolve face authority.
-5. Resolve body canon.
-6. Resolve the locked room.
-7. Create one clean `05 FRONT MASTER` only.
-8. Do not generate `06` or `07` until `05` is accepted.
-9. After `05` passes, either `06` or `07` may be produced next; they do not depend on one another.
-10. Review each candidate against every acceptance gate and record `ACCEPTED` or `REJECTED` before proceeding.
+4. Resolve face authority from the raw photographs, real-photo front lock and F01–F10 multi-angle contact; use accepted 001/05 and 004/05 only as translation guidance.
+5. Run the face gate. If identity fails, stop before body.
+6. Resolve body evidence and the V4 modeled geometry controls.
+7. Run the body gate while preserving the accepted face.
+8. Resolve the locked room and run the room/scale/icon gate without regenerating Lulu.
+9. Create one clean `05 FRONT MASTER` only.
+10. Do not generate `06` or `07` until `05` is accepted.
+11. After `05` passes, either `06` or `07` may be produced next; they do not depend on one another.
+12. Review each candidate against every acceptance gate and record `ACCEPTED` or `REJECTED` before proceeding.
 
 ## B. Generate view 05
 
@@ -131,7 +135,8 @@ Use this path when the user asks to fix one element.
 3. List the mutable region/property.
 4. List every immutable layer.
 5. Confirm the tool can actually isolate the edit.
-6. If isolation is unavailable, stop. Do not perform a full regeneration and call it a local correction.
+6. Change one variable and allow at most one bounded correction for that candidate.
+7. If isolation is unavailable or the correction fails, stop and reject the candidate. Do not perform a full regeneration and call it a local correction.
 
 Example:
 
@@ -151,7 +156,23 @@ immutable_set:
   - output dimensions
 ```
 
-## F. Packaging
+## F. Semantic export mapping
+
+Use semantic roles as the source of truth:
+
+```text
+01 GARMENT_FRONT
+02 GARMENT_BACK
+03 MANNEQUIN_FRONT
+04 FABRIC_DETAIL
+05 MODEL_FRONT
+06 MODEL_LEFT_PROFILE
+07 MODEL_REAR_THREE_QUARTER
+```
+
+Historical Shop filenames differ: model front was `04`, model rear three-quarter was `05`, fabric detail was `06`, and model left profile was `07`. Before database sync or public export, map by semantic role rather than copying numeric slots.
+
+## G. Packaging
 
 After 05, 06, and 07 pass:
 
@@ -162,7 +183,7 @@ After 05, 06, and 07 pass:
 5. Mark the garment `PACKETED` in state.
 6. Never place rejected candidates in the packet.
 
-## G. Operation template
+## H. Operation template
 
 ```yaml
 operation_id: g004-v07-r001
@@ -170,23 +191,35 @@ garment_id: "004"
 view: "07"
 status: READY
 parent_assets:
-  - garment.004.source
+  - garment.004.front-a
+  - garment.004.front-b
+  - garment.004.full
   - garment.004.view.05.accepted
   - lulu.face.real.primary
-  - lulu.face.real.contact
+  - lulu.face.real.v4.raw-frontal-closeup-eyes-closed
+  - lulu.face.real.v4.raw-three-quarter-open-eyes
+  - lulu.face.real.v4.front-lock
+  - lulu.body.real.angle-contact.v4
   - lulu.body.canon.v4
+  - lulu.body.canon.v4.three-view
   - juw.atelier.empty-plate.v1
   - view.07.pose
 # An accepted 004/06 is intentionally absent.
 authority_stack:
   garment:
-    - garment.004.source
+    - garment.004.front-a
+    - garment.004.front-b
+    - garment.004.full
   identity:
     - lulu.face.real.primary
-    - lulu.face.real.contact
+    - lulu.face.real.v4.raw-frontal-closeup-eyes-closed
+    - lulu.face.real.v4.raw-three-quarter-open-eyes
+    - lulu.face.real.v4.front-lock
     - garment.004.view.05.accepted
   body:
+    - lulu.body.real.angle-contact.v4
     - lulu.body.canon.v4
+    - lulu.body.canon.v4.three-view
   atelier:
     - juw.atelier.empty-plate.v1
   brand:

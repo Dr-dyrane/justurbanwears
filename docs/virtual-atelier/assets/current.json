@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-19T12:50:00Z",
+  "updatedAt": "2026-08-20T05:43:10Z",
   "assets": [
     {
       "id": "packet.canon.v1",
@@ -11,7 +11,7 @@
       "privacy": "private",
       "storage": "sandbox-transient",
       "status": "available",
-      "required": true,
+      "required": false,
       "sha256": "746c66b3d9eec01ab09ae90157a799cac1c2b87366436489eaebe519b6feaf96",
       "bytes": 143682751,
       "authority": ["identity", "body", "translation"],
@@ -28,7 +28,7 @@
       "privacy": "private",
       "storage": "sandbox-transient",
       "status": "available",
-      "required": true,
+      "required": false,
       "sha256": "b3ca23b4648c588df98d931888da311fbd4b6ce3d7bd85eb5c9bd10d8a0dde47",
       "bytes": 149724471,
       "authority": ["identity", "body", "atelier", "brand", "translation"],
@@ -46,7 +46,7 @@
       "privacy": "private",
       "storage": "sandbox-transient",
       "status": "available",
-      "required": true,
+      "required": false,
       "sha256": "bca299cbe1316daa1edea351d813aaa1160bc22a99672f0d3e555ab856a5db17",
       "bytes": 10075510,
       "authority": ["identity", "body", "pose", "translation"],
@@ -63,7 +63,7 @@
       "privacy": "private",
       "storage": "sandbox-transient",
       "status": "available",
-      "required": true,
+      "required": false,
       "sha256": "58a012f639c8f73f83e9dd9481b0f802055589747c0fd879575d38a3707ed053",
       "bytes": 159929037,
       "authority": ["translation", "atelier", "brand", "pose", "output"],
@@ -74,11 +74,14 @@
     {
       "id": "lulu.face.real.primary",
       "filename": "FACE_PRIMARY_CONTACT.jpg",
+      "aliases": [
+        "../models/konan/canon/v4/face/FACE_PRIMARY_CONTACT.jpg"
+      ],
       "kind": "face-reference",
       "role": "Primary real Lulu identity contact",
-      "provenance": "DIRECT_CAPTURE",
+      "provenance": "DERIVED_FROM_DIRECT",
       "privacy": "private",
-      "storage": "sandbox-transient",
+      "storage": "repo-storage-ignored",
       "status": "available",
       "required": true,
       "sha256": "f7ab5e149d6600da4dfef197fd87be47408ba0e830ecfbb68dc5c386113c8bba",
@@ -86,24 +89,92 @@
       "authority": ["identity"],
       "garmentId": null,
       "view": null,
-      "notes": "Private real-identity authority. Never commit raw pixels."
+      "notes": "Verified 1100x540 F01-F10 multi-angle contact sheet preserved under gitignored storage. It establishes identity invariance across natural, polished, frontal and three-quarter photographs. Never commit raw pixels."
+    },
+    {
+      "id": "lulu.face.real.v4.raw-frontal-closeup-eyes-closed",
+      "filename": "LULU_V4_FACE_RAW_FRONTAL_CLOSEUP_EYES_CLOSED.jpg",
+      "aliases": [
+        "../models/konan/canon/v4/face/LULU_V4_FACE_RAW_FRONTAL_CLOSEUP_EYES_CLOSED.jpg",
+        "46983299-0558-42f3-a0a5-369a63798c13.jpg"
+      ],
+      "kind": "face-reference",
+      "role": "Recovered pre-001 raw frontal Lulu morphology authority",
+      "provenance": "DIRECT_CAPTURE",
+      "privacy": "private",
+      "storage": "repo-storage-ignored",
+      "status": "available",
+      "required": true,
+      "sha256": "761ff29cd4245c13e091eebcd7aa20e7a50e84ac61c1f93eef615cf3953dc16a",
+      "bytes": 121963,
+      "authority": ["identity"],
+      "garmentId": null,
+      "view": null,
+      "notes": "720x1280 direct photograph. Controls frontal facial width, brow, nose, lips, cheek fullness, skin texture and complexion; eyes are closed and close-camera perspective does not control open-eye geometry or total head proportions."
+    },
+    {
+      "id": "lulu.face.real.v4.raw-three-quarter-open-eyes",
+      "filename": "LULU_V4_FACE_RAW_LEFT_THREE_QUARTER_OPEN_EYES.jpg",
+      "aliases": [
+        "../models/konan/canon/v4/face/LULU_V4_FACE_RAW_LEFT_THREE_QUARTER_OPEN_EYES.jpg",
+        "f36d8637-fb0e-4bcf-96a5-2fe8ef8906fe.jpg"
+      ],
+      "kind": "face-reference",
+      "role": "Recovered pre-001 raw open-eye three-quarter Lulu identity authority",
+      "provenance": "DIRECT_CAPTURE",
+      "privacy": "private",
+      "storage": "repo-storage-ignored",
+      "status": "available",
+      "required": true,
+      "sha256": "777475071c3830e063e779b16803ba64812f0e2099555ce76862677ef8415491",
+      "bytes": 87484,
+      "authority": ["identity"],
+      "garmentId": null,
+      "view": null,
+      "notes": "720x1280 direct photograph. Controls open-eye relationship, three-quarter silhouette, cheek/jaw transition, nose depth, lips, hairline and complexion."
+    },
+    {
+      "id": "lulu.face.real.v4.front-lock",
+      "filename": "LULU_V4_FACE_FRONT_LOCK.png",
+      "aliases": [
+        "../models/konan/canon/v4/face/LULU_V4_FACE_FRONT_LOCK.png",
+        "../models/konan/source/whatsapp/identity-edit-targets/front-face-lock.png"
+      ],
+      "kind": "face-reference",
+      "role": "Recovered real-photo frontal face lock",
+      "provenance": "DERIVED_FROM_DIRECT",
+      "privacy": "private",
+      "storage": "repo-storage-ignored",
+      "status": "available",
+      "required": true,
+      "sha256": "132aca4d7a63460ec31a7906fe663943e797c4a64d3176ea0d91d791a2ed9259",
+      "bytes": 195763,
+      "authority": ["identity"],
+      "garmentId": null,
+      "view": null,
+      "notes": "320x360 polished real-photo crop. Controls frontal geometry and helps prove identity invariance under styling; it does not replace the natural raw photographs or multi-angle contact sheet."
     },
     {
       "id": "lulu.face.real.contact",
-      "filename": "11563.jpg",
+      "filename": "FACE_PRIMARY_CONTACT_LARGE.png",
+      "aliases": [
+        "../models/konan/canon/v4/face/FACE_PRIMARY_CONTACT_LARGE.png",
+        "11563.jpg",
+        "11601.jpg"
+      ],
       "kind": "face-reference",
-      "role": "Real multi-angle face contact sheet",
+      "role": "Large convenience rendering of the F01-F10 real multi-angle face contact",
       "provenance": "DERIVED_FROM_DIRECT",
       "privacy": "private",
-      "storage": "sandbox-transient",
+      "storage": "repo-storage-ignored",
       "status": "available",
-      "required": true,
+      "required": false,
       "sha256": "af3f2651451c3d29d52604a45736a20da21e9336537daebeb8a83d025b515387",
       "bytes": 201179,
       "authority": ["identity"],
       "garmentId": null,
       "view": null,
-      "notes": "Angle and expression support; real face remains dominant."
+      "notes": "1536x754 resized/re-encoded convenience copy of the same F01-F10 visual sheet. Historical 11563/11601 references describe this visual set; no distinct files under those names were recovered."
     },
     {
       "id": "lulu.face.real.secondary-contact",
@@ -112,32 +183,199 @@
       "role": "Secondary real face/body angle contact sheet",
       "provenance": "DERIVED_FROM_DIRECT",
       "privacy": "private",
-      "storage": "sandbox-transient",
-      "status": "available",
+      "storage": "missing",
+      "status": "missing",
       "required": false,
       "sha256": "2b09720fb552ca5d168fc3f5d0fef5571b0d0f7b1d60397a93b14fb18ed9deed",
       "bytes": 336389,
       "authority": ["identity", "body"],
       "garmentId": null,
       "view": null,
-      "notes": "Supplementary angle support only."
+      "notes": "Historical supplementary contact record. Distinct bytes are not currently present in the recovered private packet and it is not required for V4 operations."
+    },
+    {
+      "id": "lulu.face.real.v4.three-quarter-open-eyes",
+      "filename": "LULU_V4_FACE_REAL_LEFT_THREE_QUARTER_OPEN_EYES.png",
+      "aliases": [
+        "../models/konan/canon/v4/face/LULU_V4_FACE_REAL_LEFT_THREE_QUARTER_OPEN_EYES.png"
+      ],
+      "kind": "face-reference",
+      "role": "Operator-supplied PNG copy of the raw open-eye three-quarter identity authority",
+      "provenance": "DERIVED_FROM_DIRECT",
+      "privacy": "private",
+      "storage": "repo-storage-ignored",
+      "status": "available",
+      "required": false,
+      "sha256": "d1086a97162e4a674113a528fd5121d9af26022c78caacc695952eb244f34cd5",
+      "bytes": 1272060,
+      "authority": [
+        "identity"
+      ],
+      "garmentId": null,
+      "view": null,
+      "notes": "Convenience PNG copy retained because the user confirmed this reference materially improved the likeness in 001/05 and 004/05. The recovered raw JPEG is the primary authority."
+    },
+    {
+      "id": "lulu.face.real.v4.frontal-closeup-eyes-closed",
+      "filename": "LULU_V4_FACE_REAL_FRONTAL_CLOSEUP_EYES_CLOSED.png",
+      "aliases": [
+        "../models/konan/canon/v4/face/LULU_V4_FACE_REAL_FRONTAL_CLOSEUP_EYES_CLOSED.png"
+      ],
+      "kind": "face-reference",
+      "role": "Operator-supplied PNG copy of the raw frontal Lulu facial-detail authority",
+      "provenance": "DERIVED_FROM_DIRECT",
+      "privacy": "private",
+      "storage": "repo-storage-ignored",
+      "status": "available",
+      "required": false,
+      "sha256": "c09d4b9403c0740ff6062c6566c292e70df9c6d9481bb00d805089ea11ddb34c",
+      "bytes": 1650184,
+      "authority": [
+        "identity"
+      ],
+      "garmentId": null,
+      "view": null,
+      "notes": "Convenience PNG copy. Eyes are closed and close-camera perspective prevents it from controlling open-eye geometry or overall head proportions. Three supplied copies were byte-identical; one copy is retained while the recovered raw JPEG is primary."
+    },
+    {
+      "id": "lulu.face.v4.front.candidate.v1",
+      "filename": "LULU_V4_FACE_FRONT_CANDIDATE_v1.png",
+      "aliases": [
+        "../models/konan/canon/v4/face/candidates/LULU_V4_FACE_FRONT_CANDIDATE_v1.png"
+      ],
+      "kind": "generated-output",
+      "role": "Neutral front-facing V4 identity calibration candidate",
+      "provenance": "MODEL_REFERENCE",
+      "privacy": "private",
+      "storage": "repo-storage-ignored",
+      "status": "available",
+      "required": false,
+      "sha256": "99674cf5941a19093fd2152a3022cb72adf756ffcba15260abdb252a6323c723",
+      "bytes": 1961596,
+      "authority": ["identity", "translation"],
+      "garmentId": null,
+      "view": null,
+      "notes": "1122x1402 built-in imagegen output. Explicitly approved by the user on 2026-08-20 as the source bytes for lulu.face.v4.front.lock.v1. The private candidate copy remains preserved for lineage."
+    },
+    {
+      "id": "lulu.face.v4.front.lock.v1",
+      "filename": "lulu.png",
+      "repoPath": "public/lulu.png",
+      "gitBlobSha": "4ff0946734aa3510996f089d979a7826555b41a3",
+      "kind": "generated-output",
+      "role": "User-approved Lulu V4 front face translation lock",
+      "provenance": "MODEL_REFERENCE",
+      "privacy": "public-approved",
+      "storage": "github-public-approved",
+      "status": "available",
+      "required": true,
+      "sha256": "99674cf5941a19093fd2152a3022cb72adf756ffcba15260abdb252a6323c723",
+      "bytes": 1961596,
+      "authority": ["identity", "translation"],
+      "garmentId": null,
+      "view": null,
+      "notes": "Public derivative explicitly approved by the user on 2026-08-20. It may parent V4 renders as a repeatable translation control, but real Lulu photographs remain the dominant identity truth."
+    },
+    {
+      "id": "garment.001.view.05.accepted",
+      "filename": "05-on-lulu-front.png",
+      "aliases": [
+        "../garments/drop-02/001/locked/05-on-lulu-front.png"
+      ],
+      "kind": "generated-output",
+      "role": "Accepted Garment 001 precursor front translation master",
+      "provenance": "MODEL_REFERENCE",
+      "privacy": "private",
+      "storage": "repo-storage-ignored",
+      "status": "available",
+      "required": true,
+      "sha256": "c7cd6f22e42da04ffca3a1388c2fbb44dfbb938b38ad40de90fc23e733a256b0",
+      "bytes": 2089979,
+      "authority": ["translation", "output"],
+      "garmentId": "001",
+      "view": "05",
+      "notes": "1092x1440 accepted packet authority. Generated translation guidance only; it never outranks real identity or body evidence."
+    },
+    {
+      "id": "garment.004.view.05.accepted",
+      "filename": "05-on-lulu-front.png",
+      "aliases": [
+        "../garments/drop-02/004/locked/05-on-lulu-front.png"
+      ],
+      "kind": "generated-output",
+      "role": "Accepted Garment 004 staged face-body-room front translation master",
+      "provenance": "MODEL_REFERENCE",
+      "privacy": "private",
+      "storage": "repo-storage-ignored",
+      "status": "available",
+      "required": true,
+      "sha256": "30b1ae108761fb238c767339ff8a6c9fc98683d573926b821ce3895dfef9b483",
+      "bytes": 1313274,
+      "authority": ["translation", "output"],
+      "garmentId": "004",
+      "view": "05",
+      "notes": "1024x1280 accepted front master produced by the refined GARMENT -> FACE -> BODY -> ROOM workflow. Translation guidance only; it never replaces real identity or body evidence."
     },
     {
       "id": "lulu.body.canon.v4",
-      "filename": "11450.png",
+      "filename": "LULU_V4_BODY_CANON_SOURCE.png",
+      "aliases": [
+        "../models/konan/canon/v4/LULU_V4_BODY_CANON_SOURCE.png"
+      ],
       "kind": "body-reference",
-      "role": "User-approved Lulu V4 body geometry canon",
-      "provenance": "DERIVED_FROM_DIRECT",
+      "role": "User-approved modeled Lulu V4 silhouette and garment-transfer control",
+      "provenance": "MODEL_REFERENCE",
       "privacy": "private",
-      "storage": "sandbox-transient",
+      "storage": "repo-storage-ignored",
       "status": "available",
       "required": true,
-      "sha256": "d7d205c062684326fe28c84cf71c01af06180faa5098cc7dca117b6e2c6e63d2",
-      "bytes": 208916,
+      "sha256": "c0f1b11473f7fe0d086fd845e3e53cd2e7302db4f0cacde18983d7b66eb629d9",
+      "bytes": 1016787,
       "authority": ["body"],
       "garmentId": null,
       "view": null,
-      "notes": "Geometry authority; printed measurements are not verified facts."
+      "notes": "1022x1536 modeled silhouette/edit control. Real Lulu photos remain body evidence truth. Printed height or weight is not verified and must never enter canon metadata."
+    },
+    {
+      "id": "lulu.body.canon.v4.three-view",
+      "filename": "LULU_V4_BODY_THREE_VIEW_CANON.png",
+      "aliases": [
+        "../models/konan/canon/v4/LULU_V4_BODY_THREE_VIEW_CANON.png"
+      ],
+      "kind": "body-reference",
+      "role": "Lulu V4 front, profile and rear garment-transfer geometry plate",
+      "provenance": "MODEL_REFERENCE",
+      "privacy": "private",
+      "storage": "repo-storage-ignored",
+      "status": "available",
+      "required": true,
+      "sha256": "cbbb130a6bd4dee99f9ef4d1dbc883f9a3ea0f6a72378ade685963b5c2130e14",
+      "bytes": 873107,
+      "authority": ["body", "pose", "translation"],
+      "garmentId": null,
+      "view": null,
+      "notes": "1022x1260 operational three-view plate. The individual front, side and back files are convenience crops of this plate, not independent evidence or canon."
+    },
+    {
+      "id": "lulu.body.real.angle-contact.v4",
+      "filename": "LULU_V4_BODY_ANGLE_CONTACT.jpg",
+      "aliases": [
+        "../models/konan/canon/v4/LULU_V4_BODY_ANGLE_CONTACT.jpg",
+        "zip_side_refs_contact.jpg"
+      ],
+      "kind": "body-reference",
+      "role": "Real Lulu side and rear-biased body-angle evidence",
+      "provenance": "DERIVED_FROM_DIRECT",
+      "privacy": "private",
+      "storage": "repo-storage-ignored",
+      "status": "available",
+      "required": true,
+      "sha256": "7650b7996ded2c127e529c4b7af3874ab6e937b97c75efedcb68756c9d104c60",
+      "bytes": 296366,
+      "authority": ["body", "pose"],
+      "garmentId": null,
+      "view": null,
+      "notes": "1080x1040 contact sheet derived from direct Lulu photographs. It supplies body evidence truth across side/profile/rear-three-quarter angles; it does not control face or garment construction."
     },
     {
       "id": "juw.atelier.canon",
@@ -148,13 +386,33 @@
       "privacy": "private",
       "storage": "sandbox-transient",
       "status": "available",
-      "required": true,
+      "required": false,
       "sha256": "b3ca23b4648c588df98d931888da311fbd4b6ce3d7bd85eb5c9bd10d8a0dde47",
       "bytes": 149724471,
       "authority": ["atelier"],
       "garmentId": null,
       "view": null,
       "notes": "Room is immutable unless explicitly unlocked."
+    },
+    {
+      "id": "juw.atelier.empty-plate.v1",
+      "filename": "juw-room-v1.png",
+      "aliases": [
+        "canon/juw-room-v1.png"
+      ],
+      "kind": "atelier-reference",
+      "role": "Clean fixed JUW atelier plate",
+      "provenance": "MODEL_REFERENCE",
+      "privacy": "private",
+      "storage": "repo-storage-ignored",
+      "status": "available",
+      "required": true,
+      "sha256": "0b591197d2de1b490c4305ac0aed4d1089564562c7b1005411a8340168aabb72",
+      "bytes": 1144381,
+      "authority": ["atelier", "brand"],
+      "garmentId": null,
+      "view": null,
+      "notes": "1024x1280 private clean room authority. This approved plate supersedes the unapproved monitor-pass plate with the residual ghost silhouette."
     },
     {
       "id": "juw.icon.canonical",
@@ -178,11 +436,14 @@
     {
       "id": "garment.004.front-a",
       "filename": "817192BA-CF18-4AFD-95F8-CE33AB18C0F0_4_5005_c.jpeg",
+      "aliases": [
+        "../garments/drop-02/004/source/02-source-upper-angle-lowres.jpeg"
+      ],
       "kind": "garment-reference",
       "role": "Garment 004 upper/front construction reference",
       "provenance": "DIRECT_CAPTURE",
       "privacy": "private",
-      "storage": "sandbox-transient",
+      "storage": "repo-storage-ignored",
       "status": "available",
       "required": true,
       "sha256": "c281ef0b336530a5342a58d4a39ae7cd16eea22a9313f1e429f2e252964c2578",
@@ -195,11 +456,14 @@
     {
       "id": "garment.004.front-b",
       "filename": "AA381855-38CA-45F3-88F4-E0E2453A1AC3_4_5005_c.jpeg",
+      "aliases": [
+        "../garments/drop-02/004/source/01-source-upper-front-lowres.jpeg"
+      ],
       "kind": "garment-reference",
       "role": "Garment 004 alternate front reference",
       "provenance": "DIRECT_CAPTURE",
       "privacy": "private",
-      "storage": "sandbox-transient",
+      "storage": "repo-storage-ignored",
       "status": "available",
       "required": true,
       "sha256": "4676e52baadefb9ce1962ee84aa2e4c2ac520111d519db53979cf93eab6ab32e",
@@ -212,11 +476,14 @@
     {
       "id": "garment.004.full",
       "filename": "F1C06581-79B2-44BF-B9E7-B1E35B183982_4_5005_c.jpeg",
+      "aliases": [
+        "../garments/drop-02/004/source/03-source-full-front-lowres.jpeg"
+      ],
       "kind": "garment-reference",
       "role": "Garment 004 full-length silhouette authority",
       "provenance": "DIRECT_CAPTURE",
       "privacy": "private",
-      "storage": "sandbox-transient",
+      "storage": "repo-storage-ignored",
       "status": "available",
       "required": true,
       "sha256": "47b93294932daf03f2d080c5c54c23aaab83beb7f659270fdd9dfcfe6f8ad827",

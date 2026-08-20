@@ -1,11 +1,19 @@
 {
   "schemaVersion": 1,
-  "workflowRevision": "2026-08-19.9",
-  "updatedAt": "2026-08-19T23:25:00Z",
+  "workflowRevision": "2026-08-20.4",
+  "updatedAt": "2026-08-20T05:43:10Z",
   "model": "LULU_V4",
   "activeGarment": "004",
-  "activeView": "07",
-  "status": "READY_FOR_004_07",
+  "activeView": null,
+  "status": "COMPLETE_LOCKED_PACKETED",
+  "identityReview": {
+    "candidateId": "lulu.face.v4.front.candidate.v1",
+    "acceptedAssetId": "lulu.face.v4.front.lock.v1",
+    "status": "APPROVED_LOCKED_PUBLIC",
+    "mayParent": true,
+    "publicPath": "/lulu.png",
+    "rule": "The user-approved generated V4 front-face lock may parent downstream V4 renders as a translation control, but it never replaces or outranks the real Lulu identity evidence."
+  },
   "canonicalFlow": {
     "order": [
       "GARMENT_INTAKE",
@@ -22,7 +30,9 @@
     "garment": {
       "status": "LOCKED",
       "primary": [
-        "garment.004.source",
+        "garment.004.front-a",
+        "garment.004.front-b",
+        "garment.004.full",
         "garment.004.view.05.accepted"
       ],
       "rule": "004 always means the same black floor-length gown with the white folded neckline. Garment intake is the first input to every view operation."
@@ -31,18 +41,23 @@
       "status": "LOCKED",
       "primary": [
         "lulu.face.real.primary",
-        "lulu.face.real.contact",
+        "lulu.face.real.v4.raw-frontal-closeup-eyes-closed",
+        "lulu.face.real.v4.raw-three-quarter-open-eyes",
+        "lulu.face.real.v4.front-lock",
+        "lulu.face.v4.front.lock.v1",
+        "garment.001.view.05.accepted",
         "garment.004.view.05.accepted"
       ],
-      "rule": "Real Lulu identity and the accepted 004/05 facial translation remain authoritative. No sibling view has identity authority over another sibling."
+      "rule": "Resolve identity from the verified F01-F10 multi-angle contact sheet, the recovered raw frontal and open-eye three-quarter photographs, and the real-photo frontal face lock. The user-approved generated V4 face lock supplies repeatable translation geometry but may not override real identity. Accepted 001/05 and 004/05 supply garment-specific JUW translation guidance only. V3 is legacy comparison only. The close frontal reference controls morphology and texture but not open-eye geometry or total head proportions. Face must pass before body or room work begins, and no sibling view has identity authority over another sibling."
     },
     "body": {
       "status": "LOCKED",
       "primary": [
+        "lulu.body.real.angle-contact.v4",
         "lulu.body.canon.v4",
-        "packet.model.05-07.v1"
+        "lulu.body.canon.v4.three-view"
       ],
-      "rule": "Preserve Lulu V4 geometry as a balanced whole. No caricatured waist, posterior exaggeration, flattening, shortened legs or upper-thigh reduction."
+      "rule": "Real Lulu photos remain body evidence truth. The V4 source and three-view plate are user-approved modeled silhouette and garment-transfer controls, not verified measurements. Preserve the geometry as a balanced whole: no caricatured waist, posterior exaggeration, flattening, shortened legs or upper-thigh reduction. Individual view crops are operational conveniences only."
     },
     "atelier": {
       "status": "LOCKED",
@@ -65,6 +80,24 @@
       "05": "FRONT_MASTER",
       "06": "SOFT_LEFT_PROFILE_SLIGHT_3Q",
       "07": "RIGHT_REAR_3Q"
+    },
+    "semanticMediaRoles": {
+      "workingSlots": {
+        "01": "GARMENT_FRONT",
+        "02": "GARMENT_BACK",
+        "03": "MANNEQUIN_FRONT",
+        "04": "FABRIC_DETAIL",
+        "05": "MODEL_FRONT",
+        "06": "MODEL_LEFT_PROFILE",
+        "07": "MODEL_REAR_THREE_QUARTER"
+      },
+      "historicalShopFilenames": {
+        "04": "MODEL_FRONT",
+        "05": "MODEL_REAR_THREE_QUARTER",
+        "06": "FABRIC_DETAIL",
+        "07": "MODEL_LEFT_PROFILE"
+      },
+      "rule": "Semantic role names are authoritative. Numeric slots are presentation and packet conventions only; map by role before export, database sync or Shop publication."
     },
     "outputFormat": {
       "status": "LOCKED",
@@ -98,33 +131,53 @@
       }
     },
     "004": {
-      "status": "IN_PROGRESS",
+      "status": "PACKETED",
       "views": {
         "05": "ACCEPTED_LOCKED",
         "06": "ACCEPTED_LOCKED_SIBLING",
-        "07": "READY_SIBLING"
+        "07": "ACCEPTED_LOCKED_SIBLING"
       },
       "accepted05": {
         "assetId": "garment.004.view.05.accepted",
-        "filename": "elegant_black_dress_boutique_portrait.png",
-        "sha256": "a6c2f1a76c116054601b326f92ade5f9adbfd8013a8e270fa877538f76ec75fe",
-        "bytes": 2202509,
-        "dimensions": "1122x1402",
+        "filename": "JUW_G004_05_FRONT_LOCKED.png",
+        "sha256": "30b1ae108761fb238c767339ff8a6c9fc98683d573926b821ce3895dfef9b483",
+        "bytes": 1313274,
+        "dimensions": "1024x1280",
+        "provenance": "MODEL_REFERENCE",
         "userDecision": "LOCKED",
         "lineageRole": "FRONT_TRANSLATION_MASTER"
       },
       "accepted06": {
         "assetId": "garment.004.view.06.accepted",
         "filename": "JUW_G004_06_LEFT_PROFILE_LOCKED.png",
-        "sourceFilename": "elegant_boutique_fashion_portrait.png",
-        "sha256": "ceb10540e81abc732734d94bd0b6508eef8a0beb501917f272dbc0705cc503db",
-        "bytes": 2261885,
-        "dimensions": "1122x1402",
+        "sha256": "c75814d1ba3515c771531eec23b11afaf24d4102d9988c7d7bbd1ad8f77f4205",
+        "bytes": 1374021,
+        "dimensions": "1024x1280",
         "provenance": "MODEL_REFERENCE",
         "userDecision": "ACCEPTED_LOCKED",
         "lineageRole": "SIBLING_OUTPUT_ONLY",
         "mayParent07": false,
         "note": "The accepted 006 is preserved as its own output. It is not an input, parent, prerequisite or authority for 007."
+      },
+      "accepted07": {
+        "assetId": "garment.004.view.07.accepted",
+        "filename": "JUW_G004_07_RIGHT_REAR_3Q_LOCKED.png",
+        "sha256": "753aac4f61bc0c603862feeadd13c51ffc1489ae524070dd338a9a56cc1b3291",
+        "bytes": 1404367,
+        "dimensions": "1024x1280",
+        "provenance": "MODEL_REFERENCE",
+        "userDecision": "ACCEPTED_LOCKED",
+        "lineageRole": "SIBLING_OUTPUT_ONLY",
+        "mayParent06": false,
+        "note": "The accepted 007 branches directly from 005 and the canonical stack. It is not an input, parent, prerequisite or authority for 006."
+      },
+      "packet": {
+        "packetId": "JUW_LULU_V4_G004_COMPLETE_PACKET_v2_REBUILT",
+        "status": "COMPLETE_LOCKED",
+        "createdAt": "2026-08-20T02:33:38.662338+00:00",
+        "lineage": "GARMENT -> FACE -> BODY -> ROOM -> 05 -> (06 || 07)",
+        "manifestFilename": "99_audit/MANIFEST.json",
+        "storage": "repo-storage-ignored"
       },
       "rejected06": [
         {
@@ -147,88 +200,5 @@
       "rejectedCandidatesMayParent": false
     }
   },
-  "nextOperation": {
-    "operationId": "g004-v07-r002",
-    "garmentId": "004",
-    "view": "07",
-    "status": "READY",
-    "lineage": "GARMENT -> FACE -> BODY -> ROOM -> 05 -> 07",
-    "explicitlyExcluded": [
-      "garment.004.view.06.accepted",
-      "all rejected 006 candidates"
-    ],
-    "parentAssets": [
-      "garment.004.source",
-      "garment.004.view.05.accepted",
-      "lulu.face.real.primary",
-      "lulu.face.real.contact",
-      "lulu.body.canon.v4",
-      "packet.model.05-07.v1",
-      "packet.g003.v1",
-      "juw.atelier.empty-plate.v1"
-    ],
-    "authorityStack": {
-      "garment": [
-        "garment.004.source",
-        "garment.004.view.05.accepted"
-      ],
-      "identity": [
-        "lulu.face.real.primary",
-        "lulu.face.real.contact",
-        "garment.004.view.05.accepted"
-      ],
-      "body": [
-        "lulu.body.canon.v4"
-      ],
-      "atelier": [
-        "juw.atelier.empty-plate.v1"
-      ],
-      "brand": [
-        "juw.icon.canonical"
-      ],
-      "pose": [
-        "packet.model.05-07.v1",
-        "packet.g003.v1"
-      ]
-    },
-    "changeSet": [
-      "Create the Garment 004 right-rear three-quarter sibling view directly from the accepted 004/05 and canonical stack.",
-      "Use a garment-specific elegant variation in chin angle, shoulder openness, hand position and weight distribution while staying inside the established 07 family.",
-      "Show the white folded neckline continuing correctly across the back and the black gown preserving the accepted 004 construction."
-    ],
-    "immutableSet": [
-      "Garment 004 identity and construction",
-      "real Lulu identity",
-      "accepted 004/05 facial translation",
-      "Lulu V4 body canon",
-      "locked juw_room.png pixels",
-      "canonical wall icon",
-      "camera family, colour temperature and lighting",
-      "complete legs, feet and clear heels",
-      "output dimensions and clean single-image format"
-    ],
-    "outputContract": [
-      "one clean full-body 004/07 image",
-      "right rear three-quarter catalogue stance",
-      "enough head turn toward camera to preserve identity",
-      "elegant pose variation suited to the gown rather than a duplicate of 001-003",
-      "both complete feet and clear heels visible and grounded",
-      "no labels, text or panels",
-      "room unchanged"
-    ],
-    "failureGates": [
-      "006 used as a parent or authority",
-      "identity drift",
-      "face beautification or substitution",
-      "complete-back pose instead of right rear three-quarter",
-      "copying an earlier pose mechanically",
-      "exaggerated arch or posterior projection",
-      "waist caricature or thigh reduction",
-      "garment redesign or mermaid flare",
-      "incorrect back neckline",
-      "missing or malformed feet and heels",
-      "room, icon, prop, lighting or framing drift",
-      "format contamination"
-    ]
-  }
+  "nextOperation": null
 }
