@@ -56,10 +56,12 @@ function publicMedia(product: WardrobePublicProduct, item: WardrobePublicMedia):
   const view = mediaView[item.slot];
   const label = mediaLabel[item.slot];
   const isModel = item.slot.startsWith("MODEL_");
-  const dimensions = {
-    width: isModel && product.slug === "ivory-tie-skirt" ? 971 : isModel ? 972 : 1122,
-    height: isModel ? 1619 : 1402,
-  };
+  const dimensions = product.drop === "Drop 02"
+    ? { width: 1120, height: 1400 }
+    : {
+        width: isModel && product.slug === "ivory-tie-skirt" ? 971 : isModel ? 972 : 1122,
+        height: isModel ? 1619 : 1402,
+      };
   return {
     id: item.slot.toLowerCase().replaceAll("_", "-"),
     src: item.src,

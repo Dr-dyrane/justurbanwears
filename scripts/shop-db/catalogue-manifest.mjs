@@ -4,7 +4,15 @@ const MODEL_ANCHORS = Object.freeze({
     src: "/shop/model/lulu-v2-approved.png",
   }),
   "lulu-v3": Object.freeze({ id: "lulu-v3" }),
+  "lulu-v4": Object.freeze({ id: "lulu-v4" }),
 });
+
+const V4_MODEL_SLUGS = new Set([
+  "black-cropped-tee-slim-trouser-set",
+  "violet-beaded-ruffle-romper",
+  "black-sweetheart-fit-flare-midi-dress",
+  "black-ivory-folded-neck-column-dress",
+]);
 
 const V3_MODEL_FRONT_SLUGS = new Set([
   "coral-drift-dress",
@@ -62,20 +70,24 @@ function presentation(product) {
 
   return Object.freeze({
     ...descriptive,
-    modelAnchor: V3_MODEL_FRONT_SLUGS.has(product.slug) || V3_MODEL_SUPPLEMENTAL_SLUGS.has(product.slug)
-      ? MODEL_ANCHORS["lulu-v3"]
-      : MODEL_ANCHORS["lulu-v2"],
+    modelAnchor: V4_MODEL_SLUGS.has(product.slug)
+      ? MODEL_ANCHORS["lulu-v4"]
+      : V3_MODEL_FRONT_SLUGS.has(product.slug) || V3_MODEL_SUPPLEMENTAL_SLUGS.has(product.slug)
+        ? MODEL_ANCHORS["lulu-v3"]
+        : MODEL_ANCHORS["lulu-v2"],
     media: Object.freeze(mediaSlots.map((slot) => Object.freeze({
       slot,
       src: `/shop/products/${product.slug}/${mediaFileForSlot[slot]}`,
       ...(MODEL_MEDIA_SLOTS.has(slot)
         ? {
-            modelAnchorId: (
-              (slot === "MODEL_FRONT" && V3_MODEL_FRONT_SLUGS.has(product.slug))
-              || (slot !== "MODEL_FRONT" && V3_MODEL_SUPPLEMENTAL_SLUGS.has(product.slug))
-            )
-              ? "lulu-v3"
-              : "lulu-v2",
+            modelAnchorId: V4_MODEL_SLUGS.has(product.slug)
+              ? "lulu-v4"
+              : (
+                  (slot === "MODEL_FRONT" && V3_MODEL_FRONT_SLUGS.has(product.slug))
+                  || (slot !== "MODEL_FRONT" && V3_MODEL_SUPPLEMENTAL_SLUGS.has(product.slug))
+                )
+                ? "lulu-v3"
+                : "lulu-v2",
           }
         : {}),
     }))),
@@ -89,7 +101,7 @@ function presentation(product) {
  */
 export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
   schemaVersion: 2,
-  revision: "2026-08-11-catalogue-14",
+  revision: "2026-08-20-catalogue-15",
   products: Object.freeze([
     presentation({
       slug: "coral-drift-dress",
@@ -474,6 +486,86 @@ export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
       details: ["Cropped denim jacket", "Buttoned flap chest pockets", "Long sleeves with button cuffs", "Full-length black leggings"],
       measurements: [],
       mediaSlots: ["MODEL_REAR_MIRROR"],
+    }),
+    presentation({
+      slug: "black-cropped-tee-slim-trouser-set",
+      sku: "JUW-025",
+      name: "Black Cropped Tee and Slim Trouser Set",
+      category: "Sets",
+      price: 24500,
+      taggedSize: "Size on request",
+      fit: "Measurements confirmed before payment",
+      condition: "Condition confirmed before payment",
+      colour: "Black",
+      availability: "AVAILABLE",
+      drop: "Drop 02",
+      tone: "cocoa",
+      silhouette: "set",
+      note: "A black cropped tee and slim trouser pairing with a clean, close line.",
+      story: "Soft gathered sleeve caps meet a fitted crop, balanced by high-waisted tapered trousers with a simple silver-tone button.",
+      details: ["Cropped crew-neck tee", "Soft gathered sleeve caps", "High-waisted slim trousers", "Tapered ankle length"],
+      measurements: [],
+      mediaSlots: ["MODEL_FRONT", "MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
+    }),
+    presentation({
+      slug: "violet-beaded-ruffle-romper",
+      sku: "JUW-026",
+      name: "Violet Beaded Ruffle Romper",
+      category: "Rompers",
+      price: 32000,
+      taggedSize: "Size on request",
+      fit: "Measurements confirmed before payment",
+      condition: "Condition confirmed before payment",
+      colour: "Deep violet",
+      availability: "AVAILABLE",
+      drop: "Drop 02",
+      tone: "indigo",
+      silhouette: "romper",
+      note: "A deep-violet beaded romper framed by soft flounces and an asymmetric ruffled hem.",
+      story: "Slim straps and an off-shoulder flounce open the neckline, while dense tonal beadwork carries through the close romper silhouette.",
+      details: ["Slim shoulder straps", "Off-shoulder flounce", "Dense tonal beadwork", "Asymmetric ruffled hem"],
+      measurements: [],
+      mediaSlots: ["MODEL_FRONT", "MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
+    }),
+    presentation({
+      slug: "black-sweetheart-fit-flare-midi-dress",
+      sku: "JUW-027",
+      name: "Black Sweetheart Fit-and-Flare Midi Dress",
+      category: "Dresses",
+      price: 28500,
+      taggedSize: "Size on request",
+      fit: "Measurements confirmed before payment",
+      condition: "Condition confirmed before payment",
+      colour: "Black",
+      availability: "AVAILABLE",
+      drop: "Drop 02",
+      tone: "cocoa",
+      silhouette: "dress",
+      note: "A black sweetheart midi shaped through the bodice and released into a full gathered skirt.",
+      story: "Curved cup seams, short structured sleeves, and a panelled waist give way to a softly gathered A-line midi skirt.",
+      details: ["Sweetheart cup seams", "Short structured sleeves", "Panelled fitted bodice", "Gathered A-line midi skirt"],
+      measurements: [],
+      mediaSlots: ["MODEL_FRONT", "MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
+    }),
+    presentation({
+      slug: "black-ivory-folded-neck-column-dress",
+      sku: "JUW-028",
+      name: "Black and Ivory Folded-Neck Column Dress",
+      category: "Dresses",
+      price: 34500,
+      taggedSize: "Size on request",
+      fit: "Measurements confirmed before payment",
+      condition: "Condition confirmed before payment",
+      colour: "Black and ivory",
+      availability: "AVAILABLE",
+      drop: "Drop 02",
+      tone: "ivory",
+      silhouette: "dress",
+      note: "A floor-length black column set off by a broad folded ivory neckline.",
+      story: "The wide off-shoulder fold frames a low open neckline before the dress falls into a long, close column silhouette.",
+      details: ["Broad folded ivory neckline", "Off-shoulder line", "Close column silhouette", "Floor length"],
+      measurements: [],
+      mediaSlots: ["MODEL_FRONT", "MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
     }),
   ]),
 });

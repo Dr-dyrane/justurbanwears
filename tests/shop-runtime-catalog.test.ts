@@ -9,6 +9,7 @@ import { manifestChecksum } from "../scripts/shop-db/release-core.mjs";
 import {
   cataloguePresentationChecksum,
   createBlobAssetPlan,
+  createPublicMediaSourceManifest,
   mergeLegacyAssets,
 } from "../scripts/shop-media/blob-sync.mjs";
 import { createEmptyCommerceSnapshot } from "../lib/shop/domain/state";
@@ -38,6 +39,7 @@ import { createBrowserCommerceService, createCommerceService } from "../lib/shop
 
 const repositoryRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const firstManifestProduct = SHOP_CATALOGUE_MANIFEST.products[0];
+const currentManifestProducts = SHOP_CATALOGUE_MANIFEST.products.filter((product) => product.drop === "Drop 02");
 
 function databaseRow(
   product = firstManifestProduct,
@@ -66,7 +68,7 @@ function databaseRow(
     media: product.media.map((item: {
       slot: string;
       src: string;
-      modelAnchorId?: "lulu-v2" | "lulu-v3";
+      modelAnchorId?: "lulu-v2" | "lulu-v3" | "lulu-v4";
     }) => ({ ...item })),
     availability,
   };
@@ -84,18 +86,29 @@ async function withoutExpectedCatalogueError<T>(operation: () => Promise<T>) {
 
 test("the public Blob release contains only exact manifest media and verifies local bytes", async () => {
   const plan = await createBlobAssetPlan(repositoryRoot);
+  const sourceManifest = await createPublicMediaSourceManifest(repositoryRoot);
   assert.equal(SHOP_PUBLIC_MEDIA_REVISION, SHOP_CATALOGUE_MANIFEST.revision);
   assert.equal(SHOP_PUBLIC_MEDIA_CATALOGUE_CHECKSUM, manifestChecksum(SHOP_CATALOGUE_MANIFEST));
   assert.equal(
     SHOP_PUBLIC_MEDIA_PRESENTATION_CHECKSUM,
     cataloguePresentationChecksum(SHOP_CATALOGUE_MANIFEST),
   );
-  assert.equal(plan.length, 103);
+  assert.equal(plan.length, 131);
   assert.equal(SHOP_PUBLIC_MEDIA_ASSETS.length, plan.length);
+  assert.equal(SHOP_PUBLIC_MEDIA_SOURCE_ASSETS.length, plan.length);
+  assert.deepEqual(SHOP_PUBLIC_MEDIA_SOURCE_ASSETS, sourceManifest.assets);
   assert.equal(
     plan.filter((asset) => asset.sourcePath.startsWith("/shop/products/")).length,
-    102,
+    130,
   );
+  const currentDropAssets = plan.filter((asset) => currentManifestProducts.some((product) =>
+    asset.sourcePath.startsWith(`/shop/products/${product.slug}/`)));
+  assert.equal(currentDropAssets.length, 28);
+  assert.equal(plan.length - currentDropAssets.length, 103);
+  assert.ok(currentDropAssets.every((asset) => {
+    const released = SHOP_PUBLIC_MEDIA_ASSETS.find((candidate) => candidate.sourcePath === asset.sourcePath);
+    return released?.url === released?.sourcePath || released?.url.startsWith("https://");
+  }));
   assert.deepEqual(
     SHOP_PUBLIC_MEDIA_SOURCE_ASSETS.find(({ sourcePath }) =>
       sourcePath === "/shop/products/magenta-plunge-ruched-mini-dress/08-model-detail.webp"
@@ -291,7 +304,8 @@ test("an invalid or unavailable Neon snapshot falls back with purchase actions f
   const fallback = await withoutExpectedCatalogueError(() => loadServerShopProducts(async () => {
     throw new Error("synthetic outage");
   }));
-  assert.equal(fallback.length, 18);
+  assert.equal(currentManifestProducts.length, 4);
+  assert.deepEqual(fallback.map((product) => product.sku), currentManifestProducts.map((product) => product.sku));
   assert.ok(fallback.every((product) => product.availabilityConfirmed === false));
   assert.ok(fallback.flatMap((product) => product.media ?? []).every((item) =>
     isSafeShopProductMediaUrl(item.src, item.src.split("/products/")[1]?.split("/")[0] ?? ""),
@@ -310,18 +324,28 @@ test("an invalid or unavailable Neon snapshot falls back with purchase actions f
 
   const partial = await withoutExpectedCatalogueError(() => loadServerShopProducts(async () => [
     databaseRow(),
-    { ...databaseRow(SHOP_CATALOGUE_MANIFEST.products[1]), availability: null },
+    { ...databaseRow(currentManifestProducts[0]), availability: null },
   ]));
-  assert.equal(partial.length, 18);
+  assert.equal(partial.length, currentManifestProducts.length);
   assert.ok(partial.every((product) => product.availabilityConfirmed === false));
 });
 
-test("archived Neon rows are omitted without weakening the remaining snapshot", async () => {
+test("a mixed Drop 01 and Drop 02 Neon snapshot returns only the current drop", async () => {
   const products = await loadServerShopProducts(async () => [
-    databaseRow(firstManifestProduct, "ARCHIVED"),
-    databaseRow(SHOP_CATALOGUE_MANIFEST.products[1], "RESERVED"),
+    databaseRow(firstManifestProduct, "AVAILABLE"),
+    databaseRow(currentManifestProducts[0], "RESERVED"),
   ]);
-  assert.deepEqual(products.map((product) => product.sku), ["JUW-002"]);
+  assert.deepEqual(products.map((product) => product.sku), [currentManifestProducts[0].sku]);
+  assert.equal(products[0].availability, "RESERVED");
+  assert.equal(products[0].availabilityConfirmed, true);
+});
+
+test("archived current-drop Neon rows are omitted without weakening the remaining snapshot", async () => {
+  const products = await loadServerShopProducts(async () => [
+    databaseRow(currentManifestProducts[0], "ARCHIVED"),
+    databaseRow(currentManifestProducts[1], "RESERVED"),
+  ]);
+  assert.deepEqual(products.map((product) => product.sku), [currentManifestProducts[1].sku]);
   assert.equal(products[0].availabilityConfirmed, true);
 });
 

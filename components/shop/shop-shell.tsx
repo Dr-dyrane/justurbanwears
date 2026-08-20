@@ -14,6 +14,7 @@ import { usePathname } from "next/navigation";
 import { useMemo } from "react";
 import { useMobileChrome } from "../../hooks/use-mobile-chrome";
 import { createBrowserCommerceService } from "../../lib/shop/services/commerce-service";
+import { CURRENT_SHOP_DROP } from "../../lib/shop/current-drop";
 import type { ShopProduct } from "../../lib/shop/domain/entities";
 import { isBagCheckoutAvailable } from "../../lib/shop/domain/state";
 import { BrandWordmark } from "../brand/brand-wordmark";
@@ -80,7 +81,7 @@ function ShopChrome({ children }: { children: React.ReactNode }) {
       ? checkoutAvailable
         ? { eyebrow: "Ready to continue", label: "Continue to checkout", href: "/shop/checkout" }
         : { eyebrow: "Checkout paused", label: "Availability is not confirmed", href: "#shop-content" }
-      : { eyebrow: "Drop 01", label: "Find a piece", href: "/shop/search" }
+      : { eyebrow: CURRENT_SHOP_DROP, label: "Find a piece", href: "/shop/search" }
     : pathname === "/shop/checkout"
       ? checkoutAvailable
         ? { eyebrow: "Your bag", label: `${bag.length} ${bag.length === 1 ? "piece" : "pieces"} selected`, href: "/shop/bag" }
@@ -100,8 +101,8 @@ function ShopChrome({ children }: { children: React.ReactNode }) {
         }
       : { eyebrow: "Bag needs review", label: "Availability is not confirmed", href: "/shop/bag" }
     : pathname === "/shop/search"
-        ? { eyebrow: "Drop 01", label: "Browse available pieces", href: "/shop#discover" }
-      : { eyebrow: "Drop 01", label: "Search the wardrobe", href: "/shop/search" };
+        ? { eyebrow: CURRENT_SHOP_DROP, label: "Browse available pieces", href: "/shop#discover" }
+      : { eyebrow: CURRENT_SHOP_DROP, label: "Search the wardrobe", href: "/shop/search" };
   const contextAction = !isOnline
     ? { eyebrow: "Offline", label: "Review app connection and local state", href: "/shop/account" }
     : registeredMobileAction ?? routeAction;

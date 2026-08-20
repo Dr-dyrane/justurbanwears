@@ -125,3 +125,34 @@ test("keeps independently approved V2 supplemental views beside a V3 front", () 
     ],
   );
 });
+
+test("keeps independently approved V4 views in the product gallery", () => {
+  const front = {
+    ...approvedFront(),
+    src: "/shop/products/violet-beaded-ruffle-romper/04-model-front.webp",
+    modelAnchorId: "lulu-v4" as const,
+  };
+  const profile = {
+    ...approvedFront(),
+    id: "model-left-profile",
+    src: "/shop/products/violet-beaded-ruffle-romper/07-model-left-profile.webp",
+    view: "side" as const,
+    modelAnchorId: "lulu-v4" as const,
+  };
+  const gallery = selectProductGalleryMedia({
+    modelTryout: {
+      modelStatus: "APPROVED",
+      modelAnchorId: "lulu-v4",
+      frame: front,
+    },
+    media: [profile],
+  });
+
+  assert.deepEqual(
+    gallery.map(({ src, modelAnchorId }) => ({ src, modelAnchorId })),
+    [
+      { src: front.src, modelAnchorId: "lulu-v4" },
+      { src: profile.src, modelAnchorId: "lulu-v4" },
+    ],
+  );
+});

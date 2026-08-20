@@ -3,6 +3,7 @@
 import { Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { formatNaira, shopModelAnchors } from "../../lib/shop/catalog";
+import { CURRENT_SHOP_DROP, isCurrentShopProduct } from "../../lib/shop/current-drop";
 import { resolveApprovedModelTryout } from "../../lib/shop/model-tryout";
 import { ShopLink as Link } from "./atoms/shop-link";
 import { ProductCard } from "./product-card";
@@ -20,14 +21,21 @@ const homeShopFilters: ShopFilterValues = {
   availability: "AVAILABLE",
 };
 
+const dropHeroSlug = "violet-beaded-ruffle-romper";
+
 export function ShopHome() {
   const { products } = useShop();
   const [query, setQuery] = useState("");
   const [filters, setFilters] = useState<ShopFilterValues>(homeShopFilters);
 
+  const dropProducts = useMemo(
+    () => products.filter(isCurrentShopProduct),
+    [products],
+  );
+
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
-    const matches = products.filter((product) => {
+    const matches = dropProducts.filter((product) => {
       const haystack = `${product.name} ${product.category} ${product.colour} ${product.fit}`.toLowerCase();
       return (!needle || haystack.includes(needle))
         && (filters.category === "All" || product.category === filters.category)
@@ -40,17 +48,21 @@ export function ShopHome() {
     return [...matches].sort((left, right) => {
       if (filters.sort === "price-low") return left.price - right.price;
       if (filters.sort === "price-high") return right.price - left.price;
-      return products.indexOf(left) - products.indexOf(right);
+      return dropProducts.indexOf(left) - dropProducts.indexOf(right);
     });
-  }, [filters, products, query]);
+  }, [dropProducts, filters, query]);
 
-  const dropProducts = products.filter((product) => product.availability === "AVAILABLE");
-  const heroProduct = dropProducts.find((product) => resolveApprovedModelTryout(product.modelTryout))
-    ?? dropProducts[0]
-    ?? products[0];
+  const availableDropProducts = dropProducts.filter((product) => product.availability === "AVAILABLE");
+  const dropSize = dropProducts.length;
+  const heroProduct = availableDropProducts.find((product) => (
+    product.slug === dropHeroSlug && resolveApprovedModelTryout(product.modelTryout)
+  ))
+    ?? availableDropProducts.find((product) => resolveApprovedModelTryout(product.modelTryout))
+    ?? availableDropProducts[0]
+    ?? dropProducts[0];
   const heroModelView = heroProduct ? resolveApprovedModelTryout(heroProduct.modelTryout) : null;
-  const liveAvailabilityConfirmed = products.length > 0
-    && products.every((product) => product.availabilityConfirmed);
+  const liveAvailabilityConfirmed = dropProducts.length > 0
+    && dropProducts.every((product) => product.availabilityConfirmed);
   const activeFilterCount = countActiveShopFilters(filters, homeShopFilters);
   const isRefining = query.trim().length > 0 || activeFilterCount > 0;
   const displayedProducts = !isRefining && heroProduct
@@ -114,7 +126,7 @@ export function ShopHome() {
           </div>
 
           <span aria-hidden="true" className="shop-editorial-cover-veil" />
-          <span aria-hidden="true" className="shop-editorial-cover-folio">Drop 01 · Lagos</span>
+          <span aria-hidden="true" className="shop-editorial-cover-folio">{CURRENT_SHOP_DROP} · Lagos</span>
 
           <div className="shop-editorial-cover-copy">
             <p className="shop-editorial-cover-kicker">Just Urban Wears</p>
@@ -123,7 +135,7 @@ export function ShopHome() {
               <em>of one.</em>
             </h1>
             <p className="shop-editorial-cover-lede">
-              {dropProducts.length ? `${dropProducts.length} pieces. No restocks.` : "New pieces soon."}
+              {dropSize ? `${dropSize} pieces. No restocks.` : "New pieces soon."}
             </p>
             <span className="shop-editorial-cover-action">
               {heroProduct ? "Open the piece" : "View the wardrobe"} <span aria-hidden="true">↗</span>
@@ -143,7 +155,7 @@ export function ShopHome() {
       <section className="shop-discovery" id="discover" aria-labelledby="discover-title">
         <div className="shop-section-title">
           <div>
-            <p className="shop-kicker">Drop 01 · {dropProducts.length} one-off pieces</p>
+            <p className="shop-kicker">{CURRENT_SHOP_DROP} · {dropSize} one-off pieces</p>
             <h2 id="discover-title">Choose yours.</h2>
           </div>
           {!liveAvailabilityConfirmed ? (
@@ -167,7 +179,7 @@ export function ShopHome() {
           <ShopFilterSheet
             activeCount={activeFilterCount}
             onApply={setFilters}
-            products={products}
+            products={dropProducts}
             resetValues={homeShopFilters}
             values={filters}
           />

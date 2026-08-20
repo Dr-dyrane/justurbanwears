@@ -29,6 +29,16 @@ function record(name, passed, detail) {
   results.push({ name, passed });
   console.log(`${passed ? "✓" : "✗"} ${name}${detail ? ` — ${detail}` : ""}`);
 }
+function visibleMarkup(html) {
+  const bodyStart = html.indexOf("<body");
+  const bodyEnd = html.indexOf("</body>", bodyStart);
+  return html
+    .slice(bodyStart, bodyEnd === -1 ? undefined : bodyEnd)
+    .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "");
+}
+function hasNoCustomerAiCopy(html) {
+  return !/\b(?:AI|provenance|AI-completed|generated evidence)\b/i.test(visibleMarkup(html));
+}
 async function htmlCheck(name, pathname, assertions) {
   try {
     const { response, duration } = await request(pathname, { headers: { accept: "text/html" } });
@@ -40,24 +50,60 @@ async function htmlCheck(name, pathname, assertions) {
     record(name, failures.length === 0, failures.length ? failures.join(", ") : `${duration} ms`);
   } catch (error) { record(name, false, error instanceof Error ? error.message : String(error)); }
 }
-await htmlCheck("brand entrance", "/", [
-  ["brand entrance missing", (body) => body.includes('data-brand-entrance="justurbanwears"')],
-  ["brand proposition missing", (body) => body.includes("Clothes deserve") && body.includes("more than one")],
-  ["wardrobe handoff missing", (body) => body.includes('href="/shop"') && body.includes("Enter wardrobe")],
-  ["garment truth story missing", (body) => body.includes("Fully seen") && body.includes("Reviewed frames") && body.includes("AI disclosed")],
-  ["malformed metadata", (body) => !body.includes("[object Object]")],
-]);
+try {
+  const { response, duration } = await request("/", {
+    headers: { accept: "text/html" },
+    redirect: "manual",
+  });
+  const location = response.headers.get("location");
+  const passed = response.status === 308 && Boolean(location) && new URL(location, origin).pathname === "/shop";
+  record("root to Shop", passed, `${response.status} · ${location ?? "no location"} · ${duration} ms`);
+} catch (error) { record("root to Shop", false, error instanceof Error ? error.message : String(error)); }
 await htmlCheck("shop shell", "/shop", [
   ["brand copy missing", (body) => body.includes("justurban wears")],
-  ["Drop 01 missing", (body) => body.includes("Drop 01")],
+  ["Drop 02 missing", (body) => body.includes("Drop 02")],
+  ["Drop 02 count missing", (body) => body.includes("4 pieces") && body.includes("4 one-off pieces")],
+  ["Drop 02 hero missing", (body) => body.includes("violet-beaded-ruffle-romper")],
+  ["Drop 02 catalogue incomplete", (body) => [
+    "black-cropped-tee-slim-trouser-set",
+    "violet-beaded-ruffle-romper",
+    "black-sweetheart-fit-flare-midi-dress",
+    "black-ivory-folded-neck-column-dress",
+  ].every((slug) => body.includes(`/shop/products/${slug}`))],
+  ["Drop 01 leaked into discovery", (body) => !visibleMarkup(body).includes("coral-drift-dress")],
   ["shop navigation missing", (body) => body.includes("Search the wardrobe")],
+  ["customer-facing AI copy leaked", hasNoCustomerAiCopy],
   ["malformed metadata", (body) => !body.includes("[object Object]")],
   ["favicon metadata missing", (body) => body.includes('/favicon.ico?v=2026.3-seal')],
 ]);
-await htmlCheck("product passport", "/shop/products/coral-drift-dress", [
-  ["product name missing", (body) => body.includes("Coral Drift Dress")],
+await htmlCheck("product passport", "/shop/products/violet-beaded-ruffle-romper", [
+  ["product name missing", (body) => body.includes("Violet Beaded Ruffle Romper")],
+  ["seven-view dossier incomplete", (body) => [
+    "01-garment-front.webp",
+    "02-garment-back.webp",
+    "03-mannequin-front.webp",
+    "04-model-front.webp",
+    "05-model-rear-three-quarter.webp",
+    "06-fabric-detail.webp",
+    "07-model-left-profile.webp",
+  ].every((file) => body.includes(`/shop/products/violet-beaded-ruffle-romper/${file}`))],
+  ["customer-facing AI copy leaked", hasNoCustomerAiCopy],
   ["Product JSON-LD missing", (body) => body.includes("application/ld+json") && body.includes('"@type":"Product"')],
 ]);
+try {
+  const { response, duration } = await request("/shop/products/coral-drift-dress", {
+    headers: { accept: "text/html" },
+  });
+  const body = await response.text();
+  const visible = visibleMarkup(body);
+  const withdrawn = response.status === 404 || (
+    response.status === 200
+    && visible.includes("This find has left the rail")
+    && !visible.includes("Coral Drift Dress")
+    && !body.includes('"@type":"Product"')
+  );
+  record("Drop 01 withdrawn", withdrawn, `${response.status} · ${duration} ms`);
+} catch (error) { record("Drop 01 withdrawn", false, error instanceof Error ? error.message : String(error)); }
 await htmlCheck("passwordless auth", "/auth/sign-in?returnTo=%2Fshop%2Forders", [["email-code surface missing", (body) => body.includes("Email code")]]);
 try {
   const { response, duration } = await request("/manifest.webmanifest", { headers: { accept: "application/manifest+json" } });

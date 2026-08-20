@@ -88,7 +88,7 @@ function setup(
   returnWindowMs = 7 * 24 * 60 * 60 * 1000,
 ) {
   let now = new Date(initial);
-  const store = new MemoryShopOrderStore(catalogue);
+  const store = new MemoryShopOrderStore(catalogue, () => new Date(now));
   const service = new ShopOrderService(store, { now: () => new Date(now), returnWindowMs });
   return {
     store,
@@ -273,7 +273,6 @@ test("enforces customer ownership and records private actor attribution", async 
   assert.equal(operatorView.events[0].actorSubject, customer.subject);
   assert.deepEqual(operatorView.allowedTransitions, [
     { dimension: "LIFECYCLE", target: "CANCELLED" },
-    { dimension: "LIFECYCLE", target: "EXPIRED" },
   ]);
 });
 

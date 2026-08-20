@@ -52,13 +52,13 @@ export const shopCatalogueItems = pgTable("shop_catalogue_items", {
     value: string;
   }>>().notNull(),
   modelAnchor: jsonb("model_anchor").$type<{
-    id: "lulu-v2" | "lulu-v3";
+    id: "lulu-v2" | "lulu-v3" | "lulu-v4";
     src?: string;
   }>().notNull(),
   media: jsonb("media").$type<Array<{
     slot: string;
     src: string;
-    modelAnchorId?: "lulu-v2" | "lulu-v3";
+    modelAnchorId?: "lulu-v2" | "lulu-v3" | "lulu-v4";
   }>>().notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),

@@ -246,7 +246,10 @@ export class MemoryShopOrderStore implements ShopOrderStore {
   private readonly outboxByDedupe = new Map<string, string>();
   private serial: Promise<void> = Promise.resolve();
 
-  constructor(items: readonly MemoryShopCatalogueItem[]) {
+  constructor(
+    items: readonly MemoryShopCatalogueItem[],
+    private readonly now: () => Date = () => new Date(),
+  ) {
     for (const source of items) {
       const item = copy(source);
       this.catalogue.set(item.slug, item);
@@ -339,7 +342,7 @@ export class MemoryShopOrderStore implements ShopOrderStore {
     });
   }
 
-  private project(order: InternalOrder, includePrivate: boolean, now = new Date()): ShopServerOrder {
+  private project(order: InternalOrder, includePrivate: boolean, now = this.now()): ShopServerOrder {
     const projected = copy(order) as InternalOrder;
     projected.status = projectedStatus(projected);
     projected.allowedTransitions = includePrivate ? allowedTransitionsFor(projected, now) : [];

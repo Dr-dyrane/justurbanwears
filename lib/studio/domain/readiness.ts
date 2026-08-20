@@ -59,9 +59,7 @@ export function listingReadiness(
     },
     {
       id: "model",
-      label: approvedContract
-        ? `Lulu ${approvedContract.modelAnchor.id === "lulu-v3" ? "V3" : "V2"} public model`
-        : "Approved Lulu public model",
+      label: "Approved Lulu public model",
       ready: Boolean(
         model
         && model.id === snapshot.defaultModelId

@@ -3,7 +3,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 export const CATALOGUE_NAMESPACE = "justurbanwears.shop.catalogue";
-export const EXPECTED_CATALOGUE_ROWS = 18;
+export const EXPECTED_CATALOGUE_ROWS = 22;
 export const LEGACY_CATALOGUE_SKUS = Object.freeze(
   Array.from({ length: 12 }, (_, index) => `DYN-${String(index + 81).padStart(3, "0")}`),
 );
@@ -40,7 +40,7 @@ const MODEL_MEDIA_SLOTS = new Set([
   "MODEL_REAR_MIRROR",
   "MODEL_DETAIL",
 ]);
-const MODEL_ANCHOR_IDS = new Set(["lulu-v2", "lulu-v3"]);
+const MODEL_ANCHOR_IDS = new Set(["lulu-v2", "lulu-v3", "lulu-v4"]);
 const REQUIRED_MEDIA_SLOTS = ["GARMENT_FRONT", "GARMENT_BACK", "MANNEQUIN_FRONT"];
 
 function invariant(condition, message) {

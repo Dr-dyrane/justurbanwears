@@ -33,7 +33,7 @@ const LEGACY_AUTHORITY = new Map<
 
 function studioCategory(category: (typeof WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS)[number]["category"]): GarmentCategory {
   if (category === "Dresses") return "Dress";
-  if (category === "Sets") return "Set";
+  if (category === "Sets" || category === "Rompers") return "Set";
   if (category === "Shirts") return "Shirt";
   if (category === "Knitwear") return "Knitwear";
   if (category === "Skirts") return "Skirt";

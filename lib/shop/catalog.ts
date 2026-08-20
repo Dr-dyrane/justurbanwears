@@ -33,6 +33,7 @@ export function getShopProduct(slug: string) {
 export const shopCategories = [
   "All",
   "Dresses",
+  "Rompers",
   "Sets",
   "Shirts",
   "Knitwear",

@@ -24,7 +24,7 @@ import {
 } from "../scripts/shop-db/release-core.mjs";
 
 const repositoryRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
-const expectedChecksum = "cd7b631012c13e3bf84f001e1ebb725af01d1fddf166ce4b1d8e6123aa95a984";
+const expectedChecksum = "371d82638677221762913bc11b3f5d9392806ce60d7b8e42154e9c979981dc1d";
 const legacySkuRenames = Object.fromEntries(
   Array.from({ length: 12 }, (_, index) => [
     `DYN-${String(index + 81).padStart(3, "0")}`,
@@ -70,10 +70,10 @@ function databaseCatalogueRows(manifest = SHOP_CATALOGUE_MANIFEST) {
   }));
 }
 
-test("the checked-in manifest validates all 18 public products and immutable SKUs", () => {
+test("the checked-in manifest validates all 22 catalogue products and immutable SKUs", () => {
   assert.deepEqual(validateManifest(SHOP_CATALOGUE_MANIFEST, { assetRoot: join(repositoryRoot, "public") }), {
     checksum: expectedChecksum,
-    productCount: 18,
+    productCount: 22,
   });
   assert.deepEqual(
     SHOP_CATALOGUE_MANIFEST.products.map((product) => product.sku),
@@ -81,6 +81,10 @@ test("the checked-in manifest validates all 18 public products and immutable SKU
       ...Array.from({ length: 16 }, (_, index) => `JUW-${String(index + 1).padStart(3, "0")}`),
       "JUW-020",
       "JUW-021",
+      "JUW-025",
+      "JUW-026",
+      "JUW-027",
+      "JUW-028",
     ],
   );
   const salmon = SHOP_CATALOGUE_MANIFEST.products.find((product) => product.sku === "JUW-006");
@@ -128,6 +132,30 @@ test("the checked-in manifest validates all 18 public products and immutable SKU
     returned: 0,
     writeOff: 0,
   });
+  const drop02 = SHOP_CATALOGUE_MANIFEST.products.slice(-4);
+  assert.deepEqual(
+    drop02.map(({ sku, name, category, price }) => ({ sku, name, category, price })),
+    [
+      { sku: "JUW-025", name: "Black Cropped Tee and Slim Trouser Set", category: "Sets", price: 24500 },
+      { sku: "JUW-026", name: "Violet Beaded Ruffle Romper", category: "Rompers", price: 32000 },
+      { sku: "JUW-027", name: "Black Sweetheart Fit-and-Flare Midi Dress", category: "Dresses", price: 28500 },
+      { sku: "JUW-028", name: "Black and Ivory Folded-Neck Column Dress", category: "Dresses", price: 34500 },
+    ],
+  );
+  for (const product of drop02) {
+    assert.equal(product.drop, "Drop 02");
+    assert.equal(product.taggedSize, "Size on request");
+    assert.equal(product.fit, "Measurements confirmed before payment");
+    assert.equal(product.condition, "Condition confirmed before payment");
+    assert.deepEqual(product.measurements, []);
+    assert.deepEqual(product.modelAnchor, { id: "lulu-v4" });
+    assert.equal(product.media.filter((media) => media.slot.startsWith("MODEL_")).length, 3);
+    assert.doesNotMatch(
+      [product.note, product.story, ...product.details].join(" "),
+      /\b(?:ai|provenance|generated|inferred)\b/i,
+    );
+  }
+  assert.equal(drop02[1].silhouette, "romper");
 });
 
 test("the release manifest exactly matches the approved browser presentation seeds", () => {
@@ -163,14 +191,14 @@ test("revision decisions no-op only for identical target evidence", () => {
     namespace: "justurbanwears.shop.catalogue",
     revision: SHOP_CATALOGUE_MANIFEST.revision,
     checksum: expectedChecksum,
-    rowCount: 12,
+    rowCount: 22,
     target: "preview",
   };
   assert.equal(decideRevision(undefined, request), "apply");
-  assert.equal(decideRevision({ ...request, row_count: 12 }, request), "noop");
-  assert.throws(() => decideRevision({ ...request, checksum: "0".repeat(64), row_count: 12 }, request), /different checksum/);
-  assert.throws(() => decideRevision({ ...request, target: "production", row_count: 12 }, request), /different target/);
-  assert.throws(() => decideRevision({ ...request, row_count: 11 }, request), /row count/);
+  assert.equal(decideRevision({ ...request, row_count: 22 }, request), "noop");
+  assert.throws(() => decideRevision({ ...request, checksum: "0".repeat(64), row_count: 22 }, request), /different checksum/);
+  assert.throws(() => decideRevision({ ...request, target: "production", row_count: 22 }, request), /different target/);
+  assert.throws(() => decideRevision({ ...request, row_count: 21 }, request), /row count/);
 });
 
 test("credential and target guards accept only the declared direct database", () => {
@@ -220,7 +248,7 @@ test("seed and descriptive sync never update operational inventory", () => {
   const options = { target: "preview", gitSha: "a".repeat(40) };
   const seed = buildCatalogueMutationPlan(SHOP_CATALOGUE_MANIFEST, { ...options, mode: "seed" });
   const sync = buildCatalogueMutationPlan(SHOP_CATALOGUE_MANIFEST, { ...options, mode: "descriptive-sync" });
-  assert.equal(seed.inventory.length, 18);
+  assert.equal(seed.inventory.length, 22);
   assert.ok(seed.inventory.every((query: { text: string }) => /on conflict \("sku"\) do nothing$/.test(query.text)));
   assert.ok(sync.inventory.every((query: { text: string }) => /on conflict \("sku"\) do nothing$/.test(query.text)));
   const updateClause = sync.catalogue[0].text.split("do update set ")[1];

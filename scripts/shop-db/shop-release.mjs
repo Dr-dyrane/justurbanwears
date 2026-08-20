@@ -3,6 +3,7 @@ import { dirname, join } from "node:path";
 import { assertCleanGit, resolveGitSha, safeErrorMessage, withAdminClient } from "./admin-client.mjs";
 import { applyCatalogueInTransaction, verifyCatalogueInTransaction } from "./catalogue-operations.mjs";
 import { SHOP_CATALOGUE_MANIFEST } from "./catalogue-manifest.mjs";
+import { applyDrop02TransitionInTransaction } from "./drop02-transition.mjs";
 import {
   assertExpectedManifestChecksum,
   buildCatalogueMutationPlan,
@@ -64,6 +65,7 @@ if (process.argv.length !== 2) {
           plan,
           access.target,
         );
+        await applyDrop02TransitionInTransaction(transaction, SHOP_CATALOGUE_MANIFEST);
         await verifyCatalogueInTransaction(transaction, SHOP_CATALOGUE_MANIFEST, validation, access.target);
         return { catalogueDecision, migrationCount: migrationDecision.pending.length };
       });

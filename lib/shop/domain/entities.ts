@@ -4,10 +4,10 @@ export type NairaAmount = number;
 
 export type ShopAvailability = "AVAILABLE" | "RESERVED" | "SOLD";
 export type ProductTone = "coral" | "indigo" | "moss" | "ivory" | "cocoa" | "salmon";
-export type ProductSilhouette = "dress" | "set" | "shirt" | "knit" | "skirt" | "trouser";
+export type ProductSilhouette = "dress" | "romper" | "set" | "shirt" | "knit" | "skirt" | "trouser";
 export type ProductMediaPresentation = "garment" | "mannequin" | "model";
 export type ProductMediaView = "front" | "back" | "side" | "three-quarter" | "rear-mirror" | "detail";
-export type ShopModelAnchorId = "lulu-v2" | "lulu-v3";
+export type ShopModelAnchorId = "lulu-v2" | "lulu-v3" | "lulu-v4";
 
 export interface ShopProductMedia {
   id: string;
@@ -40,7 +40,7 @@ export interface ShopProduct {
   slug: ShopProductSlug;
   sku: string;
   name: string;
-  category: "Dresses" | "Sets" | "Shirts" | "Knitwear" | "Skirts" | "Trousers";
+  category: "Dresses" | "Rompers" | "Sets" | "Shirts" | "Knitwear" | "Skirts" | "Trousers";
   price: NairaAmount;
   taggedSize: string;
   fit: string;

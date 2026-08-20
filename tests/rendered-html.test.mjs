@@ -44,43 +44,42 @@ test("server-renders the public shop foundation", async () => {
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
 
   const html = await response.text();
+  const visibleBody = visibleMarkup(html);
+  const copy = visibleCopy(html);
   assert.match(html, /justurban wears/);
-  assert.match(html, /Drop 01/);
-  assert.match(html, /Clothes with a second first impression/);
+  assert.match(visibleBody, /Drop 02/);
+  assert.match(visibleBody, /4 pieces\. No restocks\./);
+  assert.match(copy, /4 one-off pieces/);
+  assert.match(visibleBody, /violet-beaded-ruffle-romper/);
   assert.match(html, /Search the wardrobe/);
   assert.match(html, /Live availability is temporarily unavailable/);
   assert.match(html, /data-mobile-chrome-mode="compact"/);
   assert.match(html, /aria-label="Show navigation\. Home selected"/);
   assert.match(html, /id="shop-mobile-navigation"/);
+  assert.doesNotMatch(visibleBody, /\b(?:AI|provenance|AI-completed|generated evidence)\b/i);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/i);
 });
 
-test("publishes one product-led hero and one concise Drop 01 discovery grid", async () => {
+test("publishes the Violet romper hero and the exact four-piece Drop 02", async () => {
   const response = await render("/shop");
   assert.equal(response.status, 200);
 
   const html = await response.text();
   const visibleBody = visibleMarkup(html);
-  assert.match(visibleBody, /\/products\/coral-drift-dress\/04-model-front\.webp/);
-  assert.match(visibleBody, /data-model-anchor="lulu-v3"/);
+  assert.match(visibleBody, /\/products\/violet-beaded-ruffle-romper\/04-model-front\.webp/);
+  assert.match(visibleBody, /data-model-anchor="lulu-v4"/);
   assert.match(visibleBody, /On Lulu/);
-  assert.match(visibleBody, /Coral Drift Dress/);
+  assert.match(visibleBody, /Violet Beaded Ruffle Romper/);
   assert.doesNotMatch(visibleBody, /Approved studio identity|not shop merchandise/);
   assert.match(visibleBody, /aria-haspopup="dialog"/);
   assert.match(visibleBody, /class="[^"]*shop-filter-sheet/);
   assert.doesNotMatch(visibleBody, /shop-filter-row|availability-filter|shop-desktop-search-panel/);
 
   const releasedProducts = [
-    ["Coral Drift Dress", "coral-drift-dress"],
-    ["Moss Square Knit", "moss-square-knit"],
-    ["Cocoa Pleat Trouser", "cocoa-pleat-trouser"],
-    ["Salmon Camp Shirt", "salmon-camp-shirt"],
-    ["Blush Scoop Mini Dress", "blush-scoop-mini-dress"],
-    ["Orchid Beaded Column Gown", "orchid-beaded-column-gown"],
-    ["Sage Asymmetric Ruched Maxi Dress", "sage-asymmetric-ruched-maxi-dress"],
-    ["Magenta Plunge Ruched Mini Dress", "magenta-plunge-ruched-mini-dress"],
-    ["Silver Off-Shoulder Mermaid Dress", "silver-off-shoulder-mermaid-dress"],
-    ["Multicolor Abstract Strapless Mini Dress", "multicolor-abstract-strapless-mini-dress"],
+    ["Black Cropped Tee and Slim Trouser Set", "black-cropped-tee-slim-trouser-set"],
+    ["Violet Beaded Ruffle Romper", "violet-beaded-ruffle-romper"],
+    ["Black Sweetheart Fit-and-Flare Midi Dress", "black-sweetheart-fit-flare-midi-dress"],
+    ["Black and Ivory Folded-Neck Column Dress", "black-ivory-folded-neck-column-dress"],
   ];
 
   for (const [name, slug] of releasedProducts) {
@@ -88,9 +87,11 @@ test("publishes one product-led hero and one concise Drop 01 discovery grid", as
     assert.match(visibleBody, new RegExp(name));
   }
 
+  assert.equal((visibleBody.match(/class="shop-product-card"/g) ?? []).length, 3);
   assert.doesNotMatch(visibleBody, /shop-release-index|shop-wardrobe-preview|shop-editorial-rail|shop-values/);
   assert.doesNotMatch(visibleBody, /GARMENT STUDY|(?:DYN-0(?:8[1-9]|9[0-2])|JUW-0(?:0[1-9]|1[0-2]))|Six dresses from Lulu’s wardrobe|Warm colour\. Clean movement/);
-  assert.doesNotMatch(visibleBody, /Indigo Workshirt|Ivory Tie Skirt/);
+  assert.doesNotMatch(visibleBody, /Coral Drift Dress|Indigo Workshirt|Ivory Tie Skirt/);
+  assert.doesNotMatch(visibleBody, /\b(?:AI|provenance|AI-completed|generated evidence)\b/i);
 });
 
 test("keeps the private Studio and public shop visibly distinct", async () => {
@@ -102,7 +103,6 @@ test("keeps the private Studio and public shop visibly distinct", async () => {
   assert.match(visibleBody, /Studio · Lulu/);
   assert.match(visibleBody, /Business home/);
   assert.match(visibleBody, /Opening Lulu Studio/);
-  assert.match(visibleBody, /href="\/studio\/models"/);
   assert.match(visibleBody, /href="\/studio\/wardrobe"/);
   assert.match(visibleBody, /href="\/studio\/operations"/);
   assert.match(visibleBody, /data-mobile-chrome-mode="compact"/);
@@ -115,11 +115,12 @@ test("keeps the private Studio and public shop visibly distinct", async () => {
 });
 
 test("server-renders a navigable public product detail", async () => {
-  const response = await render("/shop/products/coral-drift-dress");
+  const response = await render("/shop/products/violet-beaded-ruffle-romper");
   assert.equal(response.status, 200);
 
   const html = await response.text();
-  assert.match(html, /Coral Drift Dress/);
+  const visibleBody = visibleMarkup(html);
+  assert.match(visibleBody, /Violet Beaded Ruffle Romper/);
   assert.match(html, /Live availability is unavailable/);
   assert.match(html, /Availability temporarily unavailable/);
   assert.doesNotMatch(html, /Buy now|Add to bag/);
@@ -133,103 +134,68 @@ test("server-renders a navigable public product detail", async () => {
   assert.match(html, /Check the fit/);
   assert.match(html, /Fabric and finish/);
   assert.match(html, /shop-product-info-sheet/);
-  assert.doesNotMatch(visibleMarkup(html), /<details\b/i);
+  assert.doesNotMatch(visibleBody, /<details\b/i);
   assert.doesNotMatch(html, /Sold by|Following/);
-  assert.match(html, /data-model-anchor="lulu-v2"/);
-  assert.match(html, /01-garment-front\.webp/);
+  assert.match(html, /data-model-anchor="lulu-v4"/);
+  for (const file of [
+    "01-garment-front.webp",
+    "02-garment-back.webp",
+    "03-mannequin-front.webp",
+    "04-model-front.webp",
+    "05-model-rear-three-quarter.webp",
+    "06-fabric-detail.webp",
+    "07-model-left-profile.webp",
+  ]) {
+    assert.match(html, new RegExp(`/products/violet-beaded-ruffle-romper/${file.replace(".", "\\.")}`));
+  }
   assert.match(html, /application\/ld\+json/);
+  assert.doesNotMatch(visibleBody, /\b(?:AI|provenance|AI-completed|generated evidence)\b/i);
 });
 
-test("server-renders product studies plus only identity-cleared model views", async () => {
+test("server-renders all seven approved views for each Drop 02 product", async () => {
   const slugs = [
-    "coral-drift-dress",
-    "indigo-workshirt",
-    "moss-square-knit",
-    "ivory-tie-skirt",
-    "cocoa-pleat-trouser",
-    "salmon-camp-shirt",
-    "blush-scoop-mini-dress",
-    "orchid-beaded-column-gown",
-    "sage-asymmetric-ruched-maxi-dress",
-    "magenta-plunge-ruched-mini-dress",
-    "silver-off-shoulder-mermaid-dress",
-    "multicolor-abstract-strapless-mini-dress",
+    "black-cropped-tee-slim-trouser-set",
+    "violet-beaded-ruffle-romper",
+    "black-sweetheart-fit-flare-midi-dress",
+    "black-ivory-folded-neck-column-dress",
   ];
   const responses = await Promise.all(
     slugs.map((slug) => render(`/shop/products/${slug}`)),
   );
-  const approvedModelSlugs = new Set([
-    "coral-drift-dress",
-    "indigo-workshirt",
-    "moss-square-knit",
-    "ivory-tie-skirt",
-    "cocoa-pleat-trouser",
-    "salmon-camp-shirt",
-    "blush-scoop-mini-dress",
-    "orchid-beaded-column-gown",
-    "multicolor-abstract-strapless-mini-dress",
-  ]);
-  const approvedLeftProfileSlugs = new Set([
-    "coral-drift-dress",
-    "moss-square-knit",
-    "cocoa-pleat-trouser",
-    "magenta-plunge-ruched-mini-dress",
-  ]);
-  const approvedRearThreeQuarterSlugs = new Set([
-    ...approvedLeftProfileSlugs,
-    "silver-off-shoulder-mermaid-dress",
-  ]);
 
   for (const [index, response] of responses.entries()) {
     assert.equal(response.status, 200);
     const html = await response.text();
     const visibleBody = visibleMarkup(html);
     const base = `/products/${slugs[index]}`;
-    assert.match(html, new RegExp(`${base}/01-garment-front\\.webp`));
-    assert.match(html, new RegExp(`${base}/02-garment-back\\.webp`));
-    assert.match(html, new RegExp(`${base}/03-mannequin-front\\.webp`));
-    assert.match(html, new RegExp(`${base}/06-fabric-detail\\.webp`));
-    assert.doesNotMatch(html, /05-model-back\.webp/);
-    const hasApprovedFront = approvedModelSlugs.has(slugs[index]);
-    const expectedFrontAnchor = [
-      "coral-drift-dress",
-      "indigo-workshirt",
-      "moss-square-knit",
-      "cocoa-pleat-trouser",
-      "salmon-camp-shirt",
-    ].includes(slugs[index])
-      ? "lulu-v3"
-      : "lulu-v2";
-    const hasApprovedLeftProfile = approvedLeftProfileSlugs.has(slugs[index]);
-    const hasApprovedRearThreeQuarter = approvedRearThreeQuarterSlugs.has(slugs[index]);
-    const hasApprovedSupplementalViews = hasApprovedLeftProfile || hasApprovedRearThreeQuarter;
-    if (hasApprovedFront) {
-      assert.match(visibleBody, new RegExp(`data-model-anchor="${expectedFrontAnchor}"`));
-      assert.match(
-        visibleBody,
-        new RegExp(`class="shop-media-frame is-model is-front"[^>]*data-model-anchor="${expectedFrontAnchor}"`),
-      );
-    } else {
-      assert.doesNotMatch(visibleBody, /class="shop-media-frame is-model is-front"/);
-      assert.doesNotMatch(visibleBody, new RegExp(`${base}/04-model-front\\.webp`));
-      if (!hasApprovedSupplementalViews) {
-        assert.doesNotMatch(visibleBody, /data-model-anchor="lulu-v2"/);
-        assert.doesNotMatch(visibleBody, /class="shop-media-frame is-model/);
-      }
+    for (const file of [
+      "01-garment-front.webp",
+      "02-garment-back.webp",
+      "03-mannequin-front.webp",
+      "04-model-front.webp",
+      "05-model-rear-three-quarter.webp",
+      "06-fabric-detail.webp",
+      "07-model-left-profile.webp",
+    ]) {
+      assert.match(html, new RegExp(`${base}/${file.replace(".", "\\.")}`));
     }
-    if (hasApprovedLeftProfile) {
-      assert.match(visibleBody, new RegExp(`${base}/07-model-left-profile\\.webp`));
-      assert.match(visibleBody, /On Lulu · left profile/);
-    } else {
-      assert.doesNotMatch(visibleBody, /07-model-left-profile\.webp/);
-    }
-    if (hasApprovedRearThreeQuarter) {
-      assert.match(visibleBody, new RegExp(`${base}/05-model-rear-three-quarter\\.webp`));
-      assert.match(visibleBody, /On Lulu · right rear three-quarter/);
-    } else {
-      assert.doesNotMatch(visibleBody, /05-model-rear-three-quarter\.webp/);
-    }
+    assert.match(visibleBody, /data-model-anchor="lulu-v4"/);
+    assert.match(visibleBody, /class="shop-media-frame is-model is-front"[^>]*data-model-anchor="lulu-v4"/);
+    assert.match(visibleBody, /On Lulu · left profile/);
+    assert.match(visibleBody, /On Lulu · right rear three-quarter/);
+    assert.doesNotMatch(visibleBody, /\b(?:AI|provenance|AI-completed|generated evidence)\b/i);
   }
+});
+
+test("keeps archived Drop 01 product routes out of the public catalogue", async () => {
+  const response = await render("/shop/products/coral-drift-dress");
+  assert.equal(response.status, 200);
+
+  const html = await response.text();
+  const visibleBody = visibleMarkup(html);
+  assert.match(visibleBody, /This find has left the rail/);
+  assert.doesNotMatch(visibleBody, /Coral Drift Dress/);
+  assert.doesNotMatch(html, /"@type":"Product"/);
 });
 
 test("server-renders public commerce and guards customer order history", async () => {
@@ -273,7 +239,7 @@ test("keeps prototype language out of the visible shopper journey", async () => 
   const responses = await Promise.all([
     render("/shop"),
     render("/shop/search"),
-    render("/shop/products/coral-drift-dress"),
+    render("/shop/products/violet-beaded-ruffle-romper"),
     render("/shop/bag"),
     render("/shop/checkout"),
     render("/shop/orders"),
@@ -284,6 +250,7 @@ test("keeps prototype language out of the visible shopper journey", async () => 
     .map(visibleCopy)
     .join("\n");
   assert.doesNotMatch(visible, /\b(?:demo|fictional|preview|sample)\b/i);
+  assert.doesNotMatch(visible, /\b(?:AI|provenance|AI-completed|generated evidence)\b/i);
   assert.doesNotMatch(visible, /Current mode|Your local activity|Preferences only|Required after save|App settings|Featured piece|More from the rail/i);
 });
 

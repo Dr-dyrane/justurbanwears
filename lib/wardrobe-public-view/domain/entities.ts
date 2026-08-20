@@ -10,7 +10,7 @@ export type WardrobePublicMediaSlot =
   | "CONSTRUCTION_DETAIL"
   | "FABRIC_DETAIL";
 
-export type WardrobePublicModelAnchorId = "lulu-v2" | "lulu-v3";
+export type WardrobePublicModelAnchorId = "lulu-v2" | "lulu-v3" | "lulu-v4";
 
 export interface WardrobePublicMedia {
   slot: WardrobePublicMediaSlot;
@@ -26,13 +26,17 @@ export type WardrobePublicModelAnchor =
   | {
       id: "lulu-v3";
       src?: never;
+    }
+  | {
+      id: "lulu-v4";
+      src?: never;
     };
 
 export interface WardrobePublicProduct {
   slug: string;
   sku: string;
   name: string;
-  category: "Dresses" | "Sets" | "Shirts" | "Knitwear" | "Skirts" | "Trousers";
+  category: "Dresses" | "Rompers" | "Sets" | "Shirts" | "Knitwear" | "Skirts" | "Trousers";
   price: number;
   taggedSize: string;
   fit: string;
@@ -41,7 +45,7 @@ export interface WardrobePublicProduct {
   availability: "AVAILABLE" | "RESERVED" | "SOLD";
   drop: string;
   tone: "coral" | "indigo" | "moss" | "ivory" | "cocoa" | "salmon";
-  silhouette: "dress" | "set" | "shirt" | "knit" | "skirt" | "trouser";
+  silhouette: "dress" | "romper" | "set" | "shirt" | "knit" | "skirt" | "trouser";
   note: string;
   story: string;
   details: string[];

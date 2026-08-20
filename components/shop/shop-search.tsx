@@ -3,6 +3,7 @@
 import { Search, SearchX } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { shopCategories } from "../../lib/shop/catalog";
+import { isCurrentShopProduct } from "../../lib/shop/current-drop";
 import { ProductCard } from "./product-card";
 import {
   countActiveShopFilters,
@@ -61,6 +62,10 @@ export function ShopSearch() {
   const [query, setQuery] = useState("");
   const [filters, setFilters] = useState<ShopFilterValues>(defaultShopFilters);
   const urlReadyRef = useRef(false);
+  const currentProducts = useMemo(
+    () => products.filter(isCurrentShopProduct),
+    [products],
+  );
 
   useEffect(() => {
     function restoreSearchState() {
@@ -82,7 +87,7 @@ export function ShopSearch() {
 
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
-    const matches = products.filter((product) => {
+    const matches = currentProducts.filter((product) => {
       const searchable = [
         product.name,
         product.category,
@@ -103,9 +108,9 @@ export function ShopSearch() {
     return [...matches].sort((left, right) => {
       if (filters.sort === "price-low") return left.price - right.price;
       if (filters.sort === "price-high") return right.price - left.price;
-      return products.indexOf(left) - products.indexOf(right);
+      return currentProducts.indexOf(left) - currentProducts.indexOf(right);
     });
-  }, [filters, products, query]);
+  }, [currentProducts, filters, query]);
 
   const activeFilterCount = countActiveShopFilters(filters);
   const hasQuery = Boolean(query.trim());
@@ -143,7 +148,7 @@ export function ShopSearch() {
         <ShopFilterSheet
           activeCount={activeFilterCount}
           onApply={setFilters}
-          products={products}
+          products={currentProducts}
           values={filters}
         />
       </div>

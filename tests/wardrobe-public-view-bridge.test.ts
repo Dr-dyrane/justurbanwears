@@ -95,6 +95,45 @@ test("the wardrobe public view migrates the retired synthetic SKU namespace", ()
   assert.doesNotMatch(JSON.stringify(parsed), /DYN-081/);
 });
 
+test("the public view admits the reviewed V4 romper vocabulary without a public anchor source", () => {
+  const slug = "violet-beaded-ruffle-romper";
+  const parsed = parseStoredWardrobePublicView(stored({
+    ...coral,
+    slug,
+    sku: "JUW-026",
+    name: "V4 romper contract fixture",
+    category: "Rompers",
+    silhouette: "romper",
+    modelAnchor: { id: "lulu-v4" },
+    media: [
+      { slot: "GARMENT_FRONT", src: `/shop/products/${slug}/01-garment-front.webp` },
+      { slot: "GARMENT_BACK", src: `/shop/products/${slug}/02-garment-back.webp` },
+      { slot: "MANNEQUIN_FRONT", src: `/shop/products/${slug}/03-mannequin-front.webp` },
+      { slot: "MODEL_FRONT", src: `/shop/products/${slug}/04-model-front.webp`, modelAnchorId: "lulu-v4" },
+      { slot: "FABRIC_DETAIL", src: `/shop/products/${slug}/06-fabric-detail.webp` },
+      { slot: "MODEL_LEFT_PROFILE", src: `/shop/products/${slug}/07-model-left-profile.webp`, modelAnchorId: "lulu-v4" },
+      { slot: "MODEL_REAR_THREE_QUARTER", src: `/shop/products/${slug}/05-model-rear-three-quarter.webp`, modelAnchorId: "lulu-v4" },
+    ],
+  }));
+
+  assert.equal(parsed.products.length, 1);
+  assert.equal(parsed.products[0].category, "Rompers");
+  assert.equal(parsed.products[0].silhouette, "romper");
+  assert.deepEqual(parsed.products[0].modelAnchor, { id: "lulu-v4" });
+  assert.deepEqual(
+    parsed.products[0].media
+      .filter(({ slot }) => slot.startsWith("MODEL_"))
+      .map(({ modelAnchorId }) => modelAnchorId),
+    ["lulu-v4", "lulu-v4", "lulu-v4"],
+  );
+
+  const leakedSource = parseStoredWardrobePublicView(stored({
+    ...parsed.products[0],
+    modelAnchor: { id: "lulu-v4", src: "/storage/private-v4-master.png" },
+  }));
+  assert.deepEqual(leakedSource.products, []);
+});
+
 test("v7 migrates Moss to a V3 front while retaining V2 supplemental views", () => {
   const moss = WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS.find(
     (product) => product.slug === "moss-square-knit",

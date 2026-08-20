@@ -8,6 +8,7 @@ import {
   studioCataloguePublications,
 } from "../../db/shop-postgres-schema";
 import { shopProducts } from "./catalog";
+import { CURRENT_SHOP_DROP, isCurrentShopProduct } from "./current-drop";
 import type { ShopProduct } from "./domain/entities";
 import {
   isApprovedShopMediaSource,
@@ -26,9 +27,9 @@ import type {
 
 const CACHE_TTL_MS = 30_000;
 const DATABASE_TIMEOUT_MS = 5_000;
-const categories = new Set(["Dresses", "Sets", "Shirts", "Knitwear", "Skirts", "Trousers"]);
+const categories = new Set(["Dresses", "Rompers", "Sets", "Shirts", "Knitwear", "Skirts", "Trousers"]);
 const tones = new Set(["coral", "indigo", "moss", "ivory", "cocoa", "salmon"]);
-const silhouettes = new Set(["dress", "set", "shirt", "knit", "skirt", "trouser"]);
+const silhouettes = new Set(["dress", "romper", "set", "shirt", "knit", "skirt", "trouser"]);
 const mediaSlots = new Set([
   "GARMENT_FRONT",
   "GARMENT_BACK",
@@ -124,8 +125,11 @@ function parseModelAnchor(value: unknown): WardrobePublicModelAnchor {
   if (!value || typeof value !== "object" || !("id" in value)) {
     throw new Error("Invalid catalogue model anchor.");
   }
-  if (value.id === "lulu-v3" && (!("src" in value) || value.src === undefined)) {
-    return { id: "lulu-v3" };
+  if (
+    (value.id === "lulu-v3" || value.id === "lulu-v4")
+    && (!("src" in value) || value.src === undefined)
+  ) {
+    return { id: value.id };
   }
   if (
     value.id === "lulu-v2"
@@ -159,7 +163,7 @@ function parseMedia(value: unknown, slug: string): WardrobePublicMedia[] {
     const modelAnchorId = "modelAnchorId" in item ? item.modelAnchorId : undefined;
     if (
       modelSlots.has(item.slot)
-      ? modelAnchorId !== "lulu-v2" && modelAnchorId !== "lulu-v3"
+      ? modelAnchorId !== "lulu-v2" && modelAnchorId !== "lulu-v3" && modelAnchorId !== "lulu-v4"
       : modelAnchorId !== undefined
     ) throw new Error("Invalid catalogue media anchor.");
 
@@ -385,7 +389,7 @@ function adoptedBaselineRow(row: DatabaseCatalogueRow): DatabaseCatalogueRow {
 }
 
 function fallbackProducts(): ShopProduct[] {
-  return shopProducts.map((product) => ({
+  return shopProducts.filter(isCurrentShopProduct).map((product) => ({
     ...product,
     availabilityConfirmed: false,
     details: [...product.details],
@@ -531,7 +535,7 @@ export async function loadServerShopProducts(
   try {
     const rows = await readRows();
     if (!rows.length) throw new Error("The catalogue is empty.");
-    const products = rows.flatMap((row) => {
+    const products = rows.filter((row) => row.dropLabel === CURRENT_SHOP_DROP).flatMap((row) => {
       const product = databaseCatalogueRowToShopProduct(row);
       return product ? [product] : [];
     });

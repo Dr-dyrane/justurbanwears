@@ -1,8 +1,9 @@
 import { createHash } from "node:crypto";
-import { readFile, stat } from "node:fs/promises";
+import { readFile, stat, writeFile } from "node:fs/promises";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { get, list, put } from "@vercel/blob";
+import sharp from "sharp";
 import { SHOP_CATALOGUE_MANIFEST } from "../shop-db/catalogue-manifest.mjs";
 import { canonicalStringify, manifestChecksum } from "../shop-db/release-core.mjs";
 
@@ -56,6 +57,10 @@ export async function createBlobAssetPlan(root = repositoryRoot) {
     const digest = sha256(body);
     const contentType = contentTypes.get(extension(sourcePath));
     if (!contentType) throw new Error(`Unsupported public media type: ${sourcePath}`);
+    const metadata = await sharp(body).metadata();
+    if (!Number.isSafeInteger(metadata.width) || !Number.isSafeInteger(metadata.height)) {
+      throw new Error(`Public media dimensions are unavailable: ${sourcePath}`);
+    }
     const relativePath = sourcePath.slice("/shop/".length);
 
     return {
@@ -64,9 +69,40 @@ export async function createBlobAssetPlan(root = repositoryRoot) {
       sha256: digest,
       size: body.byteLength,
       contentType,
+      width: metadata.width,
+      height: metadata.height,
       body,
     };
   }));
+}
+
+export async function createPublicMediaSourceManifest(root = repositoryRoot) {
+  const plan = await createBlobAssetPlan(root);
+  return {
+    schemaVersion: 1,
+    catalogueRevision: SHOP_CATALOGUE_MANIFEST.revision,
+    catalogueChecksum: manifestChecksum(SHOP_CATALOGUE_MANIFEST),
+    cataloguePresentationChecksum: cataloguePresentationChecksum(),
+    assets: plan.map((asset) => ({
+      sourcePath: asset.sourcePath,
+      pathname: asset.pathname,
+      sha256: asset.sha256,
+      size: asset.size,
+      contentType: asset.contentType,
+      width: asset.width,
+      height: asset.height,
+    })),
+  };
+}
+
+async function writeJson(pathname, value) {
+  await writeFile(pathname, `${JSON.stringify(value, null, 2)}\n`, "utf8");
+}
+
+export async function writePublicMediaSourceManifest(root = repositoryRoot) {
+  const manifest = await createPublicMediaSourceManifest(root);
+  await writeJson(join(root, "lib/shop/public-media-source-manifest.json"), manifest);
+  return manifest;
 }
 
 async function readPreviousManifest(root) {
@@ -171,20 +207,52 @@ export async function syncApprovedPublicMedia({ token, root = repositoryRoot } =
   };
 }
 
+export async function writeSyncedPublicMediaManifest({ token, root = repositoryRoot } = {}) {
+  const manifest = await syncApprovedPublicMedia({ token, root });
+  await writeJson(join(root, "lib/shop/public-media-manifest.json"), manifest);
+  return manifest;
+}
+
+function sourceManifestSummary(result) {
+  return {
+    mode: "source-manifest",
+    catalogueRevision: result.catalogueRevision,
+    catalogueChecksum: result.catalogueChecksum,
+    cataloguePresentationChecksum: result.cataloguePresentationChecksum,
+    assetCount: result.assets.length,
+    totalBytes: result.assets.reduce((total, asset) => total + asset.size, 0),
+  };
+}
+
+function syncedManifestSummary(result) {
+  return {
+    mode: "synced-public-manifest",
+    catalogueRevision: result.catalogueRevision,
+    catalogueChecksum: result.catalogueChecksum,
+    cataloguePresentationChecksum: result.cataloguePresentationChecksum,
+    assetCount: result.assets.length,
+    totalBytes: result.assets.reduce((total, asset) => total + asset.size, 0),
+    legacyAssetCount: result.legacyAssets.length,
+    hosts: [...new Set(result.assets.map((asset) => new URL(asset.url).host))],
+  };
+}
+
 if (process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])) {
-  const result = await syncApprovedPublicMedia({
-    token: process.env.PUBLIC_BLOB_READ_WRITE_TOKEN,
-  });
-  const output = process.argv.includes("--summary")
-    ? {
-        catalogueRevision: result.catalogueRevision,
-        catalogueChecksum: result.catalogueChecksum,
-        cataloguePresentationChecksum: result.cataloguePresentationChecksum,
-        assetCount: result.assets.length,
-        totalBytes: result.assets.reduce((total, asset) => total + asset.size, 0),
-        legacyAssetCount: result.legacyAssets.length,
-        hosts: [...new Set(result.assets.map((asset) => new URL(asset.url).host))],
-      }
-    : result;
+  const writeSource = process.argv.includes("--write-source-manifest");
+  const writePublic = process.argv.includes("--write-public-manifest");
+  if (writeSource && writePublic) {
+    throw new Error("Choose one manifest write mode at a time.");
+  }
+
+  const result = writeSource
+    ? await writePublicMediaSourceManifest()
+    : writePublic
+      ? await writeSyncedPublicMediaManifest({ token: process.env.PUBLIC_BLOB_READ_WRITE_TOKEN })
+      : await syncApprovedPublicMedia({ token: process.env.PUBLIC_BLOB_READ_WRITE_TOKEN });
+  const output = writeSource
+    ? sourceManifestSummary(result)
+    : process.argv.includes("--summary") || writePublic
+      ? syncedManifestSummary(result)
+      : result;
   process.stdout.write(`${JSON.stringify(output, null, 2)}\n`);
 }

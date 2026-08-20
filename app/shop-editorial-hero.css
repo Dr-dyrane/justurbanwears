@@ -575,7 +575,7 @@
   color: rgba(33, 23, 19, 0.48);
 }
 
-.shop-home .product-card-action > span {
+.shop-home .product-card-action > span:last-child {
   clip: rect(0 0 0 0);
   clip-path: inset(50%);
   height: 1px;

@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "catalogueRevision": "2026-08-11-catalogue-14",
-  "catalogueChecksum": "cd7b631012c13e3bf84f001e1ebb725af01d1fddf166ce4b1d8e6123aa95a984",
-  "cataloguePresentationChecksum": "086449ec6997bb6bcb4e4751da2b3e9f27f123d0bd6f7b8f9418d8a86c6bebe1",
+  "catalogueRevision": "2026-08-20-catalogue-15",
+  "catalogueChecksum": "371d82638677221762913bc11b3f5d9392806ce60d7b8e42154e9c979981dc1d",
+  "cataloguePresentationChecksum": "959a831693d0ddd06f0305736229b35f5fb3fb816675f3698ede7eadf8a15058",
   "legacyAssets": [
     {
       "sourcePath": "/shop/products/cocoa-cowl-gathered-midi-dress/07-model-left-profile.webp",
@@ -37,6 +37,174 @@
       "sha256": "35ad162ba8a9b3e50a8288ddc03dda350926dc95b93e7541a08405f711a5347c",
       "size": 1802736,
       "contentType": "image/png"
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-slim-trouser-set/01-garment-front.webp",
+      "pathname": "shop/catalogue/0c226967fa685b8993daf5f0403f06addad6fb59741157ac57d86d4e734e1aed/products/black-cropped-tee-slim-trouser-set/01-garment-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/0c226967fa685b8993daf5f0403f06addad6fb59741157ac57d86d4e734e1aed/products/black-cropped-tee-slim-trouser-set/01-garment-front.webp",
+      "sha256": "0c226967fa685b8993daf5f0403f06addad6fb59741157ac57d86d4e734e1aed",
+      "size": 44760,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-slim-trouser-set/02-garment-back.webp",
+      "pathname": "shop/catalogue/6fd5e9021a38110db22f886160eccce087972cd6e674acc21af56e377f59209f/products/black-cropped-tee-slim-trouser-set/02-garment-back.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/6fd5e9021a38110db22f886160eccce087972cd6e674acc21af56e377f59209f/products/black-cropped-tee-slim-trouser-set/02-garment-back.webp",
+      "sha256": "6fd5e9021a38110db22f886160eccce087972cd6e674acc21af56e377f59209f",
+      "size": 46760,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-slim-trouser-set/03-mannequin-front.webp",
+      "pathname": "shop/catalogue/6aebb67feab56c411b61193f1026e379b5f3258c2e892a5bb06f2f90bcaefaf5/products/black-cropped-tee-slim-trouser-set/03-mannequin-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/6aebb67feab56c411b61193f1026e379b5f3258c2e892a5bb06f2f90bcaefaf5/products/black-cropped-tee-slim-trouser-set/03-mannequin-front.webp",
+      "sha256": "6aebb67feab56c411b61193f1026e379b5f3258c2e892a5bb06f2f90bcaefaf5",
+      "size": 47468,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-slim-trouser-set/04-model-front.webp",
+      "pathname": "shop/catalogue/ea6dcc5d41ed0cb2865af9c4712942d284c558eae8e95c6aa4714c66a32d72f1/products/black-cropped-tee-slim-trouser-set/04-model-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/ea6dcc5d41ed0cb2865af9c4712942d284c558eae8e95c6aa4714c66a32d72f1/products/black-cropped-tee-slim-trouser-set/04-model-front.webp",
+      "sha256": "ea6dcc5d41ed0cb2865af9c4712942d284c558eae8e95c6aa4714c66a32d72f1",
+      "size": 203946,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-slim-trouser-set/05-model-rear-three-quarter.webp",
+      "pathname": "shop/catalogue/0b2fc2ebca18d54ce82c9b103bca478f4b209c01a1d3838513de623dcb60d0dd/products/black-cropped-tee-slim-trouser-set/05-model-rear-three-quarter.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/0b2fc2ebca18d54ce82c9b103bca478f4b209c01a1d3838513de623dcb60d0dd/products/black-cropped-tee-slim-trouser-set/05-model-rear-three-quarter.webp",
+      "sha256": "0b2fc2ebca18d54ce82c9b103bca478f4b209c01a1d3838513de623dcb60d0dd",
+      "size": 219638,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-slim-trouser-set/06-fabric-detail.webp",
+      "pathname": "shop/catalogue/4222caee52628d6adcdf51a0f2edaeae7d4b050768758fe61e959cbda3a3faa4/products/black-cropped-tee-slim-trouser-set/06-fabric-detail.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/4222caee52628d6adcdf51a0f2edaeae7d4b050768758fe61e959cbda3a3faa4/products/black-cropped-tee-slim-trouser-set/06-fabric-detail.webp",
+      "sha256": "4222caee52628d6adcdf51a0f2edaeae7d4b050768758fe61e959cbda3a3faa4",
+      "size": 231600,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-slim-trouser-set/07-model-left-profile.webp",
+      "pathname": "shop/catalogue/4dfc831e0cd4fcd01bdb8d3efbd46125e53af75c5aae0cc988fb269c19260cd8/products/black-cropped-tee-slim-trouser-set/07-model-left-profile.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/4dfc831e0cd4fcd01bdb8d3efbd46125e53af75c5aae0cc988fb269c19260cd8/products/black-cropped-tee-slim-trouser-set/07-model-left-profile.webp",
+      "sha256": "4dfc831e0cd4fcd01bdb8d3efbd46125e53af75c5aae0cc988fb269c19260cd8",
+      "size": 145112,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/black-ivory-folded-neck-column-dress/01-garment-front.webp",
+      "pathname": "shop/catalogue/39e5d936d60605ba0c971c44ff53ea96e1740a9eae5577fec147be49fb906b70/products/black-ivory-folded-neck-column-dress/01-garment-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/39e5d936d60605ba0c971c44ff53ea96e1740a9eae5577fec147be49fb906b70/products/black-ivory-folded-neck-column-dress/01-garment-front.webp",
+      "sha256": "39e5d936d60605ba0c971c44ff53ea96e1740a9eae5577fec147be49fb906b70",
+      "size": 47056,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/black-ivory-folded-neck-column-dress/02-garment-back.webp",
+      "pathname": "shop/catalogue/b137ad086e4b8937034bceab8a92d673ad788d369882df2ec6df7f842c888ff1/products/black-ivory-folded-neck-column-dress/02-garment-back.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/b137ad086e4b8937034bceab8a92d673ad788d369882df2ec6df7f842c888ff1/products/black-ivory-folded-neck-column-dress/02-garment-back.webp",
+      "sha256": "b137ad086e4b8937034bceab8a92d673ad788d369882df2ec6df7f842c888ff1",
+      "size": 48246,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/black-ivory-folded-neck-column-dress/03-mannequin-front.webp",
+      "pathname": "shop/catalogue/b8f2d7d504c6f00fa0eb5862a67ef04692e4818c6945a4e3b09ec2bcb48c781d/products/black-ivory-folded-neck-column-dress/03-mannequin-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/b8f2d7d504c6f00fa0eb5862a67ef04692e4818c6945a4e3b09ec2bcb48c781d/products/black-ivory-folded-neck-column-dress/03-mannequin-front.webp",
+      "sha256": "b8f2d7d504c6f00fa0eb5862a67ef04692e4818c6945a4e3b09ec2bcb48c781d",
+      "size": 49600,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/black-ivory-folded-neck-column-dress/04-model-front.webp",
+      "pathname": "shop/catalogue/87761a70a863246f53290bb58f31bfa252300dbbb281b3640fd1329c227d980d/products/black-ivory-folded-neck-column-dress/04-model-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/87761a70a863246f53290bb58f31bfa252300dbbb281b3640fd1329c227d980d/products/black-ivory-folded-neck-column-dress/04-model-front.webp",
+      "sha256": "87761a70a863246f53290bb58f31bfa252300dbbb281b3640fd1329c227d980d",
+      "size": 188594,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/black-ivory-folded-neck-column-dress/05-model-rear-three-quarter.webp",
+      "pathname": "shop/catalogue/1af3f21b3f84eb90b95a7b5f879a8eed550dd7946b9c96c26d72d43e8f481a59/products/black-ivory-folded-neck-column-dress/05-model-rear-three-quarter.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/1af3f21b3f84eb90b95a7b5f879a8eed550dd7946b9c96c26d72d43e8f481a59/products/black-ivory-folded-neck-column-dress/05-model-rear-three-quarter.webp",
+      "sha256": "1af3f21b3f84eb90b95a7b5f879a8eed550dd7946b9c96c26d72d43e8f481a59",
+      "size": 212804,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/black-ivory-folded-neck-column-dress/06-fabric-detail.webp",
+      "pathname": "shop/catalogue/1d09bd429b3d998db817c9c00bda71960039573086c4176a1c780ee729d5559f/products/black-ivory-folded-neck-column-dress/06-fabric-detail.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/1d09bd429b3d998db817c9c00bda71960039573086c4176a1c780ee729d5559f/products/black-ivory-folded-neck-column-dress/06-fabric-detail.webp",
+      "sha256": "1d09bd429b3d998db817c9c00bda71960039573086c4176a1c780ee729d5559f",
+      "size": 174888,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/black-ivory-folded-neck-column-dress/07-model-left-profile.webp",
+      "pathname": "shop/catalogue/7fb2c3399598ae52b29abf66fde4942fd7f57a6b09a646f61b6e834a0fe3e5fb/products/black-ivory-folded-neck-column-dress/07-model-left-profile.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/7fb2c3399598ae52b29abf66fde4942fd7f57a6b09a646f61b6e834a0fe3e5fb/products/black-ivory-folded-neck-column-dress/07-model-left-profile.webp",
+      "sha256": "7fb2c3399598ae52b29abf66fde4942fd7f57a6b09a646f61b6e834a0fe3e5fb",
+      "size": 203824,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/black-sweetheart-fit-flare-midi-dress/01-garment-front.webp",
+      "pathname": "shop/catalogue/8242545e47ad42b9bab804cd7095118df1c8a7c1f149ea820673153a14caabf8/products/black-sweetheart-fit-flare-midi-dress/01-garment-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/8242545e47ad42b9bab804cd7095118df1c8a7c1f149ea820673153a14caabf8/products/black-sweetheart-fit-flare-midi-dress/01-garment-front.webp",
+      "sha256": "8242545e47ad42b9bab804cd7095118df1c8a7c1f149ea820673153a14caabf8",
+      "size": 57172,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/black-sweetheart-fit-flare-midi-dress/02-garment-back.webp",
+      "pathname": "shop/catalogue/522b44d292a979f9f2b21679d067bb0055cab88a2e87dca16fbe1bdeabad4808/products/black-sweetheart-fit-flare-midi-dress/02-garment-back.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/522b44d292a979f9f2b21679d067bb0055cab88a2e87dca16fbe1bdeabad4808/products/black-sweetheart-fit-flare-midi-dress/02-garment-back.webp",
+      "sha256": "522b44d292a979f9f2b21679d067bb0055cab88a2e87dca16fbe1bdeabad4808",
+      "size": 65540,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/black-sweetheart-fit-flare-midi-dress/03-mannequin-front.webp",
+      "pathname": "shop/catalogue/8ce01b6ad71d2c43a5fa86a58340d60254ff259b301ef9015385fbb1cb1f783f/products/black-sweetheart-fit-flare-midi-dress/03-mannequin-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/8ce01b6ad71d2c43a5fa86a58340d60254ff259b301ef9015385fbb1cb1f783f/products/black-sweetheart-fit-flare-midi-dress/03-mannequin-front.webp",
+      "sha256": "8ce01b6ad71d2c43a5fa86a58340d60254ff259b301ef9015385fbb1cb1f783f",
+      "size": 61354,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/black-sweetheart-fit-flare-midi-dress/04-model-front.webp",
+      "pathname": "shop/catalogue/edbe8819de3166a015fbb1aa5748041f8d5574b35f8ce984d4e4529a4e1c93b3/products/black-sweetheart-fit-flare-midi-dress/04-model-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/edbe8819de3166a015fbb1aa5748041f8d5574b35f8ce984d4e4529a4e1c93b3/products/black-sweetheart-fit-flare-midi-dress/04-model-front.webp",
+      "sha256": "edbe8819de3166a015fbb1aa5748041f8d5574b35f8ce984d4e4529a4e1c93b3",
+      "size": 209552,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/black-sweetheart-fit-flare-midi-dress/05-model-rear-three-quarter.webp",
+      "pathname": "shop/catalogue/268eca96656caf4f751b3668c8aa09ae16036e90da7792dea22dcd4ec55f7301/products/black-sweetheart-fit-flare-midi-dress/05-model-rear-three-quarter.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/268eca96656caf4f751b3668c8aa09ae16036e90da7792dea22dcd4ec55f7301/products/black-sweetheart-fit-flare-midi-dress/05-model-rear-three-quarter.webp",
+      "sha256": "268eca96656caf4f751b3668c8aa09ae16036e90da7792dea22dcd4ec55f7301",
+      "size": 246240,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/black-sweetheart-fit-flare-midi-dress/06-fabric-detail.webp",
+      "pathname": "shop/catalogue/58badf500a1920bbf114a1999f0f9f9a5dd203565a197e3acf7a73b749e07d38/products/black-sweetheart-fit-flare-midi-dress/06-fabric-detail.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/58badf500a1920bbf114a1999f0f9f9a5dd203565a197e3acf7a73b749e07d38/products/black-sweetheart-fit-flare-midi-dress/06-fabric-detail.webp",
+      "sha256": "58badf500a1920bbf114a1999f0f9f9a5dd203565a197e3acf7a73b749e07d38",
+      "size": 378836,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/black-sweetheart-fit-flare-midi-dress/07-model-left-profile.webp",
+      "pathname": "shop/catalogue/4e62d5649b118d9c279a2fb6acc2f3fdc6af70d564879c1c7263c2b09532067c/products/black-sweetheart-fit-flare-midi-dress/07-model-left-profile.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/4e62d5649b118d9c279a2fb6acc2f3fdc6af70d564879c1c7263c2b09532067c/products/black-sweetheart-fit-flare-midi-dress/07-model-left-profile.webp",
+      "sha256": "4e62d5649b118d9c279a2fb6acc2f3fdc6af70d564879c1c7263c2b09532067c",
+      "size": 207814,
+      "contentType": "image/webp"
     },
     {
       "sourcePath": "/shop/products/blush-scoop-mini-dress/01-garment-front.webp",
@@ -852,6 +1020,62 @@
       "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/1d9fa87b1a8ba9cabff1dab38ffd4bae76e98bb59f07a8a0443332f531ac4448/products/teal-draped-mini-set/09-model-rear-mirror.webp",
       "sha256": "1d9fa87b1a8ba9cabff1dab38ffd4bae76e98bb59f07a8a0443332f531ac4448",
       "size": 234130,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/violet-beaded-ruffle-romper/01-garment-front.webp",
+      "pathname": "shop/catalogue/faf426cf0e3e5730952754a8d6997d9e1abfd784494a8414354875f86e88b0b5/products/violet-beaded-ruffle-romper/01-garment-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/faf426cf0e3e5730952754a8d6997d9e1abfd784494a8414354875f86e88b0b5/products/violet-beaded-ruffle-romper/01-garment-front.webp",
+      "sha256": "faf426cf0e3e5730952754a8d6997d9e1abfd784494a8414354875f86e88b0b5",
+      "size": 226640,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/violet-beaded-ruffle-romper/02-garment-back.webp",
+      "pathname": "shop/catalogue/b4d2683c50936b35a8ffef1b984bd2377388bb9be97485b4065568631f535bcc/products/violet-beaded-ruffle-romper/02-garment-back.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/b4d2683c50936b35a8ffef1b984bd2377388bb9be97485b4065568631f535bcc/products/violet-beaded-ruffle-romper/02-garment-back.webp",
+      "sha256": "b4d2683c50936b35a8ffef1b984bd2377388bb9be97485b4065568631f535bcc",
+      "size": 165548,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/violet-beaded-ruffle-romper/03-mannequin-front.webp",
+      "pathname": "shop/catalogue/38527af82ddccf9159c0c7f0b26885513d69fa999473fc50a83efe05246ab162/products/violet-beaded-ruffle-romper/03-mannequin-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/38527af82ddccf9159c0c7f0b26885513d69fa999473fc50a83efe05246ab162/products/violet-beaded-ruffle-romper/03-mannequin-front.webp",
+      "sha256": "38527af82ddccf9159c0c7f0b26885513d69fa999473fc50a83efe05246ab162",
+      "size": 198072,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/violet-beaded-ruffle-romper/04-model-front.webp",
+      "pathname": "shop/catalogue/429cc78505caf8ee0e711d55059fbae7bfed21450247de714b181dfd3c2b3709/products/violet-beaded-ruffle-romper/04-model-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/429cc78505caf8ee0e711d55059fbae7bfed21450247de714b181dfd3c2b3709/products/violet-beaded-ruffle-romper/04-model-front.webp",
+      "sha256": "429cc78505caf8ee0e711d55059fbae7bfed21450247de714b181dfd3c2b3709",
+      "size": 278548,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/violet-beaded-ruffle-romper/05-model-rear-three-quarter.webp",
+      "pathname": "shop/catalogue/0de05b62afe7c6d508bf82364fecf4394c8e644edafa9c0ab1d5767347f8d46d/products/violet-beaded-ruffle-romper/05-model-rear-three-quarter.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/0de05b62afe7c6d508bf82364fecf4394c8e644edafa9c0ab1d5767347f8d46d/products/violet-beaded-ruffle-romper/05-model-rear-three-quarter.webp",
+      "sha256": "0de05b62afe7c6d508bf82364fecf4394c8e644edafa9c0ab1d5767347f8d46d",
+      "size": 258386,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/violet-beaded-ruffle-romper/06-fabric-detail.webp",
+      "pathname": "shop/catalogue/666ff4b57d16230675853a8208ca172c4711594f0887008d8ded52bdc15b164f/products/violet-beaded-ruffle-romper/06-fabric-detail.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/666ff4b57d16230675853a8208ca172c4711594f0887008d8ded52bdc15b164f/products/violet-beaded-ruffle-romper/06-fabric-detail.webp",
+      "sha256": "666ff4b57d16230675853a8208ca172c4711594f0887008d8ded52bdc15b164f",
+      "size": 419578,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/violet-beaded-ruffle-romper/07-model-left-profile.webp",
+      "pathname": "shop/catalogue/c1b7e8689ccbeb8e30762e72eaefbf454d79a22183f62ee97a7e7370e9587e5b/products/violet-beaded-ruffle-romper/07-model-left-profile.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/c1b7e8689ccbeb8e30762e72eaefbf454d79a22183f62ee97a7e7370e9587e5b/products/violet-beaded-ruffle-romper/07-model-left-profile.webp",
+      "sha256": "c1b7e8689ccbeb8e30762e72eaefbf454d79a22183f62ee97a7e7370e9587e5b",
+      "size": 243982,
       "contentType": "image/webp"
     }
   ]

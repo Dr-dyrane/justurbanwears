@@ -30,7 +30,7 @@ export const initialModelTryoutState: ModelTryoutState = {
   attempt: 0,
 };
 
-const supportedModelAnchorIds = new Set<ShopModelAnchorId>(["lulu-v2", "lulu-v3"]);
+const supportedModelAnchorIds = new Set<ShopModelAnchorId>(["lulu-v2", "lulu-v3", "lulu-v4"]);
 
 function freshLoadingState(attempt: number): ModelTryoutState {
   return {

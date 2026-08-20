@@ -19,9 +19,8 @@ test("loads the experience layer after the mature surface styles", () => {
   assert.ok(experience > editorial);
 });
 
-test("marks Site, Shop, and Studio with explicit cross-surface tempos", () => {
-  assert.match(site, /data-experience-surface="site"/);
-  assert.match(site, /data-experience-tempo="editorial"/);
+test("routes the retired Site entrance into Shop and keeps Shop and Studio tempos explicit", () => {
+  assert.match(site, /permanentRedirect\("\/shop"\)/);
   assert.match(shop, /data-experience-surface="shop"/);
   assert.match(shop, /data-experience-tempo="focus"/);
   assert.match(studio, /data-experience-surface="studio"/);

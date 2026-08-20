@@ -17,6 +17,7 @@ export const WARDROBE_PUBLIC_MODEL_ANCHORS = Object.freeze({
     src: "/shop/model/lulu-v2-approved.png" as const,
   }),
   "lulu-v3": Object.freeze({ id: "lulu-v3" as const }),
+  "lulu-v4": Object.freeze({ id: "lulu-v4" as const }),
 });
 
 /** The public V2 identity reference remains the default and is never replaced by a private master. */
@@ -32,6 +33,13 @@ export const WARDROBE_APPROVED_V3_MODEL_FRONT_SLUGS = Object.freeze([
   "sage-open-back-high-slit-maxi-dress",
 ] as const);
 
+export const WARDROBE_APPROVED_V4_MODEL_SLUGS = Object.freeze([
+  "black-cropped-tee-slim-trouser-set",
+  "violet-beaded-ruffle-romper",
+  "black-sweetheart-fit-flare-midi-dress",
+  "black-ivory-folded-neck-column-dress",
+] as const);
+
 export const WARDROBE_APPROVED_MODEL_FRONT_SLUGS = Object.freeze([
   "coral-drift-dress",
   "indigo-workshirt",
@@ -40,6 +48,7 @@ export const WARDROBE_APPROVED_MODEL_FRONT_SLUGS = Object.freeze([
   "cocoa-pleat-trouser",
   "salmon-camp-shirt",
   ...WARDROBE_DROP_01_APPROVED_MODEL_FRONT_SLUGS,
+  ...WARDROBE_APPROVED_V4_MODEL_SLUGS,
 ] as const);
 
 type WardrobeSupplementalModelSlot = Extract<
@@ -48,6 +57,10 @@ type WardrobeSupplementalModelSlot = Extract<
 >;
 
 export const WARDROBE_APPROVED_MODEL_SUPPLEMENTAL_SLOTS = Object.freeze({
+  "black-cropped-tee-slim-trouser-set": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
+  "violet-beaded-ruffle-romper": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
+  "black-sweetheart-fit-flare-midi-dress": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
+  "black-ivory-folded-neck-column-dress": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "coral-drift-dress": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "moss-square-knit": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "cocoa-pleat-trouser": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
@@ -78,6 +91,7 @@ export function getApprovedModelSupplementalSlots(
 
 const modelFrontSlugs = new Set<string>(WARDROBE_APPROVED_MODEL_FRONT_SLUGS);
 const v3ModelFrontSlugs = new Set<string>(WARDROBE_APPROVED_V3_MODEL_FRONT_SLUGS);
+const v4ModelSlugs = new Set<string>(WARDROBE_APPROVED_V4_MODEL_SLUGS);
 const v3SupplementalModelSlugs = new Set([
   "teal-draped-mini-set",
   "sage-open-back-high-slit-maxi-dress",
@@ -111,6 +125,7 @@ export function getApprovedModelAnchorId(
   slot: WardrobePublicMediaSlot,
 ): WardrobePublicModelAnchorId | undefined {
   if (!modelMediaSlots.has(slot)) return undefined;
+  if (v4ModelSlugs.has(slug)) return "lulu-v4";
   return (
     (slot === "MODEL_FRONT" && v3ModelFrontSlugs.has(slug))
     || (slot !== "MODEL_FRONT" && v3SupplementalModelSlugs.has(slug))
@@ -118,6 +133,9 @@ export function getApprovedModelAnchorId(
 }
 
 export function getWardrobePublicModelAnchor(slug: string): WardrobePublicModelAnchor {
+  if (v4ModelSlugs.has(slug)) {
+    return { ...WARDROBE_PUBLIC_MODEL_ANCHORS["lulu-v4"] };
+  }
   return v3ModelFrontSlugs.has(slug) || v3SupplementalModelSlugs.has(slug)
     ? { ...WARDROBE_PUBLIC_MODEL_ANCHORS["lulu-v3"] }
     : { ...WARDROBE_PUBLIC_MODEL_ANCHORS["lulu-v2"] };
@@ -313,6 +331,82 @@ export const WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS: readonly WardrobePublicProduc
       measurement: WardrobePublicProduct["measurements"][number],
     ) => ({ ...measurement })),
   })),
+  migrationSeed({
+    slug: "black-cropped-tee-slim-trouser-set",
+    sku: "JUW-025",
+    name: "Black Cropped Tee and Slim Trouser Set",
+    category: "Sets",
+    price: 24500,
+    taggedSize: "Size on request",
+    fit: "Measurements confirmed before payment",
+    condition: "Condition confirmed before payment",
+    colour: "Black",
+    availability: "AVAILABLE",
+    drop: "Drop 02",
+    tone: "cocoa",
+    silhouette: "set",
+    note: "A black cropped tee and slim trouser pairing with a clean, close line.",
+    story: "Soft gathered sleeve caps meet a fitted crop, balanced by high-waisted tapered trousers with a simple silver-tone button.",
+    details: ["Cropped crew-neck tee", "Soft gathered sleeve caps", "High-waisted slim trousers", "Tapered ankle length"],
+    measurements: [],
+  }),
+  migrationSeed({
+    slug: "violet-beaded-ruffle-romper",
+    sku: "JUW-026",
+    name: "Violet Beaded Ruffle Romper",
+    category: "Rompers",
+    price: 32000,
+    taggedSize: "Size on request",
+    fit: "Measurements confirmed before payment",
+    condition: "Condition confirmed before payment",
+    colour: "Deep violet",
+    availability: "AVAILABLE",
+    drop: "Drop 02",
+    tone: "indigo",
+    silhouette: "romper",
+    note: "A deep-violet beaded romper framed by soft flounces and an asymmetric ruffled hem.",
+    story: "Slim straps and an off-shoulder flounce open the neckline, while dense tonal beadwork carries through the close romper silhouette.",
+    details: ["Slim shoulder straps", "Off-shoulder flounce", "Dense tonal beadwork", "Asymmetric ruffled hem"],
+    measurements: [],
+  }),
+  migrationSeed({
+    slug: "black-sweetheart-fit-flare-midi-dress",
+    sku: "JUW-027",
+    name: "Black Sweetheart Fit-and-Flare Midi Dress",
+    category: "Dresses",
+    price: 28500,
+    taggedSize: "Size on request",
+    fit: "Measurements confirmed before payment",
+    condition: "Condition confirmed before payment",
+    colour: "Black",
+    availability: "AVAILABLE",
+    drop: "Drop 02",
+    tone: "cocoa",
+    silhouette: "dress",
+    note: "A black sweetheart midi shaped through the bodice and released into a full gathered skirt.",
+    story: "Curved cup seams, short structured sleeves, and a panelled waist give way to a softly gathered A-line midi skirt.",
+    details: ["Sweetheart cup seams", "Short structured sleeves", "Panelled fitted bodice", "Gathered A-line midi skirt"],
+    measurements: [],
+  }),
+  migrationSeed({
+    slug: "black-ivory-folded-neck-column-dress",
+    sku: "JUW-028",
+    name: "Black and Ivory Folded-Neck Column Dress",
+    category: "Dresses",
+    price: 34500,
+    taggedSize: "Size on request",
+    fit: "Measurements confirmed before payment",
+    condition: "Condition confirmed before payment",
+    colour: "Black and ivory",
+    availability: "AVAILABLE",
+    drop: "Drop 02",
+    tone: "ivory",
+    silhouette: "dress",
+    note: "A floor-length black column set off by a broad folded ivory neckline.",
+    story: "The wide off-shoulder fold frames a low open neckline before the dress falls into a long, close column silhouette.",
+    details: ["Broad folded ivory neckline", "Off-shoulder line", "Close column silhouette", "Floor length"],
+    measurements: [],
+  }),
 ]);
 
 export function createWardrobePublicViewMigrationSnapshot(): WardrobePublicViewSnapshot {

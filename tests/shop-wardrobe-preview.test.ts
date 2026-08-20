@@ -2,57 +2,51 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import test from "node:test";
-import { WARDROBE_DROP_01_PRODUCTS } from "../lib/wardrobe-public-view/drop-01";
-import {
-  getApprovedModelSupplementalSlots,
-  WARDROBE_APPROVED_MODEL_FRONT_SLUGS,
-  WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS,
-} from "../lib/wardrobe-public-view/seeds";
+import { CURRENT_SHOP_DROP, isCurrentShopProduct } from "../lib/shop/current-drop";
+import { WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS } from "../lib/wardrobe-public-view/seeds";
 
-const approvedModelFrontSlugs = new Set<string>(WARDROBE_APPROVED_MODEL_FRONT_SLUGS);
+const expectedDrop02Products = [
+  ["black-cropped-tee-slim-trouser-set", "Black Cropped Tee and Slim Trouser Set"],
+  ["violet-beaded-ruffle-romper", "Violet Beaded Ruffle Romper"],
+  ["black-sweetheart-fit-flare-midi-dress", "Black Sweetheart Fit-and-Flare Midi Dress"],
+  ["black-ivory-folded-neck-column-dress", "Black and Ivory Folded-Neck Column Dress"],
+] as const;
 
-const expectedNames = [
-  "Blush Scoop Mini Dress",
-  "Orchid Beaded Column Gown",
-  "Sage Asymmetric Ruched Maxi Dress",
-  "Magenta Plunge Ruched Mini Dress",
-  "Silver Off-Shoulder Mermaid Dress",
-  "Multicolor Abstract Strapless Mini Dress",
-  "Teal Draped Mini Set",
-  "Sage Open-Back High-Slit Maxi Dress",
-  "Cocoa Cowl Gathered Midi Dress",
-  "Ivory Rib-Knit Fitted Midi Dress",
-  "Coral Gathered Crop-Top and Mini-Skirt Set",
-  "Cropped Denim Jacket and Black Legging Look",
-];
+const expectedDrop02Media = [
+  "GARMENT_FRONT",
+  "GARMENT_BACK",
+  "MANNEQUIN_FRONT",
+  "MODEL_FRONT",
+  "FABRIC_DETAIL",
+  "MODEL_LEFT_PROFILE",
+  "MODEL_REAR_THREE_QUARTER",
+] as const;
 
-test("the wardrobe pieces are saleable Drop 01 rows, not a separate preview catalogue", () => {
-  assert.deepEqual(WARDROBE_DROP_01_PRODUCTS.map((product) => product.name), expectedNames);
-  for (const product of WARDROBE_DROP_01_PRODUCTS) {
-    assert.equal(product.drop, "Drop 01");
+test("the public Shop is the exact four-piece Drop 02 wardrobe", () => {
+  const dropProducts = WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS.filter(isCurrentShopProduct);
+
+  assert.equal(CURRENT_SHOP_DROP, "Drop 02");
+  assert.equal(dropProducts.length, 4);
+  assert.deepEqual(
+    dropProducts.map(({ name, slug }) => [slug, name]),
+    expectedDrop02Products,
+  );
+
+  for (const product of dropProducts) {
+    assert.equal(product.drop, CURRENT_SHOP_DROP);
     assert.equal(product.availability, "AVAILABLE");
-    assert.equal(product.category, ["JUW-013", "JUW-020", "JUW-021"].includes(product.sku) ? "Sets" : "Dresses");
     assert.ok(product.price > 0);
     assert.equal(product.taggedSize, "Size on request");
-  }
-
-  const releaseSlugs = new Set<string>(WARDROBE_DROP_01_PRODUCTS.map((product) => product.slug));
-  const saleRows = WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS.filter((product) => releaseSlugs.has(product.slug));
-  assert.equal(saleRows.length, expectedNames.length);
-  assert.deepEqual(saleRows.map((product) => product.slug), WARDROBE_DROP_01_PRODUCTS.map((product) => product.slug));
-  for (const product of saleRows) {
-    const expectedMedia = [
-      "GARMENT_FRONT",
-      "GARMENT_BACK",
-      "MANNEQUIN_FRONT",
-      ...(approvedModelFrontSlugs.has(product.slug) ? ["MODEL_FRONT"] : []),
-      ...(["sage-open-back-high-slit-maxi-dress", "coral-gathered-crop-mini-set"].includes(product.slug)
-        ? ["CONSTRUCTION_DETAIL"]
-        : ["FABRIC_DETAIL"]),
-      ...getApprovedModelSupplementalSlots(product.slug),
-    ];
-    assert.deepEqual(product.media.map((item) => item.slot), expectedMedia);
-    assert.doesNotMatch(JSON.stringify(product), /storage\/models|source\/instagram|privateNote|references/i);
+    assert.equal(product.modelAnchor.id, "lulu-v4");
+    assert.deepEqual(product.media.map((item) => item.slot), expectedDrop02Media);
+    assert.equal(product.media.length, 7);
+    for (const media of product.media.filter((item) => item.slot.startsWith("MODEL_"))) {
+      assert.equal(media.modelAnchorId, "lulu-v4");
+    }
+    assert.doesNotMatch(
+      JSON.stringify(product),
+      /storage\/models|source\/instagram|privateNote|references|provenance/i,
+    );
   }
 
   const shopHomeSource = readFileSync(
@@ -63,9 +57,33 @@ test("the wardrobe pieces are saleable Drop 01 rows, not a separate preview cata
     join(process.cwd(), "lib/studio/seeds/wardrobe-authority.ts"),
     "utf8",
   );
+  const searchSource = readFileSync(
+    join(process.cwd(), "components/shop/shop-search.tsx"),
+    "utf8",
+  );
+  const detailSource = readFileSync(
+    join(process.cwd(), "components/shop/product-detail.tsx"),
+    "utf8",
+  );
+  const homeCss = readFileSync(
+    join(process.cwd(), "app/shop-editorial-hero.css"),
+    "utf8",
+  );
+  const relatedCss = readFileSync(
+    join(process.cwd(), "app/shop-product-detail-c.css"),
+    "utf8",
+  );
   assert.doesNotMatch(authoritySource, /WARDROBE_PUBLIC_DRAFTS|reviewedDrafts/);
   assert.doesNotMatch(shopHomeSource, /WardrobePreview|shop-release-index|shop-editorial-rail|shop-values/);
   assert.match(shopHomeSource, /showModelLink=\{false\}/);
   assert.match(shopHomeSource, /showStudyMark=\{false\}/);
   assert.match(shopHomeSource, /product\.slug !== heroProduct\.slug/);
+  assert.match(shopHomeSource, /products\.filter\(isCurrentShopProduct\)/);
+  assert.match(shopHomeSource, /violet-beaded-ruffle-romper/);
+  assert.match(searchSource, /products\.filter\(isCurrentShopProduct\)/);
+  assert.match(detailSource, /candidate && isCurrentShopProduct\(candidate\)/);
+  assert.match(homeCss, /\.shop-home \.product-card-action > span:last-child/);
+  assert.match(relatedCss, /\.shop-product-page \.shop-related \.product-card-action > span:last-child/);
+  assert.doesNotMatch(homeCss, /\.shop-home \.product-card-action > span\s*\{/);
+  assert.doesNotMatch(relatedCss, /\.shop-product-page \.shop-related \.product-card-action > span\s*\{/);
 });

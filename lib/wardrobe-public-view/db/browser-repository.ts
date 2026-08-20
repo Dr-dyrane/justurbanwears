@@ -36,10 +36,10 @@ export const LEGACY_PUBLIC_CATALOG_STORAGE_KEY = "justurban-wears:catalog-projec
 
 type UnknownRecord = Record<string, unknown>;
 
-const categories = new Set(["Dresses", "Sets", "Shirts", "Knitwear", "Skirts", "Trousers"]);
+const categories = new Set(["Dresses", "Rompers", "Sets", "Shirts", "Knitwear", "Skirts", "Trousers"]);
 const availabilities = new Set(["AVAILABLE", "RESERVED", "SOLD"]);
 const tones = new Set(["coral", "indigo", "moss", "ivory", "cocoa", "salmon"]);
-const silhouettes = new Set(["dress", "set", "shirt", "knit", "skirt", "trouser"]);
+const silhouettes = new Set(["dress", "romper", "set", "shirt", "knit", "skirt", "trouser"]);
 const requiredMediaSlots: WardrobePublicMediaSlot[] = [
   "GARMENT_FRONT",
   "GARMENT_BACK",
@@ -178,9 +178,9 @@ function parseProduct(
     : isRecord(value.modelAnchor)
       && value.modelAnchor.id === expectedModelAnchor.id
       && (
-        expectedModelAnchor.id === "lulu-v3"
-          ? value.modelAnchor.src === undefined
-          : value.modelAnchor.src === expectedModelAnchor.src
+        expectedModelAnchor.id === "lulu-v2"
+          ? value.modelAnchor.src === expectedModelAnchor.src
+          : value.modelAnchor.src === undefined
       )
         ? expectedModelAnchor
         : null;
