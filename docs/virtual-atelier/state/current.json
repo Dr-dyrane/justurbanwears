@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "workflowRevision": "2026-08-20.4",
-  "updatedAt": "2026-08-20T05:43:10Z",
+  "workflowRevision": "2026-08-20.12",
+  "updatedAt": "2026-08-20T16:09:12Z",
   "model": "LULU_V4",
-  "activeGarment": "004",
-  "activeView": null,
-  "status": "COMPLETE_LOCKED_PACKETED",
+  "activeGarment": "005",
+  "activeView": "07",
+  "status": "COMPLETE_LOCKED_USER_ACCEPTED",
   "identityReview": {
     "candidateId": "lulu.face.v4.front.candidate.v1",
     "acceptedAssetId": "lulu.face.v4.front.lock.v1",
@@ -16,26 +16,27 @@
   },
   "canonicalFlow": {
     "order": [
-      "GARMENT_INTAKE",
+      "GARMENT_01_04",
       "REAL_FACE_AUTHORITY",
       "BODY_CANON",
+      "ACCESSORY_STYLING",
       "LOCKED_ROOM",
       "05_FRONT_MASTER",
       "06_OR_07_SIBLING_VIEW"
     ],
-    "diagram": "GARMENT -> FACE -> BODY -> ROOM -> 05 -> (06 || 07)",
-    "rule": "006 and 007 are independent sibling views branching from accepted 005 and the same canonical stack. Neither may parent, gate, or provide generation authority for the other."
+    "diagram": "GARMENT 01-04 -> FACE -> BODY -> ACCESSORIES + ROOM -> 05 -> (06 || 07)",
+    "rule": "The garment set is established before model work. FACE draws from the complete real-photo authority stack plus the generated V4 translation control. A deliberately declared holistic subject synthesis may re-render the full frame; if the user approves that entire frame, it is rebased as the garment-specific subject lock. Hair stays unchanged unless explicitly restyled; accessories may rotate after the subject lock passes. 006 and 007 are independent siblings from accepted 005 and never parent one another. Face, body, room and garment references are an adaptive toolkit. The final gate is realistic full-body Lulu likeness, body balance, attitude, presence, pose, garment truth and believable scene integration."
   },
   "globalLocks": {
     "garment": {
-      "status": "LOCKED",
+      "status": "INTAKE_LOCKED",
       "primary": [
-        "garment.004.front-a",
-        "garment.004.front-b",
-        "garment.004.full",
-        "garment.004.view.05.accepted"
+        "garment.005.front",
+        "garment.005.left-three-quarter",
+        "garment.005.front-confirmation",
+        "garment.005.front-continuity"
       ],
-      "rule": "004 always means the same black floor-length gown with the white folded neckline. Garment intake is the first input to every view operation."
+      "rule": "005 always means the same plain medium-deep indigo long-sleeve fitted denim-like mini dress with a shallow neckline, continuous body, one narrow closed centre-front construction line, two shaping seams and a subtly rounded hem. The user explicitly confirms there is no centre split or opening: preserve the visible line but never turn it into an open slit. The retail tag is excluded. Back construction remains unknown."
     },
     "identity": {
       "status": "LOCKED",
@@ -48,16 +49,19 @@
         "garment.001.view.05.accepted",
         "garment.004.view.05.accepted"
       ],
-      "rule": "Resolve identity from the verified F01-F10 multi-angle contact sheet, the recovered raw frontal and open-eye three-quarter photographs, and the real-photo frontal face lock. The user-approved generated V4 face lock supplies repeatable translation geometry but may not override real identity. Accepted 001/05 and 004/05 supply garment-specific JUW translation guidance only. V3 is legacy comparison only. The close frontal reference controls morphology and texture but not open-eye geometry or total head proportions. Face must pass before body or room work begins, and no sibling view has identity authority over another sibling."
+      "rule": "Every FACE operation must use the complete independent authority stack together: verified F01-F10 multi-angle contact sheet, recovered raw frontal close-up, recovered raw open-eye three-quarter photograph, real-photo frontal face lock, and user-approved generated V4 translation lock. The generated lock supplies repeatable geometry but never replaces or outranks the four real-photo layers. Convenience copies are not separate authority. Accepted 001/05 and 004/05 are translation guidance only. Hair stays unchanged from the accepted V4 styling. Face must pass before body, accessories, room, or 05 work begins."
     },
     "body": {
       "status": "LOCKED",
       "primary": [
         "lulu.body.real.angle-contact.v4",
         "lulu.body.canon.v4",
-        "lulu.body.canon.v4.three-view"
+        "lulu.body.canon.v4.three-view",
+        "lulu.body.canon.v4.side",
+        "lulu.body.canon.v4.back",
+        "garment.005.body-fit.approved.v1"
       ],
-      "rule": "Real Lulu photos remain body evidence truth. The V4 source and three-view plate are user-approved modeled silhouette and garment-transfer controls, not verified measurements. Preserve the geometry as a balanced whole: no caricatured waist, posterior exaggeration, flattening, shortened legs or upper-thigh reduction. Individual view crops are operational conveniences only."
+      "rule": "Real Lulu photos remain body evidence truth. The V4 source and three-view plate are user-approved modeled silhouette and garment-transfer controls, not verified measurements. The side and back files are operational crops, not independent evidence; use an angle crop or the combined plate according to which supports the more realistic complete frame. For Garment 005, the user-approved body-fit asset controls front body geometry, stance and fit proportions only; its patterned garment surface, accessories, footwear and background have no authority. Preserve the visible closed centre construction line but never add a split. Preserve the body as a believable whole rather than optimizing isolated measurements."
     },
     "atelier": {
       "status": "LOCKED",
@@ -198,7 +202,183 @@
         }
       ],
       "rejectedCandidatesMayParent": false
+    },
+    "005": {
+      "status": "COMPLETE_LOCKED_USER_ACCEPTED",
+      "views": {
+        "01": "USER_ACCEPTED",
+        "02": "QA_ACCEPTED_INFERRED_BACK",
+        "03": "QA_ACCEPTED_MANNEQUIN_FRONT",
+        "04": "QA_ACCEPTED_MODEL_COMPLETED_DETAIL",
+        "05": "QA_ACCEPTED_LOCKED",
+        "06": "USER_ACCEPTED_LOCKED_SIBLING",
+        "07": "USER_ACCEPTED_LOCKED_SIBLING_INFERRED_BACK"
+      },
+      "backEvidence": "MISSING",
+      "rule": "The complete 01-07 set is locked. Preserve the closed narrow centre construction line; there is no centre split or opening. Hair remains unchanged. 06 and 07 are independent siblings from 05 and may not parent one another. 07 is inferred presentation only and may not serve as direct GARMENT_BACK evidence.",
+      "approvedBodyFit": {
+        "assetId": "garment.005.body-fit.approved.v1",
+        "filename": "body-gate-v1.png",
+        "sha256": "5f1a322b3e6753c117025529a53c10bf356c92f81588015be40b17a42df57b17",
+        "bytes": 1900722,
+        "dimensions": "1122x1402",
+        "status": "USER_APPROVED_BODY_ONLY",
+        "authority": ["body", "translation"],
+        "excludedAuthority": ["garment-surface", "hair", "jewellery", "footwear", "background", "atelier"]
+      },
+      "accepted01": {
+        "assetId": "garment.005.view.01.accepted",
+        "filename": "01-garment-front.png",
+        "sha256": "854fd7fea360639e551fcf544c9ba89bc0cdeee00d3bc9082754a8372480c798",
+        "bytes": 2147998,
+        "dimensions": "1122x1402",
+        "status": "USER_ACCEPTED",
+        "mayParent": true,
+        "userOverride": "The user explicitly selected the original garment isolation."
+      },
+      "acceptedSubjectFront": {
+        "assetId": "garment.005.subject.front.lock.v1",
+        "filename": "LULU_G005_SUBJECT_FRONT_LOCK_v1.png",
+        "sha256": "467e101c9a76ed9f47d79e5fea19d7486cdf9c41f90f170c6f400b1a4e04db53",
+        "bytes": 1873899,
+        "dimensions": "1122x1402",
+        "status": "USER_ACCEPTED_LOCKED",
+        "mayParent": true,
+        "authority": ["identity-translation", "body-translation", "garment-fit", "hair", "pose", "subject-styling"],
+        "excludedAuthority": ["direct-identity-evidence", "direct-garment-evidence", "atelier"],
+        "mayParentOnly": ["garment.005.room-and-05"],
+        "rule": "The user approved the complete holistic frame. After garment slots 02-04 are complete, ROOM and 05 work parent these exact bytes; do not return to the earlier body target as the visual parent. This pre-atelier subject lock cannot directly parent 06 or 07."
+      },
+      "accepted02": {
+        "assetId": "garment.005.view.02.accepted",
+        "filename": "02-garment-back.png",
+        "sha256": "b056167532bca8b26a1b96a9db9b5b0b4fd432e93a0f1b59d4da03f478746f5f",
+        "bytes": 2023509,
+        "dimensions": "1122x1402",
+        "status": "QA_ACCEPTED_INFERRED",
+        "mayServeAsDirectBackEvidence": false
+      },
+      "accepted03": {
+        "assetId": "garment.005.view.03.accepted",
+        "filename": "03-mannequin-front.png",
+        "sha256": "c991744e6e4c2d21bf5224b2b7f6eb90505de4bf5ea2c6be0e04d16ff2256724",
+        "bytes": 1755134,
+        "dimensions": "1122x1402",
+        "status": "QA_ACCEPTED"
+      },
+      "accepted04": {
+        "assetId": "garment.005.view.04.accepted",
+        "filename": "04-fabric-detail.png",
+        "sha256": "d9e595ef3143e0788b4eb63618f3396c677be87db613f03b649d45545765407d",
+        "bytes": 2979938,
+        "dimensions": "1122x1402",
+        "status": "QA_ACCEPTED_MODEL_COMPLETED",
+        "mayServeAsFibreEvidence": false
+      },
+      "accepted05": {
+        "assetId": "garment.005.view.05.accepted",
+        "filename": "05-on-lulu-front.png",
+        "sha256": "04b1fdf4b35bf6b7d0d752e30f814533ee11f852ac949f7211c0b384355d1150",
+        "bytes": 2267671,
+        "dimensions": "1122x1402",
+        "status": "QA_ACCEPTED_LOCKED",
+        "mayParent": true,
+        "mayParentOnly": ["garment.005.view.06", "garment.005.view.07"]
+      },
+      "accepted06": {
+        "assetId": "garment.005.view.06.accepted",
+        "filename": "06-on-lulu-left-profile.png",
+        "sha256": "21b76f621fa7f32b6cbb7c228ba36a6498af0922d2b9bbd0bacaf09422e9d6be",
+        "bytes": 2123525,
+        "dimensions": "1122x1402",
+        "status": "USER_ACCEPTED_LOCKED_SIBLING",
+        "selectedCandidate": "06-left-profile-r001.png",
+        "mayParent07": false,
+        "selectionNote": "The user selected r001 after visual comparison because its total realism, semblance, attitude and pose were preferred."
+      },
+      "accepted07": {
+        "assetId": "garment.005.view.07.accepted",
+        "filename": "07-on-lulu-right-rear-three-quarter.png",
+        "sha256": "1d415546abc1eed43627792e0abc4366ef56a027b624b76864fe5ce8dcbcb924",
+        "bytes": 2153411,
+        "dimensions": "1122x1402",
+        "status": "USER_ACCEPTED_LOCKED_SIBLING_INFERRED_BACK",
+        "selectedCandidate": "07-right-rear-3q-r002.png",
+        "mayParent06": false,
+        "mayServeAsDirectBackEvidence": false
+      },
+      "faceR002History": {
+        "operationId": "g005-face-r002",
+        "status": "USER_ACCEPTED_HOLISTIC_SUBJECT_LOCK",
+        "mayParent": true,
+        "attempts": [
+          {
+            "filename": "face-gate-r002.png",
+            "sha256": "529c949550568d92783d4f9206edb7b9127af8e2376f090251a4ebf6ef753fd7",
+            "status": "REJECTED",
+            "reason": "Lulu identity passed, but the generator globally re-synthesized the accepted garment, body, hands, legs, shoes, jewellery, hair edges and background."
+          },
+          {
+            "filename": "face-gate-r002-c001.png",
+            "sha256": "467e101c9a76ed9f47d79e5fea19d7486cdf9c41f90f170c6f400b1a4e04db53",
+            "status": "USER_ACCEPTED_AS_HOLISTIC_SUBJECT",
+            "reason": "The user approved the complete regenerated frame as exactly Lulu. This explicit visual decision supersedes the automated local-edit rejection and rebases the image as the Garment 005 subject lock.",
+            "automatedReview": {
+              "status": "REJECTED_AS_LOCAL_EDIT",
+              "reason": "The pixels did not preserve the earlier body target and the automated identity comparison objected to morphology drift. This remains audit history and does not describe the user's later full-frame approval."
+            }
+          }
+        ]
+      },
+      "rejected05": [
+        {
+          "operationId": "g005-room-r001",
+          "filename": "05-front-candidate-v1.png",
+          "sha256": "710cf8f151bed86290c16913c0f6bbf100741e78833cbe345b9a2216137f2d5e",
+          "status": "REJECTED",
+          "reason": "Unsupported ornamental surface pattern appeared across the denim garment, and the atelier was re-synthesized instead of remaining pixel-stable."
+        },
+        {
+          "operationId": "g005-room-r001-c001",
+          "filename": "05-front-texture-correction-rejected.png",
+          "sha256": "fd33f8f8f6c5218353833713468c610c459f5b86be6fbf8a72ad78e8de4c11ff",
+          "status": "REJECTED",
+          "reason": "The one permitted local correction softened but did not remove the unsupported pattern; it also did not restore the exact pixel-stable atelier."
+        },
+        {
+          "operationId": "g005-v05-r002-subject",
+          "filename": "05-r002-subject-candidate-v1-rejected.png",
+          "sha256": "304e982f4d44650b5c38414487ee51500e876b8b4f15fad690ca87fdac464f29",
+          "status": "REJECTED",
+          "reason": "Prematurely changed hair and styling before the garment and full FACE authority gate were locked; retained unsupported ornamental denim texture."
+        },
+        {
+          "operationId": "g005-v05-r002-subject-c001",
+          "filename": "05-r002-subject-correction-rejected.png",
+          "sha256": "15074f8a21c0cadd8ac0e6f3fe423effd3490c2873776d1f65d4474afadf74e9",
+          "status": "REJECTED",
+          "reason": "Over-corrected the centre construction line, changed hair, and still retained an unsupported ornamental surface. The operation bypassed the garment-first and complete FACE gates."
+        }
+      ],
+      "history01": [
+        {
+          "operationId": "g005-v01-manual-set-v1-r001",
+          "filename": "01-garment-front.png",
+          "sha256": "854fd7fea360639e551fcf544c9ba89bc0cdeee00d3bc9082754a8372480c798",
+          "status": "USER_ACCEPTED_OVERRIDE",
+          "reason": "The automated review objected to surface and silhouette, but the user explicitly accepted this original candidate."
+        },
+        {
+          "operationId": "g005-v01-manual-set-v1-r001-c001",
+          "filename": "01-garment-front-correction-rejected.png",
+          "sha256": "239d43994f568d78f157f693d1e0db6aef062a0c3b526f8e34a53bbfd91fa369",
+          "status": "REJECTED",
+          "reason": "Silhouette, stitching and closed centre construction passed, but a tonal ornamental/paisley surface remained after the only correction."
+        }
+      ],
+      "rejectedCandidatesMayParent": false
     }
   },
-  "nextOperation": null
+  "nextOperation": null,
+  "requiredNext": "No further private media generation is required for Garment 005. Product facts, public derivative export, database sync and Shop publication remain separate operations and require explicit authorization."
 }

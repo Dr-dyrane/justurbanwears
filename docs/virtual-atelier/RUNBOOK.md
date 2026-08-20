@@ -34,7 +34,7 @@ GARMENT INTAKE
 
 The garment ID is the first input to the flow. For example, `004` always resolves to the same black floor-length gown with the white folded neckline.
 
-`06` and `07` are sibling outputs. They both branch from the accepted `05` plus the canonical garment, face, body, room and their own pose grammar.
+`06` and `07` are sibling outputs. They both branch from the accepted `05`; select face, body, room and garment references adaptively for the strongest realistic view.
 
 ```text
                     ┌→ 06
@@ -66,9 +66,27 @@ An accepted sibling view may be used after generation for collection-level QA, b
 11. After `05` passes, either `06` or `07` may be produced next; they do not depend on one another.
 12. Review each candidate against every acceptance gate and record `ACCEPTED` or `REJECTED` before proceeding.
 
+### A1. Holistic subject synthesis
+
+Use this only when the intended output is a new garment-specific full-frame subject master, not a pixel-local edit.
+
+1. Lock `01 GARMENT_FRONT` and the body target first.
+2. Declare `HOLISTIC_SUBJECT_SYNTHESIS`.
+3. Run PASS A with the accepted body target, F01–F10 contact, raw frontal face, raw open-eye three-quarter face, and approved V4 translation lock.
+4. If needed, use the single correction for PASS B with the accepted body target, PASS A as the translation donor, F01–F10 contact, raw frontal face, and raw open-eye three-quarter face.
+5. Keep the centre-parted low bun unchanged unless the user explicitly unlocks hair.
+6. Ask the user to judge the complete person and frame: identity, body balance, garment fit, pose, hands, legs, footwear, and styling.
+7. If accepted, copy the exact bytes into the garment's private `locked/` directory and record the hash as a garment-specific subject lock.
+8. Rebase downstream authority on that exact lock. Do not demand pixel identity with the pre-synthesis body target after the user has approved the new holistic frame.
+9. Complete the garment's `01–04` set before ROOM/final-`05` composition.
+10. ROOM and `05` may change only the explicitly declared environment/accessory layers; the accepted subject lock remains the parent.
+11. The pre-atelier subject lock cannot directly parent `06` or `07`; only an accepted final `05` can.
+
+Garment 005 established this pattern with `g005-face-r002`: PASS A supplied a useful face translation, and PASS B was explicitly accepted by the user as the complete Lulu/Garment 005 subject master. Its failed local-edit review remains audit history; the user-approved result is classified separately as a full-frame subject master.
+
 ## B. Generate view 05
 
-Required authority stack:
+Starting reference palette:
 
 ```text
 current garment intake
@@ -91,15 +109,16 @@ Precondition: current garment `05` is accepted and locked.
 Required authority stack:
 
 ```text
-current garment intake
-+ real face authority
-+ body canon
+accepted current-garment 05
++ the strongest face authority for the rotation
++ dedicated SIDE crop or combined body canon
 + locked atelier plate
-+ accepted current-garment 05
-+ accepted 06 pose grammar
++ direct current-garment side authority when useful
 ```
 
 Do not use `07` as a parent.
+
+Use only the combination that produces the strongest complete image. Judge likeness, head-to-toe body realism, attitude, presence, pose, garment truth and scene integration together.
 
 Mutable layer: view-specific pose, chin angle, shoulder openness, hand position and weight distribution, while preserving the garment story and all canonical layers.
 
@@ -109,18 +128,19 @@ Mutable layer: view-specific pose, chin angle, shoulder openness, hand position 
 
 Precondition: current garment `05` is accepted and locked. `06` is not a precondition.
 
-Required authority stack:
+Starting reference palette:
 
 ```text
-current garment intake
-+ real face authority
-+ body canon
+accepted current-garment 05
++ the strongest face authority for the look-back
++ dedicated BACK crop or combined body canon
 + locked atelier plate
-+ accepted current-garment 05
-+ accepted 07 pose grammar
++ accepted conservative current-garment back guide when useful
 ```
 
 Do not use `06` as a parent.
+
+Use only the combination that produces the strongest complete image. The back guide may control presentation only; if no direct garment-back capture exists, it remains inferred and can never become direct evidence.
 
 Mutable layer: view-specific pose, head turn, shoulder openness, hand position and weight distribution, while preserving the garment story and all canonical layers.
 

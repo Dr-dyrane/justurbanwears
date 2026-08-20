@@ -19,7 +19,7 @@ The garment ID is the first input to the main flow. It resolves the garment cons
 
 `05` is the front translation master for the current garment.
 
-`06` and `07` are sibling branches from the accepted `05` and the same canonical stack:
+`06` and `07` are sibling branches from the accepted `05`. Identity, body, room and garment references are selected adaptively for the view:
 
 ```text
                     ┌→ 06
@@ -28,6 +28,18 @@ GARMENT→FACE→BODY→ROOM→05
 ```
 
 Neither sibling may parent the other. `06 → 07` and `07 → 06` are forbidden production lineages. An accepted sibling may be inspected later for collection coherence, but it has no generation authority over the other sibling.
+
+Within the five-reference image-generation boundary, the available reference roles include:
+
+- accepted new `05`
+- the strongest real-face material for that rotation
+- an angle-specific crop or the combined body control
+- the locked room
+- the strongest relevant garment construction guide
+
+These are tools, not a mandatory recipe. Choose and weight the smallest useful combination that produces the best human-reviewed outcome. A technically neat reference stack does not outrank a more realistic, recognizably Lulu result.
+
+The final governing gate is holistic: real Lulu head to toe, convincing facial semblance, believable body balance, attitude, presence, pose, garment truth, and natural integration into the scene.
 
 The authority gates are sequential:
 
@@ -157,13 +169,53 @@ Examples:
 
 - Fixing the face may not regenerate body, garment, atelier, icon, pose, or lighting.
 - Fixing the icon may not regenerate Lulu or the room.
-- Creating `06` changes only the view-specific pose after `05` passes.
-- Creating `07` changes only the view-specific pose after `05` passes; `06` is not its parent or precondition.
+- Creating `06` changes the view-specific pose after `05` passes and may use the side crop or combined body control according to which gives the more realistic complete frame.
+- Creating `07` changes the view-specific pose after `05` passes and may use the back crop or combined body control; an inferred back guide never becomes direct evidence, and `06` is not its parent or precondition.
 - A garment detail correction may not restyle the garment or change accessories.
 
 If the available tool cannot isolate the requested change, stop and disclose the limitation before generation. Do not simulate a local edit with a full-scene synthesis while calling the other layers “locked.”
 
 Each candidate receives at most one bounded correction with one changed variable. If that correction fails, reject the candidate and begin a new declared operation rather than accumulating invisible drift.
+
+### Holistic subject synthesis and rebase
+
+The pixel-preservation rule above applies to a declared local correction. It does not forbid a deliberately declared **holistic subject synthesis** whose purpose is to resolve face, body, garment fit, hair, pose, hands, footwear, and neutral staging into one new full-frame subject master.
+
+Use this mode only when all of the following are true:
+
+1. the garment front and body target have already been explicitly accepted;
+2. the complete independent real-face authority stack is present;
+3. the operation is declared as `HOLISTIC_SUBJECT_SYNTHESIS`, not a local face edit;
+4. the user reviews the entire frame, not only the face; and
+5. the accepted output is rebased as a new garment-specific subject lock.
+
+For a five-image generation boundary, the established two-pass recipe is:
+
+```text
+PASS A
+accepted body target
++ F01–F10 real-face contact
++ raw frontal morphology
++ raw open-eye three-quarter geometry
++ approved V4 translation lock
+→ face-translated full-frame candidate
+
+PASS B — one bounded correction
+accepted body target
++ PASS A candidate as translation donor
++ F01–F10 real-face contact
++ raw frontal morphology
++ raw open-eye three-quarter geometry
+→ review candidate
+```
+
+The contact sheet includes the real polished frontal lock, so its separate crop is represented without displacing an independent authority input. Hair remains unchanged unless the user explicitly unlocks it.
+
+Human approval of PASS B supersedes automated pixel-difference objections for that holistic operation because the user is accepting the entire newly synthesized frame. The accepted frame then becomes immutable. Downstream ROOM/`05` work must parent that exact subject lock and may not return to PASS A, the earlier body target, or a rejected correction as the visual parent.
+
+The subject lock does not waive the garment-set gate. Complete and approve `01–04` before composing the subject into the locked room. The subject lock may parent only the current garment's ROOM/final-`05` operation; it does not directly parent `06` or `07`. Only the accepted room-composited `05` may parent those sibling views.
+
+This exception never converts a generated subject lock into direct identity or garment evidence. Real face photographs and direct garment captures retain higher truth authority.
 
 ## 3. Operation declaration
 
