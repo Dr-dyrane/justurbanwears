@@ -7,22 +7,25 @@
 }
 
 .product-card-action {
+  background: color-mix(in srgb, var(--shop-paper) 94%, transparent);
   border-radius: 999px;
   box-sizing: border-box;
-  gap: 9px;
+  color: var(--shop-ink);
+  gap: 0;
   height: 50px;
   min-height: 50px;
   overflow: hidden;
   padding: 5px;
   width: 50px;
-  transition: width 220ms var(--ease-liquid), padding 220ms var(--ease-liquid), transform 180ms ease;
+  transition: width 220ms var(--ease-liquid), padding 220ms var(--ease-liquid), gap 220ms var(--ease-liquid), transform 180ms ease;
 }
 
 .product-card-action-icon {
   align-items: center;
-  background: color-mix(in srgb, var(--shop-paper) 86%, transparent);
+  background: transparent;
   border-radius: 50%;
-  box-shadow: 0 8px 20px color-mix(in srgb, var(--shop-ink) 12%, transparent);
+  box-shadow: none;
+  color: inherit;
   display: inline-flex;
   flex: 0 0 40px;
   height: 40px;
@@ -33,39 +36,116 @@
 }
 
 .product-card-action > span:last-child {
+  color: inherit;
+  max-width: 0;
   opacity: 0;
+  overflow: hidden;
   transform: translateX(-5px);
   white-space: nowrap;
-  transition: opacity 140ms ease, transform 200ms var(--ease-liquid);
+  transition: max-width 220ms var(--ease-liquid), opacity 140ms ease, transform 200ms var(--ease-liquid);
 }
 
-.product-card-action.is-added .product-card-action-icon {
-  background: color-mix(in srgb, var(--peach) 72%, var(--shop-paper));
-  color: var(--accent-text);
+.shop-home .shop-product-card .product-card-action,
+.shop-product-page .shop-related .shop-product-card .product-card-action {
+  background: color-mix(in srgb, var(--shop-paper) 94%, transparent);
+  box-shadow: 0 12px 28px color-mix(in srgb, var(--shop-ink) 18%, transparent);
+  color: var(--shop-ink);
+  height: 50px;
+  min-width: 50px;
+  transition:
+    background 160ms ease,
+    color 160ms ease,
+    gap 220ms var(--ease-liquid),
+    padding 220ms var(--ease-liquid),
+    transform 180ms ease,
+    width 220ms var(--ease-liquid);
+  width: 50px;
 }
 
-.product-card-action-row[data-visibility="always"] .product-card-action {
-  padding-right: 14px;
+.shop-home .shop-product-card .product-card-action > span:last-child,
+.shop-product-page .shop-related .shop-product-card .product-card-action > span:last-child {
+  clip: auto;
+  clip-path: none;
+  height: auto;
+  overflow: hidden;
+  position: static;
   width: auto;
 }
 
-.product-card-action-row[data-visibility="always"] .product-card-action > span:last-child {
+.product-card-action small {
+  color: inherit;
+  opacity: 0.72;
+}
+
+.product-card-action.is-added .product-card-action-icon {
+  background: transparent;
+  color: inherit;
+}
+
+.product-card-action-row[data-visibility="always"] .product-card-action,
+.product-card-action.is-added,
+.product-card-action.is-offline {
+  gap: 9px;
+  padding-right: 14px;
+  width: 154px;
+}
+
+.shop-home .shop-product-card .product-card-action-row[data-visibility="always"] .product-card-action,
+.shop-product-page .shop-related .shop-product-card .product-card-action-row[data-visibility="always"] .product-card-action {
+  gap: 9px;
+  padding-right: 14px;
+  width: 154px;
+}
+
+.product-card-action-row[data-visibility="always"] .product-card-action.is-offline,
+.shop-home .shop-product-card .product-card-action-row[data-visibility="always"] .product-card-action.is-offline,
+.shop-product-page .shop-related .shop-product-card .product-card-action-row[data-visibility="always"] .product-card-action.is-offline {
+  min-width: 154px;
+  width: auto;
+}
+
+.product-card-action-row[data-visibility="always"] .product-card-action > span:last-child,
+.product-card-action.is-added > span:last-child,
+.product-card-action.is-offline > span:last-child {
+  max-width: 110px;
   opacity: 1;
+  overflow: visible;
   transform: none;
+}
+
+.shop-home .shop-product-card .product-card-action.is-added,
+.shop-product-page .shop-related .shop-product-card .product-card-action.is-added {
+  background: var(--shop-nav-selection);
+  color: var(--shop-nav-selection-ink);
+}
+
+.product-card-action.is-added .product-card-action-icon > svg {
+  animation: shop-confirm-settle 300ms var(--ease-liquid) both;
 }
 
 @media (hover: hover) and (pointer: fine) {
   .shop-product-card:hover .product-card-action-row[data-visibility="intent"] .product-card-action,
   .shop-product-card:focus-within .product-card-action-row[data-visibility="intent"] .product-card-action,
   .product-card-action-row[data-visibility="intent"]:focus-within .product-card-action {
+    gap: 9px;
     padding-right: 14px;
     width: 154px;
+  }
+
+  .shop-home .shop-product-card .product-card-action:not(.is-added):not(.is-offline):hover,
+  .shop-home .shop-product-card .product-card-action:not(.is-added):not(.is-offline):focus-visible,
+  .shop-product-page .shop-related .shop-product-card .product-card-action:not(.is-added):not(.is-offline):hover,
+  .shop-product-page .shop-related .shop-product-card .product-card-action:not(.is-added):not(.is-offline):focus-visible {
+    background: var(--shop-nav-action);
+    color: var(--shop-nav-action-ink);
   }
 
   .shop-product-card:hover .product-card-action-row[data-visibility="intent"] .product-card-action > span:last-child,
   .shop-product-card:focus-within .product-card-action-row[data-visibility="intent"] .product-card-action > span:last-child,
   .product-card-action-row[data-visibility="intent"]:focus-within .product-card-action > span:last-child {
+    max-width: 110px;
     opacity: 1;
+    overflow: visible;
     transform: none;
   }
 
@@ -76,20 +156,30 @@
 
   .product-card-action:hover .product-card-action-icon,
   .product-card-action:focus-visible .product-card-action-icon {
-    background: color-mix(in srgb, var(--peach) 72%, var(--shop-paper));
-    color: var(--accent-text);
+    background: transparent;
+    color: inherit;
     transform: translateY(-1px) scale(1.035);
   }
 }
 
 @media (hover: none), (pointer: coarse) {
   .product-card-action-row[data-visibility="intent"] .product-card-action {
+    gap: 9px;
     padding-right: 14px;
-    width: auto;
+    width: 154px;
+  }
+
+  .shop-home .shop-product-card .product-card-action-row[data-visibility="intent"] .product-card-action,
+  .shop-product-page .shop-related .shop-product-card .product-card-action-row[data-visibility="intent"] .product-card-action {
+    gap: 9px;
+    padding-right: 14px;
+    width: 154px;
   }
 
   .product-card-action-row[data-visibility="intent"] .product-card-action > span:last-child {
+    max-width: 110px;
     opacity: 1;
+    overflow: visible;
     transform: none;
   }
 }
@@ -373,8 +463,10 @@
   .product-card-action,
   .product-card-action > span:last-child,
   .product-card-action-icon,
+  .product-card-action.is-added .product-card-action-icon > svg,
   .studio-mobile-bar,
   .studio-mobile-fab {
+    animation: none !important;
     transition: none !important;
   }
 }

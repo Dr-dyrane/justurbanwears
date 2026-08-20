@@ -50,11 +50,23 @@ test("Wardrobe mobile filters never place the result count over a status", () =>
   assert.match(wardrobeMobileCss, /#studio-view-garments > \.studio-filter-bar > span \{\s*display: none;\s*\}/);
 });
 
-test("product quick add keeps a complete circular icon and an understandable reveal", () => {
+test("product add-to-bag reveals a legible theme-aware state", () => {
   assert.match(productCard, /className="product-card-action-icon"/);
+  assert.match(productCard, /<strong>\{isOnline \? "Add to bag"/);
+  assert.match(productCard, /<strong>In bag<\/strong>/);
   assert.match(controlCss, /\.product-card-action-icon[\s\S]*?border-radius: 50%/);
+  assert.match(controlCss, /\.shop-home \.shop-product-card \.product-card-action[\s\S]*?var\(--shop-paper\)[\s\S]*?var\(--shop-ink\)/);
+  assert.match(controlCss, /\.product-card-action \{[\s\S]*?gap: 0;[\s\S]*?width 220ms/);
+  assert.match(controlCss, /\.product-card-action > span:last-child \{[\s\S]*?max-width: 0;[\s\S]*?overflow: hidden;/);
+  assert.match(controlCss, /\.shop-home \.shop-product-card \.product-card-action > span:last-child,[\s\S]*?clip: auto;[\s\S]*?clip-path: none;/);
+  assert.match(controlCss, /\.shop-home \.shop-product-card \.product-card-action,[\s\S]*?transition:[\s\S]*?width 220ms/);
+  assert.match(controlCss, /\.product-card-action\.is-added[\s\S]*?width: 154px;/);
+  assert.match(controlCss, /\.shop-product-page \.shop-related \.shop-product-card \.product-card-action-row\[data-visibility="always"\] \.product-card-action[\s\S]*?width: 154px;/);
+  assert.match(controlCss, /\.product-card-action-row\[data-visibility="always"\] \.product-card-action\.is-offline,[\s\S]*?min-width: 154px;[\s\S]*?width: auto;/);
+  assert.match(controlCss, /\.product-card-action\.is-added \.product-card-action-icon > svg[\s\S]*?shop-confirm-settle/);
   assert.match(controlCss, /shop-product-card:hover \.product-card-action-row/);
   assert.match(controlCss, /@media \(hover: none\), \(pointer: coarse\)/);
+  assert.match(controlCss, /@media \(prefers-reduced-motion: reduce\)[\s\S]*?\.product-card-action\.is-added \.product-card-action-icon > svg,[\s\S]*?animation: none !important;/);
 });
 
 test("task-first records, garments, and inventory use approved media", () => {

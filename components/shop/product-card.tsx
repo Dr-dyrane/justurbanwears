@@ -122,7 +122,7 @@ export function ProductCard({
             ) : (
               <button
                 aria-label={isOnline
-                  ? `Quick add ${product.name}, tagged size ${product.taggedSize}, to bag`
+                  ? `Add ${product.name}, tagged size ${product.taggedSize}, to bag`
                   : `${product.name} cannot be added while offline`}
                 className={`product-card-action${isOnline ? "" : " is-offline"}`}
                 disabled={!isOnline}
@@ -133,8 +133,8 @@ export function ProductCard({
                   <ShoppingBag size={18} strokeWidth={1.8} />
                 </span>
                 <span>
-                  <strong>{isOnline ? "Quick add" : "Offline · add paused"}</strong>
-                  <small>{isOnline ? product.taggedSize : "Reconnect to quick add"}</small>
+                  <strong>{isOnline ? "Add to bag" : "Offline · add paused"}</strong>
+                  <small>{isOnline ? product.taggedSize : "Reconnect to add"}</small>
                 </span>
               </button>
             )}
