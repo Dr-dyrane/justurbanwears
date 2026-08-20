@@ -12,6 +12,7 @@ export const DROP02_TRANSITION_SKUS = Object.freeze([
   "JUW-026",
   "JUW-027",
   "JUW-028",
+  "JUW-029",
 ]);
 
 const EXPECTED_CATALOGUE_SKUS = Object.freeze([
@@ -118,8 +119,8 @@ function assertDrop01Inventory(rows) {
   }
 }
 
-function assertDrop02InitialInventory(rows) {
-  exactSkuRows(rows, DROP02_TRANSITION_SKUS, "DROP02_TRANSITION_DROP02_INVENTORY_MISMATCH");
+function assertDrop02InitialInventory(rows, expectedSkus) {
+  exactSkuRows(rows, expectedSkus, "DROP02_TRANSITION_DROP02_INVENTORY_MISMATCH");
   invariant(rows.every((row) => (
     String(row.availability) === "AVAILABLE"
     && inventoryCountersMatch(row, {
@@ -158,9 +159,7 @@ function assertDrop01Adoption(rows, ownerSubject) {
 function assertExistingDrop02Adoption(rows, ownerSubject) {
   exactSkuRows(rows, DROP02_TRANSITION_SKUS, "DROP02_TRANSITION_DROP02_ADOPTION_MISMATCH");
   const present = rows.filter((row) => row.publication_id != null);
-  invariant(present.length === 0 || present.length === DROP02_TRANSITION_SKUS.length, "DROP02_TRANSITION_DROP02_ADOPTION_CONFLICT");
-  if (!present.length) return false;
-  for (const row of rows) {
+  for (const row of present) {
     const sku = String(row.sku);
     invariant(row.publication_sku === sku, "DROP02_TRANSITION_DROP02_ADOPTION_CONFLICT");
     invariant(row.publication_slug === row.catalogue_slug, "DROP02_TRANSITION_DROP02_ADOPTION_CONFLICT");
@@ -177,7 +176,7 @@ function assertExistingDrop02Adoption(rows, ownerSubject) {
     invariant(row.publication_idempotency_key === `catalogue-adoption:v2:${sku}:publication`, "DROP02_TRANSITION_DROP02_ADOPTION_CONFLICT");
     invariant(row.revision_idempotency_key === `catalogue-adoption:v2:${sku}:revision`, "DROP02_TRANSITION_DROP02_ADOPTION_CONFLICT");
   }
-  return true;
+  return rows.filter((row) => row.publication_id == null).map((row) => String(row.sku));
 }
 
 function assertPostcondition(row) {
@@ -187,11 +186,11 @@ function assertPostcondition(row) {
     old_publications_archived: 18,
     old_wardrobe_archived: 18,
     old_archive_events: 18,
-    new_intakes: 4,
-    new_wardrobe_items: 4,
-    new_publications: 4,
-    new_revisions: 4,
-    new_events: 8,
+    new_intakes: 5,
+    new_wardrobe_items: 5,
+    new_publications: 5,
+    new_revisions: 5,
+    new_events: 10,
     returned_listing_sold: 1,
     returned_listing_returned: 1,
   };
@@ -239,9 +238,9 @@ export async function applyDrop02TransitionInTransaction(transaction, manifest) 
   ))[0];
   invariant(
     catalogueState
-      && numberValue(catalogueState.catalogue_count) === 22
-      && numberValue(catalogueState.expected_catalogue_count) === 22
-      && numberValue(catalogueState.expected_inventory_count) === 22,
+      && numberValue(catalogueState.catalogue_count) === 23
+      && numberValue(catalogueState.expected_catalogue_count) === 23
+      && numberValue(catalogueState.expected_inventory_count) === 23,
     "DROP02_TRANSITION_CATALOGUE_MISMATCH",
   );
 
@@ -342,8 +341,11 @@ export async function applyDrop02TransitionInTransaction(transaction, manifest) 
      order by catalogue.sku`,
     [DROP02_TRANSITION_SKUS],
   ));
-  const drop02AlreadyAdopted = assertExistingDrop02Adoption(newAdoptions, ownerSubject);
-  if (!drop02AlreadyAdopted) assertDrop02InitialInventory(drop02Inventory);
+  const missingDrop02Adoptions = assertExistingDrop02Adoption(newAdoptions, ownerSubject);
+  const missingDrop02Inventory = drop02Inventory.filter((row) => (
+    missingDrop02Adoptions.includes(String(row.sku))
+  ));
+  assertDrop02InitialInventory(missingDrop02Inventory, missingDrop02Adoptions);
 
   const incompleteMedia = queryRows(await transaction.query(
     `select catalogue.sku

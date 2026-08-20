@@ -38,6 +38,7 @@ export const WARDROBE_APPROVED_V4_MODEL_SLUGS = Object.freeze([
   "violet-beaded-ruffle-romper",
   "black-sweetheart-fit-flare-midi-dress",
   "black-ivory-folded-neck-column-dress",
+  "indigo-seamed-denim-mini-dress",
 ] as const);
 
 export const WARDROBE_APPROVED_MODEL_FRONT_SLUGS = Object.freeze([
@@ -61,6 +62,7 @@ export const WARDROBE_APPROVED_MODEL_SUPPLEMENTAL_SLOTS = Object.freeze({
   "violet-beaded-ruffle-romper": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "black-sweetheart-fit-flare-midi-dress": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "black-ivory-folded-neck-column-dress": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
+  "indigo-seamed-denim-mini-dress": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "coral-drift-dress": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "moss-square-knit": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "cocoa-pleat-trouser": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
@@ -405,6 +407,25 @@ export const WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS: readonly WardrobePublicProduc
     note: "A floor-length black column set off by a broad folded ivory neckline.",
     story: "The wide off-shoulder fold frames a low open neckline before the dress falls into a long, close column silhouette.",
     details: ["Broad folded ivory neckline", "Off-shoulder line", "Close column silhouette", "Floor length"],
+    measurements: [],
+  }),
+  migrationSeed({
+    slug: "indigo-seamed-denim-mini-dress",
+    sku: "JUW-029",
+    name: "Indigo Seamed Denim Mini Dress",
+    category: "Dresses",
+    price: 28500,
+    taggedSize: "Size on request",
+    fit: "Measurements confirmed before payment",
+    condition: "Condition confirmed before payment",
+    colour: "Medium-deep indigo",
+    availability: "AVAILABLE",
+    drop: "Drop 02",
+    tone: "indigo",
+    silhouette: "dress",
+    note: "A close indigo denim mini shaped by long seams and a softly rounded hem.",
+    story: "A clean jewel neckline and plain long sleeves frame the fitted line, with restrained topstitching carrying through the compact silhouette.",
+    details: ["Shallow jewel neckline", "Long plain sleeves", "Closed centre construction line", "Fitted mini length"],
     measurements: [],
   }),
 ]);

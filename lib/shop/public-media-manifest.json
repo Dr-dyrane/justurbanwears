@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "catalogueRevision": "2026-08-20-catalogue-15",
-  "catalogueChecksum": "371d82638677221762913bc11b3f5d9392806ce60d7b8e42154e9c979981dc1d",
-  "cataloguePresentationChecksum": "959a831693d0ddd06f0305736229b35f5fb3fb816675f3698ede7eadf8a15058",
+  "catalogueRevision": "2026-08-20-catalogue-16",
+  "catalogueChecksum": "0921c6e148cea1544ba9264614eef7bd925c7da2f9ddf826f91a96095e70c919",
+  "cataloguePresentationChecksum": "73761efd4c34c8b46315f84118c78c3cab396de2366e97d8b4a09b28c4e32e0b",
   "legacyAssets": [
     {
       "sourcePath": "/shop/products/cocoa-cowl-gathered-midi-dress/07-model-left-profile.webp",
@@ -484,6 +484,62 @@
       "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/7c253f4b8b1d8207630f969d87a35bd6a4862323715f05d46b7f8d2cfa01bdfd/products/cropped-denim-jacket-black-legging-look/09-model-rear-mirror.webp",
       "sha256": "7c253f4b8b1d8207630f969d87a35bd6a4862323715f05d46b7f8d2cfa01bdfd",
       "size": 248760,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/indigo-seamed-denim-mini-dress/01-garment-front.webp",
+      "pathname": "shop/catalogue/9aaaba5f75664713a1faaa8f2704460ad7e24b67f6d3a29665a910ff37a7972f/products/indigo-seamed-denim-mini-dress/01-garment-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/9aaaba5f75664713a1faaa8f2704460ad7e24b67f6d3a29665a910ff37a7972f/products/indigo-seamed-denim-mini-dress/01-garment-front.webp",
+      "sha256": "9aaaba5f75664713a1faaa8f2704460ad7e24b67f6d3a29665a910ff37a7972f",
+      "size": 180868,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/indigo-seamed-denim-mini-dress/02-garment-back.webp",
+      "pathname": "shop/catalogue/ffc3e424046a5e14676568f5a6caef00528ab6bf5776e15200fae50ffa67b7a3/products/indigo-seamed-denim-mini-dress/02-garment-back.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/ffc3e424046a5e14676568f5a6caef00528ab6bf5776e15200fae50ffa67b7a3/products/indigo-seamed-denim-mini-dress/02-garment-back.webp",
+      "sha256": "ffc3e424046a5e14676568f5a6caef00528ab6bf5776e15200fae50ffa67b7a3",
+      "size": 151098,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/indigo-seamed-denim-mini-dress/03-mannequin-front.webp",
+      "pathname": "shop/catalogue/2c3dea5b663a01057582cf878218537ef248fd38d13a14a48efc4c7d84495e97/products/indigo-seamed-denim-mini-dress/03-mannequin-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/2c3dea5b663a01057582cf878218537ef248fd38d13a14a48efc4c7d84495e97/products/indigo-seamed-denim-mini-dress/03-mannequin-front.webp",
+      "sha256": "2c3dea5b663a01057582cf878218537ef248fd38d13a14a48efc4c7d84495e97",
+      "size": 91610,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/indigo-seamed-denim-mini-dress/04-model-front.webp",
+      "pathname": "shop/catalogue/a2bfd9adae0e5ca0a7ff643a47abd5b190c072f71ea5360d037206fdafd271a4/products/indigo-seamed-denim-mini-dress/04-model-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/a2bfd9adae0e5ca0a7ff643a47abd5b190c072f71ea5360d037206fdafd271a4/products/indigo-seamed-denim-mini-dress/04-model-front.webp",
+      "sha256": "a2bfd9adae0e5ca0a7ff643a47abd5b190c072f71ea5360d037206fdafd271a4",
+      "size": 217824,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/indigo-seamed-denim-mini-dress/05-model-rear-three-quarter.webp",
+      "pathname": "shop/catalogue/2a9306f09e98c2491cae853d533f94193563050ec9c7639de2bd635e25a5b5cf/products/indigo-seamed-denim-mini-dress/05-model-rear-three-quarter.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/2a9306f09e98c2491cae853d533f94193563050ec9c7639de2bd635e25a5b5cf/products/indigo-seamed-denim-mini-dress/05-model-rear-three-quarter.webp",
+      "sha256": "2a9306f09e98c2491cae853d533f94193563050ec9c7639de2bd635e25a5b5cf",
+      "size": 190288,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/indigo-seamed-denim-mini-dress/06-fabric-detail.webp",
+      "pathname": "shop/catalogue/ed48ae512b0aa8fdef34a1bc42d21d0604669c25a689c4532ba1e00d3b352842/products/indigo-seamed-denim-mini-dress/06-fabric-detail.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/ed48ae512b0aa8fdef34a1bc42d21d0604669c25a689c4532ba1e00d3b352842/products/indigo-seamed-denim-mini-dress/06-fabric-detail.webp",
+      "sha256": "ed48ae512b0aa8fdef34a1bc42d21d0604669c25a689c4532ba1e00d3b352842",
+      "size": 437834,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/indigo-seamed-denim-mini-dress/07-model-left-profile.webp",
+      "pathname": "shop/catalogue/a7ef9d30768eda843ae63ac557d91c629ffc29beac3189719ddc7af733cc630b/products/indigo-seamed-denim-mini-dress/07-model-left-profile.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/a7ef9d30768eda843ae63ac557d91c629ffc29beac3189719ddc7af733cc630b/products/indigo-seamed-denim-mini-dress/07-model-left-profile.webp",
+      "sha256": "a7ef9d30768eda843ae63ac557d91c629ffc29beac3189719ddc7af733cc630b",
+      "size": 184202,
       "contentType": "image/webp"
     },
     {

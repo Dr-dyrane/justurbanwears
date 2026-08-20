@@ -75,12 +75,12 @@ function oldInventory(archived: boolean) {
   });
 }
 
-function newInventory(alreadyAdopted: boolean) {
+function newInventory(adoptedSkus: Set<string>) {
   return DROP02_TRANSITION_SKUS.map((sku, index) => ({
     sku,
-    availability: alreadyAdopted && index === 0 ? "RESERVED" : "AVAILABLE",
+    availability: adoptedSkus.has(sku) && index === 0 ? "RESERVED" : "AVAILABLE",
     on_hand: 1,
-    reserved: alreadyAdopted && index === 0 ? 1 : 0,
+    reserved: adoptedSkus.has(sku) && index === 0 ? 1 : 0,
     sold: 0,
     returned: 0,
     write_off: 0,
@@ -100,10 +100,10 @@ function oldAdoptions(archived: boolean) {
   }));
 }
 
-function newAdoptions(alreadyAdopted: boolean) {
+function newAdoptions(adoptedSkus: Set<string>) {
   return DROP02_TRANSITION_SKUS.map((sku) => {
     const catalogueSlug = `drop02-${sku.toLowerCase()}`;
-    if (!alreadyAdopted) {
+    if (!adoptedSkus.has(sku)) {
       return {
         sku,
         catalogue_slug: catalogueSlug,
@@ -137,11 +137,11 @@ function postcondition() {
     old_publications_archived: 18,
     old_wardrobe_archived: 18,
     old_archive_events: 18,
-    new_intakes: 4,
-    new_wardrobe_items: 4,
-    new_publications: 4,
-    new_revisions: 4,
-    new_events: 8,
+    new_intakes: 5,
+    new_wardrobe_items: 5,
+    new_publications: 5,
+    new_revisions: 5,
+    new_events: 10,
     orphan_reserved: 0,
     returned_listing_sold: 1,
     returned_listing_returned: 1,
@@ -157,7 +157,7 @@ interface RelationshipCounts {
 }
 
 function mockTransaction({
-  alreadyApplied = false,
+  adoptionState = "none",
   relationshipCounts = {
     hold_count: 0,
     order_item_count: 0,
@@ -165,36 +165,45 @@ function mockTransaction({
     custody_count: 0,
   },
 }: {
-  alreadyApplied?: boolean;
+  adoptionState?: "none" | "partial" | "all";
   relationshipCounts?: RelationshipCounts;
 } = {}) {
   const calls: Array<{ text: string; values: unknown[] }> = [];
+  const adoptedSkus = new Set(
+    adoptionState === "all"
+      ? DROP02_TRANSITION_SKUS
+      : adoptionState === "partial"
+        ? DROP02_TRANSITION_SKUS.slice(0, -1)
+        : [],
+  );
+  const drop01Archived = adoptionState !== "none";
+  const missingSkus = DROP02_TRANSITION_SKUS.filter((sku) => !adoptedSkus.has(sku));
   return {
     calls,
     async query(text: string, values: unknown[] = []) {
       calls.push({ text, values });
       if (text.startsWith("lock table")) return { rows: [] };
       if (text.includes("as catalogue_count")) {
-        return { rows: [{ catalogue_count: 22, expected_catalogue_count: 22, expected_inventory_count: 22 }] };
+        return { rows: [{ catalogue_count: 23, expected_catalogue_count: 23, expected_inventory_count: 23 }] };
       }
       if (text.includes("from studio_operator_membership membership")) return { rows: [owner] };
       if (text.includes("from shop_inventory") && text.includes("for update")) {
-        return { rows: [...oldInventory(alreadyApplied), ...newInventory(alreadyApplied)] };
+        return { rows: [...oldInventory(drop01Archived), ...newInventory(adoptedSkus)] };
       }
       if (text.includes("as hold_count")) return { rows: [relationshipCounts] };
-      if (text.includes("publication.state as publication_state")) return { rows: oldAdoptions(alreadyApplied) };
-      if (text.includes("publication.slug as publication_slug")) return { rows: newAdoptions(alreadyApplied) };
+      if (text.includes("publication.state as publication_state")) return { rows: oldAdoptions(drop01Archived) };
+      if (text.includes("publication.slug as publication_slug")) return { rows: newAdoptions(adoptedSkus) };
       if (text.startsWith("update shop_inventory")) {
-        return { rows: alreadyApplied ? [] : DROP01_TRANSITION_SKUS.map((sku) => ({ sku })) };
+        return { rows: drop01Archived ? [] : DROP01_TRANSITION_SKUS.map((sku) => ({ sku })) };
       }
       if (text.startsWith("insert into studio_intakes")) {
         return {
-          rows: alreadyApplied ? [] : DROP02_TRANSITION_SKUS.map((sku) => ({ id: adoptionId("v2", sku, "intake") })),
+          rows: missingSkus.map((sku) => ({ id: adoptionId("v2", sku, "intake") })),
         };
       }
       if (text.startsWith("with adoption as")) {
         return {
-          rows: alreadyApplied ? [] : DROP02_TRANSITION_SKUS.map((sku) => ({ id: adoptionId("v2", sku, "publication") })),
+          rows: missingSkus.map((sku) => ({ id: adoptionId("v2", sku, "publication") })),
         };
       }
       if (text.includes("from jsonb_array_elements(catalogue.media)")) return { rows: [] };
@@ -248,8 +257,19 @@ test("runs the guarded Drop 01 retirement and v2 Drop 02 adoption in the supplie
 });
 
 test("is a true no-op after transition while preserving later Drop 02 inventory truth", async () => {
-  const transaction = mockTransaction({ alreadyApplied: true });
+  const transaction = mockTransaction({ adoptionState: "all" });
   assert.equal(await applyDrop02TransitionInTransaction(transaction, manifest()), "noop");
+  const inventoryArchive = transaction.calls.find((call) => call.text.startsWith("update shop_inventory"));
+  assert.ok(inventoryArchive);
+  assert.deepEqual(inventoryArchive.values, [DROP01_TRANSITION_SKUS]);
+});
+
+test("incrementally adopts a new Drop 02 piece without rewriting existing operational inventory", async () => {
+  const transaction = mockTransaction({ adoptionState: "partial" });
+  assert.equal(await applyDrop02TransitionInTransaction(transaction, manifest()), "apply");
+  const intakeInsert = transaction.calls.find((call) => call.text.startsWith("insert into studio_intakes"));
+  assert.ok(intakeInsert);
+  assert.deepEqual(intakeInsert.values[0], DROP02_TRANSITION_SKUS);
   const inventoryArchive = transaction.calls.find((call) => call.text.startsWith("update shop_inventory"));
   assert.ok(inventoryArchive);
   assert.deepEqual(inventoryArchive.values, [DROP01_TRANSITION_SKUS]);

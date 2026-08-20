@@ -60,7 +60,7 @@ test("server-renders the public shop foundation", async () => {
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/i);
 });
 
-test("publishes the Violet romper hero and the exact four-piece Drop 02", async () => {
+test("publishes the Violet romper hero and the exact five-piece Drop 02", async () => {
   const response = await render("/shop");
   assert.equal(response.status, 200);
 
@@ -80,6 +80,7 @@ test("publishes the Violet romper hero and the exact four-piece Drop 02", async 
     ["Violet Beaded Ruffle Romper", "violet-beaded-ruffle-romper"],
     ["Black Sweetheart Fit-and-Flare Midi Dress", "black-sweetheart-fit-flare-midi-dress"],
     ["Black and Ivory Folded-Neck Column Dress", "black-ivory-folded-neck-column-dress"],
+    ["Indigo Seamed Denim Mini Dress", "indigo-seamed-denim-mini-dress"],
   ];
 
   for (const [name, slug] of releasedProducts) {
@@ -87,7 +88,7 @@ test("publishes the Violet romper hero and the exact four-piece Drop 02", async 
     assert.match(visibleBody, new RegExp(name));
   }
 
-  assert.equal((visibleBody.match(/class="shop-product-card"/g) ?? []).length, 3);
+  assert.equal((visibleBody.match(/class="shop-product-card"/g) ?? []).length, 4);
   assert.doesNotMatch(visibleBody, /shop-release-index|shop-wardrobe-preview|shop-editorial-rail|shop-values/);
   assert.doesNotMatch(visibleBody, /GARMENT STUDY|(?:DYN-0(?:8[1-9]|9[0-2])|JUW-0(?:0[1-9]|1[0-2]))|Six dresses from Lulu’s wardrobe|Warm colour\. Clean movement/);
   assert.doesNotMatch(visibleBody, /Coral Drift Dress|Indigo Workshirt|Ivory Tie Skirt/);
@@ -158,6 +159,7 @@ test("server-renders all seven approved views for each Drop 02 product", async (
     "violet-beaded-ruffle-romper",
     "black-sweetheart-fit-flare-midi-dress",
     "black-ivory-folded-neck-column-dress",
+    "indigo-seamed-denim-mini-dress",
   ];
   const responses = await Promise.all(
     slugs.map((slug) => render(`/shop/products/${slug}`)),

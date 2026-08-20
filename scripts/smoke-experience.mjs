@@ -23,6 +23,7 @@ const routes = [
         "violet-beaded-ruffle-romper",
         "black-sweetheart-fit-flare-midi-dress",
         "black-ivory-folded-neck-column-dress",
+        "indigo-seamed-denim-mini-dress",
       ].every((slug) => html.includes(`/shop/products/${slug}`))],
       ["customer-facing AI copy leaked", (html) => hasNoCustomerAiCopy(html)],
     ],

@@ -12,6 +12,7 @@ const V4_MODEL_SLUGS = new Set([
   "violet-beaded-ruffle-romper",
   "black-sweetheart-fit-flare-midi-dress",
   "black-ivory-folded-neck-column-dress",
+  "indigo-seamed-denim-mini-dress",
 ]);
 
 const V3_MODEL_FRONT_SLUGS = new Set([
@@ -101,7 +102,7 @@ function presentation(product) {
  */
 export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
   schemaVersion: 2,
-  revision: "2026-08-20-catalogue-15",
+  revision: "2026-08-20-catalogue-16",
   products: Object.freeze([
     presentation({
       slug: "coral-drift-dress",
@@ -564,6 +565,26 @@ export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
       note: "A floor-length black column set off by a broad folded ivory neckline.",
       story: "The wide off-shoulder fold frames a low open neckline before the dress falls into a long, close column silhouette.",
       details: ["Broad folded ivory neckline", "Off-shoulder line", "Close column silhouette", "Floor length"],
+      measurements: [],
+      mediaSlots: ["MODEL_FRONT", "MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
+    }),
+    presentation({
+      slug: "indigo-seamed-denim-mini-dress",
+      sku: "JUW-029",
+      name: "Indigo Seamed Denim Mini Dress",
+      category: "Dresses",
+      price: 28500,
+      taggedSize: "Size on request",
+      fit: "Measurements confirmed before payment",
+      condition: "Condition confirmed before payment",
+      colour: "Medium-deep indigo",
+      availability: "AVAILABLE",
+      drop: "Drop 02",
+      tone: "indigo",
+      silhouette: "dress",
+      note: "A close indigo denim mini shaped by long seams and a softly rounded hem.",
+      story: "A clean jewel neckline and plain long sleeves frame the fitted line, with restrained topstitching carrying through the compact silhouette.",
+      details: ["Shallow jewel neckline", "Long plain sleeves", "Closed centre construction line", "Fitted mini length"],
       measurements: [],
       mediaSlots: ["MODEL_FRONT", "MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
     }),
