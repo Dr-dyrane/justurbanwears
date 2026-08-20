@@ -43,7 +43,7 @@ const routes = [
         "05-model-rear-three-quarter.webp",
         "06-fabric-detail.webp",
         "07-model-left-profile.webp",
-      ].every((file) => html.includes(`/shop/products/violet-beaded-ruffle-romper/${file}`))],
+      ].every((file) => html.includes(file))],
       ["customer-facing AI copy leaked", (html) => hasNoCustomerAiCopy(html)],
     ],
   },

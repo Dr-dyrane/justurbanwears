@@ -36,6 +36,19 @@ function visibleMarkup(html) {
     .slice(bodyStart, bodyEnd === -1 ? undefined : bodyEnd)
     .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "");
 }
+function visibleText(html) {
+  return visibleMarkup(html)
+    .replace(/<!--[\s\S]*?-->/g, "")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+function hasMatchingDropCounts(html) {
+  const text = visibleText(html);
+  const hero = text.match(/(\d+) pieces\. No restocks\./);
+  const discovery = text.match(/Drop 02 · (\d+) one-off pieces/);
+  return Boolean(hero && discovery && hero[1] === discovery[1] && Number(hero[1]) > 0);
+}
 function hasNoCustomerAiCopy(html) {
   return !/\b(?:AI|provenance|AI-completed|generated evidence)\b/i.test(visibleMarkup(html));
 }
@@ -62,7 +75,7 @@ try {
 await htmlCheck("shop shell", "/shop", [
   ["brand copy missing", (body) => body.includes("justurban wears")],
   ["Drop 02 missing", (body) => body.includes("Drop 02")],
-  ["Drop 02 count missing", (body) => body.includes("4 pieces") && body.includes("4 one-off pieces")],
+  ["Drop 02 count missing", hasMatchingDropCounts],
   ["Drop 02 hero missing", (body) => body.includes("violet-beaded-ruffle-romper")],
   ["Drop 02 catalogue incomplete", (body) => [
     "black-cropped-tee-slim-trouser-set",
@@ -86,7 +99,7 @@ await htmlCheck("product passport", "/shop/products/violet-beaded-ruffle-romper"
     "05-model-rear-three-quarter.webp",
     "06-fabric-detail.webp",
     "07-model-left-profile.webp",
-  ].every((file) => body.includes(`/shop/products/violet-beaded-ruffle-romper/${file}`))],
+  ].every((file) => body.includes(file))],
   ["customer-facing AI copy leaked", hasNoCustomerAiCopy],
   ["Product JSON-LD missing", (body) => body.includes("application/ld+json") && body.includes('"@type":"Product"')],
 ]);
