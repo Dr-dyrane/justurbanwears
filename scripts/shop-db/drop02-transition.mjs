@@ -58,6 +58,20 @@ function assertDrop01Inventory(rows) {
   for (const row of rows) {
     const sku = String(row.sku);
     const availability = String(row.availability);
+    if (sku === "JUW-001") {
+      invariant(
+        (availability === "AVAILABLE" || availability === "ARCHIVED")
+          && inventoryCountersMatch(row, {
+            onHand: 1,
+            reserved: 0,
+            sold: 1,
+            returned: 1,
+            writeOff: 0,
+          }),
+        "DROP02_TRANSITION_DROP01_INVENTORY_MISMATCH",
+      );
+      continue;
+    }
     if (sku === "JUW-002") {
       const seedReservation = availability === "RESERVED" && inventoryCountersMatch(row, {
         onHand: 1,
@@ -178,6 +192,8 @@ function assertPostcondition(row) {
     new_publications: 4,
     new_revisions: 4,
     new_events: 8,
+    returned_listing_sold: 1,
+    returned_listing_returned: 1,
   };
   for (const [key, count] of Object.entries(expected)) {
     invariant(numberValue(row[key]) === count, "DROP02_TRANSITION_POSTCONDITION_FAILED");
@@ -567,6 +583,8 @@ export async function applyDrop02TransitionInTransaction(transaction, manifest) 
       (select count(*) from studio_garment_revisions revision join studio_catalogue_publications publication on publication.wardrobe_item_id = revision.wardrobe_item_id where publication.sku = any($2::varchar[]) and revision.id = md5('catalogue-adoption:v2:' || publication.sku || ':revision')::uuid and revision.operator_subject = $3)::integer as new_revisions,
       (select count(*) from studio_garment_events event join studio_catalogue_publications publication on publication.wardrobe_item_id = event.wardrobe_item_id where publication.sku = any($2::varchar[]) and event.id in (md5('catalogue-adoption:v2:' || publication.sku || ':committed')::uuid, md5('catalogue-adoption:v2:' || publication.sku || ':published')::uuid))::integer as new_events,
       (select reserved from shop_inventory where sku = 'JUW-002')::integer as orphan_reserved,
+      (select sold from shop_inventory where sku = 'JUW-001')::integer as returned_listing_sold,
+      (select returned from shop_inventory where sku = 'JUW-001')::integer as returned_listing_returned,
       (select sold from shop_inventory where sku = 'JUW-004')::integer as sold_listing_sold`,
     [DROP01_TRANSITION_SKUS, DROP02_TRANSITION_SKUS, ownerSubject],
   ))[0];

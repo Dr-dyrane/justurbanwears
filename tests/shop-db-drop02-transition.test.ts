@@ -30,6 +30,17 @@ function manifest() {
 
 function oldInventory(archived: boolean) {
   return DROP01_TRANSITION_SKUS.map((sku) => {
+    if (sku === "JUW-001") {
+      return {
+        sku,
+        availability: archived ? "ARCHIVED" : "AVAILABLE",
+        on_hand: 1,
+        reserved: 0,
+        sold: 1,
+        returned: 1,
+        write_off: 0,
+      };
+    }
     if (sku === "JUW-002") {
       return {
         sku,
@@ -132,6 +143,8 @@ function postcondition() {
     new_revisions: 4,
     new_events: 8,
     orphan_reserved: 0,
+    returned_listing_sold: 1,
+    returned_listing_returned: 1,
     sold_listing_sold: 1,
   };
 }
@@ -210,6 +223,10 @@ test("runs the guarded Drop 01 retirement and v2 Drop 02 adoption in the supplie
   assert.doesNotMatch(inventoryArchive.text, /\bon_hand\s*=/);
   assert.doesNotMatch(inventoryArchive.text, /\breturned\s*=/);
   assert.doesNotMatch(inventoryArchive.text, /\bwrite_off\s*=/);
+
+  const postconditionQuery = transaction.calls.find((call) => call.text.includes("as returned_listing_sold"));
+  assert.ok(postconditionQuery);
+  assert.match(postconditionQuery.text, /where sku = 'JUW-001'/);
 
   const archiveEvent = transaction.calls.find((call) => call.text.includes("Seed reservation cleared and test piece archived"));
   assert.ok(archiveEvent);
