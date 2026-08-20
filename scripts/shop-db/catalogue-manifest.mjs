@@ -13,6 +13,7 @@ const V4_MODEL_SLUGS = new Set([
   "black-sweetheart-fit-flare-midi-dress",
   "black-ivory-folded-neck-column-dress",
   "indigo-seamed-denim-mini-dress",
+  "black-cropped-tee-silver-ruched-skirt-set",
 ]);
 
 const V3_MODEL_FRONT_SLUGS = new Set([
@@ -102,7 +103,7 @@ function presentation(product) {
  */
 export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
   schemaVersion: 2,
-  revision: "2026-08-20-catalogue-16",
+  revision: "2026-08-20-catalogue-17",
   products: Object.freeze([
     presentation({
       slug: "coral-drift-dress",
@@ -585,6 +586,26 @@ export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
       note: "A close indigo denim mini shaped by long seams and a softly rounded hem.",
       story: "A clean jewel neckline and plain long sleeves frame the fitted line, with restrained topstitching carrying through the compact silhouette.",
       details: ["Shallow jewel neckline", "Long plain sleeves", "Closed centre construction line", "Fitted mini length"],
+      measurements: [],
+      mediaSlots: ["MODEL_FRONT", "MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
+    }),
+    presentation({
+      slug: "black-cropped-tee-silver-ruched-skirt-set",
+      sku: "JUW-030",
+      name: "Black Cropped Tee and Silver Ruched Skirt Set",
+      category: "Sets",
+      price: 28500,
+      taggedSize: "Size on request",
+      fit: "Measurements confirmed before payment",
+      condition: "Condition confirmed before payment",
+      colour: "Black and silver",
+      availability: "AVAILABLE",
+      drop: "Drop 02",
+      tone: "ivory",
+      silhouette: "set",
+      note: "A matte-black cropped tee paired with a close silver ruched skirt and one high front slit.",
+      story: "The clean crew-neck crop keeps the top quiet while the reflective ruching and high centre-front slit give the skirt its movement.",
+      details: ["Cropped crew-neck tee", "High-waisted pencil skirt", "Reflective ruched finish", "Single high centre-front slit"],
       measurements: [],
       mediaSlots: ["MODEL_FRONT", "MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
     }),

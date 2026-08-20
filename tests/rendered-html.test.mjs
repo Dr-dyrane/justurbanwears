@@ -48,8 +48,8 @@ test("server-renders the public shop foundation", async () => {
   const copy = visibleCopy(html);
   assert.match(html, /justurban wears/);
   assert.match(visibleBody, /Drop 02/);
-  assert.match(visibleBody, /4 pieces\. No restocks\./);
-  assert.match(copy, /4 one-off pieces/);
+  assert.match(visibleBody, /6 pieces\. No restocks\./);
+  assert.match(copy, /6 one-off pieces/);
   assert.match(visibleBody, /violet-beaded-ruffle-romper/);
   assert.match(html, /Search the wardrobe/);
   assert.match(html, /Live availability is temporarily unavailable/);
@@ -60,7 +60,7 @@ test("server-renders the public shop foundation", async () => {
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/i);
 });
 
-test("publishes the Violet romper hero and the exact five-piece Drop 02", async () => {
+test("publishes the Violet romper hero and the exact six-piece Drop 02", async () => {
   const response = await render("/shop");
   assert.equal(response.status, 200);
 
@@ -81,6 +81,7 @@ test("publishes the Violet romper hero and the exact five-piece Drop 02", async 
     ["Black Sweetheart Fit-and-Flare Midi Dress", "black-sweetheart-fit-flare-midi-dress"],
     ["Black and Ivory Folded-Neck Column Dress", "black-ivory-folded-neck-column-dress"],
     ["Indigo Seamed Denim Mini Dress", "indigo-seamed-denim-mini-dress"],
+    ["Black Cropped Tee and Silver Ruched Skirt Set", "black-cropped-tee-silver-ruched-skirt-set"],
   ];
 
   for (const [name, slug] of releasedProducts) {
@@ -88,7 +89,7 @@ test("publishes the Violet romper hero and the exact five-piece Drop 02", async 
     assert.match(visibleBody, new RegExp(name));
   }
 
-  assert.equal((visibleBody.match(/class="shop-product-card"/g) ?? []).length, 4);
+  assert.equal((visibleBody.match(/class="shop-product-card"/g) ?? []).length, 5);
   assert.doesNotMatch(visibleBody, /shop-release-index|shop-wardrobe-preview|shop-editorial-rail|shop-values/);
   assert.doesNotMatch(visibleBody, /GARMENT STUDY|(?:DYN-0(?:8[1-9]|9[0-2])|JUW-0(?:0[1-9]|1[0-2]))|Six dresses from Lulu’s wardrobe|Warm colour\. Clean movement/);
   assert.doesNotMatch(visibleBody, /Coral Drift Dress|Indigo Workshirt|Ivory Tie Skirt/);
@@ -160,6 +161,7 @@ test("server-renders all seven approved views for each Drop 02 product", async (
     "black-sweetheart-fit-flare-midi-dress",
     "black-ivory-folded-neck-column-dress",
     "indigo-seamed-denim-mini-dress",
+    "black-cropped-tee-silver-ruched-skirt-set",
   ];
   const responses = await Promise.all(
     slugs.map((slug) => render(`/shop/products/${slug}`)),

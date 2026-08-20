@@ -24,6 +24,7 @@ const routes = [
         "black-sweetheart-fit-flare-midi-dress",
         "black-ivory-folded-neck-column-dress",
         "indigo-seamed-denim-mini-dress",
+        "black-cropped-tee-silver-ruched-skirt-set",
       ].every((slug) => html.includes(`/shop/products/${slug}`))],
       ["customer-facing AI copy leaked", (html) => hasNoCustomerAiCopy(html)],
     ],

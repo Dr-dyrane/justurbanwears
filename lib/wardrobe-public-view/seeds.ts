@@ -39,6 +39,7 @@ export const WARDROBE_APPROVED_V4_MODEL_SLUGS = Object.freeze([
   "black-sweetheart-fit-flare-midi-dress",
   "black-ivory-folded-neck-column-dress",
   "indigo-seamed-denim-mini-dress",
+  "black-cropped-tee-silver-ruched-skirt-set",
 ] as const);
 
 export const WARDROBE_APPROVED_MODEL_FRONT_SLUGS = Object.freeze([
@@ -63,6 +64,7 @@ export const WARDROBE_APPROVED_MODEL_SUPPLEMENTAL_SLOTS = Object.freeze({
   "black-sweetheart-fit-flare-midi-dress": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "black-ivory-folded-neck-column-dress": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "indigo-seamed-denim-mini-dress": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
+  "black-cropped-tee-silver-ruched-skirt-set": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "coral-drift-dress": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "moss-square-knit": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "cocoa-pleat-trouser": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
@@ -426,6 +428,25 @@ export const WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS: readonly WardrobePublicProduc
     note: "A close indigo denim mini shaped by long seams and a softly rounded hem.",
     story: "A clean jewel neckline and plain long sleeves frame the fitted line, with restrained topstitching carrying through the compact silhouette.",
     details: ["Shallow jewel neckline", "Long plain sleeves", "Closed centre construction line", "Fitted mini length"],
+    measurements: [],
+  }),
+  migrationSeed({
+    slug: "black-cropped-tee-silver-ruched-skirt-set",
+    sku: "JUW-030",
+    name: "Black Cropped Tee and Silver Ruched Skirt Set",
+    category: "Sets",
+    price: 28500,
+    taggedSize: "Size on request",
+    fit: "Measurements confirmed before payment",
+    condition: "Condition confirmed before payment",
+    colour: "Black and silver",
+    availability: "AVAILABLE",
+    drop: "Drop 02",
+    tone: "ivory",
+    silhouette: "set",
+    note: "A matte-black cropped tee paired with a close silver ruched skirt and one high front slit.",
+    story: "The clean crew-neck crop keeps the top quiet while the reflective ruching and high centre-front slit give the skirt its movement.",
+    details: ["Cropped crew-neck tee", "High-waisted pencil skirt", "Reflective ruched finish", "Single high centre-front slit"],
     measurements: [],
   }),
 ]);

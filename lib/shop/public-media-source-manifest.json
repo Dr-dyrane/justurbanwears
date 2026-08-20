@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "catalogueRevision": "2026-08-20-catalogue-16",
-  "catalogueChecksum": "0921c6e148cea1544ba9264614eef7bd925c7da2f9ddf826f91a96095e70c919",
-  "cataloguePresentationChecksum": "73761efd4c34c8b46315f84118c78c3cab396de2366e97d8b4a09b28c4e32e0b",
+  "catalogueRevision": "2026-08-20-catalogue-17",
+  "catalogueChecksum": "a623f0278bad2f3aaaae363272adfd14e1f420066ece4692cbb4695c504775df",
+  "cataloguePresentationChecksum": "6cc5cf782219a1d0d964e53f1b28d36767bf548ae1cfa104d0c39ee73e8b416a",
   "assets": [
     {
       "sourcePath": "/shop/model/lulu-v2-approved.png",
@@ -12,6 +12,69 @@
       "contentType": "image/png",
       "width": 972,
       "height": 1619
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-silver-ruched-skirt-set/01-garment-front.webp",
+      "pathname": "shop/catalogue/7f1277cbe7d69cb39701d65130f269203a5db31f586594dd89f89733ad2c91cc/products/black-cropped-tee-silver-ruched-skirt-set/01-garment-front.webp",
+      "sha256": "7f1277cbe7d69cb39701d65130f269203a5db31f586594dd89f89733ad2c91cc",
+      "size": 122138,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-silver-ruched-skirt-set/02-garment-back.webp",
+      "pathname": "shop/catalogue/f3b8a56dac0652ab862834b8d6bf3b1e6d3b79025503e2151c78833f40e9498e/products/black-cropped-tee-silver-ruched-skirt-set/02-garment-back.webp",
+      "sha256": "f3b8a56dac0652ab862834b8d6bf3b1e6d3b79025503e2151c78833f40e9498e",
+      "size": 111820,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-silver-ruched-skirt-set/03-mannequin-front.webp",
+      "pathname": "shop/catalogue/057910b4f1ead072acd13d1afe5118b8dfcfba16a87c107793af12b3c4d56972/products/black-cropped-tee-silver-ruched-skirt-set/03-mannequin-front.webp",
+      "sha256": "057910b4f1ead072acd13d1afe5118b8dfcfba16a87c107793af12b3c4d56972",
+      "size": 99366,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-silver-ruched-skirt-set/04-model-front.webp",
+      "pathname": "shop/catalogue/843fb76e2ec98182c53a4b2828cd4a96da9a4fe298a3c9138c0ba255c63a3d07/products/black-cropped-tee-silver-ruched-skirt-set/04-model-front.webp",
+      "sha256": "843fb76e2ec98182c53a4b2828cd4a96da9a4fe298a3c9138c0ba255c63a3d07",
+      "size": 201094,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-silver-ruched-skirt-set/05-model-rear-three-quarter.webp",
+      "pathname": "shop/catalogue/40f3e2c87313756e8adc2f04fca77ebf73f4bed1d5dd4fdf324c13fad0389517/products/black-cropped-tee-silver-ruched-skirt-set/05-model-rear-three-quarter.webp",
+      "sha256": "40f3e2c87313756e8adc2f04fca77ebf73f4bed1d5dd4fdf324c13fad0389517",
+      "size": 177084,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-silver-ruched-skirt-set/06-fabric-detail.webp",
+      "pathname": "shop/catalogue/8062631e9759ced29ac22af3c934840c2b1f3e5e87b7b5b3616da42416ebe0ef/products/black-cropped-tee-silver-ruched-skirt-set/06-fabric-detail.webp",
+      "sha256": "8062631e9759ced29ac22af3c934840c2b1f3e5e87b7b5b3616da42416ebe0ef",
+      "size": 374896,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-silver-ruched-skirt-set/07-model-left-profile.webp",
+      "pathname": "shop/catalogue/dd97fd655d805432f16a9e95780a31f48384d6f1da2146549d7f5763d1f11c5d/products/black-cropped-tee-silver-ruched-skirt-set/07-model-left-profile.webp",
+      "sha256": "dd97fd655d805432f16a9e95780a31f48384d6f1da2146549d7f5763d1f11c5d",
+      "size": 180010,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
     },
     {
       "sourcePath": "/shop/products/black-cropped-tee-slim-trouser-set/01-garment-front.webp",

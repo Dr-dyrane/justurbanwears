@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "workflowRevision": "2026-08-20.12",
-  "updatedAt": "2026-08-20T16:09:12Z",
+  "workflowRevision": "2026-08-20.14",
+  "updatedAt": "2026-08-20T21:02:10Z",
   "model": "LULU_V4",
-  "activeGarment": "005",
+  "activeGarment": "006",
   "activeView": "07",
-  "status": "COMPLETE_LOCKED_USER_ACCEPTED",
+  "status": "COMPLETE_LOCKED_USER_AUTHORIZED",
   "identityReview": {
     "candidateId": "lulu.face.v4.front.candidate.v1",
     "acceptedAssetId": "lulu.face.v4.front.lock.v1",
@@ -31,12 +31,12 @@
     "garment": {
       "status": "INTAKE_LOCKED",
       "primary": [
-        "garment.005.front",
-        "garment.005.left-three-quarter",
-        "garment.005.front-confirmation",
-        "garment.005.front-continuity"
+        "garment.006.front",
+        "garment.006.front-confirmation",
+        "garment.006.left-three-quarter",
+        "garment.006.side-profile"
       ],
-      "rule": "005 always means the same plain medium-deep indigo long-sleeve fitted denim-like mini dress with a shallow neckline, continuous body, one narrow closed centre-front construction line, two shaping seams and a subtly rounded hem. The user explicitly confirms there is no centre split or opening: preserve the visible line but never turn it into an open slit. The retail tag is excluded. Back construction remains unknown."
+      "rule": "006 means the user-approved two-piece look: matte-black fitted short-sleeve crop tee plus high-waisted silver reflective ruched pencil midi skirt with exactly one centre-front slit. Preserve the small waist gap, irregular crinkled reflections, restrained close silhouette and real garment weight. Rear construction remains unknown."
     },
     "identity": {
       "status": "LOCKED",
@@ -44,12 +44,13 @@
         "lulu.face.real.primary",
         "lulu.face.real.v4.raw-frontal-closeup-eyes-closed",
         "lulu.face.real.v4.raw-three-quarter-open-eyes",
+        "lulu.face.operation-board.full.v1",
         "lulu.face.real.v4.front-lock",
         "lulu.face.v4.front.lock.v1",
         "garment.001.view.05.accepted",
         "garment.004.view.05.accepted"
       ],
-      "rule": "Every FACE operation must use the complete independent authority stack together: verified F01-F10 multi-angle contact sheet, recovered raw frontal close-up, recovered raw open-eye three-quarter photograph, real-photo frontal face lock, and user-approved generated V4 translation lock. The generated lock supplies repeatable geometry but never replaces or outranks the four real-photo layers. Convenience copies are not separate authority. Accepted 001/05 and 004/05 are translation guidance only. Hair stays unchanged from the accepted V4 styling. Face must pass before body, accessories, room, or 05 work begins."
+      "rule": "Every FACE operation must use the complete independent authority stack together: verified F01-F10 multi-angle contact sheet, recovered raw frontal close-up, recovered raw open-eye three-quarter photograph, real-photo frontal face lock, and user-approved generated V4 translation lock. The active full operation board packages F01-F10 plus the exact open-eye and frontal PNG copies into one private reference so none is omitted at the five-image tool boundary; it is not new evidence. The generated lock supplies repeatable geometry but never replaces or outranks the real-photo layers. Accepted 001/05 and 004/05 are translation guidance only. Hair stays unchanged from the accepted V4 styling unless the user explicitly restyles it."
     },
     "body": {
       "status": "LOCKED",
@@ -59,9 +60,10 @@
         "lulu.body.canon.v4.three-view",
         "lulu.body.canon.v4.side",
         "lulu.body.canon.v4.back",
-        "garment.005.body-fit.approved.v1"
+        "garment.006.body-fit.r001",
+        "garment.006.subject.front.r001"
       ],
-      "rule": "Real Lulu photos remain body evidence truth. The V4 source and three-view plate are user-approved modeled silhouette and garment-transfer controls, not verified measurements. The side and back files are operational crops, not independent evidence; use an angle crop or the combined plate according to which supports the more realistic complete frame. For Garment 005, the user-approved body-fit asset controls front body geometry, stance and fit proportions only; its patterned garment surface, accessories, footwear and background have no authority. Preserve the visible closed centre construction line but never add a split. Preserve the body as a believable whole rather than optimizing isolated measurements."
+      "rule": "Real Lulu photos remain body evidence truth. The V4 source and three-view plate are user-approved modeled silhouette and garment-transfer controls, not verified measurements. Use an angle crop or the combined plate according to which supports the more realistic complete frame. For Garment 006, the corrected 05 r006 is the accepted front master; side/rear body crops and matching Garment 004 angles control heel-aware stature and angle balance in the independent siblings. Preserve the body as a believable whole rather than optimizing isolated measurements."
     },
     "atelier": {
       "status": "LOCKED",
@@ -70,7 +72,7 @@
       ],
       "filename": "juw_room.png",
       "sha256": "0b591197d2de1b490c4305ac0aed4d1089564562c7b1005411a8340168aabb72",
-      "rule": "The room is a permanent building and must remain pixel-stable."
+      "rule": "The room is the permanent JUW setting. Preserve its icon, layout, vase, rail, garments, ottoman, rug and warm-neutral identity. Minor generative texture or lighting variance is acceptable when total realism improves; redesign or structural drift is not."
     },
     "brand": {
       "status": "LOCKED",
@@ -377,8 +379,71 @@
         }
       ],
       "rejectedCandidatesMayParent": false
+    },
+    "006": {
+      "status": "COMPLETE_LOCKED_USER_AUTHORIZED",
+      "views": {
+        "01": "USER_ACCEPTED",
+        "02": "QA_ACCEPTED_INFERRED_BACK",
+        "03": "QA_ACCEPTED_MANNEQUIN_FRONT",
+        "04": "QA_ACCEPTED_MODEL_COMPLETED_DETAIL",
+        "05": "USER_ACCEPTED_CORRECTED_FRONT_MASTER",
+        "06": "QA_ACCEPTED_LOCKED_SIBLING",
+        "07": "QA_ACCEPTED_LOCKED_SIBLING_INFERRED_BACK"
+      },
+      "backEvidence": "MISSING",
+      "rule": "Preserve the approved two-piece look, Lulu semblance, centre-parted low bun, garment-specific black pointed slingbacks and holistic realism. The skirt is worn around the knee to slightly above the knee on Lulu and has one high centre-front slit. 06 and 07 branch independently from accepted 05. 02 and 07 remain inferred presentation only and never direct back evidence.",
+      "accepted01": {
+        "assetId": "garment.006.view.01.accepted",
+        "sha256": "a304e212238a656d66ef303cab4e069f1d6b32777bc2f9fc95a74804513072ba",
+        "status": "USER_ACCEPTED"
+      },
+      "acceptedSubject": {
+        "assetId": "garment.006.subject.front.r001",
+        "sha256": "a9348665a8e87d3294d6416b09121591809d5a5d25c9fa473ed89885b242a721",
+        "status": "QA_ACCEPTED_HOLISTIC_SUBJECT"
+      },
+      "accepted05": {
+        "assetId": "garment.006.view.05.accepted",
+        "sha256": "963bd38f5ee3fd8f263e527189792da91a35cfba752837e2c380b80aa157bcb1",
+        "status": "USER_ACCEPTED_CORRECTED_FRONT_MASTER",
+        "mayParentOnly": ["garment.006.view.06", "garment.006.view.07"]
+      },
+      "accepted06": {
+        "assetId": "garment.006.view.06.accepted",
+        "sha256": "9c02f2873a651b0704871bce388325a6c52ea895ee921fd13ba8081a8d51f560",
+        "status": "QA_ACCEPTED_LOCKED_SIBLING",
+        "mayParent07": false
+      },
+      "accepted07": {
+        "assetId": "garment.006.view.07.accepted",
+        "sha256": "cadd42647868c0457f9ed95fead10fd1f3ce91d229a63b1a32673216fd2df18b",
+        "status": "QA_ACCEPTED_LOCKED_SIBLING_INFERRED_BACK",
+        "mayParent06": false,
+        "mayServeAsDirectBackEvidence": false
+      },
+      "faceOperationBoard": {
+        "assetId": "lulu.face.operation-board.full.v1",
+        "sha256": "2ad1a716ec59f65d66e3f83c8d391959696f9539befe520f50889fdd33aa931b",
+        "status": "ACTIVE_COMPLETE_REAL_FACE_STACK"
+      },
+      "rejectedCandidatesMayParent": false
     }
   },
-  "nextOperation": null,
-  "requiredNext": "No further private media generation is required for Garment 005. Product facts, public derivative export, database sync and Shop publication remain separate operations and require explicit authorization."
+  "nextOperation": {
+    "operationId": "g006-model-siblings-r003",
+    "garmentId": "006",
+    "status": "COMPLETE_LOCKED",
+    "views": ["06", "07"],
+    "parentAssets": ["garment.006.view.05.accepted"],
+    "authorityStack": {
+      "translation": ["garment.004.view.06.accepted", "garment.004.view.07.accepted"],
+      "identity": ["lulu.face.operation-board.full.v1"],
+      "body": ["lulu.body.canon.v4.side", "lulu.body.canon.v4.back"],
+      "atelier": ["juw.atelier.empty-plate.v1"]
+    },
+    "outputs": ["garment.006.view.06.accepted", "garment.006.view.07.accepted"],
+    "rule": "06 and 07 were generated independently from accepted 05 with the matching Garment 004 angle, the complete real-face operation board, matching Lulu body crop and locked room. Neither sibling parents the other; 07 remains inferred presentation."
+  },
+  "requiredNext": "No private media generation remains for Garment 006. Publication requires a separate explicit catalogue, Blob and database release decision."
 }
