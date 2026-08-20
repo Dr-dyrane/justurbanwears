@@ -7,63 +7,76 @@
 }
 
 .product-card-action {
-  background: color-mix(in srgb, var(--shop-paper) 94%, transparent);
+  --product-action-duration: 520ms;
+  --product-action-spring: cubic-bezier(0.28, 0.78, 0.28, 1.12);
+  background: rgba(18, 11, 9, 0.74);
+  backdrop-filter: blur(16px);
   border-radius: 999px;
   box-sizing: border-box;
-  color: var(--shop-ink);
+  color: #fffaf7;
   gap: 0;
-  height: 50px;
-  min-height: 50px;
+  height: 38px;
+  min-height: 38px;
+  min-width: 38px;
   overflow: hidden;
-  padding: 5px;
-  width: 50px;
-  transition: width 220ms var(--ease-liquid), padding 220ms var(--ease-liquid), gap 220ms var(--ease-liquid), transform 180ms ease;
+  padding: 0;
+  width: 38px;
+  transition:
+    background 260ms ease,
+    color 260ms ease,
+    gap var(--product-action-duration) var(--product-action-spring),
+    padding var(--product-action-duration) var(--product-action-spring),
+    transform 260ms ease,
+    width var(--product-action-duration) var(--product-action-spring);
 }
 
-.product-card-action-icon {
-  align-items: center;
-  background: transparent;
-  border-radius: 50%;
-  box-shadow: none;
+.product-card-action > svg {
   color: inherit;
-  display: inline-flex;
-  flex: 0 0 40px;
-  height: 40px;
-  justify-content: center;
-  min-width: 40px;
-  width: 40px;
-  transition: background 160ms ease, color 160ms ease, transform 200ms var(--ease-liquid);
+  flex: 0 0 16px;
+  height: 16px;
+  transform-origin: center;
+  transition: color 260ms ease, transform var(--product-action-duration) var(--product-action-spring);
+  width: 16px;
 }
 
-.product-card-action > span:last-child {
+.product-card-action-label {
   color: inherit;
+  font-family: var(--font-code);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  line-height: 1;
   max-width: 0;
   opacity: 0;
   overflow: hidden;
-  transform: translateX(-5px);
+  text-transform: uppercase;
+  transform: translateX(-6px);
   white-space: nowrap;
-  transition: max-width 220ms var(--ease-liquid), opacity 140ms ease, transform 200ms var(--ease-liquid);
+  transition:
+    max-width var(--product-action-duration) var(--product-action-spring),
+    opacity 240ms ease,
+    transform var(--product-action-duration) var(--product-action-spring);
 }
 
 .shop-home .shop-product-card .product-card-action,
 .shop-product-page .shop-related .shop-product-card .product-card-action {
-  background: color-mix(in srgb, var(--shop-paper) 94%, transparent);
-  box-shadow: 0 12px 28px color-mix(in srgb, var(--shop-ink) 18%, transparent);
-  color: var(--shop-ink);
-  height: 50px;
-  min-width: 50px;
+  background: rgba(18, 11, 9, 0.74);
+  box-shadow: 0 8px 22px rgba(18, 11, 9, 0.2);
+  color: #fffaf7;
+  height: 38px;
+  min-width: 38px;
   transition:
-    background 160ms ease,
-    color 160ms ease,
-    gap 220ms var(--ease-liquid),
-    padding 220ms var(--ease-liquid),
-    transform 180ms ease,
-    width 220ms var(--ease-liquid);
-  width: 50px;
+    background 260ms ease,
+    color 260ms ease,
+    gap var(--product-action-duration) var(--product-action-spring),
+    padding var(--product-action-duration) var(--product-action-spring),
+    transform 260ms ease,
+    width var(--product-action-duration) var(--product-action-spring);
+  width: 38px;
 }
 
-.shop-home .shop-product-card .product-card-action > span:last-child,
-.shop-product-page .shop-related .shop-product-card .product-card-action > span:last-child {
+.shop-home .shop-product-card .product-card-action > .product-card-action-label:last-child,
+.shop-product-page .shop-related .shop-product-card .product-card-action > .product-card-action-label:last-child {
   clip: auto;
   clip-path: none;
   height: auto;
@@ -72,42 +85,32 @@
   width: auto;
 }
 
-.product-card-action small {
-  color: inherit;
-  opacity: 0.72;
-}
-
-.product-card-action.is-added .product-card-action-icon {
-  background: transparent;
-  color: inherit;
-}
-
 .product-card-action-row[data-visibility="always"] .product-card-action,
 .product-card-action.is-added,
 .product-card-action.is-offline {
-  gap: 9px;
-  padding-right: 14px;
-  width: 154px;
+  gap: 8px;
+  padding: 0 12px;
+  width: 128px;
 }
 
 .shop-home .shop-product-card .product-card-action-row[data-visibility="always"] .product-card-action,
 .shop-product-page .shop-related .shop-product-card .product-card-action-row[data-visibility="always"] .product-card-action {
-  gap: 9px;
-  padding-right: 14px;
-  width: 154px;
+  gap: 8px;
+  padding: 0 12px;
+  width: 128px;
 }
 
 .product-card-action-row[data-visibility="always"] .product-card-action.is-offline,
 .shop-home .shop-product-card .product-card-action-row[data-visibility="always"] .product-card-action.is-offline,
 .shop-product-page .shop-related .shop-product-card .product-card-action-row[data-visibility="always"] .product-card-action.is-offline {
-  min-width: 154px;
-  width: auto;
+  min-width: 128px;
+  width: 128px;
 }
 
-.product-card-action-row[data-visibility="always"] .product-card-action > span:last-child,
-.product-card-action.is-added > span:last-child,
-.product-card-action.is-offline > span:last-child {
-  max-width: 110px;
+.product-card-action-row[data-visibility="always"] .product-card-action-label,
+.product-card-action.is-added .product-card-action-label,
+.product-card-action.is-offline .product-card-action-label {
+  max-width: 82px;
   opacity: 1;
   overflow: visible;
   transform: none;
@@ -115,35 +118,50 @@
 
 .shop-home .shop-product-card .product-card-action.is-added,
 .shop-product-page .shop-related .shop-product-card .product-card-action.is-added {
-  background: var(--shop-nav-selection);
-  color: var(--shop-nav-selection-ink);
+  background: rgba(18, 11, 9, 0.88);
+  color: #fffaf7;
 }
 
-.product-card-action.is-added .product-card-action-icon > svg {
+.product-card-action.is-added > svg {
   animation: shop-confirm-settle 300ms var(--ease-liquid) both;
+  color: var(--juw-intent, #dd6042);
+}
+
+html[data-theme="dark"] .shop-home .shop-product-card .product-card-action,
+html[data-theme="dark"] .shop-product-page .shop-related .shop-product-card .product-card-action {
+  background: rgba(18, 11, 9, 0.78) !important;
+  color: #fffaf7;
 }
 
 @media (hover: hover) and (pointer: fine) {
   .shop-product-card:hover .product-card-action-row[data-visibility="intent"] .product-card-action,
   .shop-product-card:focus-within .product-card-action-row[data-visibility="intent"] .product-card-action,
   .product-card-action-row[data-visibility="intent"]:focus-within .product-card-action {
-    gap: 9px;
-    padding-right: 14px;
-    width: 154px;
+    gap: 8px;
+    padding: 0 12px;
+    width: 128px;
   }
 
   .shop-home .shop-product-card .product-card-action:not(.is-added):not(.is-offline):hover,
   .shop-home .shop-product-card .product-card-action:not(.is-added):not(.is-offline):focus-visible,
   .shop-product-page .shop-related .shop-product-card .product-card-action:not(.is-added):not(.is-offline):hover,
   .shop-product-page .shop-related .shop-product-card .product-card-action:not(.is-added):not(.is-offline):focus-visible {
-    background: var(--shop-nav-action);
-    color: var(--shop-nav-action-ink);
+    background: rgba(18, 11, 9, 0.9);
+    color: #fffaf7;
   }
 
-  .shop-product-card:hover .product-card-action-row[data-visibility="intent"] .product-card-action > span:last-child,
-  .shop-product-card:focus-within .product-card-action-row[data-visibility="intent"] .product-card-action > span:last-child,
-  .product-card-action-row[data-visibility="intent"]:focus-within .product-card-action > span:last-child {
-    max-width: 110px;
+  html[data-theme="dark"] .shop-home .shop-product-card .product-card-action:not(.is-added):not(.is-offline):hover,
+  html[data-theme="dark"] .shop-home .shop-product-card .product-card-action:not(.is-added):not(.is-offline):focus-visible,
+  html[data-theme="dark"] .shop-product-page .shop-related .shop-product-card .product-card-action:not(.is-added):not(.is-offline):hover,
+  html[data-theme="dark"] .shop-product-page .shop-related .shop-product-card .product-card-action:not(.is-added):not(.is-offline):focus-visible {
+    background: rgba(18, 11, 9, 0.92) !important;
+    color: #fffaf7;
+  }
+
+  .shop-product-card:hover .product-card-action-row[data-visibility="intent"] .product-card-action-label,
+  .shop-product-card:focus-within .product-card-action-row[data-visibility="intent"] .product-card-action-label,
+  .product-card-action-row[data-visibility="intent"]:focus-within .product-card-action-label {
+    max-width: 82px;
     opacity: 1;
     overflow: visible;
     transform: none;
@@ -154,30 +172,35 @@
     transform: translateY(-1px);
   }
 
-  .product-card-action:hover .product-card-action-icon,
-  .product-card-action:focus-visible .product-card-action-icon {
-    background: transparent;
-    color: inherit;
+  .product-card-action:hover > svg,
+  .product-card-action:focus-visible > svg {
     transform: translateY(-1px) scale(1.035);
   }
 }
 
 @media (hover: none), (pointer: coarse) {
+  .product-card-action,
+  .shop-home .shop-product-card .product-card-action,
+  .shop-product-page .shop-related .shop-product-card .product-card-action {
+    height: 44px;
+    min-height: 44px;
+  }
+
   .product-card-action-row[data-visibility="intent"] .product-card-action {
-    gap: 9px;
-    padding-right: 14px;
-    width: 154px;
+    gap: 8px;
+    padding: 0 12px;
+    width: 128px;
   }
 
   .shop-home .shop-product-card .product-card-action-row[data-visibility="intent"] .product-card-action,
   .shop-product-page .shop-related .shop-product-card .product-card-action-row[data-visibility="intent"] .product-card-action {
-    gap: 9px;
-    padding-right: 14px;
-    width: 154px;
+    gap: 8px;
+    padding: 0 12px;
+    width: 128px;
   }
 
-  .product-card-action-row[data-visibility="intent"] .product-card-action > span:last-child {
-    max-width: 110px;
+  .product-card-action-row[data-visibility="intent"] .product-card-action-label {
+    max-width: 82px;
     opacity: 1;
     overflow: visible;
     transform: none;
@@ -461,9 +484,9 @@
 
 @media (prefers-reduced-motion: reduce) {
   .product-card-action,
-  .product-card-action > span:last-child,
-  .product-card-action-icon,
-  .product-card-action.is-added .product-card-action-icon > svg,
+  .product-card-action-label,
+  .product-card-action > svg,
+  .product-card-action.is-added > svg,
   .studio-mobile-bar,
   .studio-mobile-fab {
     animation: none !important;

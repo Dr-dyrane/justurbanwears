@@ -50,23 +50,22 @@ test("Wardrobe mobile filters never place the result count over a status", () =>
   assert.match(wardrobeMobileCss, /#studio-view-garments > \.studio-filter-bar > span \{\s*display: none;\s*\}/);
 });
 
-test("product add-to-bag reveals a legible theme-aware state", () => {
-  assert.match(productCard, /className="product-card-action-icon"/);
-  assert.match(productCard, /<strong>\{isOnline \? "Add to bag"/);
-  assert.match(productCard, /<strong>In bag<\/strong>/);
-  assert.match(controlCss, /\.product-card-action-icon[\s\S]*?border-radius: 50%/);
-  assert.match(controlCss, /\.shop-home \.shop-product-card \.product-card-action[\s\S]*?var\(--shop-paper\)[\s\S]*?var\(--shop-ink\)/);
-  assert.match(controlCss, /\.product-card-action \{[\s\S]*?gap: 0;[\s\S]*?width 220ms/);
-  assert.match(controlCss, /\.product-card-action > span:last-child \{[\s\S]*?max-width: 0;[\s\S]*?overflow: hidden;/);
-  assert.match(controlCss, /\.shop-home \.shop-product-card \.product-card-action > span:last-child,[\s\S]*?clip: auto;[\s\S]*?clip-path: none;/);
-  assert.match(controlCss, /\.shop-home \.shop-product-card \.product-card-action,[\s\S]*?transition:[\s\S]*?width 220ms/);
-  assert.match(controlCss, /\.product-card-action\.is-added[\s\S]*?width: 154px;/);
-  assert.match(controlCss, /\.shop-product-page \.shop-related \.shop-product-card \.product-card-action-row\[data-visibility="always"\] \.product-card-action[\s\S]*?width: 154px;/);
-  assert.match(controlCss, /\.product-card-action-row\[data-visibility="always"\] \.product-card-action\.is-offline,[\s\S]*?min-width: 154px;[\s\S]*?width: auto;/);
-  assert.match(controlCss, /\.product-card-action\.is-added \.product-card-action-icon > svg[\s\S]*?shop-confirm-settle/);
+test("product add-to-bag uses one compact editorial pill", () => {
+  assert.match(productCard, /<Check aria-hidden="true" size=\{16\}/);
+  assert.match(productCard, /<ShoppingBag aria-hidden="true" size=\{16\}/);
+  assert.match(productCard, /className="product-card-action-label">\{isOnline \? "Add to bag" : "Offline"\}/);
+  assert.match(productCard, /className="product-card-action-label">In bag<\/span>/);
+  assert.doesNotMatch(productCard, /product-card-action-icon/);
+  assert.match(controlCss, /\.product-card-action \{[\s\S]*?height: 38px;[\s\S]*?width: 38px;[\s\S]*?width var\(--product-action-duration\) var\(--product-action-spring\)/);
+  assert.match(controlCss, /--product-action-duration: 520ms;[\s\S]*?--product-action-spring: cubic-bezier\(0\.28, 0\.78, 0\.28, 1\.12\)/);
+  assert.match(controlCss, /\.product-card-action-label \{[\s\S]*?font-size: 11px;[\s\S]*?max-width: 0;[\s\S]*?overflow: hidden;/);
+  assert.match(controlCss, /\.shop-home \.shop-product-card \.product-card-action,[\s\S]*?background: rgba\(18, 11, 9, 0\.74\);[\s\S]*?color: #fffaf7;[\s\S]*?height: 38px;/);
+  assert.match(controlCss, /\.product-card-action\.is-added,[\s\S]*?width: 128px;/);
+  assert.match(controlCss, /\.shop-product-page \.shop-related \.shop-product-card \.product-card-action-row\[data-visibility="always"\] \.product-card-action[\s\S]*?width: 128px;/);
+  assert.match(controlCss, /\.product-card-action\.is-added > svg[\s\S]*?shop-confirm-settle/);
   assert.match(controlCss, /shop-product-card:hover \.product-card-action-row/);
-  assert.match(controlCss, /@media \(hover: none\), \(pointer: coarse\)/);
-  assert.match(controlCss, /@media \(prefers-reduced-motion: reduce\)[\s\S]*?\.product-card-action\.is-added \.product-card-action-icon > svg,[\s\S]*?animation: none !important;/);
+  assert.match(controlCss, /@media \(hover: none\), \(pointer: coarse\)[\s\S]*?height: 44px;[\s\S]*?width: 128px;/);
+  assert.match(controlCss, /@media \(prefers-reduced-motion: reduce\)[\s\S]*?\.product-card-action\.is-added > svg,[\s\S]*?animation: none !important;/);
 });
 
 test("task-first records, garments, and inventory use approved media", () => {

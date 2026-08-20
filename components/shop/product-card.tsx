@@ -114,10 +114,8 @@ export function ProductCard({
                 className="product-card-action is-added"
                 href="/shop/bag"
               >
-                <span aria-hidden="true" className="product-card-action-icon">
-                  <Check size={18} strokeWidth={2} />
-                </span>
-                <span><strong>In bag</strong><small>{product.taggedSize}</small></span>
+                <Check aria-hidden="true" size={16} strokeWidth={2} />
+                <span className="product-card-action-label">In bag</span>
               </Link>
             ) : (
               <button
@@ -129,13 +127,8 @@ export function ProductCard({
                 onClick={quickAdd}
                 type="button"
               >
-                <span aria-hidden="true" className="product-card-action-icon">
-                  <ShoppingBag size={18} strokeWidth={1.8} />
-                </span>
-                <span>
-                  <strong>{isOnline ? "Add to bag" : "Offline · add paused"}</strong>
-                  <small>{isOnline ? product.taggedSize : "Reconnect to add"}</small>
-                </span>
+                <ShoppingBag aria-hidden="true" size={16} strokeWidth={1.8} />
+                <span className="product-card-action-label">{isOnline ? "Add to bag" : "Offline"}</span>
               </button>
             )}
           </div>
