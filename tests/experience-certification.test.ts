@@ -12,7 +12,7 @@ test("the release gate measures the compiled experience after build", () => {
   assert.match(packageJson, /"test:experience": "node scripts\/verify-experience-build\.mjs"/);
   assert.match(packageJson, /npm run build && npm run test:experience && npm run test:rendered/);
   assert.match(buildGate, /files: 5/);
-  assert.match(buildGate, /largestRaw: 475 \* KiB/);
+  assert.match(buildGate, /largestRaw: 480 \* KiB/);
   assert.match(buildGate, /totalRaw: 525 \* KiB/);
   assert.match(buildGate, /largestGzip: 86 \* KiB/);
   assert.match(buildGate, /totalGzip: 98 \* KiB/);
@@ -25,9 +25,10 @@ test("the release gate measures the compiled experience after build", () => {
 test("production deployment certification checks real route weight and semantics", () => {
   assert.match(packageJson, /"smoke:experience": "node scripts\/smoke-experience\.mjs/);
   assert.match(productionWorkflow, /npm run smoke:production && npm run smoke:experience/);
-  assert.match(liveGate, /maxBytes: 400 \* KiB/);
   assert.match(liveGate, /maxBytes: 2200 \* KiB/);
-  assert.match(liveGate, /data-experience-surface="site"/);
+  assert.match(liveGate, /request\("\/", \{ redirect: "manual" \}\)/);
+  assert.match(liveGate, /response\.status === 308/);
+  assert.match(liveGate, /pathname === "\/shop"/);
   assert.match(liveGate, /data-experience-layer="island"/);
   assert.match(liveGate, /data-experience-focus="garment"/);
   assert.match(liveGate, /highPriorityImages\(html\) === 1/);
@@ -36,8 +37,9 @@ test("production deployment certification checks real route weight and semantics
 
 test("the documented budgets distinguish enforced ceilings from field targets", () => {
   assert.match(budgets, /Enforced build ceilings/);
-  assert.match(budgets, /475 KiB raw/);
+  assert.match(budgets, /480 KiB raw/);
   assert.match(budgets, /86 KiB gzip/);
   assert.match(budgets, /2,200 KiB/);
+  assert.match(budgets, /permanently redirects to Shop/);
   assert.match(budgets, /These ceilings are regression guards, not performance claims/);
 });

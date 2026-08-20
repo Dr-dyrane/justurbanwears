@@ -4,6 +4,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import test from "node:test";
 import { shopModelAnchors, shopProducts } from "../lib/shop/catalog";
+import { CURRENT_SHOP_DROP } from "../lib/shop/current-drop";
 import {
   resolveApprovedModelTryout,
   selectProductGalleryMedia,
@@ -153,9 +154,12 @@ test("publishes only identity-cleared model fronts with their reviewed bytes", (
     const tryout = resolveApprovedModelTryout(product.modelTryout);
     return tryout ? [{ product, tryout }] : [];
   });
+  const legacyApproved = approved.filter(({ product }) =>
+    expectedApprovals.some(({ slug }) => slug === product.slug),
+  );
 
   assert.deepEqual(
-    approved.map(({ product }) => product.slug),
+    legacyApproved.map(({ product }) => product.slug),
     expectedApprovals.map(({ slug }) => slug),
   );
 
@@ -196,6 +200,19 @@ test("publishes only identity-cleared model fronts with their reviewed bytes", (
       );
     }
   }
+
+  const currentProducts = shopProducts.filter((product) => product.drop === CURRENT_SHOP_DROP);
+  const currentApproved = approved.filter(({ product }) => product.drop === CURRENT_SHOP_DROP);
+  assert.deepEqual(
+    currentApproved.map(({ product }) => product.slug),
+    currentProducts.map((product) => product.slug),
+  );
+  for (const { product, tryout } of currentApproved) {
+    assert.equal(tryout.modelAnchorId, "lulu-v4");
+    assert.equal(tryout.frame.src, `/shop/products/${product.slug}/04-model-front.webp`);
+    assert.equal(tryout.frame.width, 1120);
+    assert.equal(tryout.frame.height, 1400);
+  }
 });
 
 test("keeps unsupported square-back claims out of the public catalogue", () => {
@@ -208,6 +225,19 @@ test("appends only approved Lulu views to the main product gallery", () => {
   for (const product of shopProducts) {
     const gallery = selectProductGalleryMedia(product);
     const modelFrames = gallery.filter((item) => item.presentation === "model");
+    if (product.drop === CURRENT_SHOP_DROP) {
+      const approvedFront = resolveApprovedModelTryout(product.modelTryout);
+      assert.ok(approvedFront);
+      const productOnlyFrames = product.media?.filter((item) => item.presentation !== "model") ?? [];
+      const approvedSupplementalFrames = product.media?.filter((item) => item.presentation === "model") ?? [];
+      const approvedProductFrames = [approvedFront.frame, ...approvedSupplementalFrames];
+      assert.equal(gallery.length, productOnlyFrames.length + approvedProductFrames.length);
+      assert.deepEqual(
+        modelFrames.map(({ src, modelAnchorId }) => ({ src, modelAnchorId })),
+        approvedProductFrames.map(({ src, modelAnchorId }) => ({ src, modelAnchorId })),
+      );
+      continue;
+    }
     const hasApprovedFront = expectedApprovals.some(({ slug }) => slug === product.slug);
     const supplementalSources = approvedSupplementalSources.get(product.slug) ?? [];
     const expectedModelFrames = [

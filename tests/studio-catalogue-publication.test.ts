@@ -8,6 +8,7 @@ import {
   databaseCatalogueRowToShopProduct,
   loadServerShopProducts,
 } from "../lib/shop/server-catalog";
+import { CURRENT_SHOP_DROP } from "../lib/shop/current-drop";
 import { publishStudioPieceSchema } from "../lib/studio/engine/catalogue-publication-contracts";
 import {
   dynamicStudioSlug,
@@ -38,7 +39,8 @@ const publicationMedia = media.map((item) => ({
 }));
 
 function releaseRow() {
-  const product = SHOP_CATALOGUE_MANIFEST.products[0];
+  const product = SHOP_CATALOGUE_MANIFEST.products.find((item) => item.drop === CURRENT_SHOP_DROP);
+  assert.ok(product);
   return {
     sku: product.sku,
     slug: product.slug,
@@ -57,7 +59,7 @@ function releaseRow() {
     details: [...product.details],
     measurements: product.measurements.map((item: { label: string; value: string }) => ({ ...item })),
     modelAnchor: { ...product.modelAnchor },
-    media: product.media.map((item: { slot: string; src: string; modelAnchorId?: "lulu-v2" | "lulu-v3" }) => ({ ...item })),
+    media: product.media.map((item: { slot: string; src: string; modelAnchorId?: "lulu-v2" | "lulu-v3" | "lulu-v4" }) => ({ ...item })),
     availability: product.initialInventory.availability,
   };
 }
@@ -73,7 +75,7 @@ function dynamicRow() {
     fit: "Measurements confirmed before payment",
     condition: "Excellent · real-worn wardrobe piece",
     colour: "Coral",
-    dropLabel: "Studio wardrobe",
+    dropLabel: CURRENT_SHOP_DROP,
     tone: "coral",
     silhouette: "dress",
     note: "One-off wardrobe piece.",
@@ -128,7 +130,7 @@ test("a ledger-backed dynamic row appends without weakening a release row", asyn
   assert.ok(dynamic.media?.every((item) => isSafeShopProductMediaUrl(item.src, slug)));
   const merged = await loadServerShopProducts(async () => [releaseRow(), dynamicRow()]);
   assert.equal(merged.length, 2);
-  assert.equal(merged[0].sku, "JUW-001");
+  assert.equal(merged[0].drop, CURRENT_SHOP_DROP);
   assert.equal(merged[1].sku, dynamic.sku);
   assert.throws(() => databaseCatalogueRowToShopProduct({
     ...dynamicRow(),

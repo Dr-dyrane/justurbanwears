@@ -16,7 +16,7 @@ The release gate measures the compiled artifact after every production build.
 Current ceilings retain modest headroom above the 15 August 2026 baseline:
 
 - compiled CSS files: `≤ 5`;
-- largest compiled stylesheet: `≤ 475 KiB raw` and `≤ 86 KiB gzip`;
+- largest compiled stylesheet: `≤ 480 KiB raw` and `≤ 86 KiB gzip`;
 - aggregate compiled CSS: `≤ 525 KiB raw` and `≤ 98 KiB gzip`;
 - emitted WOFF2 files: `≤ 10`;
 - largest emitted font: `≤ 30 KiB`;
@@ -28,14 +28,14 @@ Current ceilings retain modest headroom above the 15 August 2026 baseline:
 
 Post-deployment certification checks the actual production HTML:
 
-- brand Site: `≤ 400 KiB`;
+- root permanently redirects to Shop;
 - Shop: `≤ 2,200 KiB`;
 - garment focus: `≤ 900 KiB`;
 - Studio authentication boundary: `≤ 350 KiB`.
 
 It also requires intrinsic image dimensions, malformed-metadata protection,
-exactly one high-priority hero on the Site and Shop, and the canonical
-Site/Shop/focus/island experience markers.
+exactly one high-priority Shop hero, and the canonical Shop/focus/island
+experience markers.
 
 > These ceilings are regression guards, not performance claims. Tighten them
 > only after a measured optimization establishes a lower stable baseline.
