@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "catalogueRevision": "2026-08-20-catalogue-18",
-  "catalogueChecksum": "a10cf80fa301af8426338502a3e57b72609762789b6df3cc30366b7e0cd53086",
-  "cataloguePresentationChecksum": "985f5d449027003d0b0c10a85f5a73c7c580b9d0cc21fc4743cdeb9b487c4af3",
+  "catalogueRevision": "2026-08-20-catalogue-19",
+  "catalogueChecksum": "1e9d77ae8036f6311adbffa596dca073eb4864a11d9212108a9507987f5f402f",
+  "cataloguePresentationChecksum": "527860ade55dba28ec29de464421e6cbd77ac5d8facf01bdf193184a7f6f6390",
   "assets": [
     {
       "sourcePath": "/shop/model/lulu-v2-approved.png",
@@ -12,6 +12,69 @@
       "contentType": "image/png",
       "width": 972,
       "height": 1619
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-blue-distressed-shorts-set/01-garment-front.webp",
+      "pathname": "shop/catalogue/2e93ce5afdb578a3bc9d069bc08aa67b82d7024a3feb130188422ed609a17fd0/products/black-cropped-tee-blue-distressed-shorts-set/01-garment-front.webp",
+      "sha256": "2e93ce5afdb578a3bc9d069bc08aa67b82d7024a3feb130188422ed609a17fd0",
+      "size": 139882,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-blue-distressed-shorts-set/02-garment-back.webp",
+      "pathname": "shop/catalogue/f30f02df38386415f2cc47ba31aca3aa14c59f68266a44a201d433cc81b4b235/products/black-cropped-tee-blue-distressed-shorts-set/02-garment-back.webp",
+      "sha256": "f30f02df38386415f2cc47ba31aca3aa14c59f68266a44a201d433cc81b4b235",
+      "size": 142886,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-blue-distressed-shorts-set/03-mannequin-front.webp",
+      "pathname": "shop/catalogue/c850d0bf8eaf558c2343b41647bd89b7d878e48963c0238960d8e6d5927d411e/products/black-cropped-tee-blue-distressed-shorts-set/03-mannequin-front.webp",
+      "sha256": "c850d0bf8eaf558c2343b41647bd89b7d878e48963c0238960d8e6d5927d411e",
+      "size": 78168,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-blue-distressed-shorts-set/04-model-front.webp",
+      "pathname": "shop/catalogue/40a97481d1f3f877c744a8a763281194409b708f4e482cd49c3450b0f69f940b/products/black-cropped-tee-blue-distressed-shorts-set/04-model-front.webp",
+      "sha256": "40a97481d1f3f877c744a8a763281194409b708f4e482cd49c3450b0f69f940b",
+      "size": 183418,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-blue-distressed-shorts-set/05-model-rear-three-quarter.webp",
+      "pathname": "shop/catalogue/ad1e8bb6c709abf554f140eec15ca2eb20481f313ea3b09cdd741282c1e27526/products/black-cropped-tee-blue-distressed-shorts-set/05-model-rear-three-quarter.webp",
+      "sha256": "ad1e8bb6c709abf554f140eec15ca2eb20481f313ea3b09cdd741282c1e27526",
+      "size": 175566,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-blue-distressed-shorts-set/06-fabric-detail.webp",
+      "pathname": "shop/catalogue/72e168f618290a8a11b3e13f50a2b753fc460a3740e1c37544b622d71bb39856/products/black-cropped-tee-blue-distressed-shorts-set/06-fabric-detail.webp",
+      "sha256": "72e168f618290a8a11b3e13f50a2b753fc460a3740e1c37544b622d71bb39856",
+      "size": 367510,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-blue-distressed-shorts-set/07-model-left-profile.webp",
+      "pathname": "shop/catalogue/33b04a733877095f670c8a42a3577f6f812d473fbe51233dc09b0f0a3553ecc4/products/black-cropped-tee-blue-distressed-shorts-set/07-model-left-profile.webp",
+      "sha256": "33b04a733877095f670c8a42a3577f6f812d473fbe51233dc09b0f0a3553ecc4",
+      "size": 151822,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
     },
     {
       "sourcePath": "/shop/products/black-cropped-tee-pink-distressed-shorts-set/01-garment-front.webp",

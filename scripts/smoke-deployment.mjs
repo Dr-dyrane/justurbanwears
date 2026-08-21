@@ -85,6 +85,7 @@ await htmlCheck("shop shell", "/shop", [
     "indigo-seamed-denim-mini-dress",
     "black-cropped-tee-silver-ruched-skirt-set",
     "black-cropped-tee-pink-distressed-shorts-set",
+    "black-cropped-tee-blue-distressed-shorts-set",
   ].every((slug) => body.includes(`/shop/products/${slug}`))],
   ["Drop 01 leaked into discovery", (body) => !visibleMarkup(body).includes("coral-drift-dress")],
   ["shop navigation missing", (body) => body.includes("Search the wardrobe")],
@@ -92,8 +93,8 @@ await htmlCheck("shop shell", "/shop", [
   ["malformed metadata", (body) => !body.includes("[object Object]")],
   ["favicon metadata missing", (body) => body.includes('/favicon.ico?v=2026.3-seal')],
 ]);
-await htmlCheck("product passport", "/shop/products/black-cropped-tee-pink-distressed-shorts-set", [
-  ["product name missing", (body) => body.includes("Black Cropped Tee and Pink Distressed Shorts Set")],
+await htmlCheck("product passport", "/shop/products/black-cropped-tee-blue-distressed-shorts-set", [
+  ["product name missing", (body) => body.includes("Black Cropped Tee and Blue Distressed Shorts Set")],
   ["seven-view dossier incomplete", (body) => [
     "01-garment-front.webp",
     "02-garment-back.webp",

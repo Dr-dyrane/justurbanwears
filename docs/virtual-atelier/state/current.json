@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "workflowRevision": "2026-08-20.19",
-  "updatedAt": "2026-08-21T00:43:54Z",
+  "workflowRevision": "2026-08-20.26",
+  "updatedAt": "2026-08-21T06:33:49Z",
   "model": "LULU_V4",
-  "activeGarment": "007",
-  "activeView": "05",
-  "status": "GARMENT_007_COMPLETE_LOCKED_PUBLICATION_IN_PROGRESS",
+  "activeGarment": "008",
+  "activeView": "COMPLETE_01_07",
+  "status": "GARMENT_008_COMPLETE_LOCKED_USER_AUTHORIZED_FOR_PUBLICATION",
   "identityReview": {
     "candidateId": "lulu.face.v4.front.candidate.v1",
     "acceptedAssetId": "lulu.face.v4.front.lock.v1",
@@ -31,13 +31,15 @@
     "garment": {
       "status": "USER_ACCEPTED_LOCKED",
       "primary": [
-        "garment.007.view.01.accepted",
-        "garment.007.front",
-        "garment.007.front-confirmation",
-        "garment.007.left-three-quarter",
-        "garment.007.front-video-frame"
+        "garment.008.view.01.accepted",
+        "garment.008.view.02.accepted",
+        "garment.008.view.03.accepted",
+        "garment.008.view.04.accepted",
+        "garment.008.front",
+        "garment.008.front-confirmation",
+        "garment.008.left-three-quarter"
       ],
-      "rule": "007 means the user-approved styled two-piece look: a plain matte-black fitted short-sleeve cropped close-neck tee plus vivid washed-pink high-rise distressed cut-off denim-style shorts. Preserve the small waist gap, metal button and fly, belt loops, curved front pockets, captured front distress and short uneven raw frayed hems. Rear construction remains unknown."
+      "rule": "008 means the user-designated styled two-piece look: the recurring matte-black fitted short-sleeve cropped close-neck tee plus washed medium-blue high-rise distressed denim cut-off shorts. Preserve the small waist gap, metal button and fly, belt loops, curved front pockets, captured asymmetric distress, source-visible white material and very short uneven raw frayed hems. The blue shorts are new garment truth; G007 controls presentation only. Rear construction remains unknown."
     },
     "identity": {
       "status": "LOCKED",
@@ -478,23 +480,114 @@
           "mayServeAsDirectBackEvidence": false
       },
       "rejectedCandidatesMayParent": false
+    },
+    "008": {
+      "status": "COMPLETE_LOCKED_USER_AUTHORIZED",
+      "views": {
+        "01": "USER_ACCEPTED_LOCKED",
+        "02": "USER_ACCEPTED_LOCKED_INFERRED_PRESENTATION_ONLY",
+        "03": "USER_ACCEPTED_LOCKED",
+        "04": "USER_ACCEPTED_LOCKED_MODEL_COMPLETED_PRESENTATION",
+        "05": "USER_ACCEPTED_LOCKED_FRONT_MASTER",
+        "06": "USER_ACCEPTED_LOCKED_SIBLING",
+        "07": "USER_ACCEPTED_LOCKED_SIBLING_INFERRED_BACK"
+      },
+      "backEvidence": "MISSING",
+      "rule": "Direct captures control the recurring black cropped tee styling and the new medium-blue distressed cut-off shorts. Generate 01-04 independently before model work. Any 02 remains conservative inferred presentation only and never direct back evidence. Garment 007 may control framing only and may not transfer pink colour or distress facts.",
+      "sourceManifest": "storage/garments/drop-02/008/source/manifest.json",
+      "lockedManifest": "storage/garments/drop-02/008/locked/manifest.json",
+      "accepted01": {
+        "assetId": "garment.008.view.01.accepted",
+        "sha256": "22c22672ad8a8c4d50683c15004ae1180d3ce8524f28c75f97ac387088890ed8",
+        "status": "USER_ACCEPTED_LOCKED"
+      },
+      "accepted02": {
+        "assetId": "garment.008.view.02.accepted",
+        "sha256": "d508850b7f4bb5efd9f1b8e11568e184f10c204bfca0ce70753da3a8e6e29de3",
+        "status": "USER_ACCEPTED_LOCKED_INFERRED_PRESENTATION_ONLY",
+        "mayServeAsDirectBackEvidence": false
+      },
+      "accepted03": {
+        "assetId": "garment.008.view.03.accepted",
+        "sha256": "95907c5c24f8069bdccbd6ec836730f2364003e98c16ace6c25daf989a6f8543",
+        "status": "USER_ACCEPTED_LOCKED"
+      },
+      "accepted04": {
+        "assetId": "garment.008.view.04.accepted",
+        "sha256": "a15b5463a510240f9337ec80fe531146b3283dd65ce5353db37be0c29ba7c437",
+        "status": "USER_ACCEPTED_LOCKED_MODEL_COMPLETED_PRESENTATION",
+        "mayServeAsFibreEvidence": false
+      },
+      "subjectCandidate": {
+        "assetId": "garment.008.subject.front.lock.v1",
+        "sha256": "6ceaa2a98fffec5e5dec11e6201ee082472b0f728325414ce383b7ffb58b8464",
+        "status": "USER_ACCEPTED_LOCKED",
+        "userDecision": "most perfect",
+        "acceptedAt": "2026-08-21T05:07:43Z",
+        "mayParentRoom05": true,
+        "mayDirectlyParent06Or07": false
+      },
+      "room05Candidate": {
+        "assetId": "garment.008.view.05.accepted",
+        "sha256": "d5abdc0a65557ec4884a0074d6f2aa083799999ea9cb698340c3ef3f0d4756c1",
+        "bytes": 2187199,
+        "dimensions": "1023x1537",
+        "status": "USER_ACCEPTED_LOCKED_FRONT_MASTER",
+        "userDecision": "approved",
+        "acceptedAt": "2026-08-21T05:35:00Z",
+        "mayParentIndependent06And07": true
+      },
+      "accepted06": {
+          "assetId": "garment.008.view.06.accepted",
+          "sha256": "b76e7c3cc96bed775d5a01788d825b1ccd179111ea2a500d108836cf29f48a21",
+          "bytes": 1995371,
+          "dimensions": "1023x1537",
+          "status": "USER_ACCEPTED_LOCKED_SIBLING",
+          "userDecision": "publish",
+          "acceptedAt": "2026-08-21T06:33:49Z",
+          "parent": "garment.008.view.05.accepted",
+          "mayParent07": false
+      },
+      "accepted07": {
+          "assetId": "garment.008.view.07.accepted",
+          "sha256": "9d883b8420a5983a51d927ae71ae8ab7a58f51dd205e65e5dc467cd4d0e7cbe7",
+          "bytes": 2121534,
+          "dimensions": "1023x1537",
+          "status": "USER_ACCEPTED_LOCKED_SIBLING_INFERRED_BACK",
+          "userDecision": "publish",
+          "acceptedAt": "2026-08-21T06:33:49Z",
+          "parent": "garment.008.view.05.accepted",
+          "mayParent06": false,
+          "mayServeAsDirectBackEvidence": false
+      },
+      "operationRecords": [
+        "storage/garments/drop-02/008/operations/g008-v01-r001.json",
+        "storage/garments/drop-02/008/operations/g008-v02-r001.json",
+        "storage/garments/drop-02/008/operations/g008-v03-r001.json",
+        "storage/garments/drop-02/008/operations/g008-v04-r001.json",
+        "storage/garments/drop-02/008/operations/g008-holistic-subject-r001.json",
+        "storage/garments/drop-02/008/operations/g008-room-and-05-r001.json",
+        "storage/garments/drop-02/008/operations/g008-v06-r001.json",
+        "storage/garments/drop-02/008/operations/g008-v07-r001.json"
+      ],
+      "rejectedCandidatesMayParent": false
     }
   },
   "nextOperation": {
-    "operationIds": ["g007-v06-r001", "g007-v07-r001"],
-    "garmentId": "007",
-    "status": "COMPLETE_LOCKED_USER_AUTHORIZED",
-    "views": ["06", "07"],
-    "parentAssets": ["garment.007.view.05.accepted"],
-    "authorityStack": {
-      "soleVisualParent": ["garment.007.view.05.accepted"],
-      "identity": ["lulu.face.operation-board.full.v1"],
-      "bodyByView": ["lulu.body.canon.v4.side", "lulu.body.canon.v4.back"],
-      "atelier": ["juw.atelier.empty-plate.v1"],
-      "garmentByView": ["garment.007.left-three-quarter", "garment.007.view.02.accepted"]
-    },
-    "outputs": ["garment.007.view.06.accepted", "garment.007.view.07.accepted"],
-    "rule": "Generate 06 and 07 as independent siblings directly from accepted 05. Each uses the complete face board, its matching body-angle canon, the exact room and the matching garment guide. Neither sibling may see or parent the other."
+    "operationIds": ["publish-garment-008"],
+    "garmentId": "008",
+    "operationType": "SHOP_PUBLICATION",
+    "status": "USER_AUTHORIZED",
+    "parentAssets": [
+      "garment.008.view.01.accepted",
+      "garment.008.view.02.accepted",
+      "garment.008.view.03.accepted",
+      "garment.008.view.04.accepted",
+      "garment.008.view.05.accepted",
+      "garment.008.view.06.accepted",
+      "garment.008.view.07.accepted"
+    ],
+    "rule": "Publish only reviewed public derivatives and catalogue facts. Keep private prompts, real-person references and inference labels out of public customer copy. Preserve the private 07 inferred-back limitation."
   },
-  "requiredNext": "Publish the exact locked Garment 007 seven-view set through the guarded Shop media, catalogue, database and deployment release path."
+  "requiredNext": "Create and verify the Garment 008 Shop release package, then run the guarded Blob, production catalogue, exact-SHA deployment and live Shop smoke sequence."
 }

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-21T00:43:54Z",
+  "updatedAt": "2026-08-21T04:28:07Z",
   "assets": [
     {
       "id": "packet.canon.v1",
@@ -1327,6 +1327,228 @@
       "garmentId": "007",
       "view": "07",
       "notes": "Independent from every 06 image and derived directly from accepted 05. Independent whole-frame gate passed, then the user accepted it for publication. Rear garment presentation remains conservative inferred presentation only and never direct evidence."
+    },
+    {
+      "id": "garment.008.front",
+      "filename": "01-source-front.jpeg",
+      "aliases": ["../garments/drop-02/008/source/01-source-front.jpeg"],
+      "kind": "garment-reference",
+      "role": "Garment 008 primary front construction authority",
+      "provenance": "DIRECT_CAPTURE",
+      "privacy": "private",
+      "storage": "repo-storage-ignored",
+      "status": "available",
+      "required": true,
+      "sha256": "aeff10d8e6599a7ef50e9e14c45aa4c624591fadf7c24cafb09d3841c6a5cc44",
+      "bytes": 43804,
+      "authority": ["garment"],
+      "garmentId": "008",
+      "view": "01",
+      "notes": "Direct 360x480 front capture. Controls the separate black crop tee and medium-blue high-rise distressed cut-off shorts, front hardware, pockets, asymmetric distress, white material and very short raw frayed hems."
+    },
+    {
+      "id": "garment.008.front-confirmation",
+      "filename": "02-source-front-confirmation.jpeg",
+      "aliases": ["../garments/drop-02/008/source/02-source-front-confirmation.jpeg"],
+      "kind": "garment-reference",
+      "role": "Garment 008 front construction and distress confirmation",
+      "provenance": "DIRECT_CAPTURE",
+      "privacy": "private",
+      "storage": "repo-storage-ignored",
+      "status": "available",
+      "required": true,
+      "sha256": "edc82560777c3094cee2ce263c720c14ea2112b518bc16e112c9da79450c0869",
+      "bytes": 47878,
+      "authority": ["garment"],
+      "garmentId": "008",
+      "view": "01",
+      "notes": "Direct 360x646 front capture. Confirms the button, fly, front pockets, blue wash, asymmetric distress, source-visible white material and uneven raw hems."
+    },
+    {
+      "id": "garment.008.left-three-quarter",
+      "filename": "03-source-left-three-quarter.jpeg",
+      "aliases": ["../garments/drop-02/008/source/03-source-left-three-quarter.jpeg"],
+      "kind": "garment-reference",
+      "role": "Garment 008 left-three-quarter rise, pocket-depth and side-distress authority",
+      "provenance": "DIRECT_CAPTURE",
+      "privacy": "private",
+      "storage": "repo-storage-ignored",
+      "status": "available",
+      "required": true,
+      "sha256": "f6188524660a37837c5014f35d265696dcac9f2b72cebc0058a1cce58907734d",
+      "bytes": 41721,
+      "authority": ["garment", "fit"],
+      "garmentId": "008",
+      "view": "01",
+      "notes": "Direct 360x646 left-three-quarter capture. Controls the separate waist gap, high rise, pocket depth, hip-side profile, torn outer-side opening and short relaxed raw-frayed leg shape."
+    },
+    {
+      "id": "garment.008.view.01.accepted",
+      "filename": "01-garment-front.png",
+      "aliases": [
+        "../garments/drop-02/008/locked/01-garment-front.png",
+        "../garments/drop-02/008/candidates/manual-set-v1/01-garment-front-r001.png"
+      ],
+      "kind": "generated-output",
+      "role": "User-accepted Garment 008 front master",
+      "provenance": "MODEL_REFERENCE",
+      "privacy": "private",
+      "storage": "repo-storage-ignored",
+      "status": "user-accepted-locked",
+      "required": true,
+      "sha256": "22c22672ad8a8c4d50683c15004ae1180d3ce8524f28c75f97ac387088890ed8",
+      "bytes": 1969777,
+      "authority": ["garment", "presentation"],
+      "garmentId": "008",
+      "view": "01",
+      "notes": "Exact independent candidate accepted by the user with the statement 'approved'. Direct captures remain the underlying construction truth."
+    },
+    {
+      "id": "garment.008.view.02.accepted",
+      "filename": "02-garment-back.png",
+      "aliases": [
+        "../garments/drop-02/008/locked/02-garment-back.png",
+        "../garments/drop-02/008/candidates/manual-set-v1/02-garment-back-r001.png"
+      ],
+      "kind": "generated-output",
+      "role": "User-accepted conservative Garment 008 rear presentation",
+      "provenance": "MODEL_REFERENCE",
+      "privacy": "private",
+      "storage": "repo-storage-ignored",
+      "status": "user-accepted-locked-inferred-presentation",
+      "required": true,
+      "sha256": "d508850b7f4bb5efd9f1b8e11568e184f10c204bfca0ce70753da3a8e6e29de3",
+      "bytes": 2257728,
+      "authority": ["presentation"],
+      "garmentId": "008",
+      "view": "02",
+      "notes": "Accepted as inferred presentation only. Rear yoke and pockets are conventional inventions and never become direct garment-back evidence."
+    },
+    {
+      "id": "garment.008.view.03.accepted",
+      "filename": "03-mannequin-front.png",
+      "aliases": [
+        "../garments/drop-02/008/locked/03-mannequin-front.png",
+        "../garments/drop-02/008/candidates/manual-set-v1/03-mannequin-front-r001.png"
+      ],
+      "kind": "generated-output",
+      "role": "User-accepted Garment 008 mannequin-front master",
+      "provenance": "MODEL_REFERENCE",
+      "privacy": "private",
+      "storage": "repo-storage-ignored",
+      "status": "user-accepted-locked",
+      "required": true,
+      "sha256": "95907c5c24f8069bdccbd6ec836730f2364003e98c16ace6c25daf989a6f8543",
+      "bytes": 1684833,
+      "authority": ["garment", "presentation"],
+      "garmentId": "008",
+      "view": "03",
+      "notes": "User-accepted anonymous headless-mannequin presentation."
+    },
+    {
+      "id": "garment.008.view.04.accepted",
+      "filename": "04-fabric-detail.png",
+      "aliases": [
+        "../garments/drop-02/008/locked/04-fabric-detail.png",
+        "../garments/drop-02/008/candidates/manual-set-v1/04-fabric-detail-r001.png"
+      ],
+      "kind": "generated-output",
+      "role": "User-accepted Garment 008 construction-detail presentation",
+      "provenance": "MODEL_REFERENCE",
+      "privacy": "private",
+      "storage": "repo-storage-ignored",
+      "status": "user-accepted-locked-model-completed-presentation",
+      "required": true,
+      "sha256": "a15b5463a510240f9337ec80fe531146b3283dd65ce5353db37be0c29ba7c437",
+      "bytes": 3329678,
+      "authority": ["presentation"],
+      "garmentId": "008",
+      "view": "04",
+      "notes": "Accepted as model-completed construction presentation only. It never becomes direct fibre or weave evidence."
+    },
+    {
+      "id": "garment.008.subject.front.lock.v1",
+      "filename": "LULU_G008_SUBJECT_FRONT_LOCK_v1.png",
+      "aliases": [
+        "../garments/drop-02/008/locked/LULU_G008_SUBJECT_FRONT_LOCK_v1.png",
+        "../garments/drop-02/008/candidates/v4-model-set-v1/subject-front-r001.png"
+      ],
+      "kind": "generated-output",
+      "role": "User-accepted Garment 008 holistic full-body Lulu subject lock",
+      "provenance": "MODEL_REFERENCE",
+      "privacy": "private",
+      "storage": "repo-storage-ignored",
+      "status": "user-accepted-locked",
+      "required": true,
+      "sha256": "6ceaa2a98fffec5e5dec11e6201ee082472b0f728325414ce383b7ffb58b8464",
+      "bytes": 1665956,
+      "authority": ["identity-translation", "body-translation", "garment-fit", "hair", "pose", "subject-styling"],
+      "garmentId": "008",
+      "view": "SUBJECT",
+      "notes": "Independent whole-frame gate passed, then the user accepted the exact complete subject with the statement 'most perfect'. These exact bytes may parent only Garment 008 ROOM/05; this pre-atelier lock cannot directly parent 06 or 07. Real Lulu photographs and direct garment captures remain higher evidence truth."
+    },
+    {
+      "id": "garment.008.view.05.accepted",
+      "filename": "05-on-lulu-front.png",
+      "aliases": [
+        "../garments/drop-02/008/locked/05-on-lulu-front.png",
+        "../garments/drop-02/008/candidates/v4-model-set-v1/05-on-lulu-front-r001.png"
+      ],
+      "kind": "generated-output",
+      "role": "User-accepted Garment 008 JUW atelier front/05 master",
+      "provenance": "MODEL_REFERENCE",
+      "privacy": "private",
+      "storage": "repo-storage-ignored",
+      "status": "user-accepted-locked",
+      "required": true,
+      "sha256": "d5abdc0a65557ec4884a0074d6f2aa083799999ea9cb698340c3ef3f0d4756c1",
+      "bytes": 2187199,
+      "authority": ["identity-translation", "body-translation", "garment-fit", "atelier", "pose", "styling", "output"],
+      "garmentId": "008",
+      "view": "05",
+      "notes": "Independent whole-frame gate passed with no correction, then the user accepted the complete frame with the statement 'approved'. These exact bytes are the sole visual parent for independent 06 and 07 siblings; neither sibling may parent the other."
+    },
+    {
+      "id": "garment.008.view.06.accepted",
+      "filename": "06-on-lulu-left-profile.png",
+      "aliases": [
+        "../garments/drop-02/008/locked/06-on-lulu-left-profile.png",
+        "../garments/drop-02/008/candidates/v4-model-set-v1/06-on-lulu-left-profile-r001.png"
+      ],
+      "kind": "generated-output",
+      "role": "User-accepted Garment 008 soft-left-profile 06 sibling",
+      "provenance": "MODEL_REFERENCE",
+      "privacy": "private",
+      "storage": "repo-storage-ignored",
+      "status": "user-accepted-locked",
+      "required": true,
+      "sha256": "b76e7c3cc96bed775d5a01788d825b1ccd179111ea2a500d108836cf29f48a21",
+      "bytes": 1995371,
+      "authority": ["identity-translation", "body-translation", "garment-fit", "atelier", "pose", "styling"],
+      "garmentId": "008",
+      "view": "06",
+      "notes": "Generated independently from accepted 05 with no 07 input. The whole-frame gate passed without correction and the user authorized publication with the statement 'publish'. Real-body side evidence controls balanced depth and heel-aware stature."
+    },
+    {
+      "id": "garment.008.view.07.accepted",
+      "filename": "07-on-lulu-right-rear-three-quarter.png",
+      "aliases": [
+        "../garments/drop-02/008/locked/07-on-lulu-right-rear-three-quarter.png",
+        "../garments/drop-02/008/candidates/v4-model-set-v1/07-on-lulu-right-rear-three-quarter-r001.png"
+      ],
+      "kind": "generated-output",
+      "role": "User-accepted Garment 008 right-rear-three-quarter 07 sibling",
+      "provenance": "MODEL_REFERENCE",
+      "privacy": "private",
+      "storage": "repo-storage-ignored",
+      "status": "user-accepted-locked-inferred-back",
+      "required": true,
+      "sha256": "9d883b8420a5983a51d927ae71ae8ab7a58f51dd205e65e5dc467cd4d0e7cbe7",
+      "bytes": 2121534,
+      "authority": ["identity-translation", "body-translation", "garment-fit", "atelier", "pose", "styling"],
+      "garmentId": "008",
+      "view": "07",
+      "notes": "Generated independently from accepted 05 with no 06 input. The whole-frame gate passed and the user authorized publication with 'publish'. Rear yoke, pockets and centre seam remain inferred presentation only and never direct garment-back evidence."
     }
   ]
 }

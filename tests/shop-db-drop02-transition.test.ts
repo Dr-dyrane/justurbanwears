@@ -137,11 +137,11 @@ function postcondition() {
     old_publications_archived: 18,
     old_wardrobe_archived: 18,
     old_archive_events: 18,
-    new_intakes: 7,
-    new_wardrobe_items: 7,
-    new_publications: 7,
-    new_revisions: 7,
-    new_events: 14,
+    new_intakes: 8,
+    new_wardrobe_items: 8,
+    new_publications: 8,
+    new_revisions: 8,
+    new_events: 16,
     orphan_reserved: 0,
     returned_listing_sold: 1,
     returned_listing_returned: 1,
@@ -184,7 +184,7 @@ function mockTransaction({
       calls.push({ text, values });
       if (text.startsWith("lock table")) return { rows: [] };
       if (text.includes("as catalogue_count")) {
-        return { rows: [{ catalogue_count: 25, expected_catalogue_count: 25, expected_inventory_count: 25 }] };
+        return { rows: [{ catalogue_count: 26, expected_catalogue_count: 26, expected_inventory_count: 26 }] };
       }
       if (text.includes("from studio_operator_membership membership")) return { rows: [owner] };
       if (text.includes("from shop_inventory") && text.includes("for update")) {
@@ -243,7 +243,7 @@ test("runs the guarded Drop 01 retirement and v2 Drop 02 adoption in the supplie
   assert.match(archiveEvent.text, /orphanSeedReservationCleared/);
 
   const v2Statements = transaction.calls.filter((call) => call.text.includes("catalogue-adoption:v2:"));
-  assert.ok(v2Statements.length >= 7);
+  assert.ok(v2Statements.length >= 8);
   const intakeAdoption = transaction.calls.find((call) => call.text.startsWith("insert into studio_intakes"));
   const wardrobeAdoption = transaction.calls.find((call) => call.text.startsWith("insert into studio_wardrobe_items"));
   assert.ok(intakeAdoption);

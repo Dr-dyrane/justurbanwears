@@ -26,6 +26,7 @@ const routes = [
         "indigo-seamed-denim-mini-dress",
         "black-cropped-tee-silver-ruched-skirt-set",
         "black-cropped-tee-pink-distressed-shorts-set",
+        "black-cropped-tee-blue-distressed-shorts-set",
       ].every((slug) => html.includes(`/shop/products/${slug}`))],
       ["customer-facing AI copy leaked", (html) => hasNoCustomerAiCopy(html)],
     ],

@@ -15,6 +15,7 @@ export const DROP02_TRANSITION_SKUS = Object.freeze([
   "JUW-029",
   "JUW-030",
   "JUW-031",
+  "JUW-032",
 ]);
 
 const EXPECTED_CATALOGUE_SKUS = Object.freeze([
@@ -188,11 +189,11 @@ function assertPostcondition(row) {
     old_publications_archived: 18,
     old_wardrobe_archived: 18,
     old_archive_events: 18,
-    new_intakes: 7,
-    new_wardrobe_items: 7,
-    new_publications: 7,
-    new_revisions: 7,
-    new_events: 14,
+    new_intakes: 8,
+    new_wardrobe_items: 8,
+    new_publications: 8,
+    new_revisions: 8,
+    new_events: 16,
     returned_listing_sold: 1,
     returned_listing_returned: 1,
   };
@@ -240,9 +241,9 @@ export async function applyDrop02TransitionInTransaction(transaction, manifest) 
   ))[0];
   invariant(
     catalogueState
-      && numberValue(catalogueState.catalogue_count) === 25
-      && numberValue(catalogueState.expected_catalogue_count) === 25
-      && numberValue(catalogueState.expected_inventory_count) === 25,
+      && numberValue(catalogueState.catalogue_count) === 26
+      && numberValue(catalogueState.expected_catalogue_count) === 26
+      && numberValue(catalogueState.expected_inventory_count) === 26,
     "DROP02_TRANSITION_CATALOGUE_MISMATCH",
   );
 

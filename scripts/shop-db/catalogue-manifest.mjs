@@ -15,6 +15,7 @@ const V4_MODEL_SLUGS = new Set([
   "indigo-seamed-denim-mini-dress",
   "black-cropped-tee-silver-ruched-skirt-set",
   "black-cropped-tee-pink-distressed-shorts-set",
+  "black-cropped-tee-blue-distressed-shorts-set",
 ]);
 
 const V3_MODEL_FRONT_SLUGS = new Set([
@@ -104,7 +105,7 @@ function presentation(product) {
  */
 export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
   schemaVersion: 2,
-  revision: "2026-08-20-catalogue-18",
+  revision: "2026-08-20-catalogue-19",
   products: Object.freeze([
     presentation({
       slug: "coral-drift-dress",
@@ -627,6 +628,26 @@ export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
       note: "A matte-black cropped tee paired with vivid pink distressed cut-off denim shorts.",
       story: "The close crew-neck crop leaves a clean waist gap above high-rise washed-pink denim shorts, finished with front distress and uneven raw frayed hems.",
       details: ["Cropped crew-neck tee", "High-rise denim shorts", "Front pocket and fly construction", "Distressed raw frayed hems"],
+      measurements: [],
+      mediaSlots: ["MODEL_FRONT", "MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
+    }),
+    presentation({
+      slug: "black-cropped-tee-blue-distressed-shorts-set",
+      sku: "JUW-032",
+      name: "Black Cropped Tee and Blue Distressed Shorts Set",
+      category: "Sets",
+      price: 19500,
+      taggedSize: "Size on request",
+      fit: "Measurements confirmed before payment",
+      condition: "Condition confirmed before payment",
+      colour: "Black and medium blue",
+      availability: "AVAILABLE",
+      drop: "Drop 02",
+      tone: "indigo",
+      silhouette: "set",
+      note: "A matte-black cropped tee paired with washed blue distressed cut-off denim shorts.",
+      story: "The close crew-neck crop leaves a clean waist gap above high-rise medium-blue denim shorts, finished with asymmetric front distress, relaxed openings and uneven raw frayed hems.",
+      details: ["Cropped crew-neck tee", "High-rise denim shorts", "Asymmetric front distress", "Short raw frayed hems"],
       measurements: [],
       mediaSlots: ["MODEL_FRONT", "MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
     }),
