@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "workflowRevision": "2026-08-20.14",
-  "updatedAt": "2026-08-20T21:02:10Z",
+  "workflowRevision": "2026-08-20.19",
+  "updatedAt": "2026-08-21T00:43:54Z",
   "model": "LULU_V4",
-  "activeGarment": "006",
-  "activeView": "07",
-  "status": "COMPLETE_LOCKED_USER_AUTHORIZED",
+  "activeGarment": "007",
+  "activeView": "05",
+  "status": "GARMENT_007_COMPLETE_LOCKED_PUBLICATION_IN_PROGRESS",
   "identityReview": {
     "candidateId": "lulu.face.v4.front.candidate.v1",
     "acceptedAssetId": "lulu.face.v4.front.lock.v1",
@@ -29,14 +29,15 @@
   },
   "globalLocks": {
     "garment": {
-      "status": "INTAKE_LOCKED",
+      "status": "USER_ACCEPTED_LOCKED",
       "primary": [
-        "garment.006.front",
-        "garment.006.front-confirmation",
-        "garment.006.left-three-quarter",
-        "garment.006.side-profile"
+        "garment.007.view.01.accepted",
+        "garment.007.front",
+        "garment.007.front-confirmation",
+        "garment.007.left-three-quarter",
+        "garment.007.front-video-frame"
       ],
-      "rule": "006 means the user-approved two-piece look: matte-black fitted short-sleeve crop tee plus high-waisted silver reflective ruched pencil midi skirt with exactly one centre-front slit. Preserve the small waist gap, irregular crinkled reflections, restrained close silhouette and real garment weight. Rear construction remains unknown."
+      "rule": "007 means the user-approved styled two-piece look: a plain matte-black fitted short-sleeve cropped close-neck tee plus vivid washed-pink high-rise distressed cut-off denim-style shorts. Preserve the small waist gap, metal button and fly, belt loops, curved front pockets, captured front distress and short uneven raw frayed hems. Rear construction remains unknown."
     },
     "identity": {
       "status": "LOCKED",
@@ -59,11 +60,9 @@
         "lulu.body.canon.v4",
         "lulu.body.canon.v4.three-view",
         "lulu.body.canon.v4.side",
-        "lulu.body.canon.v4.back",
-        "garment.006.body-fit.r001",
-        "garment.006.subject.front.r001"
+        "lulu.body.canon.v4.back"
       ],
-      "rule": "Real Lulu photos remain body evidence truth. The V4 source and three-view plate are user-approved modeled silhouette and garment-transfer controls, not verified measurements. Use an angle crop or the combined plate according to which supports the more realistic complete frame. For Garment 006, the corrected 05 r006 is the accepted front master; side/rear body crops and matching Garment 004 angles control heel-aware stature and angle balance in the independent siblings. Preserve the body as a believable whole rather than optimizing isolated measurements."
+      "rule": "Real Lulu photos remain body evidence truth. The V4 source and three-view plate are user-approved modeled silhouette and garment-transfer controls, not verified measurements. Use the direct angle contact and the combined plate to preserve Lulu's believable bust-waist-hip balance, thighs, legs and heel-aware stature as one complete body rather than optimizing isolated measurements."
     },
     "atelier": {
       "status": "LOCKED",
@@ -428,22 +427,74 @@
         "status": "ACTIVE_COMPLETE_REAL_FACE_STACK"
       },
       "rejectedCandidatesMayParent": false
+    },
+    "007": {
+      "status": "COMPLETE_LOCKED_USER_AUTHORIZED",
+      "views": {
+        "01": "USER_ACCEPTED_LOCKED",
+        "02": "USER_ACCEPTED_LOCKED_INFERRED_PRESENTATION",
+        "03": "USER_ACCEPTED_LOCKED",
+        "04": "USER_ACCEPTED_LOCKED_MODEL_COMPLETED_PRESENTATION",
+        "05": "USER_ACCEPTED_LOCKED_FRONT_MASTER",
+        "06": "USER_ACCEPTED_LOCKED_SIBLING",
+        "07": "USER_ACCEPTED_LOCKED_SIBLING_INFERRED_BACK"
+      },
+      "backEvidence": "MISSING",
+      "rule": "Direct captures control the black cropped tee and washed-pink distressed cut-off shorts. Generate 01-04 before model work. Any 02 remains conservative inferred presentation only and never direct back evidence. Real Lulu face/body sources are reserved for later model operations and have no authority over 01-04.",
+      "sourceManifest": "storage/garments/drop-02/007/source/manifest.json",
+      "operationRecord": "storage/garments/drop-02/007/operations/g007-manual-set-r001.json",
+      "lockedManifest": "storage/garments/drop-02/007/locked/manifest.json",
+      "accepted01": {
+        "assetId": "garment.007.view.01.accepted",
+        "sha256": "773381eee5ef1aa99c6c80504be438c1cbafff8a6a6fe4e634b879985f98e148",
+        "status": "USER_ACCEPTED_LOCKED"
+      },
+      "subjectCandidate": {
+        "assetId": "garment.007.subject.front.lock.v1",
+        "sha256": "10d321224b6664efcdaa954d4e8b92a8a1b7c1f4c1d65180d986c3c5ed257401",
+        "status": "USER_ACCEPTED_LOCKED",
+        "mayParentRoom05": true
+      },
+      "accepted05": {
+        "assetId": "garment.007.view.05.accepted",
+        "sha256": "a88b1d6b0bb922d0c0127a4cea2d4edda04fa486209d05c6e31ca528a5defde2",
+        "status": "USER_ACCEPTED_LOCKED",
+        "mayParentIndependent06And07": true
+      },
+      "accepted06": {
+          "assetId": "garment.007.view.06.accepted",
+          "sha256": "01ce928fe748984fa9bf5321c0f2911c2fae0b9622693a17c61df6c83bb9e7db",
+          "status": "USER_ACCEPTED_LOCKED_SIBLING",
+          "parent": "garment.007.view.05.accepted",
+          "correctionOrdinal": 1,
+          "mayParent07": false
+      },
+      "accepted07": {
+          "assetId": "garment.007.view.07.accepted",
+          "sha256": "72cef0e983cd4eb83b13632f633ca53542b27ef89795d4dcf2c36d77f3b70abd",
+          "status": "USER_ACCEPTED_LOCKED_SIBLING_INFERRED_BACK",
+          "parent": "garment.007.view.05.accepted",
+          "mayParent06": false,
+          "mayServeAsDirectBackEvidence": false
+      },
+      "rejectedCandidatesMayParent": false
     }
   },
   "nextOperation": {
-    "operationId": "g006-model-siblings-r003",
-    "garmentId": "006",
-    "status": "COMPLETE_LOCKED",
+    "operationIds": ["g007-v06-r001", "g007-v07-r001"],
+    "garmentId": "007",
+    "status": "COMPLETE_LOCKED_USER_AUTHORIZED",
     "views": ["06", "07"],
-    "parentAssets": ["garment.006.view.05.accepted"],
+    "parentAssets": ["garment.007.view.05.accepted"],
     "authorityStack": {
-      "translation": ["garment.004.view.06.accepted", "garment.004.view.07.accepted"],
+      "soleVisualParent": ["garment.007.view.05.accepted"],
       "identity": ["lulu.face.operation-board.full.v1"],
-      "body": ["lulu.body.canon.v4.side", "lulu.body.canon.v4.back"],
-      "atelier": ["juw.atelier.empty-plate.v1"]
+      "bodyByView": ["lulu.body.canon.v4.side", "lulu.body.canon.v4.back"],
+      "atelier": ["juw.atelier.empty-plate.v1"],
+      "garmentByView": ["garment.007.left-three-quarter", "garment.007.view.02.accepted"]
     },
-    "outputs": ["garment.006.view.06.accepted", "garment.006.view.07.accepted"],
-    "rule": "06 and 07 were generated independently from accepted 05 with the matching Garment 004 angle, the complete real-face operation board, matching Lulu body crop and locked room. Neither sibling parents the other; 07 remains inferred presentation."
+    "outputs": ["garment.007.view.06.accepted", "garment.007.view.07.accepted"],
+    "rule": "Generate 06 and 07 as independent siblings directly from accepted 05. Each uses the complete face board, its matching body-angle canon, the exact room and the matching garment guide. Neither sibling may see or parent the other."
   },
-  "requiredNext": "No private media generation remains for Garment 006. Publication requires a separate explicit catalogue, Blob and database release decision."
+  "requiredNext": "Publish the exact locked Garment 007 seven-view set through the guarded Shop media, catalogue, database and deployment release path."
 }

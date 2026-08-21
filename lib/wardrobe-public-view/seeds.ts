@@ -40,6 +40,7 @@ export const WARDROBE_APPROVED_V4_MODEL_SLUGS = Object.freeze([
   "black-ivory-folded-neck-column-dress",
   "indigo-seamed-denim-mini-dress",
   "black-cropped-tee-silver-ruched-skirt-set",
+  "black-cropped-tee-pink-distressed-shorts-set",
 ] as const);
 
 export const WARDROBE_APPROVED_MODEL_FRONT_SLUGS = Object.freeze([
@@ -65,6 +66,7 @@ export const WARDROBE_APPROVED_MODEL_SUPPLEMENTAL_SLOTS = Object.freeze({
   "black-ivory-folded-neck-column-dress": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "indigo-seamed-denim-mini-dress": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "black-cropped-tee-silver-ruched-skirt-set": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
+  "black-cropped-tee-pink-distressed-shorts-set": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "coral-drift-dress": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "moss-square-knit": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "cocoa-pleat-trouser": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
@@ -447,6 +449,25 @@ export const WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS: readonly WardrobePublicProduc
     note: "A matte-black cropped tee paired with a close silver ruched skirt and one high front slit.",
     story: "The clean crew-neck crop keeps the top quiet while the reflective ruching and high centre-front slit give the skirt its movement.",
     details: ["Cropped crew-neck tee", "High-waisted pencil skirt", "Reflective ruched finish", "Single high centre-front slit"],
+    measurements: [],
+  }),
+  migrationSeed({
+    slug: "black-cropped-tee-pink-distressed-shorts-set",
+    sku: "JUW-031",
+    name: "Black Cropped Tee and Pink Distressed Shorts Set",
+    category: "Sets",
+    price: 19500,
+    taggedSize: "Size on request",
+    fit: "Measurements confirmed before payment",
+    condition: "Condition confirmed before payment",
+    colour: "Black and pink",
+    availability: "AVAILABLE",
+    drop: "Drop 02",
+    tone: "coral",
+    silhouette: "set",
+    note: "A matte-black cropped tee paired with vivid pink distressed cut-off denim shorts.",
+    story: "The close crew-neck crop leaves a clean waist gap above high-rise washed-pink denim shorts, finished with front distress and uneven raw frayed hems.",
+    details: ["Cropped crew-neck tee", "High-rise denim shorts", "Front pocket and fly construction", "Distressed raw frayed hems"],
     measurements: [],
   }),
 ]);

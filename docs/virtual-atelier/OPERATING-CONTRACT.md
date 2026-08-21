@@ -238,9 +238,15 @@ change_set: []
 immutable_set: []
 output_contract: []
 failure_gates: []
+prompt_verbatim: ""
+generation_tool: ""
+output_path: ""
+output_sha256: ""
 ```
 
 No operation proceeds with unresolved required assets.
+
+Every executed operation must persist the exact prompt verbatim—not only a summary—together with the ordered reference paths, slot roles, exclusions, tool/mode, generated source path when available, durable workspace output path, dimensions, byte size and SHA-256. Record every bounded correction as its own operation/prompt, and record independent review plus the user's exact acceptance or rejection statement. A useful or accepted generation without this reproduction record is incomplete and may not become canon.
 
 For `06` and `07`, the sibling view must not appear in `parent_assets` or any authority list.
 

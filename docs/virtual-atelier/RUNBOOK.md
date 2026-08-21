@@ -203,6 +203,8 @@ After 05, 06, and 07 pass:
 5. Mark the garment `PACKETED` in state.
 6. Never place rejected candidates in the packet.
 
+For every generation—not only the final packet—write a private operation record before moving on. It must contain the exact prompt verbatim, ordered reference stack and per-slot roles, exclusions, tool/mode, generated source path when available, durable workspace path, dimensions, bytes and SHA-256. Add independent review and the user's exact acceptance/rejection statement. Summaries are useful indexes but never replace the verbatim prompt. Each correction keeps its own prompt and output history; never overwrite the recipe for a strong generation.
+
 ## H. Operation template
 
 ```yaml
@@ -269,4 +271,9 @@ failure_gates:
   - icon mutation
   - wrong view
   - cropped or malformed body
+prompt_verbatim: |-
+  <exact submitted prompt, without paraphrase>
+generation_tool: built-in-imagegen
+output_path: storage/garments/drop-02/NNN/candidates/...
+output_sha256: <sha256>
 ```

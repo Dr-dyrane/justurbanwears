@@ -14,6 +14,7 @@ const V4_MODEL_SLUGS = new Set([
   "black-ivory-folded-neck-column-dress",
   "indigo-seamed-denim-mini-dress",
   "black-cropped-tee-silver-ruched-skirt-set",
+  "black-cropped-tee-pink-distressed-shorts-set",
 ]);
 
 const V3_MODEL_FRONT_SLUGS = new Set([
@@ -103,7 +104,7 @@ function presentation(product) {
  */
 export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
   schemaVersion: 2,
-  revision: "2026-08-20-catalogue-17",
+  revision: "2026-08-20-catalogue-18",
   products: Object.freeze([
     presentation({
       slug: "coral-drift-dress",
@@ -606,6 +607,26 @@ export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
       note: "A matte-black cropped tee paired with a close silver ruched skirt and one high front slit.",
       story: "The clean crew-neck crop keeps the top quiet while the reflective ruching and high centre-front slit give the skirt its movement.",
       details: ["Cropped crew-neck tee", "High-waisted pencil skirt", "Reflective ruched finish", "Single high centre-front slit"],
+      measurements: [],
+      mediaSlots: ["MODEL_FRONT", "MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
+    }),
+    presentation({
+      slug: "black-cropped-tee-pink-distressed-shorts-set",
+      sku: "JUW-031",
+      name: "Black Cropped Tee and Pink Distressed Shorts Set",
+      category: "Sets",
+      price: 19500,
+      taggedSize: "Size on request",
+      fit: "Measurements confirmed before payment",
+      condition: "Condition confirmed before payment",
+      colour: "Black and pink",
+      availability: "AVAILABLE",
+      drop: "Drop 02",
+      tone: "coral",
+      silhouette: "set",
+      note: "A matte-black cropped tee paired with vivid pink distressed cut-off denim shorts.",
+      story: "The close crew-neck crop leaves a clean waist gap above high-rise washed-pink denim shorts, finished with front distress and uneven raw frayed hems.",
+      details: ["Cropped crew-neck tee", "High-rise denim shorts", "Front pocket and fly construction", "Distressed raw frayed hems"],
       measurements: [],
       mediaSlots: ["MODEL_FRONT", "MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
     }),
