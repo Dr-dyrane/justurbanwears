@@ -27,6 +27,7 @@ Every garment follows this exact authority order:
 GARMENT INTAKE
 → REAL FACE AUTHORITY
 → BODY CANON
+→ FASHION NOVA ACCESSORY STYLING CHECK
 → LOCKED ROOM
 → 05 FRONT MASTER
 → 06 OR 07 AS INDEPENDENT SIBLING VIEWS
@@ -76,7 +77,7 @@ Use this only when the intended output is a new garment-specific full-frame subj
 4. If needed, use the single correction for PASS B with the accepted body target, PASS A as the translation donor, F01–F10 contact, raw frontal face, and raw open-eye three-quarter face.
 5. Keep the centre-parted low bun unchanged unless the user explicitly unlocks hair.
 6. Ask the user to judge the complete person and frame: identity, body balance, garment fit, pose, hands, legs, footwear, and styling.
-7. If accepted, copy the exact bytes into the garment's private `locked/` directory and record the hash as a garment-specific subject lock.
+7. If the user accepts all subject layers, copy the exact bytes into the garment's private `locked/` directory and record the hash as a garment-specific subject lock. If the user accepts everything except one named accessory, record a `SUBJECT_CORE_LOCK`, exclude that accessory from its authority, and defer only that accessory to the next styling/ROOM/`05` operation.
 8. Rebase downstream authority on that exact lock. Do not demand pixel identity with the pre-synthesis body target after the user has approved the new holistic frame.
 9. Complete the garment's `01–04` set before ROOM/final-`05` composition.
 10. ROOM and `05` may change only the explicitly declared environment/accessory layers; the accepted subject lock remains the parent.
@@ -84,7 +85,16 @@ Use this only when the intended output is a new garment-specific full-frame subj
 
 Garment 005 established this pattern with `g005-face-r002`: PASS A supplied a useful face translation, and PASS B was explicitly accepted by the user as the complete Lulu/Garment 005 subject master. Its failed local-edit review remains audit history; the user-approved result is classified separately as a full-frame subject master.
 
-## B. Generate view 05
+## B. Resolve Fashion Nova accessory styling and generate view 05
+
+Before composing the room, resolve footwear and restrained accessories. For every `05`:
+
+1. Inspect a current official Fashion Nova product or collection styling page matching the closest proven garment family.
+2. Record the requested URL, resolved canonical URL, page title, access date, matched garment facts, selected direction, and `KEEP`, `REFINE`, `REPLACE`, or `NO_CLOSE_MATCH` decision in the private operation record. `NO_CLOSE_MATCH` requires an empty match list plus a written search/no-match reason and means retain the strongest garment-faithful JUW styling instead of forcing an unrelated look.
+3. Treat the result as styling guidance only. It may not alter garment construction, identity, body, hair, pose, room, icon, camera, or lighting and must not imply Fashion Nova provenance for the JUW garment.
+4. Pass only the recorded JUW styling decision into generation. Never place a Fashion Nova page, screenshot, image, URL or page asset in `referenceStack` or `authorityStack`.
+5. If the subject was accepted as a `SUBJECT_CORE_LOCK`, change only the explicitly deferred accessory while placing the otherwise immutable subject in the locked room.
+6. Close the styling choice through the final whole-frame `05` review. Views `06` and `07` inherit that accepted styling unless the user explicitly unlocks it.
 
 Starting reference palette:
 
@@ -100,6 +110,8 @@ current garment intake
 
 The accepted `05` becomes the current garment’s front translation master. It records how that garment, identity, body and styling resolve together.
 
+Before invoking `05`, declare its garment-specific `renderQualityContract` and run `npm run atelier:verify:operation -- <operation-json>`. After generation, record separate `renderQualityReview` PASS/FAIL results for photographic realism, skin texture, garment texture, lighting integration, optics/perspective and artifact rejection. Do not combine them into one room/anatomy judgment.
+
 Default output: one clean full-body image, no labels or composite layout.
 
 ## C. Generate view 06 — sibling branch
@@ -110,15 +122,19 @@ Required authority stack:
 
 ```text
 accepted current-garment 05
-+ the strongest face authority for the rotation
-+ dedicated SIDE crop or combined body canon
++ complete real-face operation board
++ dedicated SIDE body canon
++ direct real-Lulu angle contact
 + locked atelier plate
-+ direct current-garment side authority when useful
 ```
 
 Do not use `07` as a parent.
 
-Use only the combination that produces the strongest complete image. Judge likeness, head-to-toe body realism, attitude, presence, pose, garment truth and scene integration together.
+This authority core is mandatory, while reference ordering and truth-preserving packaging remain adaptive. Do not replace the SIDE crop or direct real-body evidence with a generic translation image. Current-garment construction is inherited from accepted `05`; unknown side facts stay unknown.
+
+Before invocation, complete `renderQualityContract` and run `npm run atelier:verify:operation -- <operation-json>`. Judge likeness, head-to-toe body realism, attitude, presence, pose, garment truth, skin and material texture, natural optics and scene integration together.
+
+After generation, record separate `renderQualityReview` PASS/FAIL results for photographic realism, skin texture, garment texture, lighting integration, optics/perspective and artifact rejection before claiming gate pass.
 
 Mutable layer: view-specific pose, chin angle, shoulder openness, hand position and weight distribution, while preserving the garment story and all canonical layers.
 
@@ -132,15 +148,19 @@ Starting reference palette:
 
 ```text
 accepted current-garment 05
-+ the strongest face authority for the look-back
-+ dedicated BACK crop or combined body canon
++ complete real-face operation board
++ dedicated BACK body canon
++ direct real-Lulu angle contact
 + locked atelier plate
-+ accepted conservative current-garment back guide when useful
 ```
 
 Do not use `06` as a parent.
 
-Use only the combination that produces the strongest complete image. The back guide may control presentation only; if no direct garment-back capture exists, it remains inferred and can never become direct evidence.
+This authority core is mandatory, while reference ordering and truth-preserving packaging remain adaptive. Do not replace the BACK crop or direct real-body evidence with a generic translation image. If no direct garment-back capture exists, rear construction remains conservative inferred presentation and can never become direct evidence.
+
+Before invocation, complete `renderQualityContract` and run `npm run atelier:verify:operation -- <operation-json>`. Judge likeness, head-to-toe body realism, attitude, presence, pose, garment truth, skin and material texture, natural optics and scene integration together.
+
+After generation, record separate `renderQualityReview` PASS/FAIL results for photographic realism, skin texture, garment texture, lighting integration, optics/perspective and artifact rejection before claiming gate pass.
 
 Mutable layer: view-specific pose, head turn, shoulder openness, hand position and weight distribution, while preserving the garment story and all canonical layers.
 
@@ -191,6 +211,22 @@ Use semantic roles as the source of truth:
 ```
 
 Historical Shop filenames differ: model front was `04`, model rear three-quarter was `05`, fabric detail was `06`, and model left profile was `07`. Before database sync or public export, map by semantic role rather than copying numeric slots.
+
+After all seven private views are user-accepted and locked, use the deterministic exporter:
+
+```bash
+npm run atelier:export:shop-media -- \
+  --garment 009 \
+  --slug black-cropped-tee-charcoal-cutoff-shorts-set
+
+# After inspecting the dry-run plan:
+npm run atelier:export:shop-media -- \
+  --garment 009 \
+  --slug black-cropped-tee-charcoal-cutoff-shorts-set \
+  --write
+```
+
+The exporter refuses incomplete locks and mismatched private hashes. It uses one isotropic contain scale, never a forced width/height resize, then fills the `1120×1400` Shop canvas with a softened same-image edge extension. This preserves Lulu's body proportions and prevents the horizontal stretching previously corrected on Garment 007. Record the seven output hashes and dimensions in a private export operation before Blob sync.
 
 ## G. Packaging
 
@@ -263,6 +299,30 @@ output_contract:
   - no text
   - no labels
   - no triptych
+fashionNovaCheck:
+  operationId: g004-fashion-nova-styling-check-v001
+  publisher: Fashion Nova
+  officialUrl: https://www.fashionnova.com/products/<closest-current-garment-family>
+  resolvedOfficialUrl: https://www.fashionnova.com/products/<resolved-current-garment-family>
+  pageTitle: <official live page title>
+  accessedOn: YYYY-MM-DD
+  matchedGarmentFacts:
+    - <evidence-backed garment-family match>
+  decision: "KEEP | REFINE | REPLACE | NO_CLOSE_MATCH"
+  noCloseMatchReason: <required only for NO_CLOSE_MATCH>
+  selectedStylingDirection: <bounded footwear/accessory decision>
+  authority: ADVISORY_STYLING_ONLY
+  passedAsImageReference: false
+renderQualityContract:
+  photographicRealism: one coherent natural catalogue photograph
+  skinTexture: natural pores, tonal variation and highlight rolloff
+  garmentTexture: source-supported surface, folds, tension, drape and sheen only
+  lightingIntegration: shared light field, contact shadow and material response
+  opticsPerspective: level natural perspective with preserved stature
+  artifactRejection:
+    - plastic or poreless skin
+    - pasted texture or uniform noise
+    - cutout halos, synthetic HDR or CGI sheen
 failure_gates:
   - identity drift
   - body drift
@@ -276,4 +336,11 @@ prompt_verbatim: |-
 generation_tool: built-in-imagegen
 output_path: storage/garments/drop-02/NNN/candidates/...
 output_sha256: <sha256>
+renderQualityReview:
+  photographicRealism: "PASS | FAIL"
+  skinTexture: "PASS | FAIL"
+  garmentTexture: "PASS | FAIL"
+  lightingIntegration: "PASS | FAIL"
+  opticsPerspective: "PASS | FAIL"
+  artifactRejection: "PASS | FAIL"
 ```

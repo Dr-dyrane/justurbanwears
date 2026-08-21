@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "workflowRevision": "2026-08-20.26",
-  "updatedAt": "2026-08-21T06:33:49Z",
+  "workflowRevision": "2026-08-21.22",
+  "updatedAt": "2026-08-21T22:06:44Z",
   "model": "LULU_V4",
-  "activeGarment": "008",
+  "activeGarment": "009",
   "activeView": "COMPLETE_01_07",
-  "status": "GARMENT_008_COMPLETE_LOCKED_USER_AUTHORIZED_FOR_PUBLICATION",
+  "status": "GARMENT_009_COMPLETE_01_07_USER_ACCEPTED_LOCKED_SHOP_MEDIA_EXPORTED_READY_FOR_RELEASE",
   "identityReview": {
     "candidateId": "lulu.face.v4.front.candidate.v1",
     "acceptedAssetId": "lulu.face.v4.front.lock.v1",
@@ -19,27 +19,23 @@
       "GARMENT_01_04",
       "REAL_FACE_AUTHORITY",
       "BODY_CANON",
-      "ACCESSORY_STYLING",
+      "FASHION_NOVA_ACCESSORY_STYLING_CHECK",
       "LOCKED_ROOM",
       "05_FRONT_MASTER",
       "06_OR_07_SIBLING_VIEW"
     ],
-    "diagram": "GARMENT 01-04 -> FACE -> BODY -> ACCESSORIES + ROOM -> 05 -> (06 || 07)",
-    "rule": "The garment set is established before model work. FACE draws from the complete real-photo authority stack plus the generated V4 translation control. A deliberately declared holistic subject synthesis may re-render the full frame; if the user approves that entire frame, it is rebased as the garment-specific subject lock. Hair stays unchanged unless explicitly restyled; accessories may rotate after the subject lock passes. 006 and 007 are independent siblings from accepted 005 and never parent one another. Face, body, room and garment references are an adaptive toolkit. The final gate is realistic full-body Lulu likeness, body balance, attitude, presence, pose, garment truth and believable scene integration."
+    "diagram": "GARMENT 01-04 -> FACE -> BODY -> FASHION NOVA STYLING CHECK + ROOM -> 05 -> (06 || 07)",
+      "rule": "The garment set is established before model work. FACE draws from the complete real-photo authority stack plus the generated V4 translation control. A deliberately declared holistic subject synthesis may re-render the full frame; if the user approves that entire frame, it is rebased as the garment-specific subject lock. A user-approved SUBJECT_CORE_LOCK may explicitly defer footwear to the styling/ROOM/05 operation while identity, body, garment, hair, pose and framing remain immutable. Before every 005, a current official Fashion Nova page must be checked and recorded privately as advisory footwear/accessory direction only; it never controls garment provenance, identity, body or room. Hair stays unchanged unless explicitly restyled. 006 and 007 inherit accepted 005 styling, are independent siblings from accepted 005 and never parent one another. Every 006 operation must include the dedicated side canon and every 007 operation the dedicated back canon, together with direct real-Lulu angle evidence. Ordering and truth-preserving packaging remain adaptive. Every 005/006/007 requires a pre-invocation render-quality contract and separate post-generation realism/texture review. The final gate is realistic full-body Lulu likeness, body balance, attitude, presence, pose, garment truth, natural skin/material texture and believable scene integration."
   },
   "globalLocks": {
     "garment": {
-      "status": "USER_ACCEPTED_LOCKED",
+      "status": "GARMENTS_009_010_011_01_04_USER_ACCEPTED_LOCKED",
       "primary": [
-        "garment.008.view.01.accepted",
-        "garment.008.view.02.accepted",
-        "garment.008.view.03.accepted",
-        "garment.008.view.04.accepted",
-        "garment.008.front",
-        "garment.008.front-confirmation",
-        "garment.008.left-three-quarter"
+        "garment.009.view.01.accepted",
+        "garment.010.view.01.accepted",
+        "garment.011.view.01.accepted"
       ],
-      "rule": "008 means the user-designated styled two-piece look: the recurring matte-black fitted short-sleeve cropped close-neck tee plus washed medium-blue high-rise distressed denim cut-off shorts. Preserve the small waist gap, metal button and fly, belt loops, curved front pockets, captured asymmetric distress, source-visible white material and very short uneven raw frayed hems. The blue shorts are new garment truth; G007 controls presentation only. Rear construction remains unknown."
+      "rule": "The exact independently reviewed 01-04 sets for Garments 009, 010 and 011 are privately locked. Each accepted 01 controls its garment-specific holistic subject synthesis; each 02 remains inferred presentation only and each 04 remains model-completed construction presentation only. Direct captures retain construction truth. The user explicitly accepted the complete G010 and G011 subject frames, so those exact subject locks may parent ROOM/05. Their newly generated 05 frames remain candidates until separately accepted."
     },
     "identity": {
       "status": "LOCKED",
@@ -65,6 +61,29 @@
         "lulu.body.canon.v4.back"
       ],
       "rule": "Real Lulu photos remain body evidence truth. The V4 source and three-view plate are user-approved modeled silhouette and garment-transfer controls, not verified measurements. Use the direct angle contact and the combined plate to preserve Lulu's believable bust-waist-hip balance, thighs, legs and heel-aware stature as one complete body rather than optimizing isolated measurements."
+    },
+    "renderQuality": {
+      "status": "LOCKED_MANDATORY_PREFLIGHT_AND_SEPARATE_REVIEW",
+      "validator": "scripts/virtual-atelier/validate-operation.mjs",
+      "packageCommand": "npm run atelier:verify:operation -- <operation-json>",
+      "requiredBeforeInvocation": [
+        "photographicRealism",
+        "skinTexture",
+        "garmentTexture",
+        "lightingIntegration",
+        "opticsPerspective",
+        "artifactRejection"
+      ],
+      "requiredBeforeGatePass": "Every named renderQualityReview field must equal PASS; a combined anatomy/atelier summary is insufficient.",
+      "rule": "Texture means source-supported material behaviour and natural skin detail, not added grain. Reject waxy or poreless skin, invented weave, pasted texture, uniform noise, cutout halos, over-sharpening, synthetic HDR, CGI sheen, mismatched room/subject light, wide-angle distortion and non-uniform scaling."
+    },
+    "styling": {
+      "status": "LOCKED_MANDATORY_FASHION_NOVA_CHECK_BEFORE_EVERY_05",
+      "validator": "scripts/virtual-atelier/validate-operation.mjs",
+      "requiredDecisions": ["KEEP", "REFINE", "REPLACE", "NO_CLOSE_MATCH"],
+      "operation": "storage/garments/drop-02/009/operations/g009-fashion-nova-styling-check-v001.json",
+      "decision": "REPLACE current sandals with sleek fitted black knee-high pointed-toe stiletto boots with minimal hardware.",
+      "rule": "Before every 05, inspect and record one current official Fashion Nova product or styling page for the same or closest proven garment family. Fashion Nova is advisory footwear/accessory styling evidence only and is never passed as a generation image reference by default. It has no authority over garment provenance or construction, Lulu identity/body, hair, pose, room, brand, camera or lighting. If no close match exists, record NO_CLOSE_MATCH and keep garment-faithful JUW styling. The user-accepted G009/05 whole-frame review closed its REPLACE decision; those accepted boots persist through its independent 06 and 07 siblings."
     },
     "atelier": {
       "status": "LOCKED",
@@ -108,7 +127,12 @@
     },
     "outputFormat": {
       "status": "LOCKED",
-      "rule": "One clean full-resolution image without labels, panels, text or crops."
+      "rule": "One clean full-resolution image without labels, panels, text or crops. Public Shop derivatives must use scripts/virtual-atelier/export-shop-media.mjs after all seven views are accepted and locked. The exporter maps semantic roles, preserves the source with one isotropic scale, and fills the 1120x1400 canvas with a softened same-image edge extension; forced width/height stretching is prohibited.",
+      "shopExporter": {
+        "status": "CODED_AND_FOCUSED_VERIFICATION_PASS",
+        "path": "scripts/virtual-atelier/export-shop-media.mjs",
+        "verification": "G009 dry run and write produced seven deterministic 1120x1400 derivatives with exact recorded hashes; private sources remained immutable and aspect ratios were preserved."
+      }
     }
   },
   "acceptedLineage": {
@@ -571,23 +595,227 @@
         "storage/garments/drop-02/008/operations/g008-v07-r001.json"
       ],
       "rejectedCandidatesMayParent": false
+    },
+    "009": {
+      "status": "COMPLETE_01_07_USER_ACCEPTED_LOCKED_READY_FOR_SHOP_EXPORT",
+      "views": {
+        "01": "USER_ACCEPTED_LOCKED",
+        "02": "USER_ACCEPTED_LOCKED_INFERRED_PRESENTATION_ONLY",
+        "03": "USER_ACCEPTED_LOCKED",
+        "04": "USER_ACCEPTED_LOCKED_MODEL_COMPLETED_PRESENTATION",
+        "05": "USER_ACCEPTED_LOCKED_FRONT_MASTER",
+        "06": "USER_ACCEPTED_LOCKED_SIBLING",
+        "07": "USER_ACCEPTED_LOCKED_SIBLING_INFERRED_REAR_PRESENTATION"
+      },
+      "backEvidence": "MISSING",
+      "rule": "Direct front captures control the recurring black cropped tee styling and the new washed charcoal-black cut-off shorts. Generate 01-04 independently before model work. Any 02 remains conservative inferred presentation only and never direct back evidence. Prior garments may control framing only and may not transfer colour, tears, patches or white material.",
+      "sourceManifest": "storage/garments/drop-02/009/source/manifest.json",
+      "lockedManifest": "storage/garments/drop-02/009/locked/manifest.json",
+      "subjectCore": {
+        "assetId": "garment.009.subject.core.lock.v1",
+        "sha256": "6fe2a5c564c59bd7cdc2240f98050833039492927f16df1efefc0e6931b12751",
+        "status": "USER_ACCEPTED_SUBJECT_CORE_FOOTWEAR_DEFERRED",
+        "correctionOrdinal": 1,
+        "acceptedAt": "2026-08-21T16:48:56Z",
+        "mayParentRoom05": true,
+        "mayDirectlyParent06Or07": false,
+        "excludedAuthority": ["footwear", "atelier"],
+        "note": "The initial subject was rejected only for copied gold jewellery. The one bounded correction removed the necklace and cross and passed whole-frame recheck. The user accepted every other layer as perfect while deferring footwear to a Fashion Nova styling check; exact corrected bytes are locked as the ROOM/05 subject core parent."
+      },
+      "fashionNovaStylingCheck": {
+        "operationId": "g009-fashion-nova-styling-check-v001",
+        "status": "DECISION_LOCKED_FOR_05",
+        "decision": "REPLACE_WITH_BLACK_KNEE_HIGH_POINTED_STILETTO_BOOTS",
+        "authority": "ADVISORY_FOOTWEAR_ONLY"
+      },
+      "accepted05": {
+        "assetId": "garment.009.view.05.accepted",
+        "path": "storage/garments/drop-02/009/locked/05-on-lulu-front.png",
+        "sha256": "9e1ee3c3b7ab9c61b307110ba050f409b315a2364291b9a9ba23a83fd29060b3",
+        "bytes": 2471995,
+        "dimensions": "1024x1536",
+        "status": "USER_ACCEPTED_LOCKED_FRONT_MASTER",
+        "acceptedAt": "2026-08-21T17:59:39Z",
+        "userDecision": "approve G009/05",
+        "mayParentIndependent06And07": true,
+        "note": "Generated from the locked subject core, exact atelier, accepted G009 garment authority and the advisory Fashion Nova boot decision. The exact independently cleared frame is now the sole sibling parent for independent 06 and 07."
+      },
+      "view06Candidate": {
+        "assetId": "garment.009.view.06.candidate.r002",
+        "path": "storage/garments/drop-02/009/candidates/v4-model-set-v1/06-on-lulu-left-profile-r002.png",
+        "sha256": "fea65234e1d5bc4b6f299fbed18f6442cd682feaa776d0a609d5d924e19aa79d",
+        "bytes": 2332383,
+        "dimensions": "1024x1536",
+        "status": "USER_REJECTED_BODY_CANON_UNDER_PROJECTION",
+        "parent": "garment.009.view.05.accepted",
+        "mayParent07": false,
+        "mayParentAny": false,
+        "rejectedAt": "2026-08-21T19:37:23Z",
+        "userDecision": "again we have lost state check git hx and docs 009/06 nd 07 has buttocks potrusion deficient from lulus body canaon and otehr refernce images",
+        "note": "User rejection overrides the earlier gate. The lower-back, waist, pelvis, upper-seat and upper-thigh chain is too straight and under-projected relative to the dedicated side canon, direct real-Lulu angle evidence and the accepted G004/G007 correction history. These bytes may never parent another operation."
+      },
+      "view07Candidate": {
+        "assetId": "garment.009.view.07.candidate.r002",
+        "path": "storage/garments/drop-02/009/candidates/v4-model-set-v1/07-on-lulu-right-rear-three-quarter-r002.png",
+        "sha256": "c0ae94c21ca3694c091482058940f071ee9c6350244bacbce813a1e872ff0e80",
+        "bytes": 2270596,
+        "dimensions": "1024x1536",
+        "status": "USER_REJECTED_BODY_CANON_UNDER_PROJECTION_INFERRED_PRESENTATION",
+        "parent": "garment.009.view.05.accepted",
+        "mayParent06": false,
+        "mayParentAny": false,
+        "mayServeAsDirectBackEvidence": false,
+        "rejectedAt": "2026-08-21T19:37:23Z",
+        "userDecision": "again we have lost state check git hx and docs 009/06 nd 07 has buttocks potrusion deficient from lulus body canaon and otehr refernce images",
+        "note": "User rejection overrides the earlier gate. The rear waist is too cylindrical and the pelvis/seat/upper-thigh relationship is too square and shallow relative to the dedicated back canon, direct real-Lulu angle evidence and the accepted G004/G007 correction history. These bytes may never parent another operation."
+      },
+      "accepted06": {
+        "assetId": "garment.009.view.06.accepted",
+        "path": "storage/garments/drop-02/009/locked/06-on-lulu-left-profile.png",
+        "sha256": "370501eb194dc87d92c2bce2e9c6505d4d25f1b46c9a71bbd49b0841ea9ad4a8",
+        "bytes": 2350182,
+        "dimensions": "1024x1536",
+        "status": "USER_ACCEPTED_LOCKED_SIBLING",
+        "acceptedAt": "2026-08-21T21:14:59Z",
+        "userDecision": "approve G009/06 and G009/07",
+        "parent": "garment.009.view.05.accepted",
+        "mayParent07": false,
+        "note": "Fresh independent body-canon rebase from accepted 009/05 using the dedicated side canon and direct real-Lulu angle evidence. The whole-frame gate passed and the user explicitly accepted these exact bytes."
+      },
+      "accepted07": {
+        "assetId": "garment.009.view.07.accepted",
+        "path": "storage/garments/drop-02/009/locked/07-on-lulu-right-rear-three-quarter.png",
+        "sha256": "53e9ca30b0d2dff681a9e5188e5ec580cbd604004c9d3c05a76feb4ad57769f7",
+        "bytes": 2171972,
+        "dimensions": "1024x1535",
+        "status": "USER_ACCEPTED_LOCKED_SIBLING_INFERRED_REAR_PRESENTATION",
+        "acceptedAt": "2026-08-21T21:14:59Z",
+        "userDecision": "approve G009/06 and G009/07",
+        "parent": "garment.009.view.05.accepted",
+        "mayParent06": false,
+        "mayServeAsDirectBackEvidence": false,
+        "note": "Fresh independent body-canon rebase from accepted 009/05 using the dedicated back canon and direct real-Lulu angle evidence. The whole-frame gate passed and the user explicitly accepted these exact bytes. It remains inferred rear presentation only."
+      },
+      "operationRecords": [
+        "storage/garments/drop-02/009/operations/g009-v01-r001.json",
+        "storage/garments/drop-02/009/operations/g009-v02-r001.json",
+        "storage/garments/drop-02/009/operations/g009-v03-r001.json",
+        "storage/garments/drop-02/009/operations/g009-v04-r001.json",
+        "storage/garments/drop-02/009/operations/g009-holistic-subject-r001.json",
+        "storage/garments/drop-02/009/operations/g009-holistic-subject-jewellery-c001.json",
+        "storage/garments/drop-02/009/operations/g009-fashion-nova-styling-check-v001.json",
+        "storage/garments/drop-02/009/operations/g009-room-and-05-r001.json",
+        "storage/garments/drop-02/009/operations/g009-v06-r001.json",
+        "storage/garments/drop-02/009/operations/g009-v06-r002.json",
+        "storage/garments/drop-02/009/operations/g009-v07-r001.json",
+        "storage/garments/drop-02/009/operations/g009-v07-r002.json",
+        "storage/garments/drop-02/009/operations/g009-v06-r003.json",
+        "storage/garments/drop-02/009/operations/g009-v07-r003.json",
+        "storage/garments/drop-02/009/operations/g009-v07-r004.json"
+      ],
+      "rejectedCandidatesMayParent": false
+    },
+    "010": {
+      "status": "SUBJECT_USER_ACCEPTED_LOCKED_05_INDEPENDENT_GATE_PASS_USER_DECISION_PENDING",
+      "views": {
+        "01": "USER_ACCEPTED_LOCKED",
+        "02": "USER_ACCEPTED_LOCKED_INFERRED_PRESENTATION_ONLY",
+        "03": "USER_ACCEPTED_LOCKED",
+        "04": "USER_ACCEPTED_LOCKED_MODEL_COMPLETED_PRESENTATION"
+      },
+      "backEvidence": "MISSING",
+      "rule": "Direct front and shallow-three-quarter captures control the recurring black cropped tee styling and the new longer clean deep-black cut-off shorts. Generate 01-04 independently before model work. Any 02 remains conservative inferred presentation only and never direct back evidence. Prior garments may control framing only and may not transfer shorter length, charcoal, blue or pink colour, tears, patches, white material or dramatic fringe.",
+      "sourceManifest": "storage/garments/drop-02/010/source/manifest.json",
+      "lockedManifest": "storage/garments/drop-02/010/locked/manifest.json",
+      "subjectLock": {
+        "assetId": "garment.010.subject.front.lock.v1",
+        "sha256": "6d1ed6e4cdc91111049c31c76de79a6795c03c8e166ecbeb9eee4158e290b502",
+        "status": "USER_ACCEPTED_LOCKED",
+        "acceptedAt": "2026-08-21T21:41:36Z",
+        "userDecision": "now pLEASE I AM APPROVING 10 and 11 too lets go faster",
+        "mayParentRoom05": true,
+        "mayDirectlyParent06Or07": false
+      },
+      "view05Candidate": {
+        "assetId": "garment.010.view.05.candidate.r001",
+        "path": "storage/garments/drop-02/010/candidates/v4-model-set-v1/05-on-lulu-front-r001.png",
+        "sha256": "ef5435e031423e143819ef1a9501b344705c01de160a5f8814844e91ecc5d2f1",
+        "bytes": 2198600,
+        "dimensions": "1023x1537",
+        "status": "INDEPENDENT_GATE_PASS_USER_DECISION_PENDING",
+        "mayLock": false,
+        "mayParent06Or07": false
+      },
+      "operationRecords": [
+        "storage/garments/drop-02/010/operations/g010-v01-r001.json",
+        "storage/garments/drop-02/010/operations/g010-v02-r001.json",
+        "storage/garments/drop-02/010/operations/g010-v03-r001.json",
+        "storage/garments/drop-02/010/operations/g010-v04-r001.json",
+        "storage/garments/drop-02/010/operations/g010-holistic-subject-r001.json",
+        "storage/garments/drop-02/010/operations/g010-fashion-nova-styling-check-v001.json",
+        "storage/garments/drop-02/010/operations/g010-room-and-05-r001.json"
+      ],
+      "rejectedCandidatesMayParent": false
+    },
+    "011": {
+      "status": "SUBJECT_USER_ACCEPTED_LOCKED_05_INDEPENDENT_GATE_PASS_USER_DECISION_PENDING",
+      "views": {
+        "01": "USER_ACCEPTED_LOCKED",
+        "02": "USER_ACCEPTED_LOCKED_INFERRED_PRESENTATION_ONLY",
+        "03": "USER_ACCEPTED_LOCKED",
+        "04": "USER_ACCEPTED_LOCKED_MODEL_COMPLETED_PRESENTATION"
+      },
+      "sourceClassification": "DIRECT_CAPTURE_FRONT_FAMILY_ONLY",
+      "backEvidence": "MISSING",
+      "rule": "Four consistent front-family captures control the recurring black cropped tee styling and the new light-wash wide-leg drawstring trousers with dark outer panels and visible snaps. Generate 01-04 independently before model work. Any 02 remains conservative inferred presentation only and never direct back evidence. Prior garments may control framing only and may not transfer shorts, rips, white lining, fringe, button/fly/belt-loop construction, cargo details or darker bottoms.",
+      "sourceManifest": "storage/garments/drop-02/011/source/manifest.json",
+      "lockedManifest": "storage/garments/drop-02/011/locked/manifest.json",
+      "subjectLock": {
+        "assetId": "garment.011.subject.front.lock.v1",
+        "sha256": "7968357041344eeb771e1ab218bf1548c18c1218b2cf5d0c1e955c8c13687650",
+        "status": "USER_ACCEPTED_LOCKED",
+        "acceptedAt": "2026-08-21T21:40:27Z",
+        "userDecision": "now pLEASE I AM APPROVING 10 and 11 too lets go faster",
+        "mayParentRoom05": true,
+        "mayDirectlyParent06Or07": false
+      },
+      "view05Candidate": {
+        "assetId": "garment.011.view.05.candidate.r001",
+        "path": "storage/garments/drop-02/011/candidates/v4-model-set-v1/05-on-lulu-front-r001.png",
+        "sha256": "b1a1f622e970fdfcabb86e7492c872a1e02ee8498de5331317457e0d8e882f1f",
+        "bytes": 2293936,
+        "dimensions": "1023x1537",
+        "status": "INDEPENDENT_GATE_PASS_USER_DECISION_PENDING",
+        "mayLock": false,
+        "mayParent06Or07": false
+      },
+      "operationRecords": [
+        "storage/garments/drop-02/011/operations/g011-v01-r001.json",
+        "storage/garments/drop-02/011/operations/g011-v02-r001.json",
+        "storage/garments/drop-02/011/operations/g011-v03-r001.json",
+        "storage/garments/drop-02/011/operations/g011-v04-r001.json",
+        "storage/garments/drop-02/011/operations/g011-holistic-subject-r001.json",
+        "storage/garments/drop-02/011/operations/g011-fashion-nova-styling-check-v001.json",
+        "storage/garments/drop-02/011/operations/g011-room-and-05-r001.json"
+      ],
+      "rejectedCandidatesMayParent": false
     }
   },
   "nextOperation": {
-    "operationIds": ["publish-garment-008"],
-    "garmentId": "008",
-    "operationType": "SHOP_PUBLICATION",
-    "status": "USER_AUTHORIZED",
+    "operationIds": ["publish-garment-009"],
+    "garmentId": "009",
+    "operationType": "GUARDED_SHOP_PUBLICATION_DEPLOYMENT_AND_LIVE_VERIFICATION",
+    "status": "USER_AUTHORIZED_BY_ACTIVE_GOAL",
     "parentAssets": [
-      "garment.008.view.01.accepted",
-      "garment.008.view.02.accepted",
-      "garment.008.view.03.accepted",
-      "garment.008.view.04.accepted",
-      "garment.008.view.05.accepted",
-      "garment.008.view.06.accepted",
-      "garment.008.view.07.accepted"
+      "garment.009.view.01.accepted",
+      "garment.009.view.02.accepted",
+      "garment.009.view.03.accepted",
+      "garment.009.view.04.accepted",
+      "garment.009.view.05.accepted",
+      "garment.009.view.06.accepted",
+      "garment.009.view.07.accepted"
     ],
-    "rule": "Publish only reviewed public derivatives and catalogue facts. Keep private prompts, real-person references and inference labels out of public customer copy. Preserve the private 07 inferred-back limitation."
+    "rule": "The seven exact accepted private masters have been exported by semantic role with one isotropic contain scale and same-image softened edge fill. Preserve private truth limits, keep inferred-back language out of customer copy, then run the guarded catalogue/database release, exact-revision deployment and live Shop smoke."
   },
-  "requiredNext": "Create and verify the Garment 008 Shop release package, then run the guarded Blob, production catalogue, exact-SHA deployment and live Shop smoke sequence."
+  "requiredNext": "Run the guarded catalogue/database release, commit and push the exact verified revision, deploy that revision to production, and verify the nine-piece Drop 02 Shop plus the Garment 009 seven-view product route live."
 }

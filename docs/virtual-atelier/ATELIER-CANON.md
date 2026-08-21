@@ -79,6 +79,18 @@ The approved ambience is:
 
 Visible cones of ceiling light, theatrical pools of light, heavy vignette, deep espresso walls or reception-lobby mood are failures.
 
+### Photographic integration and camera realism
+
+Lulu, the garment, footwear and room must read as one exposure in one physical space:
+
+- light direction, colour temperature, softness and falloff agree across skin, cloth, brass, floor and walls
+- footwear is grounded with plausible contact occlusion and shadow rather than floating or clipping
+- subject edges remain naturally resolved with no cutout halo, pasted-room boundary or mismatched sharpness
+- the camera stays level and catalogue-natural with believable focal-length perspective, preserved body scale and uniform image scaling
+- skin and materials keep natural microtexture without noise overlays, over-sharpening, synthetic HDR, CGI sheen or beauty-filter smoothing
+
+The room plate controls layout and light family, but realism is evaluated on the integrated photograph rather than by matching background pixels alone.
+
 ## 4. Wall icon lock
 
 The wall contains one **standalone icon only**:

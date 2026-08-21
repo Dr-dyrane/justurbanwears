@@ -10,6 +10,7 @@ Every garment follows this exact order:
 GARMENT INTAKE
 → REAL FACE AUTHORITY
 → BODY CANON
+→ FASHION NOVA ACCESSORY STYLING CHECK
 → LOCKED ROOM
 → 05 FRONT MASTER
 → 06 OR 07 AS INDEPENDENT SIBLING VIEWS
@@ -19,7 +20,7 @@ The garment ID is the first input to the main flow. It resolves the garment cons
 
 `05` is the front translation master for the current garment.
 
-`06` and `07` are sibling branches from the accepted `05`. Identity, body, room and garment references are selected adaptively for the view:
+`06` and `07` are sibling branches from the accepted `05`:
 
 ```text
                     ┌→ 06
@@ -29,17 +30,39 @@ GARMENT→FACE→BODY→ROOM→05
 
 Neither sibling may parent the other. `06 → 07` and `07 → 06` are forbidden production lineages. An accepted sibling may be inspected later for collection coherence, but it has no generation authority over the other sibling.
 
-Within the five-reference image-generation boundary, the available reference roles include:
+Within the five-reference image-generation boundary, the identity/body/room core for sibling generation is mandatory:
 
-- accepted new `05`
-- the strongest real-face material for that rotation
-- an angle-specific crop or the combined body control
-- the locked room
-- the strongest relevant garment construction guide
+- accepted current-garment `05` as sole visual parent
+- the complete real-face operation board
+- dedicated SIDE body canon for `06`, or dedicated BACK body canon for `07`
+- direct real-Lulu angle contact
+- the exact locked room
 
-These are tools, not a mandatory recipe. Choose and weight the smallest useful combination that produces the best human-reviewed outcome. A technically neat reference stack does not outrank a more realistic, recognizably Lulu result.
+These authority roles are mandatory; their ordering and any truth-preserving packaged reference are adaptive. The validator checks membership and lineage, while human review decides whether the resulting frame is realistic.
+
+Do not drop an angle-specific body crop to make room for a weaker translation convenience. Current-garment construction remains controlled by accepted `05`; unknown side or rear construction stays unknown. If a new garment exposes a direct angle-specific construction fact that cannot fit this boundary, stop and resolve a truthful packaged authority or a declared garment-only pass before model generation.
 
 The final governing gate is holistic: real Lulu head to toe, convincing facial semblance, believable body balance, attitude, presence, pose, garment truth, and natural integration into the scene.
+
+### Photographic realism and texture gate
+
+Every `05`, `06`, and `07` operation must declare a `renderQualityContract` before invocation and pass it during whole-frame review. The post-generation record must also contain a separate `renderQualityReview` result for each category; a combined anatomy/room summary cannot substitute. It covers:
+
+- **skin:** natural pores and microtexture, restrained tonal variation and believable highlight rolloff; no waxy, poreless, airbrushed or plastic face/body rendering
+- **garment surface:** only source-supported texture, weave impression, wash, wear, fraying, stitching, folds, tension, drape and sheen; do not invent fibre or material facts
+- **lighting integration:** Lulu, garment, footwear, floor and room share one plausible light field, colour temperature, contact shadow and material response
+- **optics and scale:** level natural catalogue camera, believable focal-length perspective, preserved stature and no wide-angle body distortion or non-uniform scaling
+- **artifact rejection:** no pasted texture, uniform noise overlay, haloed edges, over-sharpening, synthetic HDR, CGI sheen, beauty-filter smoothing or room/subject cutout appearance
+
+Texture is judged as material behaviour, not added grit. A sharp image can still fail realism; a softly rendered image can pass when skin, cloth, light, depth and room integration remain photographic and garment-faithful.
+
+### Fashion Nova accessory styling check
+
+Footwear and restrained accessories are resolved after identity and body pass but before every room/`05` operation. Inspect a current official Fashion Nova product or collection styling page for the same or closest proven garment family and record the requested URL, resolved canonical URL, page title, access date, matched garment facts, selected direction, and resulting styling decision in the private operation record. If no sufficiently close garment family exists, record `NO_CLOSE_MATCH`, preserve an empty match list, write the search/no-match reason, and retain the strongest garment-faithful JUW styling rather than forcing an unrelated trend.
+
+Fashion Nova is advisory styling evidence only. It may control footwear or accessory direction; it has zero authority over garment construction, Lulu's identity or body, hair, pose, room, brand icon, camera, or lighting. Never place a Fashion Nova page, screenshot, image, URL or page asset in `referenceStack` or `authorityStack`; generation receives only the concise recorded JUW styling decision. Never imply that the JUW garment is a Fashion Nova product.
+
+The check may conclude `KEEP`, `REFINE`, `REPLACE`, or `NO_CLOSE_MATCH`. The final `05` whole-frame review decides whether the styling works on Lulu in the locked atelier. This check is mandatory for `05`; it does not recur for `06` or `07`, which inherit the accepted `05` styling unless the user explicitly unlocks it.
 
 The authority gates are sequential:
 
@@ -161,6 +184,8 @@ Working production slots use:
 
 Historical Drop 01 Shop filenames used `04` for model front, `05` for model rear three-quarter, `06` for fabric detail, and `07` for model left profile. Numeric positions are therefore not authority. Database sync and public export must map by semantic role, never by number alone.
 
+Public derivatives must preserve the locked master's aspect ratio. Never force a private portrait into the Shop frame by independently resizing width and height. Use the checked-in semantic exporter only after `01–07` are accepted and locked; it contains the intact source with one isotropic scale and fills any remaining `1120×1400` canvas area from a softened copy of that same image. Private masters remain immutable and authoritative.
+
 ## 2. Immutable-state rule
 
 Once a layer passes human review, it is immutable until the user explicitly unlocks that layer.
@@ -215,6 +240,8 @@ Human approval of PASS B supersedes automated pixel-difference objections for th
 
 The subject lock does not waive the garment-set gate. Complete and approve `01–04` before composing the subject into the locked room. The subject lock may parent only the current garment's ROOM/final-`05` operation; it does not directly parent `06` or `07`. Only the accepted room-composited `05` may parent those sibling views.
 
+If the user explicitly accepts every subject layer except footwear or another named accessory, record a `SUBJECT_CORE_LOCK` rather than claiming whole-frame acceptance. The exact subject pixels may parent ROOM/`05`, but the deferred accessory is excluded from its authority and must be the only person-layer change declared for the styling/ROOM/`05` operation. The final `05` requires whole-frame approval and closes the deferred styling decision. Identity, body, garment, hair, pose, hands, and framing remain immutable throughout that operation.
+
 This exception never converts a generated subject lock into direct identity or garment evidence. Real face photographs and direct garment captures retain higher truth authority.
 
 ## 3. Operation declaration
@@ -237,6 +264,33 @@ authority_stack:
 change_set: []
 immutable_set: []
 output_contract: []
+fashionNovaCheck:
+  operationId: ""
+  publisher: "Fashion Nova"
+  officialUrl: ""
+  resolvedOfficialUrl: ""
+  pageTitle: ""
+  accessedOn: "YYYY-MM-DD"
+  matchedGarmentFacts: []
+  decision: "KEEP | REFINE | REPLACE | NO_CLOSE_MATCH"
+  noCloseMatchReason: "required only for NO_CLOSE_MATCH"
+  selectedStylingDirection: ""
+  authority: "ADVISORY_STYLING_ONLY"
+  passedAsImageReference: false
+renderQualityContract:
+  photographicRealism: ""
+  skinTexture: ""
+  garmentTexture: ""
+  lightingIntegration: ""
+  opticsPerspective: ""
+  artifactRejection: []
+renderQualityReview:
+  photographicRealism: "PASS | FAIL"
+  skinTexture: "PASS | FAIL"
+  garmentTexture: "PASS | FAIL"
+  lightingIntegration: "PASS | FAIL"
+  opticsPerspective: "PASS | FAIL"
+  artifactRejection: "PASS | FAIL"
 failure_gates: []
 prompt_verbatim: ""
 generation_tool: ""
@@ -244,7 +298,11 @@ output_path: ""
 output_sha256: ""
 ```
 
-No operation proceeds with unresolved required assets.
+No operation proceeds with unresolved required assets or an incomplete `renderQualityContract`. A `05` operation also requires a complete `fashionNovaCheck`. Before any `05`, `06`, or `07` invocation, run the checked-in operation validator and record its pass:
+
+```bash
+npm run atelier:verify:operation -- storage/garments/drop-02/NNN/operations/<operation>.json
+```
 
 Every executed operation must persist the exact prompt verbatim—not only a summary—together with the ordered reference paths, slot roles, exclusions, tool/mode, generated source path when available, durable workspace output path, dimensions, byte size and SHA-256. Record every bounded correction as its own operation/prompt, and record independent review plus the user's exact acceptance or rejection statement. A useful or accepted generation without this reproduction record is incomplete and may not become canon.
 
@@ -302,7 +360,11 @@ The requested 05/06/07 grammar is unambiguous and complete.
 
 One clean full image with no unrequested text, labels, panels, or crops.
 
-A failure in any gate rejects the candidate.
+### Photographic realism and texture gate
+
+Skin, garment, footwear and room read as one photograph. Natural skin detail remains visible; garment wash, folds, tension, fraying, stitching, drape and sheen follow the garment evidence and pose; lighting and contact shadows agree across the frame; perspective preserves Lulu's stature. Reject poreless or waxy skin, invented material texture, pasted detail, halos, synthetic HDR, CGI sheen, excessive smoothing or sharpening, and any cutout-like room integration.
+
+A model-view operation may not claim `GATE_PASS`, `ACCEPTED` or `LOCKED` until every named `renderQualityReview` result is recorded as `PASS`. A failure in any gate rejects the candidate.
 
 ## 6. State transitions
 

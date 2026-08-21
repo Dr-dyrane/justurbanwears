@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "catalogueRevision": "2026-08-20-catalogue-19",
-  "catalogueChecksum": "1e9d77ae8036f6311adbffa596dca073eb4864a11d9212108a9507987f5f402f",
-  "cataloguePresentationChecksum": "527860ade55dba28ec29de464421e6cbd77ac5d8facf01bdf193184a7f6f6390",
+  "catalogueRevision": "2026-08-21-catalogue-20",
+  "catalogueChecksum": "94d02da58a47009e9730a60d0f48ced24c1630c7fa383571b191d87fbf877bb6",
+  "cataloguePresentationChecksum": "23fbba2cf72182f946ca556a319d3be4a489f678074805e18c7e6d5f53adca27",
   "legacyAssets": [
     {
       "sourcePath": "/shop/products/black-cropped-tee-pink-distressed-shorts-set/04-model-front.webp",
@@ -116,6 +116,62 @@
       "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/33b04a733877095f670c8a42a3577f6f812d473fbe51233dc09b0f0a3553ecc4/products/black-cropped-tee-blue-distressed-shorts-set/07-model-left-profile.webp",
       "sha256": "33b04a733877095f670c8a42a3577f6f812d473fbe51233dc09b0f0a3553ecc4",
       "size": 151822,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-charcoal-cutoff-shorts-set/01-garment-front.webp",
+      "pathname": "shop/catalogue/1813039b941ecc5b06148e00c166b70cc75c83f40551354745c63c6de1d03978/products/black-cropped-tee-charcoal-cutoff-shorts-set/01-garment-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/1813039b941ecc5b06148e00c166b70cc75c83f40551354745c63c6de1d03978/products/black-cropped-tee-charcoal-cutoff-shorts-set/01-garment-front.webp",
+      "sha256": "1813039b941ecc5b06148e00c166b70cc75c83f40551354745c63c6de1d03978",
+      "size": 91344,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-charcoal-cutoff-shorts-set/02-garment-back.webp",
+      "pathname": "shop/catalogue/72c75111586a87ca7e68f3e42a0a5944af354aa6f899a6ce9d69920a6070e7db/products/black-cropped-tee-charcoal-cutoff-shorts-set/02-garment-back.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/72c75111586a87ca7e68f3e42a0a5944af354aa6f899a6ce9d69920a6070e7db/products/black-cropped-tee-charcoal-cutoff-shorts-set/02-garment-back.webp",
+      "sha256": "72c75111586a87ca7e68f3e42a0a5944af354aa6f899a6ce9d69920a6070e7db",
+      "size": 87788,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-charcoal-cutoff-shorts-set/03-mannequin-front.webp",
+      "pathname": "shop/catalogue/680e8b3fbdda10377282b8883690e83a12f124721cf5433f3652133e1f6282ba/products/black-cropped-tee-charcoal-cutoff-shorts-set/03-mannequin-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/680e8b3fbdda10377282b8883690e83a12f124721cf5433f3652133e1f6282ba/products/black-cropped-tee-charcoal-cutoff-shorts-set/03-mannequin-front.webp",
+      "sha256": "680e8b3fbdda10377282b8883690e83a12f124721cf5433f3652133e1f6282ba",
+      "size": 64644,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-charcoal-cutoff-shorts-set/04-model-front.webp",
+      "pathname": "shop/catalogue/f6a3cd8f6c9ca69a88215fec0cee30cd3ce192f95995cda09db4f60a01cd48d9/products/black-cropped-tee-charcoal-cutoff-shorts-set/04-model-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/f6a3cd8f6c9ca69a88215fec0cee30cd3ce192f95995cda09db4f60a01cd48d9/products/black-cropped-tee-charcoal-cutoff-shorts-set/04-model-front.webp",
+      "sha256": "f6a3cd8f6c9ca69a88215fec0cee30cd3ce192f95995cda09db4f60a01cd48d9",
+      "size": 196830,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-charcoal-cutoff-shorts-set/05-model-rear-three-quarter.webp",
+      "pathname": "shop/catalogue/a81d70007411ec25a4fc45b6c1d460ed8ce7d8c3df7820c56f30322368bd6026/products/black-cropped-tee-charcoal-cutoff-shorts-set/05-model-rear-three-quarter.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/a81d70007411ec25a4fc45b6c1d460ed8ce7d8c3df7820c56f30322368bd6026/products/black-cropped-tee-charcoal-cutoff-shorts-set/05-model-rear-three-quarter.webp",
+      "sha256": "a81d70007411ec25a4fc45b6c1d460ed8ce7d8c3df7820c56f30322368bd6026",
+      "size": 178186,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-charcoal-cutoff-shorts-set/06-fabric-detail.webp",
+      "pathname": "shop/catalogue/df64540267a437cc6ff9baa6b1c35aadaf5970d8871530fea56fb7a30eda9551/products/black-cropped-tee-charcoal-cutoff-shorts-set/06-fabric-detail.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/df64540267a437cc6ff9baa6b1c35aadaf5970d8871530fea56fb7a30eda9551/products/black-cropped-tee-charcoal-cutoff-shorts-set/06-fabric-detail.webp",
+      "sha256": "df64540267a437cc6ff9baa6b1c35aadaf5970d8871530fea56fb7a30eda9551",
+      "size": 216658,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-charcoal-cutoff-shorts-set/07-model-left-profile.webp",
+      "pathname": "shop/catalogue/8d6ac7449582c39826e7bd7c3d432e159e22a795f1f41780f246705f64da7dc6/products/black-cropped-tee-charcoal-cutoff-shorts-set/07-model-left-profile.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/8d6ac7449582c39826e7bd7c3d432e159e22a795f1f41780f246705f64da7dc6/products/black-cropped-tee-charcoal-cutoff-shorts-set/07-model-left-profile.webp",
+      "sha256": "8d6ac7449582c39826e7bd7c3d432e159e22a795f1f41780f246705f64da7dc6",
+      "size": 173604,
       "contentType": "image/webp"
     },
     {
