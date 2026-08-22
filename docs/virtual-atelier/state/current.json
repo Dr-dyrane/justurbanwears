@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "workflowRevision": "2026-08-22.34",
-  "updatedAt": "2026-08-22T06:09:11Z",
+  "workflowRevision": "2026-08-22.35",
+  "updatedAt": "2026-08-22T07:33:15Z",
   "model": "LULU_V4",
   "activeGarment": "012",
   "activeView": "RELEASE",
-  "status": "GARMENT_012_COMPLETE_01_07_LOCKED_SHOP_MEDIA_EXPORTED_READY_FOR_RELEASE",
+  "status": "GARMENT_012_RELEASED_LIVE_VERIFIED",
   "identityReview": {
     "candidateId": "lulu.face.v4.front.candidate.v1",
     "acceptedAssetId": "lulu.face.v4.front.lock.v1",
@@ -29,13 +29,14 @@
   },
   "globalLocks": {
     "garment": {
-      "status": "GARMENTS_009_010_011_01_04_USER_ACCEPTED_LOCKED",
+      "status": "GARMENTS_009_010_011_012_01_04_ACCEPTED_LOCKED",
       "primary": [
         "garment.009.view.01.accepted",
         "garment.010.view.01.accepted",
-        "garment.011.view.01.accepted"
+        "garment.011.view.01.accepted",
+        "garment.012.view.01.accepted"
       ],
-      "rule": "The exact independently reviewed 01-04 sets for Garments 009, 010 and 011 are privately locked. Each accepted 01 controls its garment-specific holistic subject synthesis; each 02 remains inferred presentation only and each 04 remains model-completed construction presentation only. Direct captures retain construction truth. The user explicitly accepted the complete G010 and G011 subject frames and then the exact displayed G010/05 and G011/05 masters. Each accepted 05 may parent only its own independent 06 and 07 siblings."
+      "rule": "The exact reviewed 01-04 sets for Garments 009, 010, 011 and 012 are privately locked. Each accepted 01 controls its garment-specific holistic subject synthesis; each 02 remains inferred presentation only and each 04 remains model-completed construction presentation only. Direct captures retain construction truth. G012 proceeded under the user's explicit autonomous-continuation authority while preserving the same evidence gates. Each accepted 05 may parent only its own independent 06 and 07 siblings."
     },
     "identity": {
       "status": "LOCKED",
@@ -897,7 +898,7 @@
       "rejectedCandidatesMayParent": false
     },
     "012": {
-      "status": "COMPLETE_01_07_AUTONOMOUSLY_ACCEPTED_LOCKED_SHOP_MEDIA_EXPORTED_READY_FOR_RELEASE",
+      "status": "RELEASED_LIVE_VERIFIED",
       "views": {
         "01": "USER_AUTHORIZED_EVIDENCE_GATE_ACCEPTED_LOCKED",
         "02": "USER_AUTHORIZED_EVIDENCE_GATE_ACCEPTED_LOCKED_INFERRED_PRESENTATION_ONLY",
@@ -911,6 +912,20 @@
       "backEvidence": "MISSING",
       "rule": "The four strongest direct front-family captures control the separate black cropped tee and medium-blue washed pull-on barrel trousers. The retail hangtag is packaging and must be removed. Generate 01-04 independently before model work. Any 02 or 07 remains conservative inferred presentation only and never direct rear evidence.",
       "sourceManifest": "storage/garments/drop-02/012/source/manifest.json",
+      "release": {
+        "status": "LIVE_VERIFIED",
+        "catalogueId": "JUW-036",
+        "route": "https://www.justurbanwears.com/shop/products/black-cropped-tee-blue-wash-drawstring-barrel-trousers-set",
+        "releaseCommit": "6260c852b1ad7a06a42a6f71a07f4a315942708f",
+        "verifiedProductionCommit": "6260c852b1ad7a06a42a6f71a07f4a315942708f",
+        "deploymentId": "dpl_HDQUZadtXt4Qn3TJrzkcbZbFoDXP",
+        "deploymentUrl": "https://justurbanwears-328b8k0j2-drdyranes-projects.vercel.app",
+        "catalogueRevision": "2026-08-22-catalogue-22",
+        "catalogueChecksum": "23ca93e15c045f7a2821c7aa0cc50b5571eef24531ac8f628136ecd47fb9c333",
+        "catalogueRows": 30,
+        "dropPieceCount": 12,
+        "verifiedAt": "2026-08-22T07:33:15Z"
+      },
       "accepted01": {
         "assetId": "garment.012.view.01.accepted",
         "path": "storage/garments/drop-02/012/locked/01-garment-front.png",
@@ -1021,22 +1036,6 @@
       "rejectedCandidatesMayParent": false
     }
   },
-  "nextOperation": {
-    "operationIds": ["release-g012-shop-catalogue", "deploy-g012-shop"],
-    "garmentId": "012",
-    "view": "RELEASE",
-    "operationType": "GUARDED_CATALOGUE_DATABASE_RELEASE_AND_EXACT_REVISION_DEPLOYMENT",
-    "status": "USER_AUTHORIZED_BY_AUTONOMOUS_COMPLETION_GOAL",
-    "parentAssets": [
-      "garment.012.view.01.accepted",
-      "garment.012.view.02.accepted",
-      "garment.012.view.03.accepted",
-      "garment.012.view.04.accepted",
-      "garment.012.view.05.accepted",
-      "garment.012.view.06.accepted",
-      "garment.012.view.07.accepted"
-    ],
-    "rule": "The exact seven private locks have deterministic hash-verified 1120x1400 public derivatives and content-addressed Blob records. Apply catalogue revision 2026-08-22-catalogue-22 through one guarded database release, deploy the exact committed revision, then verify the twelve-piece Shop and this seven-view product route in production."
-  },
-  "requiredNext": "Complete one guarded catalogue/database release, deploy the exact clean revision, and live-verify the twelve-piece Shop plus the complete Garment 012 seven-view route."
+  "nextOperation": null,
+  "requiredNext": "Garment 012 is complete and live-verified. Await the next garment intake before opening another operation."
 }
