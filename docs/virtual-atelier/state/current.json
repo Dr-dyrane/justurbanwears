@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "workflowRevision": "2026-08-22.35",
-  "updatedAt": "2026-08-22T07:33:15Z",
+  "workflowRevision": "2026-08-22.42",
+  "updatedAt": "2026-08-22T19:08:00Z",
   "model": "LULU_V4",
-  "activeGarment": "012",
-  "activeView": "RELEASE",
-  "status": "GARMENT_012_RELEASED_LIVE_VERIFIED",
+  "activeGarment": "013",
+  "activeView": "05_CORRECTION",
+  "status": "GARMENT_013_05_SURFACE_CORRECTION_FAILED_USER_DIRECTION_REQUIRED",
   "identityReview": {
     "candidateId": "lulu.face.v4.front.candidate.v1",
     "acceptedAssetId": "lulu.face.v4.front.lock.v1",
@@ -29,14 +29,15 @@
   },
   "globalLocks": {
     "garment": {
-      "status": "GARMENTS_009_010_011_012_01_04_ACCEPTED_LOCKED",
+      "status": "GARMENTS_009_010_011_012_013_01_04_ACCEPTED_LOCKED",
       "primary": [
         "garment.009.view.01.accepted",
         "garment.010.view.01.accepted",
         "garment.011.view.01.accepted",
-        "garment.012.view.01.accepted"
+        "garment.012.view.01.accepted",
+        "garment.013.view.01.accepted"
       ],
-      "rule": "The exact reviewed 01-04 sets for Garments 009, 010, 011 and 012 are privately locked. Each accepted 01 controls its garment-specific holistic subject synthesis; each 02 remains inferred presentation only and each 04 remains model-completed construction presentation only. Direct captures retain construction truth. G012 proceeded under the user's explicit autonomous-continuation authority while preserving the same evidence gates. Each accepted 05 may parent only its own independent 06 and 07 siblings."
+      "rule": "The exact reviewed 01-04 sets for Garments 009, 010, 011, 012 and 013 are privately locked. Each accepted 01 controls its garment-specific holistic subject synthesis; each 02 remains inferred presentation only and each 04 remains model-completed construction presentation only. Direct captures retain construction truth. G012 and G013 proceed under the user's explicit autonomous-continuation authority while preserving the same evidence gates. Each accepted 05 may parent only its own independent 06 and 07 siblings."
     },
     "identity": {
       "status": "LOCKED",
@@ -1034,8 +1035,135 @@
         "catalogueChecksum": "23ca93e15c045f7a2821c7aa0cc50b5571eef24531ac8f628136ecd47fb9c333"
       },
       "rejectedCandidatesMayParent": false
+    },
+    "013": {
+      "status": "GARMENT_013_05_SURFACE_CORRECTION_FAILED_USER_DIRECTION_REQUIRED",
+      "views": {
+        "01": "USER_AUTHORIZED_EVIDENCE_GATE_ACCEPTED_LOCKED",
+        "02": "USER_AUTHORIZED_EVIDENCE_GATE_ACCEPTED_LOCKED_INFERRED_PRESENTATION_ONLY",
+        "03": "USER_AUTHORIZED_EVIDENCE_GATE_ACCEPTED_LOCKED",
+        "04": "USER_AUTHORIZED_EVIDENCE_GATE_ACCEPTED_LOCKED_MODEL_COMPLETED_PRESENTATION",
+        "05": "LOCK_REVOKED_QA_CONTRADICTION_CORRECTION_PENDING",
+        "06": "PENDING",
+        "07": "PENDING"
+      },
+      "sourceClassification": "DIRECT_CAPTURE_FRONT_ONLY",
+      "backEvidence": "MISSING",
+      "rule": "The single direct front capture controls the black cropped tee and washed charcoal full-length wide-leg cargo jeans. The accepted correction keeps compact outer-side mid-thigh cargo pockets rather than long front-leg panels. Any 02 or later 07 remains conservative inferred presentation only and never direct rear evidence.",
+      "sourceManifest": "storage/garments/drop-02/013/source/manifest.json",
+      "accepted01": {
+        "assetId": "garment.013.view.01.accepted",
+        "path": "storage/garments/drop-02/013/locked/01-garment-front.png",
+        "sha256": "d47933dcf2109d84c2518412b6209e387e34fd9e06b4f26d99748bb4f51286e1",
+        "bytes": 1789909,
+        "dimensions": "1023x1537",
+        "status": "USER_AUTHORIZED_EVIDENCE_GATE_ACCEPTED_LOCKED",
+        "acceptedAt": "2026-08-22T17:51:41Z",
+        "userDecision": "goal G013 Live product",
+        "mayParentGarment013Workflow": true
+      },
+      "accepted02": {
+        "assetId": "garment.013.view.02.accepted",
+        "path": "storage/garments/drop-02/013/locked/02-garment-back.png",
+        "sha256": "59ccfa040f4d15c86ef77283ab4d9b10e8398a8ad9fc22eb6fb588615b7c7a74",
+        "bytes": 1699024,
+        "dimensions": "1024x1536",
+        "status": "USER_AUTHORIZED_EVIDENCE_GATE_ACCEPTED_LOCKED_INFERRED_PRESENTATION_ONLY",
+        "mayServeAsDirectBackEvidence": false
+      },
+      "accepted03": {
+        "assetId": "garment.013.view.03.accepted",
+        "path": "storage/garments/drop-02/013/locked/03-mannequin-front.png",
+        "sha256": "19de2d6f958631ba5be594e1a6938f353abb7db058355aaed1da1a33b4bc25b2",
+        "bytes": 1942293,
+        "dimensions": "1023x1537",
+        "status": "USER_AUTHORIZED_EVIDENCE_GATE_ACCEPTED_LOCKED"
+      },
+      "accepted04": {
+        "assetId": "garment.013.view.04.accepted",
+        "path": "storage/garments/drop-02/013/locked/04-fabric-detail.png",
+        "sha256": "4618115fa8444fccfe768bf5f8312b3cda9f9eb698f1c703ab6dfcd94b53e772",
+        "bytes": 2551896,
+        "dimensions": "1024x1536",
+        "status": "USER_AUTHORIZED_EVIDENCE_GATE_ACCEPTED_LOCKED_MODEL_COMPLETED_PRESENTATION",
+        "mayServeAsFibreEvidence": false
+      },
+      "acceptedSubject": {
+        "assetId": "garment.013.subject.front.lock.v1",
+        "path": "storage/garments/drop-02/013/locked/LULU_G013_SUBJECT_FRONT_LOCK_v1.png",
+        "sha256": "8eb84b79af140278dffa6aac12a0e848b7ab4a3f36ee1022c26cd7574679c4f9",
+        "bytes": 1722370,
+        "dimensions": "1023x1537",
+        "status": "AUTONOMOUSLY_ACCEPTED_LOCKED_SUBJECT",
+        "acceptedAt": "2026-08-22T18:03:00Z",
+        "userDecision": "goal G013 Live product",
+        "mayParentRoom05": true,
+        "mayDirectlyParent06Or07": false
+      },
+      "accepted05": {
+        "assetId": "garment.013.view.05.accepted",
+        "path": "storage/garments/drop-02/013/locked/05-on-lulu-front.png",
+        "sha256": "f2780c9f45ced084acd14d6e6196ea09052361b122300d3029aed516d8892f4c",
+        "bytes": 2195050,
+        "dimensions": "1023x1537",
+        "status": "LOCK_REVOKED_QA_CONTRADICTION_AUDIT_TARGET_ONLY",
+        "acceptedAt": "2026-08-22T18:12:00Z",
+        "userDecision": "goal G013 Live product",
+        "mayParentIndependent06And07": false,
+        "revokedAt": "2026-08-22T19:02:00Z",
+        "revocationReason": "Original-resolution audit found an unsupported repeated ornamental denim motif that contradicts the direct source and clean subject lock."
+      },
+      "operationRecords": [
+        "storage/garments/drop-02/013/operations/g013-v01-r001.json",
+        "storage/garments/drop-02/013/operations/g013-v01-c001.json",
+        "storage/garments/drop-02/013/operations/g013-v02-r001.json",
+        "storage/garments/drop-02/013/operations/g013-v02-c001.json",
+        "storage/garments/drop-02/013/operations/g013-v03-r001.json",
+        "storage/garments/drop-02/013/operations/g013-v03-c001.json",
+        "storage/garments/drop-02/013/operations/g013-v04-r001.json",
+        "storage/garments/drop-02/013/operations/g013-v04-c001.json",
+        "storage/garments/drop-02/013/operations/g013-fashion-nova-styling-check-v001.json",
+        "storage/garments/drop-02/013/operations/g013-holistic-subject-r001.json",
+        "storage/garments/drop-02/013/operations/g013-holistic-subject-r001-c001.json",
+        "storage/garments/drop-02/013/operations/g013-holistic-subject-r002.json",
+        "storage/garments/drop-02/013/operations/g013-room-and-05-r001.json",
+        "storage/garments/drop-02/013/operations/g013-room-and-05-r002.json",
+        "storage/garments/drop-02/013/operations/g013-room-and-05-c001.json",
+        "storage/garments/drop-02/013/operations/g013-v06-r001.json",
+        "storage/garments/drop-02/013/operations/g013-v07-r001.json",
+        "storage/garments/drop-02/013/operations/g013-v06-c001.json",
+        "storage/garments/drop-02/013/operations/g013-v07-c001.json"
+      ],
+      "siblingGate": {
+        "status": "SUPERSEDED_BY_PARENT_05_QA_REOPEN",
+        "acceptedParent": "garment.013.view.05.revoked-r002",
+        "view06": {
+          "status": "REJECTED_MAY_NOT_PARENT",
+          "remainingReleaseBlocker": "Repeated ornamental or paisley-like denim motif remains; the unsupported rear patch pocket was successfully removed."
+        },
+        "view07": {
+          "status": "REJECTED_MAY_NOT_PARENT",
+          "remainingReleaseBlocker": "Repeated ornamental or paisley-like denim motif remains across the seat and both legs."
+        },
+        "passingLayers": "View grammar, real-Lulu likeness, body projection and stature, black pointed boots, atelier, lighting and optics pass in both corrected candidates.",
+        "requiredAuthority": "None for descendants until a corrected 05 passes; rejected sibling candidates remain audit targets only."
+      },
+      "view05CorrectionGate": {
+        "status": "STOPPED_AFTER_ONE_BOUNDED_CORRECTION",
+        "candidate": "garment.013.view.05.r002.c001.rejected",
+        "remainingReleaseBlocker": "Repeated ornamental or paisley-like tonal motif remains visible across the trousers at original resolution.",
+        "passingLayers": "Identity, body, pose, garment geometry, styling, footwear, room, lighting, optics and framing remain coherent.",
+        "requiredAuthority": "Explicit user direction for either a fresh two-reference 05 restart from the clean subject plus exact room, or acceptance of the motif as a generated texture variation."
+      },
+      "rejectedCandidatesMayParent": false
     }
   },
-  "nextOperation": null,
-  "requiredNext": "Garment 012 is complete and live-verified. Await the next garment intake before opening another operation."
+  "nextOperation": {
+    "operationId": "g013-room-and-05-fresh-restart-authorization",
+    "garmentId": "013",
+    "view": "05_CORRECTION",
+    "role": "MODEL_FRONT_FRESH_TWO_REFERENCE_RESTART",
+    "status": "USER_DIRECTION_REQUIRED"
+  },
+  "requiredNext": "Obtain explicit user direction before a fresh 05 restart using only the clean subject lock and exact room; do not promote, export or publish any patterned 05/06/07 candidate."
 }
