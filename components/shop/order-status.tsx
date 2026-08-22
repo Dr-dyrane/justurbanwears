@@ -17,6 +17,7 @@ import type { ShopCommerceGuidance } from "../../lib/shop/server-order/commerce-
 import { ShopActionLink } from "./atoms/action";
 import { ShopLink as Link } from "./atoms/shop-link";
 import { PaymentEvidenceUpload } from "./payment-evidence-upload";
+import { ProductDisplayName } from "./product-display-name";
 import { ProductVisual } from "./product-visual";
 import { ReturnRequest } from "./return-request";
 import { OrderCustomerActions } from "./order-customer-actions";
@@ -354,7 +355,7 @@ export function OrderStatus({
               const content = (
                 <>
                   {product ? <ProductVisual compact product={product} /> : <span className="shop-status-product-placeholder" aria-hidden="true" />}
-                  <span><strong>{line.name}</strong><small>{line.taggedSize} · Quantity 1</small></span>
+                  <span><strong><ProductDisplayName name={line.name} /></strong><small>{line.taggedSize} · Quantity 1</small></span>
                 </>
               );
               return product ? <Link href={`/shop/products/${line.slug}`} key={line.slug}>{content}</Link> : <div key={line.slug}>{content}</div>;

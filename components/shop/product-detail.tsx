@@ -9,6 +9,7 @@ import { resolveApprovedModelTryout } from "../../lib/shop/model-tryout";
 import { ShopActionButton, ShopActionLink } from "./atoms/action";
 import { ShopLink as Link } from "./atoms/shop-link";
 import { ProductCard } from "./product-card";
+import { ProductDisplayName } from "./product-display-name";
 import { ProductMediaGallery } from "./product-media-gallery";
 import { ProductInfoSheet } from "./product-info-sheet";
 import { ProductModelTryout } from "./product-model-tryout";
@@ -218,7 +219,7 @@ export function ProductDetail() {
           <div className="shop-detail-intro">
             <p className="shop-kicker">{product.category}</p>
             <div className="shop-detail-heading">
-              <h1>{product.name}</h1>
+              <h1><ProductDisplayName name={product.name} /></h1>
               <p className="shop-detail-price">{formatNaira(product.price)}</p>
             </div>
             <p className="shop-detail-note">{product.note}</p>

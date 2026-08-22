@@ -7,6 +7,7 @@ import { CURRENT_SHOP_DROP, isCurrentShopProduct } from "../../lib/shop/current-
 import { resolveApprovedModelTryout } from "../../lib/shop/model-tryout";
 import { ShopLink as Link } from "./atoms/shop-link";
 import { ProductCard } from "./product-card";
+import { ProductDisplayName } from "./product-display-name";
 import { ProductVisual } from "./product-visual";
 import {
   countActiveShopFilters,
@@ -145,7 +146,7 @@ export function ShopHome() {
           <span className="shop-editorial-cover-caption">
             <span>
               <small>{heroModelView ? "On Lulu" : "Wardrobe"}</small>
-              <strong>{heroProduct?.name ?? "New pieces soon"}</strong>
+              <strong>{heroProduct ? <ProductDisplayName name={heroProduct.name} /> : "New pieces soon"}</strong>
             </span>
             {heroProduct ? <b>{formatNaira(heroProduct.price)}</b> : null}
           </span>

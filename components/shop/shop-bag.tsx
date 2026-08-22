@@ -6,6 +6,7 @@ import { formatNaira } from "../../lib/shop/catalog";
 import { isBagCheckoutAvailable } from "../../lib/shop/domain/state";
 import { ShopActionButton, ShopActionLink } from "./atoms/action";
 import { ShopLink as Link } from "./atoms/shop-link";
+import { ProductDisplayName } from "./product-display-name";
 import { ProductVisual } from "./product-visual";
 import { useShop } from "./shop-provider";
 
@@ -53,7 +54,7 @@ export function ShopBag() {
                 <Link href={`/shop/products/${product.slug}`}><ProductVisual product={product} compact /></Link>
                 <div>
                   <span>{product.sku} · {size}</span>
-                  <h2>{product.name}</h2>
+                  <h2><ProductDisplayName name={product.name} /></h2>
                   <p>{formatNaira(product.price)} · Quantity 1</p>
                   <button onClick={() => removeLine(product.slug, product.name)} type="button">Remove</button>
                 </div>

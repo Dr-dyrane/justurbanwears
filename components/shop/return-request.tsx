@@ -22,6 +22,7 @@ import {
   ShopSheetCloseButton,
   ShopSheetHandle,
 } from "./atoms/sheet";
+import { ProductDisplayName } from "./product-display-name";
 
 const reasons: Array<{ value: ShopReturnReason; label: string }> = [
   { value: "WRONG_SIZE", label: "The fit or size is wrong" },
@@ -194,7 +195,7 @@ export function ReturnRequest({
         </dl>
         <ul className="shop-return-items" aria-label="Pieces in this return">
           {order.return.items.map((item) => (
-            <li key={item.sku}><span>{item.name}</span><strong>{item.disposition ? orderStateLabel(item.disposition) : "Included"}</strong></li>
+            <li key={item.sku}><span><ProductDisplayName name={item.name} /></span><strong>{item.disposition ? orderStateLabel(item.disposition) : "Included"}</strong></li>
           ))}
         </ul>
         {order.return.status === "APPROVED" ? (
@@ -280,7 +281,7 @@ export function ReturnRequest({
                       : current.filter((sku) => sku !== line.sku))}
                     type="checkbox"
                   />
-                  <span>{line.name} · {line.taggedSize}</span>
+                  <span><ProductDisplayName name={line.name} /> · {line.taggedSize}</span>
                 </label>
               ))}
             </fieldset>

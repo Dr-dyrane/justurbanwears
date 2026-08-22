@@ -3,6 +3,7 @@
 import { formatNaira } from "../../lib/shop/catalog";
 import { WARDROBE_DROP_01_PRODUCTS } from "../../lib/wardrobe-public-view/drop-01";
 import { ShopLink as Link } from "./atoms/shop-link";
+import { ProductDisplayName } from "./product-display-name";
 import { ProductVisual } from "./product-visual";
 import { useShop } from "./shop-provider";
 
@@ -42,7 +43,7 @@ export function WardrobePreview() {
                 <span className="shop-wardrobe-preview-index">
                   {formatNaira(product.price)} · {String(index + 1).padStart(2, "0")}
                 </span>
-                <h3><Link href={`/shop/products/${product.slug}`}>{product.name}</Link></h3>
+                <h3><Link href={`/shop/products/${product.slug}`}><ProductDisplayName name={product.name} /></Link></h3>
               </figcaption>
             </figure>
           </li>

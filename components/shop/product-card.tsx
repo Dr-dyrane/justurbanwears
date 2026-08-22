@@ -5,6 +5,7 @@ import { useState } from "react";
 import { formatNaira, type ShopProduct } from "../../lib/shop/catalog";
 import { resolveApprovedModelTryout } from "../../lib/shop/model-tryout";
 import { ShopLink as Link } from "./atoms/shop-link";
+import { ProductDisplayName } from "./product-display-name";
 import { ProductVisual } from "./product-visual";
 import { useShop } from "./shop-provider";
 
@@ -137,7 +138,7 @@ export function ProductCard({
 
       <Link className="shop-product-copy" href={`/shop/products/${product.slug}`}>
         <span>{product.category} · {product.taggedSize}</span>
-        <h3>{product.name}</h3>
+        <h3><ProductDisplayName name={product.name} /></h3>
         <p>{formatNaira(product.price)}</p>
       </Link>
 

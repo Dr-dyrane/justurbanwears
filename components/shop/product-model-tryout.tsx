@@ -38,6 +38,7 @@ import {
   ShopSheetCloseButton,
   ShopSheetHandle,
 } from "./atoms/sheet";
+import { ProductDisplayName } from "./product-display-name";
 
 interface ProductModelTryoutProps {
   availability: ShopAvailability;
@@ -185,7 +186,7 @@ export function ProductModelTryout({
       <header className="shop-model-tryout-header">
         <div>
           <p className="shop-kicker">On model</p>
-          <h2 id={titleId}>{productName}</h2>
+          <h2 id={titleId}><ProductDisplayName name={productName} /></h2>
           <p id={descriptionId}>Front view · {taggedSize}</p>
         </div>
         <ShopSheetCloseButton

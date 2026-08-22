@@ -18,6 +18,7 @@ import {
   ShopDeliveryLocation,
   type DeliveryAddressDraft,
 } from "./location/shop-delivery-location";
+import { ProductDisplayName } from "./product-display-name";
 import { ProductVisual } from "./product-visual";
 import { useShop } from "./shop-provider";
 
@@ -369,7 +370,7 @@ export function ShopCheckout({
             {lines.map(({ product, size }) => (
               <div key={product.slug}>
                 <ProductVisual compact product={product} />
-                <span><strong>{product.name}</strong><small>{size} · Quantity 1</small></span>
+                <span><strong><ProductDisplayName name={product.name} /></strong><small>{size} · Quantity 1</small></span>
                 <b>{formatNaira(product.price)}</b>
               </div>
             ))}

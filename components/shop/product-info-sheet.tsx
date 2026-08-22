@@ -15,6 +15,7 @@ import {
   ShopSheetCloseButton,
   ShopSheetHandle,
 } from "./atoms/sheet";
+import { ProductDisplayName } from "./product-display-name";
 
 type ProductInfoSection = "measurements" | "care";
 
@@ -131,7 +132,7 @@ export function ProductInfoSheet({
           <div>
             <p className="shop-kicker">Product information</p>
             <h2 id={titleId}>{section === "measurements" ? "Measurements" : "Details & care"}</h2>
-            <p id={descriptionId}>{productName}</p>
+            <p id={descriptionId}><ProductDisplayName name={productName} /></p>
           </div>
           <ShopSheetCloseButton aria-label="Close product information" onClick={closeSheet} ref={closeButtonRef}>
             <X aria-hidden="true" size={21} strokeWidth={1.7} />

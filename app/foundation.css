@@ -5531,6 +5531,23 @@ html[data-theme="dark"] .shop-shell {
   margin: 8px 0 7px;
 }
 
+.shop-product-display-name {
+  display: inline;
+}
+
+.shop-product-name-conjunction-visual {
+  color: var(--shop-faint);
+  white-space: pre;
+}
+
+.shop-product-name-supporting {
+  color: var(--shop-faint);
+  font-family: var(--font-ui);
+  font-size: 0.64em;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
 .shop-product-copy p {
   font-variant-numeric: tabular-nums;
 }
