@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "workflowRevision": "2026-08-22.42",
-  "updatedAt": "2026-08-22T19:08:00Z",
+  "workflowRevision": "2026-08-22.43",
+  "updatedAt": "2026-08-22T20:05:47Z",
   "model": "LULU_V4",
   "activeGarment": "013",
-  "activeView": "05_CORRECTION",
-  "status": "GARMENT_013_05_SURFACE_CORRECTION_FAILED_USER_DIRECTION_REQUIRED",
+  "activeView": "SHOP_PUBLICATION",
+  "status": "GARMENT_013_01_07_USER_ACCEPTED_G013_ONLY_TEXTURE_EXCEPTION_LOCKED_PUBLICATION_PENDING",
   "identityReview": {
     "candidateId": "lulu.face.v4.front.candidate.v1",
     "acceptedAssetId": "lulu.face.v4.front.lock.v1",
@@ -29,7 +29,7 @@
   },
   "globalLocks": {
     "garment": {
-      "status": "GARMENTS_009_010_011_012_013_01_04_ACCEPTED_LOCKED",
+      "status": "GARMENTS_009_010_011_012_013_01_07_ACCEPTED_LOCKED",
       "primary": [
         "garment.009.view.01.accepted",
         "garment.010.view.01.accepted",
@@ -37,7 +37,7 @@
         "garment.012.view.01.accepted",
         "garment.013.view.01.accepted"
       ],
-      "rule": "The exact reviewed 01-04 sets for Garments 009, 010, 011, 012 and 013 are privately locked. Each accepted 01 controls its garment-specific holistic subject synthesis; each 02 remains inferred presentation only and each 04 remains model-completed construction presentation only. Direct captures retain construction truth. G012 and G013 proceed under the user's explicit autonomous-continuation authority while preserving the same evidence gates. Each accepted 05 may parent only its own independent 06 and 07 siblings."
+      "rule": "The exact reviewed 01-07 sets for Garments 009, 010, 011, 012 and 013 are privately locked. Each accepted 01 controls its garment-specific holistic subject synthesis; each 02 remains inferred presentation only and each 04 remains model-completed construction presentation only. Direct captures retain construction truth. Each accepted 05 may parent only its own independent 06 and 07 siblings. Garment 013 alone has an explicit user-approved source-texture exception for its selected 05-07; every other identity, body, construction, view, room, realism and lineage gate remains in force, and the global contract is unchanged."
     },
     "identity": {
       "status": "LOCKED",
@@ -1037,15 +1037,15 @@
       "rejectedCandidatesMayParent": false
     },
     "013": {
-      "status": "GARMENT_013_05_SURFACE_CORRECTION_FAILED_USER_DIRECTION_REQUIRED",
+      "status": "COMPLETE_01_07_USER_ACCEPTED_WITH_G013_ONLY_TEXTURE_EXCEPTION_LOCKED",
       "views": {
         "01": "USER_AUTHORIZED_EVIDENCE_GATE_ACCEPTED_LOCKED",
         "02": "USER_AUTHORIZED_EVIDENCE_GATE_ACCEPTED_LOCKED_INFERRED_PRESENTATION_ONLY",
         "03": "USER_AUTHORIZED_EVIDENCE_GATE_ACCEPTED_LOCKED",
         "04": "USER_AUTHORIZED_EVIDENCE_GATE_ACCEPTED_LOCKED_MODEL_COMPLETED_PRESENTATION",
-        "05": "LOCK_REVOKED_QA_CONTRADICTION_CORRECTION_PENDING",
-        "06": "PENDING",
-        "07": "PENDING"
+        "05": "USER_ACCEPTED_LOCKED_FRONT_MASTER_WITH_G013_ONLY_TEXTURE_EXCEPTION",
+        "06": "USER_ACCEPTED_LOCKED_SIBLING_PROFILE_WITH_G013_ONLY_TEXTURE_EXCEPTION",
+        "07": "USER_ACCEPTED_LOCKED_SIBLING_INFERRED_REAR_PRESENTATION_WITH_G013_ONLY_TEXTURE_EXCEPTION"
       },
       "sourceClassification": "DIRECT_CAPTURE_FRONT_ONLY",
       "backEvidence": "MISSING",
@@ -1106,12 +1106,44 @@
         "sha256": "f2780c9f45ced084acd14d6e6196ea09052361b122300d3029aed516d8892f4c",
         "bytes": 2195050,
         "dimensions": "1023x1537",
-        "status": "LOCK_REVOKED_QA_CONTRADICTION_AUDIT_TARGET_ONLY",
+        "status": "USER_ACCEPTED_LOCKED_FRONT_MASTER_WITH_G013_ONLY_TEXTURE_EXCEPTION",
         "acceptedAt": "2026-08-22T18:12:00Z",
-        "userDecision": "goal G013 Live product",
-        "mayParentIndependent06And07": false,
-        "revokedAt": "2026-08-22T19:02:00Z",
-        "revocationReason": "Original-resolution audit found an unsupported repeated ornamental denim motif that contradicts the direct source and clean subject lock."
+        "userDecision": "lets let it slide, can it pass a nin struct gait just fir g013?",
+        "mayParentIndependent06And07": true,
+        "textureException": "G013_ONLY_SOURCE_TEXTURE_MATCH_EXCEPTION",
+        "historyNote": "The 2026-08-22 original-resolution texture failure remains recorded; the user explicitly accepted that one mismatch for Garment 013 only."
+      },
+      "accepted06": {
+        "assetId": "garment.013.view.06.accepted",
+        "path": "storage/garments/drop-02/013/locked/06-on-lulu-left-profile.png",
+        "sha256": "cabb7447308692aa77c3b878e5dc9e56b9130d0d7838ca174970cf1b8680ec30",
+        "bytes": 2171205,
+        "dimensions": "1023x1537",
+        "status": "USER_ACCEPTED_LOCKED_SIBLING_PROFILE_WITH_G013_ONLY_TEXTURE_EXCEPTION",
+        "acceptedAt": "2026-08-22T20:05:47Z",
+        "userDecision": "lets let it slide, can it pass a nin struct gait just fir g013?",
+        "parentAssetId": "garment.013.view.05.accepted",
+        "mayParent07": false
+      },
+      "accepted07": {
+        "assetId": "garment.013.view.07.accepted",
+        "path": "storage/garments/drop-02/013/locked/07-on-lulu-right-rear-three-quarter.png",
+        "sha256": "897489cb1320da4400bd5fd10bc56cc5fd77c16248f9616fc5feb3353d19b4f1",
+        "bytes": 2205234,
+        "dimensions": "1023x1537",
+        "status": "USER_ACCEPTED_LOCKED_SIBLING_INFERRED_REAR_PRESENTATION_WITH_G013_ONLY_TEXTURE_EXCEPTION",
+        "acceptedAt": "2026-08-22T20:05:47Z",
+        "userDecision": "lets let it slide, can it pass a nin struct gait just fir g013?",
+        "parentAssetId": "garment.013.view.05.accepted",
+        "mayParent06": false,
+        "mayServeAsDirectBackEvidence": false
+      },
+      "userTextureException": {
+        "status": "RECORDED_G013_ONLY",
+        "operation": "storage/garments/drop-02/013/operations/g013-user-texture-exception-v001.json",
+        "scope": "Views 05-07 source-texture match only",
+        "globalContractChanged": false,
+        "nonWaivedIndependentReview": "PASS"
       },
       "operationRecords": [
         "storage/garments/drop-02/013/operations/g013-v01-r001.json",
@@ -1132,38 +1164,54 @@
         "storage/garments/drop-02/013/operations/g013-v06-r001.json",
         "storage/garments/drop-02/013/operations/g013-v07-r001.json",
         "storage/garments/drop-02/013/operations/g013-v06-c001.json",
-        "storage/garments/drop-02/013/operations/g013-v07-c001.json"
+        "storage/garments/drop-02/013/operations/g013-v07-c001.json",
+        "storage/garments/drop-02/013/operations/g013-user-texture-exception-v001.json",
+        "storage/garments/drop-02/013/operations/g013-shop-media-export-v001.json"
       ],
+      "shopMediaExport": {
+        "operationId": "g013-shop-media-export-v001",
+        "status": "EXPORTED_AND_HASH_VERIFIED",
+        "slug": "black-cropped-tee-charcoal-wash-wide-leg-cargo-jeans-set",
+        "canvas": "1120x1400",
+        "assetCount": 7,
+        "sourceLockManifestSha256": "d83c2c479638fe1aa2afb46e1b596d740e2c92bb4133dcb37bcd1136e2efa4c5",
+        "catalogueRevision": "2026-08-22-catalogue-23",
+        "catalogueChecksum": "dd2e42c80af4e953539aa2f6ce8c4bc5b32865facf99740a945fbd875721d394",
+        "publicBlobManifest": "SYNCED_HASH_VERIFIED_194_ASSETS"
+      },
       "siblingGate": {
-        "status": "SUPERSEDED_BY_PARENT_05_QA_REOPEN",
-        "acceptedParent": "garment.013.view.05.revoked-r002",
+        "status": "USER_ACCEPTED_G013_ONLY_TEXTURE_EXCEPTION_NON_WAIVED_GATES_PASS",
+        "acceptedParent": "garment.013.view.05.accepted",
         "view06": {
-          "status": "REJECTED_MAY_NOT_PARENT",
-          "remainingReleaseBlocker": "Repeated ornamental or paisley-like denim motif remains; the unsupported rear patch pocket was successfully removed."
+          "status": "USER_ACCEPTED_LOCKED_SIBLING_PROFILE_WITH_G013_ONLY_TEXTURE_EXCEPTION",
+          "selectedCandidate": "06-on-lulu-left-profile-r001-c001.png",
+          "nonWaivedReview": "PASS"
         },
         "view07": {
-          "status": "REJECTED_MAY_NOT_PARENT",
-          "remainingReleaseBlocker": "Repeated ornamental or paisley-like denim motif remains across the seat and both legs."
+          "status": "USER_ACCEPTED_LOCKED_SIBLING_INFERRED_REAR_PRESENTATION_WITH_G013_ONLY_TEXTURE_EXCEPTION",
+          "selectedCandidate": "07-on-lulu-right-rear-three-quarter-r001.png",
+          "nonWaivedReview": "PASS"
         },
-        "passingLayers": "View grammar, real-Lulu likeness, body projection and stature, black pointed boots, atelier, lighting and optics pass in both corrected candidates.",
-        "requiredAuthority": "None for descendants until a corrected 05 passes; rejected sibling candidates remain audit targets only."
+        "passingLayers": "View grammar, real-Lulu likeness, body projection and stature, black pointed boots, atelier and icon, lighting, optics, artifacts, full-frame format and independent sibling lineage pass.",
+        "remainingReleaseBlocker": null
       },
       "view05CorrectionGate": {
-        "status": "STOPPED_AFTER_ONE_BOUNDED_CORRECTION",
+        "status": "HISTORICAL_TEXTURE_FAILURE_SUPERSEDED_ONLY_BY_EXPLICIT_G013_USER_EXCEPTION",
         "candidate": "garment.013.view.05.r002.c001.rejected",
-        "remainingReleaseBlocker": "Repeated ornamental or paisley-like tonal motif remains visible across the trousers at original resolution.",
+        "waivedFinding": "Repeated ornamental or paisley-like tonal motif remains visible across the trousers at original resolution.",
         "passingLayers": "Identity, body, pose, garment geometry, styling, footwear, room, lighting, optics and framing remain coherent.",
-        "requiredAuthority": "Explicit user direction for either a fresh two-reference 05 restart from the clean subject plus exact room, or acceptance of the motif as a generated texture variation."
+        "userAuthority": "lets let it slide, can it pass a nin struct gait just fir g013?",
+        "globalContractChanged": false
       },
       "rejectedCandidatesMayParent": false
     }
   },
   "nextOperation": {
-    "operationId": "g013-room-and-05-fresh-restart-authorization",
+    "operationId": "g013-shop-media-export-v001",
     "garmentId": "013",
-    "view": "05_CORRECTION",
-    "role": "MODEL_FRONT_FRESH_TWO_REFERENCE_RESTART",
-    "status": "USER_DIRECTION_REQUIRED"
+    "view": "01_07_EXPORT",
+    "role": "SHOP_MEDIA_EXPORT_AND_PUBLICATION",
+    "status": "READY"
   },
-  "requiredNext": "Obtain explicit user direction before a fresh 05 restart using only the clean subject lock and exact room; do not promote, export or publish any patterned 05/06/07 candidate."
+  "requiredNext": "Export the exact locked Garment 013 bytes through the aspect-ratio-safe Shop exporter, add the catalogue row, publish the database release, deploy and verify the exact production revision."
 }

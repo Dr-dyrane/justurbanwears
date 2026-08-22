@@ -31,6 +31,7 @@ const routes = [
         "black-cropped-tee-mid-thigh-black-cutoff-shorts-set",
         "black-cropped-tee-light-wash-snap-panel-trousers-set",
         "black-cropped-tee-blue-wash-drawstring-barrel-trousers-set",
+        "black-cropped-tee-charcoal-wash-wide-leg-cargo-jeans-set",
       ].every((slug) => html.includes(`/shop/products/${slug}`))],
       ["customer-facing AI copy leaked", (html) => hasNoCustomerAiCopy(html)],
     ],
@@ -102,6 +103,26 @@ const routes = [
     assertions: [
       ["garment focus marker missing", (html) => html.includes('data-experience-focus="garment"')],
       ["product transition anchor missing", (html) => html.includes('data-product-transition="black-cropped-tee-blue-wash-drawstring-barrel-trousers-set"')],
+      ["focus priority exceeded", (html) => highPriorityImages(html) <= 1],
+      ["seven-view dossier incomplete", (html) => [
+        "01-garment-front.webp",
+        "02-garment-back.webp",
+        "03-mannequin-front.webp",
+        "04-model-front.webp",
+        "05-model-rear-three-quarter.webp",
+        "06-fabric-detail.webp",
+        "07-model-left-profile.webp",
+      ].every((file) => html.includes(file))],
+      ["customer-facing AI copy leaked", (html) => hasNoCustomerAiCopy(html)],
+    ],
+  },
+  {
+    name: "Garment 013 focus",
+    pathname: "/shop/products/black-cropped-tee-charcoal-wash-wide-leg-cargo-jeans-set",
+    maxBytes: 900 * KiB,
+    assertions: [
+      ["garment focus marker missing", (html) => html.includes('data-experience-focus="garment"')],
+      ["product transition anchor missing", (html) => html.includes('data-product-transition="black-cropped-tee-charcoal-wash-wide-leg-cargo-jeans-set"')],
       ["focus priority exceeded", (html) => highPriorityImages(html) <= 1],
       ["seven-view dossier incomplete", (html) => [
         "01-garment-front.webp",

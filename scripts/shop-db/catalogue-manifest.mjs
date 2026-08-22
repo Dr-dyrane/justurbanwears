@@ -20,6 +20,7 @@ const V4_MODEL_SLUGS = new Set([
   "black-cropped-tee-mid-thigh-black-cutoff-shorts-set",
   "black-cropped-tee-light-wash-snap-panel-trousers-set",
   "black-cropped-tee-blue-wash-drawstring-barrel-trousers-set",
+  "black-cropped-tee-charcoal-wash-wide-leg-cargo-jeans-set",
 ]);
 
 const V3_MODEL_FRONT_SLUGS = new Set([
@@ -109,7 +110,7 @@ function presentation(product) {
  */
 export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
   schemaVersion: 2,
-  revision: "2026-08-22-catalogue-22",
+  revision: "2026-08-22-catalogue-23",
   products: Object.freeze([
     presentation({
       slug: "coral-drift-dress",
@@ -732,6 +733,26 @@ export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
       note: "A matte-black cropped tee paired with medium-wash pull-on denim barrel trousers.",
       story: "The fitted crop leaves a clean waist gap above a broad gathered waistband and white drawstring, while relaxed washed-blue legs taper softly toward the ankles.",
       details: ["Cropped crew-neck tee", "Gathered pull-on waistband and white drawstring", "Angled hip pockets", "Relaxed barrel legs with tapered ankle openings"],
+      measurements: [],
+      mediaSlots: ["MODEL_FRONT", "MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
+    }),
+    presentation({
+      slug: "black-cropped-tee-charcoal-wash-wide-leg-cargo-jeans-set",
+      sku: "JUW-037",
+      name: "Black Cropped Tee and Charcoal-Wash Wide-Leg Cargo Jeans Set",
+      category: "Sets",
+      price: 24500,
+      taggedSize: "Size on request",
+      fit: "Measurements confirmed before payment",
+      condition: "Condition confirmed before payment",
+      colour: "Black and washed charcoal-grey",
+      availability: "AVAILABLE",
+      drop: "Drop 02",
+      tone: "cocoa",
+      silhouette: "set",
+      note: "A matte-black cropped tee paired with washed charcoal-grey wide-leg cargo jeans.",
+      story: "The fitted crop leaves a clean waist gap above fixed-waist charcoal-wash jeans, with compact outer-thigh utility pockets and wide straight legs falling to full length.",
+      details: ["Cropped crew-neck tee", "Fixed waistband with button and fly", "Compact outer-thigh utility pockets", "Wide straight full-length legs"],
       measurements: [],
       mediaSlots: ["MODEL_FRONT", "MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
     }),

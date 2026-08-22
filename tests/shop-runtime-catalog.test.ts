@@ -93,17 +93,17 @@ test("the public Blob release contains only exact manifest media and verifies lo
     SHOP_PUBLIC_MEDIA_PRESENTATION_CHECKSUM,
     cataloguePresentationChecksum(SHOP_CATALOGUE_MANIFEST),
   );
-  assert.equal(plan.length, 187);
+  assert.equal(plan.length, 194);
   assert.equal(SHOP_PUBLIC_MEDIA_ASSETS.length, plan.length);
   assert.equal(SHOP_PUBLIC_MEDIA_SOURCE_ASSETS.length, plan.length);
   assert.deepEqual(SHOP_PUBLIC_MEDIA_SOURCE_ASSETS, sourceManifest.assets);
   assert.equal(
     plan.filter((asset) => asset.sourcePath.startsWith("/shop/products/")).length,
-    186,
+    193,
   );
   const currentDropAssets = plan.filter((asset) => currentManifestProducts.some((product) =>
     asset.sourcePath.startsWith(`/shop/products/${product.slug}/`)));
-  assert.equal(currentDropAssets.length, 84);
+  assert.equal(currentDropAssets.length, 91);
   assert.equal(plan.length - currentDropAssets.length, 103);
   assert.ok(currentDropAssets.every((asset) => {
     const released = SHOP_PUBLIC_MEDIA_ASSETS.find((candidate) => candidate.sourcePath === asset.sourcePath);
@@ -176,18 +176,18 @@ test("the server accepts only the exact database ledger paired with the media re
   assert.doesNotThrow(() => assertCatalogueReleaseLedger({
     revision: SHOP_PUBLIC_MEDIA_REVISION,
     checksum: SHOP_PUBLIC_MEDIA_CATALOGUE_CHECKSUM,
-    rowCount: 12,
-  }, 12));
+    rowCount: 13,
+  }, 13));
   assert.throws(() => assertCatalogueReleaseLedger({
     revision: "older-release",
     checksum: SHOP_PUBLIC_MEDIA_CATALOGUE_CHECKSUM,
-    rowCount: 12,
-  }, 12), /does not match/);
+    rowCount: 13,
+  }, 13), /does not match/);
   assert.throws(() => assertCatalogueReleaseLedger({
     revision: SHOP_PUBLIC_MEDIA_REVISION,
     checksum: SHOP_PUBLIC_MEDIA_CATALOGUE_CHECKSUM,
-    rowCount: 11,
-  }, 12), /does not match/);
+    rowCount: 12,
+  }, 13), /does not match/);
 });
 
 test("the server ties confirmed descriptive rows to the checked-in release", () => {
@@ -304,7 +304,7 @@ test("an invalid or unavailable Neon snapshot falls back with purchase actions f
   const fallback = await withoutExpectedCatalogueError(() => loadServerShopProducts(async () => {
     throw new Error("synthetic outage");
   }));
-  assert.equal(currentManifestProducts.length, 12);
+  assert.equal(currentManifestProducts.length, 13);
   assert.deepEqual(fallback.map((product) => product.sku), currentManifestProducts.map((product) => product.sku));
   assert.ok(fallback.every((product) => product.availabilityConfirmed === false));
   assert.ok(fallback.flatMap((product) => product.media ?? []).every((item) =>

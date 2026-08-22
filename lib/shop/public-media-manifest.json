@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "catalogueRevision": "2026-08-22-catalogue-22",
-  "catalogueChecksum": "23ca93e15c045f7a2821c7aa0cc50b5571eef24531ac8f628136ecd47fb9c333",
-  "cataloguePresentationChecksum": "1048acb1129da3aba4bd87a9bd476ef3b2099aa80c977f4c6d27ef2c424f8efd",
+  "catalogueRevision": "2026-08-22-catalogue-23",
+  "catalogueChecksum": "dd2e42c80af4e953539aa2f6ce8c4bc5b32865facf99740a945fbd875721d394",
+  "cataloguePresentationChecksum": "07f54f53eb284f321ffba766f1663baeddfbac19ca1a56c3c60931978c066b62",
   "legacyAssets": [
     {
       "sourcePath": "/shop/products/black-cropped-tee-pink-distressed-shorts-set/04-model-front.webp",
@@ -228,6 +228,62 @@
       "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/8d6ac7449582c39826e7bd7c3d432e159e22a795f1f41780f246705f64da7dc6/products/black-cropped-tee-charcoal-cutoff-shorts-set/07-model-left-profile.webp",
       "sha256": "8d6ac7449582c39826e7bd7c3d432e159e22a795f1f41780f246705f64da7dc6",
       "size": 173604,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-charcoal-wash-wide-leg-cargo-jeans-set/01-garment-front.webp",
+      "pathname": "shop/catalogue/2173f33e9b4ca86d03f2ca48dc8dfd6a608fa135c4e9eba818c377f44e8194b0/products/black-cropped-tee-charcoal-wash-wide-leg-cargo-jeans-set/01-garment-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/2173f33e9b4ca86d03f2ca48dc8dfd6a608fa135c4e9eba818c377f44e8194b0/products/black-cropped-tee-charcoal-wash-wide-leg-cargo-jeans-set/01-garment-front.webp",
+      "sha256": "2173f33e9b4ca86d03f2ca48dc8dfd6a608fa135c4e9eba818c377f44e8194b0",
+      "size": 94474,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-charcoal-wash-wide-leg-cargo-jeans-set/02-garment-back.webp",
+      "pathname": "shop/catalogue/bc0d7aed0ba0e661a331b29f141deeb32ee81871c059e10f5070654db207477e/products/black-cropped-tee-charcoal-wash-wide-leg-cargo-jeans-set/02-garment-back.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/bc0d7aed0ba0e661a331b29f141deeb32ee81871c059e10f5070654db207477e/products/black-cropped-tee-charcoal-wash-wide-leg-cargo-jeans-set/02-garment-back.webp",
+      "sha256": "bc0d7aed0ba0e661a331b29f141deeb32ee81871c059e10f5070654db207477e",
+      "size": 57090,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-charcoal-wash-wide-leg-cargo-jeans-set/03-mannequin-front.webp",
+      "pathname": "shop/catalogue/191ebb7cc609812daedd654807b35db3d7a2a5b9e040db8fc277fed3be7bed9d/products/black-cropped-tee-charcoal-wash-wide-leg-cargo-jeans-set/03-mannequin-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/191ebb7cc609812daedd654807b35db3d7a2a5b9e040db8fc277fed3be7bed9d/products/black-cropped-tee-charcoal-wash-wide-leg-cargo-jeans-set/03-mannequin-front.webp",
+      "sha256": "191ebb7cc609812daedd654807b35db3d7a2a5b9e040db8fc277fed3be7bed9d",
+      "size": 91912,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-charcoal-wash-wide-leg-cargo-jeans-set/04-model-front.webp",
+      "pathname": "shop/catalogue/8b58d49065145670dc4262a84d9b7c7284fe8043341138db78bdf53dbfaafae0/products/black-cropped-tee-charcoal-wash-wide-leg-cargo-jeans-set/04-model-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/8b58d49065145670dc4262a84d9b7c7284fe8043341138db78bdf53dbfaafae0/products/black-cropped-tee-charcoal-wash-wide-leg-cargo-jeans-set/04-model-front.webp",
+      "sha256": "8b58d49065145670dc4262a84d9b7c7284fe8043341138db78bdf53dbfaafae0",
+      "size": 165550,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-charcoal-wash-wide-leg-cargo-jeans-set/05-model-rear-three-quarter.webp",
+      "pathname": "shop/catalogue/6dd1e04f91c6b2b50874be95953d4865e8815d6c0050da5eefca92c378bc1edb/products/black-cropped-tee-charcoal-wash-wide-leg-cargo-jeans-set/05-model-rear-three-quarter.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/6dd1e04f91c6b2b50874be95953d4865e8815d6c0050da5eefca92c378bc1edb/products/black-cropped-tee-charcoal-wash-wide-leg-cargo-jeans-set/05-model-rear-three-quarter.webp",
+      "sha256": "6dd1e04f91c6b2b50874be95953d4865e8815d6c0050da5eefca92c378bc1edb",
+      "size": 170766,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-charcoal-wash-wide-leg-cargo-jeans-set/06-fabric-detail.webp",
+      "pathname": "shop/catalogue/84dfc328006ee8103d071a0a063ea22bd62caf0bea39d8ae99fb6e8ef8bde27e/products/black-cropped-tee-charcoal-wash-wide-leg-cargo-jeans-set/06-fabric-detail.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/84dfc328006ee8103d071a0a063ea22bd62caf0bea39d8ae99fb6e8ef8bde27e/products/black-cropped-tee-charcoal-wash-wide-leg-cargo-jeans-set/06-fabric-detail.webp",
+      "sha256": "84dfc328006ee8103d071a0a063ea22bd62caf0bea39d8ae99fb6e8ef8bde27e",
+      "size": 190822,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-charcoal-wash-wide-leg-cargo-jeans-set/07-model-left-profile.webp",
+      "pathname": "shop/catalogue/ffe283d0b971b68470fc395a4f872e3264bc6d281215cd29ba167b5ddc7b6949/products/black-cropped-tee-charcoal-wash-wide-leg-cargo-jeans-set/07-model-left-profile.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/ffe283d0b971b68470fc395a4f872e3264bc6d281215cd29ba167b5ddc7b6949/products/black-cropped-tee-charcoal-wash-wide-leg-cargo-jeans-set/07-model-left-profile.webp",
+      "sha256": "ffe283d0b971b68470fc395a4f872e3264bc6d281215cd29ba167b5ddc7b6949",
+      "size": 164662,
       "contentType": "image/webp"
     },
     {
