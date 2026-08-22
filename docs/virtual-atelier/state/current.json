@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "workflowRevision": "2026-08-22.26",
-  "updatedAt": "2026-08-22T00:59:52Z",
+  "workflowRevision": "2026-08-22.28",
+  "updatedAt": "2026-08-22T02:52:15Z",
   "model": "LULU_V4",
-  "activeGarment": "010_AND_011",
-  "activeView": "COMPLETE_01_07",
-  "status": "GARMENTS_010_011_COMPLETE_01_07_USER_ACCEPTED_LOCKED_SHOP_MEDIA_EXPORTED_READY_FOR_RELEASE",
+  "activeGarment": "012",
+  "activeView": "01",
+  "status": "GARMENT_012_VIEW_01_CANDIDATE_REVIEW",
   "identityReview": {
     "candidateId": "lulu.face.v4.front.candidate.v1",
     "acceptedAssetId": "lulu.face.v4.front.lock.v1",
@@ -597,7 +597,7 @@
       "rejectedCandidatesMayParent": false
     },
     "009": {
-      "status": "COMPLETE_01_07_USER_ACCEPTED_LOCKED_SHOP_MEDIA_EXPORTED_READY_FOR_RELEASE",
+      "status": "RELEASED_LIVE_VERIFIED",
       "views": {
         "01": "USER_ACCEPTED_LOCKED",
         "02": "USER_ACCEPTED_LOCKED_INFERRED_PRESENTATION_ONLY",
@@ -610,6 +610,16 @@
       "backEvidence": "MISSING",
       "rule": "Direct front captures control the recurring black cropped tee styling and the new washed charcoal-black cut-off shorts. Generate 01-04 independently before model work. Any 02 remains conservative inferred presentation only and never direct back evidence. Prior garments may control framing only and may not transfer colour, tears, patches or white material.",
       "sourceManifest": "storage/garments/drop-02/009/source/manifest.json",
+      "release": {
+        "status": "LIVE_VERIFIED",
+        "catalogueId": "JUW-033",
+        "route": "https://www.justurbanwears.com/shop/products/black-cropped-tee-charcoal-cutoff-shorts-set",
+        "releaseCommit": "9f19ab5a4e3df01044ebd3777a45501dd7fc8c41",
+        "verifiedProductionCommit": "65fc51ae7328755c3fbeed92496be0612745ddfc",
+        "deploymentId": "dpl_6p2tpm4qMcJCriHNJK6AV6igXZ8t",
+        "catalogueRevision": "2026-08-22-catalogue-21",
+        "catalogueChecksum": "d55319880baf3a6e1edb62f627b449cfb63dee0a8413c1f37af03cac334cf219"
+      },
       "lockedManifest": "storage/garments/drop-02/009/locked/manifest.json",
       "subjectCore": {
         "assetId": "garment.009.subject.core.lock.v1",
@@ -716,7 +726,7 @@
       "rejectedCandidatesMayParent": false
     },
     "010": {
-      "status": "COMPLETE_01_07_USER_ACCEPTED_LOCKED_READY_FOR_SHOP_EXPORT",
+      "status": "RELEASED_LIVE_VERIFIED",
       "views": {
         "01": "USER_ACCEPTED_LOCKED",
         "02": "USER_ACCEPTED_LOCKED_INFERRED_PRESENTATION_ONLY",
@@ -729,6 +739,16 @@
       "backEvidence": "MISSING",
       "rule": "Direct front and shallow-three-quarter captures control the recurring black cropped tee styling and the new longer clean deep-black cut-off shorts. Generate 01-04 independently before model work. Any 02 remains conservative inferred presentation only and never direct back evidence. Prior garments may control framing only and may not transfer shorter length, charcoal, blue or pink colour, tears, patches, white material or dramatic fringe.",
       "sourceManifest": "storage/garments/drop-02/010/source/manifest.json",
+      "release": {
+        "status": "LIVE_VERIFIED",
+        "catalogueId": "JUW-034",
+        "route": "https://www.justurbanwears.com/shop/products/black-cropped-tee-mid-thigh-black-cutoff-shorts-set",
+        "releaseCommit": "65fc51ae7328755c3fbeed92496be0612745ddfc",
+        "verifiedProductionCommit": "65fc51ae7328755c3fbeed92496be0612745ddfc",
+        "deploymentId": "dpl_6p2tpm4qMcJCriHNJK6AV6igXZ8t",
+        "catalogueRevision": "2026-08-22-catalogue-21",
+        "catalogueChecksum": "d55319880baf3a6e1edb62f627b449cfb63dee0a8413c1f37af03cac334cf219"
+      },
       "lockedManifest": "storage/garments/drop-02/010/locked/manifest.json",
       "subjectLock": {
         "assetId": "garment.010.subject.front.lock.v1",
@@ -792,7 +812,7 @@
       "rejectedCandidatesMayParent": false
     },
     "011": {
-      "status": "COMPLETE_01_07_USER_ACCEPTED_LOCKED_SHOP_MEDIA_EXPORTED_READY_FOR_RELEASE",
+      "status": "RELEASED_LIVE_VERIFIED",
       "views": {
         "01": "USER_ACCEPTED_LOCKED",
         "02": "USER_ACCEPTED_LOCKED_INFERRED_PRESENTATION_ONLY",
@@ -806,6 +826,16 @@
       "backEvidence": "MISSING",
       "rule": "Four consistent front-family captures control the recurring black cropped tee styling and the new light-wash wide-leg drawstring trousers with dark outer panels and visible snaps. Generate 01-04 independently before model work. Any 02 remains conservative inferred presentation only and never direct back evidence. Prior garments may control framing only and may not transfer shorts, rips, white lining, fringe, button/fly/belt-loop construction, cargo details or darker bottoms.",
       "sourceManifest": "storage/garments/drop-02/011/source/manifest.json",
+      "release": {
+        "status": "LIVE_VERIFIED",
+        "catalogueId": "JUW-035",
+        "route": "https://www.justurbanwears.com/shop/products/black-cropped-tee-light-wash-snap-panel-trousers-set",
+        "releaseCommit": "65fc51ae7328755c3fbeed92496be0612745ddfc",
+        "verifiedProductionCommit": "65fc51ae7328755c3fbeed92496be0612745ddfc",
+        "deploymentId": "dpl_6p2tpm4qMcJCriHNJK6AV6igXZ8t",
+        "catalogueRevision": "2026-08-22-catalogue-21",
+        "catalogueChecksum": "d55319880baf3a6e1edb62f627b449cfb63dee0a8413c1f37af03cac334cf219"
+      },
       "lockedManifest": "storage/garments/drop-02/011/locked/manifest.json",
       "subjectLock": {
         "assetId": "garment.011.subject.front.lock.v1",
@@ -865,30 +895,51 @@
         "storage/garments/drop-02/011/operations/g011-shop-media-export-v001.json"
       ],
       "rejectedCandidatesMayParent": false
+    },
+    "012": {
+      "status": "VIEW_01_CANDIDATE_REVIEW",
+      "views": {
+        "01": "CANDIDATE_REVIEW",
+        "02": "BLOCKED_PENDING_01_APPROVAL_INFERRED_PRESENTATION_ONLY",
+        "03": "BLOCKED_PENDING_01_APPROVAL",
+        "04": "BLOCKED_PENDING_01_APPROVAL_MODEL_COMPLETED_PRESENTATION",
+        "05": "BLOCKED_PENDING_01_04_APPROVAL",
+        "06": "BLOCKED_PENDING_05_APPROVAL",
+        "07": "BLOCKED_PENDING_05_APPROVAL_INFERRED_REAR_PRESENTATION"
+      },
+      "sourceClassification": "DIRECT_CAPTURE_FRONT_FAMILY_ONLY",
+      "backEvidence": "MISSING",
+      "rule": "The four strongest direct front-family captures control the separate black cropped tee and medium-blue washed pull-on barrel trousers. The retail hangtag is packaging and must be removed. Generate 01-04 independently before model work. Any 02 or 07 remains conservative inferred presentation only and never direct rear evidence.",
+      "sourceManifest": "storage/garments/drop-02/012/source/manifest.json",
+      "view01Candidate": {
+        "assetId": "garment.012.view.01.candidate.r001",
+        "path": "storage/garments/drop-02/012/candidates/manual-set-v1/01-garment-front-r001.png",
+        "sha256": "f55addd2bce9400931495672fe69ac58c547fea93d25e831601f2a88d75d1719",
+        "bytes": 1944978,
+        "dimensions": "1023x1537",
+        "status": "CANDIDATE_REVIEW",
+        "mayParentAny": false
+      },
+      "operationRecords": [
+        "storage/garments/drop-02/012/operations/g012-v01-r001.json"
+      ],
+      "rejectedCandidatesMayParent": false
     }
   },
   "nextOperation": {
-    "operationIds": ["release-g010-g011-shop-catalogue", "deploy-g010-g011-shop"],
-    "garmentId": "010_AND_011",
-    "operationType": "GUARDED_CATALOGUE_DATABASE_RELEASE_AND_EXACT_REVISION_DEPLOYMENT",
-    "status": "USER_AUTHORIZED_BY_COMPLETION_GOALS",
+    "operationIds": ["g012-v01-r001"],
+    "garmentId": "012",
+    "view": "01",
+    "operationType": "PRODUCT_MOCKUP",
+    "status": "AWAITING_USER_REVIEW",
     "parentAssets": [
-      "garment.010.view.01.accepted",
-      "garment.010.view.02.accepted",
-      "garment.010.view.03.accepted",
-      "garment.010.view.04.accepted",
-      "garment.010.view.05.accepted",
-      "garment.010.view.06.accepted",
-      "garment.010.view.07.accepted",
-      "garment.011.view.01.accepted",
-      "garment.011.view.02.accepted",
-      "garment.011.view.03.accepted",
-      "garment.011.view.04.accepted",
-      "garment.011.view.05.accepted",
-      "garment.011.view.06.accepted",
-      "garment.011.view.07.accepted"
+      "garment.012.close-front",
+      "garment.012.full-front-primary",
+      "garment.012.full-front-confirmation",
+      "garment.012.full-front-secondary",
+      "garment.008.view.01.accepted"
     ],
-    "rule": "Both accepted sets have deterministic verified public derivatives. Reconcile the two catalogue rows and content-addressed Blob manifest, then publish them together through one guarded database release and the exact committed production revision."
+    "rule": "The exact 012/01 candidate has passed the independent whole-frame gate but remains unlocked. Stop for explicit user approval or rejection before 02 begins."
   },
-  "requiredNext": "Complete one guarded catalogue/database release, deploy the exact clean revision, and live-verify the 11-piece Shop plus both seven-view product routes."
+  "requiredNext": "Receive explicit user approval or rejection of the displayed 012/01 candidate. On approval, lock exact bytes and prepare independent 02, 03 and 04 operations from direct garment authority."
 }
