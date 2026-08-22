@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "workflowRevision": "2026-08-22.28",
-  "updatedAt": "2026-08-22T02:52:15Z",
+  "workflowRevision": "2026-08-22.34",
+  "updatedAt": "2026-08-22T06:09:11Z",
   "model": "LULU_V4",
   "activeGarment": "012",
-  "activeView": "01",
-  "status": "GARMENT_012_VIEW_01_CANDIDATE_REVIEW",
+  "activeView": "RELEASE",
+  "status": "GARMENT_012_COMPLETE_01_07_LOCKED_SHOP_MEDIA_EXPORTED_READY_FOR_RELEASE",
   "identityReview": {
     "candidateId": "lulu.face.v4.front.candidate.v1",
     "acceptedAssetId": "lulu.face.v4.front.lock.v1",
@@ -897,49 +897,146 @@
       "rejectedCandidatesMayParent": false
     },
     "012": {
-      "status": "VIEW_01_CANDIDATE_REVIEW",
+      "status": "COMPLETE_01_07_AUTONOMOUSLY_ACCEPTED_LOCKED_SHOP_MEDIA_EXPORTED_READY_FOR_RELEASE",
       "views": {
-        "01": "CANDIDATE_REVIEW",
-        "02": "BLOCKED_PENDING_01_APPROVAL_INFERRED_PRESENTATION_ONLY",
-        "03": "BLOCKED_PENDING_01_APPROVAL",
-        "04": "BLOCKED_PENDING_01_APPROVAL_MODEL_COMPLETED_PRESENTATION",
-        "05": "BLOCKED_PENDING_01_04_APPROVAL",
-        "06": "BLOCKED_PENDING_05_APPROVAL",
-        "07": "BLOCKED_PENDING_05_APPROVAL_INFERRED_REAR_PRESENTATION"
+        "01": "USER_AUTHORIZED_EVIDENCE_GATE_ACCEPTED_LOCKED",
+        "02": "USER_AUTHORIZED_EVIDENCE_GATE_ACCEPTED_LOCKED_INFERRED_PRESENTATION_ONLY",
+        "03": "USER_AUTHORIZED_EVIDENCE_GATE_ACCEPTED_LOCKED",
+        "04": "USER_AUTHORIZED_EVIDENCE_GATE_ACCEPTED_LOCKED_MODEL_COMPLETED_PRESENTATION",
+        "05": "AUTONOMOUSLY_ACCEPTED_LOCKED_FRONT_MASTER",
+        "06": "AUTONOMOUSLY_ACCEPTED_LOCKED_SIBLING_PROFILE",
+        "07": "AUTONOMOUSLY_ACCEPTED_LOCKED_SIBLING_INFERRED_REAR_PRESENTATION"
       },
       "sourceClassification": "DIRECT_CAPTURE_FRONT_FAMILY_ONLY",
       "backEvidence": "MISSING",
       "rule": "The four strongest direct front-family captures control the separate black cropped tee and medium-blue washed pull-on barrel trousers. The retail hangtag is packaging and must be removed. Generate 01-04 independently before model work. Any 02 or 07 remains conservative inferred presentation only and never direct rear evidence.",
       "sourceManifest": "storage/garments/drop-02/012/source/manifest.json",
-      "view01Candidate": {
-        "assetId": "garment.012.view.01.candidate.r001",
-        "path": "storage/garments/drop-02/012/candidates/manual-set-v1/01-garment-front-r001.png",
+      "accepted01": {
+        "assetId": "garment.012.view.01.accepted",
+        "path": "storage/garments/drop-02/012/locked/01-garment-front.png",
         "sha256": "f55addd2bce9400931495672fe69ac58c547fea93d25e831601f2a88d75d1719",
         "bytes": 1944978,
         "dimensions": "1023x1537",
-        "status": "CANDIDATE_REVIEW",
-        "mayParentAny": false
+        "status": "USER_AUTHORIZED_EVIDENCE_GATE_ACCEPTED_LOCKED",
+        "acceptedAt": "2026-08-22T03:05:25Z",
+        "userDecision": "continue autonomosuly we have enough evidence to carryin",
+        "mayParentGarment012Workflow": true
+      },
+      "accepted02": {
+        "assetId": "garment.012.view.02.accepted",
+        "path": "storage/garments/drop-02/012/locked/02-garment-back.png",
+        "sha256": "5c0a3da645ad0fcbc76e317aa7ebd0ff73f40107867300d791c883f23eb19d0d",
+        "bytes": 1937276,
+        "dimensions": "1024x1536",
+        "status": "USER_AUTHORIZED_EVIDENCE_GATE_ACCEPTED_LOCKED_INFERRED_PRESENTATION_ONLY",
+        "mayServeAsDirectBackEvidence": false
+      },
+      "accepted03": {
+        "assetId": "garment.012.view.03.accepted",
+        "path": "storage/garments/drop-02/012/locked/03-mannequin-front.png",
+        "sha256": "74156719633bb5ea95c3255f73c3d77f823f1398c47419db342b64f7814c2619",
+        "bytes": 1871664,
+        "dimensions": "1023x1537",
+        "status": "USER_AUTHORIZED_EVIDENCE_GATE_ACCEPTED_LOCKED"
+      },
+      "accepted04": {
+        "assetId": "garment.012.view.04.accepted",
+        "path": "storage/garments/drop-02/012/locked/04-fabric-detail.png",
+        "sha256": "bbb522868a1b154a3dc0fc55080180988211e2691fc6e179156fe8c692c47ab0",
+        "bytes": 3557499,
+        "dimensions": "1024x1536",
+        "status": "USER_AUTHORIZED_EVIDENCE_GATE_ACCEPTED_LOCKED_MODEL_COMPLETED_PRESENTATION",
+        "mayServeAsFibreEvidence": false
+      },
+      "acceptedSubject": {
+        "assetId": "garment.012.subject.front.lock.v1",
+        "path": "storage/garments/drop-02/012/locked/LULU_G012_SUBJECT_FRONT_LOCK_v1.png",
+        "sha256": "75908840e8cfda33d047df29c73dc4f9a224c5b9fcb46e4188fc2797c5b67ed3",
+        "bytes": 1831128,
+        "dimensions": "1023x1537",
+        "status": "AUTONOMOUSLY_ACCEPTED_LOCKED_SUBJECT",
+        "acceptedAt": "2026-08-22T04:21:13Z",
+        "userDecision": "continue autonomosuly we have enough evidence to carryin",
+        "mayParentRoom05": true,
+        "mayDirectlyParent06Or07": false
+      },
+      "accepted05": {
+        "assetId": "garment.012.view.05.accepted",
+        "path": "storage/garments/drop-02/012/locked/05-on-lulu-front.png",
+        "sha256": "ecabc3f0c7eff91cdcc13066a83c99bd207685507b358579bbeb29111bd0ad61",
+        "bytes": 2185241,
+        "dimensions": "1023x1537",
+        "status": "AUTONOMOUSLY_ACCEPTED_LOCKED_FRONT_MASTER",
+        "acceptedAt": "2026-08-22T04:33:12Z",
+        "userDecision": "continue autonomosuly we have enough evidence to carryin",
+        "mayParentIndependent06And07": true
+      },
+      "accepted06": {
+        "assetId": "garment.012.view.06.accepted",
+        "path": "storage/garments/drop-02/012/locked/06-on-lulu-left-profile.png",
+        "sha256": "8d2da69393c7b876201ca922773a9ee6d758176dbce437cc06b7b8aa8438850b",
+        "bytes": 2399235,
+        "dimensions": "1024x1536",
+        "status": "AUTONOMOUSLY_ACCEPTED_LOCKED_SIBLING_PROFILE",
+        "acceptedAt": "2026-08-22T05:08:52Z",
+        "parentAssetId": "garment.012.view.05.accepted",
+        "mayParent07": false
+      },
+      "accepted07": {
+        "assetId": "garment.012.view.07.accepted",
+        "path": "storage/garments/drop-02/012/locked/07-on-lulu-rear-three-quarter.png",
+        "sha256": "e684a28469abc583b15428e55785ac8313d9e48063213ddcdc605f7562388204",
+        "bytes": 2302662,
+        "dimensions": "1023x1537",
+        "status": "AUTONOMOUSLY_ACCEPTED_LOCKED_SIBLING_INFERRED_REAR_PRESENTATION",
+        "acceptedAt": "2026-08-22T05:23:34Z",
+        "parentAssetId": "garment.012.view.05.accepted",
+        "mayParent06": false,
+        "mayServeAsDirectBackEvidence": false
       },
       "operationRecords": [
-        "storage/garments/drop-02/012/operations/g012-v01-r001.json"
+        "storage/garments/drop-02/012/operations/g012-v01-r001.json",
+        "storage/garments/drop-02/012/operations/g012-v02-r001.json",
+        "storage/garments/drop-02/012/operations/g012-v02-c001.json",
+        "storage/garments/drop-02/012/operations/g012-v03-r001.json",
+        "storage/garments/drop-02/012/operations/g012-v04-r001.json",
+        "storage/garments/drop-02/012/operations/g012-fashion-nova-styling-check-v001.json",
+        "storage/garments/drop-02/012/operations/g012-holistic-subject-r001.json",
+        "storage/garments/drop-02/012/operations/g012-room-and-05-r001.json",
+        "storage/garments/drop-02/012/operations/g012-v06-r001.json",
+        "storage/garments/drop-02/012/operations/g012-v07-r001.json",
+        "storage/garments/drop-02/012/operations/g012-v07-c001.json",
+        "storage/garments/drop-02/012/operations/g012-shop-media-export-v001.json"
       ],
+      "shopMediaExport": {
+        "operationId": "g012-shop-media-export-v001",
+        "status": "EXPORTED_AND_HASH_VERIFIED",
+        "slug": "black-cropped-tee-blue-wash-drawstring-barrel-trousers-set",
+        "canvas": "1120x1400",
+        "assetCount": 7,
+        "sourceLockManifestSha256": "399d3c5db60c13df7d304bfe4efba698c320cba892a8ac1d72dc04877ff766b8",
+        "catalogueRevision": "2026-08-22-catalogue-22",
+        "catalogueChecksum": "23ca93e15c045f7a2821c7aa0cc50b5571eef24531ac8f628136ecd47fb9c333"
+      },
       "rejectedCandidatesMayParent": false
     }
   },
   "nextOperation": {
-    "operationIds": ["g012-v01-r001"],
+    "operationIds": ["release-g012-shop-catalogue", "deploy-g012-shop"],
     "garmentId": "012",
-    "view": "01",
-    "operationType": "PRODUCT_MOCKUP",
-    "status": "AWAITING_USER_REVIEW",
+    "view": "RELEASE",
+    "operationType": "GUARDED_CATALOGUE_DATABASE_RELEASE_AND_EXACT_REVISION_DEPLOYMENT",
+    "status": "USER_AUTHORIZED_BY_AUTONOMOUS_COMPLETION_GOAL",
     "parentAssets": [
-      "garment.012.close-front",
-      "garment.012.full-front-primary",
-      "garment.012.full-front-confirmation",
-      "garment.012.full-front-secondary",
-      "garment.008.view.01.accepted"
+      "garment.012.view.01.accepted",
+      "garment.012.view.02.accepted",
+      "garment.012.view.03.accepted",
+      "garment.012.view.04.accepted",
+      "garment.012.view.05.accepted",
+      "garment.012.view.06.accepted",
+      "garment.012.view.07.accepted"
     ],
-    "rule": "The exact 012/01 candidate has passed the independent whole-frame gate but remains unlocked. Stop for explicit user approval or rejection before 02 begins."
+    "rule": "The exact seven private locks have deterministic hash-verified 1120x1400 public derivatives and content-addressed Blob records. Apply catalogue revision 2026-08-22-catalogue-22 through one guarded database release, deploy the exact committed revision, then verify the twelve-piece Shop and this seven-view product route in production."
   },
-  "requiredNext": "Receive explicit user approval or rejection of the displayed 012/01 candidate. On approval, lock exact bytes and prepare independent 02, 03 and 04 operations from direct garment authority."
+  "requiredNext": "Complete one guarded catalogue/database release, deploy the exact clean revision, and live-verify the twelve-piece Shop plus the complete Garment 012 seven-view route."
 }

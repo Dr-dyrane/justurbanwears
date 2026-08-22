@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "catalogueRevision": "2026-08-22-catalogue-21",
-  "catalogueChecksum": "d55319880baf3a6e1edb62f627b449cfb63dee0a8413c1f37af03cac334cf219",
-  "cataloguePresentationChecksum": "f2940a7bced8a86fa39573d43f970096b34040eba3e0d8b9393be98b755cb7b3",
+  "catalogueRevision": "2026-08-22-catalogue-22",
+  "catalogueChecksum": "23ca93e15c045f7a2821c7aa0cc50b5571eef24531ac8f628136ecd47fb9c333",
+  "cataloguePresentationChecksum": "1048acb1129da3aba4bd87a9bd476ef3b2099aa80c977f4c6d27ef2c424f8efd",
   "assets": [
     {
       "sourcePath": "/shop/model/lulu-v2-approved.png",
@@ -72,6 +72,69 @@
       "pathname": "shop/catalogue/33b04a733877095f670c8a42a3577f6f812d473fbe51233dc09b0f0a3553ecc4/products/black-cropped-tee-blue-distressed-shorts-set/07-model-left-profile.webp",
       "sha256": "33b04a733877095f670c8a42a3577f6f812d473fbe51233dc09b0f0a3553ecc4",
       "size": 151822,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-blue-wash-drawstring-barrel-trousers-set/01-garment-front.webp",
+      "pathname": "shop/catalogue/61d4da74e2a90ae0a495219a1fce58c58c39e67ae1d4d17f0f95866b279f2385/products/black-cropped-tee-blue-wash-drawstring-barrel-trousers-set/01-garment-front.webp",
+      "sha256": "61d4da74e2a90ae0a495219a1fce58c58c39e67ae1d4d17f0f95866b279f2385",
+      "size": 128508,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-blue-wash-drawstring-barrel-trousers-set/02-garment-back.webp",
+      "pathname": "shop/catalogue/005a61d09a15e261617dd3c8287f9b02f14ee50e2039182a1b71d3f4bd98f12b/products/black-cropped-tee-blue-wash-drawstring-barrel-trousers-set/02-garment-back.webp",
+      "sha256": "005a61d09a15e261617dd3c8287f9b02f14ee50e2039182a1b71d3f4bd98f12b",
+      "size": 100454,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-blue-wash-drawstring-barrel-trousers-set/03-mannequin-front.webp",
+      "pathname": "shop/catalogue/3173431500886f14f2c2673669c10ebf398c13b6f9ebf64531a0ff12bc1b68c0/products/black-cropped-tee-blue-wash-drawstring-barrel-trousers-set/03-mannequin-front.webp",
+      "sha256": "3173431500886f14f2c2673669c10ebf398c13b6f9ebf64531a0ff12bc1b68c0",
+      "size": 107054,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-blue-wash-drawstring-barrel-trousers-set/04-model-front.webp",
+      "pathname": "shop/catalogue/b030f7bd3dd12b985ebc10212782264319edd1e78cb9f33d19dc56bacbe3f4e7/products/black-cropped-tee-blue-wash-drawstring-barrel-trousers-set/04-model-front.webp",
+      "sha256": "b030f7bd3dd12b985ebc10212782264319edd1e78cb9f33d19dc56bacbe3f4e7",
+      "size": 187768,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-blue-wash-drawstring-barrel-trousers-set/05-model-rear-three-quarter.webp",
+      "pathname": "shop/catalogue/b06bf2c3b9b74ed795c1a8a016d5345862bf72a87adb4ec4a3999ae1af07ea59/products/black-cropped-tee-blue-wash-drawstring-barrel-trousers-set/05-model-rear-three-quarter.webp",
+      "sha256": "b06bf2c3b9b74ed795c1a8a016d5345862bf72a87adb4ec4a3999ae1af07ea59",
+      "size": 206606,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-blue-wash-drawstring-barrel-trousers-set/06-fabric-detail.webp",
+      "pathname": "shop/catalogue/b62954f0678fbb245c7ad299e14037622c34f0d46dec1f0ac0c89c2cfa8439ae/products/black-cropped-tee-blue-wash-drawstring-barrel-trousers-set/06-fabric-detail.webp",
+      "sha256": "b62954f0678fbb245c7ad299e14037622c34f0d46dec1f0ac0c89c2cfa8439ae",
+      "size": 395244,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-blue-wash-drawstring-barrel-trousers-set/07-model-left-profile.webp",
+      "pathname": "shop/catalogue/614c198079cac92f8a78a7f23d3a1c07fc87f7ee3b3398e9fcb1d0885d87f2a4/products/black-cropped-tee-blue-wash-drawstring-barrel-trousers-set/07-model-left-profile.webp",
+      "sha256": "614c198079cac92f8a78a7f23d3a1c07fc87f7ee3b3398e9fcb1d0885d87f2a4",
+      "size": 199430,
       "contentType": "image/webp",
       "width": 1120,
       "height": 1400

@@ -19,6 +19,7 @@ const V4_MODEL_SLUGS = new Set([
   "black-cropped-tee-charcoal-cutoff-shorts-set",
   "black-cropped-tee-mid-thigh-black-cutoff-shorts-set",
   "black-cropped-tee-light-wash-snap-panel-trousers-set",
+  "black-cropped-tee-blue-wash-drawstring-barrel-trousers-set",
 ]);
 
 const V3_MODEL_FRONT_SLUGS = new Set([
@@ -108,7 +109,7 @@ function presentation(product) {
  */
 export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
   schemaVersion: 2,
-  revision: "2026-08-22-catalogue-21",
+  revision: "2026-08-22-catalogue-22",
   products: Object.freeze([
     presentation({
       slug: "coral-drift-dress",
@@ -711,6 +712,26 @@ export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
       note: "A matte-black cropped tee paired with light-wash wide-leg trousers and dark snap-detailed outer panels.",
       story: "The fitted black crop sits above a gathered pull-on waist and long white drawcords, while broad light-wash legs fall to the floor beside dark indigo outer panels punctuated by silver-tone snaps.",
       details: ["Cropped crew-neck tee", "Gathered pull-on waistband and drawcord", "Wide full-length legs", "Dark outer panels with silver-tone snaps"],
+      measurements: [],
+      mediaSlots: ["MODEL_FRONT", "MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
+    }),
+    presentation({
+      slug: "black-cropped-tee-blue-wash-drawstring-barrel-trousers-set",
+      sku: "JUW-036",
+      name: "Black Cropped Tee and Blue-Wash Drawstring Barrel Trousers Set",
+      category: "Sets",
+      price: 24500,
+      taggedSize: "Size on request",
+      fit: "Measurements confirmed before payment",
+      condition: "Condition confirmed before payment",
+      colour: "Black and medium-wash blue",
+      availability: "AVAILABLE",
+      drop: "Drop 02",
+      tone: "indigo",
+      silhouette: "set",
+      note: "A matte-black cropped tee paired with medium-wash pull-on denim barrel trousers.",
+      story: "The fitted crop leaves a clean waist gap above a broad gathered waistband and white drawstring, while relaxed washed-blue legs taper softly toward the ankles.",
+      details: ["Cropped crew-neck tee", "Gathered pull-on waistband and white drawstring", "Angled hip pockets", "Relaxed barrel legs with tapered ankle openings"],
       measurements: [],
       mediaSlots: ["MODEL_FRONT", "MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
     }),

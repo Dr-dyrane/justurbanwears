@@ -17,6 +17,7 @@ const expectedDrop02Products = [
   ["black-cropped-tee-charcoal-cutoff-shorts-set", "Black Cropped Tee and Charcoal Cut-Off Shorts Set"],
   ["black-cropped-tee-mid-thigh-black-cutoff-shorts-set", "Black Cropped Tee and Mid-Thigh Black Cut-Off Shorts Set"],
   ["black-cropped-tee-light-wash-snap-panel-trousers-set", "Black Cropped Tee and Light-Wash Snap-Panel Trousers Set"],
+  ["black-cropped-tee-blue-wash-drawstring-barrel-trousers-set", "Black Cropped Tee and Blue-Wash Drawstring Barrel Trousers Set"],
 ] as const;
 
 const expectedDrop02Media = [
@@ -29,11 +30,11 @@ const expectedDrop02Media = [
   "MODEL_REAR_THREE_QUARTER",
 ] as const;
 
-test("the public Shop is the exact eleven-piece Drop 02 wardrobe", () => {
+test("the public Shop is the exact twelve-piece Drop 02 wardrobe", () => {
   const dropProducts = WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS.filter(isCurrentShopProduct);
 
   assert.equal(CURRENT_SHOP_DROP, "Drop 02");
-  assert.equal(dropProducts.length, 11);
+  assert.equal(dropProducts.length, 12);
   assert.deepEqual(
     dropProducts.map(({ name, slug }) => [slug, name]),
     expectedDrop02Products,
