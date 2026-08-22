@@ -48,8 +48,8 @@ test("server-renders the public shop foundation", async () => {
   const copy = visibleCopy(html);
   assert.match(html, /justurban wears/);
   assert.match(visibleBody, /Drop 02/);
-  assert.match(visibleBody, /9 pieces\. No restocks\./);
-  assert.match(copy, /9 one-off pieces/);
+  assert.match(visibleBody, /11 pieces\. No restocks\./);
+  assert.match(copy, /11 one-off pieces/);
   assert.match(visibleBody, /violet-beaded-ruffle-romper/);
   assert.match(html, /Search the wardrobe/);
   assert.match(html, /Live availability is temporarily unavailable/);
@@ -60,7 +60,7 @@ test("server-renders the public shop foundation", async () => {
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/i);
 });
 
-test("publishes the Violet romper hero and the exact nine-piece Drop 02", async () => {
+test("publishes the Violet romper hero and the exact eleven-piece Drop 02", async () => {
   const response = await render("/shop");
   assert.equal(response.status, 200);
 
@@ -85,6 +85,8 @@ test("publishes the Violet romper hero and the exact nine-piece Drop 02", async 
     ["Black Cropped Tee and Pink Distressed Shorts Set", "black-cropped-tee-pink-distressed-shorts-set"],
     ["Black Cropped Tee and Blue Distressed Shorts Set", "black-cropped-tee-blue-distressed-shorts-set"],
     ["Black Cropped Tee and Charcoal Cut-Off Shorts Set", "black-cropped-tee-charcoal-cutoff-shorts-set"],
+    ["Black Cropped Tee and Mid-Thigh Black Cut-Off Shorts Set", "black-cropped-tee-mid-thigh-black-cutoff-shorts-set"],
+    ["Black Cropped Tee and Light-Wash Snap-Panel Trousers Set", "black-cropped-tee-light-wash-snap-panel-trousers-set"],
   ];
 
   for (const [name, slug] of releasedProducts) {
@@ -92,7 +94,7 @@ test("publishes the Violet romper hero and the exact nine-piece Drop 02", async 
     assert.match(visibleBody, new RegExp(name));
   }
 
-  assert.equal((visibleBody.match(/class="shop-product-card"/g) ?? []).length, 8);
+  assert.equal((visibleBody.match(/class="shop-product-card"/g) ?? []).length, 10);
   assert.doesNotMatch(visibleBody, /shop-release-index|shop-wardrobe-preview|shop-editorial-rail|shop-values/);
   assert.doesNotMatch(visibleBody, /GARMENT STUDY|(?:DYN-0(?:8[1-9]|9[0-2])|JUW-0(?:0[1-9]|1[0-2]))|Six dresses from Lulu’s wardrobe|Warm colour\. Clean movement/);
   assert.doesNotMatch(visibleBody, /Coral Drift Dress|Indigo Workshirt|Ivory Tie Skirt/);
@@ -168,6 +170,8 @@ test("server-renders all seven approved views for each Drop 02 product", async (
     "black-cropped-tee-pink-distressed-shorts-set",
     "black-cropped-tee-blue-distressed-shorts-set",
     "black-cropped-tee-charcoal-cutoff-shorts-set",
+    "black-cropped-tee-mid-thigh-black-cutoff-shorts-set",
+    "black-cropped-tee-light-wash-snap-panel-trousers-set",
   ];
   const responses = await Promise.all(
     slugs.map((slug) => render(`/shop/products/${slug}`)),

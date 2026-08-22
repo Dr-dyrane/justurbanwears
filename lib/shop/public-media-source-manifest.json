@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "catalogueRevision": "2026-08-21-catalogue-20",
-  "catalogueChecksum": "94d02da58a47009e9730a60d0f48ced24c1630c7fa383571b191d87fbf877bb6",
-  "cataloguePresentationChecksum": "23fbba2cf72182f946ca556a319d3be4a489f678074805e18c7e6d5f53adca27",
+  "catalogueRevision": "2026-08-22-catalogue-21",
+  "catalogueChecksum": "d55319880baf3a6e1edb62f627b449cfb63dee0a8413c1f37af03cac334cf219",
+  "cataloguePresentationChecksum": "f2940a7bced8a86fa39573d43f970096b34040eba3e0d8b9393be98b755cb7b3",
   "assets": [
     {
       "sourcePath": "/shop/model/lulu-v2-approved.png",
@@ -135,6 +135,132 @@
       "pathname": "shop/catalogue/8d6ac7449582c39826e7bd7c3d432e159e22a795f1f41780f246705f64da7dc6/products/black-cropped-tee-charcoal-cutoff-shorts-set/07-model-left-profile.webp",
       "sha256": "8d6ac7449582c39826e7bd7c3d432e159e22a795f1f41780f246705f64da7dc6",
       "size": 173604,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-light-wash-snap-panel-trousers-set/01-garment-front.webp",
+      "pathname": "shop/catalogue/9459621a3fb66c8466f55b2433eede3c5d86cbb3839eca02c3f8b46aaa4efbda/products/black-cropped-tee-light-wash-snap-panel-trousers-set/01-garment-front.webp",
+      "sha256": "9459621a3fb66c8466f55b2433eede3c5d86cbb3839eca02c3f8b46aaa4efbda",
+      "size": 98930,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-light-wash-snap-panel-trousers-set/02-garment-back.webp",
+      "pathname": "shop/catalogue/ba41de8721d439fde9aa738b9af821e2aff02a5bf16dce93caa43ee9bd24ab18/products/black-cropped-tee-light-wash-snap-panel-trousers-set/02-garment-back.webp",
+      "sha256": "ba41de8721d439fde9aa738b9af821e2aff02a5bf16dce93caa43ee9bd24ab18",
+      "size": 67340,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-light-wash-snap-panel-trousers-set/03-mannequin-front.webp",
+      "pathname": "shop/catalogue/93ed3d51be8b5936b762e7996c8664270ba65d61b0cf514f868b76b604c1b6d5/products/black-cropped-tee-light-wash-snap-panel-trousers-set/03-mannequin-front.webp",
+      "sha256": "93ed3d51be8b5936b762e7996c8664270ba65d61b0cf514f868b76b604c1b6d5",
+      "size": 94964,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-light-wash-snap-panel-trousers-set/04-model-front.webp",
+      "pathname": "shop/catalogue/37cbe4800e8f9551f327ab004c98462e933593ec45396bf4e02da2595cb5e4c9/products/black-cropped-tee-light-wash-snap-panel-trousers-set/04-model-front.webp",
+      "sha256": "37cbe4800e8f9551f327ab004c98462e933593ec45396bf4e02da2595cb5e4c9",
+      "size": 198826,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-light-wash-snap-panel-trousers-set/05-model-rear-three-quarter.webp",
+      "pathname": "shop/catalogue/11cd302ce6054b7fbe9358a51616e7715997de9c1f91c1eb1f77f1763d661eef/products/black-cropped-tee-light-wash-snap-panel-trousers-set/05-model-rear-three-quarter.webp",
+      "sha256": "11cd302ce6054b7fbe9358a51616e7715997de9c1f91c1eb1f77f1763d661eef",
+      "size": 166880,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-light-wash-snap-panel-trousers-set/06-fabric-detail.webp",
+      "pathname": "shop/catalogue/d313e832b6d8a5e7b26787922f3cd33e78945b00c1b541bd3ae3a2cebacc508d/products/black-cropped-tee-light-wash-snap-panel-trousers-set/06-fabric-detail.webp",
+      "sha256": "d313e832b6d8a5e7b26787922f3cd33e78945b00c1b541bd3ae3a2cebacc508d",
+      "size": 345688,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-light-wash-snap-panel-trousers-set/07-model-left-profile.webp",
+      "pathname": "shop/catalogue/c28a6f98f66ec97c2628db96c52b9a03c159baef7de2e55f99cd7719915244c2/products/black-cropped-tee-light-wash-snap-panel-trousers-set/07-model-left-profile.webp",
+      "sha256": "c28a6f98f66ec97c2628db96c52b9a03c159baef7de2e55f99cd7719915244c2",
+      "size": 181660,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-mid-thigh-black-cutoff-shorts-set/01-garment-front.webp",
+      "pathname": "shop/catalogue/ecf1699563c8cf6d1f67e73345950faa1a5400855e4ad1c2b4f0a63079178a66/products/black-cropped-tee-mid-thigh-black-cutoff-shorts-set/01-garment-front.webp",
+      "sha256": "ecf1699563c8cf6d1f67e73345950faa1a5400855e4ad1c2b4f0a63079178a66",
+      "size": 75728,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-mid-thigh-black-cutoff-shorts-set/02-garment-back.webp",
+      "pathname": "shop/catalogue/7cc07c55664ef27ef79b8501f6726cf2892488c38d7498018672fc856957cba5/products/black-cropped-tee-mid-thigh-black-cutoff-shorts-set/02-garment-back.webp",
+      "sha256": "7cc07c55664ef27ef79b8501f6726cf2892488c38d7498018672fc856957cba5",
+      "size": 51060,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-mid-thigh-black-cutoff-shorts-set/03-mannequin-front.webp",
+      "pathname": "shop/catalogue/3af0a969ecd948d044a9dd52e3e24b0c2bd89177ecaf393d12d472d9adec14c8/products/black-cropped-tee-mid-thigh-black-cutoff-shorts-set/03-mannequin-front.webp",
+      "sha256": "3af0a969ecd948d044a9dd52e3e24b0c2bd89177ecaf393d12d472d9adec14c8",
+      "size": 49746,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-mid-thigh-black-cutoff-shorts-set/04-model-front.webp",
+      "pathname": "shop/catalogue/49ee8e2a5e875ea3388fbc7e1ad1e7ba693fd0a6542f9df346260e2e161beb07/products/black-cropped-tee-mid-thigh-black-cutoff-shorts-set/04-model-front.webp",
+      "sha256": "49ee8e2a5e875ea3388fbc7e1ad1e7ba693fd0a6542f9df346260e2e161beb07",
+      "size": 172058,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-mid-thigh-black-cutoff-shorts-set/05-model-rear-three-quarter.webp",
+      "pathname": "shop/catalogue/63facb560fee738f917f09f8b57023bd06277ccfb236cb8acefa2df149bf52df/products/black-cropped-tee-mid-thigh-black-cutoff-shorts-set/05-model-rear-three-quarter.webp",
+      "sha256": "63facb560fee738f917f09f8b57023bd06277ccfb236cb8acefa2df149bf52df",
+      "size": 161520,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-mid-thigh-black-cutoff-shorts-set/06-fabric-detail.webp",
+      "pathname": "shop/catalogue/7f320e6fdbb6c36dacb03c48c9426e5cbaf3836bd68d0c3cb1c1460ad64bf454/products/black-cropped-tee-mid-thigh-black-cutoff-shorts-set/06-fabric-detail.webp",
+      "sha256": "7f320e6fdbb6c36dacb03c48c9426e5cbaf3836bd68d0c3cb1c1460ad64bf454",
+      "size": 119954,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-mid-thigh-black-cutoff-shorts-set/07-model-left-profile.webp",
+      "pathname": "shop/catalogue/b7b9bec8960792ac1cd13715e222abfe856a0215e3764b1ba0fe02224427289e/products/black-cropped-tee-mid-thigh-black-cutoff-shorts-set/07-model-left-profile.webp",
+      "sha256": "b7b9bec8960792ac1cd13715e222abfe856a0215e3764b1ba0fe02224427289e",
+      "size": 188328,
       "contentType": "image/webp",
       "width": 1120,
       "height": 1400

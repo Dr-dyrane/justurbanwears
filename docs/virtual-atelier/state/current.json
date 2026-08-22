@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "workflowRevision": "2026-08-21.22",
-  "updatedAt": "2026-08-21T22:06:44Z",
+  "workflowRevision": "2026-08-22.26",
+  "updatedAt": "2026-08-22T00:59:52Z",
   "model": "LULU_V4",
-  "activeGarment": "009",
+  "activeGarment": "010_AND_011",
   "activeView": "COMPLETE_01_07",
-  "status": "GARMENT_009_COMPLETE_01_07_USER_ACCEPTED_LOCKED_SHOP_MEDIA_EXPORTED_READY_FOR_RELEASE",
+  "status": "GARMENTS_010_011_COMPLETE_01_07_USER_ACCEPTED_LOCKED_SHOP_MEDIA_EXPORTED_READY_FOR_RELEASE",
   "identityReview": {
     "candidateId": "lulu.face.v4.front.candidate.v1",
     "acceptedAssetId": "lulu.face.v4.front.lock.v1",
@@ -35,7 +35,7 @@
         "garment.010.view.01.accepted",
         "garment.011.view.01.accepted"
       ],
-      "rule": "The exact independently reviewed 01-04 sets for Garments 009, 010 and 011 are privately locked. Each accepted 01 controls its garment-specific holistic subject synthesis; each 02 remains inferred presentation only and each 04 remains model-completed construction presentation only. Direct captures retain construction truth. The user explicitly accepted the complete G010 and G011 subject frames, so those exact subject locks may parent ROOM/05. Their newly generated 05 frames remain candidates until separately accepted."
+      "rule": "The exact independently reviewed 01-04 sets for Garments 009, 010 and 011 are privately locked. Each accepted 01 controls its garment-specific holistic subject synthesis; each 02 remains inferred presentation only and each 04 remains model-completed construction presentation only. Direct captures retain construction truth. The user explicitly accepted the complete G010 and G011 subject frames and then the exact displayed G010/05 and G011/05 masters. Each accepted 05 may parent only its own independent 06 and 07 siblings."
     },
     "identity": {
       "status": "LOCKED",
@@ -597,7 +597,7 @@
       "rejectedCandidatesMayParent": false
     },
     "009": {
-      "status": "COMPLETE_01_07_USER_ACCEPTED_LOCKED_READY_FOR_SHOP_EXPORT",
+      "status": "COMPLETE_01_07_USER_ACCEPTED_LOCKED_SHOP_MEDIA_EXPORTED_READY_FOR_RELEASE",
       "views": {
         "01": "USER_ACCEPTED_LOCKED",
         "02": "USER_ACCEPTED_LOCKED_INFERRED_PRESENTATION_ONLY",
@@ -716,12 +716,15 @@
       "rejectedCandidatesMayParent": false
     },
     "010": {
-      "status": "SUBJECT_USER_ACCEPTED_LOCKED_05_INDEPENDENT_GATE_PASS_USER_DECISION_PENDING",
+      "status": "COMPLETE_01_07_USER_ACCEPTED_LOCKED_READY_FOR_SHOP_EXPORT",
       "views": {
         "01": "USER_ACCEPTED_LOCKED",
         "02": "USER_ACCEPTED_LOCKED_INFERRED_PRESENTATION_ONLY",
         "03": "USER_ACCEPTED_LOCKED",
-        "04": "USER_ACCEPTED_LOCKED_MODEL_COMPLETED_PRESENTATION"
+        "04": "USER_ACCEPTED_LOCKED_MODEL_COMPLETED_PRESENTATION",
+        "05": "USER_ACCEPTED_LOCKED_FRONT_MASTER",
+        "06": "USER_ACCEPTED_LOCKED_SIBLING",
+        "07": "USER_ACCEPTED_LOCKED_SIBLING_INFERRED_REAR_PRESENTATION"
       },
       "backEvidence": "MISSING",
       "rule": "Direct front and shallow-three-quarter captures control the recurring black cropped tee styling and the new longer clean deep-black cut-off shorts. Generate 01-04 independently before model work. Any 02 remains conservative inferred presentation only and never direct back evidence. Prior garments may control framing only and may not transfer shorter length, charcoal, blue or pink colour, tears, patches, white material or dramatic fringe.",
@@ -736,15 +739,41 @@
         "mayParentRoom05": true,
         "mayDirectlyParent06Or07": false
       },
-      "view05Candidate": {
-        "assetId": "garment.010.view.05.candidate.r001",
-        "path": "storage/garments/drop-02/010/candidates/v4-model-set-v1/05-on-lulu-front-r001.png",
+      "accepted05": {
+        "assetId": "garment.010.view.05.accepted",
+        "path": "storage/garments/drop-02/010/locked/05-on-lulu-front.png",
         "sha256": "ef5435e031423e143819ef1a9501b344705c01de160a5f8814844e91ecc5d2f1",
         "bytes": 2198600,
         "dimensions": "1023x1537",
-        "status": "INDEPENDENT_GATE_PASS_USER_DECISION_PENDING",
-        "mayLock": false,
-        "mayParent06Or07": false
+        "status": "USER_ACCEPTED_LOCKED_FRONT_MASTER",
+        "acceptedAt": "2026-08-21T23:14:18Z",
+        "userDecision": "now pLEASE I AM APPROVING 10 and 11 too lets go faster",
+        "mayParentIndependent06And07": true
+      },
+      "accepted06": {
+        "assetId": "garment.010.view.06.accepted",
+        "path": "storage/garments/drop-02/010/locked/06-on-lulu-left-profile.png",
+        "sha256": "152465e59a0e0e03dc129b75bf88e8a64a8f7f2345f48802b6255d7279e91068",
+        "bytes": 2218930,
+        "dimensions": "1023x1537",
+        "status": "USER_ACCEPTED_LOCKED_SIBLING",
+        "acceptedAt": "2026-08-22T00:37:31Z",
+        "userDecision": "approve G010/06–07 and G011/06–07",
+        "parent": "garment.010.view.05.accepted",
+        "mayParent07": false
+      },
+      "accepted07": {
+        "assetId": "garment.010.view.07.accepted",
+        "path": "storage/garments/drop-02/010/locked/07-on-lulu-right-rear-three-quarter.png",
+        "sha256": "dd40713ec6a3dfa29984f9508c9decc1236242ec7bef0b261a84f344654dcecf",
+        "bytes": 2118631,
+        "dimensions": "1023x1537",
+        "status": "USER_ACCEPTED_LOCKED_SIBLING_INFERRED_REAR_PRESENTATION",
+        "acceptedAt": "2026-08-22T00:37:31Z",
+        "userDecision": "approve G010/06–07 and G011/06–07",
+        "parent": "garment.010.view.05.accepted",
+        "mayParent06": false,
+        "mayServeAsDirectBackEvidence": false
       },
       "operationRecords": [
         "storage/garments/drop-02/010/operations/g010-v01-r001.json",
@@ -753,17 +782,25 @@
         "storage/garments/drop-02/010/operations/g010-v04-r001.json",
         "storage/garments/drop-02/010/operations/g010-holistic-subject-r001.json",
         "storage/garments/drop-02/010/operations/g010-fashion-nova-styling-check-v001.json",
-        "storage/garments/drop-02/010/operations/g010-room-and-05-r001.json"
+        "storage/garments/drop-02/010/operations/g010-room-and-05-r001.json",
+        "storage/garments/drop-02/010/operations/g010-v06-r001.json",
+        "storage/garments/drop-02/010/operations/g010-v06-c001.json",
+        "storage/garments/drop-02/010/operations/g010-v07-r001.json",
+        "storage/garments/drop-02/010/operations/g010-v07-c001.json",
+        "storage/garments/drop-02/010/operations/g010-shop-media-export-v001.json"
       ],
       "rejectedCandidatesMayParent": false
     },
     "011": {
-      "status": "SUBJECT_USER_ACCEPTED_LOCKED_05_INDEPENDENT_GATE_PASS_USER_DECISION_PENDING",
+      "status": "COMPLETE_01_07_USER_ACCEPTED_LOCKED_SHOP_MEDIA_EXPORTED_READY_FOR_RELEASE",
       "views": {
         "01": "USER_ACCEPTED_LOCKED",
         "02": "USER_ACCEPTED_LOCKED_INFERRED_PRESENTATION_ONLY",
         "03": "USER_ACCEPTED_LOCKED",
-        "04": "USER_ACCEPTED_LOCKED_MODEL_COMPLETED_PRESENTATION"
+        "04": "USER_ACCEPTED_LOCKED_MODEL_COMPLETED_PRESENTATION",
+        "05": "USER_ACCEPTED_LOCKED_FRONT_MASTER",
+        "06": "USER_ACCEPTED_LOCKED_SIBLING",
+        "07": "USER_ACCEPTED_LOCKED_SIBLING_INFERRED_REAR_PRESENTATION"
       },
       "sourceClassification": "DIRECT_CAPTURE_FRONT_FAMILY_ONLY",
       "backEvidence": "MISSING",
@@ -779,15 +816,41 @@
         "mayParentRoom05": true,
         "mayDirectlyParent06Or07": false
       },
-      "view05Candidate": {
-        "assetId": "garment.011.view.05.candidate.r001",
-        "path": "storage/garments/drop-02/011/candidates/v4-model-set-v1/05-on-lulu-front-r001.png",
+      "accepted05": {
+        "assetId": "garment.011.view.05.accepted",
+        "path": "storage/garments/drop-02/011/locked/05-on-lulu-front.png",
         "sha256": "b1a1f622e970fdfcabb86e7492c872a1e02ee8498de5331317457e0d8e882f1f",
         "bytes": 2293936,
         "dimensions": "1023x1537",
-        "status": "INDEPENDENT_GATE_PASS_USER_DECISION_PENDING",
-        "mayLock": false,
-        "mayParent06Or07": false
+        "status": "USER_ACCEPTED_LOCKED_FRONT_MASTER",
+        "acceptedAt": "2026-08-21T23:14:18Z",
+        "userDecision": "now pLEASE I AM APPROVING 10 and 11 too lets go faster",
+        "mayParentIndependent06And07": true
+      },
+      "accepted06": {
+        "assetId": "garment.011.view.06.accepted",
+        "path": "storage/garments/drop-02/011/locked/06-on-lulu-left-profile.png",
+        "sha256": "576f663c1034317736a9dd4b601299b0b1932de4882f49f4f956f70ce4a20caf",
+        "bytes": 2222602,
+        "dimensions": "1023x1537",
+        "status": "USER_ACCEPTED_LOCKED_SIBLING",
+        "acceptedAt": "2026-08-22T00:37:31Z",
+        "userDecision": "approve G010/06–07 and G011/06–07",
+        "parent": "garment.011.view.05.accepted",
+        "mayParent07": false
+      },
+      "accepted07": {
+        "assetId": "garment.011.view.07.accepted",
+        "path": "storage/garments/drop-02/011/locked/07-on-lulu-right-rear-three-quarter.png",
+        "sha256": "078d9ecb052e34c804dbe2dac4de898c5a4d25d5e436e9eb2b6f3c02f7c08100",
+        "bytes": 2110825,
+        "dimensions": "1023x1537",
+        "status": "USER_ACCEPTED_LOCKED_SIBLING_INFERRED_REAR_PRESENTATION",
+        "acceptedAt": "2026-08-22T00:37:31Z",
+        "userDecision": "approve G010/06–07 and G011/06–07",
+        "parent": "garment.011.view.05.accepted",
+        "mayParent06": false,
+        "mayServeAsDirectBackEvidence": false
       },
       "operationRecords": [
         "storage/garments/drop-02/011/operations/g011-v01-r001.json",
@@ -796,26 +859,36 @@
         "storage/garments/drop-02/011/operations/g011-v04-r001.json",
         "storage/garments/drop-02/011/operations/g011-holistic-subject-r001.json",
         "storage/garments/drop-02/011/operations/g011-fashion-nova-styling-check-v001.json",
-        "storage/garments/drop-02/011/operations/g011-room-and-05-r001.json"
+        "storage/garments/drop-02/011/operations/g011-room-and-05-r001.json",
+        "storage/garments/drop-02/011/operations/g011-v06-r001.json",
+        "storage/garments/drop-02/011/operations/g011-v07-r001.json",
+        "storage/garments/drop-02/011/operations/g011-shop-media-export-v001.json"
       ],
       "rejectedCandidatesMayParent": false
     }
   },
   "nextOperation": {
-    "operationIds": ["publish-garment-009"],
-    "garmentId": "009",
-    "operationType": "GUARDED_SHOP_PUBLICATION_DEPLOYMENT_AND_LIVE_VERIFICATION",
-    "status": "USER_AUTHORIZED_BY_ACTIVE_GOAL",
+    "operationIds": ["release-g010-g011-shop-catalogue", "deploy-g010-g011-shop"],
+    "garmentId": "010_AND_011",
+    "operationType": "GUARDED_CATALOGUE_DATABASE_RELEASE_AND_EXACT_REVISION_DEPLOYMENT",
+    "status": "USER_AUTHORIZED_BY_COMPLETION_GOALS",
     "parentAssets": [
-      "garment.009.view.01.accepted",
-      "garment.009.view.02.accepted",
-      "garment.009.view.03.accepted",
-      "garment.009.view.04.accepted",
-      "garment.009.view.05.accepted",
-      "garment.009.view.06.accepted",
-      "garment.009.view.07.accepted"
+      "garment.010.view.01.accepted",
+      "garment.010.view.02.accepted",
+      "garment.010.view.03.accepted",
+      "garment.010.view.04.accepted",
+      "garment.010.view.05.accepted",
+      "garment.010.view.06.accepted",
+      "garment.010.view.07.accepted",
+      "garment.011.view.01.accepted",
+      "garment.011.view.02.accepted",
+      "garment.011.view.03.accepted",
+      "garment.011.view.04.accepted",
+      "garment.011.view.05.accepted",
+      "garment.011.view.06.accepted",
+      "garment.011.view.07.accepted"
     ],
-    "rule": "The seven exact accepted private masters have been exported by semantic role with one isotropic contain scale and same-image softened edge fill. Preserve private truth limits, keep inferred-back language out of customer copy, then run the guarded catalogue/database release, exact-revision deployment and live Shop smoke."
+    "rule": "Both accepted sets have deterministic verified public derivatives. Reconcile the two catalogue rows and content-addressed Blob manifest, then publish them together through one guarded database release and the exact committed production revision."
   },
-  "requiredNext": "Run the guarded catalogue/database release, commit and push the exact verified revision, deploy that revision to production, and verify the nine-piece Drop 02 Shop plus the Garment 009 seven-view product route live."
+  "requiredNext": "Complete one guarded catalogue/database release, deploy the exact clean revision, and live-verify the 11-piece Shop plus both seven-view product routes."
 }

@@ -93,17 +93,17 @@ test("the public Blob release contains only exact manifest media and verifies lo
     SHOP_PUBLIC_MEDIA_PRESENTATION_CHECKSUM,
     cataloguePresentationChecksum(SHOP_CATALOGUE_MANIFEST),
   );
-  assert.equal(plan.length, 166);
+  assert.equal(plan.length, 180);
   assert.equal(SHOP_PUBLIC_MEDIA_ASSETS.length, plan.length);
   assert.equal(SHOP_PUBLIC_MEDIA_SOURCE_ASSETS.length, plan.length);
   assert.deepEqual(SHOP_PUBLIC_MEDIA_SOURCE_ASSETS, sourceManifest.assets);
   assert.equal(
     plan.filter((asset) => asset.sourcePath.startsWith("/shop/products/")).length,
-    165,
+    179,
   );
   const currentDropAssets = plan.filter((asset) => currentManifestProducts.some((product) =>
     asset.sourcePath.startsWith(`/shop/products/${product.slug}/`)));
-  assert.equal(currentDropAssets.length, 63);
+  assert.equal(currentDropAssets.length, 77);
   assert.equal(plan.length - currentDropAssets.length, 103);
   assert.ok(currentDropAssets.every((asset) => {
     const released = SHOP_PUBLIC_MEDIA_ASSETS.find((candidate) => candidate.sourcePath === asset.sourcePath);
@@ -304,7 +304,7 @@ test("an invalid or unavailable Neon snapshot falls back with purchase actions f
   const fallback = await withoutExpectedCatalogueError(() => loadServerShopProducts(async () => {
     throw new Error("synthetic outage");
   }));
-  assert.equal(currentManifestProducts.length, 9);
+  assert.equal(currentManifestProducts.length, 11);
   assert.deepEqual(fallback.map((product) => product.sku), currentManifestProducts.map((product) => product.sku));
   assert.ok(fallback.every((product) => product.availabilityConfirmed === false));
   assert.ok(fallback.flatMap((product) => product.media ?? []).every((item) =>

@@ -87,6 +87,8 @@ await htmlCheck("shop shell", "/shop", [
     "black-cropped-tee-pink-distressed-shorts-set",
     "black-cropped-tee-blue-distressed-shorts-set",
     "black-cropped-tee-charcoal-cutoff-shorts-set",
+    "black-cropped-tee-mid-thigh-black-cutoff-shorts-set",
+    "black-cropped-tee-light-wash-snap-panel-trousers-set",
   ].every((slug) => body.includes(`/shop/products/${slug}`))],
   ["Drop 01 leaked into discovery", (body) => !visibleMarkup(body).includes("coral-drift-dress")],
   ["shop navigation missing", (body) => body.includes("Search the wardrobe")],
@@ -96,6 +98,34 @@ await htmlCheck("shop shell", "/shop", [
 ]);
 await htmlCheck("product passport", "/shop/products/black-cropped-tee-charcoal-cutoff-shorts-set", [
   ["product name missing", (body) => body.includes("Black Cropped Tee and Charcoal Cut-Off Shorts Set")],
+  ["seven-view dossier incomplete", (body) => [
+    "01-garment-front.webp",
+    "02-garment-back.webp",
+    "03-mannequin-front.webp",
+    "04-model-front.webp",
+    "05-model-rear-three-quarter.webp",
+    "06-fabric-detail.webp",
+    "07-model-left-profile.webp",
+  ].every((file) => body.includes(file))],
+  ["customer-facing AI copy leaked", hasNoCustomerAiCopy],
+  ["Product JSON-LD missing", (body) => body.includes("application/ld+json") && body.includes('"@type":"Product"')],
+]);
+await htmlCheck("Garment 010 product passport", "/shop/products/black-cropped-tee-mid-thigh-black-cutoff-shorts-set", [
+  ["product name missing", (body) => body.includes("Black Cropped Tee and Mid-Thigh Black Cut-Off Shorts Set")],
+  ["seven-view dossier incomplete", (body) => [
+    "01-garment-front.webp",
+    "02-garment-back.webp",
+    "03-mannequin-front.webp",
+    "04-model-front.webp",
+    "05-model-rear-three-quarter.webp",
+    "06-fabric-detail.webp",
+    "07-model-left-profile.webp",
+  ].every((file) => body.includes(file))],
+  ["customer-facing AI copy leaked", hasNoCustomerAiCopy],
+  ["Product JSON-LD missing", (body) => body.includes("application/ld+json") && body.includes('"@type":"Product"')],
+]);
+await htmlCheck("Garment 011 product passport", "/shop/products/black-cropped-tee-light-wash-snap-panel-trousers-set", [
+  ["product name missing", (body) => body.includes("Black Cropped Tee and Light-Wash Snap-Panel Trousers Set")],
   ["seven-view dossier incomplete", (body) => [
     "01-garment-front.webp",
     "02-garment-back.webp",

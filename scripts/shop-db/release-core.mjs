@@ -3,7 +3,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 
 export const CATALOGUE_NAMESPACE = "justurbanwears.shop.catalogue";
-export const EXPECTED_CATALOGUE_ROWS = 27;
+export const EXPECTED_CATALOGUE_ROWS = 29;
 export const LEGACY_CATALOGUE_SKUS = Object.freeze(
   Array.from({ length: 12 }, (_, index) => `DYN-${String(index + 81).padStart(3, "0")}`),
 );
