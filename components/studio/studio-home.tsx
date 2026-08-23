@@ -10,6 +10,7 @@ import {
   RotateCcw,
   Shirt,
 } from "lucide-react";
+import { WardrobeMotion } from "../brand/wardrobe-motion";
 import { LifecycleBadge } from "./atoms/lifecycle-badge";
 import { StudioLink as Link } from "./atoms/studio-link";
 import { studioGarmentCover } from "./garment-cover";
@@ -246,6 +247,9 @@ export function StudioHome() {
           </div>
         )}
       </section>
+      <footer aria-label="Justurban wears" className="studio-home-signoff">
+        <WardrobeMotion artwork="logo" className="studio-home-signoff-mark" polarity="auto" size="sm" variant="footer" />
+      </footer>
     </div>
   );
 }

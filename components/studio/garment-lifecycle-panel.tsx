@@ -24,6 +24,7 @@ import type {
   GarmentLifecycleWorkspace,
   GarmentRevisionMediaRole,
 } from "../../lib/studio/engine/garment-lifecycle-contracts";
+import { WardrobeMotion } from "../brand/wardrobe-motion";
 import { StudioMediaButton, type StudioMediaItem } from "./media-viewer";
 
 type ErrorBody = { error?: { message?: string; recovery?: string } };
@@ -63,6 +64,7 @@ export function GarmentLifecyclePanel({
   const [historyOpen, setHistoryOpen] = useState(false);
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
+  const [milestone, setMilestone] = useState<"published" | "returned" | null>(null);
   const [reload, setReload] = useState(0);
   const priceRef = useRef<HTMLInputElement>(null);
   const publicationKeyRef = useRef(`studio-revision:${wardrobeItemId}:${crypto.randomUUID()}`);
@@ -78,6 +80,7 @@ export function GarmentLifecyclePanel({
     const controller = new AbortController();
     setWorkspace(undefined);
     setError("");
+    setMilestone(null);
     publicationKeyRef.current = `studio-revision:${wardrobeItemId}:${crypto.randomUUID()}`;
     void fetch(`/api/studio/wardrobe/${encodeURIComponent(wardrobeItemId)}/lifecycle`, {
       cache: "no-store",
@@ -96,6 +99,7 @@ export function GarmentLifecyclePanel({
     if (busy) return;
     setBusy(action);
     setError("");
+    setMilestone(null);
     try {
       const response = await fetch(`/api/studio/wardrobe/${encodeURIComponent(wardrobeItemId)}/lifecycle`, {
         method: "POST",
@@ -106,7 +110,11 @@ export function GarmentLifecyclePanel({
       const body = await responseJson<{ workspace: GarmentLifecycleWorkspace }>(response);
       accept(body.workspace);
       if (value.command === "SAVE_FACTS") setEditing(false);
-      if (value.command === "PUBLISH_REVISION") publicationKeyRef.current = `studio-revision:${wardrobeItemId}:${crypto.randomUUID()}`;
+      if (value.command === "PUBLISH_REVISION") {
+        publicationKeyRef.current = `studio-revision:${wardrobeItemId}:${crypto.randomUUID()}`;
+        setMilestone("published");
+      }
+      if (value.command === "REPUBLISH") setMilestone("returned");
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "That action did not finish.");
     } finally {
@@ -176,6 +184,19 @@ export function GarmentLifecyclePanel({
         <div><small>Listing</small><h3 id="garment-lifecycle-title">{stateLabel(workspace.state)}</h3></div>
         {busy ? <LoaderCircle aria-label="Working" className="studio-spin" size={18} /> : null}
       </div>
+
+      {milestone ? (
+        <section aria-live="polite" className="juw-studio-publish-receipt">
+          <div className="juw-receipt-motion">
+            <WardrobeMotion artwork="logo" polarity="auto" size="sm" variant="success" />
+          </div>
+          <div>
+            <small>Shop updated</small>
+            <strong>{milestone === "published" ? "Published to Shop." : "Returned to Shop."}</strong>
+            <p>{milestone === "published" ? "Customers can now see this exact revision." : "The approved listing is visible to customers again."}</p>
+          </div>
+        </section>
+      ) : null}
 
       {!editing ? (
         <div className="studio-garment-facts">

@@ -78,7 +78,7 @@ test("the reveal silhouette is derived from the exact gap between the approved w
 });
 
 test("WardrobeMotion always resolves through the untouched master and complete motion fallbacks", async () => {
-  const [component, styles, types, assets, preview, previewStyles, notFound, loader, globalLoading, globalStage, globalStageStyles, checkout, orderPage, orderStatus, garmentReceipt, wearReceipt, useCases, useCasesStyles] = await Promise.all([
+  const [component, styles, types, assets, preview, previewStyles, notFound, loader, globalLoading, globalStage, globalStageStyles, checkout, orderPage, orderStatus, garmentReceipt, wearReceipt, studioHome, lifecyclePanel, experienceStyles, useCases, useCasesStyles] = await Promise.all([
     readFile(path.join(root, "components", "brand", "wardrobe-motion.tsx"), "utf8"),
     readFile(path.join(root, "components", "brand", "wardrobe-motion.module.css"), "utf8"),
     readFile(path.join(root, "components", "brand", "wardrobe-motion.types.ts"), "utf8"),
@@ -95,6 +95,9 @@ test("WardrobeMotion always resolves through the untouched master and complete m
     readFile(path.join(root, "components", "shop", "order-status.tsx"), "utf8"),
     readFile(path.join(root, "components", "studio", "garment-intake", "garment-intake-sheet.tsx"), "utf8"),
     readFile(path.join(root, "components", "studio", "garment-intake", "wear-sheet.tsx"), "utf8"),
+    readFile(path.join(root, "components", "studio", "studio-home.tsx"), "utf8"),
+    readFile(path.join(root, "components", "studio", "garment-lifecycle-panel.tsx"), "utf8"),
+    readFile(path.join(root, "app", "experience-system.css"), "utf8"),
     readFile(path.join(root, "app", "dev", "brand-motion", "use-cases", "page.tsx"), "utf8"),
     readFile(path.join(root, "app", "dev", "brand-motion", "use-cases", "use-cases.module.css"), "utf8"),
   ]);
@@ -108,6 +111,9 @@ test("WardrobeMotion always resolves through the untouched master and complete m
   assert.match(component, /observer\.disconnect\(\)/);
   assert.match(styles, /@media \(prefers-reduced-motion: reduce\)/);
   assert.match(styles, /html\[data-theme="dark"\].*data-polarity="auto"/s);
+  assert.match(styles, /\.root\[data-variant="footer"\] \.master \{ animation-name: wm-footer-master; \}/);
+  assert.match(styles, /@keyframes wm-footer-master/);
+  assert.match(styles, /14%, 100% \{ opacity: 1; \}/);
   assert.match(styles, /\.root\[data-motion="reduced"\] \.master \{ animation: none; opacity: 1; transform: none; \}/);
   for (const variant of ["loader", "footer", "404", "empty", "success", "entrance", "ambient"]) {
     assert.match(types, new RegExp(`"${variant}"`));
@@ -134,6 +140,15 @@ test("WardrobeMotion always resolves through the untouched master and complete m
   assert.match(garmentReceipt, /artwork="logo" polarity="auto" size="sm" variant="success"/);
   assert.match(wearReceipt, /className="juw-receipt-motion"/);
   assert.match(wearReceipt, /artwork="logo" polarity="auto" size="sm" variant="success"/);
+  assert.match(studioHome, /className="studio-home-signoff"/);
+  assert.match(studioHome, /artwork="logo" className="studio-home-signoff-mark" polarity="auto" size="sm" variant="footer"/);
+  assert.doesNotMatch(studioHome, /studio-home-signoff-mark" height=\{59\} src="\/logo\.png"/);
+  assert.match(lifecyclePanel, /setMilestone\("published"\)/);
+  assert.match(lifecyclePanel, /setMilestone\("returned"\)/);
+  assert.match(lifecyclePanel, /className="juw-studio-publish-receipt"/);
+  assert.match(lifecyclePanel, /artwork="logo" polarity="auto" size="sm" variant="success"/);
+  assert.match(experienceStyles, /html\[data-theme="dark"\] \.juw-studio-publish-receipt/);
+  assert.doesNotMatch(experienceStyles.match(/\.juw-studio-publish-receipt \{[\s\S]*?\n\}/)?.[0] ?? "", /\bborder:\s/);
   assert.match(useCases, /Four truthful moments/);
   assert.match(previewStyles, /html\[data-theme="dark"\]/);
   assert.match(useCasesStyles, /html\[data-theme="dark"\]/);

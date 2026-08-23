@@ -4,6 +4,19 @@
 **Authority:** `EXPERIENCE-SYSTEM.md`, identity 2026.3, and the exact-master `WardrobeMotion` primitive
 **Principle:** one orchestrated brand moment per view; most interactions remain composed
 
+## Empathetic state model
+
+Brand motion is not a reward sprinkled across screens. It has one of four psychological jobs:
+
+| Human need | Product state | Motion job |
+| --- | --- | --- |
+| Orientation | A wait has become perceptible | Reassure the person that the same product is carrying them forward; never hide a fast transition behind ceremony |
+| Recovery | A rare destination or record is genuinely absent | Soften disorientation, then yield immediately to the recovery action |
+| Closure | An authoritative, meaningful commitment has completed | Confirm that the system crossed the boundary the person intended—not that a button was merely pressed |
+| Belonging | The person reaches the natural end of a calm home surface | Offer a quiet sign-off that feels inhabited, stays still most of the time, and never competes with work |
+
+Errors need clarity, not performance. Frequent utility emptiness needs a useful next action, not consolation. In-progress transactional work needs stable geometry and truthful status copy. These are deliberate exclusions, not missed opportunities.
+
 ## Artwork roles
 
 | Artwork | Role | Best use |
@@ -24,6 +37,8 @@ The centered-logo mark is an exact crop of the approved logo source. The seal is
 | Garment intake receipt | Centered-logo mark / `success` | The piece has been committed to the private Wardrobe and the receipt remains visible independently of motion |
 | Approved Wear receipt | Centered-logo mark / `success` | A kept view is an explicit operator decision, not an autosave |
 | Studio Media initial authority wait | Circular seal / `loader` | A genuine data wait, compact enough to retain task focus, with separate accessible status text |
+| Studio Home signoff | Centered-logo mark / `footer` | A viewport-aware ambient acknowledgement at the natural end of Home; replaces the static mark and rests for most of its 12-second cycle |
+| Studio publish/return-to-Shop receipt | Centered-logo mark / `success` | Runs only after the authoritative lifecycle command succeeds and the public workspace has been accepted |
 | Development identity proof | Both / all variants | Exactness, polarity, scale, timing, and reduced-motion review only; unavailable in production |
 
 ## Recommended next placements
@@ -32,8 +47,6 @@ These are candidates, not blanket authorization to add motion.
 
 | Priority | Surface | Recommended behavior | Gate before implementation |
 | --- | --- | --- | --- |
-| P1 | Final publish/approval receipt in Studio | Centered-logo mark / `success`, one-shot | Only for irreversible completion, never for autosave or routine field updates |
-| P2 | Studio home signoff | Centered-logo mark / `ambient`, viewport-aware | Must replace—not sit beside—another brand mark, and remain still for most of its cycle |
 | P2 | Rare campaign/editorial entrance | Centered-logo mark / `entrance`, one-shot | Must not block navigation or compete with a garment hero transition |
 
 ## Do not insert
