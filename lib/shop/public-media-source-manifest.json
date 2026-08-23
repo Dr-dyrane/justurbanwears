@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "catalogueRevision": "2026-08-22-catalogue-24",
-  "catalogueChecksum": "b85f941281d5d53a7c2b7127ff0115bbe03a20cb9f657d9e2edee632a6d4e43e",
-  "cataloguePresentationChecksum": "3ccad3398be5fdef8387da5ae0c88a15d5e6cc51beed459caa89a5a6d151ac33",
+  "catalogueRevision": "2026-08-22-catalogue-25",
+  "catalogueChecksum": "6734e12f45dd9bda1a924294d3584b07342f3776f6dd69fe6625d122197ba1a4",
+  "cataloguePresentationChecksum": "a5bfa09b8ae10b400c492069c95b18655d8bdd6400bb2b8002dd840216923ab7",
   "assets": [
     {
       "sourcePath": "/shop/model/lulu-v2-approved.png",
@@ -639,6 +639,69 @@
       "pathname": "shop/catalogue/4dfc831e0cd4fcd01bdb8d3efbd46125e53af75c5aae0cc988fb269c19260cd8/products/black-cropped-tee-slim-trouser-set/07-model-left-profile.webp",
       "sha256": "4dfc831e0cd4fcd01bdb8d3efbd46125e53af75c5aae0cc988fb269c19260cd8",
       "size": 145112,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-washed-black-wide-leg-cargo-jeans-set/01-garment-front.webp",
+      "pathname": "shop/catalogue/872b8f4d60eaf368e23deba61002347e2f308ba1b268c178747445ea64fa6f54/products/black-cropped-tee-washed-black-wide-leg-cargo-jeans-set/01-garment-front.webp",
+      "sha256": "872b8f4d60eaf368e23deba61002347e2f308ba1b268c178747445ea64fa6f54",
+      "size": 73858,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-washed-black-wide-leg-cargo-jeans-set/02-garment-back.webp",
+      "pathname": "shop/catalogue/aeac0de4f3f3dcbdd5f26d6018205f07e701d889848d91bc0de2e06c475c2d84/products/black-cropped-tee-washed-black-wide-leg-cargo-jeans-set/02-garment-back.webp",
+      "sha256": "aeac0de4f3f3dcbdd5f26d6018205f07e701d889848d91bc0de2e06c475c2d84",
+      "size": 48572,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-washed-black-wide-leg-cargo-jeans-set/03-mannequin-front.webp",
+      "pathname": "shop/catalogue/95d5b86fdc1c7784b8595ab015b2f2d286112cf913021199bfb1383810c8844a/products/black-cropped-tee-washed-black-wide-leg-cargo-jeans-set/03-mannequin-front.webp",
+      "sha256": "95d5b86fdc1c7784b8595ab015b2f2d286112cf913021199bfb1383810c8844a",
+      "size": 91260,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-washed-black-wide-leg-cargo-jeans-set/04-model-front.webp",
+      "pathname": "shop/catalogue/7ebf56588f07be7658c5137d4abfd53a4f5d89e7b9e30dac6b023c22df528534/products/black-cropped-tee-washed-black-wide-leg-cargo-jeans-set/04-model-front.webp",
+      "sha256": "7ebf56588f07be7658c5137d4abfd53a4f5d89e7b9e30dac6b023c22df528534",
+      "size": 171288,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-washed-black-wide-leg-cargo-jeans-set/05-model-rear-three-quarter.webp",
+      "pathname": "shop/catalogue/e3f6d56c7a7e036bfbcb8ce0e93cad75b17326cbb3c15385e898d1a96193792c/products/black-cropped-tee-washed-black-wide-leg-cargo-jeans-set/05-model-rear-three-quarter.webp",
+      "sha256": "e3f6d56c7a7e036bfbcb8ce0e93cad75b17326cbb3c15385e898d1a96193792c",
+      "size": 173840,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-washed-black-wide-leg-cargo-jeans-set/06-fabric-detail.webp",
+      "pathname": "shop/catalogue/37570070583f75188040ee339252de0296185fbc57337214abb712e36525e18d/products/black-cropped-tee-washed-black-wide-leg-cargo-jeans-set/06-fabric-detail.webp",
+      "sha256": "37570070583f75188040ee339252de0296185fbc57337214abb712e36525e18d",
+      "size": 65864,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-washed-black-wide-leg-cargo-jeans-set/07-model-left-profile.webp",
+      "pathname": "shop/catalogue/623681825188c12875a72c974e4df699055c703ed0442343453d0f9b492e99d0/products/black-cropped-tee-washed-black-wide-leg-cargo-jeans-set/07-model-left-profile.webp",
+      "sha256": "623681825188c12875a72c974e4df699055c703ed0442343453d0f9b492e99d0",
+      "size": 123668,
       "contentType": "image/webp",
       "width": 1120,
       "height": 1400

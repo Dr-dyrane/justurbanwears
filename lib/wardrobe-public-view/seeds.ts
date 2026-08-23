@@ -48,6 +48,7 @@ export const WARDROBE_APPROVED_V4_MODEL_SLUGS = Object.freeze([
   "black-cropped-tee-blue-wash-drawstring-barrel-trousers-set",
   "black-cropped-tee-charcoal-wash-wide-leg-cargo-jeans-set",
   "black-cropped-tee-dark-indigo-wide-leg-cargo-jeans-set",
+  "black-cropped-tee-washed-black-wide-leg-cargo-jeans-set",
 ] as const);
 
 export const WARDROBE_APPROVED_MODEL_FRONT_SLUGS = Object.freeze([
@@ -81,6 +82,7 @@ export const WARDROBE_APPROVED_MODEL_SUPPLEMENTAL_SLOTS = Object.freeze({
   "black-cropped-tee-blue-wash-drawstring-barrel-trousers-set": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "black-cropped-tee-charcoal-wash-wide-leg-cargo-jeans-set": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "black-cropped-tee-dark-indigo-wide-leg-cargo-jeans-set": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
+  "black-cropped-tee-washed-black-wide-leg-cargo-jeans-set": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "coral-drift-dress": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "moss-square-knit": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "cocoa-pleat-trouser": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
@@ -615,6 +617,25 @@ export const WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS: readonly WardrobePublicProduc
     note: "A matte-black cropped tee paired with dark-indigo washed wide-leg cargo jeans.",
     story: "The fitted crop leaves a clean waist gap above fixed-waist dark-indigo jeans, with compact outer-thigh utility pockets and broad straight legs falling to full length.",
     details: ["Cropped crew-neck tee", "Fixed waistband with button and fly", "Compact outer-thigh utility pockets", "Broad straight full-length legs"],
+    measurements: [],
+  }),
+  migrationSeed({
+    slug: "black-cropped-tee-washed-black-wide-leg-cargo-jeans-set",
+    sku: "JUW-039",
+    name: "Black Cropped Tee and Washed Black Wide-Leg Cargo Jeans Set",
+    category: "Sets",
+    price: 24500,
+    taggedSize: "Size on request",
+    fit: "Measurements confirmed before payment",
+    condition: "Condition confirmed before payment",
+    colour: "Black and washed black",
+    availability: "AVAILABLE",
+    drop: "Drop 02",
+    tone: "cocoa",
+    silhouette: "set",
+    note: "A matte-black cropped tee paired with washed-black wide-leg cargo jeans.",
+    story: "The fitted crop leaves a clean waist gap above fixed-waist washed-black jeans, finished with a centred button and fly, curved front pockets, compact outer-thigh cargo pockets and broad full-length legs.",
+    details: ["Cropped crew-neck tee", "Fixed waistband with button and fly", "Curved hip-pocket openings and compact outer-thigh cargo pockets", "Broad washed-black full-length legs"],
     measurements: [],
   }),
 ]);
