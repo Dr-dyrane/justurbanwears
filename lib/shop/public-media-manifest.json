@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "catalogueRevision": "2026-08-22-catalogue-23",
-  "catalogueChecksum": "dd2e42c80af4e953539aa2f6ce8c4bc5b32865facf99740a945fbd875721d394",
-  "cataloguePresentationChecksum": "07f54f53eb284f321ffba766f1663baeddfbac19ca1a56c3c60931978c066b62",
+  "catalogueRevision": "2026-08-22-catalogue-24",
+  "catalogueChecksum": "b85f941281d5d53a7c2b7127ff0115bbe03a20cb9f657d9e2edee632a6d4e43e",
+  "cataloguePresentationChecksum": "3ccad3398be5fdef8387da5ae0c88a15d5e6cc51beed459caa89a5a6d151ac33",
   "legacyAssets": [
     {
       "sourcePath": "/shop/products/black-cropped-tee-pink-distressed-shorts-set/04-model-front.webp",
@@ -284,6 +284,62 @@
       "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/ffe283d0b971b68470fc395a4f872e3264bc6d281215cd29ba167b5ddc7b6949/products/black-cropped-tee-charcoal-wash-wide-leg-cargo-jeans-set/07-model-left-profile.webp",
       "sha256": "ffe283d0b971b68470fc395a4f872e3264bc6d281215cd29ba167b5ddc7b6949",
       "size": 164662,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-dark-indigo-wide-leg-cargo-jeans-set/01-garment-front.webp",
+      "pathname": "shop/catalogue/369b5ec04cb7d15f53e5291ce70fc95a10e1484453257b3bafe0b1f9e98a2f62/products/black-cropped-tee-dark-indigo-wide-leg-cargo-jeans-set/01-garment-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/369b5ec04cb7d15f53e5291ce70fc95a10e1484453257b3bafe0b1f9e98a2f62/products/black-cropped-tee-dark-indigo-wide-leg-cargo-jeans-set/01-garment-front.webp",
+      "sha256": "369b5ec04cb7d15f53e5291ce70fc95a10e1484453257b3bafe0b1f9e98a2f62",
+      "size": 86730,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-dark-indigo-wide-leg-cargo-jeans-set/02-garment-back.webp",
+      "pathname": "shop/catalogue/4075e66d995e2f83b192059d98fef7f445caf4dd06ed61be486f7953273ba9a8/products/black-cropped-tee-dark-indigo-wide-leg-cargo-jeans-set/02-garment-back.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/4075e66d995e2f83b192059d98fef7f445caf4dd06ed61be486f7953273ba9a8/products/black-cropped-tee-dark-indigo-wide-leg-cargo-jeans-set/02-garment-back.webp",
+      "sha256": "4075e66d995e2f83b192059d98fef7f445caf4dd06ed61be486f7953273ba9a8",
+      "size": 58616,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-dark-indigo-wide-leg-cargo-jeans-set/03-mannequin-front.webp",
+      "pathname": "shop/catalogue/09359aada33731dd6e916f04c3462267c079e4c29ad62ec7d82e2366377f49a4/products/black-cropped-tee-dark-indigo-wide-leg-cargo-jeans-set/03-mannequin-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/09359aada33731dd6e916f04c3462267c079e4c29ad62ec7d82e2366377f49a4/products/black-cropped-tee-dark-indigo-wide-leg-cargo-jeans-set/03-mannequin-front.webp",
+      "sha256": "09359aada33731dd6e916f04c3462267c079e4c29ad62ec7d82e2366377f49a4",
+      "size": 76908,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-dark-indigo-wide-leg-cargo-jeans-set/04-model-front.webp",
+      "pathname": "shop/catalogue/710ff0a708387ad3a0b67a16e56a9824acdfb70054bfbb5d91fe3640ddd29142/products/black-cropped-tee-dark-indigo-wide-leg-cargo-jeans-set/04-model-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/710ff0a708387ad3a0b67a16e56a9824acdfb70054bfbb5d91fe3640ddd29142/products/black-cropped-tee-dark-indigo-wide-leg-cargo-jeans-set/04-model-front.webp",
+      "sha256": "710ff0a708387ad3a0b67a16e56a9824acdfb70054bfbb5d91fe3640ddd29142",
+      "size": 172262,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-dark-indigo-wide-leg-cargo-jeans-set/05-model-rear-three-quarter.webp",
+      "pathname": "shop/catalogue/c24aaf2d129e445667554e692f4afe42c40d211a6cee7a9263d496dbfa248bab/products/black-cropped-tee-dark-indigo-wide-leg-cargo-jeans-set/05-model-rear-three-quarter.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/c24aaf2d129e445667554e692f4afe42c40d211a6cee7a9263d496dbfa248bab/products/black-cropped-tee-dark-indigo-wide-leg-cargo-jeans-set/05-model-rear-three-quarter.webp",
+      "sha256": "c24aaf2d129e445667554e692f4afe42c40d211a6cee7a9263d496dbfa248bab",
+      "size": 172930,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-dark-indigo-wide-leg-cargo-jeans-set/06-fabric-detail.webp",
+      "pathname": "shop/catalogue/6c2230fb59a98b6858383a7cf3035d659bc3d32a63b36605d62324f36b3547fe/products/black-cropped-tee-dark-indigo-wide-leg-cargo-jeans-set/06-fabric-detail.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/6c2230fb59a98b6858383a7cf3035d659bc3d32a63b36605d62324f36b3547fe/products/black-cropped-tee-dark-indigo-wide-leg-cargo-jeans-set/06-fabric-detail.webp",
+      "sha256": "6c2230fb59a98b6858383a7cf3035d659bc3d32a63b36605d62324f36b3547fe",
+      "size": 333014,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/black-cropped-tee-dark-indigo-wide-leg-cargo-jeans-set/07-model-left-profile.webp",
+      "pathname": "shop/catalogue/c92d64fd34c1ed33e2c1cb3f94714c33bc3240231e3696844ca2e40884c630ce/products/black-cropped-tee-dark-indigo-wide-leg-cargo-jeans-set/07-model-left-profile.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/c92d64fd34c1ed33e2c1cb3f94714c33bc3240231e3696844ca2e40884c630ce/products/black-cropped-tee-dark-indigo-wide-leg-cargo-jeans-set/07-model-left-profile.webp",
+      "sha256": "c92d64fd34c1ed33e2c1cb3f94714c33bc3240231e3696844ca2e40884c630ce",
+      "size": 187992,
       "contentType": "image/webp"
     },
     {

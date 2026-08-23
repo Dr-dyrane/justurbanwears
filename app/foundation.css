@@ -2229,32 +2229,6 @@ button.product-card-action {
 
 /* Editorial discovery */
 
-.shop-editorial-rail {
-  align-items: center;
-  background: var(--shop-editorial-surface);
-  border-radius: clamp(28px, 4vw, 48px);
-  color: var(--shop-editorial-ink);
-  display: grid;
-  gap: clamp(38px, 7vw, 100px);
-  grid-template-columns: minmax(300px, 0.75fr) minmax(440px, 1.25fr);
-  margin: clamp(24px, 4vw, 64px) 0;
-  overflow: hidden;
-  padding: clamp(64px, 8vw, 112px) clamp(28px, 6vw, 92px);
-  position: relative;
-}
-
-.shop-editorial-rail::after {
-  background: radial-gradient(circle, rgba(245, 196, 181, 0.11), transparent 66%);
-  border-radius: 50%;
-  content: "";
-  height: 32rem;
-  left: -18rem;
-  pointer-events: none;
-  position: absolute;
-  top: -18rem;
-  width: 32rem;
-}
-
 .shop-editorial-rail > * {
   position: relative;
   z-index: 1;
@@ -5542,10 +5516,6 @@ html[data-theme="dark"] .shop-shell {
 
 .shop-product-name-supporting {
   color: var(--shop-faint);
-  font-family: var(--font-ui);
-  font-size: 0.64em;
-  font-weight: 600;
-  letter-spacing: -0.01em;
 }
 
 .shop-product-copy p {

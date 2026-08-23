@@ -91,6 +91,7 @@ await htmlCheck("shop shell", "/shop", [
     "black-cropped-tee-light-wash-snap-panel-trousers-set",
     "black-cropped-tee-blue-wash-drawstring-barrel-trousers-set",
     "black-cropped-tee-charcoal-wash-wide-leg-cargo-jeans-set",
+    "black-cropped-tee-dark-indigo-wide-leg-cargo-jeans-set",
   ].every((slug) => body.includes(`/shop/products/${slug}`))],
   ["Drop 01 leaked into discovery", (body) => !visibleMarkup(body).includes("coral-drift-dress")],
   ["shop navigation missing", (body) => body.includes("Search the wardrobe")],
@@ -156,6 +157,20 @@ await htmlCheck("Garment 012 product passport", "/shop/products/black-cropped-te
 ]);
 await htmlCheck("Garment 013 product passport", "/shop/products/black-cropped-tee-charcoal-wash-wide-leg-cargo-jeans-set", [
   ["product name missing", (body) => body.includes("Black Cropped Tee and Charcoal-Wash Wide-Leg Cargo Jeans Set")],
+  ["seven-view dossier incomplete", (body) => [
+    "01-garment-front.webp",
+    "02-garment-back.webp",
+    "03-mannequin-front.webp",
+    "04-model-front.webp",
+    "05-model-rear-three-quarter.webp",
+    "06-fabric-detail.webp",
+    "07-model-left-profile.webp",
+  ].every((file) => body.includes(file))],
+  ["customer-facing AI copy leaked", hasNoCustomerAiCopy],
+  ["Product JSON-LD missing", (body) => body.includes("application/ld+json") && body.includes('"@type":"Product"')],
+]);
+await htmlCheck("Garment 014 product passport", "/shop/products/black-cropped-tee-dark-indigo-wide-leg-cargo-jeans-set", [
+  ["product name missing", (body) => body.includes("Black Cropped Tee and Dark Indigo Wide-Leg Cargo Jeans Set")],
   ["seven-view dossier incomplete", (body) => [
     "01-garment-front.webp",
     "02-garment-back.webp",

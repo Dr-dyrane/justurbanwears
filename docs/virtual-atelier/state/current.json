@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "workflowRevision": "2026-08-22.43",
-  "updatedAt": "2026-08-22T20:05:47Z",
+  "workflowRevision": "2026-08-22.51",
+  "updatedAt": "2026-08-23T02:58:00Z",
   "model": "LULU_V4",
-  "activeGarment": "013",
-  "activeView": "SHOP_PUBLICATION",
-  "status": "GARMENT_013_01_07_USER_ACCEPTED_G013_ONLY_TEXTURE_EXCEPTION_LOCKED_PUBLICATION_PENDING",
+  "activeGarment": "014",
+  "activeView": "07",
+  "status": "GARMENT_014_PRIVATE_PACKET_AND_PUBLIC_MEDIA_COMPLETE_CATALOGUE_RELEASE_PENDING",
   "identityReview": {
     "candidateId": "lulu.face.v4.front.candidate.v1",
     "acceptedAssetId": "lulu.face.v4.front.lock.v1",
@@ -29,15 +29,16 @@
   },
   "globalLocks": {
     "garment": {
-      "status": "GARMENTS_009_010_011_012_013_01_07_ACCEPTED_LOCKED",
+      "status": "GARMENTS_009_010_011_012_013_014_01_07_ACCEPTED_LOCKED",
       "primary": [
         "garment.009.view.01.accepted",
         "garment.010.view.01.accepted",
         "garment.011.view.01.accepted",
         "garment.012.view.01.accepted",
-        "garment.013.view.01.accepted"
+        "garment.013.view.01.accepted",
+        "garment.014.view.01.accepted"
       ],
-      "rule": "The exact reviewed 01-07 sets for Garments 009, 010, 011, 012 and 013 are privately locked. Each accepted 01 controls its garment-specific holistic subject synthesis; each 02 remains inferred presentation only and each 04 remains model-completed construction presentation only. Direct captures retain construction truth. Each accepted 05 may parent only its own independent 06 and 07 siblings. Garment 013 alone has an explicit user-approved source-texture exception for its selected 05-07; every other identity, body, construction, view, room, realism and lineage gate remains in force, and the global contract is unchanged."
+      "rule": "The exact reviewed 01-07 sets for Garments 009, 010, 011, 012, 013 and 014 are privately locked. Each accepted 01 controls its garment-specific holistic subject synthesis; each 02 remains inferred presentation only and each 04 remains model-completed construction presentation only. Direct captures retain construction truth. Each accepted 05 may parent only its own independent 06 and 07 siblings. Garment 013 alone has its historical explicit source-texture exception; the user-authorized G014 final-effect gate retained its earliest coherent 05 after stricter retries increased drift, without changing direct garment truth or the global lineage contract."
     },
     "identity": {
       "status": "LOCKED",
@@ -83,8 +84,8 @@
       "status": "LOCKED_MANDATORY_FASHION_NOVA_CHECK_BEFORE_EVERY_05",
       "validator": "scripts/virtual-atelier/validate-operation.mjs",
       "requiredDecisions": ["KEEP", "REFINE", "REPLACE", "NO_CLOSE_MATCH"],
-      "operation": "storage/garments/drop-02/009/operations/g009-fashion-nova-styling-check-v001.json",
-      "decision": "REPLACE current sandals with sleek fitted black knee-high pointed-toe stiletto boots with minimal hardware.",
+      "operation": "storage/garments/drop-02/014/operations/g014-fashion-nova-styling-check-v001.json",
+      "decision": "REFINE with sleek fitted black pointed-toe stiletto ankle boots, slim heels and minimal hardware, mostly concealed beneath the full-length wide hems.",
       "rule": "Before every 05, inspect and record one current official Fashion Nova product or styling page for the same or closest proven garment family. Fashion Nova is advisory footwear/accessory styling evidence only and is never passed as a generation image reference by default. It has no authority over garment provenance or construction, Lulu identity/body, hair, pose, room, brand, camera or lighting. If no close match exists, record NO_CLOSE_MATCH and keep garment-faithful JUW styling. The user-accepted G009/05 whole-frame review closed its REPLACE decision; those accepted boots persist through its independent 06 and 07 siblings."
     },
     "atelier": {
@@ -1204,14 +1205,72 @@
         "globalContractChanged": false
       },
       "rejectedCandidatesMayParent": false
+    },
+    "014": {
+      "status": "PRIVATE_PACKET_AND_PUBLIC_MEDIA_COMPLETE_CATALOGUE_RELEASE_PENDING",
+      "sku": "JUW-038",
+      "slug": "black-cropped-tee-dark-indigo-wide-leg-cargo-jeans-set",
+      "sourceAssetId": "garment.014.full-front",
+      "lockManifest": "storage/garments/drop-02/014/locked/manifest.json",
+      "lockManifestSha256": "dcaf5e834b001b5f73de3b6a2bb3689d07d3c179194969c54607aafe14b40fb6",
+      "views": {
+        "01": {"assetId": "garment.014.view.01.accepted", "status": "USER_AUTHORIZED_ACCEPTED_LOCKED", "sha256": "7638b5125eecd727cf690bf34300040567c340249fe891dcc48205569e5b9909"},
+        "02": {"assetId": "garment.014.view.02.accepted", "status": "USER_AUTHORIZED_ACCEPTED_LOCKED_INFERRED_PRESENTATION_ONLY", "sha256": "363b336941ee13eb5a21883a6604e16765d7798e56622fe51ed142c09c9f0595", "mayServeAsDirectBackEvidence": false},
+        "03": {"assetId": "garment.014.view.03.accepted", "status": "USER_AUTHORIZED_ACCEPTED_LOCKED", "sha256": "31aff2a3aec4fb31dbbfe398f2db4c489dcca7d9f9b4bcc91979c1a77f1f5627"},
+        "04": {"assetId": "garment.014.view.04.accepted", "status": "USER_AUTHORIZED_ACCEPTED_LOCKED_MODEL_COMPLETED_PRESENTATION", "sha256": "53d6639ded0c8b7c7dc74e46f203403b09ff2af3af26a334f390ea0d2c1d423d", "mayServeAsFibreEvidence": false},
+        "05": {"assetId": "garment.014.view.05.accepted", "status": "USER_AUTHORIZED_ACCEPTED_LOCKED_FRONT_MASTER", "sha256": "0f4cc82ec60bb07de231dade9245cb47efb2c4cbde8df0db74e1fdf03dcce8d8", "mayParentIndependent06And07": true},
+        "06": {"assetId": "garment.014.view.06.accepted", "status": "USER_AUTHORIZED_ACCEPTED_LOCKED_SIBLING_PROFILE", "sha256": "757a36cf0c30a8cd90257c97ca6854312b01bb5c885165772da94ccf98ff09cd", "parentAssetId": "garment.014.view.05.accepted", "mayParent07": false},
+        "07": {"assetId": "garment.014.view.07.accepted", "status": "USER_AUTHORIZED_ACCEPTED_LOCKED_SIBLING_INFERRED_REAR_PRESENTATION", "sha256": "7209fa4bd598a3911ab954b2c0f9f74ffac23fde2658e9da4799911175055f01", "parentAssetId": "garment.014.view.05.accepted", "mayParent06": false, "mayServeAsDirectBackEvidence": false}
+      },
+      "subjectLock": {"assetId": "garment.014.subject.front.lock.v1", "status": "AUTONOMOUSLY_ACCEPTED_LOCKED_SUBJECT", "sha256": "9bc68aeac63f4c2aa8ff4d5b68a5120613de761d28b336acec6174026cde6711", "mayParentRoom05": true, "mayDirectlyParent06Or07": false},
+      "operationRecords": [
+        "storage/garments/drop-02/014/operations/g014-v01-r001.json",
+        "storage/garments/drop-02/014/operations/g014-v01-c001.json",
+        "storage/garments/drop-02/014/operations/g014-v01-r002.json",
+        "storage/garments/drop-02/014/operations/g014-v02-r001.json",
+        "storage/garments/drop-02/014/operations/g014-v03-r001.json",
+        "storage/garments/drop-02/014/operations/g014-v04-r001.json",
+        "storage/garments/drop-02/014/operations/g014-fashion-nova-styling-check-v001.json",
+        "storage/garments/drop-02/014/operations/g014-holistic-subject-r001.json",
+        "storage/garments/drop-02/014/operations/g014-holistic-subject-r001-c001.json",
+        "storage/garments/drop-02/014/operations/g014-room-and-05-r001.json",
+        "storage/garments/drop-02/014/operations/g014-room-and-05-c001.json",
+        "storage/garments/drop-02/014/operations/g014-room-and-05-r002.json",
+        "storage/garments/drop-02/014/operations/g014-v06-r001.json",
+        "storage/garments/drop-02/014/operations/g014-v06-c001.json",
+        "storage/garments/drop-02/014/operations/g014-v07-r001.json",
+        "storage/garments/drop-02/014/operations/g014-shop-media-export-v001.json"
+      ],
+      "shopMediaExport": {
+        "operationId": "g014-shop-media-export-v001",
+        "status": "EXPORTED_AND_HASH_VERIFIED",
+        "assetCount": 7,
+        "canvas": "1120x1400",
+        "nonUniformScaling": false,
+        "sourceLockManifestSha256": "dcaf5e834b001b5f73de3b6a2bb3689d07d3c179194969c54607aafe14b40fb6",
+        "catalogueRevision": "2026-08-22-catalogue-24",
+        "catalogueManifestChecksum": "b85f941281d5d53a7c2b7127ff0115bbe03a20cb9f657d9e2edee632a6d4e43e",
+        "publicBlobManifestStatus": "SYNCED_AND_REMOTE_HASH_VERIFIED",
+        "publicBlobActiveAssetCount": 201,
+        "publicBlobLegacyAssetCount": 6,
+        "cataloguePresentationChecksum": "3ccad3398be5fdef8387da5ae0c88a15d5e6cc51beed459caa89a5a6d151ac33"
+      },
+      "siblingGate": {
+        "status": "USER_AUTHORIZED_AUTONOMOUS_WHOLE_FRAME_PASS",
+        "acceptedParent": "garment.014.view.05.accepted",
+        "view06": {"status": "USER_AUTHORIZED_ACCEPTED_LOCKED_SIBLING_PROFILE", "selectedCandidate": "06-on-lulu-left-profile-r001-c001.png", "review": "PASS"},
+        "view07": {"status": "USER_AUTHORIZED_ACCEPTED_LOCKED_SIBLING_INFERRED_REAR_PRESENTATION", "selectedCandidate": "07-on-lulu-right-rear-3q-r001.png", "review": "PASS"},
+        "remainingReleaseBlocker": null
+      },
+      "rejectedCandidatesMayParent": false
     }
   },
   "nextOperation": {
-    "operationId": "g013-shop-media-export-v001",
-    "garmentId": "013",
-    "view": "01_07_EXPORT",
-    "role": "SHOP_MEDIA_EXPORT_AND_PUBLICATION",
+    "operationId": "g014-catalogue-and-production-release-v001",
+    "garmentId": "014",
+    "view": "01-07",
+    "role": "CATALOGUE_DATABASE_DEPLOYMENT_AND_LIVE_VERIFICATION",
     "status": "READY"
   },
-  "requiredNext": "Export the exact locked Garment 013 bytes through the aspect-ratio-safe Shop exporter, add the catalogue row, publish the database release, deploy and verify the exact production revision."
+  "requiredNext": "Sync the G014 public media manifests, verify catalogue-24, then complete the authorized database, exact-revision deployment and live Shop verification release."
 }
