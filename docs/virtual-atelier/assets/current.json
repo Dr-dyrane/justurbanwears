@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-23T08:45:43Z",
+  "updatedAt": "2026-08-23T10:29:40Z",
   "assets": [
     {
       "id": "packet.canon.v1",
@@ -2837,20 +2837,20 @@
     {
       "id": "garment.015.view.04.accepted",
       "filename": "04-fabric-detail.png",
-      "aliases": ["../garments/drop-02/015/locked/04-fabric-detail.png", "../garments/drop-02/015/candidates/manual-set-v1/04-fabric-detail-r003.png"],
-      "kind": "garment-reference",
-      "role": "User-authorized deterministic direct-source Garment 015 visible-detail crop",
-      "provenance": "DERIVED_FROM_DIRECT",
+      "aliases": ["../garments/drop-02/015/locked/04-fabric-detail.png", "../garments/drop-02/015/candidates/manual-set-v1/04-fabric-detail-r004.png"],
+      "kind": "generated-output",
+      "role": "User-authorized Garment 015 model-completed close-detail presentation",
+      "provenance": "MODEL_REFERENCE",
       "privacy": "private",
       "storage": "repo-storage-ignored",
-      "status": "user-authorized-evidence-gate-accepted-locked-direct-source-crop",
+      "status": "user-authorized-evidence-gate-accepted-locked-model-completed-presentation",
       "required": true,
-      "sha256": "02f0f93fcfe2964f880241cf7ad10d93cee4a4cf550c3773ec2d02d270b5b985",
-      "bytes": 96824,
-      "authority": ["garment", "presentation"],
+      "sha256": "fc7b0278a08a5cd7c7e590f5b2abc894e20c28e4d3c31add3801645956262d85",
+      "bytes": 2692296,
+      "authority": ["presentation"],
       "garmentId": "015",
       "view": "04",
-      "notes": "Deterministic 250x310 crop of the supplied direct front capture after generated detail attempts introduced unsupported texture. It proves only visible source detail and may not support fibre, composition, weight, stretch, lining or pocket-depth claims."
+      "notes": "Explicitly user-selected existing generated close-detail presentation. It is not direct evidence and may not support fibre, composition, weight, stretch, lining, pocket-depth or hidden-construction claims; direct G015 captures remain construction truth."
     },
     {
       "id": "garment.015.subject.front.lock.v1",
