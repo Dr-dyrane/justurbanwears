@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "source": "design/identity-2026/justurban-logo-source.png",
+  "sourceSha256": "9990e1c587a5f12aac986329a0d9ab56b7201d8dffb0a2fdfe5aa40d6f6a1b06",
+  "cropBounds": {
+    "left": 391,
+    "top": 24,
+    "right": 921,
+    "bottom": 712
+  },
+  "dimensions": [
+    531,
+    689
+  ],
+  "strategy": "exact-alpha-half-partition-from-approved-centered-logo",
+  "master": {
+    "file": "/brand/motion/logo/master.png",
+    "sha256": "949b24905b69e0cf4ec6e87f2cabf4c83a05aa221defea7bcb0d58ab3b15b40c"
+  },
+  "masks": {
+    "base": {
+      "file": "/brand/motion/logo/base-mask.png",
+      "sha256": "73650e7873ffa8570fd8a804078f44ea338ffbb8156dbacdea5b15b39753c9a1"
+    },
+    "left-door": {
+      "file": "/brand/motion/logo/left-door-mask.png",
+      "sha256": "fd23149b6dcf185d219c96c60668ca20e9dbc21ad966c88535b71206b959d10f"
+    },
+    "right-door": {
+      "file": "/brand/motion/logo/right-door-mask.png",
+      "sha256": "54fb85b8da1533752439cb8dc50d15daca0a81331ca2800095bdd082cf1439e2"
+    },
+    "left-l": {
+      "file": "/brand/motion/logo/left-l-mask.png",
+      "sha256": "f02f79b90d72cc2716128e35e35312f882bb2e78163fb0d878dfa01a03ecd93c"
+    },
+    "right-l": {
+      "file": "/brand/motion/logo/right-l-mask.png",
+      "sha256": "f02f79b90d72cc2716128e35e35312f882bb2e78163fb0d878dfa01a03ecd93c"
+    },
+    "silhouette": {
+      "file": "/brand/motion/logo/silhouette-mask.png",
+      "sha256": "b88e64dd4d0703c07c1e30e964ad8ca21341a55180ed59038af057997c121f7e"
+    }
+  }
+}

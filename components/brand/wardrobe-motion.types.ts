@@ -9,11 +9,13 @@ export const WARDROBE_MOTION_VARIANTS = [
 ] as const;
 
 export type WardrobeMotionVariant = (typeof WARDROBE_MOTION_VARIANTS)[number];
+export type WardrobeMotionArtwork = "seal" | "logo";
 export type WardrobeMotionSize = "sm" | "md" | "lg";
 export type WardrobeMotionPolarity = "light" | "dark";
 export type WardrobeMotionPreference = "auto" | "reduced";
 
 export type WardrobeMotionProps = {
+  artwork?: WardrobeMotionArtwork;
   className?: string;
   label?: string;
   loop?: boolean;

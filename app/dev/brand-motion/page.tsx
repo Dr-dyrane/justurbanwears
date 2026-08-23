@@ -9,9 +9,21 @@ export default function BrandMotionPreviewPage() {
   return (
     <main className={styles.page}>
       <header className={styles.header}>
-        <p>Internal identity proof</p>
-        <h1>The wardrobe opens. The mark remains exact.</h1>
-        <span>Every moving layer is masked from the production master; the first and final frames are the untouched asset.</span>
+        <div className={styles.headerCopy}>
+          <p>Internal identity proof</p>
+          <h1>The wardrobe opens. The mark remains exact.</h1>
+          <span>Every moving layer is masked from the production master; the first and final frames are the untouched asset.</span>
+        </div>
+        <div className={styles.heroPair}>
+          <div className={styles.heroMotion}>
+            <WardrobeMotion loop polarity="light" size="lg" variant="entrance" />
+            <small>Circular seal</small>
+          </div>
+          <div className={styles.heroMotion}>
+            <WardrobeMotion artwork="logo" loop polarity="light" size="lg" variant="entrance" />
+            <small>Centered-logo mark</small>
+          </div>
+        </div>
       </header>
 
       <section className={`${styles.composition} ${styles.light}`}>
@@ -39,11 +51,42 @@ export default function BrandMotionPreviewPage() {
       </section>
 
       <section className={`${styles.composition} ${styles.light}`}>
+        <div className={styles.sectionHeading}><p>Centered-logo mark</p><h2>Transparent coral master</h2></div>
+        <div className={styles.grid}>
+          {WARDROBE_MOTION_VARIANTS.map((variant) => (
+            <article className={styles.card} key={`logo-light-${variant}`}>
+              <WardrobeMotion artwork="logo" loop polarity="light" size="md" variant={variant} />
+              <span>{variant}</span>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className={`${styles.composition} ${styles.dark}`}>
+        <div className={styles.sectionHeading}><p>Centered-logo mark · ink</p><h2>Same pixels, authored polarity</h2></div>
+        <div className={styles.grid}>
+          {WARDROBE_MOTION_VARIANTS.map((variant) => (
+            <article className={styles.card} key={`logo-dark-${variant}`}>
+              <WardrobeMotion artwork="logo" loop polarity="dark" size="md" variant={variant} />
+              <span>{variant}</span>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section className={`${styles.composition} ${styles.light}`}>
         <div className={styles.sectionHeading}><p>Scale proof</p><h2>Small, medium, large</h2></div>
         <div className={styles.scaleRow}>
-          <WardrobeMotion loop size="sm" variant="loader" />
-          <WardrobeMotion loop size="md" variant="entrance" />
-          <WardrobeMotion loop size="lg" variant="ambient" />
+          <div className={styles.scaleFamily}>
+            <WardrobeMotion loop size="sm" variant="loader" />
+            <WardrobeMotion loop size="md" variant="entrance" />
+            <WardrobeMotion loop size="lg" variant="ambient" />
+          </div>
+          <div className={styles.scaleFamily}>
+            <WardrobeMotion artwork="logo" loop size="sm" variant="loader" />
+            <WardrobeMotion artwork="logo" loop size="md" variant="entrance" />
+            <WardrobeMotion artwork="logo" loop size="lg" variant="ambient" />
+          </div>
         </div>
       </section>
 

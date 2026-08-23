@@ -29,6 +29,8 @@ export const BRAND_ASSETS = {
     runtimeAppleTouch: "/brand/apple-touch-icon.png?v=2026.3-seal",
     motionMaster: "/brand/icon-master-1024.png?v=2026.3-seal",
     motionManifest: "/brand/motion/manifest.json?v=2026.3-seal",
+    motionLogoMaster: "/brand/motion/logo/master.png?v=2026.3-logo",
+    motionLogoManifest: "/brand/motion/logo/manifest.json?v=2026.3-logo",
   },
   favicon: {
     svg: "/favicon.svg",

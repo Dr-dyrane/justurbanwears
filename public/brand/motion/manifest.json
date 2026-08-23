@@ -8,6 +8,7 @@
   ],
   "strategy": "lossless-nearest-component-partition-from-canonical-master",
   "shadowReachPx": 22,
+  "silhouetteShadowInsetPx": 8,
   "components": {
     "left-door": {
       "mask": "/brand/motion/left-door-mask.png",
@@ -72,6 +73,6 @@
   },
   "silhouette": {
     "mask": "/brand/motion/silhouette-mask.png",
-    "maskSha256": "cdd563edf60dd9aa4d5e93170226667548279c1e0e2a9f39ed876b7de1dc1903"
+    "maskSha256": "dc9e3a2460a7530d374858ded8d705a78e0ea9f902a5f6a67656d91ad69f7727"
   }
 }

@@ -1,6 +1,8 @@
 .root {
   --wm-cycle: 1280ms;
   --wm-ease: cubic-bezier(0.32, 0.72, 0, 1);
+  --wm-signature-opacity: 0;
+  --wm-silhouette-opacity: 1;
   display: inline-grid;
   flex: 0 0 auto;
   line-height: 0;
@@ -21,6 +23,15 @@
 
 .stage[data-size="sm"] { height: 48px; width: 48px; }
 .stage[data-size="lg"] { height: 164px; width: 164px; }
+
+.stage[data-artwork="logo"] {
+  background: transparent;
+  border-radius: 0;
+  width: 74px;
+}
+
+.stage[data-artwork="logo"][data-size="sm"] { width: 37px; }
+.stage[data-artwork="logo"][data-size="lg"] { width: 126px; }
 
 .layer,
 .signature {
@@ -71,6 +82,37 @@
   mask: url("/brand/motion/silhouette-mask.png") center / 100% 100% no-repeat;
 }
 
+.root[data-artwork="logo"] .base {
+  -webkit-mask-image: url("/brand/motion/logo/base-mask.png");
+  mask-image: url("/brand/motion/logo/base-mask.png");
+}
+
+.root[data-artwork="logo"] .leftDoor {
+  -webkit-mask-image: url("/brand/motion/logo/left-door-mask.png");
+  mask-image: url("/brand/motion/logo/left-door-mask.png");
+}
+
+.root[data-artwork="logo"] .rightDoor {
+  -webkit-mask-image: url("/brand/motion/logo/right-door-mask.png");
+  mask-image: url("/brand/motion/logo/right-door-mask.png");
+}
+
+.root[data-artwork="logo"] .leftL {
+  -webkit-mask-image: url("/brand/motion/logo/left-l-mask.png");
+  mask-image: url("/brand/motion/logo/left-l-mask.png");
+}
+
+.root[data-artwork="logo"] .rightL {
+  -webkit-mask-image: url("/brand/motion/logo/right-l-mask.png");
+  mask-image: url("/brand/motion/logo/right-l-mask.png");
+}
+
+.root[data-artwork="logo"] .silhouette,
+.root[data-artwork="logo"] .signature {
+  -webkit-mask-image: url("/brand/motion/logo/silhouette-mask.png");
+  mask-image: url("/brand/motion/logo/silhouette-mask.png");
+}
+
 .signature {
   background: #cb6a4a;
   opacity: 0;
@@ -111,20 +153,54 @@
 .root[data-variant="404"] { --wm-cycle: 2400ms; }
 .root[data-variant="empty"] { --wm-cycle: 2100ms; }
 .root[data-variant="ambient"] { --wm-cycle: 6200ms; }
-.root[data-variant="footer"] { --wm-cycle: 8400ms; }
+.root[data-variant="footer"] { --wm-cycle: 12000ms; }
+
+.root[data-variant="404"] { --wm-silhouette-opacity: 0.3; }
+.root[data-variant="empty"] { --wm-silhouette-opacity: 0.2; }
+.root[data-variant="ambient"] { --wm-silhouette-opacity: 0.55; }
+.root[data-variant="footer"] { --wm-silhouette-opacity: 0.42; }
 
 .root[data-variant="ambient"] .leftDoor,
 .root[data-variant="footer"] .leftDoor { --wm-open-x: -2.8%; --wm-open-y: 0%; --wm-open-rotate: -2deg; }
 .root[data-variant="ambient"] .rightDoor,
 .root[data-variant="footer"] .rightDoor { --wm-open-x: 2.8%; --wm-open-y: 0%; --wm-open-rotate: 2deg; }
 
-.root[data-variant="success"] .signature { --wm-signature-opacity: 0.28; }
+.root[data-variant="404"] .leftDoor { --wm-open-x: -8%; --wm-open-rotate: -8deg; }
+.root[data-variant="404"] .rightDoor { --wm-open-x: 8%; --wm-open-rotate: 8deg; }
+.root[data-variant="empty"] .leftDoor { --wm-open-x: -5%; --wm-open-rotate: -4deg; }
+.root[data-variant="empty"] .rightDoor { --wm-open-x: 5%; --wm-open-rotate: 4deg; }
+.root[data-variant="success"] .leftDoor { --wm-open-x: -7.5%; --wm-open-rotate: -6deg; }
+.root[data-variant="success"] .rightDoor { --wm-open-x: 7.5%; --wm-open-rotate: 6deg; }
+.root[data-variant="entrance"] .leftDoor { --wm-open-x: -8.5%; --wm-open-rotate: -9deg; }
+.root[data-variant="entrance"] .rightDoor { --wm-open-x: 8.5%; --wm-open-rotate: 9deg; }
+
+.root[data-variant="success"] .signature {
+  --wm-signature-opacity: 0.22;
+}
 .root[data-variant="404"] .silhouette,
 .root[data-variant="empty"] .silhouette { filter: saturate(0.65); }
 
 .root[data-polarity="dark"] {
   filter: drop-shadow(0 12px 28px rgb(0 0 0 / 24%));
 }
+
+.root[data-polarity="dark"] .stage {
+  box-shadow: 0 0 0 1px rgb(244 238 230 / 9%), 0 0 0 10px rgb(244 238 230 / 2.5%);
+}
+
+.root[data-artwork="logo"] { --wm-signature-opacity: 0.14; }
+.root[data-artwork="logo"][data-variant="footer"],
+.root[data-artwork="logo"][data-variant="ambient"] { --wm-signature-opacity: 0.07; }
+.root[data-artwork="logo"][data-variant="404"],
+.root[data-artwork="logo"][data-variant="empty"] { --wm-signature-opacity: 0; }
+.root[data-artwork="logo"][data-variant="entrance"] { --wm-signature-opacity: 0.17; }
+.root[data-artwork="logo"][data-polarity="light"] .signature { background: #3a2e25; }
+.root[data-artwork="logo"][data-polarity="dark"] .signature { background: #f4eee6; }
+.root[data-artwork="logo"][data-variant="success"] .signature {
+  --wm-signature-opacity: 0.22;
+  background: #cb6a4a;
+}
+.root[data-artwork="logo"][data-polarity="dark"] .stage { box-shadow: none; }
 
 @keyframes wm-master {
   0%, 12% { opacity: 1; }
@@ -172,13 +248,13 @@
 
 @keyframes wm-silhouette {
   0%, 26% { opacity: 0; transform: scale(0.985); }
-  40%, 64% { opacity: 1; transform: scale(1); }
+  40%, 64% { opacity: var(--wm-silhouette-opacity); transform: scale(1); }
   78%, 100% { opacity: 0; transform: scale(0.995); }
 }
 
 @keyframes wm-signature {
   0%, 35% { opacity: 0; transform: scale(0.985); }
-  46%, 58% { opacity: var(--wm-signature-opacity, 0); transform: scale(1); }
+  46%, 58% { opacity: var(--wm-signature-opacity); transform: scale(1); }
   72%, 100% { opacity: 0; transform: scale(0.995); }
 }
 

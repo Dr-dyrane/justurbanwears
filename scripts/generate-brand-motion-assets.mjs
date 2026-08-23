@@ -151,15 +151,18 @@ const partitionMasks = await Promise.all([
 ]);
 
 const silhouetteAlpha = new Uint8Array(pixelCount);
+const silhouetteShadowInset = 8;
 for (let y = 0; y < height; y += 1) {
   let leftEdge = -1;
   let rightEdge = width;
   for (let x = 0; x < width; x += 1) {
-    const currentOwner = owner[y * width + x];
+    const index = y * width + x;
+    const currentOwner = owner[index];
+    if (distance[index] > silhouetteShadowInset) continue;
     if (currentOwner === 0) leftEdge = Math.max(leftEdge, x);
     if (currentOwner === 1) rightEdge = Math.min(rightEdge, x);
   }
-  if (leftEdge >= 0 && rightEdge < width && rightEdge - leftEdge > 4) {
+  if (leftEdge >= 0 && rightEdge < width && rightEdge > leftEdge) {
     for (let x = leftEdge + 1; x < rightEdge; x += 1) silhouetteAlpha[y * width + x] = 255;
   }
 }
@@ -182,6 +185,7 @@ const manifest = {
   dimensions: [width, height],
   strategy: "lossless-nearest-component-partition-from-canonical-master",
   shadowReachPx: shadowReach,
+  silhouetteShadowInsetPx: silhouetteShadowInset,
   components: Object.fromEntries(named.map(([name, component], index) => [name, {
     mask: `/brand/motion/${name}-mask.png`,
     maskSha256: sha256(partitionMasks[index + 1]),
@@ -193,4 +197,95 @@ const manifest = {
 };
 
 await writeFile(path.join(outputRoot, "manifest.json"), `${JSON.stringify(manifest, null, 2)}\n`, "utf8");
-console.log(`Generated exact-master Wardrobe Motion masks from ${manifest.sourceSha256}.`);
+
+const logoSourcePath = path.join(root, "design", "identity-2026", "justurban-logo-source.png");
+const logoSource = await readFile(logoSourcePath);
+const { data: logoSourceData, info: logoSourceInfo } = await sharp(logoSource).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+const logoScanLimit = Math.floor(logoSourceInfo.height * 0.55);
+const logoBounds = { left: logoSourceInfo.width, top: logoSourceInfo.height, right: -1, bottom: -1 };
+
+for (let y = 0; y < logoScanLimit; y += 1) {
+  for (let x = 0; x < logoSourceInfo.width; x += 1) {
+    if (logoSourceData[(y * logoSourceInfo.width + x) * 4 + 3] === 0) continue;
+    logoBounds.left = Math.min(logoBounds.left, x);
+    logoBounds.top = Math.min(logoBounds.top, y);
+    logoBounds.right = Math.max(logoBounds.right, x);
+    logoBounds.bottom = Math.max(logoBounds.bottom, y);
+  }
+}
+
+if (logoBounds.right < logoBounds.left || logoBounds.bottom < logoBounds.top) {
+  throw new Error("Could not resolve the wardrobe mark inside the approved centered logo.");
+}
+
+const logoWidth = logoBounds.right - logoBounds.left + 1;
+const logoHeight = logoBounds.bottom - logoBounds.top + 1;
+const logoMaster = await sharp(logoSource).extract({
+  left: logoBounds.left,
+  top: logoBounds.top,
+  width: logoWidth,
+  height: logoHeight,
+}).png({ compressionLevel: 9 }).toBuffer();
+const { data: logoData, info: logoInfo } = await sharp(logoMaster).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+const logoPixelCount = logoInfo.width * logoInfo.height;
+const logoMiddle = logoInfo.width / 2;
+
+function logoAlphaMask(predicate) {
+  const rgba = Buffer.alloc(logoPixelCount * 4, 255);
+  for (let index = 0; index < logoPixelCount; index += 1) rgba[index * 4 + 3] = predicate(index) ? 255 : 0;
+  return sharp(rgba, { raw: { width: logoInfo.width, height: logoInfo.height, channels: 4 } }).png({ compressionLevel: 9 }).toBuffer();
+}
+
+const logoOwnership = new Int8Array(logoPixelCount).fill(-1);
+for (let index = 0; index < logoPixelCount; index += 1) {
+  if (logoData[index * 4 + 3] === 0) continue;
+  logoOwnership[index] = index % logoInfo.width < logoMiddle ? 0 : 1;
+}
+
+const logoSilhouetteAlpha = new Uint8Array(logoPixelCount);
+for (let y = 0; y < logoInfo.height; y += 1) {
+  let leftEdge = -1;
+  let rightEdge = logoInfo.width;
+  for (let x = 0; x < logoInfo.width; x += 1) {
+    const index = y * logoInfo.width + x;
+    if (logoData[index * 4 + 3] === 0) continue;
+    if (x < logoMiddle) leftEdge = Math.max(leftEdge, x);
+    if (x >= logoMiddle) rightEdge = Math.min(rightEdge, x);
+  }
+  if (leftEdge >= 0 && rightEdge < logoInfo.width && rightEdge > leftEdge) {
+    for (let x = leftEdge + 1; x < rightEdge; x += 1) logoSilhouetteAlpha[y * logoInfo.width + x] = 255;
+  }
+}
+
+const logoMasks = {
+  base: await logoAlphaMask((index) => logoOwnership[index] === -1),
+  "left-door": await logoAlphaMask((index) => logoOwnership[index] === 0),
+  "right-door": await logoAlphaMask((index) => logoOwnership[index] === 1),
+  "left-l": await logoAlphaMask(() => false),
+  "right-l": await logoAlphaMask(() => false),
+  silhouette: await logoAlphaMask((index) => logoSilhouetteAlpha[index] === 255),
+};
+
+const logoOutputRoot = path.join(outputRoot, "logo");
+await mkdir(logoOutputRoot, { recursive: true });
+await Promise.all([
+  writeFile(path.join(logoOutputRoot, "master.png"), logoMaster),
+  ...Object.entries(logoMasks).map(([name, buffer]) => writeFile(path.join(logoOutputRoot, `${name}-mask.png`), buffer)),
+]);
+
+const logoManifest = {
+  schemaVersion: 1,
+  source: "design/identity-2026/justurban-logo-source.png",
+  sourceSha256: sha256(logoSource),
+  cropBounds: logoBounds,
+  dimensions: [logoInfo.width, logoInfo.height],
+  strategy: "exact-alpha-half-partition-from-approved-centered-logo",
+  master: { file: "/brand/motion/logo/master.png", sha256: sha256(logoMaster) },
+  masks: Object.fromEntries(Object.entries(logoMasks).map(([name, buffer]) => [name, {
+    file: `/brand/motion/logo/${name}-mask.png`,
+    sha256: sha256(buffer),
+  }])),
+};
+
+await writeFile(path.join(logoOutputRoot, "manifest.json"), `${JSON.stringify(logoManifest, null, 2)}\n`, "utf8");
+console.log(`Generated exact-master Wardrobe Motion masks from ${manifest.sourceSha256} and centered logo ${logoManifest.sourceSha256}.`);

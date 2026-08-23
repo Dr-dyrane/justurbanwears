@@ -5,7 +5,7 @@ export default function NotFound() {
   return (
     <main className={styles.page}>
       <section className={styles.story}>
-        <WardrobeMotion className={styles.motion} polarity="dark" size="lg" variant="404" />
+        <WardrobeMotion artwork="logo" className={styles.motion} polarity="dark" size="lg" variant="404" />
         <p className={styles.eyebrow}>Wardrobe 404</p>
         <h1>This piece isn’t in this wardrobe.</h1>
         <p className={styles.copy}>The rail has moved on. Return to the current edit and find what is ready now.</p>

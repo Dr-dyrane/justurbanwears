@@ -8,6 +8,7 @@ import styles from "./wardrobe-motion.module.css";
 const DEFAULT_LOOP = new Set(["loader", "footer", "ambient"]);
 
 export function WardrobeMotion({
+  artwork = "seal",
   className,
   label,
   loop,
@@ -34,15 +35,16 @@ export function WardrobeMotion({
   const classes = [styles.root, className].filter(Boolean).join(" ");
   const imageProps = {
     draggable: false,
-    height: 1024,
-    src: BRAND_ASSETS.icon.motionMaster,
-    width: 1024,
+    height: artwork === "logo" ? 689 : 1024,
+    src: artwork === "logo" ? BRAND_ASSETS.icon.motionLogoMaster : BRAND_ASSETS.icon.motionMaster,
+    width: artwork === "logo" ? 531 : 1024,
   } as const;
 
   return (
     <span
       aria-live={label ? "polite" : undefined}
       className={classes}
+      data-artwork={artwork}
       data-loop={shouldLoop ? "true" : "false"}
       data-motion={motion}
       data-polarity={polarity}
@@ -51,7 +53,7 @@ export function WardrobeMotion({
       ref={rootRef}
       role={label ? "status" : undefined}
     >
-      <span aria-hidden="true" className={styles.stage} data-size={size}>
+      <span aria-hidden="true" className={styles.stage} data-artwork={artwork} data-size={size}>
         {/* Every moving image is the same untouched production master. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img {...imageProps} alt="" className={`${styles.layer} ${styles.base}`} />
@@ -63,9 +65,9 @@ export function WardrobeMotion({
         <img {...imageProps} alt="" className={`${styles.layer} ${styles.leftL}`} />
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img {...imageProps} alt="" className={`${styles.layer} ${styles.rightL}`} />
-        <span className={styles.signature} />
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img {...imageProps} alt="" className={`${styles.layer} ${styles.silhouette}`} />
+        <span className={styles.signature} />
         {/* The canonical master owns the first and final frame. */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img {...imageProps} alt="" className={`${styles.layer} ${styles.master}`} />
