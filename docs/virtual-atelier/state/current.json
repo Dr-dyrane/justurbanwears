@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "workflowRevision": "2026-08-23.53",
-  "updatedAt": "2026-08-23T10:29:40Z",
+  "workflowRevision": "2026-08-23.58",
+  "updatedAt": "2026-08-23T14:25:24Z",
   "model": "LULU_V4",
-  "activeGarment": "015",
-  "activeView": "04",
-  "status": "GARMENT_015_VIEW_04_CORRECTION_BLOB_SYNCED_DEPLOYMENT_PENDING",
+  "activeGarment": "016",
+  "activeView": "RELEASE",
+  "status": "GARMENT_016_CATALOGUE_26_BLOB_SYNCED_RELEASE_GATE_PASS_COMMITTED_LOCAL_CLEAN_RELEASE_ISOLATION_REQUIRED",
   "identityReview": {
     "candidateId": "lulu.face.v4.front.candidate.v1",
     "acceptedAssetId": "lulu.face.v4.front.lock.v1",
@@ -29,7 +29,7 @@
   },
   "globalLocks": {
     "garment": {
-      "status": "GARMENTS_009_010_011_012_013_014_015_01_07_ACCEPTED_LOCKED",
+      "status": "GARMENTS_009_010_011_012_013_014_015_016_01_07_ACCEPTED_LOCKED",
       "primary": [
         "garment.009.view.01.accepted",
         "garment.010.view.01.accepted",
@@ -1312,6 +1312,14 @@
         "publicBlobActiveAssetCount": 208,
         "publicBlobLegacyAssetCount": 7
       },
+      "releaseGate": {
+        "status": "G016_SHOP_GATE_PASS_WITH_UNRELATED_STUDIO_ASSERTION_RECORDED",
+        "focusedCatalogueDatabaseRuntimeTests": "34_OF_34_PASS",
+        "build": "PASS_CLOUDFLARE_RENDER_TARGET",
+        "renderedShopAssertions": "G016_AND_ALL_SIXTEEN_DROP_02_PRODUCTS_PASS",
+        "unrelatedExistingFailure": "STUDIO_HOME_COPY_ASSERTION_EXPECTS_STUDIO_LULU_WHILE_SEPARATE_DIRTY_STUDIO_WORK_RENDERS_DIFFERENT_COPY",
+        "diffCheck": "PASS"
+      },
       "siblingGate": {
         "status": "USER_AUTHORIZED_AUTONOMOUS_WHOLE_FRAME_PASS",
         "acceptedParent": "garment.015.view.05.accepted",
@@ -1332,14 +1340,85 @@
         "verifiedAt": "2026-08-23T09:23:18Z"
       },
       "rejectedCandidatesMayParent": false
+    },
+    "016": {
+      "status": "PRIVATE_PACKET_COMPLETE_01_07_CATALOGUE_26_BLOB_SYNCED_RELEASE_GATE_ACTIVE",
+      "sku": "JUW-040",
+      "slug": "plum-sparkle-cowl-neck-jumpsuit",
+      "sourceManifest": "storage/garments/drop-02/016/source/manifest.json",
+      "lockManifest": "storage/garments/drop-02/016/locked/manifest.json",
+      "lockManifestSha256": "b1d6099ce349f709be340f1c61d72ffaab5e70e925b940c107a0571f4d0fece1",
+      "sourceAssetIds": [
+        "garment.016.close-front",
+        "garment.016.full-front-primary",
+        "garment.016.full-front-confirmation",
+        "garment.016.full-front-continuity"
+      ],
+      "classification": "DIRECT_CAPTURE_FRONT_FAMILY_ONLY",
+      "reservedViews": ["01", "02", "03", "04", "05", "06", "07"],
+      "views": {
+        "01": {"assetId": "garment.016.view.01.accepted", "status": "AUTONOMOUSLY_ACCEPTED_LOCKED", "sha256": "70f0330897f5bedfbd65104a58659bdd7d958cac2e59936ee4d941a26e8cfced"},
+        "02": {"assetId": "garment.016.view.02.accepted", "status": "AUTONOMOUSLY_ACCEPTED_LOCKED_INFERRED_PRESENTATION_ONLY", "sha256": "37c0e345f759b818132b4b848a5a76781c4ef870fba64d31aef7bd08f0736e61", "mayServeAsDirectBackEvidence": false},
+        "03": {"assetId": "garment.016.view.03.accepted", "status": "AUTONOMOUSLY_ACCEPTED_LOCKED_MANNEQUIN_PRESENTATION", "sha256": "edcb74e4301146530206d58e96c6aeac2c499b407cadbfe92920b60c78c74aae"},
+        "04": {"assetId": "garment.016.view.04.accepted", "status": "AUTONOMOUSLY_ACCEPTED_LOCKED_MODEL_COMPLETED_PRESENTATION", "sha256": "81bcdc99122c5d28a2a0e4cb10297f070283293629ceb751de331d6033dccd5f", "mayServeAsFibreEvidence": false},
+        "05": {"assetId": "garment.016.view.05.accepted", "status": "AUTONOMOUSLY_ACCEPTED_LOCKED_FRONT_MASTER", "sha256": "57ee8d7061c5b4280ada2ddb207eae9d8fd27ba516c0ef4b1f58f788793448c2", "mayParentIndependent06And07": true},
+        "06": {"assetId": "garment.016.view.06.accepted", "status": "AUTONOMOUSLY_ACCEPTED_LOCKED_SIBLING_PROFILE", "sha256": "fb95ea6be984e77cce9a6c4cc945f63445e7f049f5727da9eda24062fed705be", "parentAssetId": "garment.016.view.05.accepted", "mayParent07": false, "mayServeAsDirectRearEvidence": false},
+        "07": {"assetId": "garment.016.view.07.accepted", "status": "AUTONOMOUSLY_ACCEPTED_LOCKED_SIBLING_INFERRED_REAR_PRESENTATION", "sha256": "1aabba0129e632c9521ae60f051c71cb0336b4346edf8978ba1048d013cff228", "parentAssetId": "garment.016.view.05.accepted", "mayParent06": false, "mayServeAsDirectBackEvidence": false}
+      },
+      "subjectLock": {
+        "assetId": "garment.016.subject.front.lock.v1",
+        "status": "AUTONOMOUSLY_ACCEPTED_LOCKED_SUBJECT",
+        "sha256": "ec6ae7f0a3d9ef3bbd863e18131cd6b0097f2dbaac2627682e2e7e178844e2fc",
+        "mayParentRoom05": true,
+        "mayDirectlyParent06Or07": false
+      },
+      "operationRecords": [
+        "storage/garments/drop-02/016/operations/g016-v01-r001.json",
+        "storage/garments/drop-02/016/operations/g016-v01-r002-final-effect-override.json",
+        "storage/garments/drop-02/016/operations/g016-v02-r001.json",
+        "storage/garments/drop-02/016/operations/g016-v02-r002-final-effect-promotion.json",
+        "storage/garments/drop-02/016/operations/g016-v03-r001.json",
+        "storage/garments/drop-02/016/operations/g016-v03-r002-final-effect-promotion.json",
+        "storage/garments/drop-02/016/operations/g016-v04-r001.json",
+        "storage/garments/drop-02/016/operations/g016-fashion-nova-styling-check-v001.json",
+        "storage/garments/drop-02/016/operations/g016-holistic-subject-r001.json",
+        "storage/garments/drop-02/016/operations/g016-room-and-05-r001.json",
+        "storage/garments/drop-02/016/operations/g016-v06-r001.json",
+        "storage/garments/drop-02/016/operations/g016-v07-r001.json",
+        "storage/garments/drop-02/016/operations/g016-shop-media-export-v001.json"
+      ],
+      "shopMediaExport": {
+        "operationId": "g016-shop-media-export-v001",
+        "status": "EXPORTED_AND_HASH_VERIFIED",
+        "assetCount": 7,
+        "canvas": "1120x1400",
+        "nonUniformScaling": false,
+        "sourceLockManifestSha256": "b1d6099ce349f709be340f1c61d72ffaab5e70e925b940c107a0571f4d0fece1",
+        "catalogueRevision": "2026-08-23-catalogue-26",
+        "catalogueManifestChecksum": "a3bdfdab5432ce78fd887ce5dd9d9d0ed4d974a69f829c0513631a5f79437f62",
+        "cataloguePresentationChecksum": "f374176869bcbfbe61240857305983666253e6b2671574060a4f8e239fd17174",
+        "publicBlobManifestStatus": "SYNCED_AND_REMOTE_HASH_VERIFIED",
+        "publicBlobActiveAssetCount": 215,
+        "publicBlobLegacyAssetCount": 7
+      },
+      "siblingGate": {
+        "status": "USER_AUTHORIZED_AUTONOMOUS_WHOLE_FRAME_PASS",
+        "acceptedParent": "garment.016.view.05.accepted",
+        "view06": {"status": "AUTONOMOUSLY_ACCEPTED_LOCKED_SIBLING_PROFILE", "selectedCandidate": "06-on-lulu-left-profile-r001.png", "review": "PASS"},
+        "view07": {"status": "AUTONOMOUSLY_ACCEPTED_LOCKED_SIBLING_INFERRED_REAR_PRESENTATION", "selectedCandidate": "07-on-lulu-right-rear-3q-r001.png", "review": "PASS"},
+        "remainingReleaseBlocker": null
+      },
+      "userAuthority": "RESUME G016",
+      "g015PendingReleaseIsSeparate": true,
+      "rejectedCandidatesMayParent": false
     }
   },
   "nextOperation": {
-    "operationId": "g015-view-04-production-deploy-v001",
-    "garmentId": "015",
-    "view": "04",
-    "role": "SOURCE_DEPLOY_AND_LIVE_VERIFY",
-    "status": "READY"
+    "operationId": "g016-clean-release-isolation-v001",
+    "garmentId": "016",
+    "view": "RELEASE",
+    "role": "CLEAN_RELEASE_REVISION",
+    "status": "AWAITING_EXPLICIT_BRANCH_OR_WORKTREE_AUTHORITY"
   },
-  "requiredNext": "Deploy and live-verify the corrected Garment 015 semantic view 04. Garment 016 intake remains paused until this correction is complete."
+  "requiredNext": "Commit only the exact G016 release paths. Production database application, push and deployment require an explicitly authorized clean release branch or worktree from origin/main because current main contains five unrelated ahead commits and separate dirty Studio work. Preserve the separate pending G015 view-04 deployment receipt without altering G015 assets."
 }
