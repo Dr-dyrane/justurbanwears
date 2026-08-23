@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "workflowRevision": "2026-08-22.51",
-  "updatedAt": "2026-08-23T08:54:00Z",
+  "workflowRevision": "2026-08-23.52",
+  "updatedAt": "2026-08-23T09:23:18Z",
   "model": "LULU_V4",
   "activeGarment": "015",
   "activeView": "01-07",
-  "status": "GARMENT_015_PRIVATE_PACKET_AND_PUBLIC_MEDIA_COMPLETE_CATALOGUE_RELEASE_PENDING",
+  "status": "GARMENT_015_LIVE_VERIFIED_RESERVATION_RELEASED",
   "identityReview": {
     "candidateId": "lulu.face.v4.front.candidate.v1",
     "acceptedAssetId": "lulu.face.v4.front.lock.v1",
@@ -1266,7 +1266,7 @@
       "rejectedCandidatesMayParent": false
     },
     "015": {
-      "status": "PRIVATE_PACKET_AND_PUBLIC_MEDIA_COMPLETE_CATALOGUE_RELEASE_PENDING",
+      "status": "LIVE_VERIFIED_RESERVATION_RELEASED",
       "sku": "JUW-039",
       "slug": "black-cropped-tee-washed-black-wide-leg-cargo-jeans-set",
       "sourceAssetId": "garment.015.full-front",
@@ -1317,15 +1317,27 @@
         "view07": {"status": "USER_AUTHORIZED_ACCEPTED_LOCKED_SIBLING_INFERRED_REAR_PRESENTATION", "selectedCandidate": "07-on-lulu-right-rear-3q-r001.png", "review": "PASS"},
         "remainingReleaseBlocker": null
       },
+      "liveRelease": {
+        "status": "LIVE_VERIFIED",
+        "sourceCommit": "4c1fb50d28b12a411fe1c0ab0d4fc05a3535894e",
+        "deploymentId": "dpl_9qhckiArhQ9Y3K1GR6erLH3MQDDa",
+        "deploymentUrl": "https://justurbanwears-jm7dxn8cd-drdyranes-projects.vercel.app",
+        "productionUrl": "https://www.justurbanwears.com/shop/products/black-cropped-tee-washed-black-wide-leg-cargo-jeans-set",
+        "database": "CATALOGUE_25_APPLIED_33_ROWS_CHECKSUM_VERIFIED",
+        "productionSmoke": "16_OF_16_PASS",
+        "experienceSmoke": "10_OF_10_PASS",
+        "browser": "SEVEN_VIEWS_LOADED_NO_ASPECT_DISTORTION_TITLE_PRICE_AVAILABILITY_AND_BAG_PERSISTENCE_PASS_CONSOLE_CLEAN",
+        "verifiedAt": "2026-08-23T09:23:18Z"
+      },
       "rejectedCandidatesMayParent": false
     }
   },
   "nextOperation": {
-    "operationId": "g015-catalogue-and-production-release-v001",
-    "garmentId": "015",
+    "operationId": "g016-intake-pending",
+    "garmentId": "016",
     "view": "01-07",
-    "role": "CATALOGUE_DATABASE_DEPLOYMENT_AND_LIVE_VERIFICATION",
-    "status": "READY"
+    "role": "AWAITING_GARMENT_SOURCE",
+    "status": "NOT_STARTED"
   },
-  "requiredNext": "Complete the authorized catalogue-25 production database transaction, exact-revision source deployment and live Shop verification release."
+  "requiredNext": "Await an explicit Garment 016 source intake. Garment 015 is live verified and its reservation is released."
 }
