@@ -27,6 +27,8 @@ export const BRAND_ASSETS = {
     runtimeApp512: "/brand/icon-512.png?v=2026.3-seal",
     runtimeMaskable512: "/brand/icon-maskable-512.png?v=2026.3-seal",
     runtimeAppleTouch: "/brand/apple-touch-icon.png?v=2026.3-seal",
+    motionMaster: "/brand/icon-master-1024.png?v=2026.3-seal",
+    motionManifest: "/brand/motion/manifest.json?v=2026.3-seal",
   },
   favicon: {
     svg: "/favicon.svg",

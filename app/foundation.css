@@ -6207,6 +6207,15 @@ html[data-theme="dark"] .studio-shell .demo-ribbon > span:first-child {
   width: 18px;
 }
 
+.studio-loading-brand {
+  flex-direction: column;
+  gap: 14px;
+}
+
+.studio-loading-brand::before {
+  display: none;
+}
+
 .studio-ops-page {
   color: var(--studio-ink);
 }

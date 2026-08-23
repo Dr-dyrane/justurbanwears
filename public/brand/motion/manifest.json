@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 1,
+  "source": "/brand/icon-master-1024.png",
+  "sourceSha256": "6f6d4d135fb03cc2709b5c0b44514a5c5276832ee348c937200fa8690d2af6ac",
+  "dimensions": [
+    1024,
+    1024
+  ],
+  "strategy": "lossless-nearest-component-partition-from-canonical-master",
+  "shadowReachPx": 22,
+  "components": {
+    "left-door": {
+      "mask": "/brand/motion/left-door-mask.png",
+      "maskSha256": "59010f77a6079ff806df62d3b94332177c0a44cfc7202134592a3d63eaa0fc08",
+      "bounds": {
+        "left": 395,
+        "top": 181,
+        "right": 496,
+        "bottom": 815
+      },
+      "centroid": [
+        449.4,
+        498
+      ]
+    },
+    "right-door": {
+      "mask": "/brand/motion/right-door-mask.png",
+      "maskSha256": "ba225d27a2dc863042e179e785727c25ebe2d359ad6e52f7a6c8ea5e5bc5b2fb",
+      "bounds": {
+        "left": 527,
+        "top": 183,
+        "right": 626,
+        "bottom": 815
+      },
+      "centroid": [
+        572.17,
+        504.99
+      ]
+    },
+    "left-l": {
+      "mask": "/brand/motion/left-l-mask.png",
+      "maskSha256": "2c1bd6a68d9c84937e9e4d3d8d9e80408e36b4bd183922fdf12c9cb6b2b0b378",
+      "bounds": {
+        "left": 296,
+        "top": 627,
+        "right": 411,
+        "bottom": 794
+      },
+      "centroid": [
+        329.43,
+        733.17
+      ]
+    },
+    "right-l": {
+      "mask": "/brand/motion/right-l-mask.png",
+      "maskSha256": "018073f2f66f6efcf2688a3c98e153647dc2da6e789e064f2ec7409377c75c48",
+      "bounds": {
+        "left": 610,
+        "top": 628,
+        "right": 725,
+        "bottom": 793
+      },
+      "centroid": [
+        691.28,
+        734.82
+      ]
+    }
+  },
+  "base": {
+    "mask": "/brand/motion/base-mask.png",
+    "maskSha256": "b104a78715bf19155d0818b8e0f4f6ebb14b42606783c36e4f6bbf93edb9962b"
+  },
+  "silhouette": {
+    "mask": "/brand/motion/silhouette-mask.png",
+    "maskSha256": "cdd563edf60dd9aa4d5e93170226667548279c1e0e2a9f39ed876b7de1dc1903"
+  }
+}

@@ -9,6 +9,7 @@ import { StudioLink as Link } from "../studio/atoms/studio-link";
 import { useStudio } from "../studio/studio-provider";
 import { PageHeading } from "../ui/page-heading";
 import { StatusPill } from "../ui/status-pill";
+import { WardrobeMotion } from "../brand/wardrobe-motion";
 
 const filters = ["ALL", "APPROVED", "COMPLETE", "RUNNING", "FAILED"] as const;
 
@@ -21,7 +22,7 @@ export function ShootGallery() {
   const [filter, setFilter] = useState<(typeof filters)[number]>("ALL");
   const visible = useMemo(() => (authority.snapshot?.media ?? []).filter((item) => filter === "ALL" || item.state === filter), [authority.snapshot?.media, filter]);
 
-  if (authority.status === "idle" || authority.status === "loading") return <div className="studio-loading" role="status">Opening media…</div>;
+  if (authority.status === "idle" || authority.status === "loading") return <div className="studio-loading studio-loading-brand" role="status"><WardrobeMotion size="sm" variant="loader" /><span>Opening media…</span></div>;
   if (authority.status === "error") return <div className="studio-quiet-empty" role="alert"><CircleAlert aria-hidden="true" size={24} /><div><strong>Media unavailable</strong><p>{authority.error}</p></div><button className="button button-secondary" onClick={() => void authority.refresh()} type="button">Try again</button></div>;
 
   return (
