@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "catalogueRevision": "2026-08-22-catalogue-25",
-  "catalogueChecksum": "6734e12f45dd9bda1a924294d3584b07342f3776f6dd69fe6625d122197ba1a4",
-  "cataloguePresentationChecksum": "a5bfa09b8ae10b400c492069c95b18655d8bdd6400bb2b8002dd840216923ab7",
+  "catalogueRevision": "2026-08-23-catalogue-26",
+  "catalogueChecksum": "a3bdfdab5432ce78fd887ce5dd9d9d0ed4d974a69f829c0513631a5f79437f62",
+  "cataloguePresentationChecksum": "f374176869bcbfbe61240857305983666253e6b2671574060a4f8e239fd17174",
   "legacyAssets": [
     {
       "sourcePath": "/shop/products/black-cropped-tee-pink-distressed-shorts-set/04-model-front.webp",
@@ -1452,6 +1452,62 @@
       "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/40008573a597745f621c71ce3826d2f23fc72609ed8c01d253ffe42ff4990fd3/products/orchid-beaded-column-gown/08-model-detail.webp",
       "sha256": "40008573a597745f621c71ce3826d2f23fc72609ed8c01d253ffe42ff4990fd3",
       "size": 447194,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/plum-sparkle-cowl-neck-jumpsuit/01-garment-front.webp",
+      "pathname": "shop/catalogue/f47dca4a1a9a6958bb5d1a4c877ba90541fa0e486115de3d425ff2913b1fab14/products/plum-sparkle-cowl-neck-jumpsuit/01-garment-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/f47dca4a1a9a6958bb5d1a4c877ba90541fa0e486115de3d425ff2913b1fab14/products/plum-sparkle-cowl-neck-jumpsuit/01-garment-front.webp",
+      "sha256": "f47dca4a1a9a6958bb5d1a4c877ba90541fa0e486115de3d425ff2913b1fab14",
+      "size": 82704,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/plum-sparkle-cowl-neck-jumpsuit/02-garment-back.webp",
+      "pathname": "shop/catalogue/b6b6bf9c96af1ff7feee7137b8062f665b50ba4e44737bd9769b8b83dd383ba8/products/plum-sparkle-cowl-neck-jumpsuit/02-garment-back.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/b6b6bf9c96af1ff7feee7137b8062f665b50ba4e44737bd9769b8b83dd383ba8/products/plum-sparkle-cowl-neck-jumpsuit/02-garment-back.webp",
+      "sha256": "b6b6bf9c96af1ff7feee7137b8062f665b50ba4e44737bd9769b8b83dd383ba8",
+      "size": 97146,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/plum-sparkle-cowl-neck-jumpsuit/03-mannequin-front.webp",
+      "pathname": "shop/catalogue/6cf0f55ab904a0346653c43b0086216068e4b0941f369d41e60dc3c1a0050673/products/plum-sparkle-cowl-neck-jumpsuit/03-mannequin-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/6cf0f55ab904a0346653c43b0086216068e4b0941f369d41e60dc3c1a0050673/products/plum-sparkle-cowl-neck-jumpsuit/03-mannequin-front.webp",
+      "sha256": "6cf0f55ab904a0346653c43b0086216068e4b0941f369d41e60dc3c1a0050673",
+      "size": 101714,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/plum-sparkle-cowl-neck-jumpsuit/04-model-front.webp",
+      "pathname": "shop/catalogue/ff4e90d583ab46165f5c76ac6f259c484aabf2b33a9fb9aab54792d85c6bbe42/products/plum-sparkle-cowl-neck-jumpsuit/04-model-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/ff4e90d583ab46165f5c76ac6f259c484aabf2b33a9fb9aab54792d85c6bbe42/products/plum-sparkle-cowl-neck-jumpsuit/04-model-front.webp",
+      "sha256": "ff4e90d583ab46165f5c76ac6f259c484aabf2b33a9fb9aab54792d85c6bbe42",
+      "size": 222222,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/plum-sparkle-cowl-neck-jumpsuit/05-model-rear-three-quarter.webp",
+      "pathname": "shop/catalogue/8e062618b9e36d727d089b614d0536d92487d78117c4289a189a770696626518/products/plum-sparkle-cowl-neck-jumpsuit/05-model-rear-three-quarter.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/8e062618b9e36d727d089b614d0536d92487d78117c4289a189a770696626518/products/plum-sparkle-cowl-neck-jumpsuit/05-model-rear-three-quarter.webp",
+      "sha256": "8e062618b9e36d727d089b614d0536d92487d78117c4289a189a770696626518",
+      "size": 229166,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/plum-sparkle-cowl-neck-jumpsuit/06-fabric-detail.webp",
+      "pathname": "shop/catalogue/60181d03161ef9d1a543702b0cf5f50e828dd3f7c1d5ee1a7f4307b86ef02cb9/products/plum-sparkle-cowl-neck-jumpsuit/06-fabric-detail.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/60181d03161ef9d1a543702b0cf5f50e828dd3f7c1d5ee1a7f4307b86ef02cb9/products/plum-sparkle-cowl-neck-jumpsuit/06-fabric-detail.webp",
+      "sha256": "60181d03161ef9d1a543702b0cf5f50e828dd3f7c1d5ee1a7f4307b86ef02cb9",
+      "size": 299580,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/plum-sparkle-cowl-neck-jumpsuit/07-model-left-profile.webp",
+      "pathname": "shop/catalogue/ceaeff05e02d7c2ee0e2ce24e44bb6918b44eefa784f226d7dc54737026a7f94/products/plum-sparkle-cowl-neck-jumpsuit/07-model-left-profile.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/ceaeff05e02d7c2ee0e2ce24e44bb6918b44eefa784f226d7dc54737026a7f94/products/plum-sparkle-cowl-neck-jumpsuit/07-model-left-profile.webp",
+      "sha256": "ceaeff05e02d7c2ee0e2ce24e44bb6918b44eefa784f226d7dc54737026a7f94",
+      "size": 222872,
       "contentType": "image/webp"
     },
     {

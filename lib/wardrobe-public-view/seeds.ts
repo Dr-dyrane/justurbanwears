@@ -49,6 +49,7 @@ export const WARDROBE_APPROVED_V4_MODEL_SLUGS = Object.freeze([
   "black-cropped-tee-charcoal-wash-wide-leg-cargo-jeans-set",
   "black-cropped-tee-dark-indigo-wide-leg-cargo-jeans-set",
   "black-cropped-tee-washed-black-wide-leg-cargo-jeans-set",
+  "plum-sparkle-cowl-neck-jumpsuit",
 ] as const);
 
 export const WARDROBE_APPROVED_MODEL_FRONT_SLUGS = Object.freeze([
@@ -83,6 +84,7 @@ export const WARDROBE_APPROVED_MODEL_SUPPLEMENTAL_SLOTS = Object.freeze({
   "black-cropped-tee-charcoal-wash-wide-leg-cargo-jeans-set": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "black-cropped-tee-dark-indigo-wide-leg-cargo-jeans-set": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "black-cropped-tee-washed-black-wide-leg-cargo-jeans-set": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
+  "plum-sparkle-cowl-neck-jumpsuit": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "coral-drift-dress": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "moss-square-knit": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "cocoa-pleat-trouser": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
@@ -636,6 +638,25 @@ export const WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS: readonly WardrobePublicProduc
     note: "A matte-black cropped tee paired with washed-black wide-leg cargo jeans.",
     story: "The fitted crop leaves a clean waist gap above fixed-waist washed-black jeans, finished with a centred button and fly, curved front pockets, compact outer-thigh cargo pockets and broad full-length legs.",
     details: ["Cropped crew-neck tee", "Fixed waistband with button and fly", "Curved hip-pocket openings and compact outer-thigh cargo pockets", "Broad washed-black full-length legs"],
+    measurements: [],
+  }),
+  migrationSeed({
+    slug: "plum-sparkle-cowl-neck-jumpsuit",
+    sku: "JUW-040",
+    name: "Plum Sparkle Cowl-Neck Jumpsuit",
+    category: "Rompers",
+    price: 28500,
+    taggedSize: "Size on request",
+    fit: "Measurements confirmed before payment",
+    condition: "Condition confirmed before payment",
+    colour: "Deep plum",
+    availability: "AVAILABLE",
+    drop: "Drop 02",
+    tone: "indigo",
+    silhouette: "romper",
+    note: "A deep-plum sparkle jumpsuit with a softly draped cowl neckline and a long, close-to-straight line.",
+    story: "A softly folded cowl frames the neckline above an uninterrupted fitted body, opening into full-length straight legs with fine tonal sparkle throughout.",
+    details: ["Soft draped cowl neckline", "Extended cap shoulders", "Fitted one-piece silhouette", "Full-length straight legs"],
     measurements: [],
   }),
 ]);
