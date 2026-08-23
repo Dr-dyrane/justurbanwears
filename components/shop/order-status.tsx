@@ -3,6 +3,7 @@
 import { ArrowLeft, BellRing, PackageSearch, RefreshCw } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { authSignInPath } from "../../lib/auth/return-to";
+import { WardrobeMotion } from "../brand/wardrobe-motion";
 import { formatNaira } from "../../lib/shop/catalog";
 import {
   customerNextAction,
@@ -73,12 +74,14 @@ export function OrderStatus({
   initialError = "",
   initialOrder,
   initialState,
+  justPlaced = false,
   reference,
 }: {
   commerceGuidance: ShopCommerceGuidance;
   initialError?: string;
   initialOrder: ShopServerOrder | null;
   initialState: OrderStatusState;
+  justPlaced?: boolean;
   reference: string;
 }) {
   const { getProduct } = useShop();
@@ -142,6 +145,13 @@ export function OrderStatus({
 
   useEffect(() => () => manualRefreshControllerRef.current?.abort(), []);
 
+  useEffect(() => {
+    if (!justPlaced) return;
+    const url = new URL(window.location.href);
+    url.searchParams.delete("placed");
+    window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+  }, [justPlaced]);
+
   const timeline = useMemo(
     () => [...(order?.events ?? [])].sort((left, right) => left.occurredAt.localeCompare(right.occurredAt)),
     [order?.events],
@@ -163,7 +173,11 @@ export function OrderStatus({
     return (
       <div className="shop-list-page">
         <div className="shop-route-empty" role={state === "error" ? "alert" : undefined}>
-          <span aria-hidden="true"><PackageSearch size={34} strokeWidth={1.65} /></span>
+          {state === "not-found" ? (
+            <div className="juw-absence-motion">
+              <WardrobeMotion artwork="logo" polarity="light" size="sm" variant="empty" />
+            </div>
+          ) : <span aria-hidden="true"><PackageSearch size={34} strokeWidth={1.65} /></span>}
           <p className="shop-kicker">{state === "error" ? "Order unavailable" : "Order not found"}</p>
           <h1>{state === "error" ? error : "That order is not available to this account."}</h1>
           <ShopActionLink href="/shop/orders">Your orders</ShopActionLink>
@@ -174,6 +188,7 @@ export function OrderStatus({
 
   const nextAction = customerNextAction(order);
   const states = orderStateSummary(order);
+  const showSuccessMoment = justPlaced || Boolean(order.fundsConfirmation);
 
   return (
     <div className="shop-list-page shop-status-page">
@@ -184,6 +199,11 @@ export function OrderStatus({
 
       <header className="shop-status-heading shop-connected-status-heading">
         <div>
+          {showSuccessMoment ? (
+            <div className="juw-order-success-motion">
+              <WardrobeMotion artwork="logo" polarity="light" size="sm" variant="success" />
+            </div>
+          ) : null}
           <p className="shop-kicker">Order status</p>
           <h1>{nextAction.title}.</h1>
           <p>{nextAction.detail}</p>

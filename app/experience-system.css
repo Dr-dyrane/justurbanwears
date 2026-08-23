@@ -217,6 +217,27 @@
   overscroll-behavior: contain;
 }
 
+/* Brand motion appears only where the surrounding copy already proves the state. */
+.juw-receipt-motion,
+.juw-order-success-motion,
+.juw-absence-motion {
+  align-items: center;
+  display: flex;
+}
+
+.juw-receipt-motion,
+.juw-order-success-motion { margin-bottom: 20px; }
+
+.juw-absence-motion {
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+@media (max-width: 680px) {
+  .juw-receipt-motion,
+  .juw-order-success-motion { margin-bottom: 16px; }
+}
+
 [data-experience-layer="sheet"][data-studio-sheet-safety] {
   --juw-sheet-motion: var(--juw-motion-resolve);
   overscroll-behavior: contain;

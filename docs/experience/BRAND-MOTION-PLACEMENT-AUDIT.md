@@ -19,6 +19,10 @@ The centered-logo mark is an exact crop of the approved logo source. The seal is
 | --- | --- | --- |
 | Global delayed route wait | Circular seal / `loader` | Shared continuity across Site, Shop, and Studio; mounts only after 420ms so fast navigation remains visually immediate |
 | Global 404 | Centered-logo mark / `404` | A rare narrative absence where the wardrobe story improves recovery without delaying the action |
+| Missing customer order | Centered-logo mark / `empty` | A rare missing-record state with a single recovery path, distinct from routine empty collections |
+| Order reserved or payment confirmed | Centered-logo mark / `success` | Runs once when the order has crossed an authoritative milestone; surrounding copy preserves payment truth |
+| Garment intake receipt | Centered-logo mark / `success` | The piece has been committed to the private Wardrobe and the receipt remains visible independently of motion |
+| Approved Wear receipt | Centered-logo mark / `success` | A kept view is an explicit operator decision, not an autosave |
 | Studio Media initial authority wait | Circular seal / `loader` | A genuine data wait, compact enough to retain task focus, with separate accessible status text |
 | Development identity proof | Both / all variants | Exactness, polarity, scale, timing, and reduced-motion review only; unavailable in production |
 
@@ -28,7 +32,6 @@ These are candidates, not blanket authorization to add motion.
 
 | Priority | Surface | Recommended behavior | Gate before implementation |
 | --- | --- | --- | --- |
-| P1 | Future standalone order confirmation route | Centered-logo mark / `success`, one-shot | Only if confirmation becomes its own route; payment and reservation truth must already be visible |
 | P1 | Final publish/approval receipt in Studio | Centered-logo mark / `success`, one-shot | Only for irreversible completion, never for autosave or routine field updates |
 | P2 | Studio home signoff | Centered-logo mark / `ambient`, viewport-aware | Must replace—not sit beside—another brand mark, and remain still for most of its cycle |
 | P2 | Rare campaign/editorial entrance | Centered-logo mark / `entrance`, one-shot | Must not block navigation or compete with a garment hero transition |

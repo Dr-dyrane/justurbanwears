@@ -7,7 +7,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Camera,
   Check,
-  CheckCircle2,
   CircleDashed,
   ImagePlus,
   LoaderCircle,
@@ -21,6 +20,7 @@ import {
   Upload,
   X,
 } from "lucide-react";
+import { WardrobeMotion } from "../../brand/wardrobe-motion";
 import type { GarmentCategory } from "../../../lib/studio/domain/entities";
 import { LifecycleBadge } from "../atoms/lifecycle-badge";
 import { StudioLink } from "../atoms/studio-link";
@@ -525,7 +525,9 @@ export function GarmentIntakeSheet({
             ) : null}
           </div>
           <div aria-live="polite" className="studio-receipt-copy">
-            <span><CheckCircle2 aria-hidden="true" size={24} /></span>
+            <div className="juw-receipt-motion">
+              <WardrobeMotion artwork="logo" polarity="light" size="sm" variant="success" />
+            </div>
             <p className="eyebrow">Saved</p>
             <h3>{facts.title} is in Wardrobe.</h3>
             <p>Add a mannequin or model view any time.</p>

@@ -23,10 +23,13 @@ export const dynamic = "force-dynamic";
 
 export default async function OrderStatusPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ placed?: string }>;
 }) {
   const { id } = await params;
+  const { placed } = await searchParams;
   const returnTo = `/shop/orders/${encodeURIComponent(id)}`;
   const actor = customerActorFromSession(await getShopCustomerSession());
   if (!actor) redirect(authSignInPath(returnTo));
@@ -54,6 +57,7 @@ export default async function OrderStatusPage({
       initialOrder={initialOrder}
       initialState={initialState}
       commerceGuidance={getShopCommerceGuidance()}
+      justPlaced={placed === "1"}
       reference={id}
     />
   );

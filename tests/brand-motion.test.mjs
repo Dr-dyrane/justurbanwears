@@ -78,7 +78,7 @@ test("the reveal silhouette is derived from the exact gap between the approved w
 });
 
 test("WardrobeMotion always resolves through the untouched master and complete motion fallbacks", async () => {
-  const [component, styles, types, assets, preview, notFound, loader, globalLoading, globalStage, globalStageStyles] = await Promise.all([
+  const [component, styles, types, assets, preview, notFound, loader, globalLoading, globalStage, globalStageStyles, checkout, orderPage, orderStatus, garmentReceipt, wearReceipt, useCases] = await Promise.all([
     readFile(path.join(root, "components", "brand", "wardrobe-motion.tsx"), "utf8"),
     readFile(path.join(root, "components", "brand", "wardrobe-motion.module.css"), "utf8"),
     readFile(path.join(root, "components", "brand", "wardrobe-motion.types.ts"), "utf8"),
@@ -89,6 +89,12 @@ test("WardrobeMotion always resolves through the untouched master and complete m
     readFile(path.join(root, "app", "loading.tsx"), "utf8"),
     readFile(path.join(root, "components", "brand", "global-brand-loading-stage.tsx"), "utf8"),
     readFile(path.join(root, "components", "brand", "global-brand-loading-stage.module.css"), "utf8"),
+    readFile(path.join(root, "components", "shop", "shop-checkout.tsx"), "utf8"),
+    readFile(path.join(root, "app", "shop", "orders", "[id]", "page.tsx"), "utf8"),
+    readFile(path.join(root, "components", "shop", "order-status.tsx"), "utf8"),
+    readFile(path.join(root, "components", "studio", "garment-intake", "garment-intake-sheet.tsx"), "utf8"),
+    readFile(path.join(root, "components", "studio", "garment-intake", "wear-sheet.tsx"), "utf8"),
+    readFile(path.join(root, "app", "dev", "brand-motion", "use-cases", "page.tsx"), "utf8"),
   ]);
 
   assert.match(assets, /motionMaster: "\/brand\/icon-master-1024\.png\?v=2026\.3-seal"/);
@@ -115,4 +121,14 @@ test("WardrobeMotion always resolves through the untouched master and complete m
   assert.match(globalStage, /aria-live="polite"/);
   assert.match(globalStageStyles, /position: fixed/);
   assert.match(globalStageStyles, /@media \(prefers-reduced-motion: reduce\)/);
+  assert.match(checkout, /\?placed=1/);
+  assert.match(orderPage, /justPlaced=\{placed === "1"\}/);
+  assert.match(orderStatus, /variant="empty"/);
+  assert.match(orderStatus, /variant="success"/);
+  assert.match(orderStatus, /url\.searchParams\.delete\("placed"\)/);
+  assert.match(garmentReceipt, /className="juw-receipt-motion"/);
+  assert.match(garmentReceipt, /artwork="logo" polarity="light" size="sm" variant="success"/);
+  assert.match(wearReceipt, /className="juw-receipt-motion"/);
+  assert.match(wearReceipt, /artwork="logo" polarity="light" size="sm" variant="success"/);
+  assert.match(useCases, /Four truthful moments/);
 });

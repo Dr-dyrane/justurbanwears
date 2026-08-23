@@ -235,7 +235,7 @@ export function ShopCheckout({
       // and the destination page will show server truth even if local storage fails.
     }
     window.sessionStorage.removeItem(DRAFT_STORAGE_KEY);
-    window.location.assign(`/shop/orders/${encodeURIComponent(body.order.reference)}`);
+    window.location.assign(`/shop/orders/${encodeURIComponent(body.order.reference)}?placed=1`);
   }
 
   if (hydration === "idle" || hydration === "restoring") {
