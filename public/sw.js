@@ -1,4 +1,5 @@
-const SHELL_CACHE = "justurban-wears-public-shell-v1";
+const RELEASE_TOKEN = "__JUW_RELEASE_TOKEN__";
+const SHELL_CACHE = `justurban-wears-public-shell-${RELEASE_TOKEN}`;
 const OFFLINE_DOCUMENT = "/offline.html";
 const PRECACHE_URLS = [OFFLINE_DOCUMENT];
 
