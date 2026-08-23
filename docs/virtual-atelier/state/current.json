@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "workflowRevision": "2026-08-23.52",
-  "updatedAt": "2026-08-23T09:23:18Z",
+  "workflowRevision": "2026-08-23.53",
+  "updatedAt": "2026-08-23T10:29:40Z",
   "model": "LULU_V4",
   "activeGarment": "015",
-  "activeView": "01-07",
-  "status": "GARMENT_015_LIVE_VERIFIED_RESERVATION_RELEASED",
+  "activeView": "04",
+  "status": "GARMENT_015_VIEW_04_CORRECTION_BLOB_SYNCED_DEPLOYMENT_PENDING",
   "identityReview": {
     "candidateId": "lulu.face.v4.front.candidate.v1",
     "acceptedAssetId": "lulu.face.v4.front.lock.v1",
@@ -39,7 +39,7 @@
         "garment.014.view.01.accepted",
         "garment.015.view.01.accepted"
       ],
-      "rule": "The exact reviewed 01-07 sets for Garments 009, 010, 011, 012, 013, 014 and 015 are privately locked. Each accepted 01 controls its garment-specific holistic subject synthesis; each 02 remains inferred presentation only. Direct captures retain construction truth. G015/03 is an exact direct-source promotion and G015/04 a deterministic direct-source visible-detail crop. Each accepted 05 may parent only its own independent 06 and 07 siblings. Garment 013 alone has its historical explicit source-texture exception; the user-authorized G014 and G015 final-effect gates retain their strongest coherent outputs when stricter optional corrections increased drift, without changing direct garment truth or the global lineage contract."
+      "rule": "The exact reviewed 01-07 sets for Garments 009, 010, 011, 012, 013, 014 and 015 are privately locked. Each accepted 01 controls its garment-specific holistic subject synthesis; each 02 remains inferred presentation only. Direct captures retain construction truth. G015/03 is an exact direct-source promotion; G015/04 is the explicitly user-selected model-completed generated close-detail presentation and is not fibre or hidden-construction evidence. Each accepted 05 may parent only its own independent 06 and 07 siblings. Garment 013 alone has its historical explicit source-texture exception; the user-authorized G014 and G015 final-effect gates retain their strongest coherent outputs when stricter optional corrections increased drift, without changing direct garment truth or the global lineage contract."
     },
     "identity": {
       "status": "LOCKED",
@@ -1266,17 +1266,17 @@
       "rejectedCandidatesMayParent": false
     },
     "015": {
-      "status": "LIVE_VERIFIED_RESERVATION_RELEASED",
+      "status": "VIEW_04_CORRECTION_BLOB_SYNCED_DEPLOYMENT_PENDING",
       "sku": "JUW-039",
       "slug": "black-cropped-tee-washed-black-wide-leg-cargo-jeans-set",
       "sourceAssetId": "garment.015.full-front",
       "lockManifest": "storage/garments/drop-02/015/locked/manifest.json",
-      "lockManifestSha256": "c35f948847b4b9b5e8b2445f0be9a6641cbf24c119c938bdb71185675bf147f8",
+      "lockManifestSha256": "3a598718035950843651eda09f4be04e31dfbe919c7315f8e6c59618376d09f3",
       "views": {
         "01": {"assetId": "garment.015.view.01.accepted", "status": "USER_AUTHORIZED_ACCEPTED_LOCKED", "sha256": "ec70e1e5b54f6d1db3186ea0a407c62b8a63b4bff6b8d9f5be96480fd280e407"},
         "02": {"assetId": "garment.015.view.02.accepted", "status": "USER_AUTHORIZED_ACCEPTED_LOCKED_INFERRED_PRESENTATION_ONLY", "sha256": "a169c47ebab96615dfab4d67fffb042d9a8d1dff0bfa430423670f997e530a2e", "mayServeAsDirectBackEvidence": false},
         "03": {"assetId": "garment.015.view.03.accepted", "status": "USER_AUTHORIZED_ACCEPTED_LOCKED_DIRECT_SOURCE", "sha256": "cbdd52517e66acce51f846a50f53e90d78627d1634d0159254e10f74592794e4"},
-        "04": {"assetId": "garment.015.view.04.accepted", "status": "USER_AUTHORIZED_ACCEPTED_LOCKED_DIRECT_SOURCE_CROP", "sha256": "02f0f93fcfe2964f880241cf7ad10d93cee4a4cf550c3773ec2d02d270b5b985", "mayServeAsFibreEvidence": false},
+        "04": {"assetId": "garment.015.view.04.accepted", "status": "USER_AUTHORIZED_ACCEPTED_LOCKED_MODEL_COMPLETED_PRESENTATION", "sha256": "fc7b0278a08a5cd7c7e590f5b2abc894e20c28e4d3c31add3801645956262d85", "mayServeAsFibreEvidence": false},
         "05": {"assetId": "garment.015.view.05.accepted", "status": "USER_AUTHORIZED_ACCEPTED_LOCKED_FRONT_MASTER", "sha256": "05a9c26a7042430158aebadbf16adead068aba58f756768ee1c3d6a75d173d9a", "mayParentIndependent06And07": true},
         "06": {"assetId": "garment.015.view.06.accepted", "status": "USER_AUTHORIZED_ACCEPTED_LOCKED_SIBLING_PROFILE", "sha256": "c6f1f3f75e138d56384565b83e793f9f139e93b21bfad4e3d5017c6ad9739343", "parentAssetId": "garment.015.view.05.accepted", "mayParent07": false, "mayServeAsDirectRearEvidence": false},
         "07": {"assetId": "garment.015.view.07.accepted", "status": "USER_AUTHORIZED_ACCEPTED_LOCKED_SIBLING_INFERRED_REAR_PRESENTATION", "sha256": "e592a108b72418be031145c174f816950817ea301069bb8b3fcc45ed9cee96db", "parentAssetId": "garment.015.view.05.accepted", "mayParent06": false, "mayServeAsDirectBackEvidence": false}
@@ -1287,6 +1287,7 @@
         "storage/garments/drop-02/015/operations/g015-v02-r001.json",
         "storage/garments/drop-02/015/operations/g015-v03-r003.json",
         "storage/garments/drop-02/015/operations/g015-v04-r003.json",
+        "storage/garments/drop-02/015/operations/g015-v04-r004-user-override.json",
         "storage/garments/drop-02/015/operations/g015-fashion-nova-styling-check-v001.json",
         "storage/garments/drop-02/015/operations/g015-holistic-subject-r003.json",
         "storage/garments/drop-02/015/operations/g015-room-and-05-r001.json",
@@ -1294,21 +1295,22 @@
         "storage/garments/drop-02/015/operations/g015-v06-c001.json",
         "storage/garments/drop-02/015/operations/g015-v07-r001.json",
         "storage/garments/drop-02/015/operations/g015-v07-r001-c001.json",
-        "storage/garments/drop-02/015/operations/g015-shop-media-export-v001.json"
+        "storage/garments/drop-02/015/operations/g015-shop-media-export-v001.json",
+        "storage/garments/drop-02/015/operations/g015-shop-media-export-v002.json"
       ],
       "shopMediaExport": {
-        "operationId": "g015-shop-media-export-v001",
-        "status": "EXPORTED_AND_HASH_VERIFIED",
+        "operationId": "g015-shop-media-export-v002",
+        "status": "EXPORTED_AND_HASH_VERIFIED_VIEW_04_CORRECTION",
         "assetCount": 7,
         "canvas": "1120x1400",
         "nonUniformScaling": false,
-        "sourceLockManifestSha256": "c35f948847b4b9b5e8b2445f0be9a6641cbf24c119c938bdb71185675bf147f8",
+        "sourceLockManifestSha256": "3a598718035950843651eda09f4be04e31dfbe919c7315f8e6c59618376d09f3",
         "catalogueRevision": "2026-08-22-catalogue-25",
         "catalogueManifestChecksum": "6734e12f45dd9bda1a924294d3584b07342f3776f6dd69fe6625d122197ba1a4",
         "cataloguePresentationChecksum": "a5bfa09b8ae10b400c492069c95b18655d8bdd6400bb2b8002dd840216923ab7",
-        "publicBlobManifestStatus": "SYNCED_AND_REMOTE_HASH_VERIFIED",
+        "publicBlobManifestStatus": "SYNCED_AND_REMOTE_HASH_VERIFIED_VIEW_04_CORRECTION",
         "publicBlobActiveAssetCount": 208,
-        "publicBlobLegacyAssetCount": 6
+        "publicBlobLegacyAssetCount": 7
       },
       "siblingGate": {
         "status": "USER_AUTHORIZED_AUTONOMOUS_WHOLE_FRAME_PASS",
@@ -1318,7 +1320,7 @@
         "remainingReleaseBlocker": null
       },
       "liveRelease": {
-        "status": "LIVE_VERIFIED",
+        "status": "PRIOR_RELEASE_SUPERSEDED_VIEW_04_RERELEASE_PENDING",
         "sourceCommit": "4c1fb50d28b12a411fe1c0ab0d4fc05a3535894e",
         "deploymentId": "dpl_9qhckiArhQ9Y3K1GR6erLH3MQDDa",
         "deploymentUrl": "https://justurbanwears-jm7dxn8cd-drdyranes-projects.vercel.app",
@@ -1333,11 +1335,11 @@
     }
   },
   "nextOperation": {
-    "operationId": "g016-intake-pending",
-    "garmentId": "016",
-    "view": "01-07",
-    "role": "AWAITING_GARMENT_SOURCE",
-    "status": "NOT_STARTED"
+    "operationId": "g015-view-04-production-deploy-v001",
+    "garmentId": "015",
+    "view": "04",
+    "role": "SOURCE_DEPLOY_AND_LIVE_VERIFY",
+    "status": "READY"
   },
-  "requiredNext": "Await an explicit Garment 016 source intake. Garment 015 is live verified and its reservation is released."
+  "requiredNext": "Deploy and live-verify the corrected Garment 015 semantic view 04. Garment 016 intake remains paused until this correction is complete."
 }
