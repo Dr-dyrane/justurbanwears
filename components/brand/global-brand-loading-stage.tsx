@@ -26,7 +26,7 @@ export function GlobalBrandLoadingStage({
   return (
     <div aria-live="polite" className={styles.stage} role="status">
       <div className={styles.content}>
-        <WardrobeMotion loop polarity="dark" size="md" variant="loader" />
+        <WardrobeMotion loop polarity="auto" size="md" variant="loader" />
         <p>Opening the next view</p>
       </div>
     </div>

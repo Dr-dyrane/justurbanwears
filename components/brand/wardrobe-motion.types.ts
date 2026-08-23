@@ -11,7 +11,7 @@ export const WARDROBE_MOTION_VARIANTS = [
 export type WardrobeMotionVariant = (typeof WARDROBE_MOTION_VARIANTS)[number];
 export type WardrobeMotionArtwork = "seal" | "logo";
 export type WardrobeMotionSize = "sm" | "md" | "lg";
-export type WardrobeMotionPolarity = "light" | "dark";
+export type WardrobeMotionPolarity = "auto" | "light" | "dark";
 export type WardrobeMotionPreference = "auto" | "reduced";
 
 export type WardrobeMotionProps = {

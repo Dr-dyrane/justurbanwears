@@ -184,8 +184,12 @@
   filter: drop-shadow(0 12px 28px rgb(0 0 0 / 24%));
 }
 
-.root[data-polarity="dark"] .stage {
-  box-shadow: 0 0 0 1px rgb(244 238 230 / 9%), 0 0 0 10px rgb(244 238 230 / 2.5%);
+.root[data-polarity="auto"] {
+  filter: drop-shadow(0 14px 30px rgb(58 33 25 / 18%));
+}
+
+:global(html[data-theme="dark"]) .root[data-polarity="auto"] {
+  filter: drop-shadow(0 16px 34px rgb(0 0 0 / 38%));
 }
 
 .root[data-artwork="logo"] { --wm-signature-opacity: 0.14; }
@@ -196,11 +200,12 @@
 .root[data-artwork="logo"][data-variant="entrance"] { --wm-signature-opacity: 0.17; }
 .root[data-artwork="logo"][data-polarity="light"] .signature { background: #3a2e25; }
 .root[data-artwork="logo"][data-polarity="dark"] .signature { background: #f4eee6; }
+.root[data-artwork="logo"][data-polarity="auto"] .signature { background: #3a2e25; }
+:global(html[data-theme="dark"]) .root[data-artwork="logo"][data-polarity="auto"] .signature { background: #f4eee6; }
 .root[data-artwork="logo"][data-variant="success"] .signature {
   --wm-signature-opacity: 0.22;
   background: #cb6a4a;
 }
-.root[data-artwork="logo"][data-polarity="dark"] .stage { box-shadow: none; }
 
 @keyframes wm-master {
   0%, 12% { opacity: 1; }

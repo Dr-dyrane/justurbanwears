@@ -20,22 +20,22 @@ export default function BrandMotionUseCasesPreviewPage() {
 
       <section className={styles.grid}>
         <article className={`${styles.card} ${styles.loading}`}>
-          <WardrobeMotion loop polarity="dark" size="md" variant="loader" />
+          <WardrobeMotion loop polarity="auto" size="md" variant="loader" />
           <div><small>01 · Continuity</small><h2>Opening the next view.</h2><p>Global route wait · appears only after 420ms.</p></div>
         </article>
 
         <article className={`${styles.card} ${styles.success}`}>
-          <WardrobeMotion artwork="logo" polarity="light" size="md" variant="success" />
+          <WardrobeMotion artwork="logo" polarity="auto" size="md" variant="success" />
           <div><small>02 · Commitment</small><h2>Your piece is held.</h2><p>Order reserved · payment truth remains visible.</p></div>
         </article>
 
         <article className={`${styles.card} ${styles.receipt}`}>
-          <WardrobeMotion artwork="logo" polarity="light" size="md" variant="success" />
+          <WardrobeMotion artwork="logo" polarity="auto" size="md" variant="success" />
           <div><small>03 · Closure</small><h2>Saved to Wardrobe.</h2><p>Garment intake and approved Wear receipts.</p></div>
         </article>
 
         <article className={`${styles.card} ${styles.absence}`}>
-          <WardrobeMotion artwork="logo" polarity="dark" size="md" variant="empty" />
+          <WardrobeMotion artwork="logo" polarity="auto" size="md" variant="empty" />
           <div><small>04 · Recovery</small><h2>This record isn’t here.</h2><p>Rare missing order or global 404 · never a routine empty list.</p></div>
         </article>
       </section>

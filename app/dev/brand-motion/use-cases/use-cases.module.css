@@ -1,8 +1,24 @@
 .page {
-  background: #e8ded4;
-  color: #2d211d;
+  --cases-accent: #9d4d37;
+  --cases-canvas: #e8ded4;
+  --cases-ink: #2d211d;
+  --cases-muted: #67534c;
+  background:
+    radial-gradient(circle at 82% 2%, rgb(203 106 74 / 13%) 0, transparent 30rem),
+    linear-gradient(145deg, #eee6de 0%, var(--cases-canvas) 48%, #ddd1c6 100%);
+  color: var(--cases-ink);
   min-height: 100vh;
   padding: clamp(22px, 5vw, 72px);
+}
+
+:global(html[data-theme="dark"]) .page {
+  --cases-accent: #dc8b72;
+  --cases-canvas: #1b1310;
+  --cases-ink: #f4eee6;
+  --cases-muted: #bcaea5;
+  background:
+    radial-gradient(circle at 82% 2%, rgb(203 106 74 / 12%) 0, transparent 32rem),
+    linear-gradient(145deg, #281c17 0%, var(--cases-canvas) 52%, #110c0a 100%);
 }
 
 .header {
@@ -12,7 +28,7 @@
 
 .header > p,
 .card small {
-  color: #9d4d37;
+  color: var(--cases-accent);
   font-size: 9px;
   font-weight: 800;
   letter-spacing: 0.16em;
@@ -32,7 +48,7 @@
 }
 
 .header > span {
-  color: #67534c;
+  color: var(--cases-muted);
   display: block;
   font-size: 13px;
   line-height: 1.7;
@@ -41,9 +57,13 @@
 }
 
 .header nav { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 26px; }
-.header nav a { border: 1px solid rgb(45 33 29 / 22%); border-radius: 999px; color: inherit; font-size: 9px; font-weight: 760; letter-spacing: 0.08em; padding: 11px 15px; text-decoration: none; text-transform: uppercase; }
-.header nav a:hover { background: rgb(244 238 230 / 70%); }
-.header nav a:focus-visible { outline: 2px solid #9d4d37; outline-offset: 3px; }
+.header nav a { background: linear-gradient(145deg, rgb(255 250 246 / 74%), rgb(255 250 246 / 38%)); border-radius: 999px; box-shadow: 0 14px 34px rgb(58 33 25 / 9%); color: inherit; font-size: 9px; font-weight: 760; letter-spacing: 0.08em; padding: 11px 15px; text-decoration: none; text-transform: uppercase; transition: background 180ms ease, box-shadow 180ms ease, transform 100ms ease; }
+.header nav a:hover { background: linear-gradient(145deg, rgb(255 250 246 / 96%), rgb(255 250 246 / 58%)); box-shadow: 0 18px 42px rgb(58 33 25 / 14%); }
+.header nav a:active { transform: scale(0.985); }
+.header nav a:focus-visible { outline: 2px solid var(--cases-accent); outline-offset: 3px; }
+
+:global(html[data-theme="dark"]) .header nav a { background: linear-gradient(145deg, rgb(244 238 230 / 10%), rgb(244 238 230 / 4%)); box-shadow: 0 18px 44px rgb(0 0 0 / 20%); }
+:global(html[data-theme="dark"]) .header nav a:hover { background: linear-gradient(145deg, rgb(244 238 230 / 16%), rgb(244 238 230 / 7%)); box-shadow: 0 22px 52px rgb(0 0 0 / 30%); }
 
 .grid {
   display: grid;
@@ -61,6 +81,7 @@
   min-height: 340px;
   overflow: hidden;
   padding: clamp(30px, 5vw, 62px);
+  box-shadow: 0 28px 80px rgb(58 33 25 / 10%);
 }
 
 .card h2 {
@@ -73,12 +94,16 @@
 }
 
 .card p { font-size: 11px; line-height: 1.65; margin: 18px 0 0; opacity: 0.62; }
-.loading { background: #241914; color: #f4eee6; }
-.success { background: #f4eee6; }
-.receipt { background: #efd9cc; }
-.absence { background: #33251f; color: #f4eee6; }
+.loading { background: radial-gradient(circle at 20% 20%, rgb(203 106 74 / 12%), transparent 19rem), linear-gradient(145deg, #35251f 0%, #241914 58%, #18100e 100%); color: #f4eee6; }
+.success { background: radial-gradient(circle at 85% 12%, rgb(221 96 66 / 10%), transparent 18rem), linear-gradient(145deg, #fffaf6 0%, #f4eee6 58%, #eadfd5 100%); color: #2d211d; }
+.receipt { background: radial-gradient(circle at 82% 14%, rgb(221 96 66 / 12%), transparent 18rem), linear-gradient(145deg, #f7e8df 0%, #efd9cc 58%, #e5c7b7 100%); color: #2d211d; }
+.absence { background: radial-gradient(circle at 82% 14%, rgb(203 106 74 / 10%), transparent 18rem), linear-gradient(145deg, #443129 0%, #33251f 58%, #211713 100%); color: #f4eee6; }
 .loading small,
 .absence small { color: #cb6a4a; }
+
+:global(html[data-theme="dark"]) .card { box-shadow: 0 34px 90px rgb(0 0 0 / 24%); }
+:global(html[data-theme="dark"]) .success { background: radial-gradient(circle at 85% 12%, rgb(203 106 74 / 12%), transparent 19rem), linear-gradient(145deg, #382821 0%, #2b1f1a 58%, #1c1411 100%); color: #f4eee6; }
+:global(html[data-theme="dark"]) .receipt { background: radial-gradient(circle at 82% 14%, rgb(221 96 66 / 14%), transparent 20rem), linear-gradient(145deg, #493129 0%, #37251f 58%, #241914 100%); color: #f4eee6; }
 
 @media (max-width: 760px) {
   .page { padding: 14px; }

@@ -526,7 +526,7 @@ export function GarmentIntakeSheet({
           </div>
           <div aria-live="polite" className="studio-receipt-copy">
             <div className="juw-receipt-motion">
-              <WardrobeMotion artwork="logo" polarity="light" size="sm" variant="success" />
+              <WardrobeMotion artwork="logo" polarity="auto" size="sm" variant="success" />
             </div>
             <p className="eyebrow">Saved</p>
             <h3>{facts.title} is in Wardrobe.</h3>

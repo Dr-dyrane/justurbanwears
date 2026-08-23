@@ -175,7 +175,7 @@ export function OrderStatus({
         <div className="shop-route-empty" role={state === "error" ? "alert" : undefined}>
           {state === "not-found" ? (
             <div className="juw-absence-motion">
-              <WardrobeMotion artwork="logo" polarity="light" size="sm" variant="empty" />
+              <WardrobeMotion artwork="logo" polarity="auto" size="sm" variant="empty" />
             </div>
           ) : <span aria-hidden="true"><PackageSearch size={34} strokeWidth={1.65} /></span>}
           <p className="shop-kicker">{state === "error" ? "Order unavailable" : "Order not found"}</p>
@@ -201,7 +201,7 @@ export function OrderStatus({
         <div>
           {showSuccessMoment ? (
             <div className="juw-order-success-motion">
-              <WardrobeMotion artwork="logo" polarity="light" size="sm" variant="success" />
+              <WardrobeMotion artwork="logo" polarity="auto" size="sm" variant="success" />
             </div>
           ) : null}
           <p className="shop-kicker">Order status</p>

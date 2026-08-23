@@ -78,12 +78,13 @@ test("the reveal silhouette is derived from the exact gap between the approved w
 });
 
 test("WardrobeMotion always resolves through the untouched master and complete motion fallbacks", async () => {
-  const [component, styles, types, assets, preview, notFound, loader, globalLoading, globalStage, globalStageStyles, checkout, orderPage, orderStatus, garmentReceipt, wearReceipt, useCases] = await Promise.all([
+  const [component, styles, types, assets, preview, previewStyles, notFound, loader, globalLoading, globalStage, globalStageStyles, checkout, orderPage, orderStatus, garmentReceipt, wearReceipt, useCases, useCasesStyles] = await Promise.all([
     readFile(path.join(root, "components", "brand", "wardrobe-motion.tsx"), "utf8"),
     readFile(path.join(root, "components", "brand", "wardrobe-motion.module.css"), "utf8"),
     readFile(path.join(root, "components", "brand", "wardrobe-motion.types.ts"), "utf8"),
     readFile(path.join(root, "lib", "brand", "assets.ts"), "utf8"),
     readFile(path.join(root, "app", "dev", "brand-motion", "page.tsx"), "utf8"),
+    readFile(path.join(root, "app", "dev", "brand-motion", "preview.module.css"), "utf8"),
     readFile(path.join(root, "app", "not-found.tsx"), "utf8"),
     readFile(path.join(root, "components", "shoot", "shoot-gallery.tsx"), "utf8"),
     readFile(path.join(root, "app", "loading.tsx"), "utf8"),
@@ -95,6 +96,7 @@ test("WardrobeMotion always resolves through the untouched master and complete m
     readFile(path.join(root, "components", "studio", "garment-intake", "garment-intake-sheet.tsx"), "utf8"),
     readFile(path.join(root, "components", "studio", "garment-intake", "wear-sheet.tsx"), "utf8"),
     readFile(path.join(root, "app", "dev", "brand-motion", "use-cases", "page.tsx"), "utf8"),
+    readFile(path.join(root, "app", "dev", "brand-motion", "use-cases", "use-cases.module.css"), "utf8"),
   ]);
 
   assert.match(assets, /motionMaster: "\/brand\/icon-master-1024\.png\?v=2026\.3-seal"/);
@@ -105,6 +107,7 @@ test("WardrobeMotion always resolves through the untouched master and complete m
   assert.match(component, /IntersectionObserver/);
   assert.match(component, /observer\.disconnect\(\)/);
   assert.match(styles, /@media \(prefers-reduced-motion: reduce\)/);
+  assert.match(styles, /html\[data-theme="dark"\].*data-polarity="auto"/s);
   assert.match(styles, /\.root\[data-motion="reduced"\] \.master \{ animation: none; opacity: 1; transform: none; \}/);
   for (const variant of ["loader", "footer", "404", "empty", "success", "entrance", "ambient"]) {
     assert.match(types, new RegExp(`"${variant}"`));
@@ -117,18 +120,23 @@ test("WardrobeMotion always resolves through the untouched master and complete m
   assert.match(globalLoading, /<GlobalBrandLoadingStage \/>/);
   assert.match(globalStage, /GLOBAL_BRAND_LOADING_DELAY_MS = 420/);
   assert.match(globalStage, /window\.setTimeout\(\(\) => setRevealed\(true\), delayMs\)/);
-  assert.match(globalStage, /polarity="dark" size="md" variant="loader"/);
+  assert.match(globalStage, /polarity="auto" size="md" variant="loader"/);
   assert.match(globalStage, /aria-live="polite"/);
   assert.match(globalStageStyles, /position: fixed/);
   assert.match(globalStageStyles, /@media \(prefers-reduced-motion: reduce\)/);
+  assert.match(globalStageStyles, /html\[data-theme="dark"\]/);
   assert.match(checkout, /\?placed=1/);
   assert.match(orderPage, /justPlaced=\{placed === "1"\}/);
   assert.match(orderStatus, /variant="empty"/);
   assert.match(orderStatus, /variant="success"/);
   assert.match(orderStatus, /url\.searchParams\.delete\("placed"\)/);
   assert.match(garmentReceipt, /className="juw-receipt-motion"/);
-  assert.match(garmentReceipt, /artwork="logo" polarity="light" size="sm" variant="success"/);
+  assert.match(garmentReceipt, /artwork="logo" polarity="auto" size="sm" variant="success"/);
   assert.match(wearReceipt, /className="juw-receipt-motion"/);
-  assert.match(wearReceipt, /artwork="logo" polarity="light" size="sm" variant="success"/);
+  assert.match(wearReceipt, /artwork="logo" polarity="auto" size="sm" variant="success"/);
   assert.match(useCases, /Four truthful moments/);
+  assert.match(previewStyles, /html\[data-theme="dark"\]/);
+  assert.match(useCasesStyles, /html\[data-theme="dark"\]/);
+  assert.doesNotMatch(previewStyles, /\bborder:\s/);
+  assert.doesNotMatch(useCasesStyles, /\bborder:\s/);
 });
