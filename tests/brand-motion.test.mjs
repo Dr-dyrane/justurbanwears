@@ -78,7 +78,7 @@ test("the reveal silhouette is derived from the exact gap between the approved w
 });
 
 test("WardrobeMotion always resolves through the untouched master and complete motion fallbacks", async () => {
-  const [component, styles, types, assets, preview, notFound, loader] = await Promise.all([
+  const [component, styles, types, assets, preview, notFound, loader, globalLoading, globalStage, globalStageStyles] = await Promise.all([
     readFile(path.join(root, "components", "brand", "wardrobe-motion.tsx"), "utf8"),
     readFile(path.join(root, "components", "brand", "wardrobe-motion.module.css"), "utf8"),
     readFile(path.join(root, "components", "brand", "wardrobe-motion.types.ts"), "utf8"),
@@ -86,6 +86,9 @@ test("WardrobeMotion always resolves through the untouched master and complete m
     readFile(path.join(root, "app", "dev", "brand-motion", "page.tsx"), "utf8"),
     readFile(path.join(root, "app", "not-found.tsx"), "utf8"),
     readFile(path.join(root, "components", "shoot", "shoot-gallery.tsx"), "utf8"),
+    readFile(path.join(root, "app", "loading.tsx"), "utf8"),
+    readFile(path.join(root, "components", "brand", "global-brand-loading-stage.tsx"), "utf8"),
+    readFile(path.join(root, "components", "brand", "global-brand-loading-stage.module.css"), "utf8"),
   ]);
 
   assert.match(assets, /motionMaster: "\/brand\/icon-master-1024\.png\?v=2026\.3-seal"/);
@@ -105,4 +108,11 @@ test("WardrobeMotion always resolves through the untouched master and complete m
   assert.match(notFound, /artwork="logo"/);
   assert.match(notFound, /variant="404"/);
   assert.match(loader, /variant="loader"/);
+  assert.match(globalLoading, /<GlobalBrandLoadingStage \/>/);
+  assert.match(globalStage, /GLOBAL_BRAND_LOADING_DELAY_MS = 420/);
+  assert.match(globalStage, /window\.setTimeout\(\(\) => setRevealed\(true\), delayMs\)/);
+  assert.match(globalStage, /polarity="dark" size="md" variant="loader"/);
+  assert.match(globalStage, /aria-live="polite"/);
+  assert.match(globalStageStyles, /position: fixed/);
+  assert.match(globalStageStyles, /@media \(prefers-reduced-motion: reduce\)/);
 });

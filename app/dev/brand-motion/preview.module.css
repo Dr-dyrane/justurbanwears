@@ -52,6 +52,25 @@
   max-width: 620px;
 }
 
+.stageLink {
+  border: 1px solid rgb(45 33 29 / 22%);
+  border-radius: 999px;
+  color: #2d211d;
+  display: inline-flex;
+  font-size: 10px;
+  font-weight: 760;
+  letter-spacing: 0.08em;
+  margin-top: 22px;
+  padding: 12px 17px;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition: background 180ms ease, border-color 180ms ease, transform 100ms ease;
+}
+
+.stageLink:hover { background: rgb(244 238 230 / 62%); border-color: rgb(45 33 29 / 38%); }
+.stageLink:active { transform: scale(0.985); }
+.stageLink:focus-visible { outline: 2px solid #9d4d37; outline-offset: 3px; }
+
 .heroMotion {
   align-items: center;
   display: flex;

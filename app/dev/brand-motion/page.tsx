@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { WardrobeMotion } from "../../../components/brand/wardrobe-motion";
 import { WARDROBE_MOTION_VARIANTS } from "../../../components/brand/wardrobe-motion.types";
 import styles from "./preview.module.css";
@@ -13,6 +14,7 @@ export default function BrandMotionPreviewPage() {
           <p>Internal identity proof</p>
           <h1>The wardrobe opens. The mark remains exact.</h1>
           <span>Every moving layer is masked from the production master; the first and final frames are the untouched asset.</span>
+          <Link className={styles.stageLink} href="/dev/brand-motion/stage">View the global loading stage</Link>
         </div>
         <div className={styles.heroPair}>
           <div className={styles.heroMotion}>
