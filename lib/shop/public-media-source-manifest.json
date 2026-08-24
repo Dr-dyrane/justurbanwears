@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "catalogueRevision": "2026-08-23-catalogue-26",
-  "catalogueChecksum": "a3bdfdab5432ce78fd887ce5dd9d9d0ed4d974a69f829c0513631a5f79437f62",
-  "cataloguePresentationChecksum": "f374176869bcbfbe61240857305983666253e6b2671574060a4f8e239fd17174",
+  "catalogueRevision": "2026-08-24-catalogue-27",
+  "catalogueChecksum": "06aea430d648ca057307f16b56b486ac3895d7cde663b4540301ebb6e9250dd9",
+  "cataloguePresentationChecksum": "7023cbfc4c9acff45b9c8572cadbcb21421ab1ad1a6d9ba83818d69d100b5d61",
   "assets": [
     {
       "sourcePath": "/shop/model/lulu-v2-approved.png",
@@ -1146,6 +1146,69 @@
       "contentType": "image/webp",
       "width": 1122,
       "height": 1402
+    },
+    {
+      "sourcePath": "/shop/products/fuchsia-strapless-ruched-cascade-ruffle-mini-dress/01-garment-front.webp",
+      "pathname": "shop/catalogue/f3ffaf929d4e1ee572a7e8bd027699f5fe40584c6212b044ede6e819a7db5884/products/fuchsia-strapless-ruched-cascade-ruffle-mini-dress/01-garment-front.webp",
+      "sha256": "f3ffaf929d4e1ee572a7e8bd027699f5fe40584c6212b044ede6e819a7db5884",
+      "size": 83196,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/fuchsia-strapless-ruched-cascade-ruffle-mini-dress/02-garment-back.webp",
+      "pathname": "shop/catalogue/05a1e707d518af4f6a9093d65058bbda185c3093afca872e806b211a36f163c9/products/fuchsia-strapless-ruched-cascade-ruffle-mini-dress/02-garment-back.webp",
+      "sha256": "05a1e707d518af4f6a9093d65058bbda185c3093afca872e806b211a36f163c9",
+      "size": 46256,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/fuchsia-strapless-ruched-cascade-ruffle-mini-dress/03-mannequin-front.webp",
+      "pathname": "shop/catalogue/8f1b437c547114b2e41b39acffa14bbfa46ad54ec674733f7877ce5ce2a7d1ba/products/fuchsia-strapless-ruched-cascade-ruffle-mini-dress/03-mannequin-front.webp",
+      "sha256": "8f1b437c547114b2e41b39acffa14bbfa46ad54ec674733f7877ce5ce2a7d1ba",
+      "size": 72842,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/fuchsia-strapless-ruched-cascade-ruffle-mini-dress/04-model-front.webp",
+      "pathname": "shop/catalogue/469b8b80763ade854d1cfeb6ffaf03e3b7ff77216d1062fad4f128211b08a380/products/fuchsia-strapless-ruched-cascade-ruffle-mini-dress/04-model-front.webp",
+      "sha256": "469b8b80763ade854d1cfeb6ffaf03e3b7ff77216d1062fad4f128211b08a380",
+      "size": 160792,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/fuchsia-strapless-ruched-cascade-ruffle-mini-dress/05-model-rear-three-quarter.webp",
+      "pathname": "shop/catalogue/cdd30d965ac9fae62b30dd56a4e5cbb2bd2b3778b30ff3568aebfce1b2b7730f/products/fuchsia-strapless-ruched-cascade-ruffle-mini-dress/05-model-rear-three-quarter.webp",
+      "sha256": "cdd30d965ac9fae62b30dd56a4e5cbb2bd2b3778b30ff3568aebfce1b2b7730f",
+      "size": 181386,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/fuchsia-strapless-ruched-cascade-ruffle-mini-dress/06-fabric-detail.webp",
+      "pathname": "shop/catalogue/274acfb13654983be5836dc50da723f7b5e1636aabed12782c4e5c4c03202d80/products/fuchsia-strapless-ruched-cascade-ruffle-mini-dress/06-fabric-detail.webp",
+      "sha256": "274acfb13654983be5836dc50da723f7b5e1636aabed12782c4e5c4c03202d80",
+      "size": 131222,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/fuchsia-strapless-ruched-cascade-ruffle-mini-dress/07-model-left-profile.webp",
+      "pathname": "shop/catalogue/f1f7954f1c8966c36202c40e91a7504c56f631cf2c74195aa4f25d1d2f2e8fa0/products/fuchsia-strapless-ruched-cascade-ruffle-mini-dress/07-model-left-profile.webp",
+      "sha256": "f1f7954f1c8966c36202c40e91a7504c56f631cf2c74195aa4f25d1d2f2e8fa0",
+      "size": 163230,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
     },
     {
       "sourcePath": "/shop/products/indigo-seamed-denim-mini-dress/01-garment-front.webp",

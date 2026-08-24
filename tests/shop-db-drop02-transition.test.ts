@@ -137,11 +137,11 @@ function postcondition() {
     old_publications_archived: 18,
     old_wardrobe_archived: 18,
     old_archive_events: 18,
-    new_intakes: 16,
-    new_wardrobe_items: 16,
-    new_publications: 16,
-    new_revisions: 16,
-    new_events: 32,
+    new_intakes: 17,
+    new_wardrobe_items: 17,
+    new_publications: 17,
+    new_revisions: 17,
+    new_events: 34,
     orphan_reserved: 0,
     returned_listing_sold: 1,
     returned_listing_returned: 1,
@@ -184,7 +184,7 @@ function mockTransaction({
       calls.push({ text, values });
       if (text.startsWith("lock table")) return { rows: [] };
       if (text.includes("as catalogue_count")) {
-        return { rows: [{ catalogue_count: 34, expected_catalogue_count: 34, expected_inventory_count: 34 }] };
+        return { rows: [{ catalogue_count: 35, expected_catalogue_count: 35, expected_inventory_count: 35 }] };
       }
       if (text.includes("from studio_operator_membership membership")) return { rows: [owner] };
       if (text.includes("from shop_inventory") && text.includes("for update")) {

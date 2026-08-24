@@ -24,6 +24,7 @@ const V4_MODEL_SLUGS = new Set([
   "black-cropped-tee-dark-indigo-wide-leg-cargo-jeans-set",
   "black-cropped-tee-washed-black-wide-leg-cargo-jeans-set",
   "plum-sparkle-cowl-neck-jumpsuit",
+  "fuchsia-strapless-ruched-cascade-ruffle-mini-dress",
 ]);
 
 const V3_MODEL_FRONT_SLUGS = new Set([
@@ -113,7 +114,7 @@ function presentation(product) {
  */
 export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
   schemaVersion: 2,
-  revision: "2026-08-23-catalogue-26",
+  revision: "2026-08-24-catalogue-27",
   products: Object.freeze([
     presentation({
       slug: "coral-drift-dress",
@@ -816,6 +817,26 @@ export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
       note: "A deep-plum sparkle jumpsuit with a softly draped cowl neckline and a long, close-to-straight line.",
       story: "A softly folded cowl frames the neckline above an uninterrupted fitted body, opening into full-length straight legs with fine tonal sparkle throughout.",
       details: ["Soft draped cowl neckline", "Extended cap shoulders", "Fitted one-piece silhouette", "Full-length straight legs"],
+      measurements: [],
+      mediaSlots: ["MODEL_FRONT", "MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
+    }),
+    presentation({
+      slug: "fuchsia-strapless-ruched-cascade-ruffle-mini-dress",
+      sku: "JUW-042",
+      name: "Fuchsia Strapless Ruched Cascade-Ruffle Mini Dress",
+      category: "Dresses",
+      price: 28500,
+      taggedSize: "Size on request",
+      fit: "Measurements confirmed before payment",
+      condition: "Condition confirmed before payment",
+      colour: "Saturated fuchsia",
+      availability: "AVAILABLE",
+      drop: "Drop 02",
+      tone: "coral",
+      silhouette: "dress",
+      note: "A saturated fuchsia strapless mini shaped with dense ruching and one cascading asymmetric ruffle.",
+      story: "A softly dipped strapless neckline meets a close ruched body, while one layered front cascade continues below the mini hem as a fluid free tail.",
+      details: ["Softly dipped strapless neckline", "Dense horizontal ruching", "Asymmetric layered front ruffle", "Extended free ruffle tail"],
       measurements: [],
       mediaSlots: ["MODEL_FRONT", "MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
     }),

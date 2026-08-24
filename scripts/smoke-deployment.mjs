@@ -94,6 +94,7 @@ await htmlCheck("shop shell", "/shop", [
     "black-cropped-tee-dark-indigo-wide-leg-cargo-jeans-set",
     "black-cropped-tee-washed-black-wide-leg-cargo-jeans-set",
     "plum-sparkle-cowl-neck-jumpsuit",
+    "fuchsia-strapless-ruched-cascade-ruffle-mini-dress",
   ].every((slug) => body.includes(`/shop/products/${slug}`))],
   ["Drop 01 leaked into discovery", (body) => !visibleMarkup(body).includes("coral-drift-dress")],
   ["shop navigation missing", (body) => body.includes("Search the wardrobe")],
@@ -201,6 +202,20 @@ await htmlCheck("Garment 015 product passport", "/shop/products/black-cropped-te
 ]);
 await htmlCheck("Garment 016 product passport", "/shop/products/plum-sparkle-cowl-neck-jumpsuit", [
   ["product name missing", (body) => body.includes("Plum Sparkle Cowl-Neck Jumpsuit")],
+  ["seven-view dossier incomplete", (body) => [
+    "01-garment-front.webp",
+    "02-garment-back.webp",
+    "03-mannequin-front.webp",
+    "04-model-front.webp",
+    "05-model-rear-three-quarter.webp",
+    "06-fabric-detail.webp",
+    "07-model-left-profile.webp",
+  ].every((file) => body.includes(file))],
+  ["customer-facing AI copy leaked", hasNoCustomerAiCopy],
+  ["Product JSON-LD missing", (body) => body.includes("application/ld+json") && body.includes('"@type":"Product"')],
+]);
+await htmlCheck("Garment 018 product passport", "/shop/products/fuchsia-strapless-ruched-cascade-ruffle-mini-dress", [
+  ["product name missing", (body) => body.includes("Fuchsia Strapless Ruched Cascade-Ruffle Mini Dress")],
   ["seven-view dossier incomplete", (body) => [
     "01-garment-front.webp",
     "02-garment-back.webp",
