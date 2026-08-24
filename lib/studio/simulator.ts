@@ -16,6 +16,7 @@ import type {
   VisualVariant,
 } from "./domain/entities";
 import { createDefaultModel, type StudioSnapshot } from "./domain/state";
+import { mergeWardrobeAuthoritySeeds } from "./seeds/wardrobe-authority";
 import type { StudioService } from "./services/contracts";
 
 export const STUDIO_SCENARIOS = ["lifecycle", "intake-error"] as const;
@@ -233,6 +234,8 @@ export function parseStudioScenario(
 
 export function studioScenarioRouteSupported(pathname: string) {
   return pathname === "/studio"
+    || pathname === "/studio/ask"
+    || pathname === "/studio/media"
     || pathname === "/studio/operations"
     || pathname === "/studio/wardrobe"
     || pathname.startsWith("/studio/wardrobe/");
@@ -246,9 +249,16 @@ export function studioScenarioHref(href: string, scenario: StudioScenario | null
   ) return href;
   const destination = new URL(href, "https://studio.invalid");
   if (destination.pathname === "/studio/orders" || destination.pathname.startsWith("/studio/orders/")) {
+    const orderReference = destination.pathname.startsWith("/studio/orders/")
+      ? decodeURIComponent(destination.pathname.slice("/studio/orders/".length))
+      : null;
     destination.pathname = "/studio/operations";
     destination.search = "";
     destination.searchParams.set("view", "orders");
+    if (orderReference) {
+      destination.searchParams.set("order", orderReference);
+      destination.hash = "studio-scenario-order";
+    }
   }
   destination.searchParams.set("scenario", scenario);
   return `${destination.pathname}${destination.search}${destination.hash}`;
@@ -294,7 +304,7 @@ export function createStudioScenarioSnapshot(scenario: StudioScenario): StudioSn
     disposition: "PENDING",
     createdAt: SCENARIO_TIME,
   }];
-  return clone({
+  const lifecycleSnapshot: StudioSnapshot = {
     defaultModelId: "model-lulu",
     models: [createDefaultModel()],
     garments,
@@ -303,7 +313,13 @@ export function createStudioScenarioSnapshot(scenario: StudioScenario): StudioSn
     orders,
     returns,
     shoots: [],
-  });
+  };
+
+  // A scenario is isolated from connected state, but its browseable catalogue
+  // remains the same sanitized compatibility snapshot as local Wardrobe. The
+  // five lifecycle fixtures above overlay that catalogue; no server read or
+  // private source evidence is introduced.
+  return clone(mergeWardrobeAuthoritySeeds(lifecycleSnapshot));
 }
 
 export function createStudioScenarioService(scenario: StudioScenario): StudioService {

@@ -28,8 +28,7 @@
   }
 
   /* The island occupies real space; content never disappears underneath it. */
-  .shop-shell > main,
-  .studio-shell .page-canvas {
+  .shop-shell > main {
     padding-bottom: calc(var(--juw-mobile-island-clearance) + 24px) !important;
     scroll-padding-bottom: calc(var(--juw-mobile-island-clearance) + 24px);
   }
@@ -231,7 +230,7 @@
 
   .studio-shell .studio-filter-bar button,
   .studio-shell .studio-segmented-view button {
-    min-height: 42px;
+    min-height: 44px;
   }
 
   /* Operational text stays premium without becoming faint or miniature. */

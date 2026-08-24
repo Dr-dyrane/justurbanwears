@@ -5,10 +5,14 @@ import {
   shopInventory,
   studioCataloguePublications,
 } from "../../db/shop-postgres-schema";
+import { CURRENT_SHOP_DROP } from "../shop/current-drop";
 import type { PublicationMediaSlot, StudioPublicationReceipt } from "../studio/engine/catalogue-publication-contracts";
 
 export type CataloguePublicationRow = typeof studioCataloguePublications.$inferSelect;
-export type CataloguePublicationWithInventory = CataloguePublicationRow & {
+export type CataloguePublicationWithDrop = CataloguePublicationRow & {
+  dropLabel: string;
+};
+export type CataloguePublicationWithInventory = CataloguePublicationWithDrop & {
   inventory?: {
     availability: "AVAILABLE" | "RESERVED" | "SOLD" | "ARCHIVED";
     onHand: number;
@@ -40,17 +44,24 @@ export type CatalogueBaselineMedia = {
 export async function findCataloguePublication(input: {
   wardrobeItemId: string;
   operatorSubject: string;
-}): Promise<CataloguePublicationRow | null> {
-  const [row] = await (await getStudioDb()).select().from(studioCataloguePublications).where(and(
+}): Promise<CataloguePublicationWithDrop | null> {
+  const [row] = await (await getStudioDb()).select({
+    publication: studioCataloguePublications,
+    dropLabel: shopCatalogueItems.dropLabel,
+  }).from(studioCataloguePublications).innerJoin(
+    shopCatalogueItems,
+    eq(shopCatalogueItems.sku, studioCataloguePublications.sku),
+  ).where(and(
     eq(studioCataloguePublications.wardrobeItemId, input.wardrobeItemId),
     eq(studioCataloguePublications.operatorSubject, input.operatorSubject),
   )).limit(1);
-  return row ?? null;
+  return row ? { ...row.publication, dropLabel: row.dropLabel } : null;
 }
 
 export async function listCataloguePublications(operatorSubject: string): Promise<CataloguePublicationWithInventory[]> {
   const rows = await (await getStudioDb()).select({
     publication: studioCataloguePublications,
+    dropLabel: shopCatalogueItems.dropLabel,
     availability: shopInventory.availability,
     onHand: shopInventory.onHand,
     reserved: shopInventory.reserved,
@@ -59,6 +70,9 @@ export async function listCataloguePublications(operatorSubject: string): Promis
     writeOff: shopInventory.writeOff,
     inventoryUpdatedAt: shopInventory.updatedAt,
   }).from(studioCataloguePublications).innerJoin(
+    shopCatalogueItems,
+    eq(shopCatalogueItems.sku, studioCataloguePublications.sku),
+  ).innerJoin(
     shopInventory,
     eq(shopInventory.sku, studioCataloguePublications.sku),
   ).where(and(
@@ -67,6 +81,7 @@ export async function listCataloguePublications(operatorSubject: string): Promis
   )).orderBy(desc(studioCataloguePublications.publishedAt));
   return rows.map((row) => ({
     ...row.publication,
+    dropLabel: row.dropLabel,
     inventory: {
       availability: row.availability,
       onHand: row.onHand,
@@ -79,7 +94,9 @@ export async function listCataloguePublications(operatorSubject: string): Promis
   }));
 }
 
-export function cataloguePublicationReceipt(row: CataloguePublicationWithInventory): StudioPublicationReceipt {
+export function cataloguePublicationReceipt(
+  row: CataloguePublicationRow & Partial<Pick<CataloguePublicationWithInventory, "dropLabel" | "inventory">>,
+): StudioPublicationReceipt {
   return {
     publicationId: row.id,
     wardrobeItemId: row.wardrobeItemId,
@@ -89,6 +106,7 @@ export function cataloguePublicationReceipt(row: CataloguePublicationWithInvento
     state: row.state as StudioPublicationReceipt["state"],
     publishedAt: row.publishedAt.toISOString(),
     shopUrl: `/shop/products/${row.slug}`,
+    ...(row.dropLabel ? { drop: row.dropLabel } : {}),
     ...(row.inventory ? { inventory: {
       ...row.inventory,
       updatedAt: row.inventory.updatedAt.toISOString(),
@@ -162,7 +180,7 @@ export type AtomicAdoptedRevisionPublicationInput = {
  */
 export async function insertCataloguePublicationAtomically(
   input: AtomicPublicationInput,
-): Promise<CataloguePublicationRow | null> {
+): Promise<CataloguePublicationWithDrop | null> {
   const database = await getStudioDb();
   const catalogueMedia = input.media.map(({ slot, src }) => ({ slot, src }));
   const details = [input.colour, input.taggedSize, input.condition];
@@ -254,7 +272,7 @@ export async function insertCataloguePublicationAtomically(
       select
         public_identity.sku, ${input.slug}, ${input.title}, ${input.category}, ${input.price},
         ${input.taggedSize}, 'Measurements confirmed before payment', ${input.condition},
-        ${input.colour}, 'Studio wardrobe', ${input.tone}, ${input.silhouette},
+        ${input.colour}, ${CURRENT_SHOP_DROP}, ${input.tone}, ${input.silhouette},
         'One-off wardrobe piece.', ${`${input.colour} · ${input.condition}`},
         ${JSON.stringify(details)}::jsonb, '[]'::jsonb, '{}'::jsonb,
         ${JSON.stringify(catalogueMedia)}::jsonb, now(), now()
@@ -320,6 +338,7 @@ export async function insertCataloguePublicationAtomically(
     baseline: raw.baseline && typeof raw.baseline === "object" ? raw.baseline as Record<string, unknown> : null,
     publishedAt: new Date(String(raw.published_at)),
     createdAt: new Date(String(raw.created_at)),
+    dropLabel: CURRENT_SHOP_DROP,
   };
 }
 

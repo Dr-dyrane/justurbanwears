@@ -160,6 +160,7 @@ test("route shells and account expose authoritative orders without relabelling l
   const shopShell = source("components/shop/shop-shell.tsx");
   const shopMobileAction = source("components/shop/shop-mobile-action-context.tsx");
   const studioShell = source("components/studio/app-shell.tsx");
+  const studioServices = source("lib/studio/service-registry.ts");
   const account = source("components/shop/shop-account.tsx");
   const ordersPage = source("app/shop/orders/page.tsx");
   const orderPage = source("app/shop/orders/[id]/page.tsx");
@@ -172,13 +173,14 @@ test("route shells and account expose authoritative orders without relabelling l
   assert.match(ordersPage, /title: "Your orders"/);
   assert.match(orderPage, /title: "Order status"/);
   assert.doesNotMatch(`${ordersPage}\n${orderPage}`, /Checkout drafts|checkout draft/i);
-  assert.match(studioShell, /href: "\/studio\/orders", label: "Orders"/);
+  assert.match(studioShell, /studioStackFallback/);
+  assert.match(studioServices, /key: "orders",[\s\S]*?href: "\/studio\/orders"/);
   assert.match(account, /Your orders/);
   assert.match(account, /Sign in to open your orders/);
   assert.doesNotMatch(account, /orders\.length|Checkout drafts/);
 });
 
-test("commerce surfaces use customer language and register the exact next Studio action", () => {
+test("commerce surfaces use customer language and expose the exact next Studio action", () => {
   const inbox = source("components/studio/connected-order-inbox.tsx");
   const detail = source("components/studio/connected-order-detail.tsx");
   const mobileAction = source("components/studio/mobile-action-context.tsx");
@@ -187,8 +189,14 @@ test("commerce surfaces use customer language and register the exact next Studio
   const customerUpload = source("components/shop/payment-evidence-upload.tsx");
   const visibleCommerce = [inbox, detail, customerStatus, customerUpload].join("\n");
 
-  assert.match(inbox, /useStudioMobileAction/);
+  assert.match(inbox, /aria-label="Next Orders action"/);
+  assert.match(inbox, /state === "error" \? "Orders —"/);
+  assert.match(inbox, /studio-piece-next/);
+  assert.doesNotMatch(inbox, /useStudioMobileAction/);
   assert.match(inbox, /#studio-order-next-action/);
+  assert.ok(inbox.indexOf("studio-piece-next") < inbox.indexOf("studio-connected-order-list"));
+  assert.ok(inbox.indexOf("studio-connected-order-list") < inbox.indexOf("Create customer order"));
+  assert.match(inbox, /<details className="studio-stack-filter">[\s\S]*?<summary>Find orders/);
   assert.match(detail, /id=\{isNextAction \? "studio-order-next-action"/);
   assert.match(detail, /open=\{isNextAction \|\| undefined\}/);
   assert.match(mobileAction, /StudioMobileActionProvider/);

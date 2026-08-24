@@ -45,7 +45,7 @@ export function deriveStudioNotifications(
       tone: "attention",
       title: `${reservedOrders.length} reserved sale${reservedOrders.length === 1 ? "" : "s"} waiting`,
       detail: "Confirm sold or release the reservation.",
-      href: "/studio/operations?view=orders",
+      href: "/studio/orders",
       actionLabel: "Open orders",
     });
   }
@@ -56,7 +56,7 @@ export function deriveStudioNotifications(
       tone: "attention",
       title: `${openReturns.length} return${openReturns.length === 1 ? "" : "s"} to inspect`,
       detail: "Restock or write off after inspection.",
-      href: "/studio/operations?view=returns",
+      href: "/studio/orders?filter=RETURNS",
       actionLabel: "Open returns",
     });
   }

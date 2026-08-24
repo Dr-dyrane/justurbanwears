@@ -14,6 +14,7 @@ import {
   studioScenarioHref,
   studioScenarioRouteSupported,
 } from "../lib/studio/simulator";
+import { projectStudioDropScopes } from "../lib/studio/projections/drop-context";
 
 const root = new URL("../", import.meta.url);
 const source = (path: string) => readFileSync(new URL(path, root), "utf8");
@@ -28,20 +29,48 @@ test("Studio scenarios are an exact development-only allowlist", () => {
   assert.equal(parseStudioScenario(null, true), null);
 });
 
-test("the lifecycle fixture is coherent and contains no public projection", () => {
+test("the lifecycle fixture overlays the complete sanitized catalogue", () => {
   const snapshot = createStudioScenarioSnapshot("lifecycle");
+  const lifecycleGarmentIds = [
+    "scenario-garment-draft",
+    "scenario-garment-ready",
+    "scenario-garment-live",
+    "scenario-garment-order",
+    "scenario-garment-return",
+  ];
   assert.deepEqual(
-    snapshot.garments.map((garment) => garment.state),
+    lifecycleGarmentIds.map((id) => snapshot.garments.find((garment) => garment.id === id)?.state),
     ["DRAFT", "READY", "PUBLISHED", "RESERVED", "SOLD"],
   );
   assert.deepEqual(
-    snapshot.listings.map((listing) => listing.state),
+    snapshot.listings
+      .filter((listing) => listing.garmentId.startsWith("scenario-garment-") && listing.garmentId !== "scenario-garment-draft")
+      .map((listing) => listing.state),
     ["READY", "PUBLISHED", "RESERVED", "SOLD"],
   );
   assert.deepEqual(snapshot.orders.map((order) => order.state), ["RESERVED", "SOLD"]);
   assert.deepEqual(snapshot.returns.map((returnCase) => returnCase.state), ["DRAFT"]);
-  assert.equal(snapshot.listings.some((listing) => Boolean(listing.publicProjection)), false);
+  assert.equal(snapshot.garments.length, 41);
+  assert.equal(snapshot.listings.length, 34);
+  assert.equal(snapshot.inventory.length, 41);
+  assert.equal(
+    snapshot.listings
+      .filter((listing) => listing.garmentId.startsWith("scenario-garment-"))
+      .some((listing) => Boolean(listing.publicProjection)),
+    false,
+    "lifecycle overlays must not pretend to be connected listing receipts",
+  );
+  assert.equal(snapshot.listings.some((listing) => Boolean(listing.publicProjection)), true);
   assert.equal(snapshot.garments.some((garment) => Boolean(garment.privateWardrobeItemId)), false);
+
+  const drops = projectStudioDropScopes(snapshot.garments, snapshot.listings);
+  assert.deepEqual(drops.scopes.map(({ key, count }) => ({ key, count })), [
+    { key: "current", count: 16 },
+    { key: "past", count: 18 },
+    { key: "studio", count: 0 },
+    { key: "private", count: 7 },
+  ]);
+  assert.deepEqual(drops.scopes[1]?.labels, ["Drop 01"]);
 
   for (const listing of snapshot.listings) {
     assert.ok(snapshot.garments.some((garment) => garment.id === listing.garmentId));
@@ -114,14 +143,16 @@ test("scenario navigation stays on safe Studio routes", () => {
   );
   assert.equal(
     studioScenarioHref("/studio/orders/JUW-ORDER", "lifecycle"),
-    "/studio/operations?view=orders&scenario=lifecycle",
+    "/studio/operations?view=orders&order=JUW-ORDER&scenario=lifecycle#studio-scenario-order",
   );
   assert.equal(studioScenarioHref("/shop", "lifecycle"), "/shop");
   assert.equal(studioScenarioHref("/shoots", "lifecycle"), "/shoots?scenario=lifecycle");
   assert.equal(studioScenarioHref("#piece-primary-action", "lifecycle"), "#piece-primary-action");
   assert.equal(studioScenarioRouteSupported("/studio"), true);
+  assert.equal(studioScenarioRouteSupported("/studio/ask"), true);
   assert.equal(studioScenarioRouteSupported("/studio/wardrobe/scenario-garment-draft"), true);
   assert.equal(studioScenarioRouteSupported("/studio/operations"), true);
+  assert.equal(studioScenarioRouteSupported("/studio/media"), true);
   assert.equal(studioScenarioRouteSupported("/studio/orders"), false);
   assert.equal(studioScenarioRouteSupported("/shoots"), false);
 });
@@ -143,7 +174,7 @@ test("the simulator wiring preserves the authority boundary", () => {
   assert.match(layout, /<AppShell operator=\{operator\} scenariosEnabled=\{scenariosEnabled\}>/);
   assert.match(provider, /parseStudioScenario\(searchParams\.get\("scenario"\), scenariosEnabled\)/);
   assert.match(provider, /scenario \? createStudioScenarioService\(scenario\) : createBrowserStudioService\(\)/);
-  assert.match(shell, /In memory only · Reload resets this scenario/);
+  assert.match(shell, /Simulator · \{STUDIO_SCENARIO_LABELS\[studio\.scenario\]\} · Resets on reload/);
   assert.match(shell, /scenarioRouteSupported \? children/);
   assert.match(shell, /<div className="workspace">[\s\S]*?<div className="demo-ribbon"/);
   assert.match(intake, /client = studioEngineIntakeClient/);

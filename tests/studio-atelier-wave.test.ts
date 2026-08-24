@@ -7,11 +7,12 @@ const read = (path: string) => readFile(new URL(`../${path}`, import.meta.url), 
 test("Studio home resolves around one dominant task and quieter business context", async () => {
   const home = await read("components/studio/studio-home.tsx");
 
-  assert.match(home, /studio-attention-primary/);
-  assert.match(home, />Next</);
-  assert.match(home, /studio-pulse-grid/);
-  assert.match(home, /Recent pieces/);
+  assert.match(home, /studio-home-recommendation/);
+  assert.match(home, /primaryTask\.label/);
+  assert.match(home, /studio-home-summary/);
+  assert.match(home, />Recent</);
   assert.doesNotMatch(home, /studio-queue-grid/);
+  assert.doesNotMatch(home, /studio-attention-primary/);
 });
 
 test("Atelier wave finishes desktop, mobile, dark, and reduced-motion treatment", async () => {

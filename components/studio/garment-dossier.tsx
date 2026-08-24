@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useParams } from "next/navigation";
-import { ArrowLeft, PackageOpen } from "lucide-react";
+import { useParams, useSearchParams } from "next/navigation";
+import { PackageOpen } from "lucide-react";
 import { StudioLink } from "./atoms/studio-link";
 import { WearSheet } from "./garment-intake/wear-sheet";
 import { GarmentSetBuilder } from "./garment-set-builder";
@@ -13,6 +13,7 @@ import { studioScenarioHref } from "../../lib/studio/simulator";
 
 export function GarmentDossier() {
   const params = useParams<{ id: string }>();
+  const searchParams = useSearchParams();
   const studio = useStudio();
   const [setWardrobeItemId, setSetWardrobeItemId] = useState<string | null>(null);
   const [wearWardrobeItemId, setWearWardrobeItemId] = useState<string | null>(null);
@@ -39,11 +40,9 @@ export function GarmentDossier() {
   return (
     <StudioMediaViewerProvider>
       <article className="studio-dossier-page">
-        <StudioLink className="studio-dossier-back" href="/studio/wardrobe">
-          <ArrowLeft aria-hidden="true" size={17} />Wardrobe
-        </StudioLink>
         <PieceWorkspaceView
           garment={garment}
+          initialAction={searchParams.get("action") === "price" ? "price" : undefined}
           onBuildSet={(piece) => setSetWardrobeItemId(piece.privateWardrobeItemId ?? null)}
           onDismiss={() => window.location.assign(studioScenarioHref("/studio/wardrobe", studio.scenario))}
           onContinueMedia={(piece) => setWearWardrobeItemId(piece.privateWardrobeItemId ?? null)}

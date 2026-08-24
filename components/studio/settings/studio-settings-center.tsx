@@ -2,24 +2,18 @@
 
 import { createAuthClient } from "@neondatabase/auth/next";
 import {
-  Bell,
   BookOpen,
-  Camera,
   Check,
   ChevronRight,
   Cloud,
   Database,
-  ExternalLink,
   LogOut,
-  ScanLine,
   Settings,
   ShieldCheck,
   Sparkles,
   UserRound,
-  Users,
 } from "lucide-react";
-import { useId, useState } from "react";
-import { useStudioPreferences } from "../../../hooks/studio/use-studio-preferences";
+import { useState } from "react";
 import type { StudioOperator } from "../../../lib/server/studio-operator";
 import { PwaInstallControl } from "../../pwa/pwa-install-control";
 import { ThemeSettings } from "../../theme/theme-settings";
@@ -34,8 +28,6 @@ export function StudioSettingsCenter({ operator }: { operator: StudioOperator | 
   const [open, setOpen] = useState(false);
   const [returnFocus, setReturnFocus] = useState<HTMLButtonElement | null>(null);
   const [signingOut, setSigningOut] = useState(false);
-  const updateCountId = useId();
-  const { showUpdateCount, setShowUpdateCount } = useStudioPreferences();
   const displayName = operator?.displayName && operator.displayName !== operator.email
     ? operator.displayName
     : "Lulu";
@@ -72,44 +64,9 @@ export function StudioSettingsCenter({ operator }: { operator: StudioOperator | 
           <ShieldCheck aria-label="Authenticated private workspace" size={19} />
         </section>
 
-        <section className="studio-settings-section studio-settings-spaces" aria-labelledby="studio-spaces-title">
-          <div className="studio-settings-heading"><span><Sparkles aria-hidden="true" size={18} /></span><div><p className="eyebrow">Spaces</p><h3 id="studio-spaces-title">Everything else</h3></div></div>
-          <nav className="studio-helper-stack" aria-label="Studio spaces and helpers">
-            <Link href="/studio/models">
-              <Users aria-hidden="true" size={19} />
-              <span><strong>Models</strong><small>Identity, consent, and presentation.</small></span>
-              <ChevronRight aria-hidden="true" size={17} />
-            </Link>
-            <Link href="/studio/media">
-              <Camera aria-hidden="true" size={19} />
-              <span><strong>Media lab</strong><small>Private AI and Wear imagery.</small></span>
-              <ChevronRight aria-hidden="true" size={17} />
-            </Link>
-            <Link href="/studio/stocktake">
-              <ScanLine aria-hidden="true" size={19} />
-              <span><strong>Stocktake</strong><small>Confirm what is physically in hand.</small></span>
-              <ChevronRight aria-hidden="true" size={17} />
-            </Link>
-            <Link href="/shop">
-              <ExternalLink aria-hidden="true" size={19} />
-              <span><strong>Open Shop</strong><small>See the public wardrobe.</small></span>
-              <ChevronRight aria-hidden="true" size={17} />
-            </Link>
-          </nav>
-        </section>
-
         <section className="studio-settings-section" aria-labelledby="studio-appearance-title">
           <div className="studio-settings-heading"><span><Sparkles aria-hidden="true" size={18} /></span><div><p className="eyebrow">Appearance</p><h3 id="studio-appearance-title">Choose the light</h3></div></div>
           <ThemeSettings />
-        </section>
-
-        <section className="studio-settings-section" aria-labelledby="studio-alerts-title">
-          <div className="studio-settings-heading"><span><Bell aria-hidden="true" size={18} /></span><div><p className="eyebrow">Updates</p><h3 id="studio-alerts-title">Attention badge</h3></div></div>
-          <label className="studio-settings-switch" htmlFor={updateCountId}>
-            <span><strong>Show update count</strong><small>Keep the number on the Updates button.</small></span>
-            <input aria-label="Show update count" checked={showUpdateCount} id={updateCountId} onChange={(event) => setShowUpdateCount(event.target.checked)} type="checkbox" />
-            <i aria-hidden="true"><b /></i>
-          </label>
         </section>
 
         <section className="studio-settings-section" aria-labelledby="studio-workspace-title">

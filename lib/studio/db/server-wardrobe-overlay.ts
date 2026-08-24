@@ -53,6 +53,7 @@ function isPublication(value: unknown, wardrobeItemId: string) {
     && typeof value.publishedAt === "string"
     && Number.isFinite(Date.parse(value.publishedAt))
     && value.shopUrl === `/shop/products/${slug}`
+    && (value.drop === undefined || typeof value.drop === "string")
     && (value.inventory === undefined || isPublicationInventory(value.inventory));
 }
 
@@ -171,6 +172,7 @@ function mapServerGarment(item: OperatorSafeWardrobeItem, legacy?: Garment): Gar
       state: item.publication.state,
       publishedAt: item.publication.publishedAt,
       shopUrl: item.publication.shopUrl,
+      ...(item.publication.drop ? { drop: item.publication.drop } : {}),
     } } : {}),
     ...(legacy ? { id: legacy.id, reviewCover: legacy.reviewCover } : {}),
   };

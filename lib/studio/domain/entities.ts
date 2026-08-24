@@ -120,6 +120,8 @@ export interface DynamicPublicationProjection {
   state: "PUBLISHED" | "UNPUBLISHED" | "ARCHIVED";
   publishedAt: string;
   shopUrl: string;
+  /** Exact collection label supplied by the public catalogue receipt. */
+  drop?: string;
 }
 
 export type PublicListingMediaSlot = WardrobePublicMediaSlot;

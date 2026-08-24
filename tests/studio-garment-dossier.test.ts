@@ -11,7 +11,6 @@ const foundation = readFileSync(`${root}/app/foundation.css`, "utf8");
 const atelier = readFileSync(`${root}/app/studio-atelier.css`, "utf8");
 const captures = readFileSync(`${root}/components/studio/draft-direct-captures.tsx`, "utf8");
 const shell = readFileSync(`${root}/components/studio/app-shell.tsx`, "utf8");
-const mobileActions = readFileSync(`${root}/components/studio/mobile-action-context.tsx`, "utf8");
 
 test("every garment entry point resolves to the permanent dossier route", () => {
   assert.equal(existsSync(`${root}/app/(studio)/studio/wardrobe/[id]/page.tsx`), true);
@@ -31,17 +30,12 @@ test("the dossier reuses the canonical Piece workspace and handles cold links", 
   assert.match(dossier, /<WearSheet/);
 });
 
-test("the live Piece workspace registers a one-tap state-aware mobile action", () => {
+test("the live Piece workspace keeps its one state-aware action inside the stack page", () => {
   assert.doesNotMatch(dossier, /useStudioMobileAction|selectPieceWorkspace/);
-  assert.match(wardrobe, /useStudioMobileAction\(mobileAction\)/);
-  assert.match(wardrobe, /invokeTargetId: "piece-primary-action"/);
+  assert.doesNotMatch(wardrobe, /useStudioMobileAction|invokeTargetId/);
   assert.match(wardrobe, /id="piece-primary-action"/);
-  assert.match(mobileActions, /invokeTargetId\?: string/);
-  assert.match(shell, /registeredMobileAction\?\.invokeTargetId/);
-  assert.match(shell, /target\.click\(\)/);
-  assert.match(shell, /className="studio-view-action"/);
-  assert.match(shell, /className="shop-mobile-fab shop-dock-lens studio-mobile-fab"/);
-  assert.equal(shell.match(/onClick=\{invokeContextAction\}/g)?.length, 2);
+  assert.match(wardrobe, /aria-label=\{`Next action for \$\{garment\.title\}`\}/);
+  assert.doesNotMatch(shell, /StudioMobileActionProvider|studio-mobile-fab|invokeContextAction/);
 });
 
 test("the dossier keeps media controls visible and public projection readable in both themes", () => {

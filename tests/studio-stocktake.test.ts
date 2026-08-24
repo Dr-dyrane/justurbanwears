@@ -76,11 +76,12 @@ test("stocktake commands stay server-authoritative and idempotent", async () => 
 });
 
 test("canonical routes expose one physical action and clear receipts", async () => {
-  const [stocktakePage, scanPage, workspace, shell] = await Promise.all([
+  const [stocktakePage, scanPage, workspace, shell, stackContext] = await Promise.all([
     source("app/(studio)/studio/stocktake/page.tsx"),
     source("app/(studio)/studio/scan/[sku]/page.tsx"),
     source("components/studio/stocktake-workspace.tsx"),
     source("components/studio/app-shell.tsx"),
+    source("components/studio/navigation/studio-stack-context.tsx"),
   ]);
   assert.match(stocktakePage, /mode="stocktake"/);
   assert.match(stocktakePage, /from "\.\.\/\.\.\/\.\.\/\.\.\/components\/studio\/stocktake-workspace"/);
@@ -93,10 +94,11 @@ test("canonical routes expose one physical action and clear receipts", async () 
   assert.match(workspace, /Mismatch recorded/);
   assert.match(workspace, /Resolve only what differs/);
   assert.match(workspace, /expectedVersion: countSession\?\.version/);
-  assert.match(workspace, /invokeTargetId: "stocktake-close-action"/);
+  assert.doesNotMatch(workspace, /useStudioMobileAction|invokeTargetId/);
   assert.match(workspace, /id="stocktake-close-action"/);
   assert.match(workspace, /This count cannot close/);
   assert.doesNotMatch(workspace, /Quantity\s*\[|\[-\]|\[\+\]/i);
-  assert.match(shell, /href: "\/studio\/stocktake"/);
-  assert.match(shell, /pathname\.startsWith\("\/studio\/scan"\)/);
+  assert.match(shell, /href=\{stack\.backHref\}/);
+  assert.match(stackContext, /pathname\.startsWith\("\/studio\/scan"\)/);
+  assert.match(stackContext, /backHref: "\/studio\/stocktake"/);
 });

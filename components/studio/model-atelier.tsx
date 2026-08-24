@@ -7,6 +7,7 @@ import { FormEvent, useEffect, useId, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   Archive,
+  ArrowRight,
   ChevronRight,
   CircleAlert,
   Lock,
@@ -18,6 +19,7 @@ import {
 import type { StudioAuthorityModel } from "../../lib/studio/services/studio-authority-client";
 import { APPROVED_PUBLIC_MODEL_PREVIEW } from "../../lib/studio/projections/approved-catalogue";
 import { LifecycleBadge } from "./atoms/lifecycle-badge";
+import { StudioLink } from "./atoms/studio-link";
 import { StudioSegmentedView, useStudioSegment } from "./atoms/studio-segmented-view";
 import { StudioTaskSheet } from "./atoms/studio-task-sheet";
 import { useStudio } from "./studio-provider";
@@ -214,10 +216,19 @@ export function ModelAtelier() {
 
   return (
     <div className="studio-ops-page">
-      <header className="studio-ops-heading" id="models">
-        <div><p className="eyebrow">Model atelier</p><h1>Choose who wears the piece.</h1><p>Every model keeps its image, usage source and authority together.</p></div>
-        <div className="studio-model-heading-actions"><span className="studio-private-chip"><ShieldCheck aria-hidden="true" size={15} />Private authority</span><button className="button button-primary" onClick={(event) => openTask("create", event.currentTarget)} type="button"><Plus aria-hidden="true" size={17} />Add model</button></div>
-      </header>
+      <h1 className="sr-only" id="models">Models</h1>
+      {selected ? (
+        <StudioLink className="studio-stack-current" href={`/studio/media/new?model=${encodeURIComponent(selected.id)}`}>
+          <span><small>Continue</small><strong>Create with {selected.name}</strong></span>
+          <LifecycleBadge state={selected.state === "READY" ? "READY" : "DRAFT"} />
+          <ArrowRight aria-hidden="true" size={18} />
+        </StudioLink>
+      ) : (
+        <button className="studio-stack-current" onClick={(event) => openTask("create", event.currentTarget)} type="button">
+          <span><small>Next</small><strong>Add model</strong></span>
+          <Plus aria-hidden="true" size={18} />
+        </button>
+      )}
 
       <StudioSegmentedView active={activeView} label="Model workspace" onSelect={selectView} pending={viewPending} segments={segments} />
 

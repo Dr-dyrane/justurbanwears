@@ -1,0 +1,465 @@
+# ADR 0046: Provider-neutral idempotent Virtual Atelier operations
+
+- Status: Proposed
+- Date: 2026-08-22
+- Owner: Virtual Atelier Engine
+- Scope: canonical generation/edit operations, provider adapters, execution identity, lifecycle, QA and Studio projection; existing identity, body, garment, room and view authorities remain unchanged
+
+## Context
+
+The Virtual Atelier already has a strong production contract. Real Lulu
+identity is primary, the approved body canon controls geometry, garment sources
+control only visible garment truth, the light atelier is locked, accepted layers
+are immutable and 05/06/07 have fixed semantics and sibling lineage.
+
+Reproducibility is weaker at execution time. Semantic intent is recorded beside
+provider-oriented prompts, numbered reference positions, a fixed reference
+budget and manually supplied operation IDs. Studio's current generation
+fingerprint includes the model. A model or provider change therefore looks like
+a different operation even when garment, authorities, view and intended change
+are identical.
+
+Exact prompts and reference hashes are necessary but not sufficient: stochastic
+providers can still distort identity, reinterpret a garment or invent an
+unknown construction detail. Conversely, byte-identical imagery across different
+models is not a realistic contract.
+
+The required guarantee is **materially equivalent accepted truth** independent
+of the conformant provider, plus operational idempotency that prevents duplicate
+generation, duplicate cost and accidental replacement of locked work.
+
+This ADR extends ADR 0040. The production authority order remains:
+
+1. `docs/virtual-atelier/OPERATING-CONTRACT.md`;
+2. `docs/virtual-atelier/ATELIER-CANON.md`;
+3. `docs/virtual-atelier/state/current.json`;
+4. the active garment brief;
+5. `docs/virtual-atelier/assets/current.json`;
+6. `docs/virtual-atelier/RUNBOOK.md`.
+
+## Decision
+
+Separate semantic operation identity from provider execution identity.
+
+Studio and the orchestrator create one immutable, provider-neutral
+`AtelierOperation`. A provider adapter compiles that operation into a concrete
+execution plan only after capability preflight. All providers face the same
+authority, lineage, output and evaluation gates.
+
+An accepted result is locked against the semantic operation. Repeating that
+operation returns the locked artifact without invoking any provider. Switching
+providers creates a different execution attempt under the same semantic
+operation, not a different product intent.
+
+## Canonical operation
+
+The versioned `AtelierOperation` contains:
+
+```text
+contractVersion
+workflowRevision
+garmentId
+viewRole
+operationType
+authorityStack[]
+  role
+  assetId
+  sha256
+  provenanceClass
+  required
+  permittedScope
+  dominance
+  privacyClass
+parentLocks[]
+  assetId
+  sha256
+  lockedLayer
+changeSet[]
+  mutableLayer
+  region
+  intendedDelta
+immutableSet[]
+  layer
+  assetId
+  sha256
+garmentFacts[]
+unknownFacts[]
+prohibitedInferences[]
+sceneSpec
+cameraSpec
+poseSpec
+stylingSpec
+renderQualityContract
+outputContract
+failureGates[]
+correctionOf?
+correctionBudget
+```
+
+Named semantic roles replace `Image 1`, `Image 2` and provider slot numbers.
+Canonical serialization fixes schema version, key order, normalization and the
+ordering policy for each collection. The engine derives `operationId`; an
+operator or model does not author it.
+
+The operation cannot reach preflight until every required authority resolves to
+an asset ID and exact hash. `unknownFacts` and `prohibitedInferences` are first-
+class constraints, not prose buried in a prompt.
+
+## Three hashes
+
+### Semantic operation hash
+
+```text
+semanticOperationHash = SHA-256(
+  canonical AtelierOperation
+  + resolved authority and parent hashes
+  + workflow revision
+)
+```
+
+It excludes provider, model, prompt syntax, reference slots, seed, sampler and
+transport details. It is the durable idempotency and accepted-result key.
+
+### Execution hash
+
+```text
+executionHash = SHA-256(
+  semanticOperationHash
+  + adapter ID and version
+  + provider, model and model revision
+  + compiled prompt hash
+  + reference binding/packing hash
+  + preprocessing version
+  + seed, sampler and parameters
+  + provider policy revision
+)
+```
+
+It identifies one replayable provider attempt. A provider with no deterministic
+seed records that limitation. Exactly-once remote invocation is claimed only
+when the provider accepts an idempotency key or exposes a durable job ID and
+status lookup. Otherwise the engine provides a single local claim and durable
+result reuse, not a false promise of byte replay or safe automatic reinvocation.
+
+Every execution also persists a private reproduction record containing the
+verbatim compiled prompt, exact ordered reference bindings with role, private
+path or opaque storage locator and SHA-256, exclusions, adapter/provider/tool
+and mode, model revision, parameters, source and output locations, dimensions,
+byte counts, hashes, provider request/job IDs, technical and semantic reviews
+and the exact user decision. Hashes index and verify this record; they do not
+replace it. None of these private fields enter browser or public projections.
+
+### Artifact and evaluation hashes
+
+`artifactHash` identifies exact normalized output bytes.
+`evaluationHash` identifies artifact hash plus rubric, evaluator and threshold
+versions. A changed rubric can re-evaluate an artifact without pretending new
+bytes were generated.
+
+## Idempotency invariants
+
+- A locked semantic hash returns its locked artifact immediately.
+- A semantic operation has at most one active claim.
+- An execution hash has at most one active local invocation claim.
+- Exactly-once remote invocation requires provider idempotency or a durable
+  provider job that can be reconciled after process failure.
+- Concurrent equivalent requests join the existing claim or read its terminal
+  result.
+- Retrying an indeterminate response reuses execution ID and hash only after
+  provider reconciliation proves whether the remote job exists.
+- If the provider supports neither idempotency nor job lookup, an indeterminate
+  remote response moves to `INDETERMINATE_PROVIDER_RESULT`; it is not
+  automatically invoked again.
+- Changing provider or model alone does not change semantic identity.
+- Changing an authority byte, parent lock, workflow revision, view, intended
+  change or immutable set does.
+- Rejected output is retained as evidence but cannot be a parent or authority.
+- A lock is immutable; replacement requires a new explicitly approved semantic
+  operation and lineage event.
+
+## Provider adapters
+
+Each adapter implements:
+
+```text
+capabilities()
+compile(AtelierOperation) -> ExecutionPlan
+invoke(ExecutionPlan) -> ProviderResult
+normalize(ProviderResult) -> CandidateArtifact
+```
+
+Capabilities declare:
+
+- generate, edit, mask and local-correction support;
+- maximum references and bytes;
+- identity/body reference behavior;
+- seed and determinism behavior;
+- supported dimensions, ratios, formats and colour spaces;
+- negative-constraint support;
+- content retention and privacy guarantees;
+- timeout, cancellation, idempotency-key, remote job lookup and reconciliation
+  behavior.
+
+The execution plan records the exact binding from semantic authority role to
+provider input. A deterministic reference packer may compose approved boards
+when the contract permits it, but it may not silently omit, merge or weaken a
+mandatory authority.
+
+If a provider cannot carry the required authority stack, privacy class,
+dimensions or local-correction isolation, preflight returns
+`BLOCKED_CAPABILITY` before invocation. Provider selection is server policy and
+never changes authority precedence.
+
+Built-in ImageGen and the current Gateway/Flux path become adapters. Neither is
+the semantic workflow.
+
+## Lifecycle
+
+```text
+DRAFT
+-> RESOLVED
+-> PREFLIGHTED
+-> CLAIMED
+-> INVOKED
+-> MATERIALIZED
+-> TECH_QA
+-> SEMANTIC_QA
+-> AWAITING_APPROVAL
+-> LOCKED
+-> PACKETED
+-> PUBLISHED
+```
+
+Side and terminal states:
+
+- `BLOCKED_MISSING_AUTHORITY`;
+- `BLOCKED_CAPABILITY`;
+- `FAILED_RETRYABLE`;
+- `INDETERMINATE_PROVIDER_RESULT`;
+- `REJECTED_TERMINAL`;
+- `BLOCKED_USER_DIRECTION`;
+- `SUPERSEDED`.
+
+Invariants:
+
+- `RESOLVED` requires every mandatory authority.
+- 06 and 07 independently parent accepted 05 and never each other.
+- Only explicit user approval permits `LOCKED`.
+- Packet and publication cannot precede lock.
+- A preview or unreviewed candidate cannot be published.
+- Accepted layers cannot be regenerated to fix another layer.
+
+## Event ledger and projections
+
+Persist append-only events such as:
+
+```text
+OperationDrafted
+AuthorityResolved
+PreflightPassed | PreflightBlocked
+ExecutionClaimed
+ProviderInvoked
+ProviderResultReconciled
+ArtifactMaterialized
+TechnicalQaRecorded
+SemanticQaRecorded
+UserApproved | UserRejected
+CorrectionAuthorized
+LayerLocked
+Packeted
+Published
+Superseded
+```
+
+Each event has an ID, per-operation sequence, semantic and execution hashes,
+actor, timestamp, previous-event hash, sanitized outcome and opaque private
+evidence references. Compare-and-swap versions and uniqueness constraints
+prevent two writers from advancing the same claim.
+
+The private execution record linked by those events retains the governing
+Atelier reproduction fields verbatim: compiled prompt; ordered references,
+roles and exact private paths or storage locators; exclusions; tool, provider
+and mode; source and output locations; dimensions; byte counts; hashes; review
+evidence; and exact user decision. Public and browser projections receive only
+sanitized status, progress and next action.
+
+`state/current.json` remains the durable human-reviewable production projection
+during migration and ultimately becomes reproducible from the ledger. Studio
+reads a sanitized operation projection. Private prompts, paths, raw metrics,
+provider credentials and canon metadata never enter browser DTOs.
+
+Historical V2/V3 task ledgers remain provenance only. They cannot override the
+current V4 authority projection.
+
+## Quality evaluation
+
+Technical QA is deterministic where possible:
+
+- bytes decode and match output geometry;
+- aspect, dimensions, orientation, colour space and format are correct;
+- public derivatives are metadata-sanitized;
+- output is one clean full image, not a board, crop, label or multi-frame sheet;
+- unexpected text and watermark checks pass;
+- artifact and provenance hashes are recorded;
+- a local correction proves acceptable outside-region preservation.
+
+Semantic QA applies a versioned rubric to:
+
+- real Lulu facial identity;
+- approved body geometry;
+- visible garment construction and silhouette;
+- unknown-detail non-invention;
+- locked atelier, icon, camera and view grammar;
+- pose and styling suitability;
+- skin, hair, garment texture, lighting integration and optics;
+- anatomy, background and generation artifacts;
+- immutable-layer preservation.
+
+Machine evaluation stores measurements, evidence locations, evaluator versions,
+thresholds and verdicts. A free-form `PASS` is not independently sufficient.
+Final acceptance still requires one independent review and explicit user
+approval.
+
+Cross-provider success means both executions satisfy the same versioned semantic
+evaluation envelope. It never means byte equality.
+
+## Correction budget
+
+The default budget is one bounded correction and one recheck.
+
+A correction identifies exactly one failed gate, one mutable region or layer,
+the full immutable set and the rejected diagnostic artifact. The rejected image
+does not become the correction parent. The correction receives a new semantic
+hash because its change set and `correctionOf` differ.
+
+Failure after the budget transitions to `BLOCKED_USER_DIRECTION`. The engine
+does not silently begin another attempt or expand the correction region.
+
+## Privacy and provenance
+
+- Real face/body media and private garment evidence use opaque asset IDs.
+- Repository state records roles, hashes and lineage, never private bytes or
+  local source paths.
+- Provider policy declares which privacy classes an adapter may receive.
+- Provider URLs, tokens and raw prompts remain server-only.
+- Verbatim prompts, ordered private reference bindings and exact private
+  source/output locations remain in the private execution record required for
+  reproduction; they are never emitted to public logs or operator-safe DTOs.
+- Public promotion creates a separately hashed, metadata-stripped derivative
+  linked to its locked private artifact.
+- Deleting a transient provider result cannot remove accepted private lineage.
+- No provider output becomes identity authority merely because it resembles
+  Lulu.
+
+## Studio integration
+
+ADR 0045 exposes these typed commands:
+
+```text
+DraftOperation
+ResolveAuthorities
+PreflightOperation
+GenerateOperation
+ReviewOperation
+ApproveOperation
+RejectOperation
+CorrectOneThing
+PacketOperation
+PublishOperation
+```
+
+Studio pages, Search and Ask Studio all dispatch the same commands. None calls a
+provider directly. Studio shows semantic operation, missing evidence, view,
+stage, approval and next action; provider names and private canon stay hidden.
+
+The operator's primary candidate actions are `Keep`, `Fix one thing` and
+`Reject`. Accepted bytes are returned immediately for an already locked
+semantic hash, providing the fast-render path.
+
+## Provider qualification
+
+A new adapter must pass a small versioned calibration suite before production
+use. The suite covers at least:
+
+- dark texture and edge preservation;
+- pale fabric and colour fidelity;
+- fitted body geometry and drape;
+- loose or layered construction;
+- identity and hairstyle stability;
+- local correction with immutable surroundings.
+
+Qualification is performed once per material provider/model/adapter revision,
+not for every garment. Failure disables the adapter for the unsupported
+capability rather than weakening an operation.
+
+## Migration
+
+1. Define canonical schemas, serializer, hashes and pure validator fixtures.
+2. Inventory accepted V4 state, briefs, asset manifest, packets and private
+   operation records.
+3. Backfill semantic operations only for accepted and locked artifacts; unknown
+   legacy execution fields remain unknown.
+4. Prove that current accepted asset and lineage hashes remain unchanged.
+5. Build ledger projection and diff it against current state.
+6. Wrap built-in ImageGen as the first adapter without regenerating accepted
+   work.
+7. Wrap the current Gateway/Flux path as a second adapter.
+8. Shadow-write events and existing state for one new garment.
+9. Cut Studio reads and commands to the event projection.
+10. Remove model-coupled semantic fingerprinting and direct provider paths only
+    after parity, crash recovery and rollback pass.
+
+## Rollback
+
+Disable new claims for the affected adapter or command family and return Studio
+to the last verified projection. Keep the append-only events, execution records,
+private artifacts and accepted locks; rollback never deletes provenance or
+regenerates accepted imagery. During dual-write migration,
+`state/current.json` remains the human-reviewable recovery authority until
+ledger replay and parity are proven. An adapter rollback changes routing only,
+not semantic hashes, approvals or locked bytes.
+
+## Acceptance
+
+- Identical concurrent semantic requests create one active local claim.
+- A provider with idempotency or durable job lookup performs at most one
+  reconciled remote invocation per execution hash.
+- Two adapters receive the same semantic hash and distinct execution hashes.
+- Changing provider/model alone does not change semantic identity.
+- Changing authority bytes or workflow revision does.
+- An incapable adapter blocks before invocation and drops no authority.
+- Crash or timeout after invocation reconciles by provider idempotency key or
+  durable job ID without duplicate cost or output; a provider lacking both
+  enters `INDETERMINATE_PROVIDER_RESULT` and is not automatically retried.
+- The private execution record contains the verbatim prompt and complete ordered
+  reference/input/output/review/decision evidence required by the governing
+  Atelier reproduction contract.
+- Ledger replay reconstructs the exact approved current projection.
+- Existing accepted artifacts and lineage survive migration byte-for-byte.
+- 05/06/07 lineage violations and rejected-parent attempts are rejected.
+- Correction budget and immutable sets are enforced.
+- No private path, media, prompt or identity metric enters a public projection.
+- UI, Search and Ask Studio derive the same semantic operation for the same
+  normalized intent.
+- Two qualified adapters can produce different pixels that independently pass
+  the same semantic rubric and one bounded human review.
+
+## Consequences
+
+JUW can change or add generation providers without rewriting production truth,
+Studio workflow or approval semantics. Duplicate requests become cheap, locked
+results render immediately and every attempt has exact provenance.
+
+The cost is a canonical serializer, adapter contract, event ledger and stronger
+evaluation tooling. Human approval remains necessary because semantic fashion
+and identity fidelity cannot be reduced to byte hashes.
+
+## Rejected alternatives
+
+- Use exact prompt text or provider model as operation identity.
+- Promise byte-identical output across stochastic providers.
+- Maintain one universal provider prompt.
+- Allow an adapter to silently drop references to fit its budget.
+- Accept a declarative `PASS` without versioned evidence.
+- Regenerate a locked layer to fix another layer.
+- Let Search, AI or the browser call an image provider directly.

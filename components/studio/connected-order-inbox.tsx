@@ -2,6 +2,7 @@
 
 import { ArrowUpRight, Inbox, RotateCcw } from "lucide-react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { formatNaira } from "../../lib/shop/catalog";
 import {
@@ -11,7 +12,12 @@ import {
   studioOrderNextActionLabel,
 } from "../../lib/shop/order-presentation";
 import type { ShopServerOrder } from "../../lib/shop/server-order/types";
-import { useStudioMobileAction } from "./mobile-action-context";
+
+const orderFilters = ["NEEDS_ACTION", "ACTIVE", "RETURNS", "COMPLETED", "CANCELLED", "ALL"] as const;
+
+function isOrderFilter(value: string | null): value is typeof orderFilters[number] {
+  return Boolean(value && orderFilters.includes(value as typeof orderFilters[number]));
+}
 
 interface AvailableOrderPiece {
   slug: string;
@@ -21,6 +27,7 @@ interface AvailableOrderPiece {
 }
 
 export function ConnectedOrderInbox() {
+  const searchParams = useSearchParams();
   const [orders, setOrders] = useState<ShopServerOrder[]>([]);
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
   const [error, setError] = useState("");
@@ -42,6 +49,11 @@ export function ConnectedOrderInbox() {
   const [area, setArea] = useState("");
   const [stateName, setStateName] = useState("Lagos");
   const [sourceNote, setSourceNote] = useState("");
+
+  useEffect(() => {
+    const requestedFilter = searchParams.get("filter");
+    if (isOrderFilter(requestedFilter)) setFilter(requestedFilter);
+  }, [searchParams]);
 
   const loadOrders = useCallback(async (
     signal?: AbortSignal,
@@ -110,16 +122,6 @@ export function ConnectedOrderInbox() {
   }, [loadOrders, state]);
 
   const nextOrder = orders.find((order) => nextStudioOrderTransition(order));
-  useStudioMobileAction(
-    state === "ready" && nextOrder
-      ? {
-          href: `/studio/orders/${nextOrder.reference}#studio-order-next-action`,
-          label: studioOrderNextActionLabel(nextOrder),
-        }
-      : state === "ready"
-        ? { href: "/studio/wardrobe", label: "Open wardrobe" }
-        : null,
-  );
 
   function findOrders(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -181,38 +183,26 @@ export function ConnectedOrderInbox() {
 
   return (
     <div className="studio-connected-orders-page">
-      <header className="studio-connected-orders-heading">
-        <div>
-          <p className="eyebrow">Orders</p>
-          <h1>What needs you now.</h1>
-          <p>Check payment. Prepare delivery. Handle returns.</p>
-        </div>
-        <span>{orders.length} {orders.length === 1 ? "order" : "orders"}</span>
+      <header className="studio-page-tools">
+        <h1 className="sr-only">Orders</h1>
+        <span className="studio-page-tools-count">{state === "ready" ? `${orders.length} ${orders.length === 1 ? "order" : "orders"}` : state === "error" ? "Orders —" : "Opening…"}</span>
         <button aria-busy={refreshing} className="button button-secondary" disabled={refreshing} onClick={() => void loadOrders(undefined, true)} type="button">{refreshing ? "Checking…" : "Check for updates"}</button>
       </header>
 
-      <details className="studio-transition-action">
-        <summary>Create customer order<span>Phone, message, or in person</span></summary>
-        <form aria-busy={creating} className="studio-transition-action-body studio-transition-fields" onSubmit={createAssistedOrder}>
-          <label><span>Order came from</span><select disabled={creating} onChange={(event) => setSource(event.target.value as typeof source)} value={source}><option value="DM">Direct message</option><option value="PHONE">Phone</option><option value="IN_PERSON">In person</option></select></label>
-          <fieldset><legend>Pieces</legend>{products.map((product) => <label key={product.slug}><input checked={selectedSlugs.includes(product.slug)} disabled={creating} onChange={(event) => setSelectedSlugs((current) => event.target.checked ? [...current, product.slug] : current.filter((slug) => slug !== product.slug))} type="checkbox" /><span>{product.name} · {product.taggedSize} · {formatNaira(product.price)}</span></label>)}</fieldset>
-          {!products.length ? <p>No available pieces.</p> : null}
-          <label><span>Customer name</span><input disabled={creating} maxLength={100} minLength={2} onChange={(event) => setContactName(event.target.value)} required value={contactName} /></label>
-          <label><span>Email</span><input disabled={creating} maxLength={320} onChange={(event) => setContactEmail(event.target.value)} required type="email" value={contactEmail} /></label>
-          <label><span>Phone</span><input disabled={creating} maxLength={30} minLength={7} onChange={(event) => setContactPhone(event.target.value)} required type="tel" value={contactPhone} /></label>
-          <label><span>Handoff</span><select disabled={creating} onChange={(event) => setFulfillmentKind(event.target.value as typeof fulfillmentKind)} value={fulfillmentKind}><option value="DELIVERY">Delivery</option><option value="PICKUP">Pickup</option></select></label>
-          {fulfillmentKind === "DELIVERY" ? <><label><span>Street</span><input disabled={creating} maxLength={180} onChange={(event) => setStreet(event.target.value)} required value={street} /></label><label><span>Area</span><input disabled={creating} maxLength={100} onChange={(event) => setArea(event.target.value)} required value={area} /></label><label><span>State</span><input disabled={creating} maxLength={100} onChange={(event) => setStateName(event.target.value)} required value={stateName} /></label></> : null}
-          <label><span>Private source note (optional)</span><textarea disabled={creating} maxLength={500} onChange={(event) => setSourceNote(event.target.value)} value={sourceNote} /></label>
-          <button className="button button-primary" disabled={creating || !selectedSlugs.length} type="submit">{creating ? "Reserving…" : "Reserve order"}</button>
-          {createError ? <p className="is-error" role="alert">{createError}</p> : null}
+      {state === "ready" ? <section className="studio-piece-next" aria-label="Next Orders action">
+        <span>{nextOrder ? <RotateCcw aria-hidden="true" size={20} /> : <Inbox aria-hidden="true" size={20} />}</span>
+        <div><small>Continue</small><strong>{nextOrder ? studioOrderNextActionLabel(nextOrder) : "No customer action waiting"}</strong><p>{nextOrder ? `${nextOrder.reference} is the next order requiring attention.` : "The current order queue is clear."}</p></div>
+        {nextOrder ? <Link className="button button-primary" href={`/studio/orders/${nextOrder.reference}#studio-order-next-action`}>Open order</Link> : <Link className="button button-secondary" href="/studio/wardrobe">Open wardrobe</Link>}
+      </section> : null}
+
+      <details className="studio-stack-filter">
+        <summary>Find orders <span>{filter.toLowerCase().replaceAll("_", " ")}</span></summary>
+        <form className="studio-transition-fields studio-transition-fields-two" onSubmit={findOrders} role="search">
+          <label><span>Search</span><input onChange={(event) => setSearch(event.target.value)} placeholder="Order, customer, or piece" type="search" value={search} /></label>
+          <label><span>Show</span><select onChange={(event) => setFilter(event.target.value)} value={filter}><option value="NEEDS_ACTION">Needs action</option><option value="ACTIVE">Active</option><option value="RETURNS">Returns</option><option value="COMPLETED">Completed</option><option value="CANCELLED">Cancelled</option><option value="ALL">All orders</option></select></label>
+          <button className="button button-secondary" type="submit">Find orders</button>
         </form>
       </details>
-
-      <form className="studio-transition-fields studio-transition-fields-two" onSubmit={findOrders} role="search">
-        <label><span>Search</span><input onChange={(event) => setSearch(event.target.value)} placeholder="Order, customer, or piece" type="search" value={search} /></label>
-        <label><span>Show</span><select onChange={(event) => setFilter(event.target.value)} value={filter}><option value="NEEDS_ACTION">Needs action</option><option value="ACTIVE">Active</option><option value="RETURNS">Returns</option><option value="COMPLETED">Completed</option><option value="CANCELLED">Cancelled</option><option value="ALL">All orders</option></select></label>
-        <button className="button button-secondary" type="submit">Find orders</button>
-      </form>
 
       {state === "loading" ? (
         <div className="studio-loading" aria-live="polite" role="status">Opening orders…</div>
@@ -265,6 +255,23 @@ export function ConnectedOrderInbox() {
           {nextPage ? <button className="button button-secondary" disabled={refreshing} onClick={() => void loadOrders(undefined, true, nextPage, true)} type="button">{refreshing ? "Loading…" : "Load more"}</button> : null}
         </section>
       ) : null}
+
+      <details className="studio-transition-action">
+        <summary>Create customer order<span>Phone, message, or in person</span></summary>
+        <form aria-busy={creating} className="studio-transition-action-body studio-transition-fields" onSubmit={createAssistedOrder}>
+          <label><span>Order came from</span><select disabled={creating} onChange={(event) => setSource(event.target.value as typeof source)} value={source}><option value="DM">Direct message</option><option value="PHONE">Phone</option><option value="IN_PERSON">In person</option></select></label>
+          <fieldset><legend>Pieces</legend>{products.map((product) => <label key={product.slug}><input checked={selectedSlugs.includes(product.slug)} disabled={creating} onChange={(event) => setSelectedSlugs((current) => event.target.checked ? [...current, product.slug] : current.filter((slug) => slug !== product.slug))} type="checkbox" /><span>{product.name} · {product.taggedSize} · {formatNaira(product.price)}</span></label>)}</fieldset>
+          {!products.length ? <p>No available pieces.</p> : null}
+          <label><span>Customer name</span><input disabled={creating} maxLength={100} minLength={2} onChange={(event) => setContactName(event.target.value)} required value={contactName} /></label>
+          <label><span>Email</span><input disabled={creating} maxLength={320} onChange={(event) => setContactEmail(event.target.value)} required type="email" value={contactEmail} /></label>
+          <label><span>Phone</span><input disabled={creating} maxLength={30} minLength={7} onChange={(event) => setContactPhone(event.target.value)} required type="tel" value={contactPhone} /></label>
+          <label><span>Handoff</span><select disabled={creating} onChange={(event) => setFulfillmentKind(event.target.value as typeof fulfillmentKind)} value={fulfillmentKind}><option value="DELIVERY">Delivery</option><option value="PICKUP">Pickup</option></select></label>
+          {fulfillmentKind === "DELIVERY" ? <><label><span>Street</span><input disabled={creating} maxLength={180} onChange={(event) => setStreet(event.target.value)} required value={street} /></label><label><span>Area</span><input disabled={creating} maxLength={100} onChange={(event) => setArea(event.target.value)} required value={area} /></label><label><span>State</span><input disabled={creating} maxLength={100} onChange={(event) => setStateName(event.target.value)} required value={stateName} /></label></> : null}
+          <label><span>Private source note (optional)</span><textarea disabled={creating} maxLength={500} onChange={(event) => setSourceNote(event.target.value)} value={sourceNote} /></label>
+          <button className="button button-primary" disabled={creating || !selectedSlugs.length} type="submit">{creating ? "Reserving…" : "Reserve order"}</button>
+          {createError ? <p className="is-error" role="alert">{createError}</p> : null}
+        </form>
+      </details>
     </div>
   );
 }

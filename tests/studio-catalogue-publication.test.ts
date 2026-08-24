@@ -168,6 +168,10 @@ test("publication is one atomic guarded statement and Piece owns Review to Publi
   assert.match(repository, /version = \$\{input\.expectedVersion\}/);
   assert.match(repository, /version = version \+ 1/);
   assert.match(repository, /insert into shop_catalogue_items/);
+  assert.match(repository, /CURRENT_SHOP_DROP/);
+  assert.match(repository, /dropLabel: shopCatalogueItems\.dropLabel/);
+  assert.match(repository, /row\.dropLabel \? \{ drop: row\.dropLabel \}/);
+  assert.doesNotMatch(repository, /'Studio wardrobe'/);
   assert.match(repository, /insert into shop_inventory/);
   assert.match(repository, /insert into studio_catalogue_publications/);
   assert.match(service, /shop\/studio\/\$\{slug\}/);

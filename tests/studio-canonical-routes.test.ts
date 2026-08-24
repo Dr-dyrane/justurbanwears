@@ -29,11 +29,13 @@ test("the compatibility media archive stays inside the canonical namespace", () 
   assert.match(detail, /Return to Media/);
 });
 
-test("Studio shell treats Media as canonical on desktop and mobile", () => {
+test("Studio shell treats Media as a canonical stack destination", () => {
   const shell = readFileSync(`${root}/components/studio/app-shell.tsx`, "utf8");
-  assert.match(shell, /pathname\.startsWith\("\/studio\/media"\)/);
-  assert.match(shell, /href: "\/studio\/media"/);
-  assert.match(shell, /label: "Media archive"/);
-  assert.match(shell, /aria-label="Media views"/);
+  const stackContext = readFileSync(`${root}/components/studio/navigation/studio-stack-context.tsx`, "utf8");
+  assert.match(stackContext, /pathname\.startsWith\("\/studio\/media"\)/);
+  assert.match(stackContext, /backLabel: "Atelier"/);
+  assert.match(shell, /aria-label=\{`Back to \$\{stack\.backLabel\}`\}/);
+  assert.match(shell, /<StudioCommandCenter showSearch=\{isHome\} \/>/);
+  assert.doesNotMatch(shell, /aria-label="Media views"|studio-stack-view-nav/);
   assert.doesNotMatch(shell, /pathname\.startsWith\("\/shoots"\)|href="\/shoots"|>Shoots</);
 });

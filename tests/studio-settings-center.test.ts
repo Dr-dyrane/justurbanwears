@@ -5,7 +5,6 @@ import test from "node:test";
 const root = process.cwd();
 const shell = readFileSync(`${root}/components/studio/app-shell.tsx`, "utf8");
 const settings = readFileSync(`${root}/components/studio/settings/studio-settings-center.tsx`, "utf8");
-const notifications = readFileSync(`${root}/components/studio/notifications/studio-notification-center.tsx`, "utf8");
 const wardrobe = readFileSync(`${root}/components/studio/wardrobe-workbench.tsx`, "utf8");
 const operator = readFileSync(`${root}/lib/server/studio-operator.ts`, "utf8");
 const taskSheet = readFileSync(`${root}/components/studio/atoms/studio-task-sheet.tsx`, "utf8");
@@ -21,9 +20,9 @@ test("Studio exposes one global profile and settings centre", () => {
   assert.match(operator, /role: membership\.role/);
 });
 
-test("the persisted attention preference changes the update badge", () => {
-  assert.match(settings, /setShowUpdateCount/);
-  assert.match(notifications, /unresolvedCount && showUpdateCount/);
+test("settings stays focused after Home absorbs attention state", () => {
+  assert.doesNotMatch(settings, /setShowUpdateCount|Show update count/);
+  assert.doesNotMatch(shell, /StudioNotificationCenter/);
 });
 
 test("settings links directly to the visual guide", () => {

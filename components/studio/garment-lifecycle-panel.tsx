@@ -52,9 +52,11 @@ async function responseJson<T>(response: Response): Promise<T> {
 }
 
 export function GarmentLifecyclePanel({
+  initialAction,
   onWorkspaceChange,
   wardrobeItemId,
 }: {
+  initialAction?: "price";
   onWorkspaceChange?(workspace: GarmentLifecycleWorkspace): void;
   wardrobeItemId: string;
 }) {
@@ -67,6 +69,7 @@ export function GarmentLifecyclePanel({
   const [milestone, setMilestone] = useState<"published" | "returned" | null>(null);
   const [reload, setReload] = useState(0);
   const priceRef = useRef<HTMLInputElement>(null);
+  const initialActionHandledRef = useRef(false);
   const publicationKeyRef = useRef(`studio-revision:${wardrobeItemId}:${crypto.randomUUID()}`);
 
   const accept = useCallback((next: GarmentLifecycleWorkspace) => {
@@ -78,6 +81,7 @@ export function GarmentLifecyclePanel({
 
   useEffect(() => {
     const controller = new AbortController();
+    initialActionHandledRef.current = false;
     setWorkspace(undefined);
     setError("");
     setMilestone(null);
@@ -94,6 +98,21 @@ export function GarmentLifecyclePanel({
       });
     return () => controller.abort();
   }, [accept, reload, wardrobeItemId]);
+
+  useEffect(() => {
+    if (
+      initialAction !== "price"
+      || initialActionHandledRef.current
+      || !workspace
+      || workspace.wardrobeItemId !== wardrobeItemId
+      || !workspace.allowedActions.includes("EDIT")
+    ) return;
+    initialActionHandledRef.current = true;
+    setDraftFacts(workspace.editableFacts);
+    setEditing(true);
+    setError("");
+    requestAnimationFrame(() => priceRef.current?.focus({ preventScroll: true }));
+  }, [initialAction, wardrobeItemId, workspace]);
 
   async function command(value: GarmentLifecycleCommand, action: string) {
     if (busy) return;

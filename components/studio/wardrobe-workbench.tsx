@@ -7,9 +7,9 @@ import { FormEvent, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   ArrowRight,
-  BookOpen,
   Camera,
   Check,
+  ChevronDown,
   Eye,
   ImagePlus,
   LockKeyhole,
@@ -47,7 +47,6 @@ import { WearSheet } from "./garment-intake/wear-sheet";
 import { DraftDirectCaptures } from "./draft-direct-captures";
 import type { DirectCaptureTarget } from "./draft-direct-captures";
 import { useStudio } from "./studio-provider";
-import { useStudioMobileAction } from "./mobile-action-context";
 import { studioGarmentCover } from "./garment-cover";
 import {
   isPendingDirectCaptureRole,
@@ -59,6 +58,7 @@ import type {
   StudioPublicationReceipt,
   StudioPublicationReview,
 } from "../../lib/studio/engine/catalogue-publication-contracts";
+import type { StudioCollectionScope } from "../../lib/studio/application/contracts";
 import {
   StudioMediaButton,
   StudioMediaViewerProvider,
@@ -68,6 +68,10 @@ import { studioScenarioHref } from "../../lib/studio/simulator";
 import { GarmentLifecyclePanel } from "./garment-lifecycle-panel";
 import type { GarmentLifecycleWorkspace } from "../../lib/studio/engine/garment-lifecycle-contracts";
 import { GarmentSetBuilder } from "./garment-set-builder";
+import {
+  projectStudioDropScopes,
+  studioDropScopeForGarment,
+} from "../../lib/studio/projections/drop-context";
 
 const filters: Array<"ALL" | StudioLifecycleState> = [
   "ALL",
@@ -81,6 +85,26 @@ const filters: Array<"ALL" | StudioLifecycleState> = [
 
 const garmentPageSize = 9;
 const publishingPageSize = 8;
+
+type WardrobeDropScope = StudioCollectionScope["key"];
+type WardrobeCollectionScope = "all" | "private" | WardrobeDropScope;
+
+function dropKeyFromLabel(label: string): WardrobeDropScope | null {
+  const normalized = label.trim().toLowerCase().replace(/\s+/g, "-");
+  if (normalized === "drop-01" || normalized === "drop-02") return normalized;
+  return null;
+}
+
+function collectionScopeFromParam(value: string | null, currentDropKey: WardrobeDropScope): WardrobeCollectionScope {
+  if (!value) return currentDropKey;
+  const normalized = value.trim().toLowerCase();
+  if (normalized === "current") return currentDropKey;
+  if (normalized === "past") return currentDropKey === "drop-02" ? "drop-01" : "drop-02";
+  if (normalized === "studio") return "private";
+  return ["all", "drop-01", "drop-02", "private"].includes(normalized)
+    ? normalized as WardrobeCollectionScope
+    : currentDropKey;
+}
 
 function formatNaira(value: number) {
   return new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", maximumFractionDigits: 0 }).format(value);
@@ -185,7 +209,7 @@ function GarmentCard({ garment }: { garment: Garment }) {
   );
 }
 
-export function PieceWorkspaceView({ garment, onBuildSet, onDismiss, onContinueMedia }: { garment: Garment; onBuildSet(garment: Garment): void; onDismiss(): void; onContinueMedia(garment: Garment): void }) {
+export function PieceWorkspaceView({ garment, initialAction, onBuildSet, onDismiss, onContinueMedia }: { garment: Garment; initialAction?: "price"; onBuildSet(garment: Garment): void; onDismiss(): void; onContinueMedia(garment: Garment): void }) {
   const studio = useStudio();
   const [captures, setCaptures] = useState<OperatorSafePendingCapture[]>([]);
   const [publicationReview, setPublicationReview] = useState<StudioPublicationReview | null>(
@@ -264,18 +288,6 @@ export function PieceWorkspaceView({ garment, onBuildSet, onDismiss, onContinueM
   const visibleBlockers = dynamicReview?.state === "READY" || dynamicReview?.state === "PUBLISHED"
     ? []
     : dynamicReview?.state === "BLOCKED" ? dynamicReview.blockers : workspace.blockers;
-  const mobileAction = reviewOpen
-    ? { href: "#piece-publication-review", label: publishing ? "Publishing…" : "Review Shop preview" }
-    : nextAction.kind === "DYNAMIC_MANAGE"
-      ? { href: "#garment-lifecycle", label: nextAction.label }
-      : workspace.nextAction.kind === "VIEW_SHOP" && listing
-        ? { href: `/shop/products/${listing.slug}`, label: nextAction.label }
-        : workspace.nextAction.kind === "VIEW_OPERATIONS"
-          ? { href: "/studio/operations", label: nextAction.label }
-          : { href: "#piece-primary-action", invokeTargetId: "piece-primary-action", label: nextAction.label };
-
-  useStudioMobileAction(mobileAction);
-
   useEffect(() => {
     if (!garment.privateWardrobeItemId) return;
     if (garment.dynamicPublication) {
@@ -433,7 +445,7 @@ export function PieceWorkspaceView({ garment, onBuildSet, onDismiss, onContinueM
         {reviewOpen && publicationLoading ? <section className="studio-piece-shop studio-publication-review" id="piece-publication-review" aria-live="polite"><small>Refreshing Shop preview…</small></section> : null}
         {reviewOpen && !publicationLoading && publicationLoadError ? <section className="studio-piece-shop studio-publication-review" id="piece-publication-review"><p className="studio-engine-error" role="alert">{publicationLoadError}</p><button className="button button-primary" onClick={() => setPublicationReload((value) => value + 1)} type="button">Check again</button></section> : null}
         {visibleBlockers.length ? <section className="studio-piece-blockers" aria-label={`${garment.title} still needs`}><small>Still needed</small><div>{visibleBlockers.map((blocker) => <span key={blocker}>{blocker}</span>)}</div></section> : null}
-        {garment.privateWardrobeItemId ? <div ref={lifecycleSectionRef}><GarmentLifecyclePanel onWorkspaceChange={setLifecycleWorkspace} wardrobeItemId={garment.privateWardrobeItemId} /></div> : null}
+        {garment.privateWardrobeItemId ? <div ref={lifecycleSectionRef}><GarmentLifecyclePanel initialAction={initialAction} onWorkspaceChange={setLifecycleWorkspace} wardrobeItemId={garment.privateWardrobeItemId} /></div> : null}
         {listing ? <section className="studio-piece-shop" ref={listingSectionRef} tabIndex={-1}><ListingEditor listing={listing} /></section> : null}
       </div>
     </section>
@@ -541,6 +553,17 @@ function ListingEditor({ listing }: { listing: StudioListing }) {
 export function WardrobeWorkbench() {
   const studio = useStudio();
   const searchParams = useSearchParams();
+  const dropContext = useMemo(
+    () => projectStudioDropScopes(studio.garments, studio.listings),
+    [studio.garments, studio.listings],
+  );
+  const projectedCollections = useMemo(
+    () => studio.scenario ? [] : studio.application.snapshot?.collectionScopes ?? [],
+    [studio.application.snapshot, studio.scenario],
+  );
+  const currentCollectionKey = projectedCollections.find((scope) => scope.isCurrent)?.key
+    ?? dropKeyFromLabel(dropContext.currentDrop)
+    ?? "drop-02";
   const intakeOriginRef = useRef<"query" | "trigger" | null>(null);
   const garmentQueryHandledRef = useRef<string | null>(null);
   const [intakeReturnFocus, setIntakeReturnFocus] = useState<HTMLElement | null>(null);
@@ -556,16 +579,63 @@ export function WardrobeWorkbench() {
   const [setReturnFocus, setSetReturnFocus] = useState<HTMLElement | null>(null);
   const [guideOpen, setGuideOpen] = useState(false);
   const [guideReturnFocus, setGuideReturnFocus] = useState<HTMLElement | null>(null);
+  const collectionQueryHandledRef = useRef(false);
+  const collectionTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const [collectionOpen, setCollectionOpen] = useState(false);
+  const [collectionReturnFocus, setCollectionReturnFocus] = useState<HTMLElement | null>(null);
+  const [collectionScope, setCollectionScope] = useState<WardrobeCollectionScope>(() => {
+    const requestedScope = searchParams.get("collection");
+    return studio.scenario && (!requestedScope || requestedScope === "choose")
+      ? "all"
+      : collectionScopeFromParam(requestedScope, currentCollectionKey);
+  });
+  const collectionIds = useMemo(() => {
+    if (collectionScope === "all") return new Set(studio.garments.map((garment) => garment.id));
+    if (collectionScope === "private") {
+      return new Set(dropContext.scopes
+        .filter((scope) => scope.key === "private" || scope.key === "studio")
+        .flatMap((scope) => scope.garmentIds));
+    }
+    const label = projectedCollections.find((scope) => scope.key === collectionScope)?.label
+      ?? (collectionScope === "drop-01" ? "Drop 01" : "Drop 02");
+    return new Set(studio.garments
+      .filter((garment) => studioDropScopeForGarment(garment, studio.listings, dropContext.currentDrop).label === label)
+      .map((garment) => garment.id));
+  }, [collectionScope, dropContext.currentDrop, dropContext.scopes, projectedCollections, studio.garments, studio.listings]);
+  const scopedGarments = useMemo(
+    () => studio.garments.filter((garment) => collectionIds.has(garment.id)),
+    [collectionIds, studio.garments],
+  );
+  const scopedListings = useMemo(
+    () => studio.listings.filter((listing) => collectionIds.has(listing.garmentId)),
+    [collectionIds, studio.listings],
+  );
   const segments = useMemo(() => [
-    { key: "garments", label: "Garments", count: studio.garments.length },
-    { key: "publishing", label: "Publishing", count: studio.listings.length },
-  ], [studio.garments.length, studio.listings.length]);
+    { key: "garments", label: "Garments", count: scopedGarments.length },
+    { key: "publishing", label: "Publishing", count: scopedListings.length },
+  ], [scopedGarments.length, scopedListings.length]);
   const { active: activeView, isPending: viewPending, select: selectView } = useStudioSegment(segments, "garments");
 
   useEffect(() => {
     if (searchParams.get("guide") !== "1" || guideOpen) return;
     window.setTimeout(() => setGuideOpen(true), 0);
   }, [guideOpen, searchParams]);
+
+  useEffect(() => {
+    const queryWantsCollection = searchParams.get("collection") === "choose";
+    if (!queryWantsCollection) {
+      collectionQueryHandledRef.current = false;
+      return;
+    }
+    if (collectionQueryHandledRef.current || collectionOpen) return;
+    collectionQueryHandledRef.current = true;
+    window.setTimeout(() => setCollectionOpen(true), 0);
+  }, [collectionOpen, searchParams]);
+
+  useEffect(() => {
+    if (!collectionOpen || collectionReturnFocus || !collectionTriggerRef.current) return;
+    setCollectionReturnFocus(collectionTriggerRef.current);
+  }, [collectionOpen, collectionReturnFocus]);
 
   useEffect(() => {
     const garmentId = searchParams.get("garment");
@@ -576,13 +646,35 @@ export function WardrobeWorkbench() {
     if (garmentQueryHandledRef.current === garmentId || studio.hydration === "idle" || studio.hydration === "restoring") return;
     const garmentIndex = studio.garments.findIndex((garment) => garment.id === garmentId);
     if (garmentIndex < 0) return;
+    const garment = studio.garments[garmentIndex];
+    const resolvedScope = studioDropScopeForGarment(garment, studio.listings, dropContext.currentDrop);
+    const resolvedCollectionScope: WardrobeCollectionScope = resolvedScope.key === "studio" || resolvedScope.key === "private"
+      ? "private"
+      : projectedCollections.find((scope) => scope.label === resolvedScope.label)?.key
+        ?? dropKeyFromLabel(resolvedScope.label)
+        ?? "private";
     garmentQueryHandledRef.current = garmentId;
     window.requestAnimationFrame(() => {
+      setCollectionScope(resolvedCollectionScope);
       setFilter("ALL");
-      setGarmentPage(Math.floor(garmentIndex / garmentPageSize));
+      setGarmentPage(0);
       setOpenPieceId(garmentId);
     });
-  }, [searchParams, studio.garments, studio.hydration, studio.listings]);
+  }, [dropContext.currentDrop, projectedCollections, searchParams, studio.garments, studio.hydration, studio.listings]);
+
+  useEffect(() => {
+    function syncCollectionScope() {
+      const requestedScope = new URLSearchParams(window.location.search).get("collection");
+      setCollectionScope(studio.scenario && (!requestedScope || requestedScope === "choose")
+        ? "all"
+        : collectionScopeFromParam(requestedScope, currentCollectionKey));
+      setGarmentPage(0);
+      setPublishingPage(0);
+    }
+
+    window.addEventListener("popstate", syncCollectionScope);
+    return () => window.removeEventListener("popstate", syncCollectionScope);
+  }, [currentCollectionKey, studio.scenario]);
 
   useEffect(() => {
     const queryWantsIntake = searchParams.get("intake") === "1";
@@ -628,54 +720,206 @@ export function WardrobeWorkbench() {
     }
   }
 
-  const visibleGarments = useMemo(() => studio.garments.filter((garment) => {
+  const visibleGarments = useMemo(() => scopedGarments.filter((garment) => {
     if (filter === "ALL") return true;
     const listing = studio.listings.find((candidate) => candidate.garmentId === garment.id);
     return (listing?.state ?? garment.state) === filter;
-  }), [filter, studio.garments, studio.listings]);
+  }), [filter, scopedGarments, studio.listings]);
   const safeGarmentPage = Math.min(garmentPage, Math.max(0, Math.ceil(visibleGarments.length / garmentPageSize) - 1));
   const pagedGarments = visibleGarments.slice(safeGarmentPage * garmentPageSize, (safeGarmentPage + 1) * garmentPageSize);
-  const safePublishingPage = Math.min(publishingPage, Math.max(0, Math.ceil(studio.listings.length / publishingPageSize) - 1));
-  const pagedListings = studio.listings.slice(safePublishingPage * publishingPageSize, (safePublishingPage + 1) * publishingPageSize);
+  const safePublishingPage = Math.min(publishingPage, Math.max(0, Math.ceil(scopedListings.length / publishingPageSize) - 1));
+  const pagedListings = scopedListings.slice(safePublishingPage * publishingPageSize, (safePublishingPage + 1) * publishingPageSize);
   const openPiece = studio.garments.find((garment) => garment.id === openPieceId);
+  const nextGarment = scopedGarments.find((garment) => garment.state === "DRAFT") ?? scopedGarments[0];
+  const nextListing = scopedListings.find((listing) => ["DRAFT", "READY"].includes(listing.state)) ?? scopedListings[0];
+  const nextListingGarment = nextListing
+    ? studio.garments.find((garment) => garment.id === nextListing.garmentId)
+    : undefined;
 
   if (studio.hydration === "idle" || studio.hydration === "restoring") {
     return <div className="studio-loading" role="status">Opening wardrobe…</div>;
   }
 
+  const privateCount = dropContext.scopes
+    .filter((scope) => scope.key === "studio" || scope.key === "private")
+    .reduce((count, scope) => count + scope.count, 0);
+  const fallbackCollections: StudioCollectionScope[] = [
+    {
+      id: "compat:drop-02",
+      key: "drop-02",
+      label: "Drop 02",
+      ordinal: 2,
+      state: "ACTIVE",
+      isCurrent: true,
+      authority: "COMPATIBILITY",
+      counts: { pieces: null, private: null, ready: null, published: null, available: null },
+      nextAction: "/studio/wardrobe",
+      updatedAt: "",
+    },
+    {
+      id: "compat:drop-01",
+      key: "drop-01",
+      label: "Drop 01",
+      ordinal: 1,
+      state: "ARCHIVED",
+      isCurrent: false,
+      authority: "COMPATIBILITY",
+      counts: { pieces: null, private: null, ready: null, published: null, available: null },
+      nextAction: "/studio/wardrobe?collection=drop-01",
+      updatedAt: "",
+    },
+  ];
+  const dropChoices = [...(projectedCollections.length ? projectedCollections : fallbackCollections)]
+    .sort((left, right) => Number(right.isCurrent) - Number(left.isCurrent) || right.ordinal - left.ordinal)
+    .map((scope) => {
+      const localCount = studio.garments.filter((garment) => (
+        studioDropScopeForGarment(garment, studio.listings, dropContext.currentDrop).label === scope.label
+      )).length;
+      return {
+        key: scope.key as WardrobeCollectionScope,
+        label: scope.label,
+        count: studio.scenario ? localCount : scope.counts.pieces,
+      };
+    });
+  const collectionChoices: Array<{ key: WardrobeCollectionScope; label: string; count: number | null }> = [
+    { key: "all", label: "All", count: dropContext.totalCount },
+    ...dropChoices,
+    { key: "private", label: "Private", count: privateCount },
+  ];
+  const selectedCollection = collectionChoices.find((choice) => choice.key === collectionScope)
+    ?? collectionChoices.find((choice) => choice.key === currentCollectionKey)
+    ?? collectionChoices[0];
+
+  function selectCollection(key: WardrobeCollectionScope) {
+    setCollectionScope(key);
+    setFilter("ALL");
+    setGarmentPage(0);
+    setPublishingPage(0);
+    const url = new URL(window.location.href);
+    if (key === currentCollectionKey) url.searchParams.delete("collection");
+    else url.searchParams.set("collection", key);
+    const target = `${url.pathname}${url.search}${url.hash}`;
+    const commitSelection = () => {
+      window.history.replaceState(window.history.state, "", target);
+      setCollectionScope(key);
+    };
+    if (window.history.state?.justUrbanDialog) {
+      window.addEventListener("popstate", commitSelection, { once: true });
+    } else {
+      commitSelection();
+    }
+    setCollectionOpen(false);
+  }
+
+  function dismissCollection() {
+    setCollectionOpen(false);
+    setCollectionReturnFocus(null);
+    if (new URLSearchParams(window.location.search).get("collection") !== "choose") return;
+    const url = new URL(window.location.href);
+    url.searchParams.delete("collection");
+    window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+  }
+
   return (
     <StudioMediaViewerProvider>
     <div className="studio-ops-page studio-premium-surface">
-      <header className="studio-ops-heading" id="garments">
-        <div><p className="eyebrow">Wardrobe</p><h1>Manage your wardrobe.</h1><p>Add photos, review each piece, and publish when ready.</p></div>
-        <div className="studio-ops-heading-actions">
-          <button className="button button-secondary" onClick={(event) => { setGuideReturnFocus(event.currentTarget); setGuideOpen(true); }} type="button"><BookOpen aria-hidden="true" size={17} />Guide</button>
-          <button className="button button-primary" onClick={(event) => openIntake(event.currentTarget)} type="button"><Plus aria-hidden="true" size={17} />Add garment</button>
-        </div>
-      </header>
+      <h1 className="sr-only" id="garments">Wardrobe</h1>
+
+      <button
+        aria-haspopup="dialog"
+        className="studio-drop-scope-trigger"
+        onClick={(event) => {
+          setCollectionReturnFocus(event.currentTarget);
+          setCollectionOpen(true);
+        }}
+        ref={collectionTriggerRef}
+        type="button"
+      >
+        <span>{selectedCollection.label} · {selectedCollection.count === null
+          ? "count unavailable"
+          : `${selectedCollection.count} piece${selectedCollection.count === 1 ? "" : "s"}`}</span>
+        <ChevronDown aria-hidden="true" size={15} />
+      </button>
+
+      {activeView === "garments" ? (
+        nextGarment ? (
+          <StudioLink className="studio-stack-current" href={garmentDossierHref(nextGarment)}>
+            <span><small>Continue</small><strong>{nextGarment.title}</strong></span>
+            <LifecycleBadge state={nextGarment.state} />
+            <ArrowRight aria-hidden="true" size={18} />
+          </StudioLink>
+        ) : (
+          <button className="studio-stack-current" onClick={(event) => openIntake(event.currentTarget)} type="button">
+            <span><small>Next</small><strong>Add garment</strong></span>
+            <Plus aria-hidden="true" size={18} />
+          </button>
+        )
+      ) : nextListing && nextListingGarment ? (
+        <StudioLink className="studio-stack-current" href={garmentDossierHref(nextListingGarment)}>
+          <span><small>Continue</small><strong>{nextListing.title}</strong></span>
+          <LifecycleBadge state={nextListing.state} />
+          <ArrowRight aria-hidden="true" size={18} />
+        </StudioLink>
+      ) : (
+        <StudioLink className="studio-stack-current" href="/studio/wardrobe">
+          <span><small>Next</small><strong>Prepare a garment for Shop</strong></span>
+          <ArrowRight aria-hidden="true" size={18} />
+        </StudioLink>
+      )}
 
       <StudioSegmentedView active={activeView} label="Wardrobe workspace" onSelect={selectView} pending={viewPending} segments={segments} />
 
       {activeView === "garments" ? (
         <section aria-labelledby="studio-tab-garments" id="studio-view-garments" role="tabpanel">
-          <div className="studio-filter-bar" role="group" aria-label="Filter wardrobe">
-            {filters.map((item) => <button aria-pressed={filter === item} className={filter === item ? "is-active" : undefined} onClick={() => { setFilter(item); setGarmentPage(0); }} key={item} type="button">{item.toLowerCase()}</button>)}
-            <span>{visibleGarments.length} shown</span>
-          </div>
+          <details className="studio-stack-filter">
+            <summary>Filter · {filter.toLowerCase()} <span>{visibleGarments.length}</span></summary>
+            <div className="studio-filter-bar" role="group" aria-label="Filter wardrobe">
+              {filters.map((item) => <button aria-pressed={filter === item} className={filter === item ? "is-active" : undefined} onClick={() => { setFilter(item); setGarmentPage(0); }} key={item} type="button">{item.toLowerCase()}</button>)}
+            </div>
+          </details>
           <h2 className="sr-only" id="garments-view-title">Garments</h2>
           {visibleGarments.length ? <><div className="studio-garment-grid">{pagedGarments.map((garment) => <GarmentCard garment={garment} key={garment.id} />)}</div><StudioPager label="Garment pages" onPageChange={setGarmentPage} page={safeGarmentPage} pageSize={garmentPageSize} total={visibleGarments.length} /></> : (
-            <div className="studio-quiet-empty studio-wardrobe-empty"><PackageOpen aria-hidden="true" size={26} strokeWidth={1.5} /><div><strong>{studio.garments.length ? "No garments in this state" : "Your wardrobe is empty"}</strong><p>{studio.garments.length ? "Choose another filter." : "Add your first garment."}</p></div>{studio.garments.length ? null : <button className="button button-primary" onClick={(event) => openIntake(event.currentTarget)} type="button">Add garment</button>}</div>
+            <div className="studio-quiet-empty studio-wardrobe-empty"><PackageOpen aria-hidden="true" size={26} strokeWidth={1.5} /><div><strong>{studio.garments.length
+              ? filter === "ALL" ? `${selectedCollection.label} is empty` : "No garments in this state"
+              : "Your wardrobe is empty"}</strong><p>{studio.garments.length
+              ? filter === "ALL" ? "Choose another drop." : "Choose another filter."
+              : "Add your first garment."}</p></div>{studio.garments.length ? null : <button className="button button-primary" onClick={(event) => openIntake(event.currentTarget)} type="button">Add garment</button>}</div>
           )}
         </section>
       ) : (
         <section className="studio-publishing-section studio-stack-panel" id="studio-view-publishing" aria-labelledby="studio-tab-publishing" role="tabpanel">
-          <div className="studio-section-title"><div><p className="eyebrow">Publishing</p><h2 id="publishing-title">Listing review</h2></div><span>{studio.listings.length} listing{studio.listings.length === 1 ? "" : "s"}</span></div>
-          {studio.listings.length ? <><div className="studio-publishing-queue">{pagedListings.map((listing) => {
+          <div className="studio-section-title"><div><p className="eyebrow">Publishing</p><h2 id="publishing-title">Listing review</h2></div><span>{scopedListings.length} listing{scopedListings.length === 1 ? "" : "s"}</span></div>
+          {scopedListings.length ? <><div className="studio-publishing-queue">{pagedListings.map((listing) => {
             const garment = studio.garments.find((candidate) => candidate.id === listing.garmentId);
             return garment ? <StudioLink className="studio-publishing-row" href={garmentDossierHref(garment)} key={listing.id}><span><small>{garment.sku}</small><strong>{listing.title}</strong></span><LifecycleBadge state={listing.state} /><ArrowRight aria-hidden="true" size={17} /></StudioLink> : null;
-          })}</div><StudioPager label="Publishing pages" onPageChange={setPublishingPage} page={safePublishingPage} pageSize={publishingPageSize} total={studio.listings.length} /></> : <div className="studio-quiet-empty"><Send aria-hidden="true" size={24} strokeWidth={1.5} /><div><strong>No Shop previews</strong><p>Approved Shop previews appear here.</p></div></div>}
+          })}</div><StudioPager label="Publishing pages" onPageChange={setPublishingPage} page={safePublishingPage} pageSize={publishingPageSize} total={scopedListings.length} /></> : <div className="studio-quiet-empty"><Send aria-hidden="true" size={24} strokeWidth={1.5} /><div><strong>No Shop previews</strong><p>Approved Shop previews appear here.</p></div></div>}
         </section>
       )}
+
+      <StudioTaskSheet
+        className="studio-drop-scope-sheet"
+        eyebrow={studio.scenario ? "Scenario preview" : projectedCollections.length ? "Studio collections" : "Local view"}
+        onDismiss={dismissCollection}
+        open={collectionOpen}
+        returnFocus={collectionReturnFocus}
+        title="Browse drops"
+      >
+        <div className="studio-drop-scope-list">
+          {collectionChoices.map((choice) => (
+            <button
+              aria-pressed={collectionScope === choice.key}
+              className={collectionScope === choice.key ? "is-selected" : undefined}
+              disabled={choice.count === null}
+              key={choice.key}
+              onClick={() => selectCollection(choice.key)}
+              type="button"
+            >
+              <span>{choice.label}</span>
+              <span>{choice.count === null ? "Unavailable" : choice.count}{collectionScope === choice.key ? <Check aria-hidden="true" size={16} /> : null}</span>
+            </button>
+          ))}
+        </div>
+      </StudioTaskSheet>
 
       {wearWardrobeItemId ? <WearSheet
         onDismiss={() => { setWearWardrobeItemId(null); setWearReturnFocus(null); }}

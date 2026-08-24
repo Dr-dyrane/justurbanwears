@@ -13,7 +13,6 @@ import {
 } from "react";
 import { useSearchParams } from "next/navigation";
 import {
-  ArrowLeft,
   Check,
   ChevronRight,
   CircleAlert,
@@ -32,7 +31,7 @@ import type {
 } from "../../lib/server/studio-stocktake-repository";
 import { StudioLink } from "./atoms/studio-link";
 import { StudioTaskSheet } from "./atoms/studio-task-sheet";
-import { useStudioMobileAction } from "./mobile-action-context";
+import { useStudioStackRegistration } from "./navigation/studio-stack-context";
 
 const locations: Array<{ key: StocktakeLocationKey; label: string }> = [
   { key: "WARDROBE_RAIL", label: "Wardrobe rail" },
@@ -239,6 +238,11 @@ export function StocktakeWorkspace({
 
   const session = data?.session ?? null;
   const countSession = requestedSessionId && session?.id === requestedSessionId ? session : null;
+  useStudioStackRegistration({
+    backHref: mode === "scan" ? "/studio/stocktake" : "/studio",
+    backLabel: mode === "scan" ? "Stocktake" : "Studio Home",
+    title: mode === "scan" ? data?.piece?.sku ?? "Scan" : session?.locationLabel ?? "Stocktake",
+  });
   const piecesByKey = useMemo(
     () => new Map((data?.pieces ?? []).map((piece) => [piece.pieceKey, piece])),
     [data?.pieces],
@@ -253,17 +257,6 @@ export function StocktakeWorkspace({
     }
     return counts;
   }, [data?.pieces]);
-
-  const mobileAction = mode === "scan"
-    ? receipt
-      ? { href: countSession ? "/studio/stocktake" : "/studio/wardrobe", label: countSession ? "Back to count" : "Open wardrobe" }
-      : { href: "#stocktake-primary-action", invokeTargetId: "stocktake-primary-action", label: pending ? "Saving…" : data?.piece?.expectedCustody === "STUDIO" && data.piece.expectedLocationKey === selectedLocation ? "Confirm in hand" : "Record mismatch" }
-    : session?.canClose
-      ? { href: "#stocktake-close-action", invokeTargetId: "stocktake-close-action", label: pending ? "Closing…" : "Close count" }
-      : session
-        ? { href: "#stocktake-scan", label: "Scan piece" }
-      : { href: "#stocktake-start", invokeTargetId: "stocktake-start", label: "Start count" };
-  useStudioMobileAction(mobileAction);
 
   async function sendCommand(body: Record<string, unknown>) {
     const response = await fetch("/api/studio/stocktake", {
@@ -368,10 +361,6 @@ export function StocktakeWorkspace({
     const willMatch = piece.expectedCustody === "STUDIO" && piece.expectedLocationKey === selectedLocation;
     return (
       <article className="studio-scan-page">
-        <StudioLink className="studio-dossier-back" href="/studio/stocktake">
-          <ArrowLeft aria-hidden="true" size={17} />Stocktake
-        </StudioLink>
-
         {receipt ? <ReceiptView receipt={receipt} /> : null}
 
         <section className="studio-scan-piece-hero">
@@ -526,17 +515,19 @@ export function StocktakeWorkspace({
             <ScanLine aria-hidden="true" size={18} />Start count
           </button>
 
-          <section className="studio-stocktake-recent" aria-labelledby="recent-checks">
-            <header><p className="eyebrow">Last seen</p><h2 id="recent-checks">Recent checks</h2></header>
-            {(data?.pieces ?? []).filter((piece) => piece.latestObservation).slice(0, 5).map((piece) => (
-              <StudioLink href={`/studio/scan/${encodeURIComponent(pieceRouteKey(piece))}`} key={piece.pieceKey}>
-                <PieceMark piece={piece} />
-                <span><strong>{piece.title}</strong><small>{piece.latestObservation?.observedLocationLabel} · {piece.latestObservation ? formatTime(piece.latestObservation.occurredAt) : ""}</small></span>
-                {piece.latestObservation?.result === "MATCH" ? <Check aria-hidden="true" size={17} /> : <CircleAlert aria-hidden="true" size={17} />}
-              </StudioLink>
-            ))}
-            {(data?.pieces ?? []).some((piece) => piece.latestObservation) ? null : <p>No physical checks yet.</p>}
-          </section>
+          <details className="studio-transition-action">
+            <summary>Recent checks<span>History</span></summary>
+            <div className="studio-transition-action-body studio-stocktake-recent">
+              {(data?.pieces ?? []).filter((piece) => piece.latestObservation).slice(0, 5).map((piece) => (
+                <StudioLink href={`/studio/scan/${encodeURIComponent(pieceRouteKey(piece))}`} key={piece.pieceKey}>
+                  <PieceMark piece={piece} />
+                  <span><strong>{piece.title}</strong><small>{piece.latestObservation?.observedLocationLabel} · {piece.latestObservation ? formatTime(piece.latestObservation.occurredAt) : ""}</small></span>
+                  {piece.latestObservation?.result === "MATCH" ? <Check aria-hidden="true" size={17} /> : <CircleAlert aria-hidden="true" size={17} />}
+                </StudioLink>
+              ))}
+              {(data?.pieces ?? []).some((piece) => piece.latestObservation) ? null : <p>No physical checks yet.</p>}
+            </div>
+          </details>
         </>
       )}
 

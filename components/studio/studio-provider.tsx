@@ -8,6 +8,7 @@ import { studioEngineIntakeClient } from "./garment-intake/engine-client";
 import type { StudioModel } from "../../lib/studio/domain/entities";
 import type { StudioMachineState } from "../../lib/studio/domain/state";
 import type { ShopServerOrder } from "../../lib/shop/server-order/types";
+import type { StudioApplicationProjection } from "../../lib/studio/application/contracts";
 import {
   createStudioScenarioIntakeClient,
   createStudioScenarioService,
@@ -15,6 +16,10 @@ import {
   type StudioScenario,
 } from "../../lib/studio/simulator";
 import { createBrowserStudioService } from "../../lib/studio/services/studio-service";
+import {
+  readStudioApplication,
+  type StudioApplicationStatus,
+} from "../../lib/studio/services/studio-application-client";
 import {
   createStudioHold,
   dismissStudioNotification,
@@ -36,9 +41,17 @@ export interface StudioAuthorityActions {
   recordLocation(input: Parameters<typeof recordStudioLocation>[0]): Promise<string>;
 }
 
+export interface StudioApplicationActions {
+  snapshot: StudioApplicationProjection | null;
+  status: StudioApplicationStatus;
+  error: string;
+  refresh(): Promise<void>;
+}
+
 interface StudioContextValue extends StudioMachineState, StudioActions {
   identity: StudioModel;
   addGarment: StudioActions["createGarment"];
+  application: StudioApplicationActions;
   authority: StudioAuthorityActions;
   intakeClient: GarmentIntakeClient;
   scenario: StudioScenario | null;
@@ -196,9 +209,34 @@ function StudioMachineProvider({ children, scenario }: {
   const [authoritySnapshot, setAuthoritySnapshot] = useState<StudioAuthoritySnapshot | null>(null);
   const [authorityStatus, setAuthorityStatus] = useState<StudioAuthorityStatus>(scenario ? "ready" : "idle");
   const [authorityError, setAuthorityError] = useState("");
+  const [applicationSnapshot, setApplicationSnapshot] = useState<StudioApplicationProjection | null>(null);
+  const [applicationStatus, setApplicationStatus] = useState<StudioApplicationStatus>(scenario ? "idle" : "loading");
+  const [applicationError, setApplicationError] = useState("");
   const authorityRequestRef = useRef<AbortController | null>(null);
+  const applicationRequestRef = useRef<AbortController | null>(null);
   const authorityLoadedAtRef = useRef(0);
+  const applicationLoadedAtRef = useRef(0);
   const scenarioAuthority = useMemo(() => scenario ? simulatorAuthority(state) : null, [scenario, state]);
+
+  const refreshApplication = useCallback(async () => {
+    if (scenario) return;
+    applicationRequestRef.current?.abort();
+    const controller = new AbortController();
+    applicationRequestRef.current = controller;
+    setApplicationStatus((current) => current === "ready" ? current : "loading");
+    setApplicationError("");
+    try {
+      const snapshot = await readStudioApplication({ signal: controller.signal });
+      if (controller.signal.aborted) return;
+      setApplicationSnapshot(snapshot);
+      setApplicationStatus("ready");
+      applicationLoadedAtRef.current = Date.now();
+    } catch (cause) {
+      if (controller.signal.aborted) return;
+      setApplicationError(cause instanceof Error ? cause.message : "Studio snapshot is unavailable.");
+      setApplicationStatus("error");
+    }
+  }, [scenario]);
 
   const refreshAuthority = useCallback(async () => {
     if (scenario) return;
@@ -248,6 +286,41 @@ function StudioMachineProvider({ children, scenario }: {
     };
   }, [refreshAuthority, scenario]);
 
+  useEffect(() => {
+    if (scenario) return;
+    const controller = new AbortController();
+    applicationRequestRef.current = controller;
+    void readStudioApplication({ signal: controller.signal }).then((snapshot) => {
+      if (controller.signal.aborted) return;
+      setApplicationSnapshot(snapshot);
+      setApplicationStatus("ready");
+      setApplicationError("");
+      applicationLoadedAtRef.current = Date.now();
+    }).catch((cause: unknown) => {
+      if (controller.signal.aborted) return;
+      setApplicationError(cause instanceof Error ? cause.message : "Studio snapshot is unavailable.");
+      setApplicationStatus("error");
+    });
+    const onVisibility = () => {
+      if (document.visibilityState === "visible" && Date.now() - applicationLoadedAtRef.current > 30_000) {
+        void refreshApplication();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisibility);
+      controller.abort();
+      applicationRequestRef.current?.abort();
+    };
+  }, [refreshApplication, scenario]);
+
+  const application = useMemo<StudioApplicationActions>(() => ({
+    snapshot: applicationSnapshot,
+    status: applicationStatus,
+    error: applicationError,
+    refresh: refreshApplication,
+  }), [applicationError, applicationSnapshot, applicationStatus, refreshApplication]);
+
   const authority = useMemo<StudioAuthorityActions>(() => ({
     snapshot: scenarioAuthority ?? authoritySnapshot,
     status: authorityStatus,
@@ -256,13 +329,13 @@ function StudioMachineProvider({ children, scenario }: {
     async createHold(input) {
       if (scenario) throw new Error("Holds are read-only in the simulator.");
       const result = await createStudioHold(input);
-      await refreshAuthority();
+      await Promise.all([refreshAuthority(), refreshApplication()]);
       return result.receipt.consequence;
     },
     async releaseHold(id) {
       if (scenario) throw new Error("Holds are read-only in the simulator.");
       const result = await releaseStudioHold(id);
-      await refreshAuthority();
+      await Promise.all([refreshAuthority(), refreshApplication()]);
       return result.receipt.consequence;
     },
     async dismissNotification(id) {
@@ -272,24 +345,26 @@ function StudioMachineProvider({ children, scenario }: {
         ...current,
         notifications: current.notifications.filter((notification) => notification.id !== id),
       } : current);
+      await refreshApplication();
     },
     async recordLocation(input) {
       if (scenario) throw new Error("Locations are read-only in the simulator.");
       const result = await recordStudioLocation(input);
-      await refreshAuthority();
+      await Promise.all([refreshAuthority(), refreshApplication()]);
       return result.receipt.consequence;
     },
-  }), [authorityError, authoritySnapshot, authorityStatus, refreshAuthority, scenario, scenarioAuthority]);
+  }), [authorityError, authoritySnapshot, authorityStatus, refreshApplication, refreshAuthority, scenario, scenarioAuthority]);
 
   const value = useMemo<StudioContextValue>(() => ({
     ...state,
     ...actions,
     identity,
     addGarment: actions.createGarment,
+    application,
     authority,
     intakeClient,
     scenario,
-  }), [actions, authority, identity, intakeClient, scenario, state]);
+  }), [actions, application, authority, identity, intakeClient, scenario, state]);
 
   return <StudioContext.Provider value={value}>{children}</StudioContext.Provider>;
 }

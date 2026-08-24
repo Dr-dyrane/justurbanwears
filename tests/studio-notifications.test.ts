@@ -16,8 +16,8 @@ test("Studio updates prioritize failures and actionable commerce work", () => {
 
   const notifications = deriveStudioNotifications(state);
   assert.deepEqual(notifications.slice(0, 4).map((item) => item.kind), ["PERSISTENCE", "ORDER", "RETURN", "WARDROBE"]);
-  assert.equal(notifications[1].href, "/studio/operations?view=orders");
-  assert.equal(notifications[2].href, "/studio/operations?view=returns");
+  assert.equal(notifications[1].href, "/studio/orders");
+  assert.equal(notifications[2].href, "/studio/orders?filter=RETURNS");
   assert.equal(notifications[3].href, "/studio/wardrobe?garment=garment-1");
 });
 
@@ -34,17 +34,16 @@ test("a listing lifecycle change creates a new signature and completion clears i
   assert.equal(deriveStudioNotifications(state).some((item) => item.kind === "PUBLISHING"), false);
 });
 
-test("the centre is accessible, state-derived, and documented without delivery overclaim", () => {
-  const centre = readFileSync(`${root}/components/studio/notifications/studio-notification-center.tsx`, "utf8");
+test("Home attention is state-derived and documented without delivery overclaim", () => {
   const shell = readFileSync(`${root}/components/studio/app-shell.tsx`, "utf8");
+  const home = readFileSync(`${root}/components/studio/studio-home.tsx`, "utf8");
+  const services = readFileSync(`${root}/components/studio/navigation/studio-service-list.tsx`, "utf8");
   const adr = readFileSync(`${root}/docs/adr/0043-studio-notifications-and-system-readiness.md`, "utf8");
 
-  assert.match(shell, /<StudioNotificationCenter \/>/);
-  assert.match(centre, /aria-controls="studio-notification-centre"/);
-  assert.match(centre, /aria-live="polite"/);
-  assert.match(centre, /unresolvedCount/);
-  assert.doesNotMatch(centre, /Mark all read/);
-  assert.doesNotMatch(centre, /onClick=\{\(\) =>.*markRead/);
+  assert.doesNotMatch(shell, /StudioNotificationCenter/);
+  assert.match(home, /const needsAttention = scenario[\s\S]*?Math\.max/);
+  assert.match(home, /aria-label=\{needsAttention === null \? "Attention unavailable" : `Attention \$\{needsAttention\}`\}/);
+  assert.match(services, /connected\?\.notifications\.length/);
   assert.match(adr, /does not claim background Web Push, email, SMS, WhatsApp, or cross-device inbox delivery/);
   assert.match(adr, /Arbitrary catalogue create\/update\/delete from Studio \| Not ready/);
   assert.match(adr, /Connected customer orders and inventory \| Not ready/);

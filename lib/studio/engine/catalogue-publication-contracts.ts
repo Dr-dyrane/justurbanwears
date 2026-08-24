@@ -27,6 +27,8 @@ export type StudioPublicationReceipt = {
   state: "PUBLISHED" | "UNPUBLISHED" | "ARCHIVED";
   publishedAt: string;
   shopUrl: string;
+  /** Exact collection label stored with the public catalogue row. */
+  drop?: string;
   inventory?: {
     availability: "AVAILABLE" | "RESERVED" | "SOLD" | "ARCHIVED";
     onHand: number;

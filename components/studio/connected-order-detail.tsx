@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  ArrowLeft,
   FileSearch,
   RotateCcw,
   ShieldCheck,
@@ -27,7 +26,7 @@ import type {
   ShopOrderTransitionDetails,
   ShopServerOrder,
 } from "../../lib/shop/server-order/types";
-import { useStudioMobileAction } from "./mobile-action-context";
+import { useStudioStackRegistration } from "./navigation/studio-stack-context";
 
 type OperatorRole = "operator" | "admin";
 type StudioTransition = ShopOperatorTransition | ShopOperatorReturnTransition;
@@ -303,7 +302,11 @@ function MutationAction({
         const mapped = mapConnectedOrderFailure(response.status, body.error?.code);
         throw new Error(body.error?.message || mapped.message);
       }
-      onApplied(body.order, `${label} saved.`);
+      const nextTransition = nextStudioOrderTransition(body.order);
+      onApplied(
+        body.order,
+        `${label} saved. Order is ${orderStateLabel(body.order.lifecycleStatus).toLowerCase()}. Next: ${nextTransition ? studioOrderNextActionLabel(body.order) : "return to Orders"}.`,
+      );
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "The order could not be updated.");
     } finally {
@@ -421,6 +424,11 @@ export function ConnectedOrderDetail() {
   const [updateNotice, setUpdateNotice] = useState("");
   const [refreshing, setRefreshing] = useState(false);
   const updateNoticeRef = useRef<HTMLParagraphElement>(null);
+  useStudioStackRegistration({
+    backHref: "/studio/orders",
+    backLabel: "Orders",
+    title: order?.reference ?? reference,
+  });
 
   const loadOrder = useCallback(async (signal?: AbortSignal, quiet = false) => {
     if (!quiet) setState("loading");
@@ -467,17 +475,6 @@ export function ConnectedOrderDetail() {
     [order?.events],
   );
   const primaryTransition = order ? nextStudioOrderTransition(order) : undefined;
-  useStudioMobileAction(
-    order
-      ? primaryTransition
-        ? {
-            href: `/studio/orders/${order.reference}#studio-order-next-action`,
-            label: studioOrderNextActionLabel(order),
-          }
-        : { href: "/studio/orders", label: "All orders" }
-      : null,
-  );
-
   if (state === "loading") {
     return <div className="studio-loading" aria-live="polite" role="status">Opening the order desk…</div>;
   }
@@ -518,10 +515,6 @@ export function ConnectedOrderDetail() {
 
   return (
     <div className="studio-connected-order-detail">
-      <div className="studio-connected-order-back">
-        <Link href="/studio/orders"><ArrowLeft aria-hidden="true" size={15} /> Orders</Link>
-        <span>{order.reference}</span>
-      </div>
       <header className="studio-connected-detail-heading">
         <div>
           <p className="eyebrow">Order</p>
@@ -627,20 +620,20 @@ export function ConnectedOrderDetail() {
             </section>
           ) : null}
 
-          <section className="studio-order-timeline" aria-labelledby="studio-order-timeline-title">
-            <div className="studio-connected-section-heading">
-              <div><p className="eyebrow">Updates</p><h2 id="studio-order-timeline-title">Order timeline</h2></div>
+          <details className="studio-transition-action studio-order-timeline">
+            <summary>Order timeline<span>{timeline.length} update{timeline.length === 1 ? "" : "s"}</span></summary>
+            <div className="studio-transition-action-body">
               <button aria-busy={refreshing} className="button button-secondary" disabled={refreshing} onClick={() => void loadOrder(undefined, true)} type="button">{refreshing ? "Checking…" : "Check for updates"}</button>
+              <ol>
+                {timeline.map((event, index) => (
+                  <li aria-current={index === timeline.length - 1 ? "step" : undefined} key={event.id}>
+                    <span>{String(index + 1).padStart(2, "0")}</span>
+                    <div><strong>{orderEventLabel(event, order.fulfillment.kind)}</strong>{event.note ? <p>{event.note}</p> : null}<small>{event.actorKind === "OPERATOR" ? "Studio operator" : event.actorKind === "CUSTOMER" ? "Customer" : "Order system"}</small><time dateTime={event.occurredAt}>{formatConnectedOrderDate(event.occurredAt)}</time></div>
+                  </li>
+                ))}
+              </ol>
             </div>
-            <ol>
-              {timeline.map((event, index) => (
-                <li aria-current={index === timeline.length - 1 ? "step" : undefined} key={event.id}>
-                  <span>{String(index + 1).padStart(2, "0")}</span>
-                  <div><strong>{orderEventLabel(event, order.fulfillment.kind)}</strong>{event.note ? <p>{event.note}</p> : null}<small>{event.actorKind === "OPERATOR" ? "Studio operator" : event.actorKind === "CUSTOMER" ? "Customer" : "Order system"}</small><time dateTime={event.occurredAt}>{formatConnectedOrderDate(event.occurredAt)}</time></div>
-                </li>
-              ))}
-            </ol>
-          </section>
+          </details>
         </main>
 
         <aside className="studio-connected-order-summary">

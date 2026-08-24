@@ -9,6 +9,7 @@ import { Check, CircleAlert, RotateCcw, Shirt } from "lucide-react";
 import { StudioLink as Link } from "../studio/atoms/studio-link";
 import { useStudio } from "../studio/studio-provider";
 import { StatusPill } from "../ui/status-pill";
+import { useStudioStackRegistration } from "../studio/navigation/studio-stack-context";
 
 type ApiFailure = { error?: { message?: string; recovery?: string } };
 
@@ -33,6 +34,11 @@ export function ShootDetail() {
   const [receipt, setReceipt] = useState("");
   const [error, setError] = useState("");
   const truthConfirmationId = useId();
+  useStudioStackRegistration({
+    backHref: "/studio/media",
+    backLabel: "Atelier",
+    title: media?.sku ?? (media ? label(media.operation) : "Atelier media"),
+  });
 
   if (authority.status === "idle" || authority.status === "loading") return <div className="studio-loading" role="status">Opening media…</div>;
   if (!media) return <div className="empty-state"><h1>Media not found</h1><Link href="/studio/media">Return to Media</Link></div>;
@@ -59,7 +65,11 @@ export function ShootDetail() {
         method: "POST",
       });
       await responseBody<unknown>(response);
-      setReceipt(decision === "KEEP" ? "View kept in the private garment record." : decision === "REJECT" ? "View rejected. Its history remains." : "One corrected retry is running.");
+      setReceipt(decision === "KEEP"
+        ? "View kept in the private garment record. Next: open the piece."
+        : decision === "REJECT"
+          ? "View rejected; its history remains. Next: return to Atelier."
+          : "One corrected retry is running. Next: return to Atelier to monitor it.");
       await authority.refresh();
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "That decision could not be saved.");
@@ -70,7 +80,7 @@ export function ShootDetail() {
 
   return (
     <div className="review-page">
-      <div className="detail-topbar"><Link className="back-link" href="/studio/media">← Media</Link><div className="shoot-titlebar"><span>{media.sku ?? "Private piece"}</span><strong>{media.title}</strong><StatusPill status={media.state} /></div><Link className="button button-secondary" href={`/studio/wardrobe/${media.wardrobeItemId}`}>Open piece</Link></div>
+      <div className="detail-topbar studio-page-tools"><StatusPill status={media.state} /><Link className="button button-secondary" href={`/studio/wardrobe/${media.wardrobeItemId}`}>Open piece</Link></div>
       <div className="review-workspace">
         <section className="review-stage"><div className="stage-main">{media.outputUrl ? <img alt={`${media.title}, ${label(media.operation)} review`} className="visual-asset ratio-portrait" height={1280} src={media.outputUrl} style={{ objectFit: "contain" }} width={1024} /> : <div className="empty-authority"><Shirt aria-hidden="true" size={52} /><span>{media.state === "FAILED" ? "View failed" : "View is building"}</span></div>}</div></section>
         <aside className="review-panel"><div className="review-scroll">
@@ -86,7 +96,10 @@ export function ShootDetail() {
           {error ? <div className="studio-quiet-empty" role="alert"><CircleAlert aria-hidden="true" size={20} /><div><strong>Couldn’t save</strong><p>{error}</p></div></div> : null}
         </div></aside>
       </div>
-      <section className="shoot-record"><div><p className="eyebrow">Record</p><h2>Generation history</h2></div><dl><div><dt>Garment</dt><dd>{media.sku ?? media.wardrobeItemId}</dd></div><div><dt>Operation</dt><dd>{label(media.operation)}</dd></div><div><dt>Model</dt><dd>{media.modelName ?? "No model"}</dd></div><div><dt>State</dt><dd>{label(media.state)}</dd></div><div><dt>Cost</dt><dd>{media.costUsd ? `$${media.costUsd}` : "Not recorded"}</dd></div><div><dt>Updated</dt><dd>{new Date(media.updatedAt).toLocaleString("en-NG")}</dd></div></dl></section>
+      <details className="studio-transition-action">
+        <summary>Generation history<span>Provenance</span></summary>
+        <div className="studio-transition-action-body"><section className="shoot-record"><dl><div><dt>Garment</dt><dd>{media.sku ?? media.wardrobeItemId}</dd></div><div><dt>Operation</dt><dd>{label(media.operation)}</dd></div><div><dt>Model</dt><dd>{media.modelName ?? "No model"}</dd></div><div><dt>State</dt><dd>{label(media.state)}</dd></div><div><dt>Cost</dt><dd>{media.costUsd ? `$${media.costUsd}` : "Not recorded"}</dd></div><div><dt>Updated</dt><dd>{new Date(media.updatedAt).toLocaleString("en-NG")}</dd></div></dl></section></div>
+      </details>
     </div>
   );
 }

@@ -8,6 +8,7 @@ const publicationRepository = readFileSync(`${root}/lib/server/studio-catalogue-
 const lifecycleRepository = readFileSync(`${root}/lib/server/studio-garment-lifecycle-repository.ts`, "utf8");
 const lifecycleService = readFileSync(`${root}/lib/studio/engine/garment-lifecycle-service.ts`, "utf8");
 const lifecyclePanel = readFileSync(`${root}/components/studio/garment-lifecycle-panel.tsx`, "utf8");
+const dossier = readFileSync(`${root}/components/studio/garment-dossier.tsx`, "utf8");
 const intakeRoute = readFileSync(`${root}/app/api/studio/intakes/route.ts`, "utf8");
 const intakeSheet = readFileSync(`${root}/components/studio/garment-intake/garment-intake-sheet.tsx`, "utf8");
 
@@ -93,6 +94,9 @@ test("Piece exposes direct price, media, visibility and history controls", () =>
   assert.match(lifecyclePanel, />Archive</);
   assert.match(lifecyclePanel, />History</);
   assert.match(lifecyclePanel, /Changes stay private until you publish them\./);
+  assert.match(dossier, /searchParams\.get\("action"\) === "price"/);
+  assert.match(lifecyclePanel, /initialAction !== "price"/);
+  assert.match(lifecyclePanel, /priceRef\.current\?\.focus/);
 });
 
 test("unfinished durable intakes are discoverable and resumable", () => {

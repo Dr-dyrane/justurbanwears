@@ -9,14 +9,14 @@ body:has(.studio-shell) {
   --atelier-panel-strong: #fffaf6;
   --atelier-panel-soft: rgba(255, 250, 246, 0.58);
   --atelier-ink: #2b2420;
-  --atelier-muted: #766b64;
-  --atelier-faint: #9a8f88;
+  --atelier-muted: #655a53;
+  --atelier-faint: #81766f;
   --atelier-accent: #dd6042;
   --atelier-accent-deep: #b94730;
   --atelier-accent-soft: rgba(221, 96, 66, 0.12);
   --atelier-positive: #667356;
   --atelier-positive-soft: rgba(102, 115, 86, 0.13);
-  --atelier-line: rgba(76, 58, 49, 0.09);
+  --atelier-line: rgba(65, 48, 39, 0.14);
   --atelier-shadow: 0 22px 64px rgba(57, 43, 36, 0.08);
   --atelier-shadow-raised: 0 30px 88px rgba(48, 35, 29, 0.14);
   --atelier-radius: 28px;
@@ -79,7 +79,7 @@ html[data-theme="dark"] .studio-shell .studio-floating-nav {
   background: transparent;
   border: 0;
   color: var(--atelier-muted);
-  min-height: 38px;
+  min-height: 44px;
   padding-inline: 13px;
   transition:
     background 160ms ease,
@@ -179,7 +179,7 @@ html[data-theme="dark"] .studio-shell .studio-floating-nav {
   border-radius: 999px;
   color: var(--atelier-muted);
   flex: 0 0 auto;
-  min-height: 42px;
+  min-height: 44px;
   padding: 0 15px;
   transition:
     background 160ms ease,
@@ -702,7 +702,7 @@ html[data-theme="dark"] .studio-shell .studio-atelier-pulse {
   border-radius: 999px;
   color: var(--atelier-muted);
   flex: 0 0 auto;
-  min-height: 38px;
+  min-height: 44px;
   padding-inline: 14px;
 }
 

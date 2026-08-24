@@ -27,6 +27,7 @@ function getServerMobileViewportSnapshot() {
 }
 
 export function useMobileChrome(routeKey: string) {
+  const keepsHeaderVisible = routeKey === "/studio" || routeKey.startsWith("/studio/");
   const mobileViewport = useSyncExternalStore(
     subscribeToMobileViewport,
     getMobileViewportSnapshot,
@@ -136,7 +137,7 @@ export function useMobileChrome(routeKey: string) {
   }, [resetChrome]);
 
   const mobileChromeSuspended = mobileViewport && suspended;
-  const mobileChromeHidden = mobileViewport && visibility.hidden;
+  const mobileChromeHidden = !keepsHeaderVisible && mobileViewport && visibility.hidden;
   const mode = useMemo(() => adaptiveMobileChromeMode({
     hidden: mobileChromeHidden,
     navigationRevealed,
