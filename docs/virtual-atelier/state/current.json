@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "workflowRevision": "2026-08-24.64",
-  "updatedAt": "2026-08-24T11:50:46Z",
+  "workflowRevision": "2026-08-24.66",
+  "updatedAt": "2026-08-24T19:25:00Z",
   "model": "LULU_V4",
-  "activeGarment": "017",
-  "activeView": "05",
-  "status": "GARMENT_018_COMPLETE_01_07_LOCKED_GARMENT_017_05_BUILT_IN_OUTPUT_MODERATION_EXHAUSTED_AFTER_TEN_DISTINCT_STRATEGIES_ZERO_CANDIDATES",
+  "activeGarment": "019",
+  "activeView": "01",
+  "status": "GARMENT_018_LIVE_VERIFIED_CATALOGUE_27_GARMENT_017_GATEWAY_PROOFS_REJECTED_TERMINAL_GARMENT_019_INTAKE_PREFLIGHT_READY",
   "identityReview": {
     "candidateId": "lulu.face.v4.front.candidate.v1",
     "acceptedAssetId": "lulu.face.v4.front.lock.v1",
@@ -29,7 +29,7 @@
   },
   "globalLocks": {
     "garment": {
-      "status": "GARMENTS_009_010_011_012_013_014_015_016_01_07_ACCEPTED_LOCKED_GARMENT_017_01_04_ACCEPTED_LOCKED",
+      "status": "GARMENTS_009_010_011_012_013_014_015_016_018_01_07_ACCEPTED_LOCKED_GARMENT_017_01_04_ACCEPTED_LOCKED_GARMENT_019_INTAKE_READY",
       "primary": [
         "garment.009.view.01.accepted",
         "garment.010.view.01.accepted",
@@ -39,9 +39,10 @@
         "garment.014.view.01.accepted",
         "garment.015.view.01.accepted",
         "garment.016.view.01.accepted",
-        "garment.017.view.01.accepted"
+        "garment.017.view.01.accepted",
+        "garment.018.view.01.accepted"
       ],
-      "rule": "The exact reviewed 01-07 sets for Garments 009 through 016 are privately locked. G017 views 01-04 are privately locked from direct front and rear evidence; its 02 is direct-rear-supported presentation and its 04 is model-completed presentation only. Each accepted 01 controls its garment-specific holistic subject synthesis. Direct captures retain construction truth. Each accepted 05 may parent only its own independent 06 and 07 siblings. Rejected candidates never parent."
+      "rule": "The exact reviewed 01-07 sets for Garments 009 through 016 and Garment 018 are privately locked. G017 views 01-04 are privately locked from direct front and rear evidence; its 02 is direct-rear-supported presentation and its 04 is model-completed presentation only. G019 is intake-only with no accepted generated view. Each accepted 01 controls its garment-specific holistic subject synthesis. Direct captures retain construction truth. Each accepted 05 may parent only its own independent 06 and 07 siblings. Rejected candidates never parent."
     },
     "identity": {
       "status": "LOCKED",
@@ -1427,7 +1428,7 @@
       "rejectedCandidatesMayParent": false
     },
     "017": {
-      "status": "PRIVATE_01_04_COMPLETE_STYLING_RECORDED_BUILT_IN_PROVIDER_EXHAUSTED_AFTER_TEN_DISTINCT_STRATEGIES_TWELVE_CALLS_ZERO_CANDIDATES",
+      "status": "PRIVATE_01_04_COMPLETE_STYLING_RECORDED_BUILT_IN_PROVIDER_EXHAUSTED_GATEWAY_SEEDREAM_AND_FLUX_PRO_PROOFS_REJECTED_TERMINAL_NO_ACCEPTED_05_07",
       "sourceManifest": "storage/garments/drop-02/017/source/manifest.json",
       "classification": "DIRECT_CAPTURE_FRONT_AND_REAR_FAMILY_NO_TRUE_SIDE",
       "reservedViews": ["01", "02", "03", "04", "05", "06", "07"],
@@ -1453,12 +1454,14 @@
         "storage/garments/drop-02/017/operations/g017-holistic-subject-r007.json",
         "storage/garments/drop-02/017/operations/g017-holistic-subject-r008-g005-parent.json",
         "storage/garments/drop-02/017/operations/g017-holistic-subject-r009-v2-pixel-parent.json",
-        "storage/garments/drop-02/017/operations/g017-holistic-subject-r010-g005-mannequin-minimal.json"
+        "storage/garments/drop-02/017/operations/g017-holistic-subject-r010-g005-mannequin-minimal.json",
+        "storage/garments/drop-02/017/operations/g017-holistic-subject-gateway-r011.json",
+        "storage/garments/drop-02/017/operations/g017-holistic-subject-gateway-r012-flux-pro.json"
       ],
       "stylingDecision": "REFINE_SMOKED_CLEAR_OR_BLACK_POINTED_NON_PLATFORM_STILETTOS_TINY_SILVER_STUDS_NO_COMPETING_ACCESSORIES",
       "rearConstruction": "NARROW_NAPE_BRIDGE_CENTER_CONNECTOR_LARGE_UPPER_OPENING_ONE_MID_BACK_STRAP_CENTER_CONNECTOR_SMALLER_LOWER_OPENING_NO_BACK_PANEL",
       "subjectGate": {
-        "status": "R001_THROUGH_R010_BUILT_IN_PROVIDER_BLOCKED_NO_OUTPUT_FALSE_POSITIVE_CONFIRMED_TWELVE_CALLS_ZERO_CANDIDATES",
+        "status": "R001_THROUGH_R010_BUILT_IN_PROVIDER_BLOCKED_ZERO_CANDIDATES_GATEWAY_R011_AND_R012_CREATED_TWO_TERMINAL_REJECTS",
         "blockedOperations": ["g017-holistic-subject-r001", "g017-holistic-subject-r002", "g017-holistic-subject-r003", "g017-holistic-subject-r004", "g017-holistic-subject-r005", "g017-holistic-subject-r006", "g017-holistic-subject-r007", "g017-holistic-subject-r008-g005-parent", "g017-holistic-subject-r009-v2-pixel-parent", "g017-holistic-subject-r010-g005-mannequin-minimal"],
         "providerRequestIds": ["a0b55b06-8e37-44aa-a12a-6c0ecdc44d90", "cfe51209-df47-43a7-b9ef-82d9d438b5eb", "e236275d-2e3f-484b-9221-35cc97b4032e", "de360402-2149-4923-b822-3c37af4a0f42", "028117ad-621a-49f5-8fe2-12953ef2c690", "f15b39d1-4174-43fe-9ff4-db27450e4204", "75af2454-4e89-4507-a02b-c1d27ca1c81d", "09e0301c-379f-4fc9-b23d-6282842efd6e", "36aaad68-1572-4dff-b272-82b5a18f2065", "d3c45d8c-8744-4fff-9bfa-c15962006437", "d8d69a8d-9852-42c1-b274-3e224c3ec05a", "c6a1e362-9fdf-4f45-bb36-53433e31302c"],
         "candidateCreated": false,
@@ -1468,7 +1471,18 @@
         "fallbackResult": "PROVIDER_BLOCKED_NO_OUTPUT",
         "latestValidatedOperation": "g017-holistic-subject-r010-g005-mannequin-minimal",
         "latestClassificationAssessment": "FALSE_POSITIVE_ISOLATED_TO_EXACT_G017_FULLY_CLOTHED_ADULT_RETAIL_GARMENT_TRANSFER_NOT_CONSENT_FACE_BODY_OR_REFERENCE_COUNT",
-        "builtInRetryExhausted": true
+        "builtInRetryExhausted": true,
+        "gatewayComparison": {
+          "status": "COMPLETE_STOPPED_TWO_TERMINAL_REJECTS",
+          "seedreamOperation": "g017-holistic-subject-gateway-r011",
+          "seedreamResult": "REJECT_IDENTITY_BODY_GARMENT_ATELIER_REALISM_AND_FORMAT",
+          "fluxProOperation": "g017-holistic-subject-gateway-r012-flux-pro",
+          "fluxProResult": "REJECT_IDENTITY_BODY_ATELIER_REALISM_AND_COST_GARMENT_AND_FORMAT_PASS",
+          "fluxProActualCostUsd": 0.12,
+          "acceptedCandidateCreated": false,
+          "mayParent": false,
+          "paidRetryAuthorized": false
+        }
       },
       "consentAndPermission": {
         "subject": "clearly adult Lulu",
@@ -1520,15 +1534,57 @@
         "publicBlobActiveAssetCount": 222,
         "publicBlobLegacyAssetCount": 7
       },
+      "productionSurface": {
+        "sourceCommit": "0ef5d0a0a7b564f65dac0e7c441616749a4e73c1",
+        "deploymentUrl": "https://justurbanwears-983axdbtc-drdyranes-projects.vercel.app",
+        "deploymentState": "READY",
+        "productionUrl": "https://www.justurbanwears.com/shop/products/fuchsia-strapless-ruched-cascade-ruffle-mini-dress",
+        "routeStatus": 200,
+        "browser": "SEVEN_MEDIA_PRESENT_1120X1400_PROFILE_AND_REAR_OBJECT_CONTAIN_4_BY_5_CONSOLE_CLEAN",
+        "databaseRevisionObserved": "2026-08-24-catalogue-27",
+        "databaseManifestChecksum": "06aea430d648ca057307f16b56b486ac3895d7cde663b4540301ebb6e9250dd9",
+        "databaseRowCount": 35,
+        "databaseSkuPresent": true,
+        "availability": "AVAILABLE",
+        "availabilityApi": "HTTP_200_CONFIRMED",
+        "productionSmoke": "18_OF_18_PASS",
+        "experienceSmoke": "12_OF_12_PASS",
+        "state": "LIVE_VERIFIED",
+        "verifiedAt": "2026-08-24T19:25:00Z"
+      },
+      "rejectedCandidatesMayParent": false
+    },
+    "019": {
+      "status": "PRIVATE_INTAKE_COMPLETE_DIRECT_FRONT_FAMILY_01_PREFLIGHT_READY_NO_GENERATION_INVOKED",
+      "sku": "JUW-043",
+      "sourceManifest": "storage/garments/drop-02/019/source/manifest.json",
+      "sourceManifestSha256": "de7a61a188e40d0ddf0d8c8aa021fa02bb7cc68ad6ef9959951186939c2da77d",
+      "classification": "DIRECT_CAPTURE_FRONT_FAMILY_ONLY",
+      "reservedViews": ["01", "02", "03", "04", "05", "06", "07"],
+      "views": {},
+      "operationRecords": [
+        "storage/garments/drop-02/019/operations/g019-v01-r001.json"
+      ],
+      "preflight": {
+        "operationId": "g019-v01-r001",
+        "operationSha256": "32145ccccf4004e1c51afc51f7fd5d86db4590523bb14b8decd954f51f91532a",
+        "view": "01",
+        "status": "PASS_READY_NOT_INVOKED"
+      },
+      "consentAndPermission": {
+        "realGarmentReferencesRemainPrivate": true,
+        "noIdentityOrBodyMediaUsedAtIntake": true,
+        "publicDerivativeRequiresSeparateGate": true
+      },
       "rejectedCandidatesMayParent": false
     }
   },
   "nextOperation": {
-    "operationId": "g017-provider-capability-change-required",
-    "garmentId": "017",
-    "view": "05",
-    "role": "HOLISTIC_SUBJECT_THEN_MODEL_FRONT",
-    "status": "AWAIT_EXPLICIT_CLI_OR_EXTERNAL_PROVIDER_SELECTION_AND_REQUIRED_CREDENTIAL"
+    "operationId": "g019-v01-r001",
+    "garmentId": "019",
+    "view": "01",
+    "role": "GARMENT_FRONT",
+    "status": "PREFLIGHT_PASS_READY_NOT_INVOKED"
   },
-  "requiredNext": "Obtain explicit authority and the required credential for the documented CLI/API fallback, or a user-selected provider with image-edit capability. Reuse the validated G017 authority stack unchanged; create and accept 05 before independent 06 and 07 siblings. Do not censor or redesign the garment and do not invent candidate assets while provider output remains empty."
+  "requiredNext": "Proceed with G019/01 from validated operation g019-v01-r001, then gate before any 02-07 fan-out. Do not rerun either paid G017 Gateway proof and do not begin G017/06 or 07 without an accepted G017/05. Resume G017 only through a materially new capability or a user-supplied manually accepted 05 while reusing the validated authority stack unchanged. G018 is live-verified and requires no further release action."
 }
