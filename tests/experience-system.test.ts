@@ -7,6 +7,7 @@ const layout = await readFile(new URL("../app/layout.tsx", import.meta.url), "ut
 const site = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
 const shop = await readFile(new URL("../components/shop/shop-shell.tsx", import.meta.url), "utf8");
 const studio = await readFile(new URL("../components/studio/app-shell.tsx", import.meta.url), "utf8");
+const studioHome = await readFile(new URL("../components/studio/studio-home.tsx", import.meta.url), "utf8");
 const canon = await readFile(new URL("../docs/experience/EXPERIENCE-SYSTEM.md", import.meta.url), "utf8");
 
 test("loads the experience layer after the mature surface styles", () => {
@@ -66,7 +67,7 @@ test("keeps the shared island contextual and the signature underlay opt-in", () 
   assert.match(shop, /data-experience-layer="island"/);
   assert.match(studio, /data-experience-layer="island"/);
   assert.match(shop, /data-experience-action="primary"/);
-  assert.match(studio, /data-experience-action="primary"/);
+  assert.match(studioHome, /data-experience-action="primary"/);
   assert.match(css, /\[data-experience-layer="island"\]/);
   assert.match(css, /\[data-experience-action="primary"\]::after/);
   assert.match(css, /translate3d\(-102%, 0, 0\)/);

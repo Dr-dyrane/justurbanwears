@@ -43,6 +43,7 @@ function AppShellFrame({ children, operator }: { children: React.ReactNode; oper
       <header
         aria-hidden={chromeHidden || mobileChromeSuspended || undefined}
         className="shop-header studio-header studio-command-header"
+        data-experience-layer="island"
         inert={chromeHidden || mobileChromeSuspended || undefined}
       >
         <nav className={`studio-command-nav glass-surface ${isHome ? "is-home" : "is-stack"}`} aria-label={isHome ? "Studio Home controls" : `${stack.title} controls`}>

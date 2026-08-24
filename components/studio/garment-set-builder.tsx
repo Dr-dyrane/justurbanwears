@@ -3,9 +3,17 @@
 /* Private Studio images are served by authenticated same-origin routes. */
 /* eslint-disable @next/next/no-img-element */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { AlertCircle, Check, LoaderCircle, Sparkles } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  AlertCircle,
+  Check,
+  ChevronDown,
+  LoaderCircle,
+  Sparkles,
+} from "lucide-react";
+import { WardrobeMotion } from "../brand/wardrobe-motion";
 import type {
+  GarmentSetCommand,
   GarmentSetSlot,
   GarmentSetWorkspace,
 } from "../../lib/studio/engine/garment-set-contracts";
@@ -15,6 +23,44 @@ import { StudioMediaButton, type StudioMediaItem } from "./media-viewer";
 type EngineErrorBody = {
   error?: { message?: string; recovery?: string };
 };
+
+type GenesisReceipt = {
+  detail: string;
+  title: string;
+};
+
+type GenesisError = {
+  detail: string;
+  title: string;
+};
+
+function pendingLabel(command: GarmentSetCommand["command"], slot: GarmentSetSlot) {
+  if (command === "ADVANCE_CURRENT") return `Preparing ${slot.label.toLowerCase()}`;
+  if (command === "KEEP_CURRENT") return `Keeping ${slot.label.toLowerCase()}`;
+  if (command === "FIX_CURRENT") return `Applying ${slot.label.toLowerCase()} correction`;
+  return `Rejecting ${slot.label.toLowerCase()}`;
+}
+
+function commandReceipt(input: {
+  command: GarmentSetCommand["command"];
+  correction?: string;
+  nextActionLabel: string;
+  slot: GarmentSetSlot;
+}): GenesisReceipt {
+  const next = `Next · ${input.nextActionLabel}`;
+  if (input.command === "ADVANCE_CURRENT") {
+    return { title: `${input.slot.label} started`, detail: `Saved privately · ${next}` };
+  }
+  if (input.command === "KEEP_CURRENT") {
+    return { title: `${input.slot.label} kept`, detail: `Saved privately · ${next}` };
+  }
+  if (input.command === "REJECT_CURRENT") {
+    return { title: `${input.slot.label} rejected`, detail: `Retained privately · ${next}` };
+  }
+  const correction = input.correction?.trim() ?? "Correction saved";
+  const summary = correction.length > 120 ? `${correction.slice(0, 119)}…` : correction;
+  return { title: "Correction applied", detail: `${summary} · ${next}` };
+}
 
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
   let response: Response;
@@ -35,13 +81,34 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-function slotStatus(slot: GarmentSetSlot) {
+function slotStatus(slot: GarmentSetSlot, current: boolean) {
   if (slot.state === "KEPT") return "Kept";
-  if (slot.state === "REVIEW") return slot.inferred ? "Check against the garment" : "Review";
-  if (slot.state === "BUILDING") return "Building";
-  if (slot.state === "FAILED") return slot.canRetry ? "Try again" : "Use a photo";
-  if (slot.state === "WAITING") return "After try-on";
-  return "Not made";
+  if (current && slot.state === "REVIEW") return "Review";
+  if (current && slot.state === "BUILDING") return "Preparing";
+  if (slot.state === "FAILED") return slot.canRetry ? "Correction available" : "Source needed";
+  if (slot.state === "WAITING") return "Waiting";
+  return current ? "Next" : "Later";
+}
+
+function stageLabel(workspace: GarmentSetWorkspace) {
+  if (workspace.stage === "LULU") return "Lulu";
+  if (workspace.stage === "COMPLETE") return "Ready";
+  return "Product";
+}
+
+function commandBody(input: {
+  command: GarmentSetCommand["command"];
+  correction?: string;
+  revision: string;
+  wardrobeItemId: string;
+}): GarmentSetCommand {
+  const common = {
+    expectedRevision: input.revision,
+    idempotencyKey: `genesis:${input.wardrobeItemId}:${input.revision}:${input.command}`,
+  };
+  if (input.command === "ADVANCE_CURRENT") return { ...common, command: input.command, costConfirmed: true };
+  if (input.command === "FIX_CURRENT") return { ...common, command: input.command, correction: input.correction ?? "" };
+  return { ...common, command: input.command };
 }
 
 export function GarmentSetBuilder({
@@ -56,152 +123,324 @@ export function GarmentSetBuilder({
   wardrobeItemId: string;
 }) {
   const [workspace, setWorkspace] = useState<GarmentSetWorkspace | null>(null);
-  const [working, setWorking] = useState(false);
-  const [error, setError] = useState("");
+  const [pendingCommand, setPendingCommand] = useState<GarmentSetCommand["command"] | null>(null);
+  const [error, setError] = useState<GenesisError | null>(null);
+  const [lastReceipt, setLastReceipt] = useState<GenesisReceipt | null>(null);
+  const [fixing, setFixing] = useState(false);
+  const [correction, setCorrection] = useState("");
+  const correctionRef = useRef<HTMLTextAreaElement>(null);
+  const feedbackRef = useRef<HTMLDivElement>(null);
+  const receiptRef = useRef<HTMLElement>(null);
+  const requestEpochRef = useRef(0);
+  const activeWardrobeItemRef = useRef(wardrobeItemId);
+  if (activeWardrobeItemRef.current !== wardrobeItemId) {
+    activeWardrobeItemRef.current = wardrobeItemId;
+    requestEpochRef.current += 1;
+  }
+  const working = pendingCommand !== null;
 
-  const load = useCallback(async () => {
-    setError("");
+  const load = useCallback(async (
+    preserveError = false,
+    requestEpoch = requestEpochRef.current,
+  ) => {
+    if (!preserveError && requestEpoch === requestEpochRef.current) setError(null);
     try {
       const result = await request<{ workspace: GarmentSetWorkspace }>(
         `/api/studio/wardrobe/${encodeURIComponent(wardrobeItemId)}/set`,
       );
+      if (requestEpoch !== requestEpochRef.current) return null;
       setWorkspace(result.workspace);
       return result.workspace;
     } catch (loadError) {
-      setError(loadError instanceof Error ? loadError.message : "The set could not be opened.");
+      if (requestEpoch !== requestEpochRef.current) return null;
+      setError({
+        title: "Genesis unavailable",
+        detail: loadError instanceof Error ? loadError.message : "Genesis could not be opened.",
+      });
       return null;
     }
   }, [wardrobeItemId]);
 
   useEffect(() => {
+    const requestEpoch = requestEpochRef.current + 1;
+    requestEpochRef.current = requestEpoch;
     if (!open) return;
-    void load();
+    setWorkspace(null);
+    setError(null);
+    setLastReceipt(null);
+    setPendingCommand(null);
+    setFixing(false);
+    setCorrection("");
+    void load(false, requestEpoch);
   }, [load, open]);
 
   useEffect(() => {
-    if (!open || workspace?.state !== "BUILDING") return;
-    const timer = window.setTimeout(() => void load(), 2_500);
-    return () => window.clearTimeout(timer);
-  }, [load, open, workspace?.state]);
+    if (!open || workspace?.nextAction !== "WAIT") return;
+    let cancelled = false;
+    let timer = 0;
+    const requestEpoch = requestEpochRef.current;
+    const poll = async () => {
+      const result = await load(true, requestEpoch);
+      if (result && requestEpoch === requestEpochRef.current) setError(null);
+      if (!cancelled && (!result || result.nextAction === "WAIT")) {
+        timer = window.setTimeout(() => void poll(), 2_500);
+      }
+    };
+    timer = window.setTimeout(() => void poll(), 2_500);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [load, open, workspace?.nextAction]);
 
+  useEffect(() => {
+    if (!fixing) return;
+    window.requestAnimationFrame(() => correctionRef.current?.focus({ preventScroll: true }));
+  }, [fixing]);
+
+  const current = workspace?.slots.find((slot) => slot.key === workspace.currentSlotKey) ?? null;
   const mediaItems = useMemo<StudioMediaItem[]>(() =>
     workspace?.slots.flatMap((slot) => slot.assetUrl ? [{
       alt: `${workspace.title} · ${slot.label}`,
-      label: slot.label,
+      label: `${slot.view} · ${slot.label}`,
       src: slot.assetUrl,
     }] : []) ?? [], [workspace]);
+  const currentMediaIndex = current?.assetUrl
+    ? mediaItems.findIndex((item) => item.src === current.assetUrl)
+    : -1;
 
-  const build = useCallback(async () => {
-    setWorking(true);
-    setError("");
+  const runCommand = useCallback(async (
+    command: GarmentSetCommand["command"],
+    extra: { correction?: string } = {},
+  ) => {
+    if (!workspace || !current) return;
+    const commandSlot = current;
+    const commandRevision = workspace.revision;
+    const requestEpoch = requestEpochRef.current;
+    setPendingCommand(command);
+    setError(null);
+    setLastReceipt(null);
     try {
+      const body = commandBody({
+        command,
+        correction: extra.correction,
+        revision: workspace.revision,
+        wardrobeItemId,
+      });
       const result = await request<{ workspace: GarmentSetWorkspace }>(
         `/api/studio/wardrobe/${encodeURIComponent(wardrobeItemId)}/set`,
-        { method: "POST", body: JSON.stringify({ costConfirmed: true }) },
+        { method: "POST", body: JSON.stringify(body) },
       );
+      if (requestEpoch !== requestEpochRef.current) return;
       setWorkspace(result.workspace);
-    } catch (buildError) {
-      setError(buildError instanceof Error ? buildError.message : "The set could not be built.");
-      await load();
-    } finally {
-      setWorking(false);
-    }
-  }, [load, wardrobeItemId]);
-
-  const decide = useCallback(async (slot: GarmentSetSlot, decision: "KEEP" | "REJECT") => {
-    if (!slot.jobId) return;
-    setWorking(true);
-    setError("");
-    try {
-      const isCompletion = slot.key === "GARMENT_BACK" || slot.key === "FABRIC_DETAIL";
-      const path = isCompletion
-        ? `/api/studio/wardrobe/${encodeURIComponent(wardrobeItemId)}/completions/${encodeURIComponent(slot.jobId)}/decision`
-        : `/api/studio/wardrobe/${encodeURIComponent(wardrobeItemId)}/wear/${encodeURIComponent(slot.jobId)}/decision`;
-      await request(path, {
-        method: "POST",
-        body: JSON.stringify(isCompletion
-          ? { decision, ...(decision === "KEEP" && slot.inferred ? { truthConfirmed: true } : {}) }
-          : { decision }),
+      const receipt = result.workspace.receipt ? null : commandReceipt({
+        command,
+        correction: extra.correction,
+        nextActionLabel: result.workspace.nextActionLabel,
+        slot: commandSlot,
       });
-      await load();
-    } catch (decisionError) {
-      setError(decisionError instanceof Error ? decisionError.message : "That decision was not saved.");
+      setLastReceipt(receipt);
+      setFixing(false);
+      setCorrection("");
+      window.requestAnimationFrame(() => {
+        (result.workspace.receipt ? receiptRef.current : feedbackRef.current)?.focus({ preventScroll: true });
+      });
+    } catch (commandError) {
+      if (requestEpoch !== requestEpochRef.current) return;
+      const refreshed = await load(true, requestEpoch);
+      if (requestEpoch !== requestEpochRef.current) return;
+      if (!refreshed) {
+        setError({
+          title: "Could not confirm",
+          detail: "Studio may have received the action. Reopen Genesis to check the saved state.",
+        });
+      } else if (refreshed.revision !== commandRevision) {
+        const receipt = refreshed.receipt ? null : commandReceipt({
+          command,
+          correction: extra.correction,
+          nextActionLabel: refreshed.nextActionLabel,
+          slot: commandSlot,
+        });
+        setError(null);
+        setLastReceipt(receipt);
+        setFixing(false);
+        setCorrection("");
+      } else {
+        setError({
+          title: "Nothing changed",
+          detail: commandError instanceof Error ? commandError.message : "That action was not saved.",
+        });
+      }
+      window.requestAnimationFrame(() => {
+        (refreshed?.receipt ? receiptRef.current : feedbackRef.current)?.focus({ preventScroll: true });
+      });
     } finally {
-      setWorking(false);
+      if (requestEpoch === requestEpochRef.current) setPendingCommand(null);
     }
-  }, [load, wardrobeItemId]);
+  }, [current, load, wardrobeItemId, workspace]);
 
-  const kept = workspace?.slots.filter((slot) => slot.state === "KEPT").length ?? 0;
-  const progress = workspace ? Math.round((kept / workspace.slots.length) * 100) : 0;
+  const pendingText = pendingCommand && current ? pendingLabel(pendingCommand, current) : null;
+  const failedWithoutFeedback = !pendingText && !error && !lastReceipt && current?.state === "FAILED";
+
+  const footer = workspace?.nextAction === "ADVANCE" ? (
+    <button className="button button-primary studio-set-build" disabled={working} onClick={() => void runCommand("ADVANCE_CURRENT")} type="button">
+      {pendingCommand === "ADVANCE_CURRENT" ? <LoaderCircle aria-hidden="true" className="studio-spin" size={18} /> : <Sparkles aria-hidden="true" size={18} />}
+      {pendingCommand === "ADVANCE_CURRENT" ? pendingText : workspace.nextActionLabel}
+      {Number(workspace.maxAdditionalCostUsd) > 0 ? <small>up to ${workspace.maxAdditionalCostUsd}</small> : null}
+    </button>
+  ) : workspace?.nextAction === "REVIEW" && fixing ? (
+    <div className="studio-set-fix-actions">
+      <button className="button button-secondary" disabled={working} onClick={() => setFixing(false)} type="button">Cancel</button>
+      <button className="button button-primary" disabled={working || !correction.trim()} onClick={() => void runCommand("FIX_CURRENT", { correction })} type="button">
+        {pendingCommand === "FIX_CURRENT" ? <LoaderCircle aria-hidden="true" className="studio-spin" size={18} /> : null}
+        {pendingCommand === "FIX_CURRENT" ? "Applying correction…" : "Make correction"}
+      </button>
+    </div>
+  ) : workspace?.nextAction === "REVIEW" ? (
+    <div className="studio-set-review-actions">
+      <button className="button button-secondary" disabled={working} onClick={() => void runCommand("REJECT_CURRENT")} type="button">
+        {pendingCommand === "REJECT_CURRENT" ? <LoaderCircle aria-hidden="true" className="studio-spin" size={18} /> : null}
+        {pendingCommand === "REJECT_CURRENT" ? "Rejecting…" : "Reject"}
+      </button>
+      <button className="button button-secondary" disabled={working} onClick={() => setFixing(true)} type="button">Fix one thing</button>
+      <button className="button button-primary" disabled={working} onClick={() => void runCommand("KEEP_CURRENT")} type="button">
+        {pendingCommand === "KEEP_CURRENT" ? <LoaderCircle aria-hidden="true" className="studio-spin" size={18} /> : null}
+        {pendingCommand === "KEEP_CURRENT" ? "Keeping…" : current?.inferred ? "It matches" : "Keep"}
+      </button>
+    </div>
+  ) : workspace?.nextAction === "DONE" ? (
+    <button className="button button-primary" onClick={onDismiss} type="button">Done</button>
+  ) : workspace?.nextAction === "BLOCKED" ? (
+    <a
+      className="button button-primary"
+      href={current?.key === "LULU_TRY_ON"
+        ? "/studio/models"
+        : `/studio/wardrobe/${encodeURIComponent(wardrobeItemId)}`}
+    >
+      {workspace.nextActionLabel}
+    </a>
+  ) : undefined;
 
   return (
     <StudioTaskSheet
-      className="studio-set-sheet"
-      eyebrow="Garment set"
-      footer={workspace && workspace.nextAction === "BUILD" ? (
-        <button className="button button-primary studio-set-build" disabled={working} onClick={() => void build()} type="button">
-          {working ? <LoaderCircle aria-hidden="true" className="spin" size={18} /> : <Sparkles aria-hidden="true" size={18} />}
-          {workspace.slots.some((slot) => slot.state === "FAILED") ? "Try unfinished views" : "Build missing views"}
-          {Number(workspace.maxAdditionalCostUsd) > 0 ? <small>up to ${workspace.maxAdditionalCostUsd}</small> : null}
-        </button>
-      ) : undefined}
+      busy={working}
+      busyLabel={pendingText ?? "Saving this Genesis action"}
+      className="studio-set-sheet studio-genesis-sheet"
+      eyebrow="Genesis"
+      footer={footer}
       onDismiss={() => {
         if (working) return false;
         onDismiss();
       }}
       open={open}
-      progress={progress}
-      progressLabel="Garment set progress"
+      progress={workspace ? workspace.progress.percent : undefined}
+      progressLabel="Genesis progress"
       returnFocus={returnFocus}
-      title={workspace?.title ?? "Build the set"}
+      title={workspace?.title ?? "Garment Genesis"}
     >
-      <div aria-live="polite" className="studio-set-status">
-        {error ? <p className="studio-set-error"><AlertCircle aria-hidden="true" size={17} />{error}</p> : null}
-        {!workspace && !error ? <p><LoaderCircle aria-hidden="true" className="spin" size={18} />Opening set</p> : null}
-        {workspace?.state === "COMPLETE" ? <p><Check aria-hidden="true" size={18} />Set complete. Everything remains private until published.</p> : null}
+      <div className="studio-set-status">
+        {pendingText ? (
+          <div aria-live="polite" className="studio-set-feedback is-pending" ref={feedbackRef} role="status" tabIndex={-1}>
+            <LoaderCircle aria-hidden="true" className="studio-spin" size={18} />
+            <span><strong>{pendingText}</strong><small>Your accepted work stays in place.</small></span>
+          </div>
+        ) : error ? (
+          <div aria-live="assertive" className="studio-set-feedback is-error" ref={feedbackRef} role="alert" tabIndex={-1}>
+            <AlertCircle aria-hidden="true" size={18} />
+            <span><strong>{error.title}</strong><small>{error.detail}</small></span>
+          </div>
+        ) : lastReceipt ? (
+          <div aria-live="polite" className="studio-set-feedback is-success" ref={feedbackRef} role="status" tabIndex={-1}>
+            <Check aria-hidden="true" size={18} />
+            <span><strong>{lastReceipt.title}</strong><small>{lastReceipt.detail}</small></span>
+          </div>
+        ) : failedWithoutFeedback ? (
+          <div className="studio-set-feedback is-error" ref={feedbackRef} role="status" tabIndex={-1}>
+            <AlertCircle aria-hidden="true" size={18} />
+            <span><strong>View not made</strong><small>{current.canRetry ? "The last attempt stayed out of the set. Try this view again." : workspace?.missingEvidence ?? "Add the required evidence to continue."}</small></span>
+          </div>
+        ) : !workspace ? (
+          <div aria-live="polite" className="studio-set-feedback is-pending" role="status">
+            <LoaderCircle aria-hidden="true" className="studio-spin" size={18} />
+            <span><strong>Opening saved work</strong><small>Restoring the current view.</small></span>
+          </div>
+        ) : null}
       </div>
 
       {workspace ? (
-        <ol className="studio-set-grid">
-          {workspace.slots.map((slot) => {
-            const itemIndex = slot.assetUrl
-              ? mediaItems.findIndex((item) => item.src === slot.assetUrl)
-              : -1;
-            return (
-              <li className={`studio-set-slot is-${slot.state.toLowerCase()}`} key={slot.key}>
-                {slot.assetUrl && itemIndex >= 0 ? (
-                  <StudioMediaButton
-                    className="studio-set-media"
-                    index={itemIndex}
-                    items={mediaItems}
-                    label={`Open ${slot.label}`}
-                  >
-                    <img alt="" src={slot.assetUrl} />
-                  </StudioMediaButton>
-                ) : (
-                  <div aria-hidden="true" className="studio-set-placeholder">
-                    {slot.state === "BUILDING"
-                      ? <LoaderCircle className="spin" size={22} />
-                      : <Sparkles size={22} />}
-                  </div>
-                )}
-                <div className="studio-set-slot-copy">
-                  <strong>{slot.label}</strong>
-                  <span>{slotStatus(slot)}</span>
-                  {slot.inferred ? <small>AI-completed view</small> : null}
+        <div aria-busy={working || workspace.nextAction === "WAIT"} className="studio-genesis-workspace">
+          <header className="studio-genesis-orient">
+            <p>{stageLabel(workspace)} · {workspace.progress.kept} of {workspace.progress.total}</p>
+            <h3>{workspace.nextActionLabel}</h3>
+            {workspace.nextAction === "WAIT" ? <span>This view stays saved with the piece.</span> : null}
+            {workspace.missingEvidence ? <span>{workspace.missingEvidence}</span> : null}
+          </header>
+
+          {workspace.receipt ? (
+            <section aria-live="polite" className="studio-genesis-receipt" ref={receiptRef} role="status" tabIndex={-1}>
+              <div className="studio-genesis-receipt-motion">
+                <WardrobeMotion artwork="logo" polarity="auto" size="sm" variant="success" />
+              </div>
+              <div>
+                <h3>{workspace.receipt.title}</h3>
+                <p>{workspace.receipt.detail}</p>
+                <span>Private</span>
+              </div>
+            </section>
+          ) : current ? (
+            <section className={`studio-genesis-current is-${current.state.toLowerCase()}`}>
+              {current.assetUrl && currentMediaIndex >= 0 ? (
+                <StudioMediaButton
+                  className="studio-genesis-media"
+                  index={currentMediaIndex}
+                  items={mediaItems}
+                  label={`Open ${current.label}`}
+                >
+                  <img alt="" src={current.assetUrl} />
+                </StudioMediaButton>
+              ) : (
+                <div aria-hidden="true" className="studio-genesis-placeholder">
+                  {current.state === "BUILDING"
+                    ? <LoaderCircle className="studio-spin" size={28} />
+                    : <Sparkles size={28} />}
                 </div>
-                {slot.state === "REVIEW" ? (
-                  <div className="studio-set-decisions">
-                    <button disabled={working} onClick={() => void decide(slot, "REJECT")} type="button">Fix</button>
-                    <button className="button-primary" disabled={working} onClick={() => void decide(slot, "KEEP")} type="button">
-                      {slot.inferred ? "Yes, it matches" : "Keep"}
-                    </button>
-                  </div>
-                ) : null}
-              </li>
-            );
-          })}
-        </ol>
+              )}
+              <div className="studio-genesis-current-copy">
+                <span>{current.view}</span>
+                <h4>{current.label}</h4>
+                <p>{slotStatus(current, true)}</p>
+                {current.inferred ? <small>Presentation only · compare with the real garment</small> : null}
+              </div>
+            </section>
+          ) : null}
+
+          {fixing ? (
+            <label className="studio-genesis-correction">
+              <span>Fix one thing</span>
+              <textarea
+                maxLength={500}
+                onChange={(event) => setCorrection(event.target.value)}
+                placeholder="Only the exact change"
+                ref={correctionRef}
+                rows={3}
+                value={correction}
+              />
+            </label>
+          ) : null}
+
+          <details className="studio-genesis-sequence">
+            <summary><span>View sequence</span><ChevronDown aria-hidden="true" size={17} /></summary>
+            <ol>
+              {workspace.slots.map((slot) => (
+                <li aria-current={slot.key === workspace.currentSlotKey ? "step" : undefined} key={slot.key}>
+                  <span>{slot.view}</span>
+                  <strong>{slot.label}</strong>
+                  <small>{slotStatus(slot, slot.key === workspace.currentSlotKey)}</small>
+                </li>
+              ))}
+            </ol>
+          </details>
+        </div>
       ) : null}
     </StudioTaskSheet>
   );

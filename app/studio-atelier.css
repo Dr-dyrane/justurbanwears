@@ -25,11 +25,11 @@ body:has(.studio-shell) {
 
 html[data-theme="dark"] .studio-shell,
 html[data-theme="dark"] body:has(.studio-shell) {
-  --atelier-canvas: #0f0c0a;
-  --atelier-canvas-strong: #16110f;
-  --atelier-panel: rgba(28, 23, 20, 0.86);
-  --atelier-panel-strong: #201a17;
-  --atelier-panel-soft: rgba(31, 25, 22, 0.64);
+  --atelier-canvas: var(--dyrane-dark-canvas);
+  --atelier-canvas-strong: var(--dyrane-dark-canvas-deep);
+  --atelier-panel: color-mix(in srgb, var(--dyrane-dark-surface) 88%, transparent);
+  --atelier-panel-strong: var(--dyrane-dark-surface-strong);
+  --atelier-panel-soft: color-mix(in srgb, var(--dyrane-dark-surface) 68%, transparent);
   --atelier-ink: #f3ede8;
   --atelier-muted: #bdb2ab;
   --atelier-faint: #8f847d;

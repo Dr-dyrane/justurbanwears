@@ -7,8 +7,8 @@
 
 ## Context
 
-Drop 02 is real catalogue state today. It contains sixteen one-off pieces,
-`JUW-025` through `JUW-040`, and is the current public Shop drop. Studio does
+Drop 02 is real catalogue state today. It contains seventeen one-off pieces,
+`JUW-025` through `JUW-040` plus `JUW-042`, and is the current public Shop drop. Studio does
 not yet hold that fact as a first-class business subject.
 
 The current implementation spreads drop meaning across three mechanisms:
@@ -231,7 +231,7 @@ Drop is Wardrobe context, not a service and not a Home metric.
 - Home keeps the four summary signals from ADR 0044. There is no fifth Drop
   orb, no Drop service row and no collection dashboard.
 - Wardrobe shows one compact scope control above its primary collection, for
-  example `Drop 02 · 16 pieces`. The active collection is the default.
+  example `Drop 02 · 17 pieces`. The active collection is the default.
 - Tapping the control opens one bounded sheet. It shows Current first, then
   authorized Draft collections and Past collections through progressive
   disclosure.
@@ -253,16 +253,18 @@ or one exact failure and recovery action.
 
 ## Transitional projection and compatibility
 
-Before `collection_id` is authoritative, a transitional adapter may construct
-collection scopes from an explicit compatibility map of known exact labels.
-For the current repository that map recognizes Drop 01 and Drop 02, identifies
-Drop 02 as current through `CURRENT_SHOP_DROP`, and verifies that Drop 02
-contains exactly the sixteen expected SKUs `JUW-025` through `JUW-040`.
+Before `collection_id` is authoritative, a transitional adapter constructs
+collection scopes from one explicit, reviewed SKU-membership fixture. Drop 01
+contains its eighteen canonical SKUs, including `JUW-004`; Drop 02 contains
+exactly `JUW-025` through `JUW-040` plus `JUW-042` and remains current through
+`CURRENT_SHOP_DROP`.
 
-The adapter must not derive keys by accepting arbitrary text. Unknown labels,
-including historical `Studio wardrobe`, appear as `UNMAPPED_COLLECTION` in
-permissioned diagnostics and block publication rather than being silently
-folded into the active drop.
+The adapter must not derive keys by accepting arbitrary text. Existing
+`drop_label` values such as `Archive` and historical `Studio wardrobe` remain
+truthful presentation or lifecycle evidence and are not rejected or rewritten
+by the additive migration. A catalogue row outside the reviewed fixture stays
+unmapped and cannot publish through the collection-ID path until an authorized
+target is assigned; it is never silently folded into the active drop.
 
 The current compatibility patch that writes `CURRENT_SHOP_DROP` for
 Studio-native publication remains in place until the foreign-key path is live.
@@ -280,15 +282,19 @@ The migration is additive and observable:
    ordinals.
 3. Add nullable `collection_id` to `shop_catalogue_items` and nullable
    `target_collection_id` to `studio_wardrobe_items`.
-4. Backfill catalogue membership from the explicit label-to-ID map. Verify no
-   recognized row remains null and verify Drop 02 membership is exactly
-   `JUW-025` through `JUW-040` before continuing.
+4. Backfill catalogue membership from the explicit reviewed SKU-to-ID fixture,
+   independent of `drop_label`. Verify all eighteen Drop 01 SKUs and all seventeen
+   Drop 02 SKUs exist and resolve to their expected collection before
+   continuing. Preserve every legacy `drop_label` byte.
 5. Backfill existing Studio wardrobe targets from their adopted publication's
    catalogue membership. For an unpublished private item, require an explicit
    active/draft resolution; do not guess from a title, timestamp or media.
-6. Add foreign keys, indexes and membership/lifecycle checks. Make catalogue
-   membership non-null after the backfill gate. Require a target before a
-   wardrobe item can become `READY` or publish.
+6. Add foreign keys, indexes and membership/lifecycle checks. Keep both new
+   foreign-key columns nullable during this additive observation phase so
+   truthful legacy and unpublished rows can remain unmapped. A later guarded
+   migration may make catalogue membership non-null only after every row has
+   an authorized target. Require a target before the new publication path can
+   publish.
 7. Run the new collection projection beside the label adapter and compare
    active collection, membership, counts and Shop results in a read-only
    shadow.
@@ -299,9 +305,11 @@ The migration is additive and observable:
    database active resolution. Retain `drop_label` until a separately reviewed
    destructive cleanup.
 
-Backfill and activation run in transactions with exact expected row counts.
-Any unknown label, duplicate ordinal, multiple active rows or membership
-mismatch aborts the migration without modifying publication or inventory.
+Backfill and activation run in transactions with exact expected canonical
+membership counts. A missing canonical SKU, duplicate ordinal, multiple active
+rows or membership mismatch aborts the migration without modifying publication
+or inventory. An unknown or legacy presentation label does not abort the
+additive migration and does not determine collection identity.
 
 ## Rollback
 
@@ -332,7 +340,7 @@ command payloads or identity-authority metadata.
 ## Acceptance
 
 - The database identifies Drop 02 by stable collection ID/key and verifies its
-  sixteen members `JUW-025` through `JUW-040`.
+  seventeen members `JUW-025` through `JUW-040` plus `JUW-042`.
 - Renaming a collection does not move a piece or alter current-drop selection.
 - Exactly one active collection is resolved by the server; zero or multiple
   active collections fail truthfully and block publication.

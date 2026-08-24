@@ -35,7 +35,7 @@ test("Studio uses Home-owned navigation and one shell-owned stack header", () =>
   assert.match(stackContext, /view === "publishing"\) return \{ backHref: "\/studio", backLabel: "Studio Home", title: "Shop" \}/);
   assert.match(stackContext, /view === "inventory"\) return \{ backHref: "\/studio", backLabel: "Studio Home", title: "Inventory" \}/);
   assert.match(stackContext, /view === "orders"\) return \{ backHref: "\/studio", backLabel: "Studio Home", title: "Orders" \}/);
-  assert.match(commandCenter, /aria-label="Search anything in Studio"/);
+  assert.match(commandCenter, /aria-label="Find a Studio service or piece"/);
   assert.match(commandCenter, /aria-label="Ask Studio"/);
   assert.match(commandCenter, /showSearch \? <button/);
   assert.match(commandCenter, /href="\/studio\/ask"/);
@@ -84,7 +84,7 @@ test("Home presents four primary destinations while search retains all seven dom
   assert.doesNotMatch(home, /<h2[^>]*>Studio<\/h2>/);
   assert.match(home, /studio-home-recent/);
   assert.match(home, /<ArrangeStudioHomeControl \/>/);
-  assert.match(home, /src="\/logo\.png"/);
+  assert.match(home, /artwork="logo" className="studio-home-signoff-mark"/);
   assert.ok(home.indexOf("studio-home-recommendation") < home.indexOf("studio-home-sheet"));
   assert.ok(home.indexOf("studio-home-sheet") < home.indexOf("studio-home-summary"));
   assert.ok(home.indexOf("studio-home-summary") < home.indexOf("<StudioServiceList"));

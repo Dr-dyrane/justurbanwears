@@ -9,7 +9,8 @@ import {
   Shirt,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { LifecycleBadge } from "./atoms/lifecycle-badge";
+import { WardrobeMotion } from "../brand/wardrobe-motion";
+import { LifecycleMeta, STUDIO_LIFECYCLE_PRESENTATION } from "./atoms/lifecycle-meta";
 import { StudioLink as Link } from "./atoms/studio-link";
 import { studioGarmentCover } from "./garment-cover";
 import {
@@ -73,7 +74,7 @@ export function StudioHome() {
     : projected?.summary.available.value ?? null;
 
   if (hydration === "idle" || hydration === "restoring" || (!scenario && (authority.status === "idle" || authority.status === "loading"))) {
-    return <div className="studio-loading" role="status">Opening Lulu Studio…</div>;
+    return <div className="studio-loading studio-loading-brand" role="status"><WardrobeMotion loop polarity="auto" size="sm" variant="loader" /><span>Opening Lulu Studio…</span></div>;
   }
 
   const scenarioTasks = [
@@ -176,7 +177,7 @@ export function StudioHome() {
 
       <section aria-label={`Recommended · ${truthLabel}`} className="studio-home-recommendation">
         <span>Recommended</span>
-        <Link href={primaryTask.href}>
+        <Link data-experience-action="primary" href={primaryTask.href}>
           <h1 id="studio-recommendation-title">{primaryTask.label}</h1>
           <ArrowRight aria-hidden="true" size={24} />
         </Link>
@@ -261,19 +262,30 @@ export function StudioHome() {
                   piece.wardrobeItemId === garment.privateWardrobeItemId || piece.sku === garment.sku
                 ));
                 const cover = studioGarmentCover(garment, listing);
+                const lifecycleState = listing?.state ?? garment.state;
+                const status = STUDIO_LIFECYCLE_PRESENTATION[lifecycleState];
+                const availabilityLabel = stock ? stock.availability.toLowerCase() : "private";
+                const showAvailability = availabilityLabel !== status.label.toLowerCase();
                 return (
-                  <Link className="studio-recent-row" href={`/studio/wardrobe/${encodeURIComponent(garment.id)}`} key={garment.id}>
+                  <Link
+                    className="studio-recent-row"
+                    data-state-tone={status.tone}
+                    href={`/studio/wardrobe/${encodeURIComponent(garment.id)}`}
+                    key={garment.id}
+                  >
                     <span className={`studio-recent-media${cover ? " is-photo" : ""}`} data-variant={garment.visual} aria-hidden="true">
                       {cover ? <img alt="" height={cover.height} loading="lazy" src={cover.src} width={cover.width} /> : <Shirt size={22} strokeWidth={1.4} />}
                     </span>
                     <span className="studio-recent-copy">
                       <small>{garment.sku}</small>
                       <strong>{garment.title}</strong>
-                      <em>{stock ? stock.availability.toLowerCase() : "private"}</em>
+                      <span className="studio-recent-meta">
+                        <LifecycleMeta className="studio-recent-status" state={lifecycleState} />
+                        {showAvailability ? <><i aria-hidden="true">·</i><span>{availabilityLabel}</span></> : null}
+                      </span>
                     </span>
-                    <span className="studio-recent-state">
-                      <LifecycleBadge state={listing?.state ?? garment.state} />
-                      <ArrowRight aria-hidden="true" size={17} />
+                    <span aria-hidden="true" className="studio-recent-disclosure">
+                      <ArrowRight size={17} />
                     </span>
                   </Link>
                 );
@@ -294,7 +306,7 @@ export function StudioHome() {
       </div>
 
       <footer aria-label="Justurban wears" className="studio-home-signoff">
-        <img alt="" className="studio-home-signoff-mark" height="689" src="/logo.png" width="531" />
+        <WardrobeMotion artwork="logo" className="studio-home-signoff-mark" polarity="auto" size="sm" variant="footer" />
       </footer>
       </div>
     </div>

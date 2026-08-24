@@ -50,7 +50,13 @@ const modelSlots = new Set([
   "MODEL_DETAIL",
 ]);
 
-type DatabaseCatalogueRow = Omit<typeof shopCatalogueItems.$inferSelect, "createdAt" | "updatedAt"> & {
+type DatabaseCatalogueRow = Omit<
+  typeof shopCatalogueItems.$inferSelect,
+  "createdAt" | "updatedAt" | "collectionId"
+> & {
+  // Kept optional until migration 0012 is applied ahead of the runtime reader.
+  // The current Shop path remains on the reviewed drop-label fallback meanwhile.
+  collectionId?: string | null;
   availability: "AVAILABLE" | "RESERVED" | "SOLD" | "ARCHIVED" | null;
   publicationId?: string | null;
   publicationOrigin?: string | null;

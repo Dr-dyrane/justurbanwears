@@ -17,6 +17,8 @@ const getClientReady = () => true;
 const getServerReady = () => false;
 
 interface StudioTaskSheetProps {
+  busy?: boolean;
+  busyLabel?: string;
   children: React.ReactNode;
   className?: string;
   eyebrow: string;
@@ -31,6 +33,8 @@ interface StudioTaskSheetProps {
 }
 
 export function StudioTaskSheet({
+  busy = false,
+  busyLabel = "Saving this task",
   children,
   className = "",
   eyebrow,
@@ -51,12 +55,13 @@ export function StudioTaskSheet({
   useDocumentScrollLock(open);
 
   const acceptDismiss = useCallback(() => {
+    if (busy) return false;
     const accepted = onDismiss();
     if (accepted === false) return false;
     const dialog = dialogRef.current;
     if (dialog?.open) dialog.close();
     return true;
-  }, [onDismiss]);
+  }, [busy, onDismiss]);
 
   const { openWithHistory, requestClose } = useHistoryBackedDialog({
     isOpen: open,
@@ -123,11 +128,12 @@ export function StudioTaskSheet({
       onClose={restoreFocus}
       ref={dialogRef}
     >
-      <div className="studio-task-sheet-frame">
+      <div aria-busy={busy || undefined} className="studio-task-sheet-frame">
+        {busy ? <span aria-live="polite" className="sr-only" role="status">{busyLabel}</span> : null}
         <header className="studio-task-sheet-header">
           <div className="studio-task-sheet-leading">
             {onBack ? (
-              <button aria-label="Go back" className="studio-icon-action" onClick={onBack} type="button">
+              <button aria-label="Go back" className="studio-icon-action" disabled={busy} onClick={onBack} type="button">
                 <ArrowLeft aria-hidden="true" size={19} />
               </button>
             ) : null}
@@ -139,6 +145,7 @@ export function StudioTaskSheet({
           <button
             aria-label={`Close ${title}`}
             className="studio-icon-action"
+            disabled={busy}
             onClick={requestClose}
             ref={closeButtonRef}
             type="button"

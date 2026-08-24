@@ -141,6 +141,8 @@ test("WardrobeMotion always resolves through the untouched master and complete m
   assert.match(wearReceipt, /className="juw-receipt-motion"/);
   assert.match(wearReceipt, /artwork="logo" polarity="auto" size="sm" variant="success"/);
   assert.match(studioHome, /className="studio-home-signoff"/);
+  assert.match(studioHome, /className="studio-loading studio-loading-brand"/);
+  assert.match(studioHome, /<WardrobeMotion loop polarity="auto" size="sm" variant="loader" \/>/);
   assert.match(studioHome, /artwork="logo" className="studio-home-signoff-mark" polarity="auto" size="sm" variant="footer"/);
   assert.doesNotMatch(studioHome, /studio-home-signoff-mark" height=\{59\} src="\/logo\.png"/);
   assert.match(lifecyclePanel, /setMilestone\("published"\)/);

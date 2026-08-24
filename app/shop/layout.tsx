@@ -1,5 +1,8 @@
 import { ShopShell } from "../../components/shop/shop-shell";
 import { getServerShopProducts } from "../../lib/shop/server-catalog";
+import "../shop-dark-contrast.css";
+import "../shop-editorial-hero.css";
+import "../shop-product-detail.css";
 
 export const dynamic = "force-dynamic";
 

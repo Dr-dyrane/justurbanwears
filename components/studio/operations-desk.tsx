@@ -20,6 +20,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import type { StudioLifecycleState } from "../../lib/studio/domain/entities";
 import type { StudioAuthorityPiece } from "../../lib/studio/services/studio-authority-client";
 import { LifecycleBadge } from "./atoms/lifecycle-badge";
+import { LifecycleMeta, STUDIO_LIFECYCLE_PRESENTATION } from "./atoms/lifecycle-meta";
 import { StudioLink as Link } from "./atoms/studio-link";
 import { StudioSegmentedView, useStudioSegment } from "./atoms/studio-segmented-view";
 import { StudioTaskSheet } from "./atoms/studio-task-sheet";
@@ -236,8 +237,8 @@ export function OperationsDesk() {
         <section className="studio-operation-section studio-stack-panel" id="studio-view-attention" aria-labelledby="studio-tab-attention" role="tabpanel">
           <div className="studio-section-title"><div><p className="eyebrow">Attention</p><h2>Exceptions to resolve</h2></div><span>{mismatches.length + actionOrders.length} waiting</span></div>
           {mismatches.length || actionOrders.length ? <div className="studio-operation-cards">
-            {mismatches.map((piece) => <article className="studio-operation-card" key={`location:${piece.pieceKey}`}><button className="studio-operation-card-trigger" onClick={(event) => openPiece(piece, event.currentTarget)} type="button"><div className="studio-card-heading"><div><small>{piece.sku ?? "Private piece"}</small><h3>{piece.title}</h3></div><CircleAlert aria-label="Location differs" size={18} /></div><dl><div><dt>Expected</dt><dd>{piece.expectedLocationLabel}</dd></div><div><dt>Last seen</dt><dd>{piece.observedLocationLabel ?? "Not confirmed"}</dd></div></dl><span className="studio-operation-card-open">Review location <ChevronRight aria-hidden="true" size={17} /></span></button></article>)}
-            {actionOrders.map((order) => <article className="studio-operation-card" key={`order:${order.reference}`}><Link className="studio-operation-card-trigger" href={`/studio/orders/${order.reference}#studio-order-next-action`}><div className="studio-card-heading"><div><small>{order.reference}</small><h3>{order.lines[0]?.name ?? "Wardrobe order"}</h3></div><LifecycleBadge state={order.return ? "DRAFT" : "RESERVED"} /></div><dl><div><dt>Exception</dt><dd>{order.return ? "Return needs review" : "Order needs action"}</dd></div><div><dt>Payment</dt><dd>{order.fundsConfirmationStatus.toLowerCase()}</dd></div></dl><span className="studio-operation-card-open">Open in Orders <ChevronRight aria-hidden="true" size={17} /></span></Link></article>)}
+            {mismatches.map((piece) => <article className="studio-operation-card studio-compact-row" data-state-tone="critical" key={`location:${piece.pieceKey}`}><button className="studio-operation-card-trigger" onClick={(event) => openPiece(piece, event.currentTarget)} type="button"><div className="studio-card-heading"><div><small>{piece.sku ?? "Private piece"}</small><h3>{piece.title}</h3></div><CircleAlert aria-label="Location differs" size={18} /></div><dl><div><dt>Expected</dt><dd>{piece.expectedLocationLabel}</dd></div><div><dt>Last seen</dt><dd>{piece.observedLocationLabel ?? "Not confirmed"}</dd></div></dl><span className="studio-operation-card-open"><span className="sr-only">Review location</span><ChevronRight aria-hidden="true" size={17} /></span></button></article>)}
+            {actionOrders.map((order) => <article className="studio-operation-card studio-compact-row" data-state-tone={order.return ? "critical" : "caution"} key={`order:${order.reference}`}><Link className="studio-operation-card-trigger" href={`/studio/orders/${order.reference}#studio-order-next-action`}><div className="studio-card-heading"><div><small>{order.reference}</small><h3>{order.lines[0]?.name ?? "Wardrobe order"}</h3><LifecycleMeta state={order.return ? "DRAFT" : "RESERVED"} /></div></div><dl><div><dt>Exception</dt><dd>{order.return ? "Return needs review" : "Order needs action"}</dd></div><div><dt>Payment</dt><dd>{order.fundsConfirmationStatus.toLowerCase()}</dd></div></dl><span className="studio-operation-card-open"><span className="sr-only">Open in Orders</span><ChevronRight aria-hidden="true" size={17} /></span></Link></article>)}
           </div> : <div className="studio-quiet-empty"><Check aria-hidden="true" size={24} /><div><strong>Nothing needs attention</strong><p>Inventory, holds, and customer handoffs are reconciled.</p></div></div>}
         </section>
       ) : null}
@@ -246,16 +247,20 @@ export function OperationsDesk() {
         <section className="studio-operation-section studio-stack-panel" id="studio-view-inventory" aria-labelledby="studio-tab-inventory" role="tabpanel">
           <div className="studio-section-title"><div><p className="eyebrow">Inventory</p><h2>Pieces and physical truth</h2></div><span>{pieces.length} pieces</span></div>
           {pieces.length ? <div className="studio-table studio-inventory-list" role="list" aria-label="Inventory pieces">
-            {pieces.map((piece) => (
+            {pieces.map((piece) => {
+              const pieceState = lifecycle(piece);
+              const status = STUDIO_LIFECYCLE_PRESENTATION[pieceState];
+              return (
               <article role="listitem" key={piece.pieceKey}>
-                <button aria-haspopup="dialog" className="studio-table-row studio-inventory-row-trigger" onClick={(event) => openPiece(piece, event.currentTarget)} type="button">
+                <button aria-haspopup="dialog" className="studio-table-row studio-inventory-row-trigger studio-compact-row" data-state-tone={status.tone} onClick={(event) => openPiece(piece, event.currentTarget)} type="button">
                   <span className={`studio-inventory-media${piece.imageSrc ? " is-photo" : ""}`}>{piece.imageSrc ? <img alt="" height={160} loading="lazy" src={piece.imageSrc} width={128} /> : <Shirt aria-hidden="true" size={22} />}</span>
-                  <span className="studio-inventory-copy"><small>{piece.sku ?? "Private piece"}</small><strong>{piece.title}</strong><em>{piece.activeHold ? `Held for ${piece.activeHold.customerName}` : piece.orderReference ? `Order ${piece.orderReference}` : piece.expectedCustody.toLowerCase()}</em></span>
+                  <span className="studio-inventory-copy"><small>{piece.sku ?? "Private piece"}</small><strong>{piece.title}</strong><span className="studio-inventory-meta"><LifecycleMeta state={pieceState} /><i aria-hidden="true">·</i><em>{piece.observedLocationLabel ?? piece.expectedLocationLabel}</em></span></span>
                   <span className="studio-inventory-stock"><strong>{piece.observedLocationLabel ?? piece.expectedLocationLabel}</strong><small>{piece.hasLocationMismatch ? `Expected ${piece.expectedLocationLabel}` : piece.observedAt ? `Confirmed ${shortDate(piece.observedAt)}` : "Expected location"}</small></span>
-                  <span className="studio-inventory-action"><LifecycleBadge state={lifecycle(piece)} />{piece.hasLocationMismatch ? <CircleAlert aria-label="Location differs" size={17} /> : <ChevronRight aria-hidden="true" size={17} />}</span>
+                  <span className="studio-inventory-action">{piece.hasLocationMismatch ? <CircleAlert aria-label="Location differs" size={17} /> : <ChevronRight aria-hidden="true" size={17} />}</span>
                 </button>
               </article>
-            ))}
+              );
+            })}
           </div> : <div className="studio-quiet-empty"><Boxes aria-hidden="true" size={24} /><div><strong>No pieces yet</strong><p>Inventory begins with garment intake.</p></div><Link className="button button-primary" href="/studio/wardrobe?intake=1">Intake garment</Link></div>}
         </section>
       ) : null}
@@ -265,7 +270,7 @@ export function OperationsDesk() {
           <div className="studio-section-title"><div><p className="eyebrow">Holds</p><h2>People waiting for a piece</h2></div><span>{activeHolds.length} active</span></div>
           {activeHolds.length ? <div className="studio-operation-cards">{activeHolds.map((hold) => {
             const piece = pieces.find((candidate) => candidate.sku === hold.sku);
-            return <article className="studio-operation-card" key={hold.id}><button className="studio-operation-card-trigger" onClick={(event) => piece && openPiece(piece, event.currentTarget)} type="button"><div className="studio-card-heading"><div><small>{hold.sku}</small><h3>{piece?.title ?? hold.sku}</h3></div><LifecycleBadge state="RESERVED" /></div><dl><div><dt>For</dt><dd>{hold.customerName}</dd></div><div><dt>Contact</dt><dd>{hold.contact}</dd></div><div><dt>Expires</dt><dd>{shortDate(hold.expiresAt)}</dd></div></dl><span className="studio-operation-card-open">Review <ChevronRight aria-hidden="true" size={17} /></span></button></article>;
+            return <article className="studio-operation-card studio-compact-row" data-state-tone="caution" key={hold.id}><button className="studio-operation-card-trigger" onClick={(event) => piece && openPiece(piece, event.currentTarget)} type="button"><div className="studio-card-heading"><div><small>{hold.sku}</small><h3>{piece?.title ?? hold.sku}</h3><LifecycleMeta state="RESERVED" /></div></div><dl><div><dt>For</dt><dd>{hold.customerName}</dd></div><div><dt>Contact</dt><dd>{hold.contact}</dd></div><div><dt>Expires</dt><dd>{shortDate(hold.expiresAt)}</dd></div></dl><span className="studio-operation-card-open"><span className="sr-only">Review</span><ChevronRight aria-hidden="true" size={17} /></span></button></article>;
           })}</div> : <div className="studio-quiet-empty"><ClipboardCheck aria-hidden="true" size={24} /><div><strong>No active holds</strong><p>Open an available piece to hold it for a customer.</p></div></div>}
         </section>
       ) : null}

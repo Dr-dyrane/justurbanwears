@@ -186,10 +186,11 @@ test("platform PNGs preserve transparent seal exteriors at their required dimens
 });
 
 test("every live surface uses the centralized 2026.3 seal identity contract", async () => {
-  const [layout, manifest, studio, shop, brandAssets, brandIcon, brandWordmark, styles, logoRoute, wordmarkRoute, iconRoute] = await Promise.all([
+  const [layout, manifest, studio, studioHome, shop, brandAssets, brandIcon, brandWordmark, styles, logoRoute, wordmarkRoute, iconRoute] = await Promise.all([
     readFile(path.join(root, "app", "layout.tsx"), "utf8"),
     readFile(path.join(root, "app", "manifest.ts"), "utf8"),
     readFile(path.join(root, "components", "studio", "app-shell.tsx"), "utf8"),
+    readFile(path.join(root, "components", "studio", "studio-home.tsx"), "utf8"),
     readFile(path.join(root, "components", "shop", "shop-shell.tsx"), "utf8"),
     readFile(path.join(root, "lib", "brand", "assets.ts"), "utf8"),
     readFile(path.join(root, "components", "brand", "brand-icon.tsx"), "utf8"),
@@ -201,8 +202,8 @@ test("every live surface uses the centralized 2026.3 seal identity contract", as
   ]);
   assert.match(layout, /BRAND_ASSETS\.favicon\.runtimeSvg/);
   assert.match(manifest, /BRAND_ASSETS\.icon\.runtimeMaskable512/);
-  assert.equal(studio.match(/<BrandIcon\b/g)?.length, 1);
-  assert.equal(studio.match(/<BrandWordmark\b/g)?.length, 1);
+  assert.doesNotMatch(studio, /<BrandIcon\b|<BrandWordmark\b/);
+  assert.match(studioHome, /<WardrobeMotion artwork="logo" className="studio-home-signoff-mark"/);
   assert.equal(shop.match(/<BrandWordmark\b/g)?.length, 2);
   assert.match(brandIcon, /BRAND_ASSETS\.icon\.runtimeSvg/);
   assert.match(brandWordmark, /BRAND_ASSETS\.wordmark\.runtimeSvg/);

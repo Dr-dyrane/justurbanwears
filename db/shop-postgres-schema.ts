@@ -25,6 +25,40 @@ export const shopCatalogueAvailability = pgEnum("shop_catalogue_availability", [
   "ARCHIVED",
 ]);
 
+export const shopCollectionState = pgEnum("shop_collection_state", [
+  "DRAFT",
+  "ACTIVE",
+  "ARCHIVED",
+]);
+
+export const shopCollections = pgTable("shop_collections", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  key: varchar("key", { length: 80 }).notNull(),
+  label: varchar("label", { length: 120 }).notNull(),
+  ordinal: integer("ordinal").notNull(),
+  version: integer("version").default(1).notNull(),
+  state: shopCollectionState("state").default("DRAFT").notNull(),
+  activatedAt: timestamp("activated_at", { withTimezone: true }),
+  archivedAt: timestamp("archived_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("shop_collections_key_unique").on(table.key),
+  uniqueIndex("shop_collections_ordinal_unique").on(table.ordinal),
+  uniqueIndex("shop_collections_one_active_unique")
+    .on(table.state)
+    .where(sql`${table.state} = 'ACTIVE'`),
+  check("shop_collections_key_format", sql`${table.key} ~ '^drop-[0-9]{2,}$'`),
+  check("shop_collections_label_present", sql`length(trim(${table.label})) > 0`),
+  check("shop_collections_ordinal_positive", sql`${table.ordinal} > 0`),
+  check("shop_collections_version_positive", sql`${table.version} > 0`),
+  check("shop_collections_lifecycle_timestamps", sql`
+    (${table.state} = 'DRAFT' and ${table.activatedAt} is null and ${table.archivedAt} is null)
+    or (${table.state} = 'ACTIVE' and ${table.activatedAt} is not null and ${table.archivedAt} is null)
+    or (${table.state} = 'ARCHIVED' and ${table.archivedAt} is not null)
+  `),
+]);
+
 // Compact public identities for Studio-published pieces. Sequence values may
 // have harmless gaps; they are never derived with a race-prone max+1 query.
 export const shopDynamicSkuSequence = pgSequence("shop_dynamic_sku_sequence", {
@@ -42,6 +76,8 @@ export const shopCatalogueItems = pgTable("shop_catalogue_items", {
   condition: text("condition").notNull(),
   colour: text("colour").notNull(),
   dropLabel: text("drop_label").notNull(),
+  collectionId: uuid("collection_id")
+    .references(() => shopCollections.id, { onDelete: "restrict" }),
   tone: text("tone").notNull(),
   silhouette: text("silhouette").notNull(),
   note: text("note").notNull(),
@@ -64,6 +100,7 @@ export const shopCatalogueItems = pgTable("shop_catalogue_items", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 }, (table) => [
   uniqueIndex("shop_catalogue_items_slug_unique").on(table.slug),
+  index("shop_catalogue_items_collection_idx").on(table.collectionId),
   check("shop_catalogue_items_price_nonnegative", sql`${table.price} >= 0`),
   check("shop_catalogue_items_details_array", sql`jsonb_typeof(${table.details}) = 'array'`),
   check("shop_catalogue_items_measurements_array", sql`jsonb_typeof(${table.measurements}) = 'array'`),
@@ -863,12 +900,15 @@ export const studioWardrobeItems = pgTable("studio_wardrobe_items", {
   quantity: integer("quantity").default(1).notNull(),
   state: varchar("state", { length: 24 }).default("DRAFT").notNull(),
   version: integer("version").default(1).notNull(),
+  targetCollectionId: uuid("target_collection_id")
+    .references(() => shopCollections.id, { onDelete: "restrict" }),
   approvedAssetId: uuid("approved_asset_id").references(() => studioAssets.id, { onDelete: "restrict" }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 }, (table) => [
   uniqueIndex("studio_wardrobe_items_intake_unique").on(table.intakeId),
   index("studio_wardrobe_items_operator_updated_idx").on(table.operatorSubject, table.updatedAt),
+  index("studio_wardrobe_items_target_collection_idx").on(table.targetCollectionId),
   check("studio_wardrobe_items_price_nonnegative", sql`${table.price} >= 0`),
   check("studio_wardrobe_items_quantity_one", sql`${table.quantity} = 1`),
   check("studio_wardrobe_items_version_positive", sql`${table.version} > 0`),

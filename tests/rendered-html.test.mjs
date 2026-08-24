@@ -100,6 +100,8 @@ test("publishes the Violet romper hero and the exact seventeen-piece Drop 02", a
     assert.match(visibleBody, new RegExp(name));
   }
 
+  // The lead product is rendered once as the editorial hero; the remaining
+  // sixteen products retain the standard catalogue-card contract.
   assert.equal((visibleBody.match(/class="shop-product-card"/g) ?? []).length, 16);
   assert.doesNotMatch(visibleBody, /shop-release-index|shop-wardrobe-preview|shop-editorial-rail|shop-values/);
   assert.doesNotMatch(visibleBody, /GARMENT STUDY|(?:DYN-0(?:8[1-9]|9[0-2])|JUW-0(?:0[1-9]|1[0-2]))|Six dresses from Lulu’s wardrobe|Warm colour\. Clean movement/);
@@ -113,16 +115,13 @@ test("keeps the private Studio and public shop visibly distinct", async () => {
 
   const html = await response.text();
   const visibleBody = visibleMarkup(html);
-  assert.match(visibleBody, /Studio · Lulu/);
-  assert.match(visibleBody, /Business home/);
   assert.match(visibleBody, /Opening Lulu Studio/);
-  assert.match(visibleBody, /href="\/studio\/wardrobe"/);
-  assert.match(visibleBody, /href="\/studio\/operations"/);
-  assert.match(visibleBody, /data-mobile-chrome-mode="compact"/);
+  assert.match(visibleBody, /data-experience-layer="island"/);
+  assert.match(visibleBody, /aria-label="Studio Home controls"/);
   assert.match(visibleBody, /aria-label="Profile &amp; settings — Lulu’s Studio spaces"/);
-  assert.match(visibleBody, /aria-label="Studio tabs"/);
-  assert.match(visibleBody, /aria-label="Add garment"/);
-  assert.match(visibleBody, /class="studio-mobile-tabs shop-dock-lens"/);
+  assert.match(visibleBody, /aria-label="Find a Studio service or piece"/);
+  assert.match(visibleBody, /Ask Studio/);
+  assert.doesNotMatch(visibleBody, /aria-label="Studio tabs"|studio-mobile-tabs|shop-dock-lens/);
   assert.doesNotMatch(visibleBody, /Show navigation|id="studio-mobile-navigation"/);
   assert.doesNotMatch(visibleBody, /Clothes with a second first impression/);
 });

@@ -19,6 +19,7 @@ import {
 import type { StudioAuthorityModel } from "../../lib/studio/services/studio-authority-client";
 import { APPROVED_PUBLIC_MODEL_PREVIEW } from "../../lib/studio/projections/approved-catalogue";
 import { LifecycleBadge } from "./atoms/lifecycle-badge";
+import { LifecycleMeta } from "./atoms/lifecycle-meta";
 import { StudioLink } from "./atoms/studio-link";
 import { StudioSegmentedView, useStudioSegment } from "./atoms/studio-segmented-view";
 import { StudioTaskSheet } from "./atoms/studio-task-sheet";
@@ -219,8 +220,7 @@ export function ModelAtelier() {
       <h1 className="sr-only" id="models">Models</h1>
       {selected ? (
         <StudioLink className="studio-stack-current" href={`/studio/media/new?model=${encodeURIComponent(selected.id)}`}>
-          <span><small>Continue</small><strong>Create with {selected.name}</strong></span>
-          <LifecycleBadge state={selected.state === "READY" ? "READY" : "DRAFT"} />
+          <span><small>Continue</small><strong>Create with {selected.name}</strong><LifecycleMeta state={selected.state === "READY" ? "READY" : "DRAFT"} /></span>
           <ArrowRight aria-hidden="true" size={18} />
         </StudioLink>
       ) : (
@@ -235,7 +235,7 @@ export function ModelAtelier() {
       <div className="studio-model-layout">
         <aside className="studio-model-index">
           <div className="studio-index-heading"><span>Models</span><strong>{readyModels.length}</strong></div>
-          <div className="studio-model-list" role="group" aria-label="Studio models">{readyModels.map((model) => <button aria-pressed={selected?.id === model.id} className={selected?.id === model.id ? "studio-model-option is-selected" : "studio-model-option"} key={model.id} onClick={() => setSelectedId(model.id)} type="button"><span className="studio-model-avatar" aria-hidden="true"><UserRound size={21} /></span><span><strong>{model.name}</strong><small>{model.kind === "LULU_V3" ? "Approved default" : "Authority confirmed"}</small></span><LifecycleBadge state="READY" /></button>)}</div>
+          <div className="studio-model-list" role="group" aria-label="Studio models">{readyModels.map((model) => <button aria-pressed={selected?.id === model.id} className={selected?.id === model.id ? "studio-model-option is-selected" : "studio-model-option"} key={model.id} onClick={() => setSelectedId(model.id)} type="button"><span className="studio-model-avatar" aria-hidden="true"><UserRound size={21} /></span><span><strong>{model.name}</strong><small>{model.kind === "LULU_V3" ? "Approved default" : "Authority confirmed"}</small><LifecycleMeta state="READY" /></span></button>)}</div>
           <button className="studio-model-create" onClick={(event) => openTask("create", event.currentTarget)} type="button"><Plus aria-hidden="true" size={18} /><span><strong>Add another model</strong><small>Photo and usage source required</small></span><ChevronRight aria-hidden="true" size={16} /></button>
         </aside>
 

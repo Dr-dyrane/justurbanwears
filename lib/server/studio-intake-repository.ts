@@ -190,6 +190,29 @@ export async function createOrReuseGeneration(input: typeof studioGenerations.$i
   return row;
 }
 
+export async function findGenerationByFingerprint(input: {
+  intakeId: string;
+  fingerprint: string;
+}): Promise<GenerationRow | null> {
+  const [row] = await (await getStudioDb()).select().from(studioGenerations).where(and(
+    eq(studioGenerations.intakeId, input.intakeId),
+    eq(studioGenerations.fingerprint, input.fingerprint),
+  )).limit(1);
+  return row ?? null;
+}
+
+export async function claimGenerationCommand(id: string): Promise<boolean> {
+  const rows = await (await getStudioDb()).update(studioGenerations).set({
+    state: "RUNNING",
+    errorCode: null,
+    updatedAt: new Date(),
+  }).where(and(
+    eq(studioGenerations.id, id),
+    inArray(studioGenerations.state, ["PENDING", "FAILED"]),
+  )).returning({ id: studioGenerations.id });
+  return rows.length === 1;
+}
+
 export async function claimGeneration(id: string): Promise<boolean> {
   const rows = await (await getStudioDb()).update(studioGenerations).set({
     state: "RUNNING",

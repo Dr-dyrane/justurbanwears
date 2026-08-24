@@ -133,7 +133,7 @@ test("scenario projection is explicit and uses the sanitized collection compatib
     projection.collectionScopes.map((scope) => ({ key: scope.key, pieces: scope.counts.pieces })),
     [
       { key: "drop-01", pieces: 18 },
-      { key: "drop-02", pieces: 16 },
+      { key: "drop-02", pieces: 17 },
     ],
   );
   assert.equal(projection.capabilities.find((item) => item.id === "COLLECTIONS_READ")?.state, "READ_ONLY_COMPATIBILITY");
@@ -154,6 +154,6 @@ test("collection compatibility map exposes only exact Drop 01 and Drop 02 scopes
     { id: "compat:drop-01", key: "drop-01", label: "Drop 01", current: false, authority: "COMPATIBILITY" },
     { id: "compat:drop-02", key: "drop-02", label: "Drop 02", current: true, authority: "COMPATIBILITY" },
   ]);
-  assert.deepEqual(projection.collectionScopes.map((scope) => scope.counts.pieces), [18, 16]);
+  assert.deepEqual(projection.collectionScopes.map((scope) => scope.counts.pieces), [18, 17]);
   assert.equal(projection.degradedSources.some((item) => item.source === "COLLECTIONS"), false);
 });

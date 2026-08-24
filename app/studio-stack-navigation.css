@@ -11,6 +11,31 @@ html:not([data-theme="dark"]) .studio-stack-shell {
   --studio-line: rgba(65, 48, 39, 0.14);
 }
 
+/* One dark material ladder for every Studio route. Coral stays an action
+   colour; near-black surfaces carry the interface. */
+html[data-theme="dark"] .studio-stack-shell {
+  --studio-canvas: var(--dyrane-dark-canvas);
+  --studio-canvas-deep: var(--dyrane-dark-canvas-deep);
+  --studio-panel: color-mix(in srgb, var(--dyrane-dark-surface) 90%, transparent);
+  --studio-panel-strong: var(--dyrane-dark-surface-strong);
+  --studio-panel-muted: color-mix(in srgb, var(--dyrane-dark-surface) 78%, var(--dyrane-dark-surface-muted));
+  --studio-panel-hover: color-mix(in srgb, var(--dyrane-dark-surface) 54%, var(--dyrane-dark-surface-muted));
+  --studio-selection: color-mix(in srgb, var(--dyrane-dark-accent-soft) 58%, var(--dyrane-dark-canvas-deep));
+  --studio-cocoa: var(--dyrane-dark-surface);
+  --studio-cocoa-hover: var(--dyrane-dark-surface-strong);
+  --studio-mineral: color-mix(in srgb, var(--dyrane-dark-surface) 82%, var(--dyrane-dark-canvas));
+  --studio-mineral-strong: color-mix(in srgb, var(--dyrane-dark-surface-strong) 82%, var(--dyrane-dark-canvas-deep));
+}
+
+html[data-theme="dark"] .studio-stack-shell .studio-premium-surface {
+  --studio-panel: color-mix(in srgb, var(--dyrane-dark-surface) 90%, transparent);
+  --studio-panel-strong: var(--dyrane-dark-surface-strong);
+  --studio-panel-muted: color-mix(in srgb, var(--dyrane-dark-surface) 78%, var(--dyrane-dark-surface-muted));
+  --studio-panel-hover: color-mix(in srgb, var(--dyrane-dark-surface) 54%, var(--dyrane-dark-surface-muted));
+  --studio-mineral: color-mix(in srgb, var(--dyrane-dark-surface) 82%, var(--dyrane-dark-canvas));
+  --studio-mineral-strong: color-mix(in srgb, var(--dyrane-dark-surface-strong) 82%, var(--dyrane-dark-canvas-deep));
+}
+
 .studio-stack-shell:has(.studio-home-control-plane) {
   --studio-home-field: color-mix(in srgb, var(--studio-accent) 28%, var(--studio-accent-soft));
   --studio-home-sheet: var(--studio-canvas-deep);
@@ -25,7 +50,7 @@ html:not([data-theme="dark"]) .studio-stack-shell {
 
 html[data-theme="dark"] .studio-stack-shell:has(.studio-home-control-plane) {
   --studio-home-field: color-mix(in srgb, var(--studio-accent) 54%, var(--dyrane-dark-accent-soft));
-  --studio-home-sheet: var(--dyrane-dark-surface-muted);
+  --studio-home-sheet: var(--dyrane-dark-canvas-deep);
   --studio-home-sheet-edge: rgba(255, 255, 255, 0.09);
   --studio-home-sheet-raised-shadow:
     0 -26px 68px rgba(0, 0, 0, 0.5),
@@ -701,6 +726,259 @@ html[data-theme] .studio-stack-shell:has(.studio-home-control-plane) .demo-ribbo
 }
 
 /* Durable stack pages --------------------------------------------------- */
+
+.studio-lifecycle-meta {
+  --studio-lifecycle-tone: var(--studio-muted);
+  align-items: center;
+  color: var(--studio-lifecycle-tone);
+  display: inline-flex;
+  font-size: 10px;
+  font-weight: 720;
+  gap: 5px;
+  line-height: 1.35;
+  min-width: 0;
+  text-transform: none;
+}
+
+.studio-lifecycle-meta[data-tone="positive"] { --studio-lifecycle-tone: var(--studio-positive); }
+.studio-lifecycle-meta[data-tone="caution"] { --studio-lifecycle-tone: var(--studio-caution); }
+.studio-lifecycle-meta[data-tone="critical"] { --studio-lifecycle-tone: var(--studio-critical); }
+.studio-lifecycle-meta > svg { flex: 0 0 auto; }
+
+.studio-shell.studio-stack-shell .studio-compact-row {
+  --studio-row-tone: var(--studio-faint);
+  background: color-mix(in srgb, var(--studio-row-tone) 5%, var(--studio-panel));
+  border: 0;
+  box-shadow: none;
+}
+
+.studio-shell.studio-stack-shell .studio-compact-row[data-state-tone="positive"] { --studio-row-tone: var(--studio-positive); }
+.studio-shell.studio-stack-shell .studio-compact-row[data-state-tone="caution"] { --studio-row-tone: var(--studio-caution); }
+.studio-shell.studio-stack-shell .studio-compact-row[data-state-tone="critical"] { --studio-row-tone: var(--studio-critical); }
+
+/* Image-led Inventory rows: media owns the edge, copy owns the flexible
+   column, and disclosure is the only trailing control. */
+.studio-shell.studio-stack-shell .studio-inventory-list {
+  background: transparent;
+  display: grid;
+  gap: 8px;
+  overflow: visible;
+}
+
+.studio-shell.studio-stack-shell .studio-inventory-list > article { border: 0; }
+
+.studio-shell.studio-stack-shell .studio-inventory-row-trigger {
+  border-radius: 20px;
+  gap: 14px;
+  grid-template-columns: 74px minmax(0, 1fr) minmax(116px, .55fr) 20px;
+  min-height: 88px;
+  overflow: hidden;
+  padding: 0 16px 0 0;
+}
+
+.studio-shell.studio-stack-shell .studio-inventory-row-trigger:hover {
+  background: color-mix(in srgb, var(--studio-row-tone) 8%, var(--studio-panel-hover));
+}
+
+.studio-shell.studio-stack-shell .studio-inventory-media {
+  align-self: stretch;
+  border-radius: 0;
+  height: 100%;
+  min-height: 88px;
+  width: 74px;
+}
+
+.studio-shell.studio-stack-shell .studio-inventory-copy { min-width: 0; }
+.studio-shell.studio-stack-shell .studio-inventory-copy strong {
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.studio-inventory-meta {
+  align-items: center;
+  color: var(--studio-muted);
+  display: flex;
+  font-size: 10px;
+  gap: 5px;
+  min-width: 0;
+}
+
+.studio-inventory-meta > i { font-style: normal; opacity: .5; }
+.studio-inventory-meta > em {
+  font-size: inherit;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.studio-shell.studio-stack-shell .studio-inventory-action {
+  align-items: center;
+  color: var(--studio-faint);
+  flex-direction: row;
+  justify-content: center;
+}
+
+/* Attention and Holds use the same calm row grammar instead of a second
+   card system. Existing facts and actions remain intact. */
+.studio-shell.studio-stack-shell .studio-operation-cards {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 1fr;
+}
+
+.studio-shell.studio-stack-shell .studio-operation-card {
+  background: transparent;
+  border-radius: 20px;
+  box-shadow: none;
+}
+
+.studio-shell.studio-stack-shell .studio-operation-card-trigger {
+  align-items: center;
+  background: color-mix(in srgb, var(--studio-row-tone) 5%, var(--studio-panel));
+  border-radius: inherit;
+  box-shadow: none;
+  display: grid;
+  gap: 6px 14px;
+  grid-template-columns: minmax(0, 1fr) 20px;
+  min-height: 88px;
+  padding: 15px 16px 15px 18px;
+}
+
+.studio-shell.studio-stack-shell .studio-operation-card-trigger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--studio-row-tone) 8%, var(--studio-panel-hover));
+  box-shadow: none;
+  transform: translateX(2px);
+}
+
+.studio-shell.studio-stack-shell .studio-operation-card .studio-card-heading {
+  grid-column: 1;
+  min-width: 0;
+}
+
+.studio-shell.studio-stack-shell .studio-operation-card .studio-card-heading > div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.studio-shell.studio-stack-shell .studio-operation-card h3 {
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.studio-shell.studio-stack-shell .studio-operation-card dl {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  grid-column: 1;
+  margin: 2px 0 0;
+}
+
+.studio-shell.studio-stack-shell .studio-operation-card dl > div {
+  align-items: center;
+  border: 0;
+  display: flex;
+  gap: 5px;
+  grid-template-columns: none;
+  padding: 0;
+}
+
+.studio-shell.studio-stack-shell .studio-operation-card dd { text-align: left; }
+.studio-shell.studio-stack-shell .studio-operation-card-open {
+  align-self: center;
+  grid-column: 2;
+  grid-row: 1 / -1;
+  justify-content: center;
+  margin: 0;
+}
+
+/* Connected Orders and Returns share one compact list surface. */
+.studio-shell.studio-stack-shell .studio-connected-order-list { gap: 8px; }
+.studio-shell.studio-stack-shell .studio-connected-order-card {
+  align-items: center;
+  border-radius: 20px;
+  gap: 5px 14px;
+  grid-template-columns: minmax(0, 1fr) 20px;
+  min-height: 104px;
+  padding: 16px 16px 16px 18px;
+}
+
+.studio-shell.studio-stack-shell .studio-connected-order-card:hover {
+  background: color-mix(in srgb, var(--studio-row-tone) 8%, var(--studio-panel-hover));
+  transform: translateX(2px);
+}
+
+.studio-shell.studio-stack-shell .studio-connected-order-reference {
+  grid-column: 1;
+  min-width: 0;
+}
+
+.studio-shell.studio-stack-shell .studio-connected-order-reference h2 {
+  font-size: 16px;
+  margin: 3px 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.studio-shell.studio-stack-shell .studio-connected-order-card dl {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px 14px;
+  grid-column: 1;
+  margin: 2px 0 0;
+}
+
+.studio-shell.studio-stack-shell .studio-connected-order-card dl > div {
+  align-items: center;
+  display: flex;
+  gap: 4px;
+}
+
+.studio-shell.studio-stack-shell .studio-connected-order-next {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  grid-column: 1;
+}
+
+.studio-shell.studio-stack-shell .studio-connected-order-card > svg {
+  color: var(--studio-faint);
+  grid-column: 2;
+  grid-row: 1 / -1;
+}
+
+/* Wardrobe publishing and model selection follow the same metadata-first
+   list contract. Detailed record surfaces keep their existing badges. */
+.studio-shell.studio-stack-shell .studio-stack-current {
+  grid-template-columns: minmax(0, 1fr) 18px;
+}
+
+.studio-shell.studio-stack-shell .studio-stack-current .studio-lifecycle-meta,
+.studio-shell.studio-stack-shell .studio-publishing-row .studio-lifecycle-meta,
+.studio-shell.studio-stack-shell .studio-model-option .studio-lifecycle-meta {
+  margin-top: 2px;
+}
+
+.studio-shell.studio-stack-shell .studio-publishing-row {
+  grid-template-columns: minmax(0, 1fr) 18px;
+}
+
+.studio-shell.studio-stack-shell .studio-publishing-row > span:first-child {
+  min-width: 0;
+}
+
+.studio-shell.studio-stack-shell .studio-publishing-row > svg { display: block; }
+
+.studio-shell.studio-stack-shell .studio-model-option {
+  grid-template-columns: 42px minmax(0, 1fr);
+}
 
 .studio-page-tools {
   align-items: center;
@@ -1384,10 +1662,26 @@ html body .studio-stack-shell .workspace > main.page-canvas:has(> .studio-home-c
 }
 
 .studio-stack-shell .studio-home-sheet .studio-recent-row {
-  grid-template-columns: 86px minmax(0, 1fr) auto;
+  --studio-recent-tone: var(--studio-faint);
+  background: color-mix(in srgb, var(--studio-recent-tone) 5%, var(--studio-home-sheet));
+  border: 0;
+  box-shadow: 0 14px 42px color-mix(in srgb, var(--studio-ink) 9%, transparent);
+  grid-template-columns: 86px minmax(0, 1fr) 20px;
   min-height: 104px;
   overflow: hidden;
   padding: 0 16px 0 0;
+}
+
+.studio-stack-shell .studio-home-sheet .studio-recent-row[data-state-tone="positive"] {
+  --studio-recent-tone: var(--studio-positive);
+}
+
+.studio-stack-shell .studio-home-sheet .studio-recent-row[data-state-tone="caution"] {
+  --studio-recent-tone: var(--studio-caution);
+}
+
+.studio-stack-shell .studio-home-sheet .studio-recent-row[data-state-tone="critical"] {
+  --studio-recent-tone: var(--studio-critical);
 }
 
 .studio-stack-shell .studio-home-sheet .studio-recent-media {
@@ -1399,8 +1693,46 @@ html body .studio-stack-shell .workspace > main.page-canvas:has(> .studio-home-c
   width: 86px;
 }
 
-.studio-home-sheet .studio-recent-copy em {
+.studio-home-sheet .studio-recent-copy {
+  min-width: 0;
+}
+
+.studio-home-sheet .studio-recent-meta,
+.studio-home-sheet .studio-recent-status,
+.studio-home-sheet .studio-recent-disclosure {
+  align-items: center;
+  display: flex;
+}
+
+.studio-home-sheet .studio-recent-meta {
+  color: var(--studio-muted);
+  flex-wrap: wrap;
+  font-size: 9px;
+  gap: 4px;
+  line-height: 1.45;
   text-transform: capitalize;
+}
+
+.studio-home-sheet .studio-recent-meta > i {
+  font-style: normal;
+  opacity: .56;
+}
+
+.studio-home-sheet .studio-recent-status {
+  color: var(--studio-recent-tone);
+  font-weight: 720;
+  gap: 4px;
+  transition: color var(--motion-fast) ease;
+}
+
+.studio-home-sheet .studio-recent-status > svg {
+  flex: 0 0 auto;
+  transition: opacity var(--motion-fast) ease, transform var(--motion-fast) var(--ease-liquid);
+}
+
+.studio-home-sheet .studio-recent-disclosure {
+  color: var(--studio-muted);
+  justify-content: flex-end;
 }
 
 .studio-home-signoff {
@@ -1576,7 +1908,7 @@ html body .studio-stack-shell .workspace > main.page-canvas:has(> .studio-home-c
   }
 
   .studio-stack-shell .studio-home-sheet .studio-recent-row {
-    grid-template-columns: 78px minmax(0, 1fr) auto;
+    grid-template-columns: 78px minmax(0, 1fr) 18px;
     min-height: 96px;
   }
 
@@ -1616,6 +1948,41 @@ html body .studio-stack-shell .workspace > main.page-canvas:has(> .studio-home-c
     grid-template-columns: 38px minmax(0, 1fr) 18px;
     min-height: 66px;
   }
+
+  .studio-shell.studio-stack-shell .studio-inventory-row-trigger {
+    gap: 12px;
+    grid-template-columns: 78px minmax(0, 1fr) 18px;
+    min-height: 96px;
+    padding-right: 14px;
+  }
+
+  .studio-shell.studio-stack-shell .studio-inventory-media {
+    grid-column: 1;
+    grid-row: 1;
+    min-height: 96px;
+    width: 78px;
+  }
+
+  .studio-shell.studio-stack-shell .studio-inventory-copy {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .studio-shell.studio-stack-shell .studio-inventory-stock { display: none; }
+  .studio-shell.studio-stack-shell .studio-inventory-action {
+    grid-column: 3;
+    grid-row: 1;
+  }
+
+  .studio-shell.studio-stack-shell .studio-operation-card-trigger {
+    grid-template-columns: minmax(0, 1fr) 18px;
+    padding-inline: 16px 14px;
+  }
+
+  .studio-shell.studio-stack-shell .studio-connected-order-card {
+    grid-template-columns: minmax(0, 1fr) 18px;
+    padding-inline: 16px 14px;
+  }
 }
 
 @media (max-width: 360px) {
@@ -1638,7 +2005,13 @@ html body .studio-stack-shell .workspace > main.page-canvas:has(> .studio-home-c
 
 @media (prefers-reduced-motion: reduce) {
   .studio-command-search-trigger,
-  .studio-command-ask-trigger {
+  .studio-command-ask-trigger,
+  .studio-home-sheet .studio-recent-row,
+  .studio-home-sheet .studio-recent-status,
+  .studio-home-sheet .studio-recent-status > svg,
+  .studio-compact-row,
+  .studio-lifecycle-meta,
+  .studio-lifecycle-meta > svg {
     transform: none !important;
     transition: none !important;
   }
@@ -1649,7 +2022,8 @@ html body .studio-stack-shell .workspace > main.page-canvas:has(> .studio-home-c
   .studio-command-search-trigger,
   .studio-command-ask-trigger,
   .studio-summary-item,
-  .studio-arrange-row {
+  .studio-arrange-row,
+  .studio-compact-row {
     border: 1px solid CanvasText;
   }
 }

@@ -111,7 +111,7 @@ export function StudioCommandCenter({ showSearch = true }: { showSearch?: boolea
       {showSearch ? <button
         aria-controls="studio-search-anything"
         aria-expanded={searchOpen}
-        aria-label="Search anything in Studio"
+        aria-label="Find a Studio service or piece"
         className="studio-command-search-trigger"
         disabled={!canSearch}
         onClick={(event) => {
@@ -122,7 +122,7 @@ export function StudioCommandCenter({ showSearch = true }: { showSearch?: boolea
         type="button"
       >
         <Search aria-hidden="true" size={18} />
-        <span>{searchCapability === "READ_ONLY_COMPATIBILITY" ? "Search services" : "Search anything"}</span>
+        <span>{searchCapability === "READ_ONLY_COMPATIBILITY" ? "Find services" : "Find in Studio"}</span>
       </button> : null}
       {canAsk ? (
         <Link

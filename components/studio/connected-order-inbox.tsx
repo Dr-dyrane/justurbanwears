@@ -225,8 +225,9 @@ export function ConnectedOrderInbox() {
           {orders.map((order) => {
             const firstLine = order.lines[0];
             const hasReturn = Boolean(order.return);
+            const needsAction = Boolean(nextStudioOrderTransition(order));
             return (
-              <Link className="studio-connected-order-card" href={`/studio/orders/${order.reference}`} key={order.reference}>
+              <Link className="studio-connected-order-card studio-compact-row" data-state-tone={hasReturn ? "critical" : needsAction ? "caution" : "neutral"} href={`/studio/orders/${order.reference}`} key={order.reference}>
                 <div className="studio-connected-order-reference">
                   <small>{order.reference}</small>
                   <h2>{firstLine?.name ?? "Wardrobe order"}</h2>

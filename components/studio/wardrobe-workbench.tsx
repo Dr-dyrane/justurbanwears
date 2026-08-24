@@ -38,6 +38,7 @@ import {
   type PendingWardrobeProductContract,
 } from "../../lib/studio/seeds/private-wardrobe-products";
 import { LifecycleBadge } from "./atoms/lifecycle-badge";
+import { LifecycleMeta, STUDIO_LIFECYCLE_PRESENTATION } from "./atoms/lifecycle-meta";
 import { ReadinessList } from "./atoms/readiness-list";
 import { StudioPager, StudioSegmentedView, useStudioSegment } from "./atoms/studio-segmented-view";
 import { StudioLink } from "./atoms/studio-link";
@@ -844,8 +845,7 @@ export function WardrobeWorkbench() {
       {activeView === "garments" ? (
         nextGarment ? (
           <StudioLink className="studio-stack-current" href={garmentDossierHref(nextGarment)}>
-            <span><small>Continue</small><strong>{nextGarment.title}</strong></span>
-            <LifecycleBadge state={nextGarment.state} />
+            <span><small>Continue</small><strong>{nextGarment.title}</strong><LifecycleMeta state={nextGarment.state} /></span>
             <ArrowRight aria-hidden="true" size={18} />
           </StudioLink>
         ) : (
@@ -856,8 +856,7 @@ export function WardrobeWorkbench() {
         )
       ) : nextListing && nextListingGarment ? (
         <StudioLink className="studio-stack-current" href={garmentDossierHref(nextListingGarment)}>
-          <span><small>Continue</small><strong>{nextListing.title}</strong></span>
-          <LifecycleBadge state={nextListing.state} />
+          <span><small>Continue</small><strong>{nextListing.title}</strong><LifecycleMeta state={nextListing.state} /></span>
           <ArrowRight aria-hidden="true" size={18} />
         </StudioLink>
       ) : (
@@ -891,7 +890,8 @@ export function WardrobeWorkbench() {
           <div className="studio-section-title"><div><p className="eyebrow">Publishing</p><h2 id="publishing-title">Listing review</h2></div><span>{scopedListings.length} listing{scopedListings.length === 1 ? "" : "s"}</span></div>
           {scopedListings.length ? <><div className="studio-publishing-queue">{pagedListings.map((listing) => {
             const garment = studio.garments.find((candidate) => candidate.id === listing.garmentId);
-            return garment ? <StudioLink className="studio-publishing-row" href={garmentDossierHref(garment)} key={listing.id}><span><small>{garment.sku}</small><strong>{listing.title}</strong></span><LifecycleBadge state={listing.state} /><ArrowRight aria-hidden="true" size={17} /></StudioLink> : null;
+            const status = STUDIO_LIFECYCLE_PRESENTATION[listing.state];
+            return garment ? <StudioLink className="studio-publishing-row studio-compact-row" data-state-tone={status.tone} href={garmentDossierHref(garment)} key={listing.id}><span><small>{garment.sku}</small><strong>{listing.title}</strong><LifecycleMeta state={listing.state} /></span><ArrowRight aria-hidden="true" size={17} /></StudioLink> : null;
           })}</div><StudioPager label="Publishing pages" onPageChange={setPublishingPage} page={safePublishingPage} pageSize={publishingPageSize} total={scopedListings.length} /></> : <div className="studio-quiet-empty"><Send aria-hidden="true" size={24} strokeWidth={1.5} /><div><strong>No Shop previews</strong><p>Approved Shop previews appear here.</p></div></div>}
         </section>
       )}

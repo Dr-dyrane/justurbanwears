@@ -503,12 +503,15 @@ export function GarmentIntakeSheet({
 
       {step === "wear" ? (
         <section className="studio-task-question">
-          <p className="eyebrow">Create</p>
-          <h3>Build the garment set?</h3>
+          <p className="eyebrow">Next</p>
+          <h3>Continue in Atelier?</h3>
           {onBuildSet || onOpenWear ? (
             <div className="studio-disclosure-group studio-wear-options">
-              {onBuildSet ? <StudioDisclosureRow detail="Back · detail · mannequin · Lulu · editorial" icon={<Sparkles size={19} />} label="Build missing views" onClick={() => wardrobeItemId && onBuildSet(wardrobeItemId)} /> : null}
-              {onOpenWear ? <StudioDisclosureRow detail="Choose one presentation view" icon={<Shirt size={19} />} label="Open Wear" onClick={() => wardrobeItemId && onOpenWear(wardrobeItemId)} /> : null}
+              {onBuildSet
+                ? <StudioDisclosureRow detail="Resume the next saved view" icon={<Sparkles size={19} />} label="Continue Genesis" onClick={() => wardrobeItemId && onBuildSet(wardrobeItemId)} />
+                : onOpenWear
+                  ? <StudioDisclosureRow detail="Choose one presentation view" icon={<Shirt size={19} />} label="Open Wear" onClick={() => wardrobeItemId && onOpenWear(wardrobeItemId)} />
+                  : null}
             </div>
           ) : <p>This simulator stops before private media work.</p>}
         </section>
@@ -530,7 +533,7 @@ export function GarmentIntakeSheet({
             </div>
             <p className="eyebrow">Saved</p>
             <h3>{facts.title} is in Wardrobe.</h3>
-            <p>Add a mannequin or model view any time.</p>
+            <p>Continue in Atelier any time.</p>
             <div className="studio-receipt-state"><LifecycleBadge state="DRAFT" /><small>Private · not for sale</small></div>
             <small className="studio-receipt-id">{wardrobeItemId}</small>
           </div>

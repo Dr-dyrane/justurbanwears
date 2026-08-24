@@ -1,4 +1,6 @@
 import studioAtelierCss from "../studio-atelier.css?raw";
+import "../studio-mobile-wardrobe.css";
+import "../studio-stack-navigation.css";
 import { AppShell } from "../../components/studio/app-shell";
 import { requireStudioOperator } from "../../lib/server/studio-operator";
 import { StudioEngineError } from "../../lib/studio/engine/errors";
