@@ -3,6 +3,7 @@ import "@fontsource-variable/bodoni-moda";
 import "@fontsource-variable/manrope";
 import "@neondatabase/auth/ui/css";
 import { Analytics } from "@vercel/analytics/react";
+import { DocumentNavigationLoadingStage } from "../components/brand/document-navigation-loading-stage";
 import { ServiceWorkerRegistration } from "../components/pwa/service-worker-registration";
 import { ThemeProvider } from "../components/theme/theme-provider";
 import { BRAND_ASSETS } from "../lib/brand/assets";
@@ -128,6 +129,7 @@ export default function RootLayout({
       <body className="antialiased">
         <ThemeProvider>
           <ServiceWorkerRegistration />
+          <DocumentNavigationLoadingStage />
           {children}
         </ThemeProvider>
         <Analytics />

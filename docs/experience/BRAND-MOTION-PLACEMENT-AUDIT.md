@@ -30,7 +30,7 @@ The centered-logo mark is an exact crop of the approved logo source. The seal is
 
 | Surface | Artwork / variant | Reason |
 | --- | --- | --- |
-| Global delayed route wait | Circular seal / `loader` | Shared continuity across Site, Shop, and Studio; mounts only after 420ms so fast navigation remains visually immediate |
+| Global delayed route wait | Circular seal / `loader` | Shared continuity across Site, Shop, and Studio; covers both App Router suspense and qualified same-origin document navigation, and mounts only after 420ms so fast navigation remains visually immediate |
 | Global 404 | Centered-logo mark / `404` | A rare narrative absence where the wardrobe story improves recovery without delaying the action |
 | Missing customer order | Centered-logo mark / `empty` | A rare missing-record state with a single recovery path, distinct from routine empty collections |
 | Order reserved or payment confirmed | Centered-logo mark / `success` | Runs once when the order has crossed an authoritative milestone; surrounding copy preserves payment truth |
@@ -75,6 +75,7 @@ These are candidates, not blanket authorization to add motion.
 8. Reduced motion resolves immediately to the untouched canonical master.
 9. No interaction waits for the animation to finish.
 10. Every new placement requires rendered light/dark, mobile, keyboard, screen-reader, reduced-motion, and off-screen-pause checks.
+11. The document-navigation bridge ignores external destinations, downloads, modified clicks, non-self targets, same-document hashes, dialog forms, and events cancelled by the owning interaction.
 
 ## Repository inventory reviewed
 
