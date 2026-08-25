@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "workflowRevision": "2026-08-25.78",
-  "updatedAt": "2026-08-25T14:48:00Z",
+  "workflowRevision": "2026-08-25.79",
+  "updatedAt": "2026-08-25T17:56:07Z",
   "model": "LULU_V4",
   "activeGarment": "021",
-  "activeView": "07",
-  "status": "GARMENT_021_01_07_USER_ACCEPTED_PRIVATE_LOCKED_SHOP_RELEASE_IN_PROGRESS",
+  "activeView": "COMPLETE",
+  "status": "GARMENT_021_01_07_PRIVATE_LOCKED_LIVE_VERIFIED_CATALOGUE_31",
   "identityReview": {
     "candidateId": "lulu.face.v4.front.candidate.v1",
     "acceptedAssetId": "lulu.face.v4.front.lock.v1",
@@ -1680,7 +1680,7 @@
       "rejectedCandidatesMayParent": false
     },
     "021": {
-      "status": "01_07_USER_ACCEPTED_PRIVATE_LOCKED_SHOP_RELEASE_IN_PROGRESS",
+      "status": "01_07_USER_ACCEPTED_PRIVATE_LOCKED_LIVE_VERIFIED",
       "sku": "JUW-045",
       "name": "Scarlet Rosette Halter Cutout Ruched Mini Dress",
       "slug": "scarlet-rosette-halter-cutout-ruched-mini-dress",
@@ -1701,16 +1701,11 @@
       "subjectLock": {"path":"storage/garments/drop-02/021/locked/LULU_G021_SUBJECT_FRONT_LOCK_v1.png","sha256":"443fd27cd9db59800b679a4902b934b5274b2235ef0847ffcfbe8c4e5b376433","dimensions":"1122x1402","status":"ACCEPTED_LOCKED"},
       "lockedManifestSha256": "785eb06c079cbcd1387a1a141fd57a34b5ec2afe7efeba132ba7f301db7a6988",
       "operationRecords": ["storage/garments/drop-02/021/operations/g021-fashion-advisory-r001.json","storage/garments/drop-02/021/operations/g021-holistic-subject-r001.json","storage/garments/drop-02/021/operations/g021-holistic-subject-r002.json","storage/garments/drop-02/021/operations/g021-room-and-05-r001.json","storage/garments/drop-02/021/operations/g021-room-and-05-r002.json","storage/garments/drop-02/021/operations/g021-v06-r001.json","storage/garments/drop-02/021/operations/g021-v07-r001.json","storage/garments/drop-02/021/operations/g021-v07-r002.json","storage/garments/drop-02/021/operations/g021-v07-r003.json","storage/garments/drop-02/021/operations/g021-v07-r004.json","storage/garments/drop-02/021/operations/g021-v07-r005.json","storage/garments/drop-02/021/operations/g021-shop-media-export-v001.json"],
+      "shopRelease": {"catalogueRevision":"2026-08-25-catalogue-31","catalogueManifestChecksum":"df50a7c843f0a468f343365ccdd40a326535bca3532cb287ff82adbfeb6759a7","cataloguePresentationChecksum":"50178cf1fcfbd0dfa02a0873f07fcc34092de9febe79fb8d660a4db05b0c49ec","publicRoot":"public/shop/products/scarlet-rosette-halter-cutout-ruched-mini-dress","mediaCount":7,"publicBlobActiveAssetCount":247,"publicBlobLegacyAssetCount":7,"sourceCommit":"b84001187feb32e05794d9c27d7a561518a80806","deployedCommit":"b84001187feb32e05794d9c27d7a561518a80806","deploymentId":"dpl_3mLyRaQhAZ5W1QrHn134QZhvGn5o","deployment":"https://justurbanwears-i55j01slz-drdyranes-projects.vercel.app","databaseSkuPresent":true,"availability":"AVAILABLE","availabilityApi":"CONFIRMED","studioPublicationCount":1,"catalogueRowCount":39,"productionSmoke":"22_OF_22_PASS","experienceSmoke":"16_OF_16_PASS","browserProductGallery":"7_OF_7_1120X1400_ISOTROPIC","browserCollectionPieceCount":21,"state":"LIVE_VERIFIED","verifiedAt":"2026-08-25T17:56:07Z","status":"LIVE_VERIFIED"},
       "consentAndPermission": {"realGarmentReferencesRemainPrivate":true,"realIdentityAndBodyReferencesRemainPrivate":true,"publicDerivativesApproved":true},
       "rejectedCandidatesMayParent": false
     }
   },
-  "nextOperation": {
-    "operationId": "g021-shop-media-export-v001",
-    "garmentId": "021",
-    "view": "01-07",
-    "role": "SHOP_MEDIA_EXPORT_AND_RELEASE",
-    "status": "AUTHORIZED_IN_PROGRESS"
-  },
-  "requiredNext": "Export approved G021 views into deterministic public Shop derivatives, update the catalogue and production database, deploy, and live-verify the exact release revision."
+  "nextOperation": null,
+  "requiredNext": "None. Garment 021 is live verified."
 }
