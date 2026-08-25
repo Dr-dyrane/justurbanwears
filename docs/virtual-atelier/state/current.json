@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "workflowRevision": "2026-08-25.80",
-  "updatedAt": "2026-08-25T18:50:00Z",
+  "workflowRevision": "2026-08-25.81",
+  "updatedAt": "2026-08-25T20:51:55Z",
   "model": "LULU_V4",
   "activeGarment": "022",
   "activeView": "COMPLETE",
-  "status": "GARMENT_022_01_07_PRIVATE_LOCKED_CATALOGUE_32_RELEASE_READY",
+  "status": "GARMENT_022_01_07_PRIVATE_LOCKED_CATALOGUE_32_LIVE_VERIFIED",
   "identityReview": {
     "candidateId": "lulu.face.v4.front.candidate.v1",
     "acceptedAssetId": "lulu.face.v4.front.lock.v1",
@@ -1706,7 +1706,7 @@
       "rejectedCandidatesMayParent": false
     },
     "022": {
-      "status": "01_07_USER_AUTHORIZED_AUTONOMOUSLY_ACCEPTED_PRIVATE_LOCKED_RELEASE_READY",
+      "status": "01_07_USER_AUTHORIZED_AUTONOMOUSLY_ACCEPTED_PRIVATE_LOCKED_LIVE_VERIFIED",
       "sku": "JUW-046",
       "name": "Crimson Asymmetric Draped Satin Maxi Dress",
       "slug": "crimson-asymmetric-draped-satin-maxi-dress",
@@ -1727,11 +1727,11 @@
       "subjectLock": {"path":"storage/garments/drop-02/022/locked/LULU_G022_SUBJECT_FRONT_LOCK_v1.png","sha256":"e9e64b6775b7e166affe491cb70d118960fc196620fdb4389aa010c7c126eb55","dimensions":"1122x1402","status":"ACCEPTED_LOCKED"},
       "lockedManifestSha256": "0f9bf0beef4a5ff3a4c276be5a5e5fa00cbe6ad2b47a3d1d07ccc6db2a740a85",
       "operationRecords": ["storage/garments/drop-02/022/operations/g022-v01-r001.json","storage/garments/drop-02/022/operations/g022-v01-r002.json","storage/garments/drop-02/022/operations/g022-v02-r001.json","storage/garments/drop-02/022/operations/g022-v03-r001.json","storage/garments/drop-02/022/operations/g022-v04-r001.json","storage/garments/drop-02/022/operations/g022-fashion-advisory-r001.json","storage/garments/drop-02/022/operations/g022-holistic-subject-r001.json","storage/garments/drop-02/022/operations/g022-room-and-05-r001.json","storage/garments/drop-02/022/operations/g022-v06-r001.json","storage/garments/drop-02/022/operations/g022-v07-r001.json","storage/garments/drop-02/022/operations/g022-shop-media-export-v001.json"],
-      "shopRelease": {"catalogueRevision":"2026-08-25-catalogue-32","catalogueManifestChecksum":"51f72d8bee036db17a8d988ebead98026695e6f925c510ef049f773b946b3252","cataloguePresentationChecksum":"849a4c571a4bd0bea6790479a5d064cf44cb76510354c281f115b27d85dc7397","publicRoot":"public/shop/products/crimson-asymmetric-draped-satin-maxi-dress","mediaCount":7,"publicBlobActiveAssetCount":254,"publicBlobLegacyAssetCount":7,"state":"RELEASE_READY","status":"RELEASE_READY"},
+      "shopRelease": {"catalogueRevision":"2026-08-25-catalogue-32","catalogueManifestChecksum":"51f72d8bee036db17a8d988ebead98026695e6f925c510ef049f773b946b3252","cataloguePresentationChecksum":"849a4c571a4bd0bea6790479a5d064cf44cb76510354c281f115b27d85dc7397","publicRoot":"public/shop/products/crimson-asymmetric-draped-satin-maxi-dress","mediaCount":7,"publicBlobActiveAssetCount":254,"publicBlobLegacyAssetCount":7,"sourceCommit":"874e7dabcb8446d785316fbe3d9b0fb7f0110a65","deployedCommit":"874e7dabcb8446d785316fbe3d9b0fb7f0110a65","deploymentId":"dpl_4wsebAVyn9D4ZdWKV7rxp9WxanBS","deployment":"https://justurbanwears-jgk8yu2uk-drdyranes-projects.vercel.app","databaseSkuPresent":true,"availability":"AVAILABLE","availabilityApi":"CONFIRMED","studioPublicationCount":1,"catalogueRowCount":40,"productionSmoke":"23_OF_23_PASS","experienceSmoke":"17_OF_17_PASS","browserProductGallery":"7_OF_7_1120X1400_ISOTROPIC","browserCollectionPieceCount":22,"browserConsole":"CLEAN","state":"LIVE_VERIFIED","verifiedAt":"2026-08-25T20:51:55Z","status":"LIVE_VERIFIED"},
       "consentAndPermission": {"realGarmentReferencesRemainPrivate":true,"realIdentityAndBodyReferencesRemainPrivate":true,"publicDerivativesApproved":true},
       "rejectedCandidatesMayParent": false
     }
   },
   "nextOperation": null,
-  "requiredNext": "Run the single G022 production release gate, deploy, and live-verify the product."
+  "requiredNext": "Begin G023 private intake and produce its 01–07 Atelier media before any Shop release."
 }
