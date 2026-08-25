@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "workflowRevision": "2026-08-25.81",
-  "updatedAt": "2026-08-25T20:51:55Z",
+  "workflowRevision": "2026-08-25.82",
+  "updatedAt": "2026-08-25T21:24:00Z",
   "model": "LULU_V4",
-  "activeGarment": "022",
+  "activeGarment": "023",
   "activeView": "COMPLETE",
-  "status": "GARMENT_022_01_07_PRIVATE_LOCKED_CATALOGUE_32_LIVE_VERIFIED",
+  "status": "GARMENT_023_01_07_PRIVATE_LOCKED_AWAITING_SHOP_RELEASE",
   "identityReview": {
     "candidateId": "lulu.face.v4.front.candidate.v1",
     "acceptedAssetId": "lulu.face.v4.front.lock.v1",
@@ -1730,8 +1730,34 @@
       "shopRelease": {"catalogueRevision":"2026-08-25-catalogue-32","catalogueManifestChecksum":"51f72d8bee036db17a8d988ebead98026695e6f925c510ef049f773b946b3252","cataloguePresentationChecksum":"849a4c571a4bd0bea6790479a5d064cf44cb76510354c281f115b27d85dc7397","publicRoot":"public/shop/products/crimson-asymmetric-draped-satin-maxi-dress","mediaCount":7,"publicBlobActiveAssetCount":254,"publicBlobLegacyAssetCount":7,"sourceCommit":"874e7dabcb8446d785316fbe3d9b0fb7f0110a65","deployedCommit":"874e7dabcb8446d785316fbe3d9b0fb7f0110a65","deploymentId":"dpl_4wsebAVyn9D4ZdWKV7rxp9WxanBS","deployment":"https://justurbanwears-jgk8yu2uk-drdyranes-projects.vercel.app","databaseSkuPresent":true,"availability":"AVAILABLE","availabilityApi":"CONFIRMED","studioPublicationCount":1,"catalogueRowCount":40,"productionSmoke":"23_OF_23_PASS","experienceSmoke":"17_OF_17_PASS","browserProductGallery":"7_OF_7_1120X1400_ISOTROPIC","browserCollectionPieceCount":22,"browserConsole":"CLEAN","state":"LIVE_VERIFIED","verifiedAt":"2026-08-25T20:51:55Z","status":"LIVE_VERIFIED"},
       "consentAndPermission": {"realGarmentReferencesRemainPrivate":true,"realIdentityAndBodyReferencesRemainPrivate":true,"publicDerivativesApproved":true},
       "rejectedCandidatesMayParent": false
+    },
+    "023": {
+      "status": "01_07_USER_AUTHORIZED_AUTONOMOUSLY_ACCEPTED_PRIVATE_LOCKED_NOT_PUBLISHED",
+      "sku": "JUW-047",
+      "name": "Scarlet Asymmetric Cascade Ruched Mini Dress",
+      "slug": "scarlet-asymmetric-cascade-ruched-mini-dress",
+      "price": 29500,
+      "sourceManifest": "storage/garments/drop-02/023/source/manifest.json",
+      "sourceManifestSha256": "37dbcdbbe6d099517f25673c728b0b17693eb3e153465dc14cd3924799ddbbea",
+      "classification": "DIRECT_CAPTURE_FRONT_FAMILY_ONLY",
+      "reservedViews": ["01", "02", "03", "04", "05", "06", "07"],
+      "views": {
+        "01": {"role":"GARMENT_FRONT","path":"storage/garments/drop-02/023/locked/01-garment-front.png","sha256":"bd8f4110592bb3eac0647937f64ec8468086f192500ea5293c7d9503c52a88d3","dimensions":"1086x1448","status":"ACCEPTED_LOCKED"},
+        "02": {"role":"GARMENT_BACK","path":"storage/garments/drop-02/023/locked/02-garment-back.png","sha256":"52cbf95f2007b40ede02e84aaa40fb1b378d53f98b8ac323d604a472808fb6f7","dimensions":"1086x1448","status":"ACCEPTED_LOCKED_INFERRED_REAR_PRESENTATION"},
+        "03": {"role":"MANNEQUIN_FRONT","path":"storage/garments/drop-02/023/locked/03-mannequin-front.png","sha256":"eb74376247da8390c52c2832c7036f716e7219b33032c06fb0657d633d3c5d99","dimensions":"1086x1448","status":"ACCEPTED_LOCKED"},
+        "04": {"role":"FABRIC_DETAIL","path":"storage/garments/drop-02/023/locked/04-fabric-detail.png","sha256":"b9ccdac51f61e55036245de995b6649b472ea33d5220f1900a6a0f6c2f08da56","dimensions":"1086x1448","status":"ACCEPTED_LOCKED_MODEL_COMPLETED_PRESENTATION_ONLY"},
+        "05": {"role":"MODEL_FRONT","path":"storage/garments/drop-02/023/locked/05-on-lulu-front.png","sha256":"d36901eeba29a0962634f3f653df076eaf12d38158960ddc00079d775269e263","dimensions":"1122x1402","status":"ACCEPTED_LOCKED_FRONT_MASTER"},
+        "06": {"role":"MODEL_LEFT_PROFILE","path":"storage/garments/drop-02/023/locked/06-on-lulu-left-profile.png","sha256":"d3d0d5d4476ac874b74c881637420387933ed4e4a10cffa22b7c2245a97f872b","dimensions":"1122x1402","status":"ACCEPTED_LOCKED_INDEPENDENT_SIBLING"},
+        "07": {"role":"MODEL_REAR_THREE_QUARTER","path":"storage/garments/drop-02/023/locked/07-on-lulu-right-rear-3q.png","sha256":"51bff71a6ff0bac85e1f7efff4f5dc97809aec63a751c6a8ecf3b93379b2463f","dimensions":"1122x1402","status":"ACCEPTED_LOCKED_BODY_FAITHFUL_INDEPENDENT_SIBLING_INFERRED_REAR_PRESENTATION"}
+      },
+      "subjectLock": {"path":"storage/garments/drop-02/023/locked/LULU_G023_SUBJECT_FRONT_LOCK_v1.png","sha256":"a3d812710d711d70d4e9d9d732cfb08ed5b70ad718cfe5a5bc9a8d47eee33ac5","dimensions":"1122x1402","status":"ACCEPTED_LOCKED"},
+      "lockedManifestSha256": "d32b5a1e89a6d258f9daf123175d9d0adfcb4ac40e0837ed8ace3a51cdd7f5c6",
+      "operationRecords": ["storage/garments/drop-02/023/operations/g023-v01-r001.json","storage/garments/drop-02/023/operations/g023-v02-r001.json","storage/garments/drop-02/023/operations/g023-v03-r001.json","storage/garments/drop-02/023/operations/g023-v04-r001.json","storage/garments/drop-02/023/operations/g023-holistic-subject-r001.json","storage/garments/drop-02/023/operations/g023-room-and-05-r001.json","storage/garments/drop-02/023/operations/g023-v06-r001.json","storage/garments/drop-02/023/operations/g023-v07-r001.json","storage/garments/drop-02/023/operations/g023-v07-r002.json"],
+      "shopRelease": {"state":"NOT_STARTED","status":"NOT_PUBLISHED"},
+      "consentAndPermission": {"realGarmentReferencesRemainPrivate":true,"realIdentityAndBodyReferencesRemainPrivate":true,"publicDerivativesApproved":true},
+      "rejectedCandidatesMayParent": false
     }
   },
   "nextOperation": null,
-  "requiredNext": "Begin G023 private intake and produce its 01–07 Atelier media before any Shop release."
+  "requiredNext": "Await explicit G023 Shop release authority before exporting public derivatives, changing catalogue or database, committing release media, deploying or live-verifying."
 }
