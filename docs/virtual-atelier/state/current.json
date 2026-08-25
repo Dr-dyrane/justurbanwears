@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "workflowRevision": "2026-08-24.66",
-  "updatedAt": "2026-08-24T19:25:00Z",
+  "workflowRevision": "2026-08-24.67",
+  "updatedAt": "2026-08-25T02:42:53Z",
   "model": "LULU_V4",
   "activeGarment": "019",
   "activeView": "01",
-  "status": "GARMENT_018_LIVE_VERIFIED_CATALOGUE_27_GARMENT_017_GATEWAY_PROOFS_REJECTED_TERMINAL_GARMENT_019_INTAKE_PREFLIGHT_READY",
+  "status": "GARMENT_017_PARTIAL_01_04_LIVE_VERIFIED_CATALOGUE_28_GARMENT_018_LIVE_VERIFIED_GARMENT_019_INTAKE_PREFLIGHT_READY",
   "identityReview": {
     "candidateId": "lulu.face.v4.front.candidate.v1",
     "acceptedAssetId": "lulu.face.v4.front.lock.v1",
@@ -1428,7 +1428,7 @@
       "rejectedCandidatesMayParent": false
     },
     "017": {
-      "status": "PARTIAL_01_04_USER_ACCEPTED_LOCKED_FOR_AS_IS_PUBLICATION_RELEASE_PENDING",
+      "status": "PARTIAL_01_04_USER_ACCEPTED_LOCKED_AS_IS_PUBLICATION_LIVE_VERIFIED",
       "sku": "JUW-041",
       "slug": "gunmetal-sparkle-open-back-long-sleeve-mini-dress",
       "sourceManifest": "storage/garments/drop-02/017/source/manifest.json",
@@ -1514,6 +1514,23 @@
         "publicDerivativeRequiresSeparateGate": true,
         "generatedOrInferredPresentationDoesNotBecomeDirectEvidence": true,
         "note": "Consent authorizes the private JUW catalogue workflow and use of Lulu's approved references; it does not override provider moderation."
+      },
+      "liveRelease": {
+        "status": "LIVE_VERIFIED",
+        "sourceCommit": "1a1c8e5",
+        "deploymentId": "dpl_Ds3zfacUKCwSVx9N1RvXEhdBPcbz",
+        "deploymentUrl": "https://justurbanwears-699sfsrge-drdyranes-projects.vercel.app",
+        "productionUrl": "https://www.justurbanwears.com/shop/products/gunmetal-sparkle-open-back-long-sleeve-mini-dress",
+        "catalogueRevision": "2026-08-24-catalogue-28",
+        "catalogueManifestChecksum": "7295f23bd32f0c00474d370b698e9569b8d15e42013daecd518c4b9e62b6bac1",
+        "productionCatalogueRows": 36,
+        "productionSmoke": "19/19",
+        "experienceSmoke": "13/13",
+        "renderedGalleryAssetCount": 4,
+        "renderedGalleryDimensions": "1120x1400",
+        "renderedGalleryNoNonUniformScaling": true,
+        "renderedGalleryConsoleClean": true,
+        "verifiedAt": "2026-08-25T02:42:53Z"
       },
       "rejectedCandidatesMayParent": false
     },
@@ -1609,5 +1626,5 @@
     "role": "GARMENT_FRONT",
     "status": "PREFLIGHT_PASS_READY_NOT_INVOKED"
   },
-  "requiredNext": "Proceed with G019/01 from validated operation g019-v01-r001, then gate before any 02-07 fan-out. Do not rerun either paid G017 Gateway proof and do not begin G017/06 or 07 without an accepted G017/05. Resume G017 only through a materially new capability or a user-supplied manually accepted 05 while reusing the validated authority stack unchanged. G018 is live-verified and requires no further release action."
+  "requiredNext": "Proceed with G019/01 from validated operation g019-v01-r001, then gate before any 02-07 fan-out. G017 is live-verified as an exact four-view partial publication; do not add 05-07 without separately accepted G017 model views. G018 is live-verified and requires no further release action."
 }

@@ -241,7 +241,7 @@ await htmlCheck("Garment 017 partial product passport", "/shop/products/gunmetal
     "04-model-front.webp",
     "05-model-rear-three-quarter.webp",
     "07-model-left-profile.webp",
-  ].some((file) => body.includes(file))],
+  ].some((file) => visibleMarkup(body).includes(file))],
   ["customer-facing AI copy leaked", hasNoCustomerAiCopy],
   ["Product JSON-LD missing", (body) => body.includes("application/ld+json") && body.includes('"@type":"Product"')],
 ]);

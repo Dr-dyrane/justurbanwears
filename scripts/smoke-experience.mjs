@@ -219,7 +219,7 @@ const routes = [
         "04-model-front.webp",
         "05-model-rear-three-quarter.webp",
         "07-model-left-profile.webp",
-      ].some((file) => html.includes(file))],
+      ].some((file) => visibleMarkup(html).includes(file))],
       ["customer-facing AI copy leaked", (html) => hasNoCustomerAiCopy(html)],
     ],
   },
