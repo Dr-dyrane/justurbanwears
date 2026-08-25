@@ -195,16 +195,18 @@ function assertExistingDrop02Adoption(rows, ownerSubject) {
 
 function assertPostcondition(row) {
   invariant(row, "DROP02_TRANSITION_POSTCONDITION_FAILED");
+  const drop01Count = DROP01_TRANSITION_SKUS.length;
+  const drop02Count = DROP02_TRANSITION_SKUS.length;
   const expected = {
-    old_inventory_archived: 18,
-    old_publications_archived: 18,
-    old_wardrobe_archived: 18,
-    old_archive_events: 18,
-    new_intakes: 18,
-    new_wardrobe_items: 18,
-    new_publications: 18,
-    new_revisions: 18,
-    new_events: 36,
+    old_inventory_archived: drop01Count,
+    old_publications_archived: drop01Count,
+    old_wardrobe_archived: drop01Count,
+    old_archive_events: drop01Count,
+    new_intakes: drop02Count,
+    new_wardrobe_items: drop02Count,
+    new_publications: drop02Count,
+    new_revisions: drop02Count,
+    new_events: drop02Count * 2,
     returned_listing_sold: 1,
     returned_listing_returned: 1,
   };
