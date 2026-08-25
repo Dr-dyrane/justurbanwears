@@ -27,6 +27,7 @@ const V4_MODEL_SLUGS = new Set([
   "fuchsia-strapless-ruched-cascade-ruffle-mini-dress",
   "charcoal-wrap-front-ruched-slit-midi-dress",
   "marigold-sculptural-rosette-strapless-mini-dress",
+  "scarlet-rosette-halter-cutout-ruched-mini-dress",
 ]);
 
 const V3_MODEL_FRONT_SLUGS = new Set([
@@ -116,7 +117,7 @@ function presentation(product) {
  */
 export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
   schemaVersion: 2,
-  revision: "2026-08-25-catalogue-30",
+  revision: "2026-08-25-catalogue-31",
   products: Object.freeze([
     presentation({
       slug: "coral-drift-dress",
@@ -899,6 +900,26 @@ export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
       note: "A bright marigold strapless mini framed by two dimensional pleated rosettes.",
       story: "A clean bandeau neckline opens into sculptural pleated flowers across the front, balanced by a softly gathered mini skirt and layered ruffle hem.",
       details: ["Straight strapless neckline", "Two sculptural pleated rosettes", "Diagonal folded-petal front", "Layered ruffle mini hem"],
+      measurements: [],
+      mediaSlots: ["MODEL_FRONT", "MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
+    }),
+    presentation({
+      slug: "scarlet-rosette-halter-cutout-ruched-mini-dress",
+      sku: "JUW-045",
+      name: "Scarlet Rosette Halter Cutout Ruched Mini Dress",
+      category: "Dresses",
+      price: 27500,
+      taggedSize: "Size on request",
+      fit: "Measurements confirmed before payment",
+      condition: "Condition confirmed before payment",
+      colour: "Scarlet red",
+      availability: "AVAILABLE",
+      drop: "Drop 02",
+      tone: "coral",
+      silhouette: "dress",
+      note: "A scarlet halter mini shaped by a dimensional centre rosette, an open midriff and dense ruching.",
+      story: "A gathered halter bandeau lifts around one sculptural fabric rose, opening into a defined midriff cutout above a close high-waisted ruched mini.",
+      details: ["Narrow halter straps", "Dimensional centre rosette", "Open midriff cutout", "High-waisted ruched mini"],
       measurements: [],
       mediaSlots: ["MODEL_FRONT", "MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
     }),

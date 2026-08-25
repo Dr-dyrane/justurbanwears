@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "workflowRevision": "2026-08-25.71",
-  "updatedAt": "2026-08-25T13:24:35Z",
+  "workflowRevision": "2026-08-25.78",
+  "updatedAt": "2026-08-25T14:48:00Z",
   "model": "LULU_V4",
-  "activeGarment": "020",
-  "activeView": "COMPLETE",
-  "status": "GARMENT_020_01_07_PRIVATE_LOCKED_LIVE_VERIFIED_CATALOGUE_30",
+  "activeGarment": "021",
+  "activeView": "07",
+  "status": "GARMENT_021_01_07_USER_ACCEPTED_PRIVATE_LOCKED_SHOP_RELEASE_IN_PROGRESS",
   "identityReview": {
     "candidateId": "lulu.face.v4.front.candidate.v1",
     "acceptedAssetId": "lulu.face.v4.front.lock.v1",
@@ -63,12 +63,13 @@
       "status": "LOCKED",
       "primary": [
         "lulu.body.real.angle-contact.v4",
+        "lulu.body.real.gym-rear-profile.v4",
         "lulu.body.canon.v4",
         "lulu.body.canon.v4.three-view",
         "lulu.body.canon.v4.side",
         "lulu.body.canon.v4.back"
       ],
-      "rule": "Real Lulu photos remain body evidence truth. The V4 source and three-view plate are user-approved modeled silhouette and garment-transfer controls, not verified measurements. Use the direct angle contact and the combined plate to preserve Lulu's believable bust-waist-hip balance, thighs, legs and heel-aware stature as one complete body rather than optimizing isolated measurements."
+      "rule": "Real Lulu photos remain body evidence truth. The V4 source and three-view plate are user-approved modeled silhouette and garment-transfer controls, not verified measurements. Use the direct angle contacts, including the gym rear-profile evidence where relevant, and the combined plate to preserve Lulu's believable bust-waist-hip balance, rear projection, waist-to-upper-thigh continuity, thighs, legs and heel-aware stature as one complete body rather than optimizing isolated measurements. Do not compress or exaggerate the evidence-supported rear silhouette."
     },
     "renderQuality": {
       "status": "LOCKED_MANDATORY_PREFLIGHT_AND_SEPARATE_REVIEW",
@@ -1677,14 +1678,39 @@
       "shopRelease": {"catalogueRevision":"2026-08-25-catalogue-30","catalogueManifestChecksum":"877864cc608e06655c33a8dd379086556656d903473e51c5766eeda69da77258","cataloguePresentationChecksum":"9dfe541e83a4a8093b106eb46d10cfaf02b540a44309e5b005d79cc2563b6e44","publicRoot":"public/shop/products/marigold-sculptural-rosette-strapless-mini-dress","mediaCount":7,"publicBlobActiveAssetCount":240,"publicBlobLegacyAssetCount":7,"sourceCommit":"d36214d902d90f8e41c10439417128f16de601de","deployedCommit":"d36214d902d90f8e41c10439417128f16de601de","deploymentId":"dpl_3GHTiBPSyQGZDzG6Vd9RXSKt7hav","deployment":"https://justurbanwears-6bytldhwb-drdyranes-projects.vercel.app","databaseSkuPresent":true,"availability":"AVAILABLE","availabilityApi":"CONFIRMED","studioPublicationCount":1,"catalogueRowCount":38,"productionSmoke":"21_OF_21_PASS","experienceSmoke":"15_OF_15_PASS","browserProductGallery":"7_OF_7_1120X1400_ISOTROPIC","browserCollectionPieceCount":20,"browserConsole":"CLEAN","state":"LIVE_VERIFIED","verifiedAt":"2026-08-25T13:24:35Z","status":"LIVE_VERIFIED"},
       "consentAndPermission": {"realGarmentReferencesRemainPrivate":true,"realIdentityAndBodyReferencesRemainPrivate":true,"publicDerivativesApproved":true},
       "rejectedCandidatesMayParent": false
+    },
+    "021": {
+      "status": "01_07_USER_ACCEPTED_PRIVATE_LOCKED_SHOP_RELEASE_IN_PROGRESS",
+      "sku": "JUW-045",
+      "name": "Scarlet Rosette Halter Cutout Ruched Mini Dress",
+      "slug": "scarlet-rosette-halter-cutout-ruched-mini-dress",
+      "price": 27500,
+      "sourceManifest": "storage/garments/drop-02/021/source/manifest.json",
+      "sourceManifestSha256": "e0476fdbb88151bda58eed7c79fc4eac7712f168106d59784eda9e5f9ab20e49",
+      "classification": "DIRECT_CAPTURE_FRONT_FAMILY_ONLY",
+      "reservedViews": ["01", "02", "03", "04", "05", "06", "07"],
+      "views": {
+        "01": {"role":"GARMENT_FRONT","path":"storage/garments/drop-02/021/locked/01-garment-front.png","sha256":"283fdde1e46bf972f644c0d8420c315b5fc2ebf5205ab863df13a17e0dfd89bc","dimensions":"1086x1448","status":"ACCEPTED_LOCKED"},
+        "02": {"role":"GARMENT_BACK","path":"storage/garments/drop-02/021/locked/02-garment-back.png","sha256":"4c8e2da94a9763a91b7ac5003725da3c29b6605954148f73bd833d07e652c2f6","dimensions":"1086x1448","status":"ACCEPTED_LOCKED_INFERRED_REAR_PRESENTATION"},
+        "03": {"role":"MANNEQUIN_FRONT","path":"storage/garments/drop-02/021/locked/03-mannequin-front.png","sha256":"f22f632eb1d7854816e7cc1dedf922bb93f6a4fa8e463a6aa5e4ae538aeca399","dimensions":"1086x1448","status":"ACCEPTED_LOCKED"},
+        "04": {"role":"FABRIC_DETAIL","path":"storage/garments/drop-02/021/locked/04-fabric-detail.png","sha256":"bed93fd82542f9cec9357fb74a4958f2c7c23ba4a11cc63434061ab5a1ca56f1","dimensions":"1086x1448","status":"ACCEPTED_LOCKED_MODEL_COMPLETED_PRESENTATION_ONLY"},
+        "05": {"role":"MODEL_FRONT","path":"storage/garments/drop-02/021/locked/05-on-lulu-front.png","sha256":"9d31633c81970285addeed27ae835c0169d667aa72b829ca49b310ff01a807dc","dimensions":"1122x1402","status":"ACCEPTED_LOCKED_FRONT_MASTER"},
+        "06": {"role":"MODEL_LEFT_PROFILE","path":"storage/garments/drop-02/021/locked/06-on-lulu-left-profile.png","sha256":"f7953664894a83a896c449941969be93c48148c7eb98443d935e19d860fb0b41","dimensions":"1122x1402","status":"ACCEPTED_LOCKED_INDEPENDENT_SIBLING"},
+        "07": {"role":"MODEL_REAR_THREE_QUARTER","path":"storage/garments/drop-02/021/locked/07-on-lulu-right-rear-3q.png","sha256":"82442e86f191736b2e50c80d66a2eac8e3ae3e21b0dd2aa8cc15ad8417669c40","dimensions":"1122x1402","status":"ACCEPTED_LOCKED_BODY_FAITHFUL_INDEPENDENT_SIBLING_INFERRED_REAR_PRESENTATION","rejectedCandidatePath":"storage/garments/drop-02/021/candidates/v4-model-set-v1/07-on-lulu-right-rear-3q-r003.png","operationRecords":["storage/garments/drop-02/021/operations/g021-v07-r001.json","storage/garments/drop-02/021/operations/g021-v07-r002.json","storage/garments/drop-02/021/operations/g021-v07-r003.json","storage/garments/drop-02/021/operations/g021-v07-r004.json","storage/garments/drop-02/021/operations/g021-v07-r005.json"]}
+      },
+      "subjectLock": {"path":"storage/garments/drop-02/021/locked/LULU_G021_SUBJECT_FRONT_LOCK_v1.png","sha256":"443fd27cd9db59800b679a4902b934b5274b2235ef0847ffcfbe8c4e5b376433","dimensions":"1122x1402","status":"ACCEPTED_LOCKED"},
+      "lockedManifestSha256": "785eb06c079cbcd1387a1a141fd57a34b5ec2afe7efeba132ba7f301db7a6988",
+      "operationRecords": ["storage/garments/drop-02/021/operations/g021-fashion-advisory-r001.json","storage/garments/drop-02/021/operations/g021-holistic-subject-r001.json","storage/garments/drop-02/021/operations/g021-holistic-subject-r002.json","storage/garments/drop-02/021/operations/g021-room-and-05-r001.json","storage/garments/drop-02/021/operations/g021-room-and-05-r002.json","storage/garments/drop-02/021/operations/g021-v06-r001.json","storage/garments/drop-02/021/operations/g021-v07-r001.json","storage/garments/drop-02/021/operations/g021-v07-r002.json","storage/garments/drop-02/021/operations/g021-v07-r003.json","storage/garments/drop-02/021/operations/g021-v07-r004.json","storage/garments/drop-02/021/operations/g021-v07-r005.json","storage/garments/drop-02/021/operations/g021-shop-media-export-v001.json"],
+      "consentAndPermission": {"realGarmentReferencesRemainPrivate":true,"realIdentityAndBodyReferencesRemainPrivate":true,"publicDerivativesApproved":true},
+      "rejectedCandidatesMayParent": false
     }
   },
   "nextOperation": {
-    "operationId": "none-g020-complete",
-    "garmentId": "020",
-    "view": "COMPLETE",
-    "role": "NONE",
-    "status": "G020_LIVE_VERIFIED"
+    "operationId": "g021-shop-media-export-v001",
+    "garmentId": "021",
+    "view": "01-07",
+    "role": "SHOP_MEDIA_EXPORT_AND_RELEASE",
+    "status": "AUTHORIZED_IN_PROGRESS"
   },
-  "requiredNext": "None. Garment 020 is live verified."
+  "requiredNext": "Export approved G021 views into deterministic public Shop derivatives, update the catalogue and production database, deploy, and live-verify the exact release revision."
 }

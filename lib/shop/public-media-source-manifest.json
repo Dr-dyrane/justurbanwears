@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "catalogueRevision": "2026-08-25-catalogue-30",
-  "catalogueChecksum": "877864cc608e06655c33a8dd379086556656d903473e51c5766eeda69da77258",
-  "cataloguePresentationChecksum": "9dfe541e83a4a8093b106eb46d10cfaf02b540a44309e5b005d79cc2563b6e44",
+  "catalogueRevision": "2026-08-25-catalogue-31",
+  "catalogueChecksum": "df50a7c843f0a468f343365ccdd40a326535bca3532cb287ff82adbfeb6759a7",
+  "cataloguePresentationChecksum": "50178cf1fcfbd0dfa02a0873f07fcc34092de9febe79fb8d660a4db05b0c49ec",
   "assets": [
     {
       "sourcePath": "/shop/model/lulu-v2-approved.png",
@@ -2001,6 +2001,69 @@
       "contentType": "image/webp",
       "width": 1122,
       "height": 1402
+    },
+    {
+      "sourcePath": "/shop/products/scarlet-rosette-halter-cutout-ruched-mini-dress/01-garment-front.webp",
+      "pathname": "shop/catalogue/2d023eb314e5c504d76b5ce909ed96eb01a7a244380968af960096774c3de967/products/scarlet-rosette-halter-cutout-ruched-mini-dress/01-garment-front.webp",
+      "sha256": "2d023eb314e5c504d76b5ce909ed96eb01a7a244380968af960096774c3de967",
+      "size": 104910,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/scarlet-rosette-halter-cutout-ruched-mini-dress/02-garment-back.webp",
+      "pathname": "shop/catalogue/313337c66851341e0abf7b27a097f582924d72192a5a4132c4666eb4c69a2eb7/products/scarlet-rosette-halter-cutout-ruched-mini-dress/02-garment-back.webp",
+      "sha256": "313337c66851341e0abf7b27a097f582924d72192a5a4132c4666eb4c69a2eb7",
+      "size": 97612,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/scarlet-rosette-halter-cutout-ruched-mini-dress/03-mannequin-front.webp",
+      "pathname": "shop/catalogue/9fd5dfb296f3e4386a32dbbe7388972da7e04045d2fb7b092f3a26ed09ce5316/products/scarlet-rosette-halter-cutout-ruched-mini-dress/03-mannequin-front.webp",
+      "sha256": "9fd5dfb296f3e4386a32dbbe7388972da7e04045d2fb7b092f3a26ed09ce5316",
+      "size": 117196,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/scarlet-rosette-halter-cutout-ruched-mini-dress/04-model-front.webp",
+      "pathname": "shop/catalogue/0b056772cb382536c98bf9dcf91378e9cb7d593151296ddc6ea74489398ac791/products/scarlet-rosette-halter-cutout-ruched-mini-dress/04-model-front.webp",
+      "sha256": "0b056772cb382536c98bf9dcf91378e9cb7d593151296ddc6ea74489398ac791",
+      "size": 217046,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/scarlet-rosette-halter-cutout-ruched-mini-dress/05-model-rear-three-quarter.webp",
+      "pathname": "shop/catalogue/c2553b75fd852ab7b92f24e968504c271044e47617c4691a1a116e7f14077ae7/products/scarlet-rosette-halter-cutout-ruched-mini-dress/05-model-rear-three-quarter.webp",
+      "sha256": "c2553b75fd852ab7b92f24e968504c271044e47617c4691a1a116e7f14077ae7",
+      "size": 191334,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/scarlet-rosette-halter-cutout-ruched-mini-dress/06-fabric-detail.webp",
+      "pathname": "shop/catalogue/a17220b95ee353eeec241083a7f57772b6774c6e419dbf25723eca36da13963f/products/scarlet-rosette-halter-cutout-ruched-mini-dress/06-fabric-detail.webp",
+      "sha256": "a17220b95ee353eeec241083a7f57772b6774c6e419dbf25723eca36da13963f",
+      "size": 217722,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/scarlet-rosette-halter-cutout-ruched-mini-dress/07-model-left-profile.webp",
+      "pathname": "shop/catalogue/829ed2cc11861f23d8bfedc9752127d18dced4e66e54ad00fb224bec61b855c9/products/scarlet-rosette-halter-cutout-ruched-mini-dress/07-model-left-profile.webp",
+      "sha256": "829ed2cc11861f23d8bfedc9752127d18dced4e66e54ad00fb224bec61b855c9",
+      "size": 200324,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
     },
     {
       "sourcePath": "/shop/products/silver-off-shoulder-mermaid-dress/01-garment-front.webp",
