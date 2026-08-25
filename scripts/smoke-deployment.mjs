@@ -239,6 +239,16 @@ await htmlCheck("Garment 019 product passport", "/shop/products/charcoal-wrap-fr
   ["customer-facing AI copy leaked", hasNoCustomerAiCopy],
   ["Product JSON-LD missing", (body) => body.includes("application/ld+json") && body.includes('"@type":"Product"')],
 ]);
+await htmlCheck("Garment 020 product passport", "/shop/products/marigold-sculptural-rosette-strapless-mini-dress", [
+  ["product name missing", (body) => body.includes("Marigold Sculptural Rosette Strapless Mini Dress")],
+  ["seven-view dossier incomplete", (body) => [
+    "01-garment-front.webp", "02-garment-back.webp", "03-mannequin-front.webp",
+    "04-model-front.webp", "05-model-rear-three-quarter.webp",
+    "06-fabric-detail.webp", "07-model-left-profile.webp",
+  ].every((file) => body.includes(file))],
+  ["customer-facing AI copy leaked", hasNoCustomerAiCopy],
+  ["Product JSON-LD missing", (body) => body.includes("application/ld+json") && body.includes('"@type":"Product"')],
+]);
 await htmlCheck("Garment 017 partial product passport", "/shop/products/gunmetal-sparkle-open-back-long-sleeve-mini-dress", [
   ["product name missing", (body) => body.includes("Gunmetal Sparkle Open-Back Long-Sleeve Mini Dress")],
   ["approved four-view dossier incomplete", (body) => [

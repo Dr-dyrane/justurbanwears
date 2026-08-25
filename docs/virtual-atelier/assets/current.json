@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-25T04:33:34Z",
+  "updatedAt": "2026-08-25T13:07:00Z",
   "assets": [
     {
       "id": "packet.canon.v1",
@@ -3643,6 +3643,30 @@
       "garmentId": "019",
       "view": "07",
       "notes": "Accepted 1023x1537 independent right rear-three-quarter sibling; garment rear remains inferred presentation only and this view may not parent 06."
+    },
+    {
+      "id": "garment.020.view.01.accepted", "filename": "01-garment-front.png", "aliases": ["../garments/drop-02/020/locked/01-garment-front.png"], "kind": "generated-output", "role": "Accepted Garment 020 front presentation", "provenance": "MODEL_REFERENCE", "privacy": "private", "storage": "repo-storage-ignored", "status": "user-authorized-autonomous-accepted-locked", "required": true, "sha256": "7ee1f9465016ac6dc553f3300d0db8409887da27c74569bcca8f3e1130ef5a04", "bytes": 2071002, "authority": ["garment", "presentation"], "garmentId": "020", "view": "01", "notes": "Accepted 1024x1536 front presentation preserving the direct front-family construction."
+    },
+    {
+      "id": "garment.020.view.02.accepted", "filename": "02-garment-back.png", "aliases": ["../garments/drop-02/020/locked/02-garment-back.png"], "kind": "generated-output", "role": "Accepted Garment 020 inferred rear presentation", "provenance": "MODEL_REFERENCE", "privacy": "private", "storage": "repo-storage-ignored", "status": "user-authorized-autonomous-accepted-locked-inferred-rear-presentation", "required": true, "sha256": "1efb8a1dec46d009100ad8d74c67a5485832c7adb8684a65175d345c85127033", "bytes": 1822447, "authority": ["garment", "presentation"], "garmentId": "020", "view": "02", "notes": "Accepted 1024x1536 low-information inferred rear presentation; never direct rear construction evidence."
+    },
+    {
+      "id": "garment.020.view.03.accepted", "filename": "03-mannequin-front.png", "aliases": ["../garments/drop-02/020/locked/03-mannequin-front.png"], "kind": "generated-output", "role": "Accepted Garment 020 anonymous mannequin front presentation", "provenance": "MODEL_REFERENCE", "privacy": "private", "storage": "repo-storage-ignored", "status": "user-authorized-autonomous-accepted-locked", "required": true, "sha256": "fc7e89235b1815e7a76065c5ef3e83a6588716c9e7ef050d9bf4efd60434317e", "bytes": 1823526, "authority": ["garment", "presentation"], "garmentId": "020", "view": "03", "notes": "Accepted 1023x1537 anonymous mannequin presentation; no Lulu authority."
+    },
+    {
+      "id": "garment.020.view.04.accepted", "filename": "04-fabric-detail.png", "aliases": ["../garments/drop-02/020/locked/04-fabric-detail.png"], "kind": "generated-output", "role": "Accepted Garment 020 visible-construction detail presentation", "provenance": "MODEL_REFERENCE", "privacy": "private", "storage": "repo-storage-ignored", "status": "user-authorized-autonomous-accepted-locked-model-completed-presentation-only", "required": true, "sha256": "c5cc2fd17ccdb7c95cbe100b689b22c4a61cc4e27239de66c6a069da10b8ba17", "bytes": 2345802, "authority": ["garment", "presentation"], "garmentId": "020", "view": "04", "notes": "Accepted 1024x1536 rosette, folded-petal and ruffle detail; never fibre evidence."
+    },
+    {
+      "id": "garment.020.subject.front.lock.v1", "filename": "LULU_G020_SUBJECT_FRONT_LOCK_v1.png", "aliases": ["../garments/drop-02/020/locked/LULU_G020_SUBJECT_FRONT_LOCK_v1.png"], "kind": "generated-output", "role": "Accepted complete G020 front subject before room compositing", "provenance": "MODEL_REFERENCE", "privacy": "private", "storage": "repo-storage-ignored", "status": "user-authorized-autonomous-accepted-locked-subject", "required": true, "sha256": "e8238705c679488398bc66bec79321af721715ec763ca77da3f5ed0f1450d0bc", "bytes": 1938160, "authority": ["identity", "body", "garment", "styling", "presentation"], "garmentId": "020", "view": "SUBJECT", "notes": "Accepted 1024x1536 holistic G020 subject lock grounded in the complete real-Lulu identity and approved body authority stack."
+    },
+    {
+      "id": "garment.020.view.05.accepted", "filename": "05-on-lulu-front.png", "aliases": ["../garments/drop-02/020/locked/05-on-lulu-front.png"], "kind": "generated-output", "role": "Accepted Garment 020 real-Lulu front master in the canonical atelier", "provenance": "MODEL_REFERENCE", "privacy": "private", "storage": "repo-storage-ignored", "status": "user-authorized-autonomous-accepted-locked-front-master", "required": true, "sha256": "21dff0da9790a05cecf17f3b29a2cd01461eeb5bcca9df047a0c2540a2fbbfb8", "bytes": 2108102, "authority": ["identity", "body", "garment", "styling", "atelier", "presentation"], "garmentId": "020", "view": "05", "notes": "Accepted 1023x1537 front master preserving real-Lulu identity, body balance, G020 garment truth, gold styling and the canonical light atelier."
+    },
+    {
+      "id": "garment.020.view.06.accepted", "filename": "06-on-lulu-left-profile.png", "aliases": ["../garments/drop-02/020/locked/06-on-lulu-left-profile.png"], "kind": "generated-output", "role": "Accepted Garment 020 independent left-profile sibling", "provenance": "MODEL_REFERENCE", "privacy": "private", "storage": "repo-storage-ignored", "status": "user-authorized-autonomous-accepted-locked-independent-sibling", "required": true, "sha256": "60b2c58156d4f6afe6e5c0c1f428b9d7759cd2284c2a818c01c51d813de0266c", "bytes": 2145895, "authority": ["identity", "body", "garment", "styling", "atelier", "presentation"], "garmentId": "020", "view": "06", "notes": "Accepted 1023x1537 independent left-profile sibling; it may not parent view 07."
+    },
+    {
+      "id": "garment.020.view.07.accepted", "filename": "07-on-lulu-right-rear-3q.png", "aliases": ["../garments/drop-02/020/locked/07-on-lulu-right-rear-3q.png"], "kind": "generated-output", "role": "Accepted Garment 020 independent right rear-three-quarter sibling", "provenance": "MODEL_REFERENCE", "privacy": "private", "storage": "repo-storage-ignored", "status": "user-authorized-autonomous-accepted-locked-independent-sibling-inferred-rear-presentation", "required": true, "sha256": "089c4a32f4c6e9255c20d47b3be323c8a44210681ed0fb44f5b97af61ac6d73d", "bytes": 2079530, "authority": ["identity", "body", "garment", "styling", "atelier", "presentation"], "garmentId": "020", "view": "07", "notes": "Accepted 1023x1537 independent right rear-three-quarter sibling; garment rear remains inferred presentation only and this view may not parent 06."
     }
   ]
 }

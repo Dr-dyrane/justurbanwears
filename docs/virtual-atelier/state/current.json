@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "workflowRevision": "2026-08-24.69",
-  "updatedAt": "2026-08-25T05:11:36Z",
+  "workflowRevision": "2026-08-25.70",
+  "updatedAt": "2026-08-25T13:12:00Z",
   "model": "LULU_V4",
-  "activeGarment": "019",
+  "activeGarment": "020",
   "activeView": "COMPLETE",
-  "status": "GARMENT_017_PARTIAL_01_04_LIVE_VERIFIED_GARMENT_018_LIVE_VERIFIED_GARMENT_019_01_07_LIVE_VERIFIED_CATALOGUE_29",
+  "status": "GARMENT_020_01_07_PRIVATE_LOCKED_PUBLIC_MEDIA_SYNCED_RELEASE_PENDING_CATALOGUE_30",
   "identityReview": {
     "candidateId": "lulu.face.v4.front.candidate.v1",
     "acceptedAssetId": "lulu.face.v4.front.lock.v1",
@@ -89,8 +89,8 @@
       "status": "LOCKED_MANDATORY_FASHION_NOVA_CHECK_BEFORE_EVERY_05",
       "validator": "scripts/virtual-atelier/validate-operation.mjs",
       "requiredDecisions": ["KEEP", "REFINE", "REPLACE", "NO_CLOSE_MATCH"],
-      "operation": "storage/garments/drop-02/019/operations/g019-fashion-advisory-r001.json",
-      "decision": "REFINE with black pointed slingback stilettos, tiny gold studs, one thin gold bracelet, and no necklace or competing accessories.",
+      "operation": "storage/garments/drop-02/020/operations/g020-fashion-advisory-r001.json",
+      "decision": "REFINE with metallic-gold ankle-strap stilettos, tiny gold studs, one thin gold bracelet, and no necklace, bag or competing accessories.",
       "rule": "Before every 05, inspect and record one current official Fashion Nova product or styling page for the same or closest proven garment family. Fashion Nova is advisory footwear/accessory styling evidence only and is never passed as a generation image reference by default. It has no authority over garment provenance or construction, Lulu identity/body, hair, pose, room, brand, camera or lighting. If no close match exists, record NO_CLOSE_MATCH and keep garment-faithful JUW styling. The user-accepted G009/05 whole-frame review closed its REPLACE decision; those accepted boots persist through its independent 06 and 07 siblings."
     },
     "atelier": {
@@ -1651,14 +1651,40 @@
         "publicDerivativesApproved": true
       },
       "rejectedCandidatesMayParent": false
+    },
+    "020": {
+      "status": "VIEWS_01_07_USER_AUTHORIZED_AUTONOMOUSLY_ACCEPTED_PRIVATE_LOCKED_PUBLIC_MEDIA_SYNCED_RELEASE_PENDING",
+      "sku": "JUW-044",
+      "name": "Marigold Sculptural Rosette Strapless Mini Dress",
+      "slug": "marigold-sculptural-rosette-strapless-mini-dress",
+      "price": 32500,
+      "sourceManifest": "storage/garments/drop-02/020/source/manifest.json",
+      "sourceManifestSha256": "08b0769bff88e5094ea384232b7807b0d9f38a06f01dbf0b937af391ee893bbc",
+      "classification": "DIRECT_CAPTURE_FRONT_FAMILY_ONLY",
+      "reservedViews": ["01", "02", "03", "04", "05", "06", "07"],
+      "views": {
+        "01": {"role":"GARMENT_FRONT","path":"storage/garments/drop-02/020/locked/01-garment-front.png","sha256":"7ee1f9465016ac6dc553f3300d0db8409887da27c74569bcca8f3e1130ef5a04","dimensions":"1024x1536","status":"ACCEPTED_LOCKED"},
+        "02": {"role":"GARMENT_BACK","path":"storage/garments/drop-02/020/locked/02-garment-back.png","sha256":"1efb8a1dec46d009100ad8d74c67a5485832c7adb8684a65175d345c85127033","dimensions":"1024x1536","status":"ACCEPTED_LOCKED_INFERRED_REAR_PRESENTATION"},
+        "03": {"role":"MANNEQUIN_FRONT","path":"storage/garments/drop-02/020/locked/03-mannequin-front.png","sha256":"fc7e89235b1815e7a76065c5ef3e83a6588716c9e7ef050d9bf4efd60434317e","dimensions":"1023x1537","status":"ACCEPTED_LOCKED"},
+        "04": {"role":"FABRIC_DETAIL","path":"storage/garments/drop-02/020/locked/04-fabric-detail.png","sha256":"c5cc2fd17ccdb7c95cbe100b689b22c4a61cc4e27239de66c6a069da10b8ba17","dimensions":"1024x1536","status":"ACCEPTED_LOCKED_MODEL_COMPLETED_PRESENTATION_ONLY"},
+        "05": {"role":"MODEL_FRONT","path":"storage/garments/drop-02/020/locked/05-on-lulu-front.png","sha256":"21dff0da9790a05cecf17f3b29a2cd01461eeb5bcca9df047a0c2540a2fbbfb8","dimensions":"1023x1537","status":"ACCEPTED_LOCKED_FRONT_MASTER"},
+        "06": {"role":"MODEL_LEFT_PROFILE","path":"storage/garments/drop-02/020/locked/06-on-lulu-left-profile.png","sha256":"60b2c58156d4f6afe6e5c0c1f428b9d7759cd2284c2a818c01c51d813de0266c","dimensions":"1023x1537","status":"ACCEPTED_LOCKED_INDEPENDENT_SIBLING"},
+        "07": {"role":"MODEL_REAR_THREE_QUARTER","path":"storage/garments/drop-02/020/locked/07-on-lulu-right-rear-3q.png","sha256":"089c4a32f4c6e9255c20d47b3be323c8a44210681ed0fb44f5b97af61ac6d73d","dimensions":"1023x1537","status":"ACCEPTED_LOCKED_INDEPENDENT_SIBLING_INFERRED_REAR_PRESENTATION"}
+      },
+      "subjectLock": {"path":"storage/garments/drop-02/020/locked/LULU_G020_SUBJECT_FRONT_LOCK_v1.png","sha256":"e8238705c679488398bc66bec79321af721715ec763ca77da3f5ed0f1450d0bc","dimensions":"1024x1536","status":"ACCEPTED_LOCKED"},
+      "lockedManifestSha256": "52d965119d0af35bdffea3901c318ab44d9204ab970fc887ff6cb2c1e6756a29",
+      "operationRecords": ["storage/garments/drop-02/020/operations/g020-fashion-advisory-r001.json", "storage/garments/drop-02/020/operations/g020-holistic-subject-r001.json", "storage/garments/drop-02/020/operations/g020-room-and-05-r001.json", "storage/garments/drop-02/020/operations/g020-v06-r001.json", "storage/garments/drop-02/020/operations/g020-v07-r001.json", "storage/garments/drop-02/020/operations/g020-shop-media-export-v001.json"],
+      "shopRelease": {"catalogueRevision":"2026-08-25-catalogue-30","catalogueManifestChecksum":"877864cc608e06655c33a8dd379086556656d903473e51c5766eeda69da77258","cataloguePresentationChecksum":"9dfe541e83a4a8093b106eb46d10cfaf02b540a44309e5b005d79cc2563b6e44","publicRoot":"public/shop/products/marigold-sculptural-rosette-strapless-mini-dress","mediaCount":7,"publicBlobActiveAssetCount":240,"publicBlobLegacyAssetCount":7,"state":"PUBLIC_MEDIA_SYNCED_RELEASE_PENDING"},
+      "consentAndPermission": {"realGarmentReferencesRemainPrivate":true,"realIdentityAndBodyReferencesRemainPrivate":true,"publicDerivativesApproved":true},
+      "rejectedCandidatesMayParent": false
     }
   },
   "nextOperation": {
-    "operationId": "none-g019-complete",
-    "garmentId": "019",
-    "view": "COMPLETE",
-    "role": "NONE",
-    "status": "G019_LIVE_VERIFIED"
+    "operationId": "g020-release-catalogue-30",
+    "garmentId": "020",
+    "view": "RELEASE",
+    "role": "SHOP_CATALOGUE_PUBLICATION",
+    "status": "PUBLIC_MEDIA_SYNCED_RELEASE_PENDING"
   },
-  "requiredNext": "Garment 019 is complete and live-verified. Await the next garment intake. G017 remains a live-verified four-view partial publication; G018 remains live-verified."
+  "requiredNext": "Apply and verify catalogue 30, deploy the exact revision, then live-smoke G020 and the complete Shop experience."
 }

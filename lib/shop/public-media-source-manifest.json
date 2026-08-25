@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "catalogueRevision": "2026-08-24-catalogue-29",
-  "catalogueChecksum": "b5388445c60f055902f7e16b0f1e66672372a2446d91b43a36bdba894367f2e7",
-  "cataloguePresentationChecksum": "13d3468c9dc9b59beaf81954d82931fffd664912c560b7276b988fbc20a15a6d",
+  "catalogueRevision": "2026-08-25-catalogue-30",
+  "catalogueChecksum": "877864cc608e06655c33a8dd379086556656d903473e51c5766eeda69da77258",
+  "cataloguePresentationChecksum": "9dfe541e83a4a8093b106eb46d10cfaf02b540a44309e5b005d79cc2563b6e44",
   "assets": [
     {
       "sourcePath": "/shop/model/lulu-v2-approved.png",
@@ -1569,6 +1569,69 @@
       "contentType": "image/webp",
       "width": 972,
       "height": 1619
+    },
+    {
+      "sourcePath": "/shop/products/marigold-sculptural-rosette-strapless-mini-dress/01-garment-front.webp",
+      "pathname": "shop/catalogue/47694eea111acc07b8d093d0dc30657c6ac014f93d15b64d18138cce4523f13b/products/marigold-sculptural-rosette-strapless-mini-dress/01-garment-front.webp",
+      "sha256": "47694eea111acc07b8d093d0dc30657c6ac014f93d15b64d18138cce4523f13b",
+      "size": 126768,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/marigold-sculptural-rosette-strapless-mini-dress/02-garment-back.webp",
+      "pathname": "shop/catalogue/961393b79fdcd7ecc8d3e02590b5311ba364eb243a249a96fdd0469af8a11561/products/marigold-sculptural-rosette-strapless-mini-dress/02-garment-back.webp",
+      "sha256": "961393b79fdcd7ecc8d3e02590b5311ba364eb243a249a96fdd0469af8a11561",
+      "size": 64338,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/marigold-sculptural-rosette-strapless-mini-dress/03-mannequin-front.webp",
+      "pathname": "shop/catalogue/925467f8b0a23025f6eb8ea876adf9968ebb39ee5d64887228e19f8c2b0791dc/products/marigold-sculptural-rosette-strapless-mini-dress/03-mannequin-front.webp",
+      "sha256": "925467f8b0a23025f6eb8ea876adf9968ebb39ee5d64887228e19f8c2b0791dc",
+      "size": 99586,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/marigold-sculptural-rosette-strapless-mini-dress/04-model-front.webp",
+      "pathname": "shop/catalogue/4d30d7eb075cc60c897d0f61b1a8f301044ddd9b797e95597bed7eecb0122c15/products/marigold-sculptural-rosette-strapless-mini-dress/04-model-front.webp",
+      "sha256": "4d30d7eb075cc60c897d0f61b1a8f301044ddd9b797e95597bed7eecb0122c15",
+      "size": 171426,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/marigold-sculptural-rosette-strapless-mini-dress/05-model-rear-three-quarter.webp",
+      "pathname": "shop/catalogue/c1c6de294ec0488dec21e4d06a91ccfe8064f46be428f77caac85a5611879ca4/products/marigold-sculptural-rosette-strapless-mini-dress/05-model-rear-three-quarter.webp",
+      "sha256": "c1c6de294ec0488dec21e4d06a91ccfe8064f46be428f77caac85a5611879ca4",
+      "size": 167822,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/marigold-sculptural-rosette-strapless-mini-dress/06-fabric-detail.webp",
+      "pathname": "shop/catalogue/c6d0af1a74a7a21dcb06d98f04a028bad1c6ac8dcbdcd0abe58d89ad4977bbc3/products/marigold-sculptural-rosette-strapless-mini-dress/06-fabric-detail.webp",
+      "sha256": "c6d0af1a74a7a21dcb06d98f04a028bad1c6ac8dcbdcd0abe58d89ad4977bbc3",
+      "size": 237028,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/marigold-sculptural-rosette-strapless-mini-dress/07-model-left-profile.webp",
+      "pathname": "shop/catalogue/c225a98a8fadfa13c2b199f7a2305cfb0a1a385100b7a713618786a74fbed4b1/products/marigold-sculptural-rosette-strapless-mini-dress/07-model-left-profile.webp",
+      "sha256": "c225a98a8fadfa13c2b199f7a2305cfb0a1a385100b7a713618786a74fbed4b1",
+      "size": 165518,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
     },
     {
       "sourcePath": "/shop/products/moss-square-knit/01-garment-front.webp",

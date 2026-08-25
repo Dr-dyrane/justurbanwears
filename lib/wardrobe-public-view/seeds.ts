@@ -52,6 +52,7 @@ export const WARDROBE_APPROVED_V4_MODEL_SLUGS = Object.freeze([
   "plum-sparkle-cowl-neck-jumpsuit",
   "fuchsia-strapless-ruched-cascade-ruffle-mini-dress",
   "charcoal-wrap-front-ruched-slit-midi-dress",
+  "marigold-sculptural-rosette-strapless-mini-dress",
 ] as const);
 
 export const WARDROBE_APPROVED_MODEL_FRONT_SLUGS = Object.freeze([
@@ -89,6 +90,7 @@ export const WARDROBE_APPROVED_MODEL_SUPPLEMENTAL_SLOTS = Object.freeze({
   "plum-sparkle-cowl-neck-jumpsuit": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "fuchsia-strapless-ruched-cascade-ruffle-mini-dress": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "charcoal-wrap-front-ruched-slit-midi-dress": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
+  "marigold-sculptural-rosette-strapless-mini-dress": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "coral-drift-dress": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "moss-square-knit": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "cocoa-pleat-trouser": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
@@ -718,6 +720,25 @@ export const WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS: readonly WardrobePublicProduc
     note: "A charcoal-black fitted midi shaped by a deep crossover front and asymmetric ruching.",
     story: "Long close sleeves frame a deep wrap-front V, with diagonal folds drawing through the waist into a fitted midi skirt and one narrow front slit.",
     details: ["Deep crossover V neckline", "Long fitted sleeves", "Asymmetric diagonal ruching", "Narrow front slit"],
+    measurements: [],
+  }),
+  migrationSeed({
+    slug: "marigold-sculptural-rosette-strapless-mini-dress",
+    sku: "JUW-044",
+    name: "Marigold Sculptural Rosette Strapless Mini Dress",
+    category: "Dresses",
+    price: 32500,
+    taggedSize: "Size on request",
+    fit: "Measurements confirmed before payment",
+    condition: "Condition confirmed before payment",
+    colour: "Marigold yellow",
+    availability: "AVAILABLE",
+    drop: "Drop 02",
+    tone: "coral",
+    silhouette: "dress",
+    note: "A bright marigold strapless mini framed by two dimensional pleated rosettes.",
+    story: "A clean bandeau neckline opens into sculptural pleated flowers across the front, balanced by a softly gathered mini skirt and layered ruffle hem.",
+    details: ["Straight strapless neckline", "Two sculptural pleated rosettes", "Diagonal folded-petal front", "Layered ruffle mini hem"],
     measurements: [],
   }),
 ]);

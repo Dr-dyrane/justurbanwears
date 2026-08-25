@@ -26,6 +26,7 @@ const V4_MODEL_SLUGS = new Set([
   "plum-sparkle-cowl-neck-jumpsuit",
   "fuchsia-strapless-ruched-cascade-ruffle-mini-dress",
   "charcoal-wrap-front-ruched-slit-midi-dress",
+  "marigold-sculptural-rosette-strapless-mini-dress",
 ]);
 
 const V3_MODEL_FRONT_SLUGS = new Set([
@@ -115,7 +116,7 @@ function presentation(product) {
  */
 export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
   schemaVersion: 2,
-  revision: "2026-08-24-catalogue-29",
+  revision: "2026-08-25-catalogue-30",
   products: Object.freeze([
     presentation({
       slug: "coral-drift-dress",
@@ -878,6 +879,26 @@ export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
       note: "A charcoal-black fitted midi shaped by a deep crossover front and asymmetric ruching.",
       story: "Long close sleeves frame a deep wrap-front V, with diagonal folds drawing through the waist into a fitted midi skirt and one narrow front slit.",
       details: ["Deep crossover V neckline", "Long fitted sleeves", "Asymmetric diagonal ruching", "Narrow front slit"],
+      measurements: [],
+      mediaSlots: ["MODEL_FRONT", "MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
+    }),
+    presentation({
+      slug: "marigold-sculptural-rosette-strapless-mini-dress",
+      sku: "JUW-044",
+      name: "Marigold Sculptural Rosette Strapless Mini Dress",
+      category: "Dresses",
+      price: 32500,
+      taggedSize: "Size on request",
+      fit: "Measurements confirmed before payment",
+      condition: "Condition confirmed before payment",
+      colour: "Marigold yellow",
+      availability: "AVAILABLE",
+      drop: "Drop 02",
+      tone: "coral",
+      silhouette: "dress",
+      note: "A bright marigold strapless mini framed by two dimensional pleated rosettes.",
+      story: "A clean bandeau neckline opens into sculptural pleated flowers across the front, balanced by a softly gathered mini skirt and layered ruffle hem.",
+      details: ["Straight strapless neckline", "Two sculptural pleated rosettes", "Diagonal folded-petal front", "Layered ruffle mini hem"],
       measurements: [],
       mediaSlots: ["MODEL_FRONT", "MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
     }),
