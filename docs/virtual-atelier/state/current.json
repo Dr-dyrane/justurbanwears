@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "workflowRevision": "2026-08-24.67",
-  "updatedAt": "2026-08-25T02:42:53Z",
+  "workflowRevision": "2026-08-24.68",
+  "updatedAt": "2026-08-25T04:33:34Z",
   "model": "LULU_V4",
   "activeGarment": "019",
-  "activeView": "01",
-  "status": "GARMENT_017_PARTIAL_01_04_LIVE_VERIFIED_CATALOGUE_28_GARMENT_018_LIVE_VERIFIED_GARMENT_019_INTAKE_PREFLIGHT_READY",
+  "activeView": "RELEASE",
+  "status": "GARMENT_017_PARTIAL_01_04_LIVE_VERIFIED_GARMENT_018_LIVE_VERIFIED_GARMENT_019_01_07_ACCEPTED_LOCKED_RELEASE_CANDIDATE_CATALOGUE_29",
   "identityReview": {
     "candidateId": "lulu.face.v4.front.candidate.v1",
     "acceptedAssetId": "lulu.face.v4.front.lock.v1",
@@ -29,7 +29,7 @@
   },
   "globalLocks": {
     "garment": {
-      "status": "GARMENTS_009_010_011_012_013_014_015_016_018_01_07_ACCEPTED_LOCKED_GARMENT_017_01_04_ACCEPTED_LOCKED_GARMENT_019_INTAKE_READY",
+      "status": "GARMENTS_009_010_011_012_013_014_015_016_018_019_01_07_ACCEPTED_LOCKED_GARMENT_017_01_04_ACCEPTED_LOCKED",
       "primary": [
         "garment.009.view.01.accepted",
         "garment.010.view.01.accepted",
@@ -40,9 +40,10 @@
         "garment.015.view.01.accepted",
         "garment.016.view.01.accepted",
         "garment.017.view.01.accepted",
-        "garment.018.view.01.accepted"
+        "garment.018.view.01.accepted",
+        "garment.019.view.01.accepted"
       ],
-      "rule": "The exact reviewed 01-07 sets for Garments 009 through 016 and Garment 018 are privately locked. G017 views 01-04 are privately locked from direct front and rear evidence; its 02 is direct-rear-supported presentation and its 04 is model-completed presentation only. G019 is intake-only with no accepted generated view. Each accepted 01 controls its garment-specific holistic subject synthesis. Direct captures retain construction truth. Each accepted 05 may parent only its own independent 06 and 07 siblings. Rejected candidates never parent."
+      "rule": "The exact reviewed 01-07 sets for Garments 009 through 016, Garment 018 and Garment 019 are privately locked. G017 views 01-04 are privately locked from direct front and rear evidence; its 02 is direct-rear-supported presentation and its 04 is model-completed presentation only. Each accepted 01 controls its garment-specific holistic subject synthesis. Direct captures retain construction truth. Each accepted 05 may parent only its own independent 06 and 07 siblings. Rejected candidates never parent."
     },
     "identity": {
       "status": "LOCKED",
@@ -88,8 +89,8 @@
       "status": "LOCKED_MANDATORY_FASHION_NOVA_CHECK_BEFORE_EVERY_05",
       "validator": "scripts/virtual-atelier/validate-operation.mjs",
       "requiredDecisions": ["KEEP", "REFINE", "REPLACE", "NO_CLOSE_MATCH"],
-      "operation": "storage/garments/drop-02/017/operations/g017-fashion-nova-styling-check-v001.json",
-      "decision": "REFINE with smoked-clear or black pointed-toe non-platform PVC stilettos, tiny silver or white-metal studs, and no competing necklace, bag or heavy accessories.",
+      "operation": "storage/garments/drop-02/019/operations/g019-fashion-advisory-r001.json",
+      "decision": "REFINE with black pointed slingback stilettos, tiny gold studs, one thin gold bracelet, and no necklace or competing accessories.",
       "rule": "Before every 05, inspect and record one current official Fashion Nova product or styling page for the same or closest proven garment family. Fashion Nova is advisory footwear/accessory styling evidence only and is never passed as a generation image reference by default. It has no authority over garment provenance or construction, Lulu identity/body, hair, pose, room, brand, camera or lighting. If no close match exists, record NO_CLOSE_MATCH and keep garment-faithful JUW styling. The user-accepted G009/05 whole-frame review closed its REPLACE decision; those accepted boots persist through its independent 06 and 07 siblings."
     },
     "atelier": {
@@ -1595,36 +1596,57 @@
       "rejectedCandidatesMayParent": false
     },
     "019": {
-      "status": "PRIVATE_INTAKE_COMPLETE_DIRECT_FRONT_FAMILY_01_PREFLIGHT_READY_NO_GENERATION_INVOKED",
+      "status": "VIEWS_01_07_USER_AUTHORIZED_AUTONOMOUSLY_ACCEPTED_PRIVATE_LOCKED_RELEASE_CANDIDATE",
       "sku": "JUW-043",
+      "name": "Charcoal Wrap-Front Ruched Slit Midi Dress",
+      "slug": "charcoal-wrap-front-ruched-slit-midi-dress",
+      "price": 28500,
       "sourceManifest": "storage/garments/drop-02/019/source/manifest.json",
       "sourceManifestSha256": "de7a61a188e40d0ddf0d8c8aa021fa02bb7cc68ad6ef9959951186939c2da77d",
       "classification": "DIRECT_CAPTURE_FRONT_FAMILY_ONLY",
       "reservedViews": ["01", "02", "03", "04", "05", "06", "07"],
-      "views": {},
+      "views": {
+        "01": {"role": "GARMENT_FRONT", "path": "storage/garments/drop-02/019/locked/01-garment-front.png", "sha256": "657dba9e455bf276d464b02b17db25b8de8c11879be966b7257002be27d2e563", "dimensions": "1024x1536", "status": "ACCEPTED_LOCKED"},
+        "02": {"role": "GARMENT_BACK", "path": "storage/garments/drop-02/019/locked/02-garment-back.png", "sha256": "875760c7ad646771287da421f5187ea21f8d0773facdff3d3d9400b5978c8ab8", "dimensions": "1024x1536", "status": "ACCEPTED_LOCKED_INFERRED_REAR_PRESENTATION"},
+        "03": {"role": "MANNEQUIN_FRONT", "path": "storage/garments/drop-02/019/locked/03-mannequin-front.png", "sha256": "4081291ee6ea9059321b6c7c488535e645e070441a521ee0101c17ac54e77f40", "dimensions": "1023x1537", "status": "ACCEPTED_LOCKED"},
+        "04": {"role": "FABRIC_DETAIL", "path": "storage/garments/drop-02/019/locked/04-fabric-detail.png", "sha256": "c01f11ad0091ca954a1a230ca739bd8b521f95781defa733bf6b50f920d3fd67", "dimensions": "1023x1537", "status": "ACCEPTED_LOCKED_MODEL_COMPLETED_PRESENTATION_ONLY"},
+        "05": {"role": "MODEL_FRONT", "path": "storage/garments/drop-02/019/locked/05-on-lulu-front.png", "sha256": "2323aeb01b1798bda7bc5b9c020efc3d979f2f321c7ce42834664658efad0907", "dimensions": "1122x1402", "status": "ACCEPTED_LOCKED_FRONT_MASTER"},
+        "06": {"role": "MODEL_LEFT_PROFILE", "path": "storage/garments/drop-02/019/locked/06-on-lulu-left-profile.png", "sha256": "9ccf9814eab69fa75dfccb9dbf10fa756b3b374d550a6237479455b8208a1072", "dimensions": "1122x1402", "status": "ACCEPTED_LOCKED_INDEPENDENT_SIBLING"},
+        "07": {"role": "MODEL_REAR_THREE_QUARTER", "path": "storage/garments/drop-02/019/locked/07-on-lulu-right-rear-3q.png", "sha256": "98b9319ef57a45cf97ac95da22588a39162e02783a6ede8a5b5d246ff8103293", "dimensions": "1023x1537", "status": "ACCEPTED_LOCKED_INDEPENDENT_SIBLING_INFERRED_REAR_PRESENTATION"}
+      },
+      "subjectLock": {"path": "storage/garments/drop-02/019/locked/LULU_G019_SUBJECT_FRONT_LOCK_v1.png", "sha256": "7907f4e9f4c06687f351152b202e3c8690f3e38da809be86d103809397630c02", "dimensions": "1024x1536", "status": "ACCEPTED_LOCKED"},
       "operationRecords": [
-        "storage/garments/drop-02/019/operations/g019-v01-r001.json"
+        "storage/garments/drop-02/019/operations/g019-v01-r003-clean-surface.json",
+        "storage/garments/drop-02/019/operations/g019-v02-r001.json",
+        "storage/garments/drop-02/019/operations/g019-v03-r001.json",
+        "storage/garments/drop-02/019/operations/g019-v04-r001.json",
+        "storage/garments/drop-02/019/operations/g019-fashion-advisory-r001.json",
+        "storage/garments/drop-02/019/operations/g019-holistic-subject-r001.json",
+        "storage/garments/drop-02/019/operations/g019-room-and-05-r001.json",
+        "storage/garments/drop-02/019/operations/g019-v06-r001.json",
+        "storage/garments/drop-02/019/operations/g019-v07-r001.json"
       ],
-      "preflight": {
-        "operationId": "g019-v01-r001",
-        "operationSha256": "32145ccccf4004e1c51afc51f7fd5d86db4590523bb14b8decd954f51f91532a",
-        "view": "01",
-        "status": "PASS_READY_NOT_INVOKED"
+      "shopRelease": {
+        "catalogueRevision": "2026-08-24-catalogue-29",
+        "catalogueManifestChecksum": "b5388445c60f055902f7e16b0f1e66672372a2446d91b43a36bdba894367f2e7",
+        "publicRoot": "public/shop/products/charcoal-wrap-front-ruched-slit-midi-dress",
+        "mediaCount": 7,
+        "status": "LOCAL_RELEASE_CANDIDATE"
       },
       "consentAndPermission": {
         "realGarmentReferencesRemainPrivate": true,
-        "noIdentityOrBodyMediaUsedAtIntake": true,
-        "publicDerivativeRequiresSeparateGate": true
+        "realIdentityAndBodyReferencesRemainPrivate": true,
+        "publicDerivativesApproved": true
       },
       "rejectedCandidatesMayParent": false
     }
   },
   "nextOperation": {
-    "operationId": "g019-v01-r001",
+    "operationId": "g019-shop-release-v001",
     "garmentId": "019",
-    "view": "01",
-    "role": "GARMENT_FRONT",
-    "status": "PREFLIGHT_PASS_READY_NOT_INVOKED"
+    "view": "RELEASE",
+    "role": "SHOP_PUBLICATION",
+    "status": "LOCAL_RELEASE_CANDIDATE"
   },
-  "requiredNext": "Proceed with G019/01 from validated operation g019-v01-r001, then gate before any 02-07 fan-out. G017 is live-verified as an exact four-view partial publication; do not add 05-07 without separately accepted G017 model views. G018 is live-verified and requires no further release action."
+  "requiredNext": "Complete the bounded G019 catalogue-29 release gate: Blob sync, exact commit and push, production database revision, source-built production deployment, route/API/browser verification, then record LIVE_VERIFIED. G017 remains a live-verified four-view partial publication; G018 remains live-verified."
 }

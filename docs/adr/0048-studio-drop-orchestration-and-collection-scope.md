@@ -7,8 +7,8 @@
 
 ## Context
 
-Drop 02 is real catalogue state today. It contains eighteen one-off pieces,
-`JUW-025` through `JUW-042`, and is the current public Shop drop. Studio does
+Drop 02 is real catalogue state today. It contains nineteen one-off pieces,
+`JUW-025` through `JUW-043`, and is the current public Shop drop. Studio does
 not yet hold that fact as a first-class business subject.
 
 The current implementation spreads drop meaning across three mechanisms:
@@ -231,7 +231,7 @@ Drop is Wardrobe context, not a service and not a Home metric.
 - Home keeps the four summary signals from ADR 0044. There is no fifth Drop
   orb, no Drop service row and no collection dashboard.
 - Wardrobe shows one compact scope control above its primary collection, for
-  example `Drop 02 · 18 pieces`. The active collection is the default.
+  example `Drop 02 · 19 pieces`. The active collection is the default.
 - Tapping the control opens one bounded sheet. It shows Current first, then
   authorized Draft collections and Past collections through progressive
   disclosure.
@@ -256,7 +256,7 @@ or one exact failure and recovery action.
 Before `collection_id` is authoritative, a transitional adapter constructs
 collection scopes from one explicit, reviewed SKU-membership fixture. Drop 01
 contains its eighteen canonical SKUs, including `JUW-004`; Drop 02 contains
-exactly `JUW-025` through `JUW-042` and remains current through
+exactly `JUW-025` through `JUW-043` and remains current through
 `CURRENT_SHOP_DROP`.
 
 The adapter must not derive keys by accepting arbitrary text. Existing
@@ -283,7 +283,7 @@ The migration is additive and observable:
 3. Add nullable `collection_id` to `shop_catalogue_items` and nullable
    `target_collection_id` to `studio_wardrobe_items`.
 4. Backfill catalogue membership from the explicit reviewed SKU-to-ID fixture,
-   independent of `drop_label`. Verify all eighteen Drop 01 SKUs and all eighteen
+   independent of `drop_label`. Verify all eighteen Drop 01 SKUs and all nineteen
    Drop 02 SKUs exist and resolve to their expected collection before
    continuing. Preserve every legacy `drop_label` byte.
 5. Backfill existing Studio wardrobe targets from their adopted publication's
@@ -340,7 +340,7 @@ command payloads or identity-authority metadata.
 ## Acceptance
 
 - The database identifies Drop 02 by stable collection ID/key and verifies its
-  eighteen members `JUW-025` through `JUW-042`.
+  nineteen members `JUW-025` through `JUW-043`.
 - Renaming a collection does not move a piece or alter current-drop selection.
 - Exactly one active collection is resolved by the server; zero or multiple
   active collections fail truthfully and block publication.

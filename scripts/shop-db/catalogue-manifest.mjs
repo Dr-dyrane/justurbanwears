@@ -25,6 +25,7 @@ const V4_MODEL_SLUGS = new Set([
   "black-cropped-tee-washed-black-wide-leg-cargo-jeans-set",
   "plum-sparkle-cowl-neck-jumpsuit",
   "fuchsia-strapless-ruched-cascade-ruffle-mini-dress",
+  "charcoal-wrap-front-ruched-slit-midi-dress",
 ]);
 
 const V3_MODEL_FRONT_SLUGS = new Set([
@@ -114,7 +115,7 @@ function presentation(product) {
  */
 export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
   schemaVersion: 2,
-  revision: "2026-08-24-catalogue-28",
+  revision: "2026-08-24-catalogue-29",
   products: Object.freeze([
     presentation({
       slug: "coral-drift-dress",
@@ -857,6 +858,26 @@ export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
       note: "A saturated fuchsia strapless mini shaped with dense ruching and one cascading asymmetric ruffle.",
       story: "A softly dipped strapless neckline meets a close ruched body, while one layered front cascade continues below the mini hem as a fluid free tail.",
       details: ["Softly dipped strapless neckline", "Dense horizontal ruching", "Asymmetric layered front ruffle", "Extended free ruffle tail"],
+      measurements: [],
+      mediaSlots: ["MODEL_FRONT", "MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
+    }),
+    presentation({
+      slug: "charcoal-wrap-front-ruched-slit-midi-dress",
+      sku: "JUW-043",
+      name: "Charcoal Wrap-Front Ruched Slit Midi Dress",
+      category: "Dresses",
+      price: 28500,
+      taggedSize: "Size on request",
+      fit: "Measurements confirmed before payment",
+      condition: "Condition confirmed before payment",
+      colour: "Charcoal black",
+      availability: "AVAILABLE",
+      drop: "Drop 02",
+      tone: "cocoa",
+      silhouette: "dress",
+      note: "A charcoal-black fitted midi shaped by a deep crossover front and asymmetric ruching.",
+      story: "Long close sleeves frame a deep wrap-front V, with diagonal folds drawing through the waist into a fitted midi skirt and one narrow front slit.",
+      details: ["Deep crossover V neckline", "Long fitted sleeves", "Asymmetric diagonal ruching", "Narrow front slit"],
       measurements: [],
       mediaSlots: ["MODEL_FRONT", "MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
     }),

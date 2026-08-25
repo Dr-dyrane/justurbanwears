@@ -51,6 +51,7 @@ export const WARDROBE_APPROVED_V4_MODEL_SLUGS = Object.freeze([
   "black-cropped-tee-washed-black-wide-leg-cargo-jeans-set",
   "plum-sparkle-cowl-neck-jumpsuit",
   "fuchsia-strapless-ruched-cascade-ruffle-mini-dress",
+  "charcoal-wrap-front-ruched-slit-midi-dress",
 ] as const);
 
 export const WARDROBE_APPROVED_MODEL_FRONT_SLUGS = Object.freeze([
@@ -87,6 +88,7 @@ export const WARDROBE_APPROVED_MODEL_SUPPLEMENTAL_SLOTS = Object.freeze({
   "black-cropped-tee-washed-black-wide-leg-cargo-jeans-set": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "plum-sparkle-cowl-neck-jumpsuit": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "fuchsia-strapless-ruched-cascade-ruffle-mini-dress": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
+  "charcoal-wrap-front-ruched-slit-midi-dress": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "coral-drift-dress": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "moss-square-knit": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "cocoa-pleat-trouser": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
@@ -697,6 +699,25 @@ export const WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS: readonly WardrobePublicProduc
     note: "A saturated fuchsia strapless mini shaped with dense ruching and one cascading asymmetric ruffle.",
     story: "A softly dipped strapless neckline meets a close ruched body, while one layered front cascade continues below the mini hem as a fluid free tail.",
     details: ["Softly dipped strapless neckline", "Dense horizontal ruching", "Asymmetric layered front ruffle", "Extended free ruffle tail"],
+    measurements: [],
+  }),
+  migrationSeed({
+    slug: "charcoal-wrap-front-ruched-slit-midi-dress",
+    sku: "JUW-043",
+    name: "Charcoal Wrap-Front Ruched Slit Midi Dress",
+    category: "Dresses",
+    price: 28500,
+    taggedSize: "Size on request",
+    fit: "Measurements confirmed before payment",
+    condition: "Condition confirmed before payment",
+    colour: "Charcoal black",
+    availability: "AVAILABLE",
+    drop: "Drop 02",
+    tone: "cocoa",
+    silhouette: "dress",
+    note: "A charcoal-black fitted midi shaped by a deep crossover front and asymmetric ruching.",
+    story: "Long close sleeves frame a deep wrap-front V, with diagonal folds drawing through the waist into a fitted midi skirt and one narrow front slit.",
+    details: ["Deep crossover V neckline", "Long fitted sleeves", "Asymmetric diagonal ruching", "Narrow front slit"],
     measurements: [],
   }),
 ]);

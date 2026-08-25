@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "catalogueRevision": "2026-08-24-catalogue-28",
-  "catalogueChecksum": "7295f23bd32f0c00474d370b698e9569b8d15e42013daecd518c4b9e62b6bac1",
-  "cataloguePresentationChecksum": "bf2223ba520f7606a6ddd5718b0e2db46d6a5463cda9606f48ded865f702906c",
+  "catalogueRevision": "2026-08-24-catalogue-29",
+  "catalogueChecksum": "b5388445c60f055902f7e16b0f1e66672372a2446d91b43a36bdba894367f2e7",
+  "cataloguePresentationChecksum": "13d3468c9dc9b59beaf81954d82931fffd664912c560b7276b988fbc20a15a6d",
   "assets": [
     {
       "sourcePath": "/shop/model/lulu-v2-approved.png",
@@ -876,6 +876,69 @@
       "contentType": "image/webp",
       "width": 1122,
       "height": 1402
+    },
+    {
+      "sourcePath": "/shop/products/charcoal-wrap-front-ruched-slit-midi-dress/01-garment-front.webp",
+      "pathname": "shop/catalogue/e408b700e51d8961e7d2f2cdce39772df164fba5bf48fa9564b4ffa41c6ddeb8/products/charcoal-wrap-front-ruched-slit-midi-dress/01-garment-front.webp",
+      "sha256": "e408b700e51d8961e7d2f2cdce39772df164fba5bf48fa9564b4ffa41c6ddeb8",
+      "size": 62738,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/charcoal-wrap-front-ruched-slit-midi-dress/02-garment-back.webp",
+      "pathname": "shop/catalogue/4482c785989a6bd164f20225e9a37941fdf625273f2842230c10ea9af3256a86/products/charcoal-wrap-front-ruched-slit-midi-dress/02-garment-back.webp",
+      "sha256": "4482c785989a6bd164f20225e9a37941fdf625273f2842230c10ea9af3256a86",
+      "size": 42332,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/charcoal-wrap-front-ruched-slit-midi-dress/03-mannequin-front.webp",
+      "pathname": "shop/catalogue/a9e2d8fa4700e476c767df51382f4b3eb793aa90942adaa7c939376d5c4b952c/products/charcoal-wrap-front-ruched-slit-midi-dress/03-mannequin-front.webp",
+      "sha256": "a9e2d8fa4700e476c767df51382f4b3eb793aa90942adaa7c939376d5c4b952c",
+      "size": 48220,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/charcoal-wrap-front-ruched-slit-midi-dress/04-model-front.webp",
+      "pathname": "shop/catalogue/745a861483fac4a40e05275665f2e79ce3f1987910c6723dfe7ebdd380783909/products/charcoal-wrap-front-ruched-slit-midi-dress/04-model-front.webp",
+      "sha256": "745a861483fac4a40e05275665f2e79ce3f1987910c6723dfe7ebdd380783909",
+      "size": 199142,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/charcoal-wrap-front-ruched-slit-midi-dress/05-model-rear-three-quarter.webp",
+      "pathname": "shop/catalogue/48616ab8c4591f60381181ba9f7cde80bb2b6712dae723636572b42f97758dbc/products/charcoal-wrap-front-ruched-slit-midi-dress/05-model-rear-three-quarter.webp",
+      "sha256": "48616ab8c4591f60381181ba9f7cde80bb2b6712dae723636572b42f97758dbc",
+      "size": 155920,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/charcoal-wrap-front-ruched-slit-midi-dress/06-fabric-detail.webp",
+      "pathname": "shop/catalogue/ce9b4ee28ed20f0a6990ae0ffcb92369d73ebdaed4af534fd42a7a5ffd6a27c8/products/charcoal-wrap-front-ruched-slit-midi-dress/06-fabric-detail.webp",
+      "sha256": "ce9b4ee28ed20f0a6990ae0ffcb92369d73ebdaed4af534fd42a7a5ffd6a27c8",
+      "size": 68556,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/charcoal-wrap-front-ruched-slit-midi-dress/07-model-left-profile.webp",
+      "pathname": "shop/catalogue/50f7fb0ef64dc3e056483b8661b1fd3ef58e4417cea87d57525a2015d41513e9/products/charcoal-wrap-front-ruched-slit-midi-dress/07-model-left-profile.webp",
+      "sha256": "50f7fb0ef64dc3e056483b8661b1fd3ef58e4417cea87d57525a2015d41513e9",
+      "size": 174858,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
     },
     {
       "sourcePath": "/shop/products/cocoa-cowl-gathered-midi-dress/01-garment-front.webp",
