@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "workflowRevision": "2026-08-25.83",
-  "updatedAt": "2026-08-25T23:01:31Z",
+  "workflowRevision": "2026-08-25.84",
+  "updatedAt": "2026-08-25T23:08:43Z",
   "model": "LULU_V4",
   "activeGarment": "023",
   "activeView": "COMPLETE",
-  "status": "GARMENT_023_01_07_PRIVATE_LOCKED_CATALOGUE_33_RELEASE_READY",
+  "status": "GARMENT_023_01_07_PRIVATE_LOCKED_LIVE_VERIFIED_CATALOGUE_33",
   "identityReview": {
     "candidateId": "lulu.face.v4.front.candidate.v1",
     "acceptedAssetId": "lulu.face.v4.front.lock.v1",
@@ -1732,7 +1732,7 @@
       "rejectedCandidatesMayParent": false
     },
     "023": {
-      "status": "01_07_USER_AUTHORIZED_AUTONOMOUSLY_ACCEPTED_PRIVATE_LOCKED_RELEASE_READY",
+      "status": "01_07_USER_AUTHORIZED_AUTONOMOUSLY_ACCEPTED_PRIVATE_LOCKED_LIVE_VERIFIED",
       "sku": "JUW-047",
       "name": "Scarlet Asymmetric Cascade Ruched Mini Dress",
       "slug": "scarlet-asymmetric-cascade-ruched-mini-dress",
@@ -1753,11 +1753,11 @@
       "subjectLock": {"path":"storage/garments/drop-02/023/locked/LULU_G023_SUBJECT_FRONT_LOCK_v1.png","sha256":"a3d812710d711d70d4e9d9d732cfb08ed5b70ad718cfe5a5bc9a8d47eee33ac5","dimensions":"1122x1402","status":"ACCEPTED_LOCKED"},
       "lockedManifestSha256": "3b3659d8e8fdbc8297b5889c4ed43c07f2db4c13ed84da73dfd89c20d3f7b163",
       "operationRecords": ["storage/garments/drop-02/023/operations/g023-v01-r001.json","storage/garments/drop-02/023/operations/g023-v02-r001.json","storage/garments/drop-02/023/operations/g023-v03-r001.json","storage/garments/drop-02/023/operations/g023-v04-r001.json","storage/garments/drop-02/023/operations/g023-holistic-subject-r001.json","storage/garments/drop-02/023/operations/g023-room-and-05-r001.json","storage/garments/drop-02/023/operations/g023-v06-r001.json","storage/garments/drop-02/023/operations/g023-v07-r001.json","storage/garments/drop-02/023/operations/g023-v07-r002.json","storage/garments/drop-02/023/operations/g023-shop-media-export-v001.json"],
-      "shopRelease": {"catalogueRevision":"2026-08-25-catalogue-33","catalogueManifestChecksum":"3be78321051c0cfa33eefd97fed820656d1cffcbc2345d8d5bc76d94ccd5e631","cataloguePresentationChecksum":"61b3dad7fc66d4b8a146646ffa8d59cfc3354abe99040b19f1b010d7231a7129","publicRoot":"public/shop/products/scarlet-asymmetric-cascade-ruched-mini-dress","mediaCount":7,"publicBlobActiveAssetCount":261,"publicBlobLegacyAssetCount":7,"state":"RELEASE_READY","status":"RELEASE_READY"},
+      "shopRelease": {"catalogueRevision":"2026-08-25-catalogue-33","catalogueManifestChecksum":"3be78321051c0cfa33eefd97fed820656d1cffcbc2345d8d5bc76d94ccd5e631","cataloguePresentationChecksum":"61b3dad7fc66d4b8a146646ffa8d59cfc3354abe99040b19f1b010d7231a7129","publicRoot":"public/shop/products/scarlet-asymmetric-cascade-ruched-mini-dress","mediaCount":7,"publicBlobActiveAssetCount":261,"publicBlobLegacyAssetCount":7,"sourceCommit":"6a49292ed032000130baef40c6ff9162b5f33c41","deployedCommit":"6a49292ed032000130baef40c6ff9162b5f33c41","deploymentId":"dpl_FaNvGvRHALiiQuAUP6MvpdHSZYiS","deployment":"https://justurbanwears-37pwwj1vt-drdyranes-projects.vercel.app","databaseSkuPresent":true,"availability":"AVAILABLE","availabilityApi":"CONFIRMED","studioPublicationCount":1,"catalogueRowCount":41,"productionSmoke":"24_OF_24_PASS","experienceSmoke":"18_OF_18_PASS","browserProductGallery":"7_OF_7_1120X1400_ISOTROPIC","browserCollectionPieceCount":23,"browserConsole":"CLEAN","state":"LIVE_VERIFIED","verifiedAt":"2026-08-25T23:08:43Z","status":"LIVE_VERIFIED"},
       "consentAndPermission": {"realGarmentReferencesRemainPrivate":true,"realIdentityAndBodyReferencesRemainPrivate":true,"publicDerivativesApproved":true},
       "rejectedCandidatesMayParent": false
     }
   },
   "nextOperation": null,
-  "requiredNext": "Run the single G023 production release gate, deploy, and live-verify the product."
+  "requiredNext": "None. Garment 023 is live verified."
 }
