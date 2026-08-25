@@ -195,7 +195,8 @@ test("commerce surfaces use customer language and expose the exact next Studio a
   assert.doesNotMatch(inbox, /useStudioMobileAction/);
   assert.match(inbox, /#studio-order-next-action/);
   assert.ok(inbox.indexOf("studio-piece-next") < inbox.indexOf("studio-connected-order-list"));
-  assert.ok(inbox.indexOf("studio-connected-order-list") < inbox.indexOf("Create customer order"));
+  assert.ok(inbox.indexOf("studio-connected-order-list") < inbox.indexOf('title="Customer order"'));
+  assert.match(inbox, /<StudioTaskSheet[\s\S]*?onSubmit=\{createAssistedOrder\}[\s\S]*?title="Customer order"/);
   assert.match(inbox, /<details className="studio-stack-filter">[\s\S]*?<summary>Find orders/);
   assert.match(detail, /id=\{isNextAction \? "studio-order-next-action"/);
   assert.match(detail, /open=\{isNextAction \|\| undefined\}/);

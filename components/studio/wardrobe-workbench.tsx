@@ -43,6 +43,7 @@ import { ReadinessList } from "./atoms/readiness-list";
 import { StudioPager, StudioSegmentedView, useStudioSegment } from "./atoms/studio-segmented-view";
 import { StudioLink } from "./atoms/studio-link";
 import { StudioTaskSheet } from "./atoms/studio-task-sheet";
+import { StudioStackPage, StudioStackSection } from "./atoms/studio-stack-page";
 import { GarmentIntakeSheet } from "./garment-intake/garment-intake-sheet";
 import { WearSheet } from "./garment-intake/wear-sheet";
 import { DraftDirectCaptures } from "./draft-direct-captures";
@@ -224,6 +225,7 @@ export function PieceWorkspaceView({ garment, initialAction, onBuildSet, onDismi
   const [publishing, setPublishing] = useState(false);
   const [publicationError, setPublicationError] = useState("");
   const [lifecycleWorkspace, setLifecycleWorkspace] = useState<GarmentLifecycleWorkspace>();
+  const [secondaryOpen, setSecondaryOpen] = useState(initialAction === "price");
   const publicationConfirmationId = useId();
   const captureSectionRef = useRef<HTMLElement>(null);
   const listingSectionRef = useRef<HTMLElement>(null);
@@ -371,7 +373,8 @@ export function PieceWorkspaceView({ garment, initialAction, onBuildSet, onDismi
         publicationSectionRef.current?.focus({ preventScroll: true });
       }, 0);
     } else if (nextAction.kind === "DYNAMIC_MANAGE") {
-      lifecycleSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      setSecondaryOpen(true);
+      window.setTimeout(() => lifecycleSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 0);
     } else if (nextAction.kind === "DYNAMIC_RETRY") {
       setPublicationReload((value) => value + 1);
     } else if (workspace.nextAction.kind === "CAPTURE") {
@@ -388,10 +391,14 @@ export function PieceWorkspaceView({ garment, initialAction, onBuildSet, onDismi
       onContinueMedia(garment);
     } else if (workspace.nextAction.kind === "PREPARE_SHOP") {
       studio.prepareListing(garment.id);
+      setSecondaryOpen(true);
       window.setTimeout(() => listingSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 0);
     } else if (workspace.nextAction.kind === "REVIEW_SHOP") {
-      listingSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-      listingSectionRef.current?.focus({ preventScroll: true });
+      setSecondaryOpen(true);
+      window.setTimeout(() => {
+        listingSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+        listingSectionRef.current?.focus({ preventScroll: true });
+      }, 0);
     } else if (workspace.nextAction.kind === "PUBLISH" && listing) {
       studio.publishListing(listing.id);
     } else if (workspace.nextAction.kind === "VIEW_SHOP" && listing) {
@@ -445,9 +452,20 @@ export function PieceWorkspaceView({ garment, initialAction, onBuildSet, onDismi
         </section> : null}
         {reviewOpen && publicationLoading ? <section className="studio-piece-shop studio-publication-review" id="piece-publication-review" aria-live="polite"><small>Refreshing Shop preview…</small></section> : null}
         {reviewOpen && !publicationLoading && publicationLoadError ? <section className="studio-piece-shop studio-publication-review" id="piece-publication-review"><p className="studio-engine-error" role="alert">{publicationLoadError}</p><button className="button button-primary" onClick={() => setPublicationReload((value) => value + 1)} type="button">Check again</button></section> : null}
-        {visibleBlockers.length ? <section className="studio-piece-blockers" aria-label={`${garment.title} still needs`}><small>Still needed</small><div>{visibleBlockers.map((blocker) => <span key={blocker}>{blocker}</span>)}</div></section> : null}
-        {garment.privateWardrobeItemId ? <div ref={lifecycleSectionRef}><GarmentLifecyclePanel initialAction={initialAction} onWorkspaceChange={setLifecycleWorkspace} wardrobeItemId={garment.privateWardrobeItemId} /></div> : null}
-        {listing ? <section className="studio-piece-shop" ref={listingSectionRef} tabIndex={-1}><ListingEditor listing={listing} /></section> : null}
+        {visibleBlockers.length || garment.privateWardrobeItemId || listing ? (
+          <details
+            className="studio-transition-action studio-piece-secondary"
+            onToggle={(event) => setSecondaryOpen(event.currentTarget.open)}
+            open={secondaryOpen}
+          >
+            <summary>Piece details<span>{dynamicStage.label}</span></summary>
+            <div className="studio-transition-action-body studio-piece-secondary-body">
+              {visibleBlockers.length ? <section className="studio-piece-blockers" aria-label={`${garment.title} still needs`}><small>Still needed</small><div>{visibleBlockers.map((blocker) => <span key={blocker}>{blocker}</span>)}</div></section> : null}
+              {garment.privateWardrobeItemId ? <div ref={lifecycleSectionRef}><GarmentLifecyclePanel initialAction={initialAction} onWorkspaceChange={setLifecycleWorkspace} wardrobeItemId={garment.privateWardrobeItemId} /></div> : null}
+              {listing ? <section className="studio-piece-shop" ref={listingSectionRef} tabIndex={-1}><ListingEditor listing={listing} /></section> : null}
+            </div>
+          </details>
+        ) : null}
       </div>
     </section>
   );
@@ -823,7 +841,7 @@ export function WardrobeWorkbench() {
 
   return (
     <StudioMediaViewerProvider>
-    <div className="studio-ops-page studio-premium-surface">
+    <StudioStackPage className="studio-ops-page studio-premium-surface" kind="service">
       <h1 className="sr-only" id="garments">Wardrobe</h1>
 
       <button
@@ -869,7 +887,7 @@ export function WardrobeWorkbench() {
       <StudioSegmentedView active={activeView} label="Wardrobe workspace" onSelect={selectView} pending={viewPending} segments={segments} />
 
       {activeView === "garments" ? (
-        <section aria-labelledby="studio-tab-garments" id="studio-view-garments" role="tabpanel">
+        <StudioStackSection aria-labelledby="studio-tab-garments" id="studio-view-garments" role="tabpanel">
           <details className="studio-stack-filter">
             <summary>Filter · {filter.toLowerCase()} <span>{visibleGarments.length}</span></summary>
             <div className="studio-filter-bar" role="group" aria-label="Filter wardrobe">
@@ -884,7 +902,7 @@ export function WardrobeWorkbench() {
               ? filter === "ALL" ? "Choose another drop." : "Choose another filter."
               : "Add your first garment."}</p></div>{studio.garments.length ? null : <button className="button button-primary" onClick={(event) => openIntake(event.currentTarget)} type="button">Add garment</button>}</div>
           )}
-        </section>
+        </StudioStackSection>
       ) : (
         <section className="studio-publishing-section studio-stack-panel" id="studio-view-publishing" aria-labelledby="studio-tab-publishing" role="tabpanel">
           <div className="studio-section-title"><div><p className="eyebrow">Publishing</p><h2 id="publishing-title">Listing review</h2></div><span>{scopedListings.length} listing{scopedListings.length === 1 ? "" : "s"}</span></div>
@@ -1006,7 +1024,7 @@ export function WardrobeWorkbench() {
           }}
         /> : null}
       </StudioTaskSheet>
-    </div>
+    </StudioStackPage>
     </StudioMediaViewerProvider>
   );
 }

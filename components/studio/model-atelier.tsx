@@ -9,19 +9,18 @@ import {
   Archive,
   ArrowRight,
   ChevronRight,
-  CircleAlert,
   Lock,
   Pencil,
   Plus,
-  ShieldCheck,
   UserRound,
 } from "lucide-react";
 import type { StudioAuthorityModel } from "../../lib/studio/services/studio-authority-client";
 import { APPROVED_PUBLIC_MODEL_PREVIEW } from "../../lib/studio/projections/approved-catalogue";
-import { LifecycleBadge } from "./atoms/lifecycle-badge";
 import { LifecycleMeta } from "./atoms/lifecycle-meta";
+import { StudioFeedback } from "./atoms/studio-feedback";
 import { StudioLink } from "./atoms/studio-link";
 import { StudioSegmentedView, useStudioSegment } from "./atoms/studio-segmented-view";
+import { StudioStackPage, StudioStackSection } from "./atoms/studio-stack-page";
 import { StudioTaskSheet } from "./atoms/studio-task-sheet";
 import { useStudio } from "./studio-provider";
 
@@ -115,8 +114,7 @@ function ModelTask({
   }
 
   return (
-    <StudioTaskSheet eyebrow={mode === "create" ? "Model authority" : "Model styling"} onDismiss={onDismiss} open={open} returnFocus={returnFocus} title={mode === "create" ? "Add model" : `Edit ${model?.name ?? "model"}`}>
-      <form className="studio-task-sheet-body" onSubmit={save}>
+    <StudioTaskSheet eyebrow={mode === "create" ? "Model authority" : "Model styling"} onDismiss={onDismiss} onSubmit={save} open={open} returnFocus={returnFocus} title={mode === "create" ? "Add model" : `Edit ${model?.name ?? "model"}`}>
         <section className="studio-task-question">
           <h3>{mode === "create" ? "Who can wear the piece?" : "How should this model present it?"}</h3>
           <div className="studio-form-grid studio-task-fields">
@@ -132,9 +130,8 @@ function ModelTask({
             </>}
           </div>
         </section>
-        {error ? <p className="studio-task-error" role="alert">{error}</p> : null}
+        {error ? <StudioFeedback detail={error} state="error" title="Couldn’t save" /> : null}
         <footer className="studio-task-sheet-footer"><button className="button button-secondary" onClick={onDismiss} type="button">Cancel</button><button className="button button-primary" disabled={pending} type="submit">{pending ? "Saving…" : mode === "create" ? "Add model" : "Save changes"}</button></footer>
-      </form>
     </StudioTaskSheet>
   );
 }
@@ -212,11 +209,11 @@ export function ModelAtelier() {
     }
   }
 
-  if (authority.status === "idle" || authority.status === "loading") return <div className="studio-loading" role="status">Opening model atelier…</div>;
-  if (authority.status === "error" || !authority.snapshot) return <div className="studio-quiet-empty" role="alert"><CircleAlert aria-hidden="true" size={24} /><div><strong>Models unavailable</strong><p>{authority.error}</p></div><button className="button button-secondary" onClick={() => void authority.refresh()} type="button">Try again</button></div>;
+  if (authority.status === "idle" || authority.status === "loading") return <StudioStackPage className="studio-ops-page" kind="service"><StudioFeedback state="loading" title="Opening Models" /></StudioStackPage>;
+  if (authority.status === "error" || !authority.snapshot) return <StudioStackPage className="studio-ops-page" kind="service"><StudioFeedback action={<button className="button button-secondary" onClick={() => void authority.refresh()} type="button">Try again</button>} detail={authority.error} state="error" title="Models unavailable" /></StudioStackPage>;
 
   return (
-    <div className="studio-ops-page">
+    <StudioStackPage className="studio-ops-page" kind="service">
       <h1 className="sr-only" id="models">Models</h1>
       {selected ? (
         <StudioLink className="studio-stack-current" href={`/studio/media/new?model=${encodeURIComponent(selected.id)}`}>
@@ -232,28 +229,27 @@ export function ModelAtelier() {
 
       <StudioSegmentedView active={activeView} label="Model workspace" onSelect={selectView} pending={viewPending} segments={segments} />
 
+      <StudioStackSection>
       <div className="studio-model-layout">
         <aside className="studio-model-index">
-          <div className="studio-index-heading"><span>Models</span><strong>{readyModels.length}</strong></div>
-          <div className="studio-model-list" role="group" aria-label="Studio models">{readyModels.map((model) => <button aria-pressed={selected?.id === model.id} className={selected?.id === model.id ? "studio-model-option is-selected" : "studio-model-option"} key={model.id} onClick={() => setSelectedId(model.id)} type="button"><span className="studio-model-avatar" aria-hidden="true"><UserRound size={21} /></span><span><strong>{model.name}</strong><small>{model.kind === "LULU_V3" ? "Approved default" : "Authority confirmed"}</small><LifecycleMeta state="READY" /></span></button>)}</div>
-          <button className="studio-model-create" onClick={(event) => openTask("create", event.currentTarget)} type="button"><Plus aria-hidden="true" size={18} /><span><strong>Add another model</strong><small>Photo and usage source required</small></span><ChevronRight aria-hidden="true" size={16} /></button>
+          <div className="studio-model-list" role="group" aria-label={`${readyModels.length} ready Studio models`}>{readyModels.map((model) => <button aria-pressed={selected?.id === model.id} className={selected?.id === model.id ? "studio-model-option is-selected" : "studio-model-option"} key={model.id} onClick={() => setSelectedId(model.id)} type="button"><span className="studio-model-avatar" aria-hidden="true"><UserRound size={21} /></span><span><strong>{model.name}</strong><LifecycleMeta state="READY" /></span></button>)}</div>
+          <button className="studio-model-create" onClick={(event) => openTask("create", event.currentTarget)} type="button"><Plus aria-hidden="true" size={18} /><span><strong>Add model</strong></span><ChevronRight aria-hidden="true" size={16} /></button>
         </aside>
 
         {selected ? <div className={`studio-model-stage${activeView === "profile" ? "" : " is-panel-only"}`}>
-          {activeView === "profile" ? <div className={`studio-model-portrait${selected.kind === "LULU_V3" ? " is-approved" : ""}`}><img alt={`${selected.name}, private approved model authority`} className="studio-model-approved-image" height={1619} src={selected.kind === "LULU_V3" ? APPROVED_PUBLIC_MODEL_PREVIEW.src : selected.sourceAssetUrl} width={972} /><span className="studio-model-anchor-badge"><ShieldCheck aria-hidden="true" size={17} /><span><small>{selected.kind === "LULU_V3" ? "Approved V3 profile" : "Usage confirmed"}</small><strong>{selected.name}</strong></span></span><div className="studio-model-master-caption"><small>Private model authority</small><strong>{selected.name}</strong><span>Ready for try-ons</span></div></div> : null}
-          <section className="studio-model-profile studio-stack-panel" role="tabpanel">
-            <div className="studio-editor-heading"><div><p className="eyebrow">{selected.kind === "LULU_V3" ? "Approved default" : "Model profile"}</p><h2>{selected.name}</h2></div><LifecycleBadge state={selected.state === "READY" ? "READY" : "DRAFT"} /></div>
-            {activeView === "profile" ? <div className="studio-approved-prefill" role="note"><ShieldCheck aria-hidden="true" size={18} /><span><strong>Ready for private Wear work</strong><small>Authority confirmed {new Intl.DateTimeFormat("en-NG", { dateStyle: "medium" }).format(new Date(selected.authorityConfirmedAt))}</small></span></div> : null}
-            {activeView === "styling" ? <section className="studio-model-profile-section"><div className="studio-profile-section-heading"><div><p className="eyebrow">Styling</p><h3>How {selected.name} presents the clothes</h3></div></div><dl className="studio-model-facts"><div><dt>Hair</dt><dd>{styling(selected).hair}</dd></div><div><dt>Makeup</dt><dd>{styling(selected).makeup}</dd></div><div><dt>Direction</dt><dd>{styling(selected).direction}</dd></div></dl></section> : null}
-            {activeView === "authority" ? <section className="studio-model-profile-section"><div className="studio-profile-section-heading"><div><p className="eyebrow">Authority</p><h3>Evidence and limits</h3></div><ShieldCheck aria-label="Confirmed" size={18} /></div><dl className="studio-model-facts"><div><dt>Source</dt><dd>{selected.licenseUrl ? <a href={selected.licenseUrl} rel="noreferrer" target="_blank">Open usage source</a> : "Lulu private authority"}</dd></div><div><dt>Allowed</dt><dd>{String(selected.authority.allowedUse ?? "Private Studio try-on generation")}</dd></div><div><dt>Restricted</dt><dd>{String(selected.authority.restrictedUse ?? "No public use without separate approval")}</dd></div></dl></section> : null}
-            <div className="studio-model-profile-actions">{selected.kind === "LULU_V3" ? <div className="studio-model-lock-note"><Lock aria-hidden="true" size={16} /><span><strong>Lulu stays consistent.</strong><small>Add another model for a different identity.</small></span></div> : <div className="studio-inventory-decision-grid"><button className="button button-primary" onClick={(event) => openTask("edit", event.currentTarget)} type="button"><Pencil aria-hidden="true" size={16} />Edit styling</button><button className="button button-secondary" onClick={(event) => { setReturnFocus(event.currentTarget); setArchiveOpen(true); }} type="button"><Archive aria-hidden="true" size={16} />Withdraw</button></div>}</div>
-          </section>
-        </div> : <div className="studio-quiet-empty"><UserRound aria-hidden="true" size={24} /><div><strong>No model authority yet</strong><p>Add one adult photo and its usage source.</p></div></div>}
+          {activeView === "profile" ? <div className={`studio-model-portrait${selected.kind === "LULU_V3" ? " is-approved" : ""}`}><img alt={`${selected.name}, private approved model authority`} className="studio-model-approved-image" height={1619} src={selected.kind === "LULU_V3" ? APPROVED_PUBLIC_MODEL_PREVIEW.src : selected.sourceAssetUrl} width={972} /><div className="studio-model-master-caption"><small>{selected.kind === "LULU_V3" ? "Approved default" : "Usage confirmed"}</small><strong>{selected.name}</strong><span>Ready for try-ons</span></div></div> : null}
+          <StudioStackSection className="studio-model-profile studio-stack-panel" meta={<LifecycleMeta state={selected.state === "READY" ? "READY" : "DRAFT"} />} role="tabpanel" title={selected.name}>
+            {activeView === "styling" ? <dl className="studio-model-facts"><div><dt>Hair</dt><dd>{styling(selected).hair}</dd></div><div><dt>Makeup</dt><dd>{styling(selected).makeup}</dd></div><div><dt>Direction</dt><dd>{styling(selected).direction}</dd></div></dl> : null}
+            {activeView === "authority" ? <dl className="studio-model-facts"><div><dt>Confirmed</dt><dd>{new Intl.DateTimeFormat("en-NG", { dateStyle: "medium" }).format(new Date(selected.authorityConfirmedAt))}</dd></div><div><dt>Source</dt><dd>{selected.licenseUrl ? <a href={selected.licenseUrl} rel="noreferrer" target="_blank">Open usage source</a> : "Lulu private authority"}</dd></div><div><dt>Allowed</dt><dd>{String(selected.authority.allowedUse ?? "Private Studio try-on generation")}</dd></div><div><dt>Restricted</dt><dd>{String(selected.authority.restrictedUse ?? "No public use without separate approval")}</dd></div></dl> : null}
+            <div className="studio-model-profile-actions">{selected.kind === "LULU_V3" && activeView === "profile" ? <div className="studio-model-lock-note"><Lock aria-hidden="true" size={16} /><span><strong>Lulu stays consistent.</strong><small>Add another model for a different identity.</small></span></div> : selected.kind !== "LULU_V3" && activeView === "styling" ? <button className="button button-primary" onClick={(event) => openTask("edit", event.currentTarget)} type="button"><Pencil aria-hidden="true" size={16} />Edit styling</button> : selected.kind !== "LULU_V3" && activeView === "authority" ? <button className="button button-secondary" onClick={(event) => { setReturnFocus(event.currentTarget); setArchiveOpen(true); }} type="button"><Archive aria-hidden="true" size={16} />Withdraw</button> : null}</div>
+          </StudioStackSection>
+        </div> : <StudioFeedback action={<button className="button button-primary" onClick={(event) => openTask("create", event.currentTarget)} type="button">Add model</button>} state="empty" title="No model authority" />}
       </div>
+      </StudioStackSection>
 
       <ModelTask key={`${task ?? "closed"}-${selected?.id ?? "none"}`} mode={task ?? "create"} model={task === "edit" ? selected ?? null : null} onDismiss={dismissTask} onSaved={async (model) => { setSelectedId(model.id); setTask(null); await authority.refresh(); }} open={Boolean(task)} returnFocus={returnFocus} />
 
-      <StudioTaskSheet eyebrow="Withdraw authority" onDismiss={() => setArchiveOpen(false)} open={archiveOpen} returnFocus={returnFocus} title={selected ? `Withdraw ${selected.name}` : "Withdraw model"}><form className="studio-task-sheet-body" onSubmit={archiveModel}><section className="studio-task-question"><h3>Stop using this model?</h3><p>Existing generated media stays in history. New try-ons will no longer offer this model.</p><label className="studio-field"><span>Reason</span><textarea maxLength={240} onChange={(event) => setArchiveReason(event.target.value)} required rows={3} value={archiveReason} /></label></section>{error ? <p className="studio-task-error" role="alert">{error}</p> : null}<footer className="studio-task-sheet-footer"><button className="button button-secondary" onClick={() => setArchiveOpen(false)} type="button">Keep model</button><button className="button button-primary" disabled={pending} type="submit">{pending ? "Withdrawing…" : "Withdraw authority"}</button></footer></form></StudioTaskSheet>
-    </div>
+      <StudioTaskSheet eyebrow="Withdraw authority" onDismiss={() => setArchiveOpen(false)} onSubmit={archiveModel} open={archiveOpen} returnFocus={returnFocus} title={selected ? `Withdraw ${selected.name}` : "Withdraw model"}><section className="studio-task-question"><h3>Stop using this model?</h3><p>Existing generated media stays in history. New try-ons will no longer offer this model.</p><label className="studio-field"><span>Reason</span><textarea maxLength={240} onChange={(event) => setArchiveReason(event.target.value)} required rows={3} value={archiveReason} /></label></section>{error ? <StudioFeedback detail={error} state="error" title="Couldn’t save" /> : null}<footer className="studio-task-sheet-footer"><button className="button button-secondary" onClick={() => setArchiveOpen(false)} type="button">Keep model</button><button className="button button-primary" disabled={pending} type="submit">{pending ? "Withdrawing…" : "Withdraw authority"}</button></footer></StudioTaskSheet>
+    </StudioStackPage>
   );
 }

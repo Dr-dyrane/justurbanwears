@@ -25,6 +25,7 @@ interface StudioTaskSheetProps {
   footer?: React.ReactNode;
   onBack?: () => void;
   onDismiss(): boolean | void;
+  onSubmit?: React.FormEventHandler<HTMLFormElement>;
   open: boolean;
   progress?: number;
   progressLabel?: string;
@@ -41,6 +42,7 @@ export function StudioTaskSheet({
   footer,
   onBack,
   onDismiss,
+  onSubmit,
   open,
   progress,
   progressLabel = "Task progress",
@@ -167,7 +169,11 @@ export function StudioTaskSheet({
           </div>
         ) : null}
 
-        <div className="studio-task-sheet-body">{children}</div>
+        {onSubmit ? (
+          <form className="studio-task-sheet-body" onSubmit={onSubmit}>{children}</form>
+        ) : (
+          <div className="studio-task-sheet-body">{children}</div>
+        )}
         {footer ? <footer className="studio-task-sheet-footer">{footer}</footer> : null}
       </div>
     </dialog>,

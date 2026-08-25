@@ -1,5 +1,5 @@
-import { GarmentLibrary } from "../../../components/garment/garment-library";
+import { permanentRedirect } from "next/navigation";
 
 export default function GarmentsPage() {
-  return <GarmentLibrary />;
+  permanentRedirect("/studio/wardrobe");
 }

@@ -1,5 +1,10 @@
-import { GarmentDetail } from "../../../../components/garment/garment-detail";
+import { permanentRedirect } from "next/navigation";
 
-export default function GarmentDetailPage() {
-  return <GarmentDetail />;
+export default async function GarmentDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  permanentRedirect(`/studio/wardrobe/${encodeURIComponent(id)}`);
 }

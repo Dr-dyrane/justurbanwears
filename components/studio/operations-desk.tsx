@@ -5,11 +5,9 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import {
-  Boxes,
   Check,
   ChevronRight,
   CircleAlert,
-  ClipboardCheck,
   MapPin,
   PackageCheck,
   RotateCcw,
@@ -21,8 +19,10 @@ import type { StudioLifecycleState } from "../../lib/studio/domain/entities";
 import type { StudioAuthorityPiece } from "../../lib/studio/services/studio-authority-client";
 import { LifecycleBadge } from "./atoms/lifecycle-badge";
 import { LifecycleMeta, STUDIO_LIFECYCLE_PRESENTATION } from "./atoms/lifecycle-meta";
+import { StudioFeedback } from "./atoms/studio-feedback";
 import { StudioLink as Link } from "./atoms/studio-link";
 import { StudioSegmentedView, useStudioSegment } from "./atoms/studio-segmented-view";
+import { StudioStackPage, StudioStackSection } from "./atoms/studio-stack-page";
 import { StudioTaskSheet } from "./atoms/studio-task-sheet";
 import { useStudio } from "./studio-provider";
 
@@ -192,20 +192,20 @@ export function OperationsDesk() {
   }
 
   if (authority.status === "idle" || authority.status === "loading") {
-    return <div className="studio-loading" role="status">Opening operations…</div>;
+    return <StudioStackPage className="studio-ops-page studio-premium-surface" kind="service"><StudioFeedback state="loading" title="Opening Operations" /></StudioStackPage>;
   }
 
   if (authority.status === "error" || !snapshot) {
     return (
-      <div className="studio-ops-page studio-premium-surface">
-        <header className="studio-ops-heading"><div><p className="eyebrow">Operations</p><h1>Live state unavailable.</h1><p>No inventory action is available until current truth returns.</p></div></header>
-        <div className="studio-quiet-empty" role="alert"><CircleAlert aria-hidden="true" size={24} /><div><strong>Couldn’t open Operations</strong><p>{authority.error}</p></div><button className="button button-secondary" onClick={() => void authority.refresh()} type="button">Try again</button></div>
-      </div>
+      <StudioStackPage className="studio-ops-page studio-premium-surface" kind="service">
+        <h1 className="sr-only">Operations</h1>
+        <StudioFeedback action={<button className="button button-secondary" onClick={() => void authority.refresh()} type="button">Try again</button>} detail={authority.error} state="error" title="Operations unavailable" />
+      </StudioStackPage>
     );
   }
 
   return (
-    <div className="studio-ops-page studio-premium-surface">
+    <StudioStackPage className="studio-ops-page studio-premium-surface" kind="service">
       <h1 className="sr-only">Operations</h1>
 
       {scenarioOrderReference ? (
@@ -234,18 +234,16 @@ export function OperationsDesk() {
       <StudioSegmentedView active={activeView} label="Operations workspace" onSelect={selectView} pending={viewPending} segments={segments} />
 
       {activeView === "attention" ? (
-        <section className="studio-operation-section studio-stack-panel" id="studio-view-attention" aria-labelledby="studio-tab-attention" role="tabpanel">
-          <div className="studio-section-title"><div><p className="eyebrow">Attention</p><h2>Exceptions to resolve</h2></div><span>{mismatches.length + actionOrders.length} waiting</span></div>
+        <StudioStackSection className="studio-operation-section studio-stack-panel" id="studio-view-attention" aria-labelledby="studio-tab-attention" role="tabpanel">
           {mismatches.length || actionOrders.length ? <div className="studio-operation-cards">
             {mismatches.map((piece) => <article className="studio-operation-card studio-compact-row" data-state-tone="critical" key={`location:${piece.pieceKey}`}><button className="studio-operation-card-trigger" onClick={(event) => openPiece(piece, event.currentTarget)} type="button"><div className="studio-card-heading"><div><small>{piece.sku ?? "Private piece"}</small><h3>{piece.title}</h3></div><CircleAlert aria-label="Location differs" size={18} /></div><dl><div><dt>Expected</dt><dd>{piece.expectedLocationLabel}</dd></div><div><dt>Last seen</dt><dd>{piece.observedLocationLabel ?? "Not confirmed"}</dd></div></dl><span className="studio-operation-card-open"><span className="sr-only">Review location</span><ChevronRight aria-hidden="true" size={17} /></span></button></article>)}
             {actionOrders.map((order) => <article className="studio-operation-card studio-compact-row" data-state-tone={order.return ? "critical" : "caution"} key={`order:${order.reference}`}><Link className="studio-operation-card-trigger" href={`/studio/orders/${order.reference}#studio-order-next-action`}><div className="studio-card-heading"><div><small>{order.reference}</small><h3>{order.lines[0]?.name ?? "Wardrobe order"}</h3><LifecycleMeta state={order.return ? "DRAFT" : "RESERVED"} /></div></div><dl><div><dt>Exception</dt><dd>{order.return ? "Return needs review" : "Order needs action"}</dd></div><div><dt>Payment</dt><dd>{order.fundsConfirmationStatus.toLowerCase()}</dd></div></dl><span className="studio-operation-card-open"><span className="sr-only">Open in Orders</span><ChevronRight aria-hidden="true" size={17} /></span></Link></article>)}
-          </div> : <div className="studio-quiet-empty"><Check aria-hidden="true" size={24} /><div><strong>Nothing needs attention</strong><p>Inventory, holds, and customer handoffs are reconciled.</p></div></div>}
-        </section>
+          </div> : <StudioFeedback state="empty" title="Nothing needs attention" />}
+        </StudioStackSection>
       ) : null}
 
       {activeView === "inventory" ? (
-        <section className="studio-operation-section studio-stack-panel" id="studio-view-inventory" aria-labelledby="studio-tab-inventory" role="tabpanel">
-          <div className="studio-section-title"><div><p className="eyebrow">Inventory</p><h2>Pieces and physical truth</h2></div><span>{pieces.length} pieces</span></div>
+        <StudioStackSection className="studio-operation-section studio-stack-panel" id="studio-view-inventory" aria-labelledby="studio-tab-inventory" role="tabpanel">
           {pieces.length ? <div className="studio-table studio-inventory-list" role="list" aria-label="Inventory pieces">
             {pieces.map((piece) => {
               const pieceState = lifecycle(piece);
@@ -261,35 +259,34 @@ export function OperationsDesk() {
               </article>
               );
             })}
-          </div> : <div className="studio-quiet-empty"><Boxes aria-hidden="true" size={24} /><div><strong>No pieces yet</strong><p>Inventory begins with garment intake.</p></div><Link className="button button-primary" href="/studio/wardrobe?intake=1">Intake garment</Link></div>}
-        </section>
+          </div> : <StudioFeedback action={<Link className="button button-primary" href="/studio/wardrobe?intake=1">Add garment</Link>} state="empty" title="No pieces yet" />}
+        </StudioStackSection>
       ) : null}
 
       {activeView === "holds" ? (
-        <section className="studio-operation-section studio-stack-panel" id="studio-view-holds" aria-labelledby="studio-tab-holds" role="tabpanel">
-          <div className="studio-section-title"><div><p className="eyebrow">Holds</p><h2>People waiting for a piece</h2></div><span>{activeHolds.length} active</span></div>
+        <StudioStackSection className="studio-operation-section studio-stack-panel" id="studio-view-holds" aria-labelledby="studio-tab-holds" role="tabpanel">
           {activeHolds.length ? <div className="studio-operation-cards">{activeHolds.map((hold) => {
             const piece = pieces.find((candidate) => candidate.sku === hold.sku);
             return <article className="studio-operation-card studio-compact-row" data-state-tone="caution" key={hold.id}><button className="studio-operation-card-trigger" onClick={(event) => piece && openPiece(piece, event.currentTarget)} type="button"><div className="studio-card-heading"><div><small>{hold.sku}</small><h3>{piece?.title ?? hold.sku}</h3><LifecycleMeta state="RESERVED" /></div></div><dl><div><dt>For</dt><dd>{hold.customerName}</dd></div><div><dt>Contact</dt><dd>{hold.contact}</dd></div><div><dt>Expires</dt><dd>{shortDate(hold.expiresAt)}</dd></div></dl><span className="studio-operation-card-open"><span className="sr-only">Review</span><ChevronRight aria-hidden="true" size={17} /></span></button></article>;
-          })}</div> : <div className="studio-quiet-empty"><ClipboardCheck aria-hidden="true" size={24} /><div><strong>No active holds</strong><p>Open an available piece to hold it for a customer.</p></div></div>}
-        </section>
+          })}</div> : <StudioFeedback state="empty" title="No active holds" />}
+        </StudioStackSection>
       ) : null}
 
       <StudioTaskSheet className="studio-inventory-detail-sheet" eyebrow={selected?.sku ?? "Private piece"} onDismiss={closePiece} open={Boolean(selected)} returnFocus={returnFocus} title={selected?.title ?? "Piece"}>
         {selected ? <div className="studio-inventory-detail">
-          <figure className={`studio-inventory-detail-media${selected.imageSrc ? " is-photo" : ""}`}>{selected.imageSrc ? <img alt={`${selected.title} inventory view`} height={1280} src={selected.imageSrc} width={1024} /> : <Shirt aria-hidden="true" size={42} />}<figcaption><LifecycleBadge state={lifecycle(selected)} /><span>{selected.activeHold ? "On hold" : selected.availability.toLowerCase()}</span></figcaption></figure>
+          <figure className={`studio-inventory-detail-media${selected.imageSrc ? " is-photo" : ""}`}>{selected.imageSrc ? <img alt={`${selected.title} inventory view`} height={1280} src={selected.imageSrc} width={1024} /> : <Shirt aria-hidden="true" size={42} />}<figcaption><LifecycleBadge state={lifecycle(selected)} /></figcaption></figure>
           <section className="studio-inventory-detail-section">
-            <div className="studio-inventory-detail-heading"><div><p className="eyebrow">Truth</p><h3>Where it is now</h3></div></div>
+            <div className="studio-inventory-detail-heading"><h3>Location</h3></div>
             <dl className="studio-inventory-detail-facts"><div><dt>Custody</dt><dd>{selected.expectedCustody.toLowerCase()}</dd></div><div><dt>Expected</dt><dd>{selected.expectedLocationLabel}</dd></div><div><dt>Last seen</dt><dd>{selected.observedLocationLabel ?? "Not confirmed"}</dd></div><div><dt>Attached to</dt><dd>{selected.activeHold ? `Hold · ${selected.activeHold.customerName}` : selected.orderReference ? `Order · ${selected.orderReference}` : "Nothing"}</dd></div></dl>
           </section>
 
-          {selected.hasLocationMismatch ? <div className="studio-quiet-empty" role="alert"><CircleAlert aria-hidden="true" size={22} /><div><strong>Location differs</strong><p>Expected {selected.expectedLocationLabel}; last seen {selected.observedLocationLabel}.</p></div>{selected.orderReference ? <Link className="button button-secondary" href={`/studio/orders/${selected.orderReference}`}>Review order</Link> : null}</div> : null}
+          {selected.hasLocationMismatch ? <StudioFeedback action={selected.orderReference ? <Link className="button button-secondary" href={`/studio/orders/${selected.orderReference}`}>Review order</Link> : undefined} detail={`Expected ${selected.expectedLocationLabel}; last seen ${selected.observedLocationLabel}.`} state="error" title="Location differs" /> : null}
 
-          {notice ? <div className="studio-quiet-empty" aria-live="polite" role="status"><Check aria-hidden="true" size={22} /><div><strong>Saved</strong><p>{notice}</p></div></div> : null}
-          {error ? <p className="studio-task-error" role="alert">{error}</p> : null}
+          {notice ? <StudioFeedback detail={notice} state="success" title="Saved" /> : null}
+          {error ? <StudioFeedback detail={error} state="error" title="Couldn’t save" /> : null}
 
           <section className="studio-inventory-detail-section">
-            <div className="studio-inventory-detail-heading"><div><p className="eyebrow">Location</p><h3>Confirm in hand</h3></div></div>
+            <div className="studio-inventory-detail-heading"><h3>Confirm location</h3></div>
             {selected.expectedCustody === "STUDIO" ? <div className="studio-inventory-decision-grid">{locations.map((location) => {
               const confirmsExpected = selected.expectedLocationKey === location.key;
               return <button className="studio-inventory-decision" disabled={pending || Boolean(scenario)} key={location.key} onClick={() => void recordLocation(location.key, confirmsExpected ? "CONFIRM" : "MOVE")} type="button"><MapPin aria-hidden="true" size={20} /><span><strong>{confirmsExpected ? `Confirm at ${location.label}` : `Move to ${location.label}`}</strong><small>{scenario ? "Read-only scenario" : confirmsExpected ? "Check the piece is here." : `Expected location becomes ${location.label.toLowerCase()}.`}</small></span><ChevronRight aria-hidden="true" size={17} /></button>;
@@ -297,7 +294,7 @@ export function OperationsDesk() {
           </section>
 
           <section className="studio-inventory-detail-section">
-            <div className="studio-inventory-detail-heading"><div><p className="eyebrow">Next</p><h3>Legal actions</h3></div></div>
+            <div className="studio-inventory-detail-heading"><h3>Actions</h3></div>
             <div className="studio-inventory-decision-grid">
               {selected.orderReference ? <Link className="studio-inventory-decision" href={`/studio/orders/${selected.orderReference}`}><PackageCheck aria-hidden="true" size={20} /><span><strong>Open order</strong><small>Continue with this order.</small></span><ChevronRight aria-hidden="true" size={17} /></Link> : null}
               {selected.activeHold ? <button className="studio-inventory-decision" disabled={pending || Boolean(scenario)} onClick={() => void releaseHold()} type="button"><RotateCcw aria-hidden="true" size={20} /><span><strong>Release hold</strong><small>{scenario ? "Read-only scenario" : "Make this piece available again."}</small></span><ChevronRight aria-hidden="true" size={17} /></button> : null}
@@ -308,18 +305,16 @@ export function OperationsDesk() {
         </div> : null}
       </StudioTaskSheet>
 
-      <StudioTaskSheet eyebrow="Customer hold" onDismiss={() => { setHoldOpen(false); setHoldPieceKey(null); }} open={holdOpen} returnFocus={holdReturnFocus} title={holdPiece ? `Hold ${holdPiece.title}` : "Hold piece"}>
-        <form className="studio-task-sheet-body" onSubmit={saveHold}>
+      <StudioTaskSheet eyebrow="Customer hold" onDismiss={() => { setHoldOpen(false); setHoldPieceKey(null); }} onSubmit={saveHold} open={holdOpen} returnFocus={holdReturnFocus} title={holdPiece ? `Hold ${holdPiece.title}` : "Hold piece"}>
           <div className="studio-form-grid">
             <label className="studio-field"><span>Customer name</span><input autoComplete="name" maxLength={120} onChange={(event) => setCustomerName(event.target.value)} required value={customerName} /></label>
             <label className="studio-field"><span>Phone or email</span><input autoComplete="email" maxLength={160} onChange={(event) => setContact(event.target.value)} required value={contact} /></label>
             <label className="studio-field"><span>Expires</span><input min={new Date().toISOString().slice(0, 16)} onChange={(event) => setExpiresAt(event.target.value)} required type="datetime-local" value={expiresAt} /></label>
             <label className="studio-field"><span>Reason</span><input maxLength={240} onChange={(event) => setReason(event.target.value)} placeholder="Trying on tomorrow" required value={reason} /></label>
           </div>
-          {error ? <p className="studio-task-error" role="alert">{error}</p> : null}
+          {error ? <StudioFeedback detail={error} state="error" title="Couldn’t save" /> : null}
           <footer className="studio-task-sheet-footer"><button className="button button-secondary" onClick={() => setHoldOpen(false)} type="button">Cancel</button><button className="button button-primary" disabled={pending} type="submit">{pending ? "Holding…" : "Hold piece"}</button></footer>
-        </form>
       </StudioTaskSheet>
-    </div>
+    </StudioStackPage>
   );
 }

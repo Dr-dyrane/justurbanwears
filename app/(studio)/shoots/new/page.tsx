@@ -1,5 +1,5 @@
-import { ShootComposer } from "../../../../components/shoot/shoot-composer";
+import { permanentRedirect } from "next/navigation";
 
 export default function NewShootPage() {
-  return <ShootComposer />;
+  permanentRedirect("/studio/media/new");
 }

@@ -1,5 +1,5 @@
-import { ShootGallery } from "../../../components/shoot/shoot-gallery";
+import { permanentRedirect } from "next/navigation";
 
 export default function ShootsPage() {
-  return <ShootGallery />;
+  permanentRedirect("/studio/media");
 }

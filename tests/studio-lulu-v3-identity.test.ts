@@ -107,7 +107,7 @@ test("Model Atelier uses a public V3 try-on without exposing the private master"
   ]);
   const source = `${atelier}\n${projection}`;
   assert.match(source, /APPROVED_PUBLIC_MODEL_PREVIEW/);
-  assert.match(source, /Approved V3 profile/);
+  assert.match(source, /Approved default/);
   assert.match(source, /cocoa-cowl-gathered-midi-dress\/07-model-left-profile\.webp/);
   assert.doesNotMatch(source, /lulu-v2-approved\.png/);
   assert.doesNotMatch(source, /storage\/models\/konan/);

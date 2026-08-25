@@ -35,7 +35,7 @@ test("Studio shell treats Media as a canonical stack destination", () => {
   assert.match(stackContext, /pathname\.startsWith\("\/studio\/media"\)/);
   assert.match(stackContext, /backLabel: "Atelier"/);
   assert.match(shell, /aria-label=\{`Back to \$\{stack\.backLabel\}`\}/);
-  assert.match(shell, /<StudioCommandCenter showSearch=\{isHome\} \/>/);
+  assert.match(shell, /<StudioCommandCenter showAsk=\{!pathname\.startsWith\("\/studio\/ask"\)\} showSearch=\{isHome\} \/>/);
   assert.doesNotMatch(shell, /aria-label="Media views"|studio-stack-view-nav/);
   assert.doesNotMatch(shell, /pathname\.startsWith\("\/shoots"\)|href="\/shoots"|>Shoots</);
 });

@@ -26,6 +26,8 @@ import type {
   ShopOrderTransitionDetails,
   ShopServerOrder,
 } from "../../lib/shop/server-order/types";
+import { StudioFeedback } from "./atoms/studio-feedback";
+import { StudioStackPage, StudioStackSection } from "./atoms/studio-stack-page";
 import { useStudioStackRegistration } from "./navigation/studio-stack-context";
 
 type OperatorRole = "operator" | "admin";
@@ -476,16 +478,16 @@ export function ConnectedOrderDetail() {
   );
   const primaryTransition = order ? nextStudioOrderTransition(order) : undefined;
   if (state === "loading") {
-    return <div className="studio-loading" aria-live="polite" role="status">Opening the order desk…</div>;
+    return <StudioFeedback detail="Reading the order and its latest customer state." state="loading" title="Opening order" />;
   }
   if (state === "not-found" || state === "error" || !order) {
     return (
-      <div className="studio-quiet-empty" role={state === "error" ? "alert" : undefined}>
-        <FileSearch aria-hidden="true" size={24} />
-        <div><strong>{state === "error" ? error : "Order not found"}</strong><p>Return to Orders.</p></div>
-        {state === "error" ? <button className="button button-secondary" onClick={() => void loadOrder()} type="button">Try again</button> : null}
-        <Link className="button button-primary" href="/studio/orders">Orders</Link>
-      </div>
+      <StudioFeedback
+        action={<>{state === "error" ? <button className="button button-secondary" onClick={() => void loadOrder()} type="button">Try again</button> : null}<Link className="button button-primary" href="/studio/orders">Orders</Link></>}
+        detail={state === "error" ? error : "This reference is not in the connected order queue."}
+        state={state === "error" ? "error" : "empty"}
+        title={state === "error" ? "Order unavailable" : "Order not found"}
+      />
     );
   }
 
@@ -512,12 +514,14 @@ export function ConnectedOrderDetail() {
       transition={transition}
     />
   );
+  const secondaryActions = (transitions: StudioTransition[]) => transitions
+    .filter((transition) => !primaryTransition || transitionKey(transition) !== transitionKey(primaryTransition))
+    .map(action);
 
   return (
-    <div className="studio-connected-order-detail">
+    <StudioStackPage className="studio-connected-order-detail" kind="record">
       <header className="studio-connected-detail-heading">
         <div>
-          <p className="eyebrow">Order</p>
           <h1>{order.lines[0]?.name ?? "Wardrobe order"}</h1>
           <p>{order.contact.name} · {order.deliveryLabel} · {formatNaira(order.total)}</p>
         </div>
@@ -528,11 +532,23 @@ export function ConnectedOrderDetail() {
         {orderStateSummary(order).map((item) => <div key={item.label}><small>{item.label}</small><strong>{item.value}</strong></div>)}
       </section>
       {updateNotice ? (
-        <p className="studio-order-update-notice" aria-live="polite" ref={updateNoticeRef} role="status" tabIndex={-1}>{updateNotice}</p>
+        <div ref={updateNoticeRef} tabIndex={-1}>
+          <StudioFeedback className="studio-order-update-notice" detail={updateNotice} state="success" title="Order updated" />
+        </div>
       ) : null}
 
-      <div className="studio-connected-detail-grid">
-        <main>
+      <StudioStackSection
+        meta="Next action"
+        title={primaryTransition ? studioOrderNextActionLabel(order) : "Order is up to date"}
+      >
+        {primaryTransition ? action(primaryTransition) : <StudioFeedback detail="No customer or fulfilment action is currently due." state="success" title="Nothing waiting" />}
+      </StudioStackSection>
+
+      <details className="studio-transition-action studio-order-secondary-details">
+        <summary>Order details<span>Evidence, fulfilment, and history</span></summary>
+        <div className="studio-transition-action-body">
+          <div className="studio-connected-detail-grid">
+            <main>
           <section className="studio-order-action-section" aria-labelledby="receipt-review-title">
             <div className="studio-order-action-heading"><span><FileSearch aria-hidden="true" size={19} /></span><div><p className="eyebrow">Transfer receipt</p><h2 id="receipt-review-title">Check the receipt.</h2></div></div>
             <p>Check the receipt first. Confirm payment only after the money reaches the account.</p>
@@ -546,7 +562,7 @@ export function ConnectedOrderDetail() {
                 ))}
               </div>
             ) : <p className="studio-order-quiet-note">No transfer receipt yet.</p>}
-            <div className="studio-transition-list">{paymentTransitions.map(action)}</div>
+            <div className="studio-transition-list">{secondaryActions(paymentTransitions)}</div>
           </section>
 
           <section className="studio-order-action-section studio-funds-section" aria-labelledby="payment-title">
@@ -562,7 +578,7 @@ export function ConnectedOrderDetail() {
                 <div><dt>Verified by</dt><dd>{order.fundsConfirmation.verifierDisplayName}</dd></div>
               </dl>
             ) : null}
-            <div className="studio-transition-list">{fundsTransitions.map(action)}</div>
+            <div className="studio-transition-list">{secondaryActions(fundsTransitions)}</div>
             {!fundsTransitions.length && !order.fundsConfirmation ? <p className="studio-order-quiet-note">Available after the receipt is checked.</p> : null}
           </section>
 
@@ -579,9 +595,9 @@ export function ConnectedOrderDetail() {
               </dl>
             ) : null}
             <div className="studio-transition-list">
-              {pickupTransitions.map(action)}
-              {fulfillmentTransitions.map(action)}
-              {lifecycleTransitions.map(action)}
+              {secondaryActions(pickupTransitions)}
+              {secondaryActions(fulfillmentTransitions)}
+              {secondaryActions(lifecycleTransitions)}
             </div>
           </section>
 
@@ -595,7 +611,7 @@ export function ConnectedOrderDetail() {
                 {order.cancellationRecovery.refundAmount ? <div><dt>Refund</dt><dd>{formatNaira(order.cancellationRecovery.refundAmount)}</dd></div> : null}
                 {order.cancellationRecovery.refundReference ? <div><dt>Reference</dt><dd>{order.cancellationRecovery.refundReference}</dd></div> : null}
               </dl>
-              <div className="studio-transition-list">{recoveryTransitions.map(action)}</div>
+              <div className="studio-transition-list">{secondaryActions(recoveryTransitions)}</div>
             </section>
           ) : null}
 
@@ -615,7 +631,7 @@ export function ConnectedOrderDetail() {
               <ul className="studio-order-return-items">
                 {order.return.items.map((item) => <li key={item.sku}><span><strong>{item.name}</strong><small>{item.sku}</small></span><b>{item.disposition ? orderStateLabel(item.disposition) : formatNaira(item.unitPrice)}</b></li>)}
               </ul>
-              <div className="studio-transition-list">{returnTransitions.map(action)}</div>
+              <div className="studio-transition-list">{secondaryActions(returnTransitions)}</div>
               {!returnTransitions.length ? <p className="studio-order-quiet-note">No return action is currently due.</p> : null}
             </section>
           ) : null}
@@ -634,10 +650,9 @@ export function ConnectedOrderDetail() {
               </ol>
             </div>
           </details>
-        </main>
+            </main>
 
-        <aside className="studio-connected-order-summary">
-          <p className="eyebrow">Order details</p>
+            <aside className="studio-connected-order-summary">
           <dl>
             <div><dt>Reference</dt><dd>{order.reference}</dd></div>
             <div><dt>Source</dt><dd>{order.source === "ONLINE" ? "Online" : orderStateLabel(order.source)}</dd></div>
@@ -655,8 +670,10 @@ export function ConnectedOrderDetail() {
           </dl>
           <h2>Pieces</h2>
           <ul>{order.lines.map((line) => <li key={line.slug}><span><strong>{line.name}</strong><small>{line.sku} · {line.taggedSize}</small></span><b>{formatNaira(line.unitPrice)}</b></li>)}</ul>
-        </aside>
-      </div>
-    </div>
+            </aside>
+          </div>
+        </div>
+      </details>
+    </StudioStackPage>
   );
 }

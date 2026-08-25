@@ -567,9 +567,9 @@ export function StudioAskSurface() {
             {resolving ? <LoaderCircle aria-hidden="true" size={18} /> : <ArrowRight aria-hidden="true" size={18} />}
           </button>
         </form>
-        <p>{askCapability === "READ_ONLY_COMPATIBILITY"
-          ? "Service guidance only while connected records are unavailable."
-          : "Changes finish in their owning stack."}</p>
+        {askCapability === "READ_ONLY_COMPATIBILITY"
+          ? <p>Service guidance only while connected records are unavailable.</p>
+          : null}
       </div>
     </section>
   );

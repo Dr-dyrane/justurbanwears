@@ -199,7 +199,7 @@ test("the durable route replaces the fake modal modes and preserves keyboard and
   assert.match(surface, /resolveStudioAssistant\(stored, context\)/);
   assert.match(surface, /provenanceTime\(turn\.response\.provenance\.generatedAt\)/);
   assert.match(surface, /event\.key !== "Enter" \|\| event\.shiftKey/);
-  assert.match(surface, /Changes finish in their owning stack/);
+  assert.doesNotMatch(surface, /Changes finish in their owning stack/);
   assert.match(surface, /placeholder="Ask about Studio or find a record"/);
   assert.match(surface, /projected\.searchDocuments\.map/);
   assert.match(commandCenter, /Find in Studio/);

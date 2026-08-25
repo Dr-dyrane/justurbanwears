@@ -2027,3 +2027,435 @@ html body .studio-stack-shell .workspace > main.page-canvas:has(> .studio-home-c
     border: 1px solid CanvasText;
   }
 }
+
+/* Canonical native stack contract --------------------------------------
+   ADR 0047 owns every non-Home Studio route. This final layer deliberately
+   normalizes the older service-specific surfaces without changing domain
+   behavior: one calm canvas, one current action, flat rows, and bounded
+   progressive disclosure. */
+
+.studio-command-placeholder {
+  display: block;
+  height: 48px;
+  width: 48px;
+}
+
+.studio-native-canvas {
+  margin-inline: auto;
+  max-width: min(1080px, 100%);
+  padding-inline: clamp(16px, 4vw, 34px);
+  padding-top: clamp(12px, 2.5vw, 26px);
+  width: 100%;
+}
+
+.studio-native-canvas > :where(
+  .studio-stack-page,
+  .studio-ops-page,
+  .studio-connected-orders-page,
+  .studio-connected-order-detail,
+  .studio-stocktake-page,
+  .studio-scan-page,
+  .studio-dossier-page,
+  .studio-ask-page,
+  .review-page,
+  #shoot-gallery
+) {
+  margin: 0;
+  max-width: none;
+  width: 100%;
+}
+
+.studio-stack-page {
+  color: var(--studio-ink);
+  display: grid;
+  gap: clamp(16px, 2.6vw, 26px);
+}
+
+.studio-stack-section {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  min-width: 0;
+  padding: 0;
+}
+
+.studio-stack-section-header {
+  align-items: center;
+  display: flex;
+  gap: 16px;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  min-height: 44px;
+}
+
+.studio-stack-section-heading {
+  align-items: baseline;
+  display: flex;
+  gap: 10px;
+  min-width: 0;
+}
+
+.studio-stack-section-heading h2 {
+  color: var(--studio-ink);
+  font-family: var(--font-body);
+  font-size: clamp(17px, 2vw, 21px);
+  font-weight: 720;
+  letter-spacing: -.025em;
+  line-height: 1.1;
+  margin: 0;
+}
+
+.studio-stack-section-meta {
+  color: var(--studio-muted);
+  font-size: 11px;
+}
+
+.studio-stack-section-body {
+  min-width: 0;
+}
+
+.studio-feedback {
+  --studio-feedback-tone: var(--studio-faint);
+  align-items: center;
+  background: color-mix(in srgb, var(--studio-feedback-tone) 6%, var(--studio-panel));
+  border: 0;
+  border-radius: 20px;
+  color: var(--studio-ink);
+  display: grid;
+  gap: 12px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  min-height: 68px;
+  padding: 12px 14px;
+}
+
+.studio-feedback.is-success { --studio-feedback-tone: var(--studio-positive); }
+.studio-feedback.is-error { --studio-feedback-tone: var(--studio-critical); }
+.studio-feedback.is-loading { --studio-feedback-tone: var(--studio-accent); }
+.studio-feedback-motion { height: 38px; width: 38px; }
+.studio-feedback-copy { display: grid; gap: 3px; min-width: 0; }
+.studio-feedback-copy > strong { font-size: 13px; }
+.studio-feedback-detail { color: var(--studio-muted); font-size: 10px; line-height: 1.45; }
+
+.studio-native-canvas :where(
+  .studio-ops-page,
+  .studio-connected-orders-page,
+  .studio-stocktake-page
+) {
+  gap: clamp(16px, 2.6vw, 26px);
+}
+
+/* Shell title owns service orientation. Body headings describe records or
+   current decisions; the old marketing/editorial service heroes disappear. */
+.studio-native-canvas :where(
+  .studio-ops-heading,
+  .studio-ops-hero,
+  .studio-stocktake-heading,
+  .studio-connected-detail-heading
+) {
+  align-items: center;
+  gap: 14px;
+  margin: 0;
+}
+
+.studio-native-canvas :where(
+  .studio-ops-heading,
+  .studio-ops-hero,
+  .studio-stocktake-heading,
+  .studio-connected-detail-heading
+) .eyebrow {
+  display: none;
+}
+
+.studio-native-canvas :where(
+  .studio-ops-heading h1,
+  .studio-ops-hero h1,
+  .studio-stocktake-heading h1,
+  .studio-connected-detail-heading h1
+) {
+  font-family: var(--font-body);
+  font-size: clamp(22px, 4vw, 34px);
+  font-weight: 720;
+  letter-spacing: -.04em;
+  line-height: 1.05;
+  margin: 0;
+}
+
+.studio-native-canvas :where(
+  .studio-ops-heading p:last-child,
+  .studio-ops-hero p:last-child,
+  .studio-stocktake-heading p:last-child,
+  .studio-connected-detail-heading p:last-child
+) {
+  color: var(--studio-muted);
+  font-size: 11px;
+  line-height: 1.45;
+  margin: 5px 0 0;
+}
+
+/* Continue is one action-led row, not a card nested inside a dashboard. */
+.studio-native-canvas .studio-piece-next {
+  align-items: center;
+  background: color-mix(in srgb, var(--studio-accent) 7%, var(--studio-panel));
+  border: 0;
+  border-radius: 22px;
+  box-shadow: none;
+  display: grid;
+  gap: 14px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  margin: 0;
+  min-height: 82px;
+  padding: 14px 14px 14px 18px;
+}
+
+.studio-native-canvas .studio-piece-next > span:first-child { display: none; }
+.studio-native-canvas .studio-piece-next > div { display: grid; gap: 3px; min-width: 0; }
+.studio-native-canvas .studio-piece-next small { color: var(--studio-muted); font-size: 9px; }
+.studio-native-canvas .studio-piece-next strong {
+  font-size: clamp(14px, 2vw, 17px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.studio-native-canvas .studio-piece-next p {
+  color: var(--studio-muted);
+  display: -webkit-box;
+  font-size: 10px;
+  line-height: 1.4;
+  margin: 0;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+.studio-native-canvas .studio-piece-next .button {
+  border-radius: 999px;
+  min-height: 44px;
+  white-space: nowrap;
+}
+
+/* Section titles and tabs no longer restate the page name. */
+.studio-native-canvas .studio-section-title {
+  align-items: center;
+  margin: 0 0 12px;
+}
+.studio-native-canvas .studio-section-title .eyebrow { display: none; }
+.studio-native-canvas .studio-section-title h2 {
+  font-family: var(--font-body);
+  font-size: 18px;
+  font-weight: 720;
+  letter-spacing: -.025em;
+  margin: 0;
+}
+.studio-native-canvas .studio-section-title > span {
+  color: var(--studio-muted);
+  font-size: 10px;
+}
+
+.studio-native-canvas .studio-segmented-view {
+  background: transparent;
+  margin: 0;
+}
+
+.studio-native-canvas .studio-stack-filter {
+  margin: 0;
+}
+
+/* All secondary CRUD, provenance and history use one quiet disclosure
+   material. No nested card borders or permanently expanded forms. */
+.studio-native-canvas .studio-transition-action {
+  background: transparent;
+  border: 0;
+  border-top: 1px solid var(--studio-line);
+  border-radius: 0;
+  box-shadow: none;
+  margin: 0;
+}
+
+.studio-native-canvas .studio-transition-action > summary {
+  border: 0;
+  min-height: 62px;
+  padding: 0 2px;
+}
+
+.studio-native-canvas .studio-transition-action-body {
+  background: transparent;
+  border: 0;
+  padding: 8px 0 20px;
+}
+
+.studio-piece-secondary-body {
+  display: grid;
+  gap: 16px;
+}
+
+/* Piece record: one garment image, one identity block and one current task.
+   Lifecycle and listing administration stay behind Piece details. */
+.studio-native-canvas .studio-dossier-page .studio-piece-workspace {
+  align-items: start;
+  gap: clamp(18px, 3vw, 30px);
+  grid-template-columns: minmax(280px, .82fr) minmax(0, 1.18fr);
+}
+
+.studio-native-canvas .studio-dossier-page .studio-draft-content {
+  gap: 16px;
+}
+
+.studio-native-canvas .studio-draft-summary {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
+}
+
+.studio-native-canvas .studio-draft-summary .studio-card-heading h3 {
+  font-size: clamp(20px, 3vw, 30px);
+}
+
+.studio-native-canvas .studio-piece-blockers,
+.studio-native-canvas .studio-piece-shop,
+.studio-native-canvas .studio-pending-product-media {
+  box-shadow: none;
+}
+
+/* Atelier now uses the same image-led row grammar as Wardrobe and Inventory. */
+.studio-native-canvas .shoot-gallery {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: 1fr;
+}
+
+.studio-native-canvas .shoot-card {
+  align-items: center;
+  background: var(--studio-panel);
+  border: 0;
+  border-radius: 20px;
+  box-shadow: none;
+  display: grid;
+  gap: 14px;
+  grid-template-columns: 78px minmax(0, 1fr) 18px;
+  min-height: 96px;
+  overflow: hidden;
+  padding: 0 14px 0 0;
+}
+
+.studio-native-canvas .shoot-card:hover {
+  background: var(--studio-panel-hover);
+  box-shadow: none;
+  transform: translateX(2px);
+}
+
+.studio-native-canvas .shoot-card > :is(img, .empty-authority) {
+  align-self: stretch;
+  border-radius: 0;
+  grid-column: 1;
+  grid-row: 1;
+  height: 96px;
+  min-height: 96px;
+  object-fit: cover;
+  width: 78px;
+}
+
+.studio-native-canvas .shoot-card-copy {
+  grid-column: 2;
+  grid-row: 1;
+  min-width: 0;
+  padding: 0;
+}
+
+.studio-native-canvas .shoot-card-copy h2 {
+  font-family: var(--font-body);
+  font-size: 14px;
+  font-weight: 720;
+  margin: 3px 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.studio-native-canvas .shoot-card > svg {
+  color: var(--studio-faint);
+  grid-column: 3;
+  grid-row: 1;
+}
+
+/* Orders and stocktake remain capable, but their lists use the same flat
+   vocabulary and their forms open as bounded task sheets. */
+.studio-native-canvas .studio-connected-orders-page,
+.studio-native-canvas .studio-stocktake-page {
+  display: grid;
+  gap: clamp(16px, 2.6vw, 26px);
+}
+
+.studio-native-canvas .studio-page-tools {
+  margin: 0;
+  min-height: 44px;
+}
+
+.studio-native-canvas .studio-connected-state-grid {
+  gap: 1px;
+  margin: 0;
+}
+
+.studio-native-canvas .studio-connected-state-grid > div {
+  background: var(--studio-panel);
+  min-height: 68px;
+  padding: 14px;
+}
+
+.studio-native-canvas .studio-order-action-section,
+.studio-native-canvas .studio-connected-order-summary,
+.studio-native-canvas .studio-stocktake-list,
+.studio-native-canvas .studio-stocktake-recent,
+.studio-native-canvas .studio-stocktake-close {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+@media (max-width: 760px) {
+  .studio-native-canvas {
+    padding-inline: 14px;
+    padding-top: 8px;
+  }
+
+  .studio-native-canvas .studio-dossier-page .studio-piece-workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .studio-native-canvas .studio-piece-next {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .studio-native-canvas .studio-piece-next .button {
+    justify-self: stretch;
+    width: 100%;
+  }
+
+  .studio-feedback {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .studio-feedback-action {
+    grid-column: 1 / -1;
+  }
+
+  .studio-feedback-action .button {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .studio-feedback,
+  .studio-native-canvas .studio-piece-next,
+  .studio-native-canvas .shoot-card {
+    background: var(--studio-panel-strong);
+  }
+}
+
+@media (forced-colors: active) {
+  .studio-feedback,
+  .studio-native-canvas .studio-piece-next,
+  .studio-native-canvas .shoot-card,
+  .studio-native-canvas .studio-transition-action {
+    border: 1px solid CanvasText;
+  }
+}

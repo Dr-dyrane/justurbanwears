@@ -1,5 +1,10 @@
-import { ShootDetail } from "../../../../components/shoot/shoot-detail";
+import { permanentRedirect } from "next/navigation";
 
-export default function ShootDetailPage() {
-  return <ShootDetail />;
+export default async function ShootDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  permanentRedirect(`/studio/media/${encodeURIComponent(id)}`);
 }

@@ -41,7 +41,13 @@ function documentKind(value: string) {
   return value.toLocaleLowerCase("en-NG").replaceAll("_", " ").replace(/^./, (letter) => letter.toUpperCase());
 }
 
-export function StudioCommandCenter({ showSearch = true }: { showSearch?: boolean }) {
+export function StudioCommandCenter({
+  showAsk = true,
+  showSearch = true,
+}: {
+  showAsk?: boolean;
+  showSearch?: boolean;
+}) {
   const studio = useStudio();
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -124,7 +130,7 @@ export function StudioCommandCenter({ showSearch = true }: { showSearch?: boolea
         <Search aria-hidden="true" size={18} />
         <span>{searchCapability === "READ_ONLY_COMPATIBILITY" ? "Find services" : "Find in Studio"}</span>
       </button> : null}
-      {canAsk ? (
+      {!showAsk ? <span aria-hidden="true" className="studio-command-placeholder" /> : canAsk ? (
         <Link
           aria-label="Ask Studio"
           className="studio-command-ask-trigger"

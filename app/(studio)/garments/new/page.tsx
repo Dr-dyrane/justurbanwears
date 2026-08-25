@@ -1,5 +1,5 @@
-import { GarmentIntake } from "../../../../components/garment/garment-intake";
+import { permanentRedirect } from "next/navigation";
 
 export default function NewGarmentPage() {
-  return <GarmentIntake />;
+  permanentRedirect("/studio/wardrobe?intake=1");
 }

@@ -53,7 +53,7 @@ function AppShellFrame({ children, operator }: { children: React.ReactNode; oper
             </Link>
           )}
           {isHome ? null : <span className="studio-command-page-title">{stack.title}</span>}
-          <StudioCommandCenter showSearch={isHome} />
+          <StudioCommandCenter showAsk={!pathname.startsWith("/studio/ask")} showSearch={isHome} />
         </nav>
       </header>
 
@@ -64,7 +64,7 @@ function AppShellFrame({ children, operator }: { children: React.ReactNode; oper
           </div>
         ) : null}
 
-        <main className="page-canvas" id="studio-content">
+        <main className={`page-canvas${isHome ? "" : " studio-native-canvas"}`} id="studio-content">
           {scenarioRouteSupported ? children : (
             <section className="studio-quiet-empty" role="status">
               <ClipboardList aria-hidden="true" size={24} />

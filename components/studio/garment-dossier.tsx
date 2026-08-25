@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { PackageOpen } from "lucide-react";
 import { StudioLink } from "./atoms/studio-link";
+import { StudioStackPage } from "./atoms/studio-stack-page";
 import { WearSheet } from "./garment-intake/wear-sheet";
 import { GarmentSetBuilder } from "./garment-set-builder";
 import { StudioMediaViewerProvider } from "./media-viewer";
@@ -39,7 +40,7 @@ export function GarmentDossier() {
 
   return (
     <StudioMediaViewerProvider>
-      <article className="studio-dossier-page">
+      <StudioStackPage className="studio-dossier-page" kind="record">
         <PieceWorkspaceView
           garment={garment}
           initialAction={searchParams.get("action") === "price" ? "price" : undefined}
@@ -61,7 +62,7 @@ export function GarmentDossier() {
             wardrobeItemId={wearWardrobeItemId}
           />
         ) : null}
-      </article>
+      </StudioStackPage>
     </StudioMediaViewerProvider>
   );
 }

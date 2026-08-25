@@ -2,9 +2,10 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Camera, CircleAlert, Shirt, UserRound } from "lucide-react";
+import { Camera, Shirt, UserRound } from "lucide-react";
+import { StudioFeedback } from "../studio/atoms/studio-feedback";
+import { StudioStackPage, StudioStackSection } from "../studio/atoms/studio-stack-page";
 import { useStudio } from "../studio/studio-provider";
-import { PageHeading } from "../ui/page-heading";
 
 type WearOperation = "MANNEQUIN_FRONT" | "MODEL_TRY_ON";
 type ApiFailure = { error?: { message?: string; recovery?: string } };
@@ -63,20 +64,20 @@ export function ShootComposer() {
     }
   }
 
-  if (authority.status === "idle" || authority.status === "loading") return <div className="studio-loading" role="status">Opening media…</div>;
-  if (authority.status === "error") return <div className="studio-quiet-empty" role="alert"><CircleAlert aria-hidden="true" size={24} /><div><strong>Media unavailable</strong><p>{authority.error}</p></div></div>;
+  if (authority.status === "idle" || authority.status === "loading") return <StudioFeedback state="loading" title="Opening Atelier" />;
+  if (authority.status === "error") return <StudioFeedback detail={authority.error} state="error" title="Media unavailable" />;
 
   return (
-    <div>
-      <PageHeading eyebrow="Create media" title="Choose the piece. Choose the view." description="Studio uses the approved garment and model authorities already on record." />
+    <StudioStackPage kind="workflow">
+      <h1 className="sr-only">Create media</h1>
       {pieces.length ? <form className="composer-layout" onSubmit={submit}>
         <div className="composer-main">
-          <section className="composer-section"><div className="intake-section-head"><div><span>01</span><h2>Piece</h2></div><p>Private garment truth</p></div><label className="authority-card select-authority"><span className="empty-authority"><Shirt aria-hidden="true" size={26} /></span><div><span><small>Garment</small></span><select aria-label="Garment" onChange={(event) => setWardrobeItemId(event.target.value)} value={wardrobeItemId}>{pieces.map((item) => <option key={item.pieceKey} value={item.wardrobeItemId!}>{item.sku ?? "Private"} · {item.title}</option>)}</select><p>{piece?.colour} · {piece?.condition}</p></div></label></section>
-          <section className="composer-section"><div className="intake-section-head"><div><span>02</span><h2>View</h2></div><p>One real generation</p></div><div className="preset-grid"><button className={operation === "MANNEQUIN_FRONT" ? "preset-card active" : "preset-card"} onClick={() => setOperation("MANNEQUIN_FRONT")} type="button"><small>Shape</small><strong>Mannequin</strong><p>Show the garment without a person.</p><span>{operation === "MANNEQUIN_FRONT" ? "Selected" : "Choose"}</span></button><button className={operation === "MODEL_TRY_ON" ? "preset-card active" : "preset-card"} onClick={() => setOperation("MODEL_TRY_ON")} type="button"><small>Wear</small><strong>On model</strong><p>Use one approved model authority.</p><span>{operation === "MODEL_TRY_ON" ? "Selected" : "Choose"}</span></button></div></section>
-          {operation === "MODEL_TRY_ON" ? <section className="composer-section"><div className="intake-section-head"><div><span>03</span><h2>Model</h2></div><p>Approved private authority</p></div><label className="authority-card select-authority"><span className="empty-authority"><UserRound aria-hidden="true" size={26} /></span><div><span><small>Model</small></span><select aria-label="Model" onChange={(event) => setModelProfileId(event.target.value)} required value={modelProfileId}>{models.map((model) => <option key={model.id} value={model.id}>{model.name}</option>)}</select><p>Usage authority confirmed</p></div></label></section> : null}
+          <StudioStackSection className="composer-section" meta="1" title="Piece"><label className="authority-card select-authority"><span className="empty-authority"><Shirt aria-hidden="true" size={26} /></span><div><span><small>Garment</small></span><select aria-label="Garment" onChange={(event) => setWardrobeItemId(event.target.value)} value={wardrobeItemId}>{pieces.map((item) => <option key={item.pieceKey} value={item.wardrobeItemId!}>{item.sku ?? "Private"} · {item.title}</option>)}</select><p>{piece?.colour} · {piece?.condition}</p></div></label></StudioStackSection>
+          <StudioStackSection className="composer-section" meta="2" title="View"><div className="preset-grid"><button aria-pressed={operation === "MANNEQUIN_FRONT"} className={operation === "MANNEQUIN_FRONT" ? "preset-card active" : "preset-card"} onClick={() => setOperation("MANNEQUIN_FRONT")} type="button"><strong>Mannequin</strong><small>Garment only</small></button><button aria-pressed={operation === "MODEL_TRY_ON"} className={operation === "MODEL_TRY_ON" ? "preset-card active" : "preset-card"} onClick={() => setOperation("MODEL_TRY_ON")} type="button"><strong>On model</strong><small>Approved identity</small></button></div></StudioStackSection>
+          {operation === "MODEL_TRY_ON" ? <StudioStackSection className="composer-section" meta="3" title="Model"><label className="authority-card select-authority"><span className="empty-authority"><UserRound aria-hidden="true" size={26} /></span><div><span><small>Model</small></span><select aria-label="Model" onChange={(event) => setModelProfileId(event.target.value)} required value={modelProfileId}>{models.map((model) => <option key={model.id} value={model.id}>{model.name}</option>)}</select><p>Approved for Wear</p></div></label></StudioStackSection> : null}
         </div>
-        <aside className="brief-panel"><div className="brief-sticky"><p className="eyebrow">Ready</p><h2>{piece?.title ?? "Choose a piece"}</h2><div className="brief-meta"><span>View</span><strong>{operation === "MANNEQUIN_FRONT" ? "Mannequin" : "Model try-on"}</strong><span>Privacy</span><strong>Private until kept</strong></div><button className="button button-primary button-full" disabled={busy || !wardrobeItemId || (operation === "MODEL_TRY_ON" && !modelProfileId)} type="submit">{busy ? <><span className="spinner" />Building view…</> : <><Camera aria-hidden="true" size={17} />Build view</>}</button>{error ? <p className="studio-task-error" role="alert">{error}</p> : null}</div></aside>
-      </form> : <div className="studio-quiet-empty"><Shirt aria-hidden="true" size={24} /><div><strong>No private garment authority</strong><p>Intake a garment before creating Wear media.</p></div><button className="button button-primary" onClick={() => router.push("/studio/wardrobe?intake=1")} type="button">Intake garment</button></div>}
-    </div>
+        <aside className="brief-panel"><div className="brief-sticky"><h2>{piece?.title ?? "Choose a piece"}</h2><div className="brief-meta"><span>View</span><strong>{operation === "MANNEQUIN_FRONT" ? "Mannequin" : "Model try-on"}</strong><span>Visibility</span><strong>Private</strong></div><button className="button button-primary button-full" disabled={busy || !wardrobeItemId || (operation === "MODEL_TRY_ON" && !modelProfileId)} type="submit">{busy ? <><span className="spinner" />Building view…</> : <><Camera aria-hidden="true" size={17} />Build view</>}</button>{error ? <StudioFeedback detail={error} state="error" title="View not made" /> : null}</div></aside>
+      </form> : <StudioFeedback action={<button className="button button-primary" onClick={() => router.push("/studio/wardrobe?intake=1")} type="button">Intake garment</button>} detail="Add a private garment before creating media." state="empty" title="No garment yet" />}
+    </StudioStackPage>
   );
 }

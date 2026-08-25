@@ -1,5 +1,5 @@
-import { IdentityCanonPage } from "../../../components/identity/identity-canon";
+import { permanentRedirect } from "next/navigation";
 
 export default function KonanPage() {
-  return <IdentityCanonPage />;
+  permanentRedirect("/studio/models");
 }

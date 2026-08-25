@@ -3,7 +3,7 @@
 import { ArrowUpRight, Inbox, RotateCcw } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { formatNaira } from "../../lib/shop/catalog";
 import {
   formatConnectedOrderDate,
@@ -12,6 +12,9 @@ import {
   studioOrderNextActionLabel,
 } from "../../lib/shop/order-presentation";
 import type { ShopServerOrder } from "../../lib/shop/server-order/types";
+import { StudioFeedback } from "./atoms/studio-feedback";
+import { StudioStackPage, StudioStackSection } from "./atoms/studio-stack-page";
+import { StudioTaskSheet } from "./atoms/studio-task-sheet";
 
 const orderFilters = ["NEEDS_ACTION", "ACTIVE", "RETURNS", "COMPLETED", "CANCELLED", "ALL"] as const;
 
@@ -39,6 +42,8 @@ export function ConnectedOrderInbox() {
   const [nextPage, setNextPage] = useState<number | null>(null);
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState("");
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createdOrder, setCreatedOrder] = useState<ShopServerOrder | null>(null);
   const [selectedSlugs, setSelectedSlugs] = useState<string[]>([]);
   const [source, setSource] = useState<"PHONE" | "DM" | "IN_PERSON">("DM");
   const [contactName, setContactName] = useState("");
@@ -49,6 +54,7 @@ export function ConnectedOrderInbox() {
   const [area, setArea] = useState("");
   const [stateName, setStateName] = useState("Lagos");
   const [sourceNote, setSourceNote] = useState("");
+  const createButtonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     const requestedFilter = searchParams.get("filter");
@@ -174,6 +180,8 @@ export function ConnectedOrderInbox() {
       setContactEmail("");
       setContactPhone("");
       setSourceNote("");
+      setCreatedOrder(body.order);
+      setCreateOpen(false);
     } catch (cause) {
       setCreateError(cause instanceof Error ? cause.message : "The order could not be reserved.");
     } finally {
@@ -182,84 +190,88 @@ export function ConnectedOrderInbox() {
   }
 
   return (
-    <div className="studio-connected-orders-page">
+    <StudioStackPage className="studio-connected-orders-page" kind="service">
       <header className="studio-page-tools">
         <h1 className="sr-only">Orders</h1>
         <span className="studio-page-tools-count">{state === "ready" ? `${orders.length} ${orders.length === 1 ? "order" : "orders"}` : state === "error" ? "Orders —" : "Opening…"}</span>
-        <button aria-busy={refreshing} className="button button-secondary" disabled={refreshing} onClick={() => void loadOrders(undefined, true)} type="button">{refreshing ? "Checking…" : "Check for updates"}</button>
+        <div>
+          <button className="button button-primary" onClick={() => { setCreateError(""); setCreateOpen(true); }} ref={createButtonRef} type="button">New order</button>
+          <button aria-busy={refreshing} className="button button-secondary" disabled={refreshing} onClick={() => void loadOrders(undefined, true)} type="button">{refreshing ? "Checking…" : "Check for updates"}</button>
+        </div>
       </header>
 
-      {state === "ready" ? <section className="studio-piece-next" aria-label="Next Orders action">
-        <span>{nextOrder ? <RotateCcw aria-hidden="true" size={20} /> : <Inbox aria-hidden="true" size={20} />}</span>
-        <div><small>Continue</small><strong>{nextOrder ? studioOrderNextActionLabel(nextOrder) : "No customer action waiting"}</strong><p>{nextOrder ? `${nextOrder.reference} is the next order requiring attention.` : "The current order queue is clear."}</p></div>
-        {nextOrder ? <Link className="button button-primary" href={`/studio/orders/${nextOrder.reference}#studio-order-next-action`}>Open order</Link> : <Link className="button button-secondary" href="/studio/wardrobe">Open wardrobe</Link>}
-      </section> : null}
+      {createdOrder ? (
+        <StudioFeedback
+          action={<Link className="button button-secondary" href={`/studio/orders/${createdOrder.reference}`}>Open order</Link>}
+          detail={`${createdOrder.reference} is reserved and now appears in Orders.`}
+          state="success"
+          title="Customer order created"
+        />
+      ) : null}
 
-      <details className="studio-stack-filter">
-        <summary>Find orders <span>{filter.toLowerCase().replaceAll("_", " ")}</span></summary>
-        <form className="studio-transition-fields studio-transition-fields-two" onSubmit={findOrders} role="search">
-          <label><span>Search</span><input onChange={(event) => setSearch(event.target.value)} placeholder="Order, customer, or piece" type="search" value={search} /></label>
-          <label><span>Show</span><select onChange={(event) => setFilter(event.target.value)} value={filter}><option value="NEEDS_ACTION">Needs action</option><option value="ACTIVE">Active</option><option value="RETURNS">Returns</option><option value="COMPLETED">Completed</option><option value="CANCELLED">Cancelled</option><option value="ALL">All orders</option></select></label>
-          <button className="button button-secondary" type="submit">Find orders</button>
-        </form>
-      </details>
+      <StudioStackSection aria-label="Order queue">
+        {state === "ready" ? <section className="studio-piece-next" aria-label="Next Orders action">
+          <span>{nextOrder ? <RotateCcw aria-hidden="true" size={20} /> : <Inbox aria-hidden="true" size={20} />}</span>
+          <div><small>Continue</small><strong>{nextOrder ? studioOrderNextActionLabel(nextOrder) : "No customer action waiting"}</strong><p>{nextOrder ? `${nextOrder.reference} is the next order requiring attention.` : "The current order queue is clear."}</p></div>
+          {nextOrder ? <Link className="button button-primary" href={`/studio/orders/${nextOrder.reference}#studio-order-next-action`}>Open order</Link> : <Link className="button button-secondary" href="/studio/wardrobe">Open wardrobe</Link>}
+        </section> : null}
 
-      {state === "loading" ? (
-        <div className="studio-loading" aria-live="polite" role="status">Opening orders…</div>
-      ) : null}
-      {state === "error" ? (
-        <div className="studio-quiet-empty" role="alert">
-          <Inbox aria-hidden="true" size={24} />
-          <div><strong>Orders unavailable</strong><p>{error}</p></div>
-          <button className="button button-secondary" onClick={() => void loadOrders()} type="button">Try again</button>
-        </div>
-      ) : null}
-      {state === "ready" && !orders.length ? (
-        <div className="studio-quiet-empty">
-          <Inbox aria-hidden="true" size={24} />
-          <div><strong>No orders yet</strong><p>New customer orders appear here.</p></div>
-        </div>
-      ) : null}
-      {state === "ready" && orders.length ? (
-        <section className="studio-connected-order-list" aria-label="Orders">
-          {orders.map((order) => {
-            const firstLine = order.lines[0];
-            const hasReturn = Boolean(order.return);
-            const needsAction = Boolean(nextStudioOrderTransition(order));
-            return (
-              <Link className="studio-connected-order-card studio-compact-row" data-state-tone={hasReturn ? "critical" : needsAction ? "caution" : "neutral"} href={`/studio/orders/${order.reference}`} key={order.reference}>
-                <div className="studio-connected-order-reference">
-                  <small>{order.reference}</small>
-                  <h2>{firstLine?.name ?? "Wardrobe order"}</h2>
-                  <p>{order.lines.length} {order.lines.length === 1 ? "piece" : "pieces"} · {formatNaira(order.total)} · {order.source === "ONLINE" ? "Online" : orderStateLabel(order.source)}</p>
-                </div>
-                <dl>
-                  <div><dt>Receipt</dt><dd>{orderStateLabel(order.paymentReviewStatus)}</dd></div>
-                  <div><dt>Payment</dt><dd>{orderStateLabel(order.fundsConfirmationStatus)}</dd></div>
-                  <div><dt>{order.fulfillment.kind === "PICKUP" ? "Pickup" : "Delivery"}</dt><dd>{orderStateLabel(order.fulfillmentStatus)}</dd></div>
-                  <div>
-                    <dt>{hasReturn ? "Return" : "Reserved"}</dt>
-                    <dd>{hasReturn ? orderStateLabel(order.return!.status) : formatConnectedOrderDate(order.savedAt, false)}</dd>
+        <details className="studio-stack-filter">
+          <summary>Find orders <span>{filter.toLowerCase().replaceAll("_", " ")}</span></summary>
+          <form className="studio-transition-fields studio-transition-fields-two" onSubmit={findOrders} role="search">
+            <label><span>Search</span><input onChange={(event) => setSearch(event.target.value)} placeholder="Order, customer, or piece" type="search" value={search} /></label>
+            <label><span>Show</span><select onChange={(event) => setFilter(event.target.value)} value={filter}><option value="NEEDS_ACTION">Needs action</option><option value="ACTIVE">Active</option><option value="RETURNS">Returns</option><option value="COMPLETED">Completed</option><option value="CANCELLED">Cancelled</option><option value="ALL">All orders</option></select></label>
+            <button className="button button-secondary" type="submit">Find orders</button>
+          </form>
+        </details>
+
+        {state === "loading" ? <StudioFeedback detail="Reading the connected order queue." state="loading" title="Opening orders" /> : null}
+        {state === "error" ? <StudioFeedback action={<button className="button button-secondary" onClick={() => void loadOrders()} type="button">Try again</button>} detail={error} state="error" title="Orders unavailable" /> : null}
+        {state === "ready" && !orders.length ? <StudioFeedback detail="New customer orders will appear here." state="empty" title="No orders yet" /> : null}
+        {state === "ready" && orders.length ? (
+          <section className="studio-connected-order-list" aria-label="Orders">
+            {orders.map((order) => {
+              const firstLine = order.lines[0];
+              const hasReturn = Boolean(order.return);
+              const needsAction = Boolean(nextStudioOrderTransition(order));
+              return (
+                <Link className="studio-connected-order-card studio-compact-row" data-state-tone={hasReturn ? "critical" : needsAction ? "caution" : "neutral"} href={`/studio/orders/${order.reference}`} key={order.reference}>
+                  <div className="studio-connected-order-reference">
+                    <small>{order.reference}</small>
+                    <h2>{firstLine?.name ?? "Wardrobe order"}</h2>
+                    <p>{order.lines.length} {order.lines.length === 1 ? "piece" : "pieces"} · {formatNaira(order.total)} · {order.source === "ONLINE" ? "Online" : orderStateLabel(order.source)}</p>
                   </div>
-                </dl>
-                <div className="studio-connected-order-next">
-                  <small>{hasReturn ? <><RotateCcw aria-hidden="true" size={13} /> Return action</> : "Next action"}</small>
-                  <strong>{studioOrderNextActionLabel(order)}</strong>
-                  {order.reservationExpiresAt && order.lifecycleStatus === "ACTIVE" ? (
-                    <time dateTime={order.reservationExpiresAt}>Reservation until {formatConnectedOrderDate(order.reservationExpiresAt)}</time>
-                  ) : null}
-                </div>
-                <ArrowUpRight aria-hidden="true" size={19} />
-              </Link>
-            );
-          })}
-          {nextPage ? <button className="button button-secondary" disabled={refreshing} onClick={() => void loadOrders(undefined, true, nextPage, true)} type="button">{refreshing ? "Loading…" : "Load more"}</button> : null}
-        </section>
-      ) : null}
+                  <dl>
+                    <div><dt>Receipt</dt><dd>{orderStateLabel(order.paymentReviewStatus)}</dd></div>
+                    <div><dt>Payment</dt><dd>{orderStateLabel(order.fundsConfirmationStatus)}</dd></div>
+                    <div><dt>{order.fulfillment.kind === "PICKUP" ? "Pickup" : "Delivery"}</dt><dd>{orderStateLabel(order.fulfillmentStatus)}</dd></div>
+                    <div><dt>{hasReturn ? "Return" : "Reserved"}</dt><dd>{hasReturn ? orderStateLabel(order.return!.status) : formatConnectedOrderDate(order.savedAt, false)}</dd></div>
+                  </dl>
+                  <div className="studio-connected-order-next">
+                    <small>{hasReturn ? <><RotateCcw aria-hidden="true" size={13} /> Return action</> : "Next action"}</small>
+                    <strong>{studioOrderNextActionLabel(order)}</strong>
+                    {order.reservationExpiresAt && order.lifecycleStatus === "ACTIVE" ? <time dateTime={order.reservationExpiresAt}>Reservation until {formatConnectedOrderDate(order.reservationExpiresAt)}</time> : null}
+                  </div>
+                  <ArrowUpRight aria-hidden="true" size={19} />
+                </Link>
+              );
+            })}
+            {nextPage ? <button className="button button-secondary" disabled={refreshing} onClick={() => void loadOrders(undefined, true, nextPage, true)} type="button">{refreshing ? "Loading…" : "Load more"}</button> : null}
+          </section>
+        ) : null}
+      </StudioStackSection>
 
-      <details className="studio-transition-action">
-        <summary>Create customer order<span>Phone, message, or in person</span></summary>
-        <form aria-busy={creating} className="studio-transition-action-body studio-transition-fields" onSubmit={createAssistedOrder}>
+      <StudioTaskSheet
+        busy={creating}
+        busyLabel="Reserving this order"
+        eyebrow="New order"
+        onDismiss={() => { if (creating) return false; setCreateOpen(false); }}
+        onSubmit={createAssistedOrder}
+        open={createOpen}
+        returnFocus={createButtonRef.current}
+        title="Customer order"
+      >
+        <div className="studio-transition-fields">
           <label><span>Order came from</span><select disabled={creating} onChange={(event) => setSource(event.target.value as typeof source)} value={source}><option value="DM">Direct message</option><option value="PHONE">Phone</option><option value="IN_PERSON">In person</option></select></label>
           <fieldset><legend>Pieces</legend>{products.map((product) => <label key={product.slug}><input checked={selectedSlugs.includes(product.slug)} disabled={creating} onChange={(event) => setSelectedSlugs((current) => event.target.checked ? [...current, product.slug] : current.filter((slug) => slug !== product.slug))} type="checkbox" /><span>{product.name} · {product.taggedSize} · {formatNaira(product.price)}</span></label>)}</fieldset>
           {!products.length ? <p>No available pieces.</p> : null}
@@ -270,9 +282,9 @@ export function ConnectedOrderInbox() {
           {fulfillmentKind === "DELIVERY" ? <><label><span>Street</span><input disabled={creating} maxLength={180} onChange={(event) => setStreet(event.target.value)} required value={street} /></label><label><span>Area</span><input disabled={creating} maxLength={100} onChange={(event) => setArea(event.target.value)} required value={area} /></label><label><span>State</span><input disabled={creating} maxLength={100} onChange={(event) => setStateName(event.target.value)} required value={stateName} /></label></> : null}
           <label><span>Private source note (optional)</span><textarea disabled={creating} maxLength={500} onChange={(event) => setSourceNote(event.target.value)} value={sourceNote} /></label>
           <button className="button button-primary" disabled={creating || !selectedSlugs.length} type="submit">{creating ? "Reserving…" : "Reserve order"}</button>
-          {createError ? <p className="is-error" role="alert">{createError}</p> : null}
-        </form>
-      </details>
-    </div>
+          {createError ? <StudioFeedback detail={createError} state="error" title="Order not created" /> : null}
+        </div>
+      </StudioTaskSheet>
+    </StudioStackPage>
   );
 }

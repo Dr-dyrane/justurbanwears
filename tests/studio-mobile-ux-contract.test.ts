@@ -24,12 +24,13 @@ const controlCss = readFileSync(`${root}/app/control-refinement.css`, "utf8");
 const stackCss = readFileSync(`${root}/app/studio-stack-navigation.css`, "utf8");
 const wardrobeMobileCss = readFileSync(`${root}/app/studio-mobile-wardrobe.css`, "utf8");
 const rootLayout = readFileSync(`${root}/app/layout.tsx`, "utf8");
+const studioLayout = readFileSync(`${root}/app/(studio)/layout.tsx`, "utf8");
 
 test("Studio uses Home-owned navigation and one shell-owned stack header", () => {
   assert.match(shell, /data-studio-page=\{isHome \? "home" : "stack"\}/);
   assert.match(shell, /studio-command-nav glass-surface/);
   assert.match(shell, /<StudioSettingsCenter operator=\{operator\}/);
-  assert.match(shell, /<StudioCommandCenter showSearch=\{isHome\} \/>/);
+  assert.match(shell, /<StudioCommandCenter showAsk=\{!pathname\.startsWith\("\/studio\/ask"\)\} showSearch=\{isHome\} \/>/);
   assert.match(shell, /aria-label=\{`Back to \$\{stack\.backLabel\}`\}/);
   assert.match(shell, /className="studio-command-page-title"/);
   assert.match(stackContext, /view === "publishing"\) return \{ backHref: "\/studio", backLabel: "Studio Home", title: "Shop" \}/);
@@ -52,7 +53,7 @@ test("Studio uses Home-owned navigation and one shell-owned stack header", () =>
   assert.match(stackCss, /@media \(max-width: 680px\)[\s\S]*?grid-template-columns: 44px minmax\(0, 1fr\) 44px/);
   assert.match(stackCss, /padding-bottom: max\(36px, env\(safe-area-inset-bottom, 0px\)\)/);
   assert.doesNotMatch(mobileCss, /\.shop-shell > main,\s*\.studio-shell \.page-canvas/);
-  assert.match(rootLayout, /studio-stack-navigation\.css/);
+  assert.match(studioLayout, /studio-stack-navigation\.css/);
   assert.match(rootLayout, /const renderedMobileExperienceCss = mobileExperienceCss;/);
   assert.match(rootLayout, /control-refinement\.css/);
 });
