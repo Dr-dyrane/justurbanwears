@@ -54,6 +54,7 @@ export const WARDROBE_APPROVED_V4_MODEL_SLUGS = Object.freeze([
   "charcoal-wrap-front-ruched-slit-midi-dress",
   "marigold-sculptural-rosette-strapless-mini-dress",
   "scarlet-rosette-halter-cutout-ruched-mini-dress",
+  "crimson-asymmetric-draped-satin-maxi-dress",
 ] as const);
 
 export const WARDROBE_APPROVED_MODEL_FRONT_SLUGS = Object.freeze([
@@ -93,6 +94,7 @@ export const WARDROBE_APPROVED_MODEL_SUPPLEMENTAL_SLOTS = Object.freeze({
   "charcoal-wrap-front-ruched-slit-midi-dress": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "marigold-sculptural-rosette-strapless-mini-dress": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "scarlet-rosette-halter-cutout-ruched-mini-dress": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
+  "crimson-asymmetric-draped-satin-maxi-dress": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "coral-drift-dress": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "moss-square-knit": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "cocoa-pleat-trouser": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
@@ -760,6 +762,25 @@ export const WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS: readonly WardrobePublicProduc
     note: "A scarlet halter mini shaped by a dimensional centre rosette, an open midriff and dense ruching.",
     story: "A gathered halter bandeau lifts around one sculptural fabric rose, opening into a defined midriff cutout above a close high-waisted ruched mini.",
     details: ["Narrow halter straps", "Dimensional centre rosette", "Open midriff cutout", "High-waisted ruched mini"],
+    measurements: [],
+  }),
+  migrationSeed({
+    slug: "crimson-asymmetric-draped-satin-maxi-dress",
+    sku: "JUW-046",
+    name: "Crimson Asymmetric Draped Satin Maxi Dress",
+    category: "Dresses",
+    price: 34500,
+    taggedSize: "Size on request",
+    fit: "Measurements confirmed before payment",
+    condition: "Condition confirmed before payment",
+    colour: "Deep crimson",
+    availability: "AVAILABLE",
+    drop: "Drop 02",
+    tone: "coral",
+    silhouette: "dress",
+    note: "A deep-crimson satin maxi defined by one sculptural shoulder and a softly gathered waist.",
+    story: "A wide asymmetric shoulder rises above a fluid draped neckline, with gathered folds shaping the bodice before the satin falls into a long straight column.",
+    details: ["Asymmetric one-shoulder neckline", "Softly draped satin-like bodice", "Gathered low waist", "Straight floor-length column"],
     measurements: [],
   }),
 ]);

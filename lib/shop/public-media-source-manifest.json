@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "catalogueRevision": "2026-08-25-catalogue-31",
-  "catalogueChecksum": "df50a7c843f0a468f343365ccdd40a326535bca3532cb287ff82adbfeb6759a7",
-  "cataloguePresentationChecksum": "50178cf1fcfbd0dfa02a0873f07fcc34092de9febe79fb8d660a4db05b0c49ec",
+  "catalogueRevision": "2026-08-25-catalogue-32",
+  "catalogueChecksum": "51f72d8bee036db17a8d988ebead98026695e6f925c510ef049f773b946b3252",
+  "cataloguePresentationChecksum": "849a4c571a4bd0bea6790479a5d064cf44cb76510354c281f115b27d85dc7397",
   "assets": [
     {
       "sourcePath": "/shop/model/lulu-v2-approved.png",
@@ -1164,6 +1164,69 @@
       "contentType": "image/webp",
       "width": 1122,
       "height": 1402
+    },
+    {
+      "sourcePath": "/shop/products/crimson-asymmetric-draped-satin-maxi-dress/01-garment-front.webp",
+      "pathname": "shop/catalogue/a2a9f7bba8f30a77a32df93e8727134c8d3e66e61c330f6e3345c8831e0facf4/products/crimson-asymmetric-draped-satin-maxi-dress/01-garment-front.webp",
+      "sha256": "a2a9f7bba8f30a77a32df93e8727134c8d3e66e61c330f6e3345c8831e0facf4",
+      "size": 47590,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/crimson-asymmetric-draped-satin-maxi-dress/02-garment-back.webp",
+      "pathname": "shop/catalogue/87aa169cbcbb287d5878e99ba56a1176119daf6696a97d08361af334b860cde7/products/crimson-asymmetric-draped-satin-maxi-dress/02-garment-back.webp",
+      "sha256": "87aa169cbcbb287d5878e99ba56a1176119daf6696a97d08361af334b860cde7",
+      "size": 48662,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/crimson-asymmetric-draped-satin-maxi-dress/03-mannequin-front.webp",
+      "pathname": "shop/catalogue/7a950562f08ae4b47baa26482f5fff2aa088bda70f58c9cf75a361a03050c32c/products/crimson-asymmetric-draped-satin-maxi-dress/03-mannequin-front.webp",
+      "sha256": "7a950562f08ae4b47baa26482f5fff2aa088bda70f58c9cf75a361a03050c32c",
+      "size": 51230,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/crimson-asymmetric-draped-satin-maxi-dress/04-model-front.webp",
+      "pathname": "shop/catalogue/54144320473308bb99bc44e93f16282616145c5d12339c3e8acded8682ba2f0a/products/crimson-asymmetric-draped-satin-maxi-dress/04-model-front.webp",
+      "sha256": "54144320473308bb99bc44e93f16282616145c5d12339c3e8acded8682ba2f0a",
+      "size": 184844,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/crimson-asymmetric-draped-satin-maxi-dress/05-model-rear-three-quarter.webp",
+      "pathname": "shop/catalogue/5725d067416ec1cc3c2a57ffe74b517055db1a8acfecda45429668ead97680fe/products/crimson-asymmetric-draped-satin-maxi-dress/05-model-rear-three-quarter.webp",
+      "sha256": "5725d067416ec1cc3c2a57ffe74b517055db1a8acfecda45429668ead97680fe",
+      "size": 174662,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/crimson-asymmetric-draped-satin-maxi-dress/06-fabric-detail.webp",
+      "pathname": "shop/catalogue/1546b401f311015ee2aee9ed0977e61d42178b64358f1b91badeb6ffd3d3fdde/products/crimson-asymmetric-draped-satin-maxi-dress/06-fabric-detail.webp",
+      "sha256": "1546b401f311015ee2aee9ed0977e61d42178b64358f1b91badeb6ffd3d3fdde",
+      "size": 90246,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/crimson-asymmetric-draped-satin-maxi-dress/07-model-left-profile.webp",
+      "pathname": "shop/catalogue/c1328c1ae459b86b53bc7a417e1b9b9a48721f167772258fce933d385f7f232c/products/crimson-asymmetric-draped-satin-maxi-dress/07-model-left-profile.webp",
+      "sha256": "c1328c1ae459b86b53bc7a417e1b9b9a48721f167772258fce933d385f7f232c",
+      "size": 184384,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
     },
     {
       "sourcePath": "/shop/products/cropped-denim-jacket-black-legging-look/01-garment-front.webp",

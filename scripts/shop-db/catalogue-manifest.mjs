@@ -28,6 +28,7 @@ const V4_MODEL_SLUGS = new Set([
   "charcoal-wrap-front-ruched-slit-midi-dress",
   "marigold-sculptural-rosette-strapless-mini-dress",
   "scarlet-rosette-halter-cutout-ruched-mini-dress",
+  "crimson-asymmetric-draped-satin-maxi-dress",
 ]);
 
 const V3_MODEL_FRONT_SLUGS = new Set([
@@ -117,7 +118,7 @@ function presentation(product) {
  */
 export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
   schemaVersion: 2,
-  revision: "2026-08-25-catalogue-31",
+  revision: "2026-08-25-catalogue-32",
   products: Object.freeze([
     presentation({
       slug: "coral-drift-dress",
@@ -920,6 +921,26 @@ export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
       note: "A scarlet halter mini shaped by a dimensional centre rosette, an open midriff and dense ruching.",
       story: "A gathered halter bandeau lifts around one sculptural fabric rose, opening into a defined midriff cutout above a close high-waisted ruched mini.",
       details: ["Narrow halter straps", "Dimensional centre rosette", "Open midriff cutout", "High-waisted ruched mini"],
+      measurements: [],
+      mediaSlots: ["MODEL_FRONT", "MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
+    }),
+    presentation({
+      slug: "crimson-asymmetric-draped-satin-maxi-dress",
+      sku: "JUW-046",
+      name: "Crimson Asymmetric Draped Satin Maxi Dress",
+      category: "Dresses",
+      price: 34500,
+      taggedSize: "Size on request",
+      fit: "Measurements confirmed before payment",
+      condition: "Condition confirmed before payment",
+      colour: "Deep crimson",
+      availability: "AVAILABLE",
+      drop: "Drop 02",
+      tone: "coral",
+      silhouette: "dress",
+      note: "A deep-crimson satin maxi defined by one sculptural shoulder and a softly gathered waist.",
+      story: "A wide asymmetric shoulder rises above a fluid draped neckline, with gathered folds shaping the bodice before the satin falls into a long straight column.",
+      details: ["Asymmetric one-shoulder neckline", "Softly draped satin-like bodice", "Gathered low waist", "Straight floor-length column"],
       measurements: [],
       mediaSlots: ["MODEL_FRONT", "MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
     }),
