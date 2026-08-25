@@ -1435,14 +1435,18 @@ html body .studio-stack-shell .workspace > main.page-canvas:has(> .studio-home-c
   display: block;
   gap: 0;
   height: 100dvh;
+  margin: 0;
   max-width: 100%;
   min-height: 100dvh;
   overflow: hidden;
+  width: 100%;
 }
 
 .studio-home-recommendation {
   align-content: end;
-  background: radial-gradient(circle at 86% 8%, color-mix(in srgb, white 16%, transparent), transparent 48%);
+  background:
+    radial-gradient(circle at 86% 8%, color-mix(in srgb, white 16%, transparent), transparent 48%),
+    var(--studio-home-field);
   display: grid;
   gap: 12px;
   min-height: clamp(190px, 27vw, 310px);
