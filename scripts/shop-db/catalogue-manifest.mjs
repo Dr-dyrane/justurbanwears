@@ -114,7 +114,7 @@ function presentation(product) {
  */
 export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
   schemaVersion: 2,
-  revision: "2026-08-24-catalogue-27",
+  revision: "2026-08-24-catalogue-28",
   products: Object.freeze([
     presentation({
       slug: "coral-drift-dress",
@@ -819,6 +819,26 @@ export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
       details: ["Soft draped cowl neckline", "Extended cap shoulders", "Fitted one-piece silhouette", "Full-length straight legs"],
       measurements: [],
       mediaSlots: ["MODEL_FRONT", "MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
+    }),
+    presentation({
+      slug: "gunmetal-sparkle-open-back-long-sleeve-mini-dress",
+      sku: "JUW-041",
+      name: "Gunmetal Sparkle Open-Back Long-Sleeve Mini Dress",
+      category: "Dresses",
+      price: 28500,
+      taggedSize: "Size on request",
+      fit: "Measurements confirmed before payment",
+      condition: "Condition confirmed before payment",
+      colour: "Gunmetal charcoal",
+      availability: "AVAILABLE",
+      drop: "Drop 02",
+      tone: "cocoa",
+      silhouette: "dress",
+      note: "A fitted gunmetal sparkle mini with a plunging crossover front and sculptural open-back straps.",
+      story: "A deep crossover neckline meets a raised waist and close mini silhouette, while the back opens into two cutouts divided by a narrow connector strap.",
+      details: ["Deep crossover V neckline", "Long close sleeves", "Raised waist band", "Two-part open-back construction"],
+      measurements: [],
+      mediaSlots: [],
     }),
     presentation({
       slug: "fuchsia-strapless-ruched-cascade-ruffle-mini-dress",

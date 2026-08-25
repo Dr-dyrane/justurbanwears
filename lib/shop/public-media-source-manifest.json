@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "catalogueRevision": "2026-08-24-catalogue-27",
-  "catalogueChecksum": "06aea430d648ca057307f16b56b486ac3895d7cde663b4540301ebb6e9250dd9",
-  "cataloguePresentationChecksum": "7023cbfc4c9acff45b9c8572cadbcb21421ab1ad1a6d9ba83818d69d100b5d61",
+  "catalogueRevision": "2026-08-24-catalogue-28",
+  "catalogueChecksum": "7295f23bd32f0c00474d370b698e9569b8d15e42013daecd518c4b9e62b6bac1",
+  "cataloguePresentationChecksum": "bf2223ba520f7606a6ddd5718b0e2db46d6a5463cda9606f48ded865f702906c",
   "assets": [
     {
       "sourcePath": "/shop/model/lulu-v2-approved.png",
@@ -1206,6 +1206,42 @@
       "pathname": "shop/catalogue/f1f7954f1c8966c36202c40e91a7504c56f631cf2c74195aa4f25d1d2f2e8fa0/products/fuchsia-strapless-ruched-cascade-ruffle-mini-dress/07-model-left-profile.webp",
       "sha256": "f1f7954f1c8966c36202c40e91a7504c56f631cf2c74195aa4f25d1d2f2e8fa0",
       "size": 163230,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/gunmetal-sparkle-open-back-long-sleeve-mini-dress/01-garment-front.webp",
+      "pathname": "shop/catalogue/4f19065979838c8c77cf439beb4e82e9218186da899907067bb70f6ba83d64bb/products/gunmetal-sparkle-open-back-long-sleeve-mini-dress/01-garment-front.webp",
+      "sha256": "4f19065979838c8c77cf439beb4e82e9218186da899907067bb70f6ba83d64bb",
+      "size": 249194,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/gunmetal-sparkle-open-back-long-sleeve-mini-dress/02-garment-back.webp",
+      "pathname": "shop/catalogue/3107a2235c327246b000043e910bd2e38e446c3d866df6d44fe2d0e9ea760a1f/products/gunmetal-sparkle-open-back-long-sleeve-mini-dress/02-garment-back.webp",
+      "sha256": "3107a2235c327246b000043e910bd2e38e446c3d866df6d44fe2d0e9ea760a1f",
+      "size": 210038,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/gunmetal-sparkle-open-back-long-sleeve-mini-dress/03-mannequin-front.webp",
+      "pathname": "shop/catalogue/be4b2eea8f1b38c15f3a4963ab520fa85366fee0a641ba12a8c94109580cf234/products/gunmetal-sparkle-open-back-long-sleeve-mini-dress/03-mannequin-front.webp",
+      "sha256": "be4b2eea8f1b38c15f3a4963ab520fa85366fee0a641ba12a8c94109580cf234",
+      "size": 115830,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/gunmetal-sparkle-open-back-long-sleeve-mini-dress/06-fabric-detail.webp",
+      "pathname": "shop/catalogue/f93517e513ae09468cab22a8d44ff1dbeca8982562af02776a648128a2718dfe/products/gunmetal-sparkle-open-back-long-sleeve-mini-dress/06-fabric-detail.webp",
+      "sha256": "f93517e513ae09468cab22a8d44ff1dbeca8982562af02776a648128a2718dfe",
+      "size": 311264,
       "contentType": "image/webp",
       "width": 1120,
       "height": 1400

@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import sharp from "sharp";
 import {
+  PARTIAL_PUBLIC_MEDIA_MAPPING,
   PUBLIC_MEDIA_MAPPING,
   SHOP_MEDIA_HEIGHT,
   SHOP_MEDIA_WIDTH,
@@ -21,6 +22,18 @@ test("maps private semantic views to the historical public Shop filenames", () =
       { view: "07", role: "MODEL_REAR_THREE_QUARTER", output: "05-model-rear-three-quarter.webp" },
       { view: "04", role: "FABRIC_DETAIL", output: "06-fabric-detail.webp" },
       { view: "06", role: "MODEL_LEFT_PROFILE", output: "07-model-left-profile.webp" },
+    ],
+  );
+});
+
+test("maps an explicitly authorized partial 01-04 publication without model placeholders", () => {
+  assert.deepEqual(
+    PARTIAL_PUBLIC_MEDIA_MAPPING.map(({ view, role, output }) => ({ view, role, output })),
+    [
+      { view: "01", role: "GARMENT_FRONT", output: "01-garment-front.webp" },
+      { view: "02", role: "GARMENT_BACK", output: "02-garment-back.webp" },
+      { view: "03", role: "MANNEQUIN_FRONT", output: "03-mannequin-front.webp" },
+      { view: "04", role: "FABRIC_DETAIL", output: "06-fabric-detail.webp" },
     ],
   );
 });
@@ -48,4 +61,22 @@ test("refuses an incomplete private packet before any public export", () => {
     () => validateLockedManifest({ schemaVersion: 1, garmentId: "009", status: "01_04_LOCKED", views: {} }, "009"),
     /not complete and locked through 01–07/,
   );
+});
+
+test("accepts only an explicitly authorized partial 01-04 publication", () => {
+  const views = Object.fromEntries(PARTIAL_PUBLIC_MEDIA_MAPPING.map(({ view, role }) => [view, {
+    role,
+    path: `${view}-accepted.png`,
+    sha256: "a".repeat(64),
+    status: "USER_ACCEPTED_LOCKED",
+  }]));
+  const manifest = {
+    schemaVersion: 1,
+    garmentId: "017",
+    status: "PARTIAL_01_04_USER_ACCEPTED_LOCKED_FOR_AS_IS_PUBLICATION",
+    authorization: { mode: "USER_AUTHORIZED_AS_IS_PARTIAL_PUBLICATION" },
+    views,
+  };
+  assert.equal(validateLockedManifest(manifest, "017", { allowPartial: true }), manifest);
+  assert.throws(() => validateLockedManifest(manifest, "017"), /not complete and locked through 01–07/);
 });

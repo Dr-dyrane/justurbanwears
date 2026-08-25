@@ -1428,7 +1428,9 @@
       "rejectedCandidatesMayParent": false
     },
     "017": {
-      "status": "PRIVATE_01_04_COMPLETE_STYLING_RECORDED_BUILT_IN_PROVIDER_EXHAUSTED_GATEWAY_SEEDREAM_AND_FLUX_PRO_PROOFS_REJECTED_TERMINAL_NO_ACCEPTED_05_07",
+      "status": "PARTIAL_01_04_USER_ACCEPTED_LOCKED_FOR_AS_IS_PUBLICATION_RELEASE_PENDING",
+      "sku": "JUW-041",
+      "slug": "gunmetal-sparkle-open-back-long-sleeve-mini-dress",
       "sourceManifest": "storage/garments/drop-02/017/source/manifest.json",
       "classification": "DIRECT_CAPTURE_FRONT_AND_REAR_FAMILY_NO_TRUE_SIDE",
       "reservedViews": ["01", "02", "03", "04", "05", "06", "07"],
@@ -1456,8 +1458,29 @@
         "storage/garments/drop-02/017/operations/g017-holistic-subject-r009-v2-pixel-parent.json",
         "storage/garments/drop-02/017/operations/g017-holistic-subject-r010-g005-mannequin-minimal.json",
         "storage/garments/drop-02/017/operations/g017-holistic-subject-gateway-r011.json",
-        "storage/garments/drop-02/017/operations/g017-holistic-subject-gateway-r012-flux-pro.json"
+        "storage/garments/drop-02/017/operations/g017-holistic-subject-gateway-r012-flux-pro.json",
+        "storage/garments/drop-02/017/operations/g017-shop-media-export-v001.json"
       ],
+      "publicationAuthority": {
+        "status": "USER_AUTHORIZED_AS_IS_PARTIAL_PUBLICATION",
+        "acceptedViews": ["01", "02", "03", "04"],
+        "absentViews": ["05", "06", "07"],
+        "placeholderOrSubstitutionAllowed": false,
+        "note": "Publish G017 as is. Only the four accepted garment views may be public; no model-view placeholder, reused Lulu media, or rejected candidate may fill 05–07."
+      },
+      "shopMediaExport": {
+        "operationId": "g017-shop-media-export-v001",
+        "status": "EXPORTED_BLOB_SYNCED_AND_REMOTE_HASH_VERIFIED",
+        "assetCount": 4,
+        "canvas": "1120x1400",
+        "nonUniformScaling": false,
+        "sourceLockManifestSha256": "a6e88b2f447113e49c69d8103fb3ebc7fb294c0aaf3dc121a560a9dae1233c9",
+        "catalogueRevision": "2026-08-24-catalogue-28",
+        "catalogueManifestChecksum": "7295f23bd32f0c00474d370b698e9569b8d15e42013daecd518c4b9e62b6bac1",
+        "cataloguePresentationChecksum": "bf2223ba520f7606a6ddd5718b0e2db46d6a5463cda9606f48ded865f702906c",
+        "publicBlobActiveAssetCount": 226,
+        "publicBlobLegacyAssetCount": 7
+      },
       "stylingDecision": "REFINE_SMOKED_CLEAR_OR_BLACK_POINTED_NON_PLATFORM_STILETTOS_TINY_SILVER_STUDS_NO_COMPETING_ACCESSORIES",
       "rearConstruction": "NARROW_NAPE_BRIDGE_CENTER_CONNECTOR_LARGE_UPPER_OPENING_ONE_MID_BACK_STRAP_CENTER_CONNECTOR_SMALLER_LOWER_OPENING_NO_BACK_PANEL",
       "subjectGate": {

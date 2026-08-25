@@ -21,6 +21,15 @@ export const PUBLIC_MEDIA_MAPPING = Object.freeze([
   Object.freeze({ view: "06", role: "MODEL_LEFT_PROFILE", output: "07-model-left-profile.webp" }),
 ]);
 
+export const PARTIAL_PUBLIC_MEDIA_MAPPING = Object.freeze([
+  Object.freeze({ view: "01", role: "GARMENT_FRONT", output: "01-garment-front.webp" }),
+  Object.freeze({ view: "02", role: "GARMENT_BACK", output: "02-garment-back.webp" }),
+  Object.freeze({ view: "03", role: "MANNEQUIN_FRONT", output: "03-mannequin-front.webp" }),
+  Object.freeze({ view: "04", role: "FABRIC_DETAIL", output: "06-fabric-detail.webp" }),
+]);
+
+const PARTIAL_PUBLICATION_STATUS = "PARTIAL_01_04_USER_ACCEPTED_LOCKED_FOR_AS_IS_PUBLICATION";
+
 function sha256(bytes) {
   return createHash("sha256").update(bytes).digest("hex");
 }
@@ -36,14 +45,20 @@ export function containedDimensions(sourceWidth, sourceHeight, width = SHOP_MEDI
   };
 }
 
-export function validateLockedManifest(manifest, garmentId) {
+export function validateLockedManifest(manifest, garmentId, { allowPartial = false } = {}) {
   if (!manifest || manifest.schemaVersion !== 1 || manifest.garmentId !== garmentId) {
     throw new Error(`Garment ${garmentId} locked manifest is missing or invalid.`);
   }
-  if (!/^COMPLETE_01_07_.*LOCKED$/.test(manifest.status)) {
+  const isComplete = /^COMPLETE_01_07_.*LOCKED$/.test(manifest.status);
+  const isAuthorizedPartial = manifest.status === PARTIAL_PUBLICATION_STATUS;
+  if (!isComplete && !(allowPartial && isAuthorizedPartial)) {
     throw new Error(`Garment ${garmentId} is not complete and locked through 01–07.`);
   }
-  for (const mapping of PUBLIC_MEDIA_MAPPING) {
+  if (isAuthorizedPartial && manifest.authorization?.mode !== "USER_AUTHORIZED_AS_IS_PARTIAL_PUBLICATION") {
+    throw new Error(`Garment ${garmentId} partial publication has no explicit user authorization.`);
+  }
+  const mappingSet = isComplete ? PUBLIC_MEDIA_MAPPING : PARTIAL_PUBLIC_MEDIA_MAPPING;
+  for (const mapping of mappingSet) {
     const view = manifest.views?.[mapping.view];
     if (
       !view
@@ -163,7 +178,7 @@ async function verifiedLockedSource(lockedRoot, manifestView, garmentId, view) {
   return { path, bytes };
 }
 
-export async function createShopMediaExport({ garmentId, slug, privateRoot, publicRoot }) {
+export async function createShopMediaExport({ garmentId, slug, privateRoot, publicRoot, allowPartial = false }) {
   if (!/^\d{3}$/.test(garmentId)) throw new Error("Garment id must use three digits.");
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) throw new Error("Shop slug is invalid.");
   const lockedRoot = resolve(privateRoot, garmentId, "locked");
@@ -171,10 +186,15 @@ export async function createShopMediaExport({ garmentId, slug, privateRoot, publ
   const manifest = validateLockedManifest(
     JSON.parse(await readFile(join(lockedRoot, "manifest.json"), "utf8")),
     garmentId,
+    { allowPartial },
   );
 
+  const mappingSet = /^COMPLETE_01_07_.*LOCKED$/.test(manifest.status)
+    ? PUBLIC_MEDIA_MAPPING
+    : PARTIAL_PUBLIC_MEDIA_MAPPING;
+
   const assets = [];
-  for (const mapping of PUBLIC_MEDIA_MAPPING) {
+  for (const mapping of mappingSet) {
     const manifestView = manifest.views[mapping.view];
     const source = await verifiedLockedSource(lockedRoot, manifestView, garmentId, mapping.view);
     const derivative = await renderShopDerivative(source.bytes);
@@ -214,6 +234,7 @@ function parseArgs(argv) {
     publicRoot: "public/shop/products",
     write: false,
     json: false,
+    allowPartial: false,
   };
   for (let index = 0; index < argv.length; index += 1) {
     const argument = argv[index];
@@ -223,6 +244,7 @@ function parseArgs(argv) {
     else if (argument === "--public-root") options.publicRoot = argv[++index];
     else if (argument === "--write") options.write = true;
     else if (argument === "--json") options.json = true;
+    else if (argument === "--allow-partial") options.allowPartial = true;
     else if (argument === "--help" || argument === "-h") options.help = true;
     else throw new Error(`Unknown argument: ${argument}`);
   }
@@ -230,7 +252,7 @@ function parseArgs(argv) {
 }
 
 function usage() {
-  return `Usage: node scripts/virtual-atelier/export-shop-media.mjs --garment 009 --slug product-slug [--write] [--json]\n\nThe exporter verifies a complete private 01–07 lock, preserves every source aspect ratio, and produces seven 1120×1400 WebP derivatives. Without --write it performs a read-only render and prints the planned output.`;
+  return `Usage: node scripts/virtual-atelier/export-shop-media.mjs --garment 009 --slug product-slug [--write] [--json] [--allow-partial]\n\nThe exporter normally requires a complete private 01–07 lock. --allow-partial accepts only an explicitly user-authorized 01–04 as-is publication manifest and exports its four truthful roles. Every source aspect ratio is preserved. Without --write it performs a read-only render and prints the planned output.`;
 }
 
 async function main() {
@@ -245,6 +267,7 @@ async function main() {
     slug: options.slug,
     privateRoot: resolve(options.privateRoot),
     publicRoot: resolve(options.publicRoot),
+    allowPartial: options.allowPartial,
   });
   if (options.write) await writeShopMediaExport(plan);
   const summary = {

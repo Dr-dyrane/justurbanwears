@@ -48,8 +48,8 @@ test("server-renders the public shop foundation", async () => {
   const copy = visibleCopy(html);
   assert.match(html, /justurban wears/);
   assert.match(visibleBody, /Drop 02/);
-  assert.match(visibleBody, /17 pieces\. No restocks\./);
-  assert.match(copy, /17 one-off pieces/);
+  assert.match(visibleBody, /18 pieces\. No restocks\./);
+  assert.match(copy, /18 one-off pieces/);
   assert.match(visibleBody, /violet-beaded-ruffle-romper/);
   assert.match(html, /Search the wardrobe/);
   assert.match(html, /Live availability is temporarily unavailable/);
@@ -60,7 +60,7 @@ test("server-renders the public shop foundation", async () => {
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/i);
 });
 
-test("publishes the Violet romper hero and the exact seventeen-piece Drop 02", async () => {
+test("publishes the Violet romper hero and the exact eighteen-piece Drop 02", async () => {
   const response = await render("/shop");
   assert.equal(response.status, 200);
 
@@ -92,6 +92,7 @@ test("publishes the Violet romper hero and the exact seventeen-piece Drop 02", a
     ["Black Cropped Tee and Dark Indigo Wide-Leg Cargo Jeans Set", "black-cropped-tee-dark-indigo-wide-leg-cargo-jeans-set"],
     ["Black Cropped Tee and Washed Black Wide-Leg Cargo Jeans Set", "black-cropped-tee-washed-black-wide-leg-cargo-jeans-set"],
     ["Plum Sparkle Cowl-Neck Jumpsuit", "plum-sparkle-cowl-neck-jumpsuit"],
+    ["Gunmetal Sparkle Open-Back Long-Sleeve Mini Dress", "gunmetal-sparkle-open-back-long-sleeve-mini-dress"],
     ["Fuchsia Strapless Ruched Cascade-Ruffle Mini Dress", "fuchsia-strapless-ruched-cascade-ruffle-mini-dress"],
   ];
 
@@ -101,8 +102,8 @@ test("publishes the Violet romper hero and the exact seventeen-piece Drop 02", a
   }
 
   // The lead product is rendered once as the editorial hero; the remaining
-  // sixteen products retain the standard catalogue-card contract.
-  assert.equal((visibleBody.match(/class="shop-product-card"/g) ?? []).length, 16);
+  // seventeen products retain the standard catalogue-card contract.
+  assert.equal((visibleBody.match(/class="shop-product-card"/g) ?? []).length, 17);
   assert.doesNotMatch(visibleBody, /shop-release-index|shop-wardrobe-preview|shop-editorial-rail|shop-values/);
   assert.doesNotMatch(visibleBody, /GARMENT STUDY|(?:DYN-0(?:8[1-9]|9[0-2])|JUW-0(?:0[1-9]|1[0-2]))|Six dresses from Lulu’s wardrobe|Warm colour\. Clean movement/);
   assert.doesNotMatch(visibleBody, /Coral Drift Dress|Indigo Workshirt|Ivory Tie Skirt/);
@@ -164,7 +165,7 @@ test("server-renders a navigable public product detail", async () => {
   assert.doesNotMatch(visibleBody, /\b(?:AI|provenance|AI-completed|generated evidence)\b/i);
 });
 
-test("server-renders all seven approved views for each Drop 02 product", async () => {
+test("server-renders every approved view for each Drop 02 product", async () => {
   const slugs = [
     "black-cropped-tee-slim-trouser-set",
     "violet-beaded-ruffle-romper",
@@ -182,6 +183,7 @@ test("server-renders all seven approved views for each Drop 02 product", async (
     "black-cropped-tee-dark-indigo-wide-leg-cargo-jeans-set",
     "black-cropped-tee-washed-black-wide-leg-cargo-jeans-set",
     "plum-sparkle-cowl-neck-jumpsuit",
+    "gunmetal-sparkle-open-back-long-sleeve-mini-dress",
     "fuchsia-strapless-ruched-cascade-ruffle-mini-dress",
   ];
   const responses = await Promise.all(
@@ -193,7 +195,12 @@ test("server-renders all seven approved views for each Drop 02 product", async (
     const html = await response.text();
     const visibleBody = visibleMarkup(html);
     const base = `/products/${slugs[index]}`;
-    for (const file of [
+    const expectedFiles = slugs[index] === "gunmetal-sparkle-open-back-long-sleeve-mini-dress" ? [
+      "01-garment-front.webp",
+      "02-garment-back.webp",
+      "03-mannequin-front.webp",
+      "06-fabric-detail.webp",
+    ] : [
       "01-garment-front.webp",
       "02-garment-back.webp",
       "03-mannequin-front.webp",
@@ -201,8 +208,16 @@ test("server-renders all seven approved views for each Drop 02 product", async (
       "05-model-rear-three-quarter.webp",
       "06-fabric-detail.webp",
       "07-model-left-profile.webp",
-    ]) {
+    ];
+    for (const file of expectedFiles) {
       assert.match(html, new RegExp(`${base}/${file.replace(".", "\\.")}`));
+    }
+    if (slugs[index] === "gunmetal-sparkle-open-back-long-sleeve-mini-dress") {
+      // Client bundles contain the complete shared catalogue seed. The
+      // rendered product surface itself must not expose substituted model
+      // media for this explicitly authorized four-view release.
+      assert.doesNotMatch(visibleBody, /04-model-front\.webp|05-model-rear-three-quarter\.webp|07-model-left-profile\.webp/);
+      continue;
     }
     assert.match(visibleBody, /data-model-anchor="lulu-v4"/);
     assert.match(visibleBody, /class="shop-media-frame is-model is-front"[^>]*data-model-anchor="lulu-v4"/);

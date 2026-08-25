@@ -22,6 +22,7 @@ const expectedDrop02Products = [
   ["black-cropped-tee-dark-indigo-wide-leg-cargo-jeans-set", "Black Cropped Tee and Dark Indigo Wide-Leg Cargo Jeans Set"],
   ["black-cropped-tee-washed-black-wide-leg-cargo-jeans-set", "Black Cropped Tee and Washed Black Wide-Leg Cargo Jeans Set"],
   ["plum-sparkle-cowl-neck-jumpsuit", "Plum Sparkle Cowl-Neck Jumpsuit"],
+  ["gunmetal-sparkle-open-back-long-sleeve-mini-dress", "Gunmetal Sparkle Open-Back Long-Sleeve Mini Dress"],
   ["fuchsia-strapless-ruched-cascade-ruffle-mini-dress", "Fuchsia Strapless Ruched Cascade-Ruffle Mini Dress"],
 ] as const;
 
@@ -35,11 +36,11 @@ const expectedDrop02Media = [
   "MODEL_REAR_THREE_QUARTER",
 ] as const;
 
-test("the public Shop is the exact seventeen-piece Drop 02 wardrobe", () => {
+test("the public Shop is the exact eighteen-piece Drop 02 wardrobe", () => {
   const dropProducts = WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS.filter(isCurrentShopProduct);
 
   assert.equal(CURRENT_SHOP_DROP, "Drop 02");
-  assert.equal(dropProducts.length, 17);
+  assert.equal(dropProducts.length, 18);
   assert.deepEqual(
     dropProducts.map(({ name, slug }) => [slug, name]),
     expectedDrop02Products,
@@ -50,9 +51,12 @@ test("the public Shop is the exact seventeen-piece Drop 02 wardrobe", () => {
     assert.equal(product.availability, "AVAILABLE");
     assert.ok(product.price > 0);
     assert.equal(product.taggedSize, "Size on request");
-    assert.equal(product.modelAnchor.id, "lulu-v4");
-    assert.deepEqual(product.media.map((item) => item.slot), expectedDrop02Media);
-    assert.equal(product.media.length, 7);
+    assert.equal(product.modelAnchor.id, product.sku === "JUW-041" ? "lulu-v2" : "lulu-v4");
+    const expectedMedia = product.sku === "JUW-041"
+      ? ["GARMENT_FRONT", "GARMENT_BACK", "MANNEQUIN_FRONT", "FABRIC_DETAIL"]
+      : expectedDrop02Media;
+    assert.deepEqual(product.media.map((item) => item.slot), expectedMedia);
+    assert.equal(product.media.length, expectedMedia.length);
     for (const media of product.media.filter((item) => item.slot.startsWith("MODEL_"))) {
       assert.equal(media.modelAnchorId, "lulu-v4");
     }

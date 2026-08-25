@@ -24,7 +24,7 @@ import {
 } from "../scripts/shop-db/release-core.mjs";
 
 const repositoryRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
-const expectedChecksum = "06aea430d648ca057307f16b56b486ac3895d7cde663b4540301ebb6e9250dd9";
+const expectedChecksum = "7295f23bd32f0c00474d370b698e9569b8d15e42013daecd518c4b9e62b6bac1";
 const legacySkuRenames = Object.fromEntries(
   Array.from({ length: 12 }, (_, index) => [
     `DYN-${String(index + 81).padStart(3, "0")}`,
@@ -70,10 +70,10 @@ function databaseCatalogueRows(manifest = SHOP_CATALOGUE_MANIFEST) {
   }));
 }
 
-test("the checked-in manifest validates all 35 catalogue products and immutable SKUs", () => {
+test("the checked-in manifest validates all 36 catalogue products and immutable SKUs", () => {
   assert.deepEqual(validateManifest(SHOP_CATALOGUE_MANIFEST, { assetRoot: join(repositoryRoot, "public") }), {
     checksum: expectedChecksum,
-    productCount: 35,
+    productCount: 36,
   });
   assert.deepEqual(
     SHOP_CATALOGUE_MANIFEST.products.map((product) => product.sku),
@@ -97,6 +97,7 @@ test("the checked-in manifest validates all 35 catalogue products and immutable 
       "JUW-038",
       "JUW-039",
       "JUW-040",
+      "JUW-041",
       "JUW-042",
     ],
   );
@@ -145,7 +146,7 @@ test("the checked-in manifest validates all 35 catalogue products and immutable 
     returned: 0,
     writeOff: 0,
   });
-  const drop02 = SHOP_CATALOGUE_MANIFEST.products.slice(-17);
+  const drop02 = SHOP_CATALOGUE_MANIFEST.products.slice(-18);
   assert.deepEqual(
     drop02.map(({ sku, name, category, price }) => ({ sku, name, category, price })),
     [
@@ -165,6 +166,7 @@ test("the checked-in manifest validates all 35 catalogue products and immutable 
       { sku: "JUW-038", name: "Black Cropped Tee and Dark Indigo Wide-Leg Cargo Jeans Set", category: "Sets", price: 24500 },
       { sku: "JUW-039", name: "Black Cropped Tee and Washed Black Wide-Leg Cargo Jeans Set", category: "Sets", price: 24500 },
       { sku: "JUW-040", name: "Plum Sparkle Cowl-Neck Jumpsuit", category: "Rompers", price: 28500 },
+      { sku: "JUW-041", name: "Gunmetal Sparkle Open-Back Long-Sleeve Mini Dress", category: "Dresses", price: 28500 },
       { sku: "JUW-042", name: "Fuchsia Strapless Ruched Cascade-Ruffle Mini Dress", category: "Dresses", price: 28500 },
     ],
   );
@@ -174,8 +176,10 @@ test("the checked-in manifest validates all 35 catalogue products and immutable 
     assert.equal(product.fit, "Measurements confirmed before payment");
     assert.equal(product.condition, "Condition confirmed before payment");
     assert.deepEqual(product.measurements, []);
-    assert.deepEqual(product.modelAnchor, { id: "lulu-v4" });
-    assert.equal(product.media.filter((media) => media.slot.startsWith("MODEL_")).length, 3);
+    assert.deepEqual(product.modelAnchor, product.sku === "JUW-041"
+      ? { id: "lulu-v2", src: "/shop/model/lulu-v2-approved.png" }
+      : { id: "lulu-v4" });
+    assert.equal(product.media.filter((media) => media.slot.startsWith("MODEL_")).length, product.sku === "JUW-041" ? 0 : 3);
     assert.doesNotMatch(
       [product.note, product.story, ...product.details].join(" "),
       /\b(?:ai|provenance|generated|inferred)\b/i,
@@ -217,13 +221,13 @@ test("revision decisions no-op only for identical target evidence", () => {
     namespace: "justurbanwears.shop.catalogue",
     revision: SHOP_CATALOGUE_MANIFEST.revision,
     checksum: expectedChecksum,
-    rowCount: 35,
+    rowCount: 36,
     target: "preview",
   };
   assert.equal(decideRevision(undefined, request), "apply");
-  assert.equal(decideRevision({ ...request, row_count: 35 }, request), "noop");
-  assert.throws(() => decideRevision({ ...request, checksum: "0".repeat(64), row_count: 35 }, request), /different checksum/);
-  assert.throws(() => decideRevision({ ...request, target: "production", row_count: 35 }, request), /different target/);
+  assert.equal(decideRevision({ ...request, row_count: 36 }, request), "noop");
+  assert.throws(() => decideRevision({ ...request, checksum: "0".repeat(64), row_count: 36 }, request), /different checksum/);
+  assert.throws(() => decideRevision({ ...request, target: "production", row_count: 36 }, request), /different target/);
   assert.throws(() => decideRevision({ ...request, row_count: 24 }, request), /row count/);
 });
 
@@ -274,7 +278,7 @@ test("seed and descriptive sync never update operational inventory", () => {
   const options = { target: "preview", gitSha: "a".repeat(40) };
   const seed = buildCatalogueMutationPlan(SHOP_CATALOGUE_MANIFEST, { ...options, mode: "seed" });
   const sync = buildCatalogueMutationPlan(SHOP_CATALOGUE_MANIFEST, { ...options, mode: "descriptive-sync" });
-  assert.equal(seed.inventory.length, 35);
+  assert.equal(seed.inventory.length, 36);
   assert.ok(seed.inventory.every((query: { text: string }) => /on conflict \("sku"\) do nothing$/.test(query.text)));
   assert.ok(sync.inventory.every((query: { text: string }) => /on conflict \("sku"\) do nothing$/.test(query.text)));
   const updateClause = sync.catalogue[0].text.split("do update set ")[1];
