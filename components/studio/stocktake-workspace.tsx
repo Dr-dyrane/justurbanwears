@@ -29,6 +29,7 @@ import type {
   StocktakeSession,
   StocktakeWorkspace as StocktakeWorkspaceData,
 } from "../../lib/server/studio-stocktake-repository";
+import { StudioLoadingStage } from "./atoms/studio-loading-stage";
 import { StudioLink } from "./atoms/studio-link";
 import { StudioTaskSheet } from "./atoms/studio-task-sheet";
 import { useStudioStackRegistration } from "./navigation/studio-stack-context";
@@ -344,7 +345,7 @@ export function StocktakeWorkspace({
     window.location.assign(`/studio/scan/${encodeURIComponent(key)}${query}`);
   }
 
-  if (loading) return <div className="studio-loading" role="status">Opening stocktake…</div>;
+  if (loading) return <StudioLoadingStage label="Opening stocktake…" />;
 
   if (mode === "scan") {
     const piece = data?.piece;

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { PackageOpen } from "lucide-react";
+import { StudioLoadingStage } from "./atoms/studio-loading-stage";
 import { StudioLink } from "./atoms/studio-link";
 import { StudioStackPage } from "./atoms/studio-stack-page";
 import { WearSheet } from "./garment-intake/wear-sheet";
@@ -23,7 +24,7 @@ export function GarmentDossier() {
     candidate.id === requestedId || candidate.privateWardrobeItemId === requestedId
   );
   if (studio.hydration === "idle" || studio.hydration === "restoring") {
-    return <div className="studio-loading" role="status">Opening piece…</div>;
+    return <StudioLoadingStage label="Opening piece…" />;
   }
 
   if (!garment) {

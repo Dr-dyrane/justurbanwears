@@ -11,6 +11,7 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { WardrobeMotion } from "../brand/wardrobe-motion";
 import { LifecycleMeta, STUDIO_LIFECYCLE_PRESENTATION } from "./atoms/lifecycle-meta";
+import { StudioLoadingStage } from "./atoms/studio-loading-stage";
 import { StudioLink as Link } from "./atoms/studio-link";
 import { studioGarmentCover } from "./garment-cover";
 import {
@@ -74,7 +75,7 @@ export function StudioHome() {
     : projected?.summary.available.value ?? null;
 
   if (hydration === "idle" || hydration === "restoring" || (!scenario && (authority.status === "idle" || authority.status === "loading"))) {
-    return <div className="studio-loading studio-loading-brand" role="status"><WardrobeMotion loop polarity="auto" size="sm" variant="loader" /><span>Opening Lulu Studio…</span></div>;
+    return <StudioLoadingStage label="Opening Lulu Studio…" />;
   }
 
   const scenarioTasks = [

@@ -9,6 +9,7 @@ import { Check, RotateCcw, Shirt } from "lucide-react";
 import type { StudioLifecycleState } from "../../lib/studio/domain/entities";
 import { LifecycleMeta } from "../studio/atoms/lifecycle-meta";
 import { StudioFeedback } from "../studio/atoms/studio-feedback";
+import { StudioLoadingStage } from "../studio/atoms/studio-loading-stage";
 import { StudioLink as Link } from "../studio/atoms/studio-link";
 import { StudioStackPage, StudioStackSection } from "../studio/atoms/studio-stack-page";
 import { useStudio } from "../studio/studio-provider";
@@ -50,7 +51,7 @@ export function ShootDetail() {
     title: media?.sku ?? (media ? label(media.operation) : "Atelier media"),
   });
 
-  if (authority.status === "idle" || authority.status === "loading") return <StudioFeedback state="loading" title="Opening media" />;
+  if (authority.status === "idle" || authority.status === "loading") return <StudioLoadingStage label="Opening media…" />;
   if (authority.status === "error") return <StudioFeedback detail={authority.error} state="error" title="Media unavailable" />;
   if (!media) return <StudioFeedback action={<Link className="button button-secondary" href="/studio/media">Return to Media</Link>} state="empty" title="Media not found" />;
   const completion = ["GARMENT_FRONT", "GARMENT_BACK", "FABRIC_DETAIL"].includes(media.operation);

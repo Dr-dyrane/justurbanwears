@@ -13,6 +13,7 @@ import {
 } from "../../lib/shop/order-presentation";
 import type { ShopServerOrder } from "../../lib/shop/server-order/types";
 import { StudioFeedback } from "./atoms/studio-feedback";
+import { StudioLoadingStage } from "./atoms/studio-loading-stage";
 import { StudioStackPage, StudioStackSection } from "./atoms/studio-stack-page";
 import { StudioTaskSheet } from "./atoms/studio-task-sheet";
 
@@ -225,7 +226,7 @@ export function ConnectedOrderInbox() {
           </form>
         </details>
 
-        {state === "loading" ? <StudioFeedback detail="Reading the connected order queue." state="loading" title="Opening orders" /> : null}
+        {state === "loading" ? <StudioLoadingStage label="Opening orders…" /> : null}
         {state === "error" ? <StudioFeedback action={<button className="button button-secondary" onClick={() => void loadOrders()} type="button">Try again</button>} detail={error} state="error" title="Orders unavailable" /> : null}
         {state === "ready" && !orders.length ? <StudioFeedback detail="New customer orders will appear here." state="empty" title="No orders yet" /> : null}
         {state === "ready" && orders.length ? (

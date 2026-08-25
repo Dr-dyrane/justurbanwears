@@ -34,8 +34,23 @@ test("the live Piece workspace keeps its one state-aware action inside the stack
   assert.doesNotMatch(dossier, /useStudioMobileAction|selectPieceWorkspace/);
   assert.doesNotMatch(wardrobe, /useStudioMobileAction|invokeTargetId/);
   assert.match(wardrobe, /id="piece-primary-action"/);
-  assert.match(wardrobe, /aria-label=\{`Next action for \$\{garment\.title\}`\}/);
+  assert.match(wardrobe, /aria-label=\{`\$\{nextAction\.label\} for \$\{garment\.title\}`\}/);
+  assert.match(wardrobe, /<button[\s\S]*?className="studio-piece-next"[\s\S]*?onClick=\{runNextAction\}/);
   assert.doesNotMatch(shell, /StudioMobileActionProvider|studio-mobile-fab|invokeContextAction/);
+});
+
+test("Piece work is split into concise task launchers and bounded sheets", () => {
+  assert.match(wardrobe, /aria-haspopup="dialog"/);
+  assert.match(wardrobe, /className="studio-service-list studio-piece-task-list"/);
+  assert.match(wardrobe, /<strong>Product photos<\/strong>/);
+  assert.match(wardrobe, /<strong>Facts & price<\/strong>/);
+  assert.match(wardrobe, /<strong>Shop<\/strong>/);
+  assert.match(wardrobe, /const hasFactsTask = Boolean\(garment\.privateWardrobeItemId \|\| listing\)/);
+  assert.match(wardrobe, /<StudioTaskSheet[\s\S]*?className="studio-piece-photos-sheet"[\s\S]*?title="Product photos"/);
+  assert.match(wardrobe, /<StudioTaskSheet[\s\S]*?className="studio-piece-shop-sheet"[\s\S]*?title="Shop"/);
+  assert.match(wardrobe, /<StudioTaskSheet[\s\S]*?className="studio-piece-details-sheet"[\s\S]*?title="Facts & price"/);
+  assert.doesNotMatch(wardrobe, /captureSectionRef/);
+  assert.doesNotMatch(wardrobe, /<details[\s\S]*?studio-piece-secondary/);
 });
 
 test("the dossier keeps media controls visible and public projection readable in both themes", () => {
@@ -46,5 +61,6 @@ test("the dossier keeps media controls visible and public projection readable in
 test("Magic Wand failures stay in operator language", () => {
   assert.match(captures, /async function responseJson/);
   assert.match(captures, /AI views are unavailable\. Try again\./);
+  assert.doesNotMatch(captures, /studio-magic-capture-shortcut/);
   assert.equal(captures.match(/await response\.json\(\)/g)?.length, 1);
 });

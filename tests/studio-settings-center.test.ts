@@ -17,6 +17,10 @@ test("Studio exposes one global profile and settings centre", () => {
   assert.match(settings, /authClient\.signOut\(\)/);
   assert.match(settings, /AI intake/);
   assert.match(settings, /Preferences stay on this device/);
+  assert.match(settings, />Appearance<\/h3>/);
+  assert.match(settings, />Workspace<\/h3>/);
+  assert.match(settings, />Help<\/h3>/);
+  assert.doesNotMatch(settings, /Choose the light|Data & access|Keep the steps close/);
   assert.match(operator, /role: membership\.role/);
 });
 

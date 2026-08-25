@@ -2,6 +2,7 @@ export const STUDIO_APPLICATION_PROJECTION_VERSION = "studio-application/v1" as 
 
 export type StudioApplicationSource =
   | "AUTHORITY"
+  | "COLLECTIONS"
   | "CATALOGUE_COMPATIBILITY"
   | "SCENARIO";
 
@@ -62,19 +63,20 @@ export type StudioCapability = {
     | "ORDERS_READ"
     | "MODELS_READ"
     | "MEDIA_READ"
-    | "COLLECTIONS_READ";
+    | "COLLECTIONS_READ"
+    | "COLLECTIONS_WRITE";
   state: StudioCapabilityState;
 };
 
 export type StudioCollectionScope = {
-  /** Transitional identity. It is deliberately not a database UUID. */
-  id: `compat:${string}`;
-  key: "drop-01" | "drop-02";
-  label: "Drop 01" | "Drop 02";
-  ordinal: 1 | 2;
-  state: "ACTIVE" | "ARCHIVED";
+  id: string;
+  key: `drop-${string}`;
+  label: string;
+  ordinal: number;
+  version: number;
+  state: "DRAFT" | "ACTIVE" | "ARCHIVED";
   isCurrent: boolean;
-  authority: "COMPATIBILITY";
+  authority: "DATABASE" | "COMPATIBILITY" | "SCENARIO";
   counts: {
     pieces: number | null;
     private: number | null;
@@ -88,6 +90,7 @@ export type StudioCollectionScope = {
 
 export type StudioSearchDocumentKind =
   | "SERVICE"
+  | "COLLECTION"
   | "PIECE"
   | "SKU"
   | "ORDER"

@@ -169,7 +169,7 @@ test("operator copy and recovery stay action-led", () => {
   assert.match(home, /projected\.degradedSources\.length \? "Studio snapshot" : "Live Studio"/);
   assert.match(home, /Live state unavailable/);
   assert.match(home, /studio\/wardrobe\/\$\{encodeURIComponent/);
-  assert.match(directCaptures, /studio-magic-capture-shortcut/);
+  assert.doesNotMatch(directCaptures, /studio-magic-capture-shortcut/);
   assert.match(directCaptures, /Magic Wand/);
   assert.match(wardrobe, /aiSourceMode: "APPROVED_FRONT"/);
   assert.match(wardrobe, /approvedFrontUrl: garment\.reviewCover\?\.src/);

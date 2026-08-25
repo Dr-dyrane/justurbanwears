@@ -9,8 +9,8 @@ const budgets = {
     files: 5,
     largestRaw: 480 * KiB,
     largestGzip: 86 * KiB,
-    totalRaw: 525 * KiB,
-    totalGzip: 98 * KiB,
+    totalRaw: 560 * KiB,
+    totalGzip: 100 * KiB,
   },
   fonts: {
     files: 10,

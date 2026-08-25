@@ -8,6 +8,7 @@ import { ArrowRight, Camera, ImagePlus, Shirt, Users } from "lucide-react";
 import type { StudioLifecycleState } from "../../lib/studio/domain/entities";
 import { LifecycleMeta } from "../studio/atoms/lifecycle-meta";
 import { StudioLink as Link } from "../studio/atoms/studio-link";
+import { StudioLoadingStage } from "../studio/atoms/studio-loading-stage";
 import { StudioFeedback } from "../studio/atoms/studio-feedback";
 import { StudioStackPage, StudioStackSection } from "../studio/atoms/studio-stack-page";
 import { useStudio } from "../studio/studio-provider";
@@ -35,7 +36,7 @@ export function ShootGallery() {
     ?? media.find((item) => item.state === "FAILED");
   const readyModels = authority.snapshot?.models.filter((model) => model.state === "READY").length ?? 0;
 
-  if (authority.status === "idle" || authority.status === "loading") return <StudioFeedback state="loading" title="Opening Atelier" />;
+  if (authority.status === "idle" || authority.status === "loading") return <StudioLoadingStage label="Opening Atelier…" />;
   if (authority.status === "error") {
     const configurationFailure = /not enabled|approved studio workspace|configured/i.test(authority.error);
     return <StudioFeedback action={configurationFailure ? <Link className="button button-secondary" href="/studio/wardrobe">Open Wardrobe</Link> : <button className="button button-secondary" onClick={() => void authority.refresh()} type="button">Try again</button>} detail={authority.error} state="error" title="Media unavailable" />;

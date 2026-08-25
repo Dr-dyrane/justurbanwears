@@ -13,9 +13,9 @@ test("the release gate measures the compiled experience after build", () => {
   assert.match(packageJson, /npm run build && npm run test:experience && npm run test:rendered/);
   assert.match(buildGate, /files: 5/);
   assert.match(buildGate, /largestRaw: 480 \* KiB/);
-  assert.match(buildGate, /totalRaw: 525 \* KiB/);
+  assert.match(buildGate, /totalRaw: 560 \* KiB/);
   assert.match(buildGate, /largestGzip: 86 \* KiB/);
-  assert.match(buildGate, /totalGzip: 98 \* KiB/);
+  assert.match(buildGate, /totalGzip: 100 \* KiB/);
   assert.match(buildGate, /transition\\s\*:\\s\*all/);
   assert.match(buildGate, /prefers-reduced-motion/);
   assert.match(buildGate, /forced-colors/);

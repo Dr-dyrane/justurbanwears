@@ -27,6 +27,7 @@ import type {
   ShopServerOrder,
 } from "../../lib/shop/server-order/types";
 import { StudioFeedback } from "./atoms/studio-feedback";
+import { StudioLoadingStage } from "./atoms/studio-loading-stage";
 import { StudioStackPage, StudioStackSection } from "./atoms/studio-stack-page";
 import { useStudioStackRegistration } from "./navigation/studio-stack-context";
 
@@ -478,7 +479,7 @@ export function ConnectedOrderDetail() {
   );
   const primaryTransition = order ? nextStudioOrderTransition(order) : undefined;
   if (state === "loading") {
-    return <StudioFeedback detail="Reading the order and its latest customer state." state="loading" title="Opening order" />;
+    return <StudioLoadingStage label="Opening order…" />;
   }
   if (state === "not-found" || state === "error" || !order) {
     return (

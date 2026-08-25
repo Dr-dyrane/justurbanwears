@@ -2028,6 +2028,851 @@ html body .studio-stack-shell .workspace > main.page-canvas:has(> .studio-home-c
   }
 }
 
+/* Native Studio convergence ------------------------------------------------
+   The protected atelier stylesheet is intentionally emitted inline after the
+   route CSS. These selectors therefore carry the canonical stack context so
+   the current native contract cannot be reopened by legacy dashboard spacing
+   or card treatments. */
+
+.studio-shell.studio-stack-shell .studio-native-canvas .studio-stack-page {
+  gap: 12px;
+}
+
+.studio-shell.studio-stack-shell .studio-native-canvas .studio-wardrobe-page {
+  gap: 0;
+}
+
+.studio-shell.studio-stack-shell .studio-native-canvas .studio-wardrobe-page > .studio-drop-scope-trigger {
+  margin-bottom: 4px;
+}
+
+.studio-shell.studio-stack-shell .studio-native-canvas .studio-wardrobe-page > .studio-stack-current,
+.studio-shell.studio-stack-shell .studio-native-canvas .studio-wardrobe-page > .studio-segmented-view {
+  margin-bottom: 4px;
+}
+
+.studio-shell.studio-stack-shell .studio-native-canvas .studio-stack-current {
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+  min-height: 66px;
+  padding: 9px 2px;
+  position: relative;
+}
+
+.studio-shell.studio-stack-shell .studio-native-canvas .studio-stack-current::after {
+  background: var(--studio-line);
+  bottom: 0;
+  content: "";
+  height: 1px;
+  inset-inline: 0;
+  position: absolute;
+}
+
+.studio-shell.studio-stack-shell .studio-native-canvas .studio-segmented-view {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  margin: 0;
+  min-height: 44px;
+  padding: 0;
+}
+
+.studio-shell.studio-stack-shell .studio-native-canvas .studio-segmented-view > button {
+  border: 0;
+  border-radius: 14px;
+  min-height: 40px;
+}
+
+.studio-shell.studio-stack-shell .studio-native-canvas .studio-segmented-view > button.is-active {
+  background: var(--studio-selection);
+  box-shadow: none;
+  color: var(--studio-ink);
+}
+
+/* Current actions are icon-led rows, not cards nested in a page. */
+.studio-shell.studio-stack-shell .studio-native-canvas .studio-piece-next {
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  gap: 14px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  margin: 0;
+  min-height: 72px;
+  padding: 10px 2px;
+  position: relative;
+}
+
+.studio-shell.studio-stack-shell .studio-native-canvas .studio-piece-next::after {
+  background: var(--studio-line);
+  bottom: 0;
+  content: "";
+  height: 1px;
+  left: 0;
+  position: absolute;
+  right: 0;
+}
+
+.studio-shell.studio-stack-shell .studio-native-canvas .studio-piece-next:has(> span:first-child > svg) {
+  grid-template-columns: 44px minmax(0, 1fr) auto;
+}
+
+.studio-shell.studio-stack-shell .studio-native-canvas .studio-piece-next:has(> span:first-child > svg)::after {
+  left: 58px;
+}
+
+.studio-shell.studio-stack-shell .studio-native-canvas .studio-piece-next:has(> span:first-child > svg) > span:first-child {
+  align-items: center;
+  background: var(--studio-panel-muted);
+  border-radius: 14px;
+  color: var(--studio-accent-display, var(--studio-accent));
+  display: flex;
+  height: 44px;
+  justify-content: center;
+  width: 44px;
+}
+
+.studio-shell.studio-stack-shell .studio-native-canvas .studio-piece-next:is(:hover, :focus-within) {
+  background: color-mix(in srgb, var(--studio-accent) 5%, transparent);
+}
+
+/* Legacy premium panels and operation cards collapse back into one canvas. */
+.studio-shell.studio-stack-shell .studio-native-canvas .studio-premium-surface > section[role="tabpanel"],
+.studio-shell.studio-stack-shell .studio-native-canvas .studio-stack-panel,
+.studio-shell.studio-stack-shell .studio-native-canvas :is(
+  .studio-operation-card,
+  .studio-operation-summary,
+  .studio-table,
+  .studio-publishing-row,
+  .studio-model-profile,
+  .review-panel,
+  .brief-panel
+) {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.studio-shell.studio-stack-shell .studio-native-canvas .studio-premium-surface > section[role="tabpanel"] {
+  margin: 0;
+  padding: 0;
+}
+
+.studio-shell.studio-stack-shell .studio-native-canvas :is(
+  .studio-operation-cards,
+  .studio-connected-order-list,
+  .studio-publishing-queue,
+  .studio-model-list,
+  .studio-inventory-list,
+  .shoot-gallery
+) {
+  gap: 0;
+}
+
+.studio-shell.studio-stack-shell .studio-native-canvas .studio-operation-card {
+  margin: 0;
+  position: relative;
+}
+
+.studio-shell.studio-stack-shell .studio-native-canvas .studio-operation-card:not(:last-child)::after {
+  background: var(--studio-line);
+  bottom: 0;
+  content: "";
+  height: 1px;
+  inset-inline: 0;
+  position: absolute;
+}
+
+.studio-shell.studio-stack-shell .studio-native-canvas .studio-operation-card-trigger {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  min-height: 76px;
+  padding: 12px 2px;
+}
+
+/* Buttons remain recognisable through tone and placement, never outlines. */
+.studio-shell.studio-stack-shell .studio-native-canvas :where(.button, button),
+.studio-task-sheet.studio-task-sheet :where(.button, button) {
+  border: 0;
+  box-shadow: none;
+}
+
+.studio-shell.studio-stack-shell .studio-native-canvas .button-secondary,
+.studio-task-sheet.studio-task-sheet .button-secondary {
+  background: var(--studio-panel-muted);
+}
+
+/* CRUD sheets are one material. Sections and action groups provide semantic
+   rhythm without becoming cards inside the sheet. */
+.studio-task-sheet.studio-task-sheet :is(
+  .studio-settings-identity,
+  .studio-settings-section,
+  .studio-inventory-detail-section,
+  .studio-task-question,
+  .studio-transition-fields,
+  .studio-form-grid,
+  .studio-listing-editor,
+  .studio-publication-review,
+  .review-panel,
+  .brief-panel
+) {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.studio-task-sheet.studio-task-sheet .studio-inventory-detail {
+  display: grid;
+  gap: 0;
+}
+
+.studio-task-sheet.studio-task-sheet .studio-inventory-detail-media {
+  aspect-ratio: 4 / 3;
+  border-radius: 0;
+  margin: 0;
+}
+
+.studio-task-sheet.studio-task-sheet .studio-inventory-detail-state {
+  margin: 0;
+  min-height: 34px;
+  padding: 9px 2px 5px;
+}
+
+.studio-task-sheet.studio-task-sheet .studio-inventory-detail-section {
+  padding: 16px 0;
+  position: relative;
+}
+
+.studio-task-sheet.studio-task-sheet .studio-inventory-detail-section:not(:last-child)::after {
+  background: var(--studio-line);
+  bottom: 0;
+  content: "";
+  height: 1px;
+  inset-inline: 0;
+  position: absolute;
+}
+
+.studio-task-sheet.studio-task-sheet .studio-inventory-detail-facts {
+  display: grid;
+  gap: 0;
+  grid-template-columns: 1fr;
+  overflow: visible;
+}
+
+.studio-task-sheet.studio-task-sheet .studio-inventory-detail-facts > div {
+  align-items: center;
+  background: transparent;
+  border-radius: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  min-height: 50px;
+  padding: 9px 2px;
+  position: relative;
+}
+
+.studio-task-sheet.studio-task-sheet .studio-inventory-detail-facts > div:not(:last-child)::after {
+  background: var(--studio-line);
+  bottom: 0;
+  content: "";
+  height: 1px;
+  inset-inline: 0;
+  position: absolute;
+}
+
+.studio-task-sheet.studio-task-sheet .studio-inventory-detail-facts dt {
+  color: var(--studio-muted);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.studio-task-sheet.studio-task-sheet .studio-inventory-detail-facts dd {
+  color: var(--studio-ink);
+  font-size: 11px;
+  font-weight: 650;
+  text-align: right;
+}
+
+.studio-task-sheet.studio-task-sheet .studio-inventory-decision-grid {
+  display: grid;
+  gap: 0;
+}
+
+.studio-task-sheet.studio-task-sheet .studio-inventory-decision {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  min-height: 66px;
+  padding: 9px 2px;
+  position: relative;
+}
+
+.studio-task-sheet.studio-task-sheet .studio-inventory-decision:not(:last-child)::after {
+  background: var(--studio-line);
+  bottom: 0;
+  content: "";
+  height: 1px;
+  left: 58px;
+  position: absolute;
+  right: 0;
+}
+
+@media (max-width: 760px) {
+  .studio-shell.studio-stack-shell .studio-native-canvas .studio-stack-page {
+    gap: 10px;
+  }
+
+  .studio-shell.studio-stack-shell .studio-native-canvas .studio-piece-next:has(> span:first-child > svg) {
+    align-items: center;
+    grid-template-columns: 44px minmax(0, 1fr);
+  }
+
+  .studio-shell.studio-stack-shell .studio-native-canvas .studio-piece-next:has(> span:first-child > svg) > :last-child:not(:nth-child(2)) {
+    grid-column: 2;
+    justify-self: start;
+  }
+}
+
+/* Native Studio surface contract ----------------------------------------
+   One material system now applies beyond Home: canvas first, flat rows,
+   semantic dividers, compact state, and coral only where action is real. */
+
+html:not([data-theme="dark"]) .studio-stack-shell {
+  --studio-canvas: #f8f3eb;
+  --studio-canvas-deep: #fffaf2;
+  --studio-panel: #fffaf2;
+  --studio-panel-strong: #fffdf8;
+  --studio-panel-muted: #f3ebe1;
+  --studio-panel-hover: #eee3d8;
+  --studio-selection: color-mix(in srgb, var(--studio-accent) 11%, #fffaf2);
+  --studio-cocoa: #eadfd4;
+  --studio-cocoa-hover: #e4d6ca;
+  --studio-mineral: #f1e8df;
+  --studio-mineral-strong: #e9ddd2;
+}
+
+html[data-theme="dark"] .studio-stack-shell {
+  --studio-canvas: #090807;
+  --studio-canvas-deep: #0d0b0a;
+  --studio-panel: #11100e;
+  --studio-panel-strong: #161310;
+  --studio-panel-muted: #1b1714;
+  --studio-panel-hover: #211b17;
+  --studio-selection: color-mix(in srgb, var(--studio-accent) 13%, #11100e);
+  --studio-cocoa: #211914;
+  --studio-cocoa-hover: #2a1f19;
+  --studio-mineral: #151210;
+  --studio-mineral-strong: #1a1613;
+}
+
+.studio-stack-shell .workspace,
+.studio-stack-shell .page-canvas,
+.studio-stack-shell .studio-native-canvas {
+  background: var(--studio-canvas);
+}
+
+.studio-native-canvas {
+  --studio-page-rail: clamp(14px, 4vw, 34px);
+  padding-inline: 0;
+}
+
+.studio-native-canvas > :where(
+  .studio-stack-page,
+  .studio-ops-page,
+  .studio-connected-orders-page,
+  .studio-connected-order-detail,
+  .studio-stocktake-page,
+  .studio-scan-page,
+  .studio-dossier-page,
+  .studio-ask-page,
+  .review-page,
+  #shoot-gallery
+) {
+  padding-inline: var(--studio-page-rail);
+}
+
+.studio-stack-shell :where(a, button, input, select, textarea, summary):focus-visible,
+.studio-task-sheet :where(a, button, input, select, textarea, summary):focus-visible {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--studio-accent) 28%, transparent);
+  outline: 0;
+}
+
+.studio-stack-shell :where(.button, button),
+.studio-task-sheet :where(.button, button) {
+  border: 0;
+}
+
+.studio-home-recommendation-actions > a {
+  border: 0;
+}
+
+/* Wardrobe becomes the same image-led list as Inventory and Atelier. */
+.studio-shell.studio-stack-shell .studio-native-canvas .studio-garment-grid {
+  display: grid;
+  gap: 0;
+  grid-template-columns: 1fr;
+}
+
+.studio-shell.studio-stack-shell .studio-native-canvas .studio-garment-card {
+  --studio-row-tone: var(--studio-faint);
+  align-items: stretch;
+  background: color-mix(in srgb, var(--studio-row-tone) 3%, transparent);
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  display: grid;
+  gap: 0;
+  grid-template-columns: 82px minmax(0, 1fr);
+  min-height: 96px;
+  overflow: visible;
+  padding: 0;
+  position: relative;
+}
+
+.studio-shell.studio-stack-shell .studio-native-canvas .studio-garment-card:not(:last-child)::after {
+  background: var(--studio-line);
+  bottom: 0;
+  content: "";
+  height: 1px;
+  left: 82px;
+  position: absolute;
+  right: 0;
+}
+
+.studio-shell.studio-stack-shell .studio-native-canvas .studio-garment-visual,
+.studio-shell.studio-stack-shell .studio-native-canvas .studio-garment-visual.is-photo {
+  align-self: stretch;
+  aspect-ratio: auto;
+  border-radius: 0;
+  box-shadow: none;
+  height: 96px;
+  min-height: 96px;
+  transform: none;
+}
+
+.studio-shell.studio-stack-shell .studio-native-canvas .studio-garment-card:hover .studio-garment-visual {
+  box-shadow: none;
+  transform: none;
+}
+
+.studio-shell.studio-stack-shell .studio-native-canvas .studio-garment-visual > :where(span, small) {
+  display: none;
+}
+
+.studio-shell.studio-stack-shell .studio-native-canvas .studio-garment-body {
+  background: transparent;
+  min-width: 0;
+  padding: 0;
+}
+
+.studio-shell.studio-stack-shell .studio-native-canvas .studio-garment-disclosure {
+  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  min-height: 96px;
+  padding: 12px 14px;
+}
+
+.studio-shell.studio-stack-shell .studio-native-canvas .studio-garment-card:hover {
+  background: color-mix(in srgb, var(--studio-accent) 7%, transparent);
+}
+
+.studio-shell.studio-stack-shell .studio-piece-stage {
+  align-items: center;
+  background: transparent;
+  border-radius: 0;
+  color: var(--studio-muted);
+  display: inline-flex;
+  font-size: 9px;
+  gap: 6px;
+  line-height: 1.2;
+  padding: 0;
+}
+
+.studio-shell.studio-stack-shell .studio-piece-stage::before {
+  background: currentColor;
+  border-radius: 50%;
+  content: "";
+  height: 6px;
+  width: 6px;
+}
+
+.studio-shell.studio-stack-shell .studio-piece-stage[data-stage="NEEDS_WORK"] { color: var(--studio-accent-display, var(--studio-accent)); }
+.studio-shell.studio-stack-shell .studio-piece-stage[data-stage="READY"],
+.studio-shell.studio-stack-shell .studio-piece-stage[data-stage="LIVE"] { color: var(--studio-positive); }
+
+.studio-shell.studio-stack-shell .studio-inventory-list,
+.studio-native-canvas .shoot-gallery,
+.studio-native-canvas .studio-connected-order-list,
+.studio-native-canvas .studio-publishing-queue {
+  gap: 0;
+}
+
+.studio-shell.studio-stack-shell .studio-inventory-list > article,
+.studio-native-canvas .shoot-gallery > .shoot-card,
+.studio-native-canvas .studio-connected-order-list > *,
+.studio-native-canvas .studio-publishing-queue > * {
+  border-radius: 0;
+  position: relative;
+}
+
+.studio-shell.studio-stack-shell .studio-inventory-list > article:not(:last-child)::after,
+.studio-native-canvas .shoot-gallery > .shoot-card:not(:last-child)::after,
+.studio-native-canvas .studio-connected-order-list > :not(:last-child)::after,
+.studio-native-canvas .studio-publishing-queue > :not(:last-child)::after {
+  background: var(--studio-line);
+  bottom: 0;
+  content: "";
+  height: 1px;
+  left: 78px;
+  position: absolute;
+  right: 0;
+  z-index: 2;
+}
+
+/* Every bounded CRUD flow is one sheet canvas—not cards inside a card. */
+.studio-task-sheet.studio-task-sheet .studio-task-sheet-frame {
+  background: var(--studio-panel-strong);
+  border: 0;
+}
+
+html[data-theme="dark"] .studio-task-sheet.studio-task-sheet .studio-task-sheet-frame {
+  background: #0d0b0a;
+}
+
+html:not([data-theme="dark"]) .studio-task-sheet.studio-task-sheet .studio-task-sheet-frame {
+  background: #fffaf2;
+}
+
+.studio-task-sheet.studio-task-sheet .studio-task-sheet-header {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+.studio-task-sheet.studio-task-sheet .studio-task-sheet-body {
+  padding: 0 clamp(18px, 5vw, 38px) max(18px, env(safe-area-inset-bottom));
+}
+
+.studio-task-sheet.studio-task-sheet .studio-task-sheet-footer {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  padding-inline: 0;
+}
+
+.studio-settings-centre {
+  gap: 0;
+}
+
+.studio-settings-identity,
+.studio-settings-section,
+.studio-settings-status-list,
+.studio-settings-link {
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.studio-settings-identity,
+.studio-settings-section {
+  padding: 14px 0;
+  position: relative;
+}
+
+.studio-settings-identity::after,
+.studio-settings-section:not(:last-of-type)::after {
+  background: var(--studio-line);
+  bottom: 0;
+  content: "";
+  height: 1px;
+  left: 52px;
+  position: absolute;
+  right: 0;
+}
+
+.studio-settings-heading .eyebrow,
+.studio-settings-boundary {
+  display: none;
+}
+
+.studio-settings-section .theme-settings,
+.studio-settings-status-list {
+  background: transparent;
+  border-radius: 0;
+}
+
+.studio-settings-status-list > div {
+  padding-inline: 0;
+  position: relative;
+}
+
+.studio-settings-status-list > div + div {
+  border: 0;
+}
+
+.studio-settings-status-list > div + div::before {
+  background: var(--studio-line);
+  content: "";
+  height: 1px;
+  left: 28px;
+  position: absolute;
+  right: 0;
+  top: 0;
+}
+
+.studio-settings-status-list > div > b {
+  background: transparent;
+  border-radius: 0;
+  color: var(--studio-muted);
+  padding: 0;
+}
+
+.studio-settings-link {
+  padding-inline: 0;
+}
+
+/* Drop management: ordinal is the visual rail; state lives in the subline. */
+.studio-drop-list,
+.studio-drop-actions {
+  display: grid;
+}
+
+.studio-drop-row,
+.studio-drop-context-row,
+.studio-drop-new,
+.studio-drop-actions > button {
+  background: transparent;
+  color: var(--studio-ink);
+  min-height: 68px;
+  position: relative;
+}
+
+.studio-drop-row,
+.studio-drop-context-row,
+.studio-drop-new {
+  border-radius: 0;
+}
+
+.studio-drop-context-row,
+.studio-drop-new,
+.studio-drop-row-main,
+.studio-drop-actions > button {
+  align-items: center;
+  display: grid;
+  font: inherit;
+  gap: 12px;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  padding: 10px 0;
+  text-align: left;
+  width: 100%;
+}
+
+.studio-drop-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 44px;
+}
+
+.studio-drop-row-main {
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+}
+
+.studio-drop-row-more {
+  align-items: center;
+  background: transparent;
+  color: var(--studio-muted);
+  display: flex;
+  justify-content: center;
+}
+
+.studio-drop-row:not(:last-child)::after,
+.studio-drop-context-row:not(:last-child)::after,
+.studio-drop-actions > button:not(:last-child)::after {
+  background: var(--studio-line);
+  bottom: 0;
+  content: "";
+  height: 1px;
+  left: 54px;
+  position: absolute;
+  right: 0;
+}
+
+.studio-drop-ordinal {
+  align-items: center;
+  background: var(--studio-panel-muted);
+  border-radius: 14px;
+  color: var(--studio-muted);
+  display: flex;
+  font-family: var(--font-display);
+  font-size: 17px;
+  height: 42px;
+  justify-content: center;
+  width: 42px;
+}
+
+.studio-drop-row[data-state="active"] .studio-drop-ordinal {
+  background: var(--studio-selection);
+  color: var(--studio-accent-display, var(--studio-accent));
+}
+
+.studio-drop-row-copy,
+.studio-drop-actions > button > span {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.studio-drop-row-copy strong,
+.studio-drop-actions > button strong {
+  font-size: 14px;
+}
+
+.studio-drop-row-copy small,
+.studio-drop-actions > button small {
+  align-items: center;
+  color: var(--studio-muted);
+  display: flex;
+  font-size: 10px;
+  gap: 5px;
+}
+
+.studio-drop-new {
+  color: var(--studio-accent-display, var(--studio-accent));
+}
+
+.studio-drop-name,
+.studio-drop-preview,
+.studio-drop-receipt {
+  display: grid;
+  gap: 18px;
+}
+
+.studio-drop-name label,
+.studio-drop-preview > p,
+.studio-drop-receipt {
+  padding-block: 14px;
+}
+
+.studio-drop-name label {
+  display: grid;
+  gap: 8px;
+}
+
+.studio-drop-name input {
+  background: var(--studio-panel-muted);
+  border: 0;
+  border-radius: 18px;
+  color: var(--studio-ink);
+  font: inherit;
+  min-height: 56px;
+  padding: 0 16px;
+}
+
+.studio-drop-diff {
+  display: grid;
+}
+
+.studio-drop-diff > div {
+  align-items: center;
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(70px, .65fr) minmax(0, 1fr) auto minmax(0, 1fr);
+  min-height: 58px;
+  position: relative;
+}
+
+.studio-drop-diff > div + div::before {
+  background: var(--studio-line);
+  content: "";
+  height: 1px;
+  left: 0;
+  position: absolute;
+  right: 0;
+  top: 0;
+}
+
+.studio-drop-diff span,
+.studio-drop-diff small,
+.studio-drop-preview > p,
+.studio-drop-receipt small {
+  color: var(--studio-muted);
+  font-size: 10px;
+}
+
+.studio-drop-receipt > span {
+  align-items: center;
+  background: color-mix(in srgb, var(--studio-positive) 13%, transparent);
+  border-radius: 50%;
+  color: var(--studio-positive);
+  display: flex;
+  height: 44px;
+  justify-content: center;
+  width: 44px;
+}
+
+.studio-drop-sheet .studio-feedback {
+  background: transparent;
+  border-radius: 0;
+  padding-inline: 0;
+}
+
+@media (max-width: 760px) {
+  .studio-native-canvas {
+    padding-inline: 0;
+  }
+
+  .studio-native-canvas > :where(
+    .studio-stack-page,
+    .studio-ops-page,
+    .studio-connected-orders-page,
+    .studio-connected-order-detail,
+    .studio-stocktake-page,
+    .studio-scan-page,
+    .studio-dossier-page,
+    .studio-ask-page,
+    .review-page,
+    #shoot-gallery
+  ) {
+    padding-inline: var(--studio-page-rail);
+  }
+
+  .studio-shell.studio-stack-shell .studio-native-canvas .studio-garment-grid,
+  .studio-shell.studio-stack-shell .studio-native-canvas .studio-inventory-list,
+  .studio-native-canvas .shoot-gallery,
+  .studio-native-canvas .studio-connected-order-list,
+  .studio-native-canvas .studio-publishing-queue {
+    margin-inline: calc(var(--studio-page-rail) * -1);
+  }
+
+  .studio-shell.studio-stack-shell .studio-native-canvas .studio-garment-card,
+  .studio-shell.studio-stack-shell .studio-native-canvas .studio-inventory-row-trigger,
+  .studio-native-canvas .shoot-card,
+  .studio-native-canvas .studio-connected-order-list > *,
+  .studio-native-canvas .studio-publishing-queue > * {
+    padding-right: var(--studio-page-rail);
+  }
+
+  .studio-task-sheet.studio-task-sheet .studio-task-sheet-body {
+    padding-inline: 16px;
+  }
+}
+
+@media (forced-colors: active) {
+  .studio-stack-shell :where(a, button, input, select, textarea, summary):focus-visible,
+  .studio-task-sheet :where(a, button, input, select, textarea, summary):focus-visible,
+  .studio-task-sheet.studio-task-sheet .studio-task-sheet-frame {
+    outline: 2px solid CanvasText;
+  }
+}
+
 /* Canonical native stack contract --------------------------------------
    ADR 0047 owns every non-Home Studio route. This final layer deliberately
    normalizes the older service-specific surfaces without changing domain
@@ -2195,20 +3040,35 @@ html body .studio-stack-shell .workspace > main.page-canvas:has(> .studio-home-c
 /* Continue is one action-led row, not a card nested inside a dashboard. */
 .studio-native-canvas .studio-piece-next {
   align-items: center;
+  appearance: none;
   background: color-mix(in srgb, var(--studio-accent) 7%, var(--studio-panel));
   border: 0;
   border-radius: 22px;
   box-shadow: none;
+  color: var(--studio-ink);
+  cursor: pointer;
   display: grid;
   gap: 14px;
   grid-template-columns: minmax(0, 1fr) auto;
   margin: 0;
   min-height: 82px;
   padding: 14px 14px 14px 18px;
+  text-align: left;
+  width: 100%;
 }
 
-.studio-native-canvas .studio-piece-next > span:first-child { display: none; }
-.studio-native-canvas .studio-piece-next > div { display: grid; gap: 3px; min-width: 0; }
+.studio-native-canvas .studio-piece-next > span {
+  align-items: initial;
+  background: transparent;
+  border-radius: 0;
+  color: inherit;
+  display: grid;
+  gap: 3px;
+  height: auto;
+  justify-content: initial;
+  min-width: 0;
+  width: auto;
+}
 .studio-native-canvas .studio-piece-next small { color: var(--studio-muted); font-size: 9px; }
 .studio-native-canvas .studio-piece-next strong {
   font-size: clamp(14px, 2vw, 17px);
@@ -2216,7 +3076,7 @@ html body .studio-stack-shell .workspace > main.page-canvas:has(> .studio-home-c
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.studio-native-canvas .studio-piece-next p {
+.studio-native-canvas .studio-piece-next > span > span {
   color: var(--studio-muted);
   display: -webkit-box;
   font-size: 10px;
@@ -2226,10 +3086,19 @@ html body .studio-stack-shell .workspace > main.page-canvas:has(> .studio-home-c
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 1;
 }
-.studio-native-canvas .studio-piece-next .button {
-  border-radius: 999px;
-  min-height: 44px;
-  white-space: nowrap;
+.studio-native-canvas .studio-piece-next > svg {
+  color: var(--studio-accent);
+  transition: transform var(--duration-fast) var(--ease-standard);
+}
+.studio-native-canvas .studio-piece-next:is(:hover, :focus-visible) {
+  background: color-mix(in srgb, var(--studio-accent) 11%, var(--studio-panel));
+}
+.studio-native-canvas .studio-piece-next:is(:hover, :focus-visible) > svg {
+  transform: translateX(2px);
+}
+.studio-native-canvas .studio-piece-next:disabled {
+  cursor: wait;
+  opacity: .72;
 }
 
 /* Section titles and tabs no longer restate the page name. */
@@ -2422,12 +3291,7 @@ html body .studio-stack-shell .workspace > main.page-canvas:has(> .studio-home-c
   }
 
   .studio-native-canvas .studio-piece-next {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .studio-native-canvas .studio-piece-next .button {
-    justify-self: stretch;
-    width: 100%;
+    grid-template-columns: minmax(0, 1fr) auto;
   }
 
   .studio-feedback {
@@ -2456,6 +3320,480 @@ html body .studio-stack-shell .workspace > main.page-canvas:has(> .studio-home-c
   .studio-native-canvas .studio-piece-next,
   .studio-native-canvas .shoot-card,
   .studio-native-canvas .studio-transition-action {
+    border: 1px solid CanvasText;
+  }
+}
+
+/* Cascade lock: service-era padding is declared immediately above. The
+   native canvas owns no horizontal inset; page rails and rows own it. */
+.studio-native-canvas {
+  padding-inline: 0;
+}
+
+.studio-native-canvas .shoot-gallery {
+  gap: 0;
+}
+
+@media (max-width: 760px) {
+  .studio-native-canvas {
+    padding-inline: 0;
+  }
+}
+
+/* Native surface cascade lock ------------------------------------------------
+   Legacy premium selectors are intentionally more specific than the original
+   service CSS. Keep the final Studio contract equally explicit so every stack
+   uses the same black/ivory canvas and rows—not the old cocoa card system. */
+html:not([data-theme="dark"]) body .studio-shell.studio-stack-shell {
+  --studio-canvas: #f8f3eb;
+  --studio-canvas-deep: #fffaf2;
+  --studio-panel: #fffaf2;
+  --studio-panel-strong: #fffdf8;
+  --studio-panel-muted: #f3ebe1;
+  --studio-panel-hover: #eee3d8;
+  --studio-selection: color-mix(in srgb, var(--studio-accent) 11%, #fffaf2);
+  --studio-cocoa: #eadfd4;
+  --studio-cocoa-hover: #e4d6ca;
+  --studio-mineral: #f1e8df;
+  --studio-mineral-strong: #e9ddd2;
+}
+
+html[data-theme="dark"] body .studio-shell.studio-stack-shell {
+  --studio-canvas: #090807;
+  --studio-canvas-deep: #0d0b0a;
+  --studio-panel: #11100e;
+  --studio-panel-strong: #161310;
+  --studio-panel-muted: #1b1714;
+  --studio-panel-hover: #211b17;
+  --studio-selection: color-mix(in srgb, var(--studio-accent) 13%, #11100e);
+  --studio-cocoa: #211914;
+  --studio-cocoa-hover: #2a1f19;
+  --studio-mineral: #151210;
+  --studio-mineral-strong: #1a1613;
+}
+
+.studio-shell.studio-stack-shell main.page-canvas.studio-native-canvas {
+  background: var(--studio-canvas);
+  padding-inline: 0;
+}
+
+.studio-shell.studio-stack-shell .studio-native-canvas .studio-stack-page > section[role="tabpanel"] {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+}
+
+.studio-drop-new > span {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.studio-drop-new > span > :is(strong, small) {
+  display: block;
+}
+
+@media (max-width: 760px) {
+  .studio-shell.studio-stack-shell main.page-canvas.studio-native-canvas {
+    padding-inline: 0;
+  }
+}
+
+/* Native Studio completion pass -------------------------------------------
+   The remaining service surfaces use the same flat, edge-to-edge grammar as
+   Home: coral actions, tonal rows, semantic dividers and short task sheets. */
+.studio-shell.studio-stack-shell .studio-native-canvas .studio-inventory-row-trigger {
+  background: color-mix(in srgb, var(--studio-row-tone) 4%, transparent);
+  border-radius: 0;
+}
+
+.studio-shell.studio-stack-shell .studio-native-canvas .studio-inventory-row-trigger:hover {
+  background: color-mix(in srgb, var(--studio-row-tone) 8%, var(--studio-selection));
+}
+
+.studio-shell.studio-stack-shell .studio-native-canvas .button.button-primary,
+.studio-task-sheet.studio-task-sheet .button.button-primary {
+  background: var(--studio-accent);
+  color: #fffaf7;
+}
+
+.studio-shell.studio-stack-shell .studio-native-canvas .button.button-primary:hover,
+.studio-task-sheet.studio-task-sheet .button.button-primary:hover {
+  background: color-mix(in srgb, var(--studio-accent) 86%, #5b2117);
+}
+
+.studio-native-canvas .studio-ask-welcome button,
+.studio-native-canvas .studio-ask-session-tools button,
+.studio-native-canvas .studio-ask-clarification a,
+.studio-native-canvas .studio-ask-recovery > div:last-child a {
+  background: var(--studio-panel-muted);
+  border: 0;
+}
+
+.studio-native-canvas .studio-ask-form {
+  background: var(--studio-panel-muted);
+  border-radius: 999px;
+  border: 0;
+  box-shadow:
+    0 16px 48px color-mix(in srgb, var(--studio-ink) 11%, transparent),
+    0 0 34px color-mix(in srgb, var(--studio-accent) 8%, transparent);
+  padding: 4px;
+}
+
+.studio-native-canvas .studio-ask-form:focus-within {
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--studio-accent) 25%, transparent),
+    0 16px 48px color-mix(in srgb, var(--studio-ink) 11%, transparent),
+    0 0 34px color-mix(in srgb, var(--studio-accent) 8%, transparent);
+}
+
+.studio-native-canvas .studio-ask-form textarea,
+.studio-native-canvas .studio-ask-form textarea:focus-visible {
+  background: transparent;
+  border-radius: 999px;
+  box-shadow: none;
+}
+
+.studio-native-canvas .studio-ask-handoff {
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+  padding-inline: 2px;
+}
+
+.studio-native-canvas .studio-piece-secondary-trigger {
+  align-items: center;
+  color: var(--studio-ink);
+  cursor: pointer;
+  display: grid;
+  font: inherit;
+  gap: 14px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  min-height: 64px;
+  padding: 0 2px;
+  text-align: left;
+  width: 100%;
+}
+
+.studio-native-canvas .studio-piece-secondary-trigger > span {
+  display: grid;
+  gap: 3px;
+}
+
+.studio-native-canvas .studio-piece-secondary-trigger strong {
+  font-size: 13px;
+}
+
+.studio-native-canvas .studio-piece-secondary-trigger small {
+  color: var(--studio-muted);
+  font-size: 10px;
+}
+
+.studio-native-canvas .studio-piece-secondary-trigger > svg {
+  color: var(--studio-faint);
+  transition: transform 160ms var(--ease-liquid);
+}
+
+.studio-native-canvas .studio-piece-secondary-trigger:is(:hover, :focus-visible) {
+  background: color-mix(in srgb, var(--studio-accent) 6%, transparent);
+}
+
+.studio-native-canvas .studio-piece-secondary-trigger:is(:hover, :focus-visible) > svg {
+  transform: translateX(2px);
+}
+
+.studio-piece-details-sheet .studio-piece-secondary-body {
+  gap: 0;
+}
+
+.studio-piece-details-sheet .studio-piece-secondary-body > :not(:last-child) {
+  border-bottom: 1px solid var(--studio-line);
+}
+
+.studio-piece-details-sheet :is(
+  .studio-piece-blockers,
+  .studio-piece-shop,
+  .studio-listing-card,
+  .studio-listing-preview,
+  .studio-listing-editor,
+  .studio-public-contract,
+  .studio-publication-review
+) {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.studio-piece-details-sheet .studio-piece-blockers,
+.studio-piece-details-sheet .studio-piece-shop,
+.studio-piece-details-sheet .studio-listing-preview,
+.studio-piece-details-sheet .studio-listing-editor {
+  color: var(--studio-ink);
+  padding: 18px 0;
+}
+
+.studio-piece-details-sheet .studio-listing-card {
+  display: grid;
+  grid-template-columns: 1fr;
+  overflow: visible;
+}
+
+.studio-piece-details-sheet .studio-listing-preview {
+  min-height: 0;
+}
+
+/* Piece records are task launchers, not permanently expanded workbenches.
+   Each supported job opens its own bounded sheet while the record stays calm. */
+.studio-native-canvas .studio-piece-task-list {
+  margin: 2px 0 0;
+}
+
+.studio-native-canvas .studio-piece-task-row {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  width: 100%;
+}
+
+.studio-native-canvas .studio-piece-task-row:hover {
+  background: color-mix(in srgb, var(--studio-accent) 6%, transparent);
+}
+
+.studio-piece-photos-sheet .studio-task-sheet-body,
+.studio-piece-shop-sheet .studio-task-sheet-body {
+  gap: 0;
+}
+
+.studio-piece-photos-sheet .studio-task-sheet-body > :not(:last-child) {
+  border-bottom: 1px solid var(--studio-line);
+}
+
+.studio-piece-photos-sheet :is(.studio-pending-product-media, .studio-direct-captures),
+.studio-piece-shop-sheet :is(.studio-piece-shop, .studio-piece-shop-status) {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  margin: 0;
+  padding: 20px 0;
+}
+
+.studio-piece-photos-sheet .studio-direct-capture-list {
+  gap: 0;
+}
+
+.studio-piece-photos-sheet .studio-direct-capture-list > article {
+  background: transparent;
+  border-radius: 0;
+  padding-block: 11px;
+  position: relative;
+}
+
+.studio-piece-photos-sheet .studio-direct-capture-list > article:not(:last-child)::after {
+  background: var(--studio-line);
+  bottom: 0;
+  content: "";
+  height: 1px;
+  left: 60px;
+  position: absolute;
+  right: 0;
+}
+
+.studio-piece-shop-sheet .studio-publication-review {
+  color: var(--studio-ink);
+}
+
+.studio-piece-shop-status {
+  align-items: center;
+  color: var(--studio-ink);
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 42px minmax(0, 1fr);
+}
+
+.studio-piece-shop-status > span:first-child {
+  align-items: center;
+  background: var(--studio-panel-muted);
+  border-radius: 14px;
+  color: var(--studio-accent-display, var(--studio-accent));
+  display: flex;
+  height: 42px;
+  justify-content: center;
+  width: 42px;
+}
+
+.studio-piece-shop-status.is-success > span:first-child {
+  color: var(--studio-positive);
+}
+
+.studio-piece-shop-status > div:nth-child(2) {
+  display: grid;
+  gap: 3px;
+}
+
+.studio-piece-shop-status > div:nth-child(2) small {
+  color: var(--studio-muted);
+  font-size: 10px;
+}
+
+/* Piece records are native canvases: media may bleed, while readable content
+   owns its rail. Nothing inside the record creates a second page surface. */
+.studio-native-canvas > .studio-dossier-page {
+  padding-inline: 0;
+}
+
+.studio-native-canvas .studio-dossier-page .studio-piece-workspace {
+  gap: 0;
+}
+
+.studio-native-canvas .studio-dossier-page .studio-draft-content {
+  background: transparent;
+  margin: 0;
+  padding: 8px var(--studio-page-rail) 24px;
+}
+
+.studio-native-canvas .studio-dossier-page .studio-draft-summary {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0;
+}
+
+.studio-native-canvas .studio-dossier-page .studio-piece-next {
+  background: transparent;
+  border-radius: 0;
+  min-height: 70px;
+  padding: 10px 2px;
+  position: relative;
+}
+
+.studio-native-canvas .studio-dossier-page .studio-piece-next::after {
+  background: var(--studio-line);
+  bottom: 0;
+  content: "";
+  height: 1px;
+  inset-inline: 0;
+  position: absolute;
+}
+
+.studio-native-canvas .studio-dossier-page .studio-piece-next small {
+  color: var(--studio-accent-display, var(--studio-accent));
+}
+
+.studio-native-canvas .studio-dossier-page .studio-piece-next:is(:hover, :focus-visible) {
+  background: color-mix(in srgb, var(--studio-accent) 6%, transparent);
+}
+
+/* Product-photo work is one flat list. Each missing view owns three concise
+   methods; the former duplicate Magic Wand card is intentionally absent. */
+.studio-piece-photos-sheet .studio-capture-next {
+  grid-template-columns: 1fr;
+}
+
+.studio-piece-photos-sheet .studio-capture-next > small {
+  line-height: 1.2;
+}
+
+.studio-piece-photos-sheet .studio-capture-next > div {
+  gap: 0;
+}
+
+.studio-piece-photos-sheet .studio-capture-next span {
+  background: transparent;
+  border-radius: 0;
+  font-weight: 650;
+  line-height: 26px;
+  padding: 0 14px 0 0;
+}
+
+.studio-piece-photos-sheet .studio-direct-capture-list > article {
+  grid-template-columns: 48px minmax(0, 1fr) auto;
+  min-height: 70px;
+  padding: 10px 2px;
+}
+
+.studio-piece-photos-sheet .studio-direct-capture-actions,
+.studio-piece-photos-sheet .studio-direct-capture-list > article.is-saved .studio-direct-capture-actions {
+  display: flex;
+  gap: 2px;
+  grid-column: 3;
+  justify-content: flex-end;
+}
+
+.studio-piece-photos-sheet .studio-direct-capture-actions :is(label, button),
+.studio-piece-photos-sheet .studio-direct-capture-actions .studio-direct-capture-magic {
+  background: transparent;
+  border-radius: 0;
+  color: var(--studio-muted);
+  font-size: 10px;
+  grid-column: auto;
+  height: 40px;
+  min-height: 40px;
+  padding: 0 9px;
+}
+
+.studio-piece-photos-sheet .studio-direct-capture-actions :is(label, button):is(:hover, :focus-visible) {
+  background: var(--studio-selection);
+  color: var(--studio-accent-display, var(--studio-accent));
+}
+
+@media (max-width: 760px) {
+  .studio-native-canvas .studio-dossier-page .studio-piece-workspace {
+    display: block;
+  }
+
+  .studio-native-canvas .studio-dossier-page .studio-draft-visual {
+    border-radius: 0;
+  }
+
+  .studio-native-canvas .studio-dossier-page .studio-draft-content {
+    gap: 8px;
+    margin: 0;
+    padding: 20px var(--studio-page-rail) 24px;
+  }
+
+  .studio-piece-photos-sheet .studio-direct-capture-list > article {
+    grid-template-columns: 48px minmax(0, 1fr);
+  }
+
+  .studio-piece-photos-sheet .studio-direct-capture-actions,
+  .studio-piece-photos-sheet .studio-direct-capture-list > article.is-saved .studio-direct-capture-actions {
+    grid-column: 2;
+    justify-content: flex-start;
+  }
+}
+
+.studio-piece-shop-blockers,
+.studio-piece-shop-status > :is(.studio-sheet-actions, .button) {
+  grid-column: 1 / -1;
+}
+
+.studio-piece-shop-blockers {
+  display: grid;
+  gap: 0;
+}
+
+.studio-piece-shop-blockers > span {
+  border-bottom: 1px solid var(--studio-line);
+  color: var(--studio-muted);
+  font-size: 11px;
+  padding: 12px 2px;
+}
+
+@media (forced-colors: active) {
+  .studio-native-canvas .studio-piece-secondary-trigger,
+  .studio-native-canvas .studio-piece-task-row,
+  .studio-native-canvas .studio-ask-form,
+  .studio-native-canvas .studio-ask-welcome button,
+  .studio-native-canvas .studio-ask-session-tools button {
     border: 1px solid CanvasText;
   }
 }

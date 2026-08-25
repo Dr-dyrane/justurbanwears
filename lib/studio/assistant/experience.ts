@@ -1,5 +1,6 @@
 export type StudioAssistantDocumentKind =
   | "Alert"
+  | "Collection"
   | "Media"
   | "Model"
   | "Order"
@@ -110,6 +111,10 @@ const CAPABILITY_PATTERN = /\b(help|what can you do|how can you help|capabilitie
 const PRICE_PATTERN = /\b(price|pricing)\b/i;
 const PRICE_CHANGE_PATTERN = /\b(change|edit|set|update|raise|reduce|lower)\b/i;
 const COLLECTION_PATTERN = /\b(drop|collection)\b/i;
+const CREATE_COLLECTION_PATTERN = /\b(add|create|new|start)\b[\s\S]*\b(drop|collection)\b|\b(drop|collection)\b[\s\S]*\b(add|create|new|start)\b/i;
+const RENAME_COLLECTION_PATTERN = /\b(rename)\b[\s\S]*\b(drop|collection)\b|\b(drop|collection)\b[\s\S]*\b(rename)\b/i;
+const ACTIVATE_COLLECTION_PATTERN = /\b(activate|launch|make live)\b[\s\S]*\b(drop|collection)\b|\b(drop|collection)\b[\s\S]*\b(activate|launch|make live)\b/i;
+const ARCHIVE_COLLECTION_PATTERN = /\b(archive)\b[\s\S]*\b(drop|collection)\b|\b(drop|collection)\b[\s\S]*\b(archive)\b/i;
 const CREATE_PIECE_PATTERN = /\b(add|bring in|create|intake|new|register|upload)\b[\s\S]*\b(garment|piece|product|item|clothes|dress|shirt|skirt|set|trouser|knit)\b|\bintake\b/i;
 const PUBLISH_PATTERN = /\b(go live|list|listing|publish|publication|shop preview|public)\b/i;
 const MEDIA_PATTERN = /\b(atelier|generate|image|media|photo|render|shoot|try[ -]?on|wear)\b/i;
@@ -152,11 +157,12 @@ export function scoreStudioAssistantDocument(document: StudioAssistantDocument, 
 function rankedDocuments(context: StudioAssistantContext, query: string, kind?: StudioAssistantDocumentKind) {
   const kindPriority: Record<StudioAssistantDocumentKind, number> = {
     Piece: 6,
-    Order: 5,
-    Model: 4,
-    Media: 3,
-    Alert: 2,
-    Service: 1,
+    Collection: 5,
+    Order: 4,
+    Model: 3,
+    Media: 2,
+    Alert: 1,
+    Service: 0,
   };
   return context.documents
     .filter((document) => !kind || document.kind === kind)
@@ -204,6 +210,42 @@ function pieceOptions(context: StudioAssistantContext, query: string) {
   const ranked = rankedDocuments(context, query, "Piece");
   if (ranked.length) return ranked.slice(0, 4).map(({ document }) => ({ href: document.href, label: document.label }));
   return [{ href: "/studio/wardrobe", label: "Choose in Wardrobe" }];
+}
+
+function collectionOptions(context: StudioAssistantContext, query: string) {
+  const ranked = rankedDocuments(context, query, "Collection");
+  const scenario = context.provenance.status === "preview" ? "&scenario=lifecycle" : "";
+  if (ranked.length) return ranked.slice(0, 4).map(({ document }) => ({
+    href: `/studio/wardrobe?collection=choose&dropAction=manage&dropId=${encodeURIComponent(document.entityId ?? "")}${scenario}`,
+    label: document.label,
+  }));
+  return [{ href: `/studio/wardrobe?collection=choose${scenario}`, label: "Browse drops" }];
+}
+
+function collectionHandoff(
+  context: StudioAssistantContext,
+  query: string,
+  input: { actionLabel: string; body: string; consequence: string; risk: StudioAssistantRisk; title: string },
+) {
+  const target = exactTarget(context, query, "Collection");
+  if (!target) return response(context, "CHANGE", input.risk, [{
+    body: "Choose the exact drop before Studio prepares the change.",
+    kind: "clarification",
+    options: collectionOptions(context, query),
+    title: "Which drop?",
+  }]);
+  const scenario = context.provenance.status === "preview" ? "&scenario=lifecycle" : "";
+  return response(context, "CHANGE", input.risk, [{
+    action: {
+      href: `/studio/wardrobe?collection=choose&dropAction=manage&dropId=${encodeURIComponent(target.entityId ?? "")}${scenario}`,
+      label: input.actionLabel,
+    },
+    body: input.body,
+    consequence: input.consequence,
+    kind: "handoff",
+    risk: input.risk,
+    title: input.title,
+  }]);
 }
 
 function targetedPieceHandoff(
@@ -315,6 +357,48 @@ export function resolveStudioAssistant(
       risk: "R1",
       title: "Add a piece",
     }]);
+  }
+
+  if (CREATE_COLLECTION_PATTERN.test(query)) {
+    const scenario = context.provenance.status === "preview" ? "&scenario=lifecycle" : "";
+    return response(context, "CREATE", "R1", [{
+      action: { href: `/studio/wardrobe?collection=choose&dropAction=create${scenario}`, label: "Name drop" },
+      body: "Name the drop, review the draft, then confirm it.",
+      consequence: "The new drop stays private until it is activated.",
+      kind: "handoff",
+      risk: "R1",
+      title: "New drop",
+    }]);
+  }
+
+  if (RENAME_COLLECTION_PATTERN.test(query)) {
+    return collectionHandoff(context, query, {
+      actionLabel: "Review rename",
+      body: "Open the selected drop and prepare its new Studio name.",
+      consequence: "The name changes only after preview and confirmation.",
+      risk: "R2",
+      title: "Rename drop",
+    });
+  }
+
+  if (ACTIVATE_COLLECTION_PATTERN.test(query)) {
+    return collectionHandoff(context, query, {
+      actionLabel: "Review activation",
+      body: "Open the selected draft and review the active-drop handover.",
+      consequence: "Activation requires confirmation and returns a durable receipt.",
+      risk: "R3",
+      title: "Activate drop",
+    });
+  }
+
+  if (ARCHIVE_COLLECTION_PATTERN.test(query)) {
+    return collectionHandoff(context, query, {
+      actionLabel: "Review archive",
+      body: "Open the selected drop and review what leaves active Studio work.",
+      consequence: "History remains available; the archive happens only after confirmation.",
+      risk: "R3",
+      title: "Archive drop",
+    });
   }
 
   if (PRICE_PATTERN.test(query) && PRICE_CHANGE_PATTERN.test(query)) {

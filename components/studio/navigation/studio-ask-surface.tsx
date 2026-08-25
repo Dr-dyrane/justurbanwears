@@ -18,6 +18,7 @@ import {
 } from "../../../lib/studio/assistant/experience";
 import type { StudioSearchDocument } from "../../../lib/studio/application/contracts";
 import { STUDIO_SERVICES } from "../../../lib/studio/service-registry";
+import { StudioLoadingStage } from "../atoms/studio-loading-stage";
 import { StudioLink as Link } from "../atoms/studio-link";
 import { useStudio } from "../studio-provider";
 
@@ -31,9 +32,9 @@ type AskTurn = {
 const STORAGE_KEY = "juw.studio.ask.v1";
 const STARTERS = [
   "What needs attention?",
+  "Create a new drop",
   "Change JUW-001 price",
   "Prepare media for JUW-003",
-  "Find active orders",
 ] as const;
 
 function assistantTokens(values: Array<string | null | undefined>) {
@@ -66,6 +67,7 @@ function pieceDetail(input: { availability?: string; category: string; colour?: 
 
 function assistantDocumentKind(kind: StudioSearchDocument["kind"]): StudioAssistantDocument["kind"] {
   if (kind === "SERVICE") return "Service";
+  if (kind === "COLLECTION") return "Collection";
   if (kind === "ORDER") return "Order";
   if (kind === "MODEL") return "Model";
   if (kind === "MEDIA" || kind === "ATELIER_OPERATION") return "Media";
@@ -120,6 +122,12 @@ function buildContext(studio: ReturnType<typeof useStudio>): StudioAssistantCont
         label: service.label,
         tokens: assistantTokens([service.key, service.label, service.description, ...service.aliases]),
       }));
+
+  if (studio.scenario && studio.application.snapshot) {
+    documents.push(...studio.application.snapshot.searchDocuments
+      .filter((document) => document.kind === "COLLECTION")
+      .map((document) => projectedAssistantDocument(document, connected)));
+  }
 
   if (!projected) {
   const knownPieceKeys = new Set<string>();
@@ -483,7 +491,7 @@ export function StudioAskSurface() {
   }
 
   if (!studio.scenario && (studio.application.status === "idle" || studio.application.status === "loading")) {
-    return <div className="studio-loading" role="status">Opening Ask Studio…</div>;
+    return <StudioLoadingStage label="Opening Ask Studio…" />;
   }
 
   if (askCapability === "UNAVAILABLE") {

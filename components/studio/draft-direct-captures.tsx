@@ -5,7 +5,6 @@
 
 import {
   ArrowLeft,
-  ArrowRight,
   Camera,
   Check,
   CircleAlert,
@@ -177,7 +176,6 @@ export function DraftDirectCaptures({
   const requiredRoles = useMemo(() => PENDING_DIRECT_CAPTURE_ROLES.filter((role) =>
     target.requiredRoles.includes(role)
   ), [target.requiredRoles]);
-  const missingRoles = requiredRoles.filter((role) => !captures.some((capture) => capture.role === role));
   const aiUsesApprovedFront = aiFlow?.sourceMode === "APPROVED_FRONT";
 
   const applyWorkspace = useCallback((workspace: CaptureWorkspace) => {
@@ -447,7 +445,7 @@ export function DraftDirectCaptures({
   return (
     <section className="studio-direct-captures" aria-label={`${garment.title} private captures`}>
       <div className="studio-direct-captures-heading" ref={capturesHeadingRef} tabIndex={-1}>
-        <div><small>Product photos</small><strong>{captures.length}/{requiredRoles.length} saved</strong></div>
+        <div><small>Saved</small><strong>{captures.length} of {requiredRoles.length}</strong></div>
         {loading ? (
           <Spinner label="Loading saved photos" />
         ) : captures.length === requiredRoles.length ? (
@@ -531,19 +529,6 @@ export function DraftDirectCaptures({
         </div>
       ) : (
         <div className="studio-direct-capture-list">
-          {missingRoles[0] ? (
-            <button
-              aria-label={`Create ${pendingWardrobeMediaLabel(missingRoles[0]).toLowerCase()} with Magic Wand`}
-              className="studio-magic-capture-shortcut"
-              disabled={busy}
-              onClick={(event) => void openAi(missingRoles[0], event.currentTarget)}
-              type="button"
-            >
-              <span><WandSparkles aria-hidden="true" size={18} /></span>
-              <span><small>Magic Wand</small><strong>{pendingWardrobeMediaLabel(missingRoles[0])}</strong></span>
-              <ArrowRight aria-hidden="true" size={16} />
-            </button>
-          ) : null}
           {requiredRoles.map((role) => {
             const saved = captures.find((capture) => capture.role === role);
             return (

@@ -7,10 +7,8 @@ import { FormEvent, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import {
   ArrowRight,
-  Camera,
   Check,
   ChevronDown,
-  Eye,
   ImagePlus,
   LockKeyhole,
   PackageOpen,
@@ -18,6 +16,7 @@ import {
   Send,
   ShieldCheck,
   Shirt,
+  SlidersHorizontal,
 } from "lucide-react";
 import type {
   Garment,
@@ -40,9 +39,11 @@ import {
 import { LifecycleBadge } from "./atoms/lifecycle-badge";
 import { LifecycleMeta, STUDIO_LIFECYCLE_PRESENTATION } from "./atoms/lifecycle-meta";
 import { ReadinessList } from "./atoms/readiness-list";
+import { StudioLoadingStage } from "./atoms/studio-loading-stage";
 import { StudioPager, StudioSegmentedView, useStudioSegment } from "./atoms/studio-segmented-view";
 import { StudioLink } from "./atoms/studio-link";
 import { StudioTaskSheet } from "./atoms/studio-task-sheet";
+import { StudioDropSheet } from "./collections/studio-drop-sheet";
 import { StudioStackPage, StudioStackSection } from "./atoms/studio-stack-page";
 import { GarmentIntakeSheet } from "./garment-intake/garment-intake-sheet";
 import { WearSheet } from "./garment-intake/wear-sheet";
@@ -91,9 +92,38 @@ const publishingPageSize = 8;
 type WardrobeDropScope = StudioCollectionScope["key"];
 type WardrobeCollectionScope = "all" | "private" | WardrobeDropScope;
 
+const BASELINE_COLLECTIONS: StudioCollectionScope[] = [
+  {
+    id: "compat:drop-02",
+    key: "drop-02",
+    label: "Drop 02",
+    ordinal: 2,
+    version: 1,
+    state: "ACTIVE",
+    isCurrent: true,
+    authority: "COMPATIBILITY",
+    counts: { pieces: null, private: null, ready: null, published: null, available: null },
+    nextAction: "/studio/wardrobe",
+    updatedAt: "",
+  },
+  {
+    id: "compat:drop-01",
+    key: "drop-01",
+    label: "Drop 01",
+    ordinal: 1,
+    version: 1,
+    state: "ARCHIVED",
+    isCurrent: false,
+    authority: "COMPATIBILITY",
+    counts: { pieces: null, private: null, ready: null, published: null, available: null },
+    nextAction: "/studio/wardrobe?collection=drop-01",
+    updatedAt: "",
+  },
+];
+
 function dropKeyFromLabel(label: string): WardrobeDropScope | null {
   const normalized = label.trim().toLowerCase().replace(/\s+/g, "-");
-  if (normalized === "drop-01" || normalized === "drop-02") return normalized;
+  if (/^drop-[0-9]{2,}$/.test(normalized)) return normalized as WardrobeDropScope;
   return null;
 }
 
@@ -103,9 +133,10 @@ function collectionScopeFromParam(value: string | null, currentDropKey: Wardrobe
   if (normalized === "current") return currentDropKey;
   if (normalized === "past") return currentDropKey === "drop-02" ? "drop-01" : "drop-02";
   if (normalized === "studio") return "private";
-  return ["all", "drop-01", "drop-02", "private"].includes(normalized)
-    ? normalized as WardrobeCollectionScope
-    : currentDropKey;
+  if (normalized === "all" || normalized === "private" || /^drop-[0-9]{2,}$/.test(normalized)) {
+    return normalized as WardrobeCollectionScope;
+  }
+  return currentDropKey;
 }
 
 function formatNaira(value: number) {
@@ -225,12 +256,15 @@ export function PieceWorkspaceView({ garment, initialAction, onBuildSet, onDismi
   const [publishing, setPublishing] = useState(false);
   const [publicationError, setPublicationError] = useState("");
   const [lifecycleWorkspace, setLifecycleWorkspace] = useState<GarmentLifecycleWorkspace>();
+  const [photosOpen, setPhotosOpen] = useState(false);
+  const [photosReturnFocus, setPhotosReturnFocus] = useState<HTMLElement | null>(null);
   const [secondaryOpen, setSecondaryOpen] = useState(initialAction === "price");
+  const [detailsReturnFocus, setDetailsReturnFocus] = useState<HTMLElement | null>(null);
+  const [shopReturnFocus, setShopReturnFocus] = useState<HTMLElement | null>(null);
   const publicationConfirmationId = useId();
-  const captureSectionRef = useRef<HTMLElement>(null);
-  const listingSectionRef = useRef<HTMLElement>(null);
-  const publicationSectionRef = useRef<HTMLElement>(null);
-  const lifecycleSectionRef = useRef<HTMLDivElement>(null);
+  const photosTriggerRef = useRef<HTMLButtonElement>(null);
+  const detailsTriggerRef = useRef<HTMLButtonElement>(null);
+  const shopTriggerRef = useRef<HTMLButtonElement>(null);
   const publicationKeyRef = useRef(`studio-publish:${garment.privateWardrobeItemId ?? garment.id}:${crypto.randomUUID()}`);
   const listing = studio.listings.find((candidate) => candidate.garmentId === garment.id);
   const pendingContract = getPendingWardrobeProductContract(garment.sku);
@@ -288,9 +322,28 @@ export function PieceWorkspaceView({ garment, initialAction, onBuildSet, onDismi
     : dynamicReview?.state === "PUBLISHED"
       ? { stage: "LIVE", label: "Live" }
       : { stage: workspace.stage, label: workspace.stageLabel };
-  const visibleBlockers = dynamicReview?.state === "READY" || dynamicReview?.state === "PUBLISHED"
-    ? []
-    : dynamicReview?.state === "BLOCKED" ? dynamicReview.blockers : workspace.blockers;
+  const targetCaptureCount = captureTarget?.requiredRoles.length ?? 0;
+  const savedTargetCaptureCount = captureTarget?.requiredRoles.filter((role) => capturedRoles.includes(role)).length ?? 0;
+  const photosState = targetCaptureCount
+    ? `${savedTargetCaptureCount}/${targetCaptureCount} saved`
+    : pendingContract?.publicSafeMedia.length
+      ? `${pendingContract.publicSafeMedia.length} approved`
+      : "Ready";
+  const detailsState = garment.price > 0
+    ? `${formatNaira(garment.price)} · ${garment.sizeLabel}`
+    : `Price pending · ${garment.sizeLabel}`;
+  const hasFactsTask = Boolean(garment.privateWardrobeItemId || listing);
+  const shopState = publicationLoading
+    ? "Checking"
+    : publicationLoadError
+      ? "Unavailable"
+      : dynamicReview?.state === "READY"
+        ? "Ready to publish"
+        : dynamicReview?.state === "PUBLISHED"
+          ? "Live"
+          : dynamicReview?.state === "BLOCKED"
+            ? `${dynamicReview.blockers.length} step${dynamicReview.blockers.length === 1 ? "" : "s"} left`
+            : "Private";
   useEffect(() => {
     if (!garment.privateWardrobeItemId) return;
     if (garment.dynamicPublication) {
@@ -363,42 +416,45 @@ export function PieceWorkspaceView({ garment, initialAction, onBuildSet, onDismi
     }
   }
 
+  function activeTrigger(fallback: HTMLElement | null) {
+    return document.activeElement instanceof HTMLElement ? document.activeElement : fallback;
+  }
+
+  function openPhotos(returnFocus = activeTrigger(photosTriggerRef.current)) {
+    setPhotosReturnFocus(returnFocus);
+    setPhotosOpen(true);
+  }
+
+  function openDetails(returnFocus = activeTrigger(detailsTriggerRef.current)) {
+    setDetailsReturnFocus(returnFocus);
+    setSecondaryOpen(true);
+  }
+
+  function openShop(returnFocus = activeTrigger(shopTriggerRef.current)) {
+    setShopReturnFocus(returnFocus);
+    setReviewOpen(true);
+  }
+
   function runNextAction() {
     if (nextAction.kind === "BUILD_SET") {
       onBuildSet(garment);
     } else if (nextAction.kind === "DYNAMIC_REVIEW") {
-      setReviewOpen(true);
-      window.setTimeout(() => {
-        publicationSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-        publicationSectionRef.current?.focus({ preventScroll: true });
-      }, 0);
+      openShop();
     } else if (nextAction.kind === "DYNAMIC_MANAGE") {
-      setSecondaryOpen(true);
-      window.setTimeout(() => lifecycleSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 0);
+      openDetails();
     } else if (nextAction.kind === "DYNAMIC_RETRY") {
       setPublicationReload((value) => value + 1);
     } else if (workspace.nextAction.kind === "CAPTURE") {
-      const captureSection = captureSectionRef.current;
-      const behavior = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth";
-      window.setTimeout(() => {
-        const firstAction = captureSection?.querySelector<HTMLElement>("button:not([disabled]), a[href], input:not([disabled])");
-        (firstAction ?? captureSection)?.scrollIntoView({ behavior, block: firstAction ? "center" : "start" });
-        (firstAction ?? captureSection)?.focus({ preventScroll: true });
-      }, 0);
+      openPhotos();
     } else if (workspace.nextAction.kind === "FINISH") {
       studio.moveGarmentToWardrobe(garment.id);
     } else if (workspace.nextAction.kind === "TRY_ON") {
       onContinueMedia(garment);
     } else if (workspace.nextAction.kind === "PREPARE_SHOP") {
       studio.prepareListing(garment.id);
-      setSecondaryOpen(true);
-      window.setTimeout(() => listingSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 0);
+      openDetails();
     } else if (workspace.nextAction.kind === "REVIEW_SHOP") {
-      setSecondaryOpen(true);
-      window.setTimeout(() => {
-        listingSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-        listingSectionRef.current?.focus({ preventScroll: true });
-      }, 0);
+      openDetails();
     } else if (workspace.nextAction.kind === "PUBLISH" && listing) {
       studio.publishListing(listing.id);
     } else if (workspace.nextAction.kind === "VIEW_SHOP" && listing) {
@@ -422,50 +478,135 @@ export function PieceWorkspaceView({ garment, initialAction, onBuildSet, onDismi
           <div className="studio-garment-facts">
             <span>{garment.price > 0 ? formatNaira(garment.price) : "Price pending"}</span>
             <span>{garment.quantity} unit{garment.quantity === 1 ? "" : "s"}</span>
-            <span>{garment.measurements.length > 0 ? `${garment.measurements.length} measurements` : "Measurements pending"}</span>
+            {garment.measurements.length > 0 ? <span>{garment.measurements.length} measurements</span> : null}
           </div>
         </div>
-        {!reviewOpen ? <section className="studio-piece-next" aria-label={`Next action for ${garment.title}`}>
-          <span>{workspace.nextAction.kind === "CAPTURE" ? <Camera aria-hidden="true" size={19} /> : dynamicReview?.state === "READY" || workspace.canPublish ? <Eye aria-hidden="true" size={19} /> : <LockKeyhole aria-hidden="true" size={19} />}</span>
-          <div><small>Next</small><strong>{nextAction.label}</strong><p>{nextAction.detail}</p></div>
-          <button className="button button-primary" disabled={nextAction.kind === "DYNAMIC_LOADING"} id="piece-primary-action" onClick={runNextAction} type="button">{nextAction.label}{nextAction.kind === "DYNAMIC_LOADING" ? null : <ArrowRight aria-hidden="true" size={15} />}</button>
-        </section> : null}
-        {pendingContract ? <PendingProductMedia capturedViews={capturedRoles} contract={pendingContract} title={garment.title} /> : null}
-        {captureTarget && !lifecycleOwnsMedia ? <section id={`piece-captures-${garment.id}`} ref={captureSectionRef} tabIndex={-1}><DraftDirectCaptures garment={garment} onCapturesChange={setCaptures} target={captureTarget} /></section> : null}
-        {reviewOpen && dynamicReview?.state === "READY" ? <section className="studio-piece-shop studio-publication-review" id="piece-publication-review" ref={publicationSectionRef} tabIndex={-1}>
-          <div className="studio-card-heading"><div><small>Shop preview</small><h3>{dynamicReview.title}</h3></div><strong>{formatNaira(dynamicReview.price)}</strong></div>
-          <div className="studio-publication-media">
-            {dynamicReview.media.map((item) => <StudioMediaButton items={[{
-              alt: `${dynamicReview.title} · ${item.label.toLowerCase()}`,
-              label: item.label,
-              src: item.assetUrl,
-            }]} key={item.id} label={`Preview ${item.label.toLowerCase()}`}>
-              <img alt={`${dynamicReview.title} · ${item.label.toLowerCase()}`} height={item.height} src={item.assetUrl} width={item.width} />
-            </StudioMediaButton>)}
-          </div>
-          <div className="studio-garment-facts">
-            <span>{dynamicReview.category}</span><span>{dynamicReview.colour}</span><span>{dynamicReview.sizeLabel}</span><span>1 available</span>
-          </div>
-          <div className="studio-publication-confirm"><input checked={publicationConfirmed} id={publicationConfirmationId} onChange={(event) => setPublicationConfirmed(event.target.checked)} type="checkbox" /><label htmlFor={publicationConfirmationId}><strong>Make public</strong><small>These facts and photos will appear in Shop.</small></label></div>
-          {publicationError ? <p className="studio-engine-error" role="alert">{publicationError}</p> : null}
-          <div className="studio-sheet-actions"><button className="button button-secondary" onClick={() => setReviewOpen(false)} type="button">Back</button><button className="button button-primary" disabled={!publicationConfirmed || publishing} onClick={() => void publishDynamicPiece()} type="button">{publishing ? "Publishing…" : "Publish"}</button></div>
-        </section> : null}
-        {reviewOpen && publicationLoading ? <section className="studio-piece-shop studio-publication-review" id="piece-publication-review" aria-live="polite"><small>Refreshing Shop preview…</small></section> : null}
-        {reviewOpen && !publicationLoading && publicationLoadError ? <section className="studio-piece-shop studio-publication-review" id="piece-publication-review"><p className="studio-engine-error" role="alert">{publicationLoadError}</p><button className="button button-primary" onClick={() => setPublicationReload((value) => value + 1)} type="button">Check again</button></section> : null}
-        {visibleBlockers.length || garment.privateWardrobeItemId || listing ? (
-          <details
-            className="studio-transition-action studio-piece-secondary"
-            onToggle={(event) => setSecondaryOpen(event.currentTarget.open)}
-            open={secondaryOpen}
+        <button
+          aria-label={`${nextAction.label} for ${garment.title}`}
+          className="studio-piece-next"
+          disabled={nextAction.kind === "DYNAMIC_LOADING"}
+          id="piece-primary-action"
+          onClick={runNextAction}
+          type="button"
+        >
+          <span><small>Next</small><strong>{nextAction.label}</strong><span>{nextAction.detail}</span></span>
+          {nextAction.kind === "DYNAMIC_LOADING" ? null : <ArrowRight aria-hidden="true" size={18} />}
+        </button>
+
+        <div aria-label={`${garment.title} tasks`} className="studio-service-list studio-piece-task-list">
+          {captureTarget && !lifecycleOwnsMedia ? (
+            <button
+              aria-haspopup="dialog"
+              className="studio-service-row studio-piece-task-row"
+              onClick={() => openPhotos(photosTriggerRef.current)}
+              ref={photosTriggerRef}
+              type="button"
+            >
+              <span aria-hidden="true"><ImagePlus size={19} strokeWidth={1.75} /></span>
+              <span className="studio-service-copy"><strong>Product photos</strong><small>{photosState}</small></span>
+              <ArrowRight aria-hidden="true" size={17} />
+            </button>
+          ) : null}
+          {hasFactsTask ? (
+            <button
+              aria-haspopup="dialog"
+              className="studio-service-row studio-piece-task-row"
+              onClick={() => openDetails(detailsTriggerRef.current)}
+              ref={detailsTriggerRef}
+              type="button"
+            >
+              <span aria-hidden="true"><SlidersHorizontal size={19} strokeWidth={1.75} /></span>
+              <span className="studio-service-copy"><strong>Facts & price</strong><small>{detailsState}</small></span>
+              <ArrowRight aria-hidden="true" size={17} />
+            </button>
+          ) : null}
+          {garment.privateWardrobeItemId ? (
+            <button
+              aria-haspopup="dialog"
+              className="studio-service-row studio-piece-task-row"
+              onClick={() => openShop(shopTriggerRef.current)}
+              ref={shopTriggerRef}
+              type="button"
+            >
+              <span aria-hidden="true"><Send size={18} strokeWidth={1.75} /></span>
+              <span className="studio-service-copy"><strong>Shop</strong><small>{shopState}</small></span>
+              <ArrowRight aria-hidden="true" size={17} />
+            </button>
+          ) : null}
+        </div>
+
+        {captureTarget && !lifecycleOwnsMedia ? (
+          <StudioTaskSheet
+            className="studio-piece-photos-sheet"
+            onDismiss={() => setPhotosOpen(false)}
+            open={photosOpen}
+            returnFocus={photosReturnFocus}
+            title="Product photos"
           >
-            <summary>Piece details<span>{dynamicStage.label}</span></summary>
-            <div className="studio-transition-action-body studio-piece-secondary-body">
-              {visibleBlockers.length ? <section className="studio-piece-blockers" aria-label={`${garment.title} still needs`}><small>Still needed</small><div>{visibleBlockers.map((blocker) => <span key={blocker}>{blocker}</span>)}</div></section> : null}
-              {garment.privateWardrobeItemId ? <div ref={lifecycleSectionRef}><GarmentLifecyclePanel initialAction={initialAction} onWorkspaceChange={setLifecycleWorkspace} wardrobeItemId={garment.privateWardrobeItemId} /></div> : null}
-              {listing ? <section className="studio-piece-shop" ref={listingSectionRef} tabIndex={-1}><ListingEditor listing={listing} /></section> : null}
-            </div>
-          </details>
+            {pendingContract ? <PendingProductMedia capturedViews={capturedRoles} contract={pendingContract} title={garment.title} /> : null}
+            <DraftDirectCaptures garment={garment} onCapturesChange={setCaptures} target={captureTarget} />
+          </StudioTaskSheet>
         ) : null}
+
+        {garment.privateWardrobeItemId ? (
+          <StudioTaskSheet
+            className="studio-piece-shop-sheet"
+            onDismiss={() => setReviewOpen(false)}
+            open={reviewOpen}
+            returnFocus={shopReturnFocus}
+            title="Shop"
+          >
+            {dynamicReview?.state === "READY" ? <section className="studio-piece-shop studio-publication-review" id="piece-publication-review">
+              <div className="studio-card-heading"><div><small>Preview</small><h3>{dynamicReview.title}</h3></div><strong>{formatNaira(dynamicReview.price)}</strong></div>
+              <div className="studio-publication-media">
+                {dynamicReview.media.map((item) => <StudioMediaButton items={[{
+                  alt: `${dynamicReview.title} · ${item.label.toLowerCase()}`,
+                  label: item.label,
+                  src: item.assetUrl,
+                }]} key={item.id} label={`Preview ${item.label.toLowerCase()}`}>
+                  <img alt={`${dynamicReview.title} · ${item.label.toLowerCase()}`} height={item.height} src={item.assetUrl} width={item.width} />
+                </StudioMediaButton>)}
+              </div>
+              <div className="studio-garment-facts">
+                <span>{dynamicReview.category}</span><span>{dynamicReview.colour}</span><span>{dynamicReview.sizeLabel}</span><span>1 available</span>
+              </div>
+              <div className="studio-publication-confirm"><input checked={publicationConfirmed} id={publicationConfirmationId} onChange={(event) => setPublicationConfirmed(event.target.checked)} type="checkbox" /><label htmlFor={publicationConfirmationId}><strong>Make public</strong><small>These facts and photos will appear in Shop.</small></label></div>
+              {publicationError ? <p className="studio-engine-error" role="alert">{publicationError}</p> : null}
+              <div className="studio-sheet-actions"><button className="button button-primary" disabled={!publicationConfirmed || publishing} onClick={() => void publishDynamicPiece()} type="button">{publishing ? "Publishing…" : "Publish"}</button></div>
+            </section> : null}
+            {publicationLoading ? <StudioLoadingStage label="Checking Shop…" /> : null}
+            {!publicationLoading && publicationLoadError ? <section className="studio-piece-shop-status"><p className="studio-engine-error" role="alert">{publicationLoadError}</p><button className="button button-primary" onClick={() => setPublicationReload((value) => value + 1)} type="button">Try again</button></section> : null}
+            {!publicationLoading && dynamicReview?.state === "BLOCKED" ? <section className="studio-piece-shop-status">
+              <span aria-hidden="true"><Send size={20} /></span>
+              <div><strong>Not ready yet</strong><small>{dynamicReview.blockers.length} step{dynamicReview.blockers.length === 1 ? "" : "s"} left</small></div>
+              <div className="studio-piece-shop-blockers">{dynamicReview.blockers.map((blocker) => <span key={blocker}>{blocker}</span>)}</div>
+              <div className="studio-sheet-actions">
+                {captureTarget && !lifecycleOwnsMedia ? <button className="button button-primary" onClick={() => { setReviewOpen(false); openPhotos(photosTriggerRef.current); }} type="button">Open photos</button> : null}
+                <button className="button button-secondary" onClick={() => { setReviewOpen(false); openDetails(detailsTriggerRef.current); }} type="button">Open details</button>
+              </div>
+            </section> : null}
+            {!publicationLoading && dynamicReview?.state === "PUBLISHED" ? <section className="studio-piece-shop-status is-success">
+              <span aria-hidden="true"><Check size={20} /></span>
+              <div><strong>Live in Shop</strong><small>{dynamicReview.receipt.sku}</small></div>
+              <a className="button button-primary" href={dynamicReview.receipt.shopUrl}>View in Shop</a>
+            </section> : null}
+          </StudioTaskSheet>
+        ) : null}
+
+        {hasFactsTask ? <>
+          <StudioTaskSheet
+            className="studio-piece-details-sheet"
+            onDismiss={() => setSecondaryOpen(false)}
+            open={secondaryOpen}
+            returnFocus={detailsReturnFocus}
+            title="Facts & price"
+          >
+            <div className="studio-piece-secondary-body">
+              {garment.privateWardrobeItemId ? <GarmentLifecyclePanel initialAction={initialAction} onWorkspaceChange={setLifecycleWorkspace} wardrobeItemId={garment.privateWardrobeItemId} /> : null}
+              {listing ? <section className="studio-piece-shop"><ListingEditor listing={listing} /></section> : null}
+            </div>
+          </StudioTaskSheet>
+        </> : null}
       </div>
     </section>
   );
@@ -577,10 +718,26 @@ export function WardrobeWorkbench() {
     [studio.garments, studio.listings],
   );
   const projectedCollections = useMemo(
-    () => studio.scenario ? [] : studio.application.snapshot?.collectionScopes ?? [],
-    [studio.application.snapshot, studio.scenario],
+    () => studio.application.snapshot?.collectionScopes ?? [],
+    [studio.application.snapshot],
   );
-  const currentCollectionKey = projectedCollections.find((scope) => scope.isCurrent)?.key
+  const [collectionDefinitions, setCollectionDefinitions] = useState<StudioCollectionScope[]>([]);
+  const availableCollections = collectionDefinitions.length
+    ? collectionDefinitions
+    : projectedCollections.length
+      ? projectedCollections
+      : BASELINE_COLLECTIONS;
+  const collectionsForSheet = useMemo(
+    () => availableCollections.map((collection) => {
+      if (collection.counts.pieces !== null) return collection;
+      const pieces = studio.garments.filter((garment) => (
+        studioDropScopeForGarment(garment, studio.listings, dropContext.currentDrop).label === collection.label
+      )).length;
+      return { ...collection, counts: { ...collection.counts, pieces } };
+    }),
+    [availableCollections, dropContext.currentDrop, studio.garments, studio.listings],
+  );
+  const currentCollectionKey = availableCollections.find((scope) => scope.isCurrent)?.key
     ?? dropKeyFromLabel(dropContext.currentDrop)
     ?? "drop-02";
   const intakeOriginRef = useRef<"query" | "trigger" | null>(null);
@@ -615,12 +772,12 @@ export function WardrobeWorkbench() {
         .filter((scope) => scope.key === "private" || scope.key === "studio")
         .flatMap((scope) => scope.garmentIds));
     }
-    const label = projectedCollections.find((scope) => scope.key === collectionScope)?.label
+    const label = availableCollections.find((scope) => scope.key === collectionScope)?.label
       ?? (collectionScope === "drop-01" ? "Drop 01" : "Drop 02");
     return new Set(studio.garments
       .filter((garment) => studioDropScopeForGarment(garment, studio.listings, dropContext.currentDrop).label === label)
       .map((garment) => garment.id));
-  }, [collectionScope, dropContext.currentDrop, dropContext.scopes, projectedCollections, studio.garments, studio.listings]);
+  }, [availableCollections, collectionScope, dropContext.currentDrop, dropContext.scopes, studio.garments, studio.listings]);
   const scopedGarments = useMemo(
     () => studio.garments.filter((garment) => collectionIds.has(garment.id)),
     [collectionIds, studio.garments],
@@ -641,15 +798,17 @@ export function WardrobeWorkbench() {
   }, [guideOpen, searchParams]);
 
   useEffect(() => {
-    const queryWantsCollection = searchParams.get("collection") === "choose";
+    const queryWantsCollection = searchParams.get("collection") === "choose"
+      || Boolean(searchParams.get("dropAction"));
     if (!queryWantsCollection) {
       collectionQueryHandledRef.current = false;
       return;
     }
+    if (!studio.scenario && studio.application.status === "loading") return;
     if (collectionQueryHandledRef.current || collectionOpen) return;
     collectionQueryHandledRef.current = true;
     window.setTimeout(() => setCollectionOpen(true), 0);
-  }, [collectionOpen, searchParams]);
+  }, [collectionOpen, searchParams, studio.application.status, studio.scenario]);
 
   useEffect(() => {
     if (!collectionOpen || collectionReturnFocus || !collectionTriggerRef.current) return;
@@ -669,7 +828,7 @@ export function WardrobeWorkbench() {
     const resolvedScope = studioDropScopeForGarment(garment, studio.listings, dropContext.currentDrop);
     const resolvedCollectionScope: WardrobeCollectionScope = resolvedScope.key === "studio" || resolvedScope.key === "private"
       ? "private"
-      : projectedCollections.find((scope) => scope.label === resolvedScope.label)?.key
+      : availableCollections.find((scope) => scope.label === resolvedScope.label)?.key
         ?? dropKeyFromLabel(resolvedScope.label)
         ?? "private";
     garmentQueryHandledRef.current = garmentId;
@@ -679,7 +838,7 @@ export function WardrobeWorkbench() {
       setGarmentPage(0);
       setOpenPieceId(garmentId);
     });
-  }, [dropContext.currentDrop, projectedCollections, searchParams, studio.garments, studio.hydration, studio.listings]);
+  }, [availableCollections, dropContext.currentDrop, searchParams, studio.garments, studio.hydration, studio.listings]);
 
   useEffect(() => {
     function syncCollectionScope() {
@@ -756,39 +915,13 @@ export function WardrobeWorkbench() {
     : undefined;
 
   if (studio.hydration === "idle" || studio.hydration === "restoring") {
-    return <div className="studio-loading" role="status">Opening wardrobe…</div>;
+    return <StudioLoadingStage label="Opening wardrobe…" />;
   }
 
   const privateCount = dropContext.scopes
     .filter((scope) => scope.key === "studio" || scope.key === "private")
     .reduce((count, scope) => count + scope.count, 0);
-  const fallbackCollections: StudioCollectionScope[] = [
-    {
-      id: "compat:drop-02",
-      key: "drop-02",
-      label: "Drop 02",
-      ordinal: 2,
-      state: "ACTIVE",
-      isCurrent: true,
-      authority: "COMPATIBILITY",
-      counts: { pieces: null, private: null, ready: null, published: null, available: null },
-      nextAction: "/studio/wardrobe",
-      updatedAt: "",
-    },
-    {
-      id: "compat:drop-01",
-      key: "drop-01",
-      label: "Drop 01",
-      ordinal: 1,
-      state: "ARCHIVED",
-      isCurrent: false,
-      authority: "COMPATIBILITY",
-      counts: { pieces: null, private: null, ready: null, published: null, available: null },
-      nextAction: "/studio/wardrobe?collection=drop-01",
-      updatedAt: "",
-    },
-  ];
-  const dropChoices = [...(projectedCollections.length ? projectedCollections : fallbackCollections)]
+  const dropChoices = [...availableCollections]
     .sort((left, right) => Number(right.isCurrent) - Number(left.isCurrent) || right.ordinal - left.ordinal)
     .map((scope) => {
       const localCount = studio.garments.filter((garment) => (
@@ -809,18 +942,21 @@ export function WardrobeWorkbench() {
     ?? collectionChoices.find((choice) => choice.key === currentCollectionKey)
     ?? collectionChoices[0];
 
-  function selectCollection(key: WardrobeCollectionScope) {
-    setCollectionScope(key);
+  function selectCollection(key: string) {
+    const resolvedKey = key as WardrobeCollectionScope;
+    setCollectionScope(resolvedKey);
     setFilter("ALL");
     setGarmentPage(0);
     setPublishingPage(0);
     const url = new URL(window.location.href);
-    if (key === currentCollectionKey) url.searchParams.delete("collection");
-    else url.searchParams.set("collection", key);
+    if (resolvedKey === currentCollectionKey) url.searchParams.delete("collection");
+    else url.searchParams.set("collection", resolvedKey);
+    url.searchParams.delete("dropAction");
+    url.searchParams.delete("dropId");
     const target = `${url.pathname}${url.search}${url.hash}`;
     const commitSelection = () => {
       window.history.replaceState(window.history.state, "", target);
-      setCollectionScope(key);
+      setCollectionScope(resolvedKey);
     };
     if (window.history.state?.justUrbanDialog) {
       window.addEventListener("popstate", commitSelection, { once: true });
@@ -833,15 +969,18 @@ export function WardrobeWorkbench() {
   function dismissCollection() {
     setCollectionOpen(false);
     setCollectionReturnFocus(null);
-    if (new URLSearchParams(window.location.search).get("collection") !== "choose") return;
+    const currentQuery = new URLSearchParams(window.location.search);
+    if (currentQuery.get("collection") !== "choose" && !currentQuery.has("dropAction")) return;
     const url = new URL(window.location.href);
     url.searchParams.delete("collection");
+    url.searchParams.delete("dropAction");
+    url.searchParams.delete("dropId");
     window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
   }
 
   return (
     <StudioMediaViewerProvider>
-    <StudioStackPage className="studio-ops-page studio-premium-surface" kind="service">
+    <StudioStackPage className="studio-ops-page studio-premium-surface studio-wardrobe-page" kind="service">
       <h1 className="sr-only" id="garments">Wardrobe</h1>
 
       <button
@@ -914,30 +1053,25 @@ export function WardrobeWorkbench() {
         </section>
       )}
 
-      <StudioTaskSheet
-        className="studio-drop-scope-sheet"
-        eyebrow={studio.scenario ? "Scenario preview" : projectedCollections.length ? "Studio collections" : "Local view"}
+      <StudioDropSheet
+        allCount={dropContext.totalCount}
+        collections={collectionsForSheet}
+        initialAction={searchParams.get("dropAction") === "create"
+          ? "create"
+          : searchParams.get("dropAction") === "manage" ? "manage" : undefined}
+        initialCollectionId={searchParams.get("dropId")}
+        onApplied={(change) => {
+          setCollectionDefinitions(change.collections);
+          if (!studio.scenario) void studio.application.refresh();
+        }}
         onDismiss={dismissCollection}
+        onSelect={selectCollection}
         open={collectionOpen}
+        privateCount={privateCount}
         returnFocus={collectionReturnFocus}
-        title="Browse drops"
-      >
-        <div className="studio-drop-scope-list">
-          {collectionChoices.map((choice) => (
-            <button
-              aria-pressed={collectionScope === choice.key}
-              className={collectionScope === choice.key ? "is-selected" : undefined}
-              disabled={choice.count === null}
-              key={choice.key}
-              onClick={() => selectCollection(choice.key)}
-              type="button"
-            >
-              <span>{choice.label}</span>
-              <span>{choice.count === null ? "Unavailable" : choice.count}{collectionScope === choice.key ? <Check aria-hidden="true" size={16} /> : null}</span>
-            </button>
-          ))}
-        </div>
-      </StudioTaskSheet>
+        scenario={Boolean(studio.scenario)}
+        selectedKey={collectionScope}
+      />
 
       {wearWardrobeItemId ? <WearSheet
         onDismiss={() => { setWearWardrobeItemId(null); setWearReturnFocus(null); }}

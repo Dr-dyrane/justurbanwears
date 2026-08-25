@@ -24,6 +24,10 @@ import {
   type StudioSummaryMetric,
 } from "../studio/application/contracts";
 import { getStudioAuthority } from "./studio-authority-repository";
+import {
+  listStudioCollections,
+  type StudioCollectionReadResult,
+} from "./studio-collection-repository";
 import type { StudioOperator } from "./studio-operator";
 import type { StudioAuthoritySnapshot } from "../studio/services/studio-authority-client";
 
@@ -35,13 +39,14 @@ const CURRENT_COMPATIBILITY_SKUS: ReadonlySet<string> = new Set(
 
 const SEARCH_KIND_ORDER: Record<StudioSearchDocument["kind"], number> = {
   SERVICE: 0,
-  PIECE: 1,
-  SKU: 2,
-  ORDER: 3,
-  MODEL: 4,
-  ATELIER_OPERATION: 5,
-  MEDIA: 6,
-  UPDATE: 7,
+  COLLECTION: 1,
+  PIECE: 2,
+  SKU: 3,
+  ORDER: 4,
+  MODEL: 5,
+  ATELIER_OPERATION: 6,
+  MEDIA: 7,
+  UPDATE: 8,
 };
 
 const unavailableMetric = (): StudioSummaryMetric => ({
@@ -106,6 +111,7 @@ function compatibilityCollections(now: string): {
       key: definition.key,
       label: definition.label,
       ordinal: definition.ordinal,
+      version: 1,
       state: definition.state,
       isCurrent: definition.isCurrent,
       authority: "COMPATIBILITY",
@@ -122,6 +128,18 @@ function compatibilityCollections(now: string): {
     };
   });
   return { scopes, degraded };
+}
+
+function collectionDocuments(scopes: readonly StudioCollectionScope[]): StudioSearchDocument[] {
+  return scopes.map((scope) => ({
+    id: `collection:${scope.id}`,
+    kind: "COLLECTION",
+    primaryLabel: scope.label,
+    secondaryLabel: `${scope.counts.pieces ?? "—"} pieces · ${scope.state.toLowerCase()}`,
+    lifecycleState: scope.state,
+    route: scope.nextAction,
+    aliases: [scope.key, `drop ${scope.ordinal}`, scope.isCurrent ? "current drop" : ""].filter(Boolean),
+  }));
 }
 
 function authorityDocuments(authority: StudioAuthoritySnapshot): StudioSearchDocument[] {
@@ -281,7 +299,7 @@ function connectedContinueAction(
   };
 }
 
-function connectedCapabilities(available: boolean): StudioCapability[] {
+function connectedCapabilities(available: boolean, collectionsAvailable = false): StudioCapability[] {
   const state = available ? "AVAILABLE" as const : "UNAVAILABLE" as const;
   const compatibilityState = available ? "AVAILABLE" as const : "READ_ONLY_COMPATIBILITY" as const;
   return [
@@ -292,7 +310,8 @@ function connectedCapabilities(available: boolean): StudioCapability[] {
     { id: "ORDERS_READ", state },
     { id: "MODELS_READ", state },
     { id: "MEDIA_READ", state },
-    { id: "COLLECTIONS_READ", state: "READ_ONLY_COMPATIBILITY" },
+    { id: "COLLECTIONS_READ", state: collectionsAvailable ? "AVAILABLE" : "READ_ONLY_COMPATIBILITY" },
+    { id: "COLLECTIONS_WRITE", state: collectionsAvailable ? "AVAILABLE" : "UNAVAILABLE" },
   ];
 }
 
@@ -300,10 +319,20 @@ export function projectConnectedStudioApplication(input: {
   operator: StudioOperator;
   now: string;
   authority: StudioAuthoritySnapshot | null;
+  collections?: StudioCollectionReadResult | null;
 }): StudioApplicationProjection {
-  const collections = compatibilityCollections(input.now);
+  const compatibility = compatibilityCollections(input.now);
+  const collectionsAvailable = Boolean(input.collections);
+  const collectionScopes = input.collections?.scopes ?? compatibility.scopes;
   const authorityAvailable = input.authority !== null;
-  const degraded: StudioDegradedSource[] = [...collections.degraded];
+  const degraded: StudioDegradedSource[] = [
+    ...(collectionsAvailable ? [] : compatibility.degraded),
+    ...(collectionsAvailable ? [] : [{
+      source: "COLLECTIONS" as const,
+      message: "Drop changes are temporarily unavailable.",
+      nextAction: "Browse the approved collection map without changing it.",
+    }]),
+  ];
   if (!authorityAvailable) degraded.push({
     source: "AUTHORITY",
     message: "Connected Studio truth is unavailable.",
@@ -339,23 +368,29 @@ export function projectConnectedStudioApplication(input: {
         generatedAt: authority.generatedAt,
         state: "CURRENT" as const,
       }] : []),
-      {
-        source: "CATALOGUE_COMPATIBILITY",
+      ...(input.collections ? [{
+        source: "COLLECTIONS" as const,
+        revision: `collections:${input.collections.scopes.map((scope) => `${scope.key}@${scope.version}`).join(",")}`,
+        generatedAt: input.collections.generatedAt,
+        state: "CURRENT" as const,
+      }] : [{
+        source: "CATALOGUE_COMPATIBILITY" as const,
         revision: `known-drops:${shopProducts.length}`,
         generatedAt: input.now,
-        state: "COMPATIBILITY",
-      },
+        state: "COMPATIBILITY" as const,
+      }]),
     ],
     summary,
     continueAction: authority
       ? connectedContinueAction(authority, summary.attention.value ?? 0)
       : null,
-    collectionScopes: collections.scopes,
+    collectionScopes,
     searchDocuments: sortDocuments([
       ...serviceDocuments(),
+      ...collectionDocuments(collectionScopes),
       ...(authority ? authorityDocuments(authority) : []),
     ]),
-    capabilities: connectedCapabilities(authorityAvailable),
+    capabilities: connectedCapabilities(authorityAvailable, collectionsAvailable),
     degradedSources: degraded,
   };
 }
@@ -367,6 +402,7 @@ export function projectScenarioStudioApplication(input: {
 }): StudioApplicationProjection {
   const snapshot = createStudioScenarioSnapshot(input.scenario);
   const collections = compatibilityCollections(input.now);
+  const scenarioCollections = collections.scopes.map((scope) => ({ ...scope, authority: "SCENARIO" as const }));
   const mode: StudioApplicationMode = {
     kind: "SCENARIO",
     id: input.scenario,
@@ -431,9 +467,16 @@ export function projectScenarioStudioApplication(input: {
       orders: metric(snapshot.orders.length, input.now, "SCENARIO"),
     },
     continueAction,
-    collectionScopes: collections.scopes,
-    searchDocuments: sortDocuments([...serviceDocuments(input.scenario), ...documents]),
-    capabilities: connectedCapabilities(true),
+    collectionScopes: scenarioCollections,
+    searchDocuments: sortDocuments([
+      ...serviceDocuments(input.scenario),
+      ...collectionDocuments(scenarioCollections).map((document) => ({
+        ...document,
+        route: studioScenarioHref(document.route, input.scenario),
+      })),
+      ...documents,
+    ]),
+    capabilities: connectedCapabilities(true, true),
     degradedSources: collections.degraded,
   };
 }
@@ -443,11 +486,12 @@ export async function getStudioApplicationProjection(
 ): Promise<StudioApplicationProjection> {
   const now = new Date().toISOString();
   let authority: StudioAuthoritySnapshot | null = null;
-  try {
-    authority = await getStudioAuthority(operator);
-  } catch {
-    // This read endpoint stays available with explicit null metrics and a
-    // degraded-source notice. It never reuses unlabelled stale authority.
-  }
-  return projectConnectedStudioApplication({ operator, now, authority });
+  let collections: StudioCollectionReadResult | null = null;
+  const [authorityResult, collectionResult] = await Promise.allSettled([
+    getStudioAuthority(operator),
+    listStudioCollections(),
+  ]);
+  if (authorityResult.status === "fulfilled") authority = authorityResult.value;
+  if (collectionResult.status === "fulfilled") collections = collectionResult.value;
+  return projectConnectedStudioApplication({ operator, now, authority, collections });
 }

@@ -17,9 +17,9 @@ import {
 import { useRouter, useSearchParams } from "next/navigation";
 import type { StudioLifecycleState } from "../../lib/studio/domain/entities";
 import type { StudioAuthorityPiece } from "../../lib/studio/services/studio-authority-client";
-import { LifecycleBadge } from "./atoms/lifecycle-badge";
 import { LifecycleMeta, STUDIO_LIFECYCLE_PRESENTATION } from "./atoms/lifecycle-meta";
 import { StudioFeedback } from "./atoms/studio-feedback";
+import { StudioLoadingStage } from "./atoms/studio-loading-stage";
 import { StudioLink as Link } from "./atoms/studio-link";
 import { StudioSegmentedView, useStudioSegment } from "./atoms/studio-segmented-view";
 import { StudioStackPage, StudioStackSection } from "./atoms/studio-stack-page";
@@ -192,7 +192,7 @@ export function OperationsDesk() {
   }
 
   if (authority.status === "idle" || authority.status === "loading") {
-    return <StudioStackPage className="studio-ops-page studio-premium-surface" kind="service"><StudioFeedback state="loading" title="Opening Operations" /></StudioStackPage>;
+    return <StudioLoadingStage label="Opening Operations…" />;
   }
 
   if (authority.status === "error" || !snapshot) {
@@ -274,7 +274,8 @@ export function OperationsDesk() {
 
       <StudioTaskSheet className="studio-inventory-detail-sheet" eyebrow={selected?.sku ?? "Private piece"} onDismiss={closePiece} open={Boolean(selected)} returnFocus={returnFocus} title={selected?.title ?? "Piece"}>
         {selected ? <div className="studio-inventory-detail">
-          <figure className={`studio-inventory-detail-media${selected.imageSrc ? " is-photo" : ""}`}>{selected.imageSrc ? <img alt={`${selected.title} inventory view`} height={1280} src={selected.imageSrc} width={1024} /> : <Shirt aria-hidden="true" size={42} />}<figcaption><LifecycleBadge state={lifecycle(selected)} /></figcaption></figure>
+          {selected.imageSrc ? <figure className="studio-inventory-detail-media is-photo"><img alt={`${selected.title} inventory view`} height={1280} src={selected.imageSrc} width={1024} /></figure> : null}
+          <LifecycleMeta className="studio-inventory-detail-state" state={lifecycle(selected)} />
           <section className="studio-inventory-detail-section">
             <div className="studio-inventory-detail-heading"><h3>Location</h3></div>
             <dl className="studio-inventory-detail-facts"><div><dt>Custody</dt><dd>{selected.expectedCustody.toLowerCase()}</dd></div><div><dt>Expected</dt><dd>{selected.expectedLocationLabel}</dd></div><div><dt>Last seen</dt><dd>{selected.observedLocationLabel ?? "Not confirmed"}</dd></div><div><dt>Attached to</dt><dd>{selected.activeHold ? `Hold · ${selected.activeHold.customerName}` : selected.orderReference ? `Order · ${selected.orderReference}` : "Nothing"}</dd></div></dl>

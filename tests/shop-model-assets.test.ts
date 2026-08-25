@@ -203,15 +203,22 @@ test("publishes only identity-cleared model fronts with their reviewed bytes", (
 
   const currentProducts = shopProducts.filter((product) => product.drop === CURRENT_SHOP_DROP);
   const currentApproved = approved.filter(({ product }) => product.drop === CURRENT_SHOP_DROP);
+  const currentPending = currentProducts.filter((product) => product.modelTryout?.modelStatus !== "APPROVED");
   assert.deepEqual(
     currentApproved.map(({ product }) => product.slug),
-    currentProducts.map((product) => product.slug),
+    currentProducts
+      .filter((product) => product.modelTryout?.modelStatus === "APPROVED")
+      .map((product) => product.slug),
   );
   for (const { product, tryout } of currentApproved) {
     assert.equal(tryout.modelAnchorId, "lulu-v4");
     assert.equal(tryout.frame.src, `/shop/products/${product.slug}/04-model-front.webp`);
     assert.equal(tryout.frame.width, 1120);
     assert.equal(tryout.frame.height, 1400);
+  }
+  for (const product of currentPending) {
+    assert.deepEqual(product.modelTryout, { modelStatus: "PENDING" });
+    assert.equal(product.media?.some((item) => item.presentation === "model") ?? false, false);
   }
 });
 
@@ -227,10 +234,12 @@ test("appends only approved Lulu views to the main product gallery", () => {
     const modelFrames = gallery.filter((item) => item.presentation === "model");
     if (product.drop === CURRENT_SHOP_DROP) {
       const approvedFront = resolveApprovedModelTryout(product.modelTryout);
-      assert.ok(approvedFront);
       const productOnlyFrames = product.media?.filter((item) => item.presentation !== "model") ?? [];
       const approvedSupplementalFrames = product.media?.filter((item) => item.presentation === "model") ?? [];
-      const approvedProductFrames = [approvedFront.frame, ...approvedSupplementalFrames];
+      const approvedProductFrames = [
+        ...(approvedFront ? [approvedFront.frame] : []),
+        ...approvedSupplementalFrames,
+      ];
       assert.equal(gallery.length, productOnlyFrames.length + approvedProductFrames.length);
       assert.deepEqual(
         modelFrames.map(({ src, modelAnchorId }) => ({ src, modelAnchorId })),

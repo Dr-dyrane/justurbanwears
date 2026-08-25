@@ -21,7 +21,7 @@ interface StudioTaskSheetProps {
   busyLabel?: string;
   children: React.ReactNode;
   className?: string;
-  eyebrow: string;
+  eyebrow?: string;
   footer?: React.ReactNode;
   onBack?: () => void;
   onDismiss(): boolean | void;
@@ -140,7 +140,7 @@ export function StudioTaskSheet({
               </button>
             ) : null}
             <div>
-              <p className="eyebrow">{eyebrow}</p>
+              {eyebrow ? <p className="eyebrow">{eyebrow}</p> : null}
               <h2 id={titleId}>{title}</h2>
             </div>
           </div>

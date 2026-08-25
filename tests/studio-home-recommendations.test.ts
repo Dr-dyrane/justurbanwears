@@ -26,8 +26,10 @@ test("the drop recommendation opens the existing collection sheet", () => {
   assert.match(wardrobe, /searchParams\.get\("collection"\) === "choose"/);
   assert.match(wardrobe, /setCollectionOpen\(true\)/);
   assert.match(wardrobe, /onDismiss=\{dismissCollection\}/);
-  assert.match(wardrobe, /title="Browse drops"/);
-  assert.match(wardrobe, /"Studio collections"/);
+  assert.match(wardrobe, /<StudioDropSheet/);
+  assert.match(wardrobe, /dropAction/);
+  assert.match(wardrobe, /initialAction/);
+  assert.match(wardrobe, /onApplied/);
   assert.match(wardrobe, /"drop-01"/);
   assert.match(wardrobe, /"drop-02"/);
 });

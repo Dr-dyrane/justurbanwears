@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { StudioAuthoritySnapshot } from "../lib/studio/services/studio-authority-client";
+import { SHOP_COLLECTION_COMPATIBILITY } from "../lib/shop/collection-compatibility";
 import {
   projectConnectedStudioApplication,
   projectScenarioStudioApplication,
@@ -131,15 +132,41 @@ test("scenario projection is explicit and uses the sanitized collection compatib
   assert.deepEqual(projection.sourceRevisions.map((item) => item.source), ["SCENARIO"]);
   assert.deepEqual(
     projection.collectionScopes.map((scope) => ({ key: scope.key, pieces: scope.counts.pieces })),
-    [
-      { key: "drop-01", pieces: 18 },
-      { key: "drop-02", pieces: 17 },
-    ],
+    SHOP_COLLECTION_COMPATIBILITY.map((scope) => ({ key: scope.key, pieces: scope.skus.length })),
   );
-  assert.equal(projection.capabilities.find((item) => item.id === "COLLECTIONS_READ")?.state, "READ_ONLY_COMPATIBILITY");
+  assert.equal(projection.capabilities.find((item) => item.id === "COLLECTIONS_READ")?.state, "AVAILABLE");
+  assert.equal(projection.capabilities.find((item) => item.id === "COLLECTIONS_WRITE")?.state, "AVAILABLE");
   assert.equal(projection.degradedSources.some((item) => item.source === "COLLECTIONS"), false);
   assert.equal(projection.continueAction?.source, "SCENARIO");
   assert.ok(projection.searchDocuments.every((document) => document.route.includes("scenario=lifecycle")));
+});
+
+test("connected projection prefers first-class collections and exposes write capability", () => {
+  const projection = projectConnectedStudioApplication({
+    operator,
+    now,
+    authority: fixture(),
+    collections: {
+      generatedAt: now,
+      scopes: [{
+        id: "4b8b9d7e-37f8-4b2e-86dc-d2d345d35d2c",
+        key: "drop-03",
+        label: "Drop 03",
+        ordinal: 3,
+        version: 1,
+        state: "DRAFT",
+        isCurrent: false,
+        authority: "DATABASE",
+        counts: { pieces: 0, private: 0, ready: 0, published: 0, available: 0 },
+        nextAction: "/studio/wardrobe?collection=drop-03",
+        updatedAt: now,
+      }],
+    },
+  });
+  assert.deepEqual(projection.collectionScopes.map((scope) => scope.key), ["drop-03"]);
+  assert.equal(projection.capabilities.find((item) => item.id === "COLLECTIONS_WRITE")?.state, "AVAILABLE");
+  assert.equal(projection.degradedSources.some((item) => item.source === "COLLECTIONS"), false);
+  assert.equal(projection.searchDocuments.find((item) => item.id.startsWith("collection:"))?.primaryLabel, "Drop 03");
 });
 
 test("collection compatibility map exposes only exact Drop 01 and Drop 02 scopes", () => {
@@ -154,6 +181,16 @@ test("collection compatibility map exposes only exact Drop 01 and Drop 02 scopes
     { id: "compat:drop-01", key: "drop-01", label: "Drop 01", current: false, authority: "COMPATIBILITY" },
     { id: "compat:drop-02", key: "drop-02", label: "Drop 02", current: true, authority: "COMPATIBILITY" },
   ]);
-  assert.deepEqual(projection.collectionScopes.map((scope) => scope.counts.pieces), [18, 17]);
-  assert.equal(projection.degradedSources.some((item) => item.source === "COLLECTIONS"), false);
+  assert.deepEqual(
+    projection.collectionScopes.map((scope) => scope.counts.pieces),
+    SHOP_COLLECTION_COMPATIBILITY.map((scope) => scope.skus.length),
+  );
+  assert.ok(projection.degradedSources.some((item) => (
+    item.source === "COLLECTIONS"
+    && item.message === "Drop changes are temporarily unavailable."
+  )));
+  assert.equal(projection.degradedSources.some((item) => (
+    item.source === "COLLECTIONS"
+    && item.message.includes("transitional drop map")
+  )), false);
 });

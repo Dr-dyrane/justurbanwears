@@ -4,6 +4,7 @@ import { readFile } from "node:fs/promises";
 
 const css = await readFile(new URL("../app/experience-system.css", import.meta.url), "utf8");
 const layout = await readFile(new URL("../app/layout.tsx", import.meta.url), "utf8");
+const shopLayout = await readFile(new URL("../app/shop/layout.tsx", import.meta.url), "utf8");
 const site = await readFile(new URL("../app/page.tsx", import.meta.url), "utf8");
 const shop = await readFile(new URL("../components/shop/shop-shell.tsx", import.meta.url), "utf8");
 const studio = await readFile(new URL("../components/studio/app-shell.tsx", import.meta.url), "utf8");
@@ -12,12 +13,11 @@ const canon = await readFile(new URL("../docs/experience/EXPERIENCE-SYSTEM.md", 
 
 test("loads the experience layer after the mature surface styles", () => {
   const foundation = layout.indexOf('import "./foundation.css"');
-  const editorial = layout.indexOf('import "./shop-editorial-hero.css"');
   const experience = layout.indexOf('import "./experience-system.css"');
 
   assert.ok(foundation >= 0);
-  assert.ok(editorial > foundation);
-  assert.ok(experience > editorial);
+  assert.ok(experience > foundation);
+  assert.match(shopLayout, /import "\.\.\/shop-editorial-hero\.css"/);
 });
 
 test("routes the retired Site entrance into Shop and keeps Shop and Studio tempos explicit", () => {

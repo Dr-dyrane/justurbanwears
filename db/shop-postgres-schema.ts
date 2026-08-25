@@ -1218,6 +1218,38 @@ export const studioNotificationReceipts = pgTable("studio_notification_receipts"
   primaryKey({ columns: [table.operatorSubject, table.notificationId] }),
 ]);
 
+// Drop changes are durable commands, not implicit label edits. The stored
+// before/after snapshots are deliberately operator-safe so every UI surface
+// can render the same receipt after a retry or refresh.
+export const studioCollectionCommands = pgTable("studio_collection_commands", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  operatorSubject: text("operator_subject").notNull(),
+  idempotencyKey: varchar("idempotency_key", { length: 160 }).notNull(),
+  requestFingerprint: varchar("request_fingerprint", { length: 64 }).notNull(),
+  command: varchar("command", { length: 40 }).notNull(),
+  collectionId: uuid("collection_id")
+    .notNull()
+    .references(() => shopCollections.id, { onDelete: "restrict" }),
+  collectionKey: varchar("collection_key", { length: 80 }).notNull(),
+  beforeState: jsonb("before_state").$type<Record<string, unknown>>().notNull(),
+  afterState: jsonb("after_state").$type<Record<string, unknown>>().notNull(),
+  consequence: text("consequence").notNull(),
+  nextRoute: text("next_route").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("studio_collection_commands_operator_idempotency_unique").on(
+    table.operatorSubject,
+    table.idempotencyKey,
+  ),
+  index("studio_collection_commands_collection_created_idx").on(table.collectionId, table.createdAt),
+  check("studio_collection_commands_fingerprint", sql`${table.requestFingerprint} ~ '^[0-9a-f]{64}$'`),
+  check("studio_collection_commands_known", sql`
+    ${table.command} in ('CREATE_COLLECTION', 'RENAME_COLLECTION', 'ACTIVATE_COLLECTION', 'ARCHIVE_COLLECTION')
+  `),
+  check("studio_collection_commands_before_object", sql`jsonb_typeof(${table.beforeState}) = 'object'`),
+  check("studio_collection_commands_after_object", sql`jsonb_typeof(${table.afterState}) = 'object'`),
+]);
+
 // A move changes the expected Studio location without rewriting commerce
 // custody. The command is append-only; this projection is the current answer.
 export const studioPieceCustodyCommands = pgTable("studio_piece_custody_commands", {

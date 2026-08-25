@@ -18,6 +18,7 @@ import type { StudioAuthorityModel } from "../../lib/studio/services/studio-auth
 import { APPROVED_PUBLIC_MODEL_PREVIEW } from "../../lib/studio/projections/approved-catalogue";
 import { LifecycleMeta } from "./atoms/lifecycle-meta";
 import { StudioFeedback } from "./atoms/studio-feedback";
+import { StudioLoadingStage } from "./atoms/studio-loading-stage";
 import { StudioLink } from "./atoms/studio-link";
 import { StudioSegmentedView, useStudioSegment } from "./atoms/studio-segmented-view";
 import { StudioStackPage, StudioStackSection } from "./atoms/studio-stack-page";
@@ -209,7 +210,7 @@ export function ModelAtelier() {
     }
   }
 
-  if (authority.status === "idle" || authority.status === "loading") return <StudioStackPage className="studio-ops-page" kind="service"><StudioFeedback state="loading" title="Opening Models" /></StudioStackPage>;
+  if (authority.status === "idle" || authority.status === "loading") return <StudioLoadingStage label="Opening Models…" />;
   if (authority.status === "error" || !authority.snapshot) return <StudioStackPage className="studio-ops-page" kind="service"><StudioFeedback action={<button className="button button-secondary" onClick={() => void authority.refresh()} type="button">Try again</button>} detail={authority.error} state="error" title="Models unavailable" /></StudioStackPage>;
 
   return (

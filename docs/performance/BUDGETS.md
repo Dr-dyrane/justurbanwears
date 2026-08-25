@@ -13,11 +13,12 @@ At the 75th percentile for mobile and desktop:
 ## Enforced build ceilings
 
 The release gate measures the compiled artifact after every production build.
-Current ceilings retain modest headroom above the 15 August 2026 baseline:
+Current ceilings retain modest headroom above the 25 August 2026 whole-Studio
+native-surface baseline:
 
 - compiled CSS files: `≤ 5`;
 - largest compiled stylesheet: `≤ 480 KiB raw` and `≤ 86 KiB gzip`;
-- aggregate compiled CSS: `≤ 525 KiB raw` and `≤ 98 KiB gzip`;
+- aggregate compiled CSS: `≤ 560 KiB raw` and `≤ 100 KiB gzip`;
 - emitted WOFF2 files: `≤ 10`;
 - largest emitted font: `≤ 30 KiB`;
 - aggregate emitted fonts: `≤ 170 KiB`;

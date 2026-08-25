@@ -1,10 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { loadRenderWorker } from "./render-worker.mjs";
 
 async function renderRoot() {
-  const workerUrl = new URL("../dist/server/index.js", import.meta.url);
-  workerUrl.searchParams.set("test", `${process.pid}-${Date.now()}-brand-entrance`);
-  const { default: worker } = await import(workerUrl.href);
+  const worker = await loadRenderWorker("brand-entrance");
 
   return worker.fetch(
     new Request("http://localhost/", {

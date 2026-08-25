@@ -78,7 +78,7 @@ test("the reveal silhouette is derived from the exact gap between the approved w
 });
 
 test("WardrobeMotion always resolves through the untouched master and complete motion fallbacks", async () => {
-  const [component, styles, types, assets, preview, previewStyles, notFound, loader, globalLoading, globalStage, globalStageStyles, checkout, orderPage, orderStatus, garmentReceipt, wearReceipt, studioHome, lifecyclePanel, experienceStyles, useCases, useCasesStyles] = await Promise.all([
+  const [component, styles, types, assets, preview, previewStyles, notFound, studioLoading, globalLoading, globalStage, globalStageStyles, checkout, orderPage, orderStatus, garmentReceipt, wearReceipt, studioHome, lifecyclePanel, experienceStyles, useCases, useCasesStyles] = await Promise.all([
     readFile(path.join(root, "components", "brand", "wardrobe-motion.tsx"), "utf8"),
     readFile(path.join(root, "components", "brand", "wardrobe-motion.module.css"), "utf8"),
     readFile(path.join(root, "components", "brand", "wardrobe-motion.types.ts"), "utf8"),
@@ -86,7 +86,7 @@ test("WardrobeMotion always resolves through the untouched master and complete m
     readFile(path.join(root, "app", "dev", "brand-motion", "page.tsx"), "utf8"),
     readFile(path.join(root, "app", "dev", "brand-motion", "preview.module.css"), "utf8"),
     readFile(path.join(root, "app", "not-found.tsx"), "utf8"),
-    readFile(path.join(root, "components", "shoot", "shoot-gallery.tsx"), "utf8"),
+    readFile(path.join(root, "components", "studio", "atoms", "studio-loading-stage.tsx"), "utf8"),
     readFile(path.join(root, "app", "loading.tsx"), "utf8"),
     readFile(path.join(root, "components", "brand", "global-brand-loading-stage.tsx"), "utf8"),
     readFile(path.join(root, "components", "brand", "global-brand-loading-stage.module.css"), "utf8"),
@@ -122,7 +122,8 @@ test("WardrobeMotion always resolves through the untouched master and complete m
   assert.match(preview, /notFound\(\)/);
   assert.match(notFound, /artwork="logo"/);
   assert.match(notFound, /variant="404"/);
-  assert.match(loader, /variant="loader"/);
+  assert.match(studioLoading, /className="studio-loading studio-loading-brand"/);
+  assert.match(studioLoading, /<WardrobeMotion loop polarity="auto" size="sm" variant="loader" \/>/);
   assert.match(globalLoading, /<GlobalBrandLoadingStage \/>/);
   assert.match(globalStage, /GLOBAL_BRAND_LOADING_DELAY_MS = 420/);
   assert.match(globalStage, /window\.setTimeout\(\(\) => setRevealed\(true\), delayMs\)/);
@@ -141,8 +142,7 @@ test("WardrobeMotion always resolves through the untouched master and complete m
   assert.match(wearReceipt, /className="juw-receipt-motion"/);
   assert.match(wearReceipt, /artwork="logo" polarity="auto" size="sm" variant="success"/);
   assert.match(studioHome, /className="studio-home-signoff"/);
-  assert.match(studioHome, /className="studio-loading studio-loading-brand"/);
-  assert.match(studioHome, /<WardrobeMotion loop polarity="auto" size="sm" variant="loader" \/>/);
+  assert.match(studioHome, /<StudioLoadingStage label="Opening Lulu Studio…" \/>/);
   assert.match(studioHome, /artwork="logo" className="studio-home-signoff-mark" polarity="auto" size="sm" variant="footer"/);
   assert.doesNotMatch(studioHome, /studio-home-signoff-mark" height=\{59\} src="\/logo\.png"/);
   assert.match(lifecyclePanel, /setMilestone\("published"\)/);

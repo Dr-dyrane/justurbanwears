@@ -30,6 +30,7 @@ const context: StudioAssistantContext = {
   documents: [
     document({ href: "/studio/wardrobe", id: "service:wardrobe", identifiers: ["wardrobe", "garment", "piece"], kind: "Service", label: "Wardrobe" }),
     document({ href: "/studio/media", id: "service:atelier", identifiers: ["atelier", "media", "image"], kind: "Service", label: "Atelier" }),
+    document({ entityId: "4b8b9d7e-37f8-4b2e-86dc-d2d345d35d2c", href: "/studio/wardrobe?collection=drop-02&scenario=lifecycle", id: "collection:4b8b9d7e-37f8-4b2e-86dc-d2d345d35d2c", identifiers: ["drop-02", "drop 02", "current drop"], kind: "Collection", label: "Drop 02", state: "ACTIVE", tokens: "drop-02 drop 02 current drop active" }),
     document({ entityId: "g-001", href: "/studio/wardrobe/g-001", id: "piece:g-001", identifiers: ["g-001", "JUW-001"], kind: "Piece", label: "Coral Drift Dress", mediaTargetId: "wardrobe-001", state: "READY", tokens: "g-001 juw-001 coral drift dress ready available dress coral" }),
     document({ entityId: "g-002", href: "/studio/wardrobe/g-002", id: "piece:g-002", identifiers: ["g-002", "JUW-002"], kind: "Piece", label: "Coral Mini Set", mediaTargetId: "wardrobe-002", state: "DRAFT", tokens: "g-002 juw-002 coral mini set draft private set coral" }),
     document({ entityId: "ORD-001", href: "/studio/orders/ORD-001", id: "order:o-001", identifiers: ["o-001", "ORD-001", "JUW-001"], kind: "Order", label: "Order ORD-001", state: "ACTIVE", tokens: "o-001 ord-001 juw-001 order active payment delivery" }),
@@ -134,6 +135,31 @@ test("collection language opens collection scope without claiming a drop mutatio
   assert.match(handoff?.body ?? "", /does not infer a drop/i);
 });
 
+test("drop creation opens the shared preview and receipt flow", () => {
+  const response = resolveStudioAssistant("Create a new drop", context);
+  const handoff = block(response, "handoff");
+  assert.equal(response.intent, "CREATE");
+  assert.equal(response.risk, "R1");
+  assert.equal(handoff?.action.href, "/studio/wardrobe?collection=choose&dropAction=create&scenario=lifecycle");
+  assert.match(handoff?.consequence ?? "", /stays private/i);
+});
+
+test("drop lifecycle commands resolve an exact drop without executing from chat", () => {
+  const rename = resolveStudioAssistant("Rename Drop 02", context);
+  assert.equal(rename.risk, "R2");
+  assert.match(block(rename, "handoff")?.action.href ?? "", /dropAction=manage/);
+  assert.match(block(rename, "handoff")?.consequence ?? "", /preview and confirmation/i);
+
+  const activate = resolveStudioAssistant("Activate Drop 02", context);
+  assert.equal(activate.risk, "R3");
+  assert.match(block(activate, "handoff")?.consequence ?? "", /durable receipt/i);
+
+  const archive = resolveStudioAssistant("Archive Drop 02", context);
+  assert.equal(archive.intent, "CHANGE");
+  assert.equal(archive.risk, "R3");
+  assert.match(block(archive, "handoff")?.title ?? "", /Archive drop/i);
+});
+
 test("publication is always a high-impact review handoff", () => {
   const response = resolveStudioAssistant("Publish JUW-001", context);
   const handoff = block(response, "handoff");
@@ -189,6 +215,7 @@ test("unknown requests recover into the four primary operating stacks", () => {
 test("the durable route replaces the fake modal modes and preserves keyboard and session recovery", () => {
   const commandCenter = readFileSync(`${root}/components/studio/navigation/studio-command-center.tsx`, "utf8");
   const surface = readFileSync(`${root}/components/studio/navigation/studio-ask-surface.tsx`, "utf8");
+  const styles = readFileSync(`${root}/app/studio-stack-navigation.css`, "utf8");
   const stack = readFileSync(`${root}/components/studio/navigation/studio-stack-context.tsx`, "utf8");
   const page = readFileSync(`${root}/app/(studio)/studio/ask/page.tsx`, "utf8");
 
@@ -201,6 +228,8 @@ test("the durable route replaces the fake modal modes and preserves keyboard and
   assert.match(surface, /event\.key !== "Enter" \|\| event\.shiftKey/);
   assert.doesNotMatch(surface, /Changes finish in their owning stack/);
   assert.match(surface, /placeholder="Ask about Studio or find a record"/);
+  assert.match(styles, /\.studio-native-canvas \.studio-ask-form:focus-within/);
+  assert.match(styles, /\.studio-native-canvas \.studio-ask-form textarea:focus-visible[\s\S]*?box-shadow: none;/);
   assert.match(surface, /projected\.searchDocuments\.map/);
   assert.match(commandCenter, /Find in Studio/);
   assert.match(commandCenter, /"Scenario find"/);

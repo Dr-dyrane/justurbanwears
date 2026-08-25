@@ -5,6 +5,7 @@ import test from "node:test";
 const root = process.cwd();
 const operations = readFileSync(`${root}/components/studio/operations-desk.tsx`, "utf8");
 const css = readFileSync(`${root}/app/foundation.css`, "utf8");
+const nativeCss = readFileSync(`${root}/app/studio-stack-navigation.css`, "utf8");
 
 test("inventory rows open one named detail sheet instead of mutating stock inline", () => {
   const listStart = operations.indexOf("studio-inventory-list");
@@ -26,8 +27,12 @@ test("the sheet exposes facts and only authority-backed physical actions", () =>
   assert.match(operations, /Release hold/);
   assert.match(operations, /Open order/);
   assert.match(operations, /Open piece/);
+  assert.match(operations, /selected\.imageSrc \? <figure className="studio-inventory-detail-media is-photo"/);
+  assert.doesNotMatch(operations, /: <Shirt aria-hidden="true" size=\{42\}/);
+  assert.match(operations, /studio-inventory-detail-state/);
   assert.match(css, /\.studio-inventory-detail-sheet/);
   assert.match(css, /\.studio-inventory-decision-grid/);
+  assert.match(nativeCss, /\.studio-inventory-detail-facts > div[\s\S]*?background: transparent;/);
   assert.match(operations, /authority\.recordLocation/);
   assert.match(operations, /authority\.createHold/);
   assert.match(operations, /authority\.releaseHold/);
