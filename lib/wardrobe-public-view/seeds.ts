@@ -55,6 +55,7 @@ export const WARDROBE_APPROVED_V4_MODEL_SLUGS = Object.freeze([
   "marigold-sculptural-rosette-strapless-mini-dress",
   "scarlet-rosette-halter-cutout-ruched-mini-dress",
   "crimson-asymmetric-draped-satin-maxi-dress",
+  "scarlet-asymmetric-cascade-ruched-mini-dress",
 ] as const);
 
 export const WARDROBE_APPROVED_MODEL_FRONT_SLUGS = Object.freeze([
@@ -95,6 +96,7 @@ export const WARDROBE_APPROVED_MODEL_SUPPLEMENTAL_SLOTS = Object.freeze({
   "marigold-sculptural-rosette-strapless-mini-dress": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "scarlet-rosette-halter-cutout-ruched-mini-dress": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "crimson-asymmetric-draped-satin-maxi-dress": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
+  "scarlet-asymmetric-cascade-ruched-mini-dress": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "coral-drift-dress": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "moss-square-knit": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "cocoa-pleat-trouser": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
@@ -781,6 +783,25 @@ export const WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS: readonly WardrobePublicProduc
     note: "A deep-crimson satin maxi defined by one sculptural shoulder and a softly gathered waist.",
     story: "A wide asymmetric shoulder rises above a fluid draped neckline, with gathered folds shaping the bodice before the satin falls into a long straight column.",
     details: ["Asymmetric one-shoulder neckline", "Softly draped satin-like bodice", "Gathered low waist", "Straight floor-length column"],
+    measurements: [],
+  }),
+  migrationSeed({
+    slug: "scarlet-asymmetric-cascade-ruched-mini-dress",
+    sku: "JUW-047",
+    name: "Scarlet Asymmetric Cascade Ruched Mini Dress",
+    category: "Dresses",
+    price: 29500,
+    taggedSize: "Size on request",
+    fit: "Measurements confirmed before payment",
+    condition: "Condition confirmed before payment",
+    colour: "Scarlet red",
+    availability: "AVAILABLE",
+    drop: "Drop 02",
+    tone: "coral",
+    silhouette: "dress",
+    note: "A scarlet long-sleeve mini shaped by an asymmetric neckline, dense ruching and one fluid hip cascade.",
+    story: "A wide gathered neckline rises toward one shoulder above diagonal bodice drape, while close skirt ruching resolves into a rosette knot and an extended asymmetric ruffle.",
+    details: ["Asymmetric gathered neckline", "Long fitted sleeves", "Dense ruched mini silhouette", "Rosette hip knot with extended cascade"],
     measurements: [],
   }),
 ]);

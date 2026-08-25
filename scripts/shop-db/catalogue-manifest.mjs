@@ -29,6 +29,7 @@ const V4_MODEL_SLUGS = new Set([
   "marigold-sculptural-rosette-strapless-mini-dress",
   "scarlet-rosette-halter-cutout-ruched-mini-dress",
   "crimson-asymmetric-draped-satin-maxi-dress",
+  "scarlet-asymmetric-cascade-ruched-mini-dress",
 ]);
 
 const V3_MODEL_FRONT_SLUGS = new Set([
@@ -118,7 +119,7 @@ function presentation(product) {
  */
 export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
   schemaVersion: 2,
-  revision: "2026-08-25-catalogue-32",
+  revision: "2026-08-25-catalogue-33",
   products: Object.freeze([
     presentation({
       slug: "coral-drift-dress",
@@ -941,6 +942,26 @@ export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
       note: "A deep-crimson satin maxi defined by one sculptural shoulder and a softly gathered waist.",
       story: "A wide asymmetric shoulder rises above a fluid draped neckline, with gathered folds shaping the bodice before the satin falls into a long straight column.",
       details: ["Asymmetric one-shoulder neckline", "Softly draped satin-like bodice", "Gathered low waist", "Straight floor-length column"],
+      measurements: [],
+      mediaSlots: ["MODEL_FRONT", "MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
+    }),
+    presentation({
+      slug: "scarlet-asymmetric-cascade-ruched-mini-dress",
+      sku: "JUW-047",
+      name: "Scarlet Asymmetric Cascade Ruched Mini Dress",
+      category: "Dresses",
+      price: 29500,
+      taggedSize: "Size on request",
+      fit: "Measurements confirmed before payment",
+      condition: "Condition confirmed before payment",
+      colour: "Scarlet red",
+      availability: "AVAILABLE",
+      drop: "Drop 02",
+      tone: "coral",
+      silhouette: "dress",
+      note: "A scarlet long-sleeve mini shaped by an asymmetric neckline, dense ruching and one fluid hip cascade.",
+      story: "A wide gathered neckline rises toward one shoulder above diagonal bodice drape, while close skirt ruching resolves into a rosette knot and an extended asymmetric ruffle.",
+      details: ["Asymmetric gathered neckline", "Long fitted sleeves", "Dense ruched mini silhouette", "Rosette hip knot with extended cascade"],
       measurements: [],
       mediaSlots: ["MODEL_FRONT", "MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
     }),

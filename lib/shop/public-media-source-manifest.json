@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "catalogueRevision": "2026-08-25-catalogue-32",
-  "catalogueChecksum": "51f72d8bee036db17a8d988ebead98026695e6f925c510ef049f773b946b3252",
-  "cataloguePresentationChecksum": "849a4c571a4bd0bea6790479a5d064cf44cb76510354c281f115b27d85dc7397",
+  "catalogueRevision": "2026-08-25-catalogue-33",
+  "catalogueChecksum": "3be78321051c0cfa33eefd97fed820656d1cffcbc2345d8d5bc76d94ccd5e631",
+  "cataloguePresentationChecksum": "61b3dad7fc66d4b8a146646ffa8d59cfc3354abe99040b19f1b010d7231a7129",
   "assets": [
     {
       "sourcePath": "/shop/model/lulu-v2-approved.png",
@@ -2064,6 +2064,69 @@
       "contentType": "image/webp",
       "width": 1122,
       "height": 1402
+    },
+    {
+      "sourcePath": "/shop/products/scarlet-asymmetric-cascade-ruched-mini-dress/01-garment-front.webp",
+      "pathname": "shop/catalogue/05c4ea24ef36805e73574d6b1debb11260ad0e45931e2e55d33a4f16e1f718c8/products/scarlet-asymmetric-cascade-ruched-mini-dress/01-garment-front.webp",
+      "sha256": "05c4ea24ef36805e73574d6b1debb11260ad0e45931e2e55d33a4f16e1f718c8",
+      "size": 83290,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/scarlet-asymmetric-cascade-ruched-mini-dress/02-garment-back.webp",
+      "pathname": "shop/catalogue/8906b98400c597707c9b3161070432fbb148ff6929cd923844e0aa41900da023/products/scarlet-asymmetric-cascade-ruched-mini-dress/02-garment-back.webp",
+      "sha256": "8906b98400c597707c9b3161070432fbb148ff6929cd923844e0aa41900da023",
+      "size": 70324,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/scarlet-asymmetric-cascade-ruched-mini-dress/03-mannequin-front.webp",
+      "pathname": "shop/catalogue/369d0fb36cf0c20c3535c4e47ba5d551276a3a4e84dfe56ffff46c23798bee79/products/scarlet-asymmetric-cascade-ruched-mini-dress/03-mannequin-front.webp",
+      "sha256": "369d0fb36cf0c20c3535c4e47ba5d551276a3a4e84dfe56ffff46c23798bee79",
+      "size": 126260,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/scarlet-asymmetric-cascade-ruched-mini-dress/04-model-front.webp",
+      "pathname": "shop/catalogue/51ba67be9c5fdc15d51c774c3845ee2ada8f292d532d2561d5d4d8453462f503/products/scarlet-asymmetric-cascade-ruched-mini-dress/04-model-front.webp",
+      "sha256": "51ba67be9c5fdc15d51c774c3845ee2ada8f292d532d2561d5d4d8453462f503",
+      "size": 206522,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/scarlet-asymmetric-cascade-ruched-mini-dress/05-model-rear-three-quarter.webp",
+      "pathname": "shop/catalogue/2a30d17f15d733a1048eb97e1732182ae7920ae4444774643cbc253ee7086e83/products/scarlet-asymmetric-cascade-ruched-mini-dress/05-model-rear-three-quarter.webp",
+      "sha256": "2a30d17f15d733a1048eb97e1732182ae7920ae4444774643cbc253ee7086e83",
+      "size": 187486,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/scarlet-asymmetric-cascade-ruched-mini-dress/06-fabric-detail.webp",
+      "pathname": "shop/catalogue/0a7d0023ddb546b246b16af5d8047802140aea9a4ff6777dc50eb6541b2cdd26/products/scarlet-asymmetric-cascade-ruched-mini-dress/06-fabric-detail.webp",
+      "sha256": "0a7d0023ddb546b246b16af5d8047802140aea9a4ff6777dc50eb6541b2cdd26",
+      "size": 96972,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/scarlet-asymmetric-cascade-ruched-mini-dress/07-model-left-profile.webp",
+      "pathname": "shop/catalogue/f948baf09c40dad8904ab43b585be35372c889a94cf3fa3b1957843e654761c8/products/scarlet-asymmetric-cascade-ruched-mini-dress/07-model-left-profile.webp",
+      "sha256": "f948baf09c40dad8904ab43b585be35372c889a94cf3fa3b1957843e654761c8",
+      "size": 205832,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
     },
     {
       "sourcePath": "/shop/products/scarlet-rosette-halter-cutout-ruched-mini-dress/01-garment-front.webp",

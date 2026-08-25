@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "workflowRevision": "2026-08-25.82",
-  "updatedAt": "2026-08-25T21:24:00Z",
+  "workflowRevision": "2026-08-25.83",
+  "updatedAt": "2026-08-25T23:01:31Z",
   "model": "LULU_V4",
   "activeGarment": "023",
   "activeView": "COMPLETE",
-  "status": "GARMENT_023_01_07_PRIVATE_LOCKED_AWAITING_SHOP_RELEASE",
+  "status": "GARMENT_023_01_07_PRIVATE_LOCKED_CATALOGUE_33_RELEASE_READY",
   "identityReview": {
     "candidateId": "lulu.face.v4.front.candidate.v1",
     "acceptedAssetId": "lulu.face.v4.front.lock.v1",
@@ -1732,7 +1732,7 @@
       "rejectedCandidatesMayParent": false
     },
     "023": {
-      "status": "01_07_USER_AUTHORIZED_AUTONOMOUSLY_ACCEPTED_PRIVATE_LOCKED_NOT_PUBLISHED",
+      "status": "01_07_USER_AUTHORIZED_AUTONOMOUSLY_ACCEPTED_PRIVATE_LOCKED_RELEASE_READY",
       "sku": "JUW-047",
       "name": "Scarlet Asymmetric Cascade Ruched Mini Dress",
       "slug": "scarlet-asymmetric-cascade-ruched-mini-dress",
@@ -1751,13 +1751,13 @@
         "07": {"role":"MODEL_REAR_THREE_QUARTER","path":"storage/garments/drop-02/023/locked/07-on-lulu-right-rear-3q.png","sha256":"51bff71a6ff0bac85e1f7efff4f5dc97809aec63a751c6a8ecf3b93379b2463f","dimensions":"1122x1402","status":"ACCEPTED_LOCKED_BODY_FAITHFUL_INDEPENDENT_SIBLING_INFERRED_REAR_PRESENTATION"}
       },
       "subjectLock": {"path":"storage/garments/drop-02/023/locked/LULU_G023_SUBJECT_FRONT_LOCK_v1.png","sha256":"a3d812710d711d70d4e9d9d732cfb08ed5b70ad718cfe5a5bc9a8d47eee33ac5","dimensions":"1122x1402","status":"ACCEPTED_LOCKED"},
-      "lockedManifestSha256": "d32b5a1e89a6d258f9daf123175d9d0adfcb4ac40e0837ed8ace3a51cdd7f5c6",
-      "operationRecords": ["storage/garments/drop-02/023/operations/g023-v01-r001.json","storage/garments/drop-02/023/operations/g023-v02-r001.json","storage/garments/drop-02/023/operations/g023-v03-r001.json","storage/garments/drop-02/023/operations/g023-v04-r001.json","storage/garments/drop-02/023/operations/g023-holistic-subject-r001.json","storage/garments/drop-02/023/operations/g023-room-and-05-r001.json","storage/garments/drop-02/023/operations/g023-v06-r001.json","storage/garments/drop-02/023/operations/g023-v07-r001.json","storage/garments/drop-02/023/operations/g023-v07-r002.json"],
-      "shopRelease": {"state":"NOT_STARTED","status":"NOT_PUBLISHED"},
+      "lockedManifestSha256": "3b3659d8e8fdbc8297b5889c4ed43c07f2db4c13ed84da73dfd89c20d3f7b163",
+      "operationRecords": ["storage/garments/drop-02/023/operations/g023-v01-r001.json","storage/garments/drop-02/023/operations/g023-v02-r001.json","storage/garments/drop-02/023/operations/g023-v03-r001.json","storage/garments/drop-02/023/operations/g023-v04-r001.json","storage/garments/drop-02/023/operations/g023-holistic-subject-r001.json","storage/garments/drop-02/023/operations/g023-room-and-05-r001.json","storage/garments/drop-02/023/operations/g023-v06-r001.json","storage/garments/drop-02/023/operations/g023-v07-r001.json","storage/garments/drop-02/023/operations/g023-v07-r002.json","storage/garments/drop-02/023/operations/g023-shop-media-export-v001.json"],
+      "shopRelease": {"catalogueRevision":"2026-08-25-catalogue-33","catalogueManifestChecksum":"3be78321051c0cfa33eefd97fed820656d1cffcbc2345d8d5bc76d94ccd5e631","cataloguePresentationChecksum":"61b3dad7fc66d4b8a146646ffa8d59cfc3354abe99040b19f1b010d7231a7129","publicRoot":"public/shop/products/scarlet-asymmetric-cascade-ruched-mini-dress","mediaCount":7,"publicBlobActiveAssetCount":261,"publicBlobLegacyAssetCount":7,"state":"RELEASE_READY","status":"RELEASE_READY"},
       "consentAndPermission": {"realGarmentReferencesRemainPrivate":true,"realIdentityAndBodyReferencesRemainPrivate":true,"publicDerivativesApproved":true},
       "rejectedCandidatesMayParent": false
     }
   },
   "nextOperation": null,
-  "requiredNext": "Await explicit G023 Shop release authority before exporting public derivatives, changing catalogue or database, committing release media, deploying or live-verifying."
+  "requiredNext": "Run the single G023 production release gate, deploy, and live-verify the product."
 }

@@ -24,7 +24,7 @@ import {
 } from "../scripts/shop-db/release-core.mjs";
 
 const repositoryRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
-const expectedChecksum = "51f72d8bee036db17a8d988ebead98026695e6f925c510ef049f773b946b3252";
+const expectedChecksum = "3be78321051c0cfa33eefd97fed820656d1cffcbc2345d8d5bc76d94ccd5e631";
 const legacySkuRenames = Object.fromEntries(
   Array.from({ length: 12 }, (_, index) => [
     `DYN-${String(index + 81).padStart(3, "0")}`,
@@ -70,10 +70,10 @@ function databaseCatalogueRows(manifest = SHOP_CATALOGUE_MANIFEST) {
   }));
 }
 
-test("the checked-in manifest validates all 40 catalogue products and immutable SKUs", () => {
+test("the checked-in manifest validates all 41 catalogue products and immutable SKUs", () => {
   assert.deepEqual(validateManifest(SHOP_CATALOGUE_MANIFEST, { assetRoot: join(repositoryRoot, "public") }), {
     checksum: expectedChecksum,
-    productCount: 40,
+    productCount: 41,
   });
   assert.deepEqual(
     SHOP_CATALOGUE_MANIFEST.products.map((product) => product.sku),
@@ -103,6 +103,7 @@ test("the checked-in manifest validates all 40 catalogue products and immutable 
       "JUW-044",
       "JUW-045",
       "JUW-046",
+      "JUW-047",
     ],
   );
   const salmon = SHOP_CATALOGUE_MANIFEST.products.find((product) => product.sku === "JUW-006");
@@ -150,7 +151,7 @@ test("the checked-in manifest validates all 40 catalogue products and immutable 
     returned: 0,
     writeOff: 0,
   });
-  const drop02 = SHOP_CATALOGUE_MANIFEST.products.slice(-22);
+  const drop02 = SHOP_CATALOGUE_MANIFEST.products.slice(-23);
   assert.deepEqual(
     drop02.map(({ sku, name, category, price }) => ({ sku, name, category, price })),
     [
@@ -176,6 +177,7 @@ test("the checked-in manifest validates all 40 catalogue products and immutable 
       { sku: "JUW-044", name: "Marigold Sculptural Rosette Strapless Mini Dress", category: "Dresses", price: 32500 },
       { sku: "JUW-045", name: "Scarlet Rosette Halter Cutout Ruched Mini Dress", category: "Dresses", price: 27500 },
       { sku: "JUW-046", name: "Crimson Asymmetric Draped Satin Maxi Dress", category: "Dresses", price: 34500 },
+      { sku: "JUW-047", name: "Scarlet Asymmetric Cascade Ruched Mini Dress", category: "Dresses", price: 29500 },
     ],
   );
   for (const product of drop02) {
@@ -229,13 +231,13 @@ test("revision decisions no-op only for identical target evidence", () => {
     namespace: "justurbanwears.shop.catalogue",
     revision: SHOP_CATALOGUE_MANIFEST.revision,
     checksum: expectedChecksum,
-    rowCount: 40,
+    rowCount: 41,
     target: "preview",
   };
   assert.equal(decideRevision(undefined, request), "apply");
-  assert.equal(decideRevision({ ...request, row_count: 40 }, request), "noop");
-  assert.throws(() => decideRevision({ ...request, checksum: "0".repeat(64), row_count: 40 }, request), /different checksum/);
-  assert.throws(() => decideRevision({ ...request, target: "production", row_count: 40 }, request), /different target/);
+  assert.equal(decideRevision({ ...request, row_count: 41 }, request), "noop");
+  assert.throws(() => decideRevision({ ...request, checksum: "0".repeat(64), row_count: 41 }, request), /different checksum/);
+  assert.throws(() => decideRevision({ ...request, target: "production", row_count: 41 }, request), /different target/);
   assert.throws(() => decideRevision({ ...request, row_count: 24 }, request), /row count/);
 });
 
@@ -286,7 +288,7 @@ test("seed and descriptive sync never update operational inventory", () => {
   const options = { target: "preview", gitSha: "a".repeat(40) };
   const seed = buildCatalogueMutationPlan(SHOP_CATALOGUE_MANIFEST, { ...options, mode: "seed" });
   const sync = buildCatalogueMutationPlan(SHOP_CATALOGUE_MANIFEST, { ...options, mode: "descriptive-sync" });
-  assert.equal(seed.inventory.length, 40);
+  assert.equal(seed.inventory.length, 41);
   assert.ok(seed.inventory.every((query: { text: string }) => /on conflict \("sku"\) do nothing$/.test(query.text)));
   assert.ok(sync.inventory.every((query: { text: string }) => /on conflict \("sku"\) do nothing$/.test(query.text)));
   const updateClause = sync.catalogue[0].text.split("do update set ")[1];
