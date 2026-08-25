@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "workflowRevision": "2026-08-24.68",
-  "updatedAt": "2026-08-25T04:33:34Z",
+  "workflowRevision": "2026-08-24.69",
+  "updatedAt": "2026-08-25T05:11:36Z",
   "model": "LULU_V4",
   "activeGarment": "019",
-  "activeView": "RELEASE",
-  "status": "GARMENT_017_PARTIAL_01_04_LIVE_VERIFIED_GARMENT_018_LIVE_VERIFIED_GARMENT_019_01_07_ACCEPTED_LOCKED_RELEASE_CANDIDATE_CATALOGUE_29",
+  "activeView": "COMPLETE",
+  "status": "GARMENT_017_PARTIAL_01_04_LIVE_VERIFIED_GARMENT_018_LIVE_VERIFIED_GARMENT_019_01_07_LIVE_VERIFIED_CATALOGUE_29",
   "identityReview": {
     "candidateId": "lulu.face.v4.front.candidate.v1",
     "acceptedAssetId": "lulu.face.v4.front.lock.v1",
@@ -1596,7 +1596,7 @@
       "rejectedCandidatesMayParent": false
     },
     "019": {
-      "status": "VIEWS_01_07_USER_AUTHORIZED_AUTONOMOUSLY_ACCEPTED_PRIVATE_LOCKED_RELEASE_CANDIDATE",
+      "status": "VIEWS_01_07_USER_AUTHORIZED_AUTONOMOUSLY_ACCEPTED_PRIVATE_LOCKED_LIVE_VERIFIED",
       "sku": "JUW-043",
       "name": "Charcoal Wrap-Front Ruched Slit Midi Dress",
       "slug": "charcoal-wrap-front-ruched-slit-midi-dress",
@@ -1631,7 +1631,19 @@
         "catalogueManifestChecksum": "b5388445c60f055902f7e16b0f1e66672372a2446d91b43a36bdba894367f2e7",
         "publicRoot": "public/shop/products/charcoal-wrap-front-ruched-slit-midi-dress",
         "mediaCount": 7,
-        "status": "LOCAL_RELEASE_CANDIDATE"
+        "sourceCommit": "42b3842",
+        "deployedCommit": "7a3e36d",
+        "deployment": "https://justurbanwears-4uef3r5cw-drdyranes-projects.vercel.app",
+        "databaseSkuPresent": true,
+        "availability": "AVAILABLE",
+        "availabilityApi": "CONFIRMED",
+        "studioPublicationCount": 1,
+        "productionSmoke": "20_OF_20_PASS",
+        "experienceSmoke": "14_OF_14_PASS",
+        "browserConsole": "CLEAN",
+        "state": "LIVE_VERIFIED",
+        "verifiedAt": "2026-08-25T05:11:36Z",
+        "status": "LIVE_VERIFIED"
       },
       "consentAndPermission": {
         "realGarmentReferencesRemainPrivate": true,
@@ -1642,11 +1654,11 @@
     }
   },
   "nextOperation": {
-    "operationId": "g019-shop-release-v001",
+    "operationId": "none-g019-complete",
     "garmentId": "019",
-    "view": "RELEASE",
-    "role": "SHOP_PUBLICATION",
-    "status": "LOCAL_RELEASE_CANDIDATE"
+    "view": "COMPLETE",
+    "role": "NONE",
+    "status": "G019_LIVE_VERIFIED"
   },
-  "requiredNext": "Complete the bounded G019 catalogue-29 release gate: Blob sync, exact commit and push, production database revision, source-built production deployment, route/API/browser verification, then record LIVE_VERIFIED. G017 remains a live-verified four-view partial publication; G018 remains live-verified."
+  "requiredNext": "Garment 019 is complete and live-verified. Await the next garment intake. G017 remains a live-verified four-view partial publication; G018 remains live-verified."
 }
