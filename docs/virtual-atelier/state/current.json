@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "workflowRevision": "2026-08-25.70",
-  "updatedAt": "2026-08-25T13:12:00Z",
+  "workflowRevision": "2026-08-25.71",
+  "updatedAt": "2026-08-25T13:24:35Z",
   "model": "LULU_V4",
   "activeGarment": "020",
   "activeView": "COMPLETE",
-  "status": "GARMENT_020_01_07_PRIVATE_LOCKED_PUBLIC_MEDIA_SYNCED_RELEASE_PENDING_CATALOGUE_30",
+  "status": "GARMENT_020_01_07_PRIVATE_LOCKED_LIVE_VERIFIED_CATALOGUE_30",
   "identityReview": {
     "candidateId": "lulu.face.v4.front.candidate.v1",
     "acceptedAssetId": "lulu.face.v4.front.lock.v1",
@@ -1653,7 +1653,7 @@
       "rejectedCandidatesMayParent": false
     },
     "020": {
-      "status": "VIEWS_01_07_USER_AUTHORIZED_AUTONOMOUSLY_ACCEPTED_PRIVATE_LOCKED_PUBLIC_MEDIA_SYNCED_RELEASE_PENDING",
+      "status": "VIEWS_01_07_USER_AUTHORIZED_AUTONOMOUSLY_ACCEPTED_PRIVATE_LOCKED_LIVE_VERIFIED",
       "sku": "JUW-044",
       "name": "Marigold Sculptural Rosette Strapless Mini Dress",
       "slug": "marigold-sculptural-rosette-strapless-mini-dress",
@@ -1674,17 +1674,17 @@
       "subjectLock": {"path":"storage/garments/drop-02/020/locked/LULU_G020_SUBJECT_FRONT_LOCK_v1.png","sha256":"e8238705c679488398bc66bec79321af721715ec763ca77da3f5ed0f1450d0bc","dimensions":"1024x1536","status":"ACCEPTED_LOCKED"},
       "lockedManifestSha256": "52d965119d0af35bdffea3901c318ab44d9204ab970fc887ff6cb2c1e6756a29",
       "operationRecords": ["storage/garments/drop-02/020/operations/g020-fashion-advisory-r001.json", "storage/garments/drop-02/020/operations/g020-holistic-subject-r001.json", "storage/garments/drop-02/020/operations/g020-room-and-05-r001.json", "storage/garments/drop-02/020/operations/g020-v06-r001.json", "storage/garments/drop-02/020/operations/g020-v07-r001.json", "storage/garments/drop-02/020/operations/g020-shop-media-export-v001.json"],
-      "shopRelease": {"catalogueRevision":"2026-08-25-catalogue-30","catalogueManifestChecksum":"877864cc608e06655c33a8dd379086556656d903473e51c5766eeda69da77258","cataloguePresentationChecksum":"9dfe541e83a4a8093b106eb46d10cfaf02b540a44309e5b005d79cc2563b6e44","publicRoot":"public/shop/products/marigold-sculptural-rosette-strapless-mini-dress","mediaCount":7,"publicBlobActiveAssetCount":240,"publicBlobLegacyAssetCount":7,"state":"PUBLIC_MEDIA_SYNCED_RELEASE_PENDING"},
+      "shopRelease": {"catalogueRevision":"2026-08-25-catalogue-30","catalogueManifestChecksum":"877864cc608e06655c33a8dd379086556656d903473e51c5766eeda69da77258","cataloguePresentationChecksum":"9dfe541e83a4a8093b106eb46d10cfaf02b540a44309e5b005d79cc2563b6e44","publicRoot":"public/shop/products/marigold-sculptural-rosette-strapless-mini-dress","mediaCount":7,"publicBlobActiveAssetCount":240,"publicBlobLegacyAssetCount":7,"sourceCommit":"d36214d902d90f8e41c10439417128f16de601de","deployedCommit":"d36214d902d90f8e41c10439417128f16de601de","deploymentId":"dpl_3GHTiBPSyQGZDzG6Vd9RXSKt7hav","deployment":"https://justurbanwears-6bytldhwb-drdyranes-projects.vercel.app","databaseSkuPresent":true,"availability":"AVAILABLE","availabilityApi":"CONFIRMED","studioPublicationCount":1,"catalogueRowCount":38,"productionSmoke":"21_OF_21_PASS","experienceSmoke":"15_OF_15_PASS","browserProductGallery":"7_OF_7_1120X1400_ISOTROPIC","browserCollectionPieceCount":20,"browserConsole":"CLEAN","state":"LIVE_VERIFIED","verifiedAt":"2026-08-25T13:24:35Z","status":"LIVE_VERIFIED"},
       "consentAndPermission": {"realGarmentReferencesRemainPrivate":true,"realIdentityAndBodyReferencesRemainPrivate":true,"publicDerivativesApproved":true},
       "rejectedCandidatesMayParent": false
     }
   },
   "nextOperation": {
-    "operationId": "g020-release-catalogue-30",
+    "operationId": "none-g020-complete",
     "garmentId": "020",
-    "view": "RELEASE",
-    "role": "SHOP_CATALOGUE_PUBLICATION",
-    "status": "PUBLIC_MEDIA_SYNCED_RELEASE_PENDING"
+    "view": "COMPLETE",
+    "role": "NONE",
+    "status": "G020_LIVE_VERIFIED"
   },
-  "requiredNext": "Apply and verify catalogue 30, deploy the exact revision, then live-smoke G020 and the complete Shop experience."
+  "requiredNext": "None. Garment 020 is live verified."
 }
