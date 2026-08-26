@@ -6,6 +6,17 @@ Scope: private accepted media for Garments 001–024, semantic views 01–07, au
 
 Outcome: the manual workflow is creatively proven and substantially durable, but portable replay still has four concrete gaps: one missing accepted byte asset, two incorrect asset-index hashes, an authority-manifest schema ambiguity, and an unimplemented provider-neutral ledger/qualification layer.
 
+## Implementation resolution — 2026-08-26
+
+The bounded portability implementation following this audit resolved three actionable gaps without changing any accepted image bytes:
+
+- the two G022 public-index hashes now match the private source manifest and exact files;
+- `portable-authority-kit.v1.json` explicitly records approval and immutable-lock status without changing the production private Blob manifest bytes;
+- the provider-neutral semantic/execution identity, capability preflight, artifact/evaluation identities and ledger invariants are executable and tested; and
+- `verify-portable-bundle.mjs` verifies the minimal authority kit plus one active garment rather than treating all history as an invocation dependency.
+
+The G005/01 accepted byte remains historical evidence unavailable in the local archive. It is not required by the minimal active-garment portable bundle and must not be synthesized or substituted. Studio provider calls still require a separately reviewed cutover to the new ledger boundary.
+
 ## Technical summary
 
 The strongest durable pattern is not a magic prompt. It is a controlled sequence:

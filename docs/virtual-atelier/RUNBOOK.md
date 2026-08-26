@@ -19,6 +19,14 @@ The preflight must return `PASS`. A missing, mismatched, or unresolved authority
 
 For private V4 work, also read and hash-check `storage/models/konan/canon/v4/authority-manifest.json`. The private manifest is authoritative for pixel paths, lineage and permissions; `docs/virtual-atelier/assets/current.json` is the public logical index.
 
+For a portable-machine restore, verify the minimal immutable authority kit plus the active garment packet instead of requiring all historical garments:
+
+```bash
+npm run atelier:verify:portable -- --garment 024
+```
+
+The verifier checks the committed private Blob manifest against the explicit approval/lock overlay, local authority bytes, direct garment source manifest, locked views and generation operation records. A new provider/model/adapter revision must also pass `docs/virtual-atelier/provider-calibration.v1.json` before production routing.
+
 ## 1. Canonical production hierarchy
 
 Every garment follows this exact authority order:

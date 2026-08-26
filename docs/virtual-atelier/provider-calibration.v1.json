@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "suiteRevision": "JUW_ATELIER_PROVIDER_CALIBRATION_2026-08-26.1",
+  "purpose": "Qualify a provider, model and adapter revision against accepted truth and known failure modes before production routing.",
+  "requiredVerdict": "ALL_CASES_PASS_WITH_ONE_INDEPENDENT_REVIEW",
+  "humanApprovalRequired": true,
+  "cases": [
+    {
+      "id": "G005_HOLISTIC_SUBJECT_LOCK",
+      "garmentId": "005",
+      "kind": "POSITIVE_CALIBRATION",
+      "evidence": "docs/virtual-atelier/garments/005.md",
+      "mustProve": ["real identity remains primary", "whole-frame body and garment coherence", "accepted subject lock is reusable without layer reinterpretation"]
+    },
+    {
+      "id": "G009_ANGLE_CANON_FALSE_PASS",
+      "garmentId": "009",
+      "kind": "NEGATIVE_AND_CORRECTION_CALIBRATION",
+      "evidence": "docs/virtual-atelier/garments/009.md",
+      "mustProve": ["deficient side and rear geometry is rejected", "dedicated side and back canon are never omitted", "06 and 07 remain independent siblings from 05"]
+    },
+    {
+      "id": "G017_PROVIDER_OUTPUT_IS_NOT_ACCEPTANCE",
+      "garmentId": "017",
+      "kind": "CAPABILITY_AND_TERMINAL_FAILURE_CALIBRATION",
+      "evidence": "docs/virtual-atelier/garments/017.md",
+      "mustProve": ["no-output moderation becomes a recorded terminal result", "returned pixels still fail when identity body room format or realism fail", "no placeholder model view is promoted"]
+    },
+    {
+      "id": "G023_SOURCE_ROOM_AND_BODY_REBASE",
+      "garmentId": "023",
+      "kind": "NEGATIVE_AND_CORRECTION_CALIBRATION",
+      "evidence": "docs/virtual-atelier/garments/023.md",
+      "mustProve": ["source-room leakage in 03 is rejected", "too-slim subject output cannot parent", "correction preserves the connected whole silhouette"]
+    },
+    {
+      "id": "G024_CURRENT_GOLDEN_SEQUENCE",
+      "garmentId": "024",
+      "kind": "POSITIVE_END_TO_END_CALIBRATION",
+      "evidence": "docs/virtual-atelier/garments/024.md",
+      "mustProve": ["01 through 07 preserve semantic roles", "05 is locked before independent 06 and 07", "identity body garment atelier realism and privacy all pass"]
+    }
+  ]
+}

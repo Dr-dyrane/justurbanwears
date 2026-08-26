@@ -4,6 +4,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { get, put } from "@vercel/blob";
 import sharp from "sharp";
+import { LULU_V4_LOCAL_SOURCES } from "../virtual-atelier/lulu-v4-local-sources.mjs";
 
 const repositoryRoot = join(dirname(fileURLToPath(import.meta.url)), "../..");
 const manifestPath = join(repositoryRoot, "lib/server/private-asset-manifests/lulu-v4.json");
@@ -14,20 +15,6 @@ if (!token) throw new Error("Provide PRIVATE_BLOB_READ_WRITE_TOKEN.");
 if (manifest.privacy !== "PRIVATE_PRODUCTION_ONLY" || manifest.publishable !== false) {
   throw new Error("The Lulu V4 authority manifest must remain private and non-publishable.");
 }
-
-const sourceById = Object.freeze({
-  "lulu.face.operation-board.full.v1": "storage/models/konan/canon/v4/face/LULU_V4_FACE_OPERATION_BOARD_FULL.png",
-  "lulu.face.v4.front.lock.v1": "storage/models/konan/canon/v4/face/candidates/LULU_V4_FACE_FRONT_CANDIDATE_v1.png",
-  "lulu.body.canon.v4": "storage/models/konan/canon/v4/LULU_V4_BODY_CANON_SOURCE.png",
-  "lulu.body.canon.v4.three-view": "storage/models/konan/canon/v4/LULU_V4_BODY_THREE_VIEW_CANON.png",
-  "lulu.body.canon.v4.front": "storage/models/konan/canon/v4/LULU_V4_BODY_FRONT_CANON.png",
-  "lulu.body.canon.v4.side": "storage/models/konan/canon/v4/LULU_V4_BODY_SIDE_CANON.png",
-  "lulu.body.canon.v4.back": "storage/models/konan/canon/v4/LULU_V4_BODY_BACK_CANON.png",
-  "lulu.body.real.angle-contact.v4": "storage/models/konan/canon/v4/LULU_V4_BODY_ANGLE_CONTACT.jpg",
-  "lulu.body.real.gym-rear-profile.v4": "storage/models/konan/canon/v4/LULU_V4_BODY_GYM_REAR_PROFILE_EVIDENCE_UPRIGHT.jpeg",
-  "lulu.body.rear.operation-board.full.v1": "storage/models/konan/canon/v4/LULU_V4_BODY_REAR_OPERATION_BOARD_FULL.png",
-  "juw.atelier.empty-plate.v1": "storage/virtual-atelier/canon/juw-room-v1.png",
-});
 
 function sha256(bytes) {
   return createHash("sha256").update(bytes).digest("hex");
@@ -61,7 +48,7 @@ async function putImmutable(pathname, body, contentType) {
 
 const uploaded = [];
 for (const asset of manifest.assets) {
-  const relativeSource = sourceById[asset.id];
+  const relativeSource = LULU_V4_LOCAL_SOURCES[asset.id];
   if (!relativeSource) throw new Error(`No approved local source is mapped for ${asset.id}.`);
   const body = await readFile(join(repositoryRoot, relativeSource));
   const metadata = await sharp(body).metadata();

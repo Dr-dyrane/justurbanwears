@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "kitId": "lulu-v4-portable-authority-kit",
+  "authorityRevision": "LULU_V4_2026-08-25.4",
+  "privacy": "PRIVATE_PRODUCTION_ONLY",
+  "purpose": "Cross-machine restore and approval overlay for the immutable Lulu V4 authority packet",
+  "assets": [
+    {"id":"lulu.face.operation-board.full.v1","sha256":"2ad1a716ec59f65d66e3f83c8d391959696f9539befe520f50889fdd33aa931b","acceptanceStatus":"APPROVED","lockedStatus":"IMMUTABLE_AUTHORITY"},
+    {"id":"lulu.face.v4.front.lock.v1","sha256":"99674cf5941a19093fd2152a3022cb72adf756ffcba15260abdb252a6323c723","acceptanceStatus":"APPROVED","lockedStatus":"IMMUTABLE_AUTHORITY"},
+    {"id":"lulu.body.canon.v4","sha256":"c0f1b11473f7fe0d086fd845e3e53cd2e7302db4f0cacde18983d7b66eb629d9","acceptanceStatus":"APPROVED","lockedStatus":"IMMUTABLE_AUTHORITY"},
+    {"id":"lulu.body.canon.v4.three-view","sha256":"cbbb130a6bd4dee99f9ef4d1dbc883f9a3ea0f6a72378ade685963b5c2130e14","acceptanceStatus":"APPROVED","lockedStatus":"IMMUTABLE_AUTHORITY"},
+    {"id":"lulu.body.canon.v4.front","sha256":"08bd144387d3a3be2f6e08d00c85318aee8942324388544bfdec9788f681febd","acceptanceStatus":"APPROVED","lockedStatus":"IMMUTABLE_AUTHORITY"},
+    {"id":"lulu.body.canon.v4.side","sha256":"f046469a3bcc83fb4e6c0d588ee3c3d8a5813ab69f048d7e39fff77e799234ad","acceptanceStatus":"APPROVED","lockedStatus":"IMMUTABLE_AUTHORITY"},
+    {"id":"lulu.body.canon.v4.back","sha256":"4758397a783dde383cb59fd7105197c41f08f278be4ca48915be38f5d60bc499","acceptanceStatus":"APPROVED","lockedStatus":"IMMUTABLE_AUTHORITY"},
+    {"id":"lulu.body.real.angle-contact.v4","sha256":"7650b7996ded2c127e529c4b7af3874ab6e937b97c75efedcb68756c9d104c60","acceptanceStatus":"APPROVED","lockedStatus":"IMMUTABLE_AUTHORITY"},
+    {"id":"lulu.body.real.gym-rear-profile.v4","sha256":"553c3801ff5479a7672cce58ec2e3052c1c09bed5d4f10f410e9b01a136b1ebe","acceptanceStatus":"APPROVED","lockedStatus":"IMMUTABLE_AUTHORITY"},
+    {"id":"lulu.body.rear.operation-board.full.v1","sha256":"4deac0f9ac3dcfde9ec779bbc605f4ffc3c2334370feca7df79130ad0cabcb30","acceptanceStatus":"APPROVED","lockedStatus":"IMMUTABLE_AUTHORITY"},
+    {"id":"juw.atelier.empty-plate.v1","sha256":"0b591197d2de1b490c4305ac0aed4d1089564562c7b1005411a8340168aabb72","acceptanceStatus":"APPROVED","lockedStatus":"IMMUTABLE_AUTHORITY"}
+  ],
+  "supplementalRestoreAssets": [
+    {"id":"lulu.face.real.primary","sha256":"f7ab5e149d6600da4dfef197fd87be47408ba0e830ecfbb68dc5c386113c8bba","byteSize":153889,"width":1100,"height":540,"mimeType":"image/jpeg","acceptanceStatus":"APPROVED","lockedStatus":"IMMUTABLE_REAL_IDENTITY_AUTHORITY"},
+    {"id":"lulu.face.real.v4.raw-frontal-closeup-eyes-closed","sha256":"761ff29cd4245c13e091eebcd7aa20e7a50e84ac61c1f93eef615cf3953dc16a","byteSize":121963,"width":720,"height":1280,"mimeType":"image/jpeg","acceptanceStatus":"APPROVED","lockedStatus":"IMMUTABLE_REAL_IDENTITY_AUTHORITY"},
+    {"id":"lulu.face.real.v4.raw-three-quarter-open-eyes","sha256":"777475071c3830e063e779b16803ba64812f0e2099555ce76862677ef8415491","byteSize":87484,"width":720,"height":1280,"mimeType":"image/jpeg","acceptanceStatus":"APPROVED","lockedStatus":"IMMUTABLE_REAL_IDENTITY_AUTHORITY"},
+    {"id":"lulu.face.real.v4.front-lock","sha256":"132aca4d7a63460ec31a7906fe663943e797c4a64d3176ea0d91d791a2ed9259","byteSize":195763,"width":320,"height":360,"mimeType":"image/png","acceptanceStatus":"APPROVED","lockedStatus":"IMMUTABLE_REAL_IDENTITY_AUTHORITY"}
+  ]
+}

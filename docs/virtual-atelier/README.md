@@ -92,13 +92,14 @@ Each layer has scoped authority. A new reference cannot overwrite unrelated laye
 
 ## Idempotency
 
-Every operation must resolve to a stable declaration:
+Every operation resolves to a canonical provider-neutral declaration:
 
 ```text
-operation_id = garment + view + parent hashes + authority revision + change set
+semantic_operation_hash = canonical AtelierOperation + resolved authority/parent hashes + workflow revision
+execution_hash = semantic_operation_hash + adapter/provider/model + compiled prompt/reference packing + execution parameters
 ```
 
-Running the same operation declaration should target the same production state. If the authority revision, garment evidence, or change set changes, create a new operation ID rather than silently mutating the old one.
+Running the same semantic declaration returns its locked result regardless of provider choice. Provider/model changes create a new execution attempt under the same semantic operation. If the authority revision, garment evidence, parent lock, immutable set or intended change changes, the semantic identity changes rather than silently mutating accepted work. See ADR 0046 and `scripts/virtual-atelier/operation-identity.mjs`.
 
 ## Current restart position
 

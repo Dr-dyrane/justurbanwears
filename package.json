@@ -28,7 +28,7 @@
     "test:contracts": "tsx --test tests/*.test.ts",
     "test:shop-runtime": "tsx --test tests/shop-runtime-catalog.test.ts",
     "test:shop-db-release": "node --test tests/shop-db-release.test.ts",
-    "test:atelier": "node --test tests/virtual-atelier-operation-validator.test.mjs",
+    "test:atelier": "node --test tests/virtual-atelier-operation-validator.test.mjs tests/virtual-atelier-portability.test.mjs",
     "verify": "npm run env:check && npm run lint && npm run typecheck && npm run test:brand && npm run test:contracts && npm run test:atelier && npm run build && npm run test:experience && npm run test:rendered",
     "smoke:production": "node scripts/smoke-deployment.mjs https://www.justurbanwears.com",
     "smoke:experience": "node scripts/smoke-experience.mjs https://www.justurbanwears.com",
@@ -49,6 +49,7 @@
     "blob:sync:lulu-v4-authority": "node scripts/studio-models/sync-lulu-v4-authority.mjs",
     "atelier:monitor:room": "node scripts/virtual-atelier/monitor-room-plate.mjs",
     "atelier:verify:operation": "node scripts/virtual-atelier/validate-operation.mjs",
+    "atelier:verify:portable": "node scripts/virtual-atelier/verify-portable-bundle.mjs",
     "atelier:export:shop-media": "node scripts/virtual-atelier/export-shop-media.mjs"
   },
   "dependencies": {

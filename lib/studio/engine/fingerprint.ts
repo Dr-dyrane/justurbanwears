@@ -25,3 +25,18 @@ export function generationFingerprint(input: {
 }): string {
   return sha256(stable({ ...input, sourceHashes: [...input.sourceHashes].sort() }));
 }
+
+export function generationExecutionFingerprint(input: {
+  semanticFingerprint: string;
+  adapterId: string;
+  adapterVersion: string;
+  provider: string;
+  model: string;
+  modelRevision?: string | null;
+  promptHash: string;
+  referencePackingHash: string;
+  parameters: unknown;
+  providerPolicyRevision: string;
+}): string {
+  return sha256(stable(input));
+}

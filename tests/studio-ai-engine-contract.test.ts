@@ -8,7 +8,7 @@ import {
   generateIntakeSchema,
 } from "../lib/studio/engine/contracts";
 import { StudioEngineError } from "../lib/studio/engine/errors";
-import { generationFingerprint } from "../lib/studio/engine/fingerprint";
+import { generationExecutionFingerprint, generationFingerprint } from "../lib/studio/engine/fingerprint";
 import { assertIntakeTransition } from "../lib/studio/engine/state";
 
 test("browser contracts reject provider, identity and blob controls", () => {
@@ -67,6 +67,31 @@ test("generation fingerprints are stable, ordered and input-sensitive", () => {
     ...base,
     parameters: { aspectRatio: "4:5", attempt: 2 },
   }));
+});
+
+test("execution fingerprints distinguish provider attempts under one semantic operation", () => {
+  const semanticFingerprint = generationFingerprint({
+    sourceHashes: ["a"],
+    facts: { colour: "coral" },
+    operation: "GARMENT_FRONT",
+    promptVersion: "v1",
+    model: "provider/model-a",
+    parameters: { aspectRatio: "4:5" },
+  });
+  const base = {
+    semanticFingerprint,
+    adapterId: "gateway",
+    adapterVersion: "1",
+    provider: "provider-a",
+    model: "model-a",
+    promptHash: "b".repeat(64),
+    referencePackingHash: "c".repeat(64),
+    parameters: { aspectRatio: "4:5" },
+    providerPolicyRevision: "1",
+  };
+  const first = generationExecutionFingerprint(base);
+  assert.match(first, /^[0-9a-f]{64}$/);
+  assert.notEqual(first, generationExecutionFingerprint({ ...base, model: "model-b" }));
 });
 
 test("intake transitions fail closed", () => {

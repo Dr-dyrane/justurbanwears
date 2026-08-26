@@ -1,6 +1,6 @@
 # ADR 0046: Provider-neutral idempotent Virtual Atelier operations
 
-- Status: Proposed
+- Status: Accepted; portability core implemented, Studio provider-routing cutover pending
 - Date: 2026-08-22
 - Owner: Virtual Atelier Engine
 - Scope: canonical generation/edit operations, provider adapters, execution identity, lifecycle, QA and Studio projection; existing identity, body, garment, room and view authorities remain unchanged
@@ -40,6 +40,8 @@ This ADR extends ADR 0040. The production authority order remains:
 ## Decision
 
 Separate semantic operation identity from provider execution identity.
+
+Implementation note (2026-08-26): `scripts/virtual-atelier/operation-identity.mjs` now provides canonical semantic identity, execution identity, artifact/evaluation hashes, capability preflight and append-only ledger projection. `scripts/virtual-atelier/verify-portable-bundle.mjs` verifies the minimal private authority and active-garment packet. Existing provider calls are not yet routed through the ledger; that migration remains explicitly pending rather than being represented as complete.
 
 Studio and the orchestrator create one immutable, provider-neutral
 `AtelierOperation`. A provider adapter compiles that operation into a concrete

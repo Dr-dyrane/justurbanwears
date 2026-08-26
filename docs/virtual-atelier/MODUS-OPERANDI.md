@@ -33,10 +33,14 @@ Conflicts resolve toward the earlier, more direct authority. A generated control
 
 ## 2. Minimum private authority kit
 
-The operational kit is the private manifest at `lib/server/private-asset-manifests/lulu-v4.json`. The manifest is safe to commit because it contains identifiers, hashes, dimensions and private Blob pathnames rather than private pixels. The media remain private.
+The optimized Studio runtime kit is the private manifest at `lib/server/private-asset-manifests/lulu-v4.json`. The cross-machine restore contract is `docs/virtual-atelier/portable-authority-kit.v1.json`, which adds the raw real-face anchors required to re-establish identity if an optimized board or translation lock ever needs to be rebuilt. Both manifests are safe to commit because they contain identifiers, hashes, dimensions and private pathnames rather than private pixels. The media remain private.
 
 | Logical asset | Required role | Used for |
 | --- | --- | --- |
+| `lulu.face.real.primary` | Complete real Lulu face contact | Raw identity truth and board reconstruction |
+| `lulu.face.real.v4.raw-frontal-closeup-eyes-closed` | Direct raw frontal facial evidence | Holistic identity synthesis and facial geometry |
+| `lulu.face.real.v4.raw-three-quarter-open-eyes` | Direct raw three-quarter facial evidence | Angle identity and open-eye truth |
+| `lulu.face.real.v4.front-lock` | Direct real-photo front lock | Front identity comparison; never styling authority |
 | `lulu.face.operation-board.full.v1` | Complete real-face operation board | Every 05–07 identity operation |
 | `lulu.face.v4.front.lock.v1` | Approved generated V4 translation lock | Repeatable face translation; never primary identity |
 | `lulu.body.canon.v4` | Approved whole-body silhouette control | Holistic subject and front-body continuity |
@@ -178,7 +182,15 @@ Record after invocation:
 - accepted/rejected/superseded lineage; and
 - release evidence if promoted.
 
-ADR 0046 defines the target provider-neutral semantic hash, execution hash and event ledger. Until it is implemented, the private JSON operation record plus `state/current.json` are the recovery authorities.
+ADR 0046 defines the provider-neutral semantic hash, execution hash and event ledger. The portable core is implemented in `scripts/virtual-atelier/operation-identity.mjs`; it derives canonical semantic and provider execution identities, fails closed on provider capability, separates artifact/evaluation identity and enforces lock reuse and unsafe-retry reconciliation. The private JSON operation record plus `state/current.json` remain the recovery authorities until Studio provider routing is cut over to the ledger.
+
+Before trusting a restored environment, run:
+
+```bash
+npm run atelier:verify:portable -- --garment 024
+```
+
+This verifies only the universal immutable Lulu/atelier kit, the selected garment's direct sources, locked views and generation operation records. It does not require every historical garment merely because that history exists locally.
 
 ## 7. Drift-control baseline
 
@@ -224,3 +236,5 @@ The workflow is portable only when all answers are yes:
 - Can all private identity/body/source media remain outside public Git and browser DTOs?
 
 If any answer is no, the environment is not production-ready even if it can generate an image.
+
+Provider qualification uses `docs/virtual-atelier/provider-calibration.v1.json`. A provider/model/adapter revision must pass G005 identity synthesis, the G009 angle false-pass correction, G017 terminal provider failure, G023 source-room/body correction and the complete G024 sequence. Qualification never auto-approves a generated Lulu candidate.

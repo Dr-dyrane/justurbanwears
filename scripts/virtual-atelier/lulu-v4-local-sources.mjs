@@ -1,0 +1,17 @@
+export const LULU_V4_LOCAL_SOURCES = Object.freeze({
+  "lulu.face.real.primary": "storage/models/konan/canon/v4/face/FACE_PRIMARY_CONTACT.jpg",
+  "lulu.face.real.v4.raw-frontal-closeup-eyes-closed": "storage/models/konan/canon/v4/face/LULU_V4_FACE_RAW_FRONTAL_CLOSEUP_EYES_CLOSED.jpg",
+  "lulu.face.real.v4.raw-three-quarter-open-eyes": "storage/models/konan/canon/v4/face/LULU_V4_FACE_RAW_LEFT_THREE_QUARTER_OPEN_EYES.jpg",
+  "lulu.face.real.v4.front-lock": "storage/models/konan/canon/v4/face/LULU_V4_FACE_FRONT_LOCK.png",
+  "lulu.face.operation-board.full.v1": "storage/models/konan/canon/v4/face/LULU_V4_FACE_OPERATION_BOARD_FULL.png",
+  "lulu.face.v4.front.lock.v1": "storage/models/konan/canon/v4/face/candidates/LULU_V4_FACE_FRONT_CANDIDATE_v1.png",
+  "lulu.body.canon.v4": "storage/models/konan/canon/v4/LULU_V4_BODY_CANON_SOURCE.png",
+  "lulu.body.canon.v4.three-view": "storage/models/konan/canon/v4/LULU_V4_BODY_THREE_VIEW_CANON.png",
+  "lulu.body.canon.v4.front": "storage/models/konan/canon/v4/LULU_V4_BODY_FRONT_CANON.png",
+  "lulu.body.canon.v4.side": "storage/models/konan/canon/v4/LULU_V4_BODY_SIDE_CANON.png",
+  "lulu.body.canon.v4.back": "storage/models/konan/canon/v4/LULU_V4_BODY_BACK_CANON.png",
+  "lulu.body.real.angle-contact.v4": "storage/models/konan/canon/v4/LULU_V4_BODY_ANGLE_CONTACT.jpg",
+  "lulu.body.real.gym-rear-profile.v4": "storage/models/konan/canon/v4/LULU_V4_BODY_GYM_REAR_PROFILE_EVIDENCE_UPRIGHT.jpeg",
+  "lulu.body.rear.operation-board.full.v1": "storage/models/konan/canon/v4/LULU_V4_BODY_REAR_OPERATION_BOARD_FULL.png",
+  "juw.atelier.empty-plate.v1": "storage/virtual-atelier/canon/juw-room-v1.png",
+});
