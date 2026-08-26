@@ -1046,6 +1046,7 @@ html[data-theme] .studio-stack-shell:has(.studio-home-control-plane) .demo-ribbo
 }
 
 html body .studio-stack-shell .workspace > main.page-canvas:has(> .studio-home-control-plane) {
+  background: var(--studio-home-field);
   padding-bottom: 0 !important;
   scroll-padding-bottom: 0;
 }
