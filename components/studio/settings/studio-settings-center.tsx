@@ -11,7 +11,6 @@ import {
   Settings,
   ShieldCheck,
   Sparkles,
-  UserRound,
 } from "lucide-react";
 import { useState } from "react";
 import type { StudioOperator } from "../../../lib/server/studio-operator";
@@ -22,6 +21,32 @@ import { StudioTaskSheet } from "../atoms/studio-task-sheet";
 import { useStudio } from "../studio-provider";
 
 const authClient = createAuthClient();
+const LULU_PROFILE_AVATAR_SRC = "/lulu.png";
+
+function LuluProfileAvatar({ initial, online = false }: { initial: string; online?: boolean }) {
+  return (
+    <span
+      aria-hidden="true"
+      className={online
+        ? "studio-profile-avatar studio-profile-orb-mobile"
+        : "studio-profile-avatar studio-profile-card-avatar"}
+    >
+      <b>{initial}</b>
+      {/* eslint-disable-next-line @next/next/no-img-element -- this public-approved identity lock must keep its exact app-owned bytes */}
+      <img
+        alt=""
+        decoding="async"
+        fetchPriority={online ? "high" : "auto"}
+        height={1402}
+        loading={online ? "eager" : "lazy"}
+        onError={(event) => { event.currentTarget.hidden = true; }}
+        src={LULU_PROFILE_AVATAR_SRC}
+        width={1122}
+      />
+      {online ? <i /> : null}
+    </span>
+  );
+}
 
 export function StudioSettingsCenter({ operator }: { operator: StudioOperator | null }) {
   const studio = useStudio();
@@ -43,11 +68,7 @@ export function StudioSettingsCenter({ operator }: { operator: StudioOperator | 
       onClick={(event) => { setReturnFocus(event.currentTarget); setOpen(true); }}
       type="button"
     >
-      <UserRound aria-hidden="true" className="studio-profile-orb-desktop" size={18} />
-      <span aria-hidden="true" className="studio-profile-orb-mobile">
-        <b>{avatarInitial}</b>
-        <i />
-      </span>
+      <LuluProfileAvatar initial={avatarInitial} online />
     </button>
     <StudioTaskSheet
       className="studio-settings-sheet studio-profile-sheet"
@@ -58,7 +79,7 @@ export function StudioSettingsCenter({ operator }: { operator: StudioOperator | 
     >
       <div className="studio-settings-centre" id="studio-settings-centre">
         <section className="studio-settings-identity studio-profile-card" aria-labelledby="studio-profile-name">
-          <span aria-hidden="true" className="studio-profile-card-avatar">{avatarInitial}</span>
+          <LuluProfileAvatar initial={avatarInitial} />
           <div><small>{operator?.role === "admin" ? "Studio admin" : "Studio operator"}</small><h3 id="studio-profile-name">{displayName}</h3><p>{operator?.email ?? "Local Studio preview"}</p></div>
           <ShieldCheck aria-label="Authenticated private workspace" size={19} />
         </section>

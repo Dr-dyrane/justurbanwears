@@ -129,6 +129,7 @@ test("keeps the private Studio and public shop visibly distinct", async () => {
   assert.match(visibleBody, /data-experience-layer="island"/);
   assert.match(visibleBody, /aria-label="Studio Home controls"/);
   assert.match(visibleBody, /aria-label="Profile &amp; settings — Lulu’s Studio spaces"/);
+  assert.match(visibleBody, /src="\/lulu\.png"/);
   assert.match(visibleBody, /aria-label="Find a Studio service or piece"/);
   assert.match(visibleBody, /Ask Studio/);
   assert.doesNotMatch(visibleBody, /aria-label="Studio tabs"|studio-mobile-tabs|shop-dock-lens/);

@@ -24,6 +24,15 @@ test("Studio exposes one global profile and settings centre", () => {
   assert.match(operator, /role: membership\.role/);
 });
 
+test("Studio uses the one approved Lulu face for both profile surfaces", () => {
+  assert.match(settings, /const LULU_PROFILE_AVATAR_SRC = "\/lulu\.png"/);
+  assert.equal(settings.match(/<LuluProfileAvatar initial=\{avatarInitial\}/g)?.length, 2);
+  assert.match(settings, /fetchPriority=\{online \? "high" : "auto"\}/);
+  assert.match(settings, /loading=\{online \? "eager" : "lazy"\}/);
+  assert.match(settings, /onError=\{\(event\) => \{ event\.currentTarget\.hidden = true; \}\}/);
+  assert.doesNotMatch(settings, /blob\.vercel-storage\.com|studio\/model-authorities|<UserRound/);
+});
+
 test("settings stays focused after Home absorbs attention state", () => {
   assert.doesNotMatch(settings, /setShowUpdateCount|Show update count/);
   assert.doesNotMatch(shell, /StudioNotificationCenter/);
