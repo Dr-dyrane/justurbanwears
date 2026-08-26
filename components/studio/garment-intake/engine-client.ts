@@ -9,6 +9,36 @@ export interface IntakeFacts {
   price: number;
 }
 
+export interface StudioDecisionReceipt {
+  receiptId: string;
+  generationId: string;
+  decision: "KEEP" | "EDIT" | "REJECT" | "RETRY";
+  noteSha256: string;
+  decidedAt: string;
+}
+
+export interface StudioCorrectionAuthority {
+  generationId: string;
+  decisionReceiptId: string;
+}
+
+export async function studioDecisionNoteSha256(note?: string) {
+  const normalized = note?.trim() || "";
+  const digest = await globalThis.crypto.subtle.digest("SHA-256", new TextEncoder().encode(normalized));
+  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+export function studioDecisionReceiptMatches(input: {
+  receipt?: StudioDecisionReceipt | null;
+  generationId: string;
+  decision: StudioDecisionReceipt["decision"];
+  noteSha256: string;
+}) {
+  return input.receipt?.generationId === input.generationId
+    && input.receipt.decision === input.decision
+    && input.receipt.noteSha256 === input.noteSha256;
+}
+
 export interface IntakeSnapshot {
   id: string;
   kind: "GARMENT";
@@ -29,7 +59,13 @@ export interface IntakeSnapshot {
     assetId: string;
     status: string;
   };
+  decisionReceipt?: StudioDecisionReceipt;
   wardrobeItemId?: string;
+  reconciliation?: {
+    state: "INDETERMINATE";
+    retryAllowed: false;
+    message: string;
+  };
 }
 
 export type IntakeDecision = "KEEP" | "EDIT" | "REJECT" | "RETRY";
@@ -37,10 +73,14 @@ export type IntakeDecision = "KEEP" | "EDIT" | "REJECT" | "RETRY";
 export interface GarmentIntakeClient {
   listActiveIntakes?(): Promise<{ intakes: IntakeSnapshot[] }>;
   getIntake?(intakeId: string): Promise<{ intake: IntakeSnapshot }>;
-  createIntake(sourceMode: IntakeSourceMode, description?: string): Promise<{ intake: IntakeSnapshot }>;
+  createIntake(sourceMode: IntakeSourceMode, description?: string, idempotencyKey?: string): Promise<{ intake: IntakeSnapshot }>;
   addSource(intakeId: string, file: File): Promise<{ intake: IntakeSnapshot }>;
   analyzeIntake(intake: IntakeSnapshot, description?: string): Promise<{ intake: IntakeSnapshot }>;
-  generateGarment(intake: IntakeSnapshot, correction?: string): Promise<{ intake: IntakeSnapshot; reused: boolean }>;
+  generateGarment(
+    intake: IntakeSnapshot,
+    correction?: string,
+    correctionAuthority?: StudioCorrectionAuthority,
+  ): Promise<{ intake: IntakeSnapshot; reused: boolean }>;
   decideIntake(intake: IntakeSnapshot, decision: IntakeDecision, note?: string): Promise<{ intake: IntakeSnapshot }>;
   commitIntake(intake: IntakeSnapshot, facts: IntakeFacts): Promise<{
     intake: IntakeSnapshot;
@@ -49,6 +89,8 @@ export interface GarmentIntakeClient {
   candidateUrl(intake: IntakeSnapshot): string | undefined;
   sourceUrl?(intake: IntakeSnapshot): string | undefined;
 }
+
+const STUDIO_CLIENT_REQUEST_TIMEOUT_MS = 60_000;
 
 interface EngineErrorBody {
   error?: {
@@ -79,6 +121,7 @@ async function engineRequest<T>(input: RequestInfo | URL, init?: RequestInit): P
       cache: "no-store",
       credentials: "same-origin",
       ...init,
+      signal: init?.signal ?? AbortSignal.timeout(STUDIO_CLIENT_REQUEST_TIMEOUT_MS),
       headers: init?.body instanceof FormData
         ? init.headers
         : { "Content-Type": "application/json", ...init?.headers },
@@ -103,11 +146,25 @@ function key() {
   return globalThis.crypto?.randomUUID?.() ?? `intake-${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
-export async function createIntake(sourceMode: IntakeSourceMode, description?: string) {
+export async function createIntake(sourceMode: IntakeSourceMode, description?: string, idempotencyKey?: string) {
   return engineRequest<{ intake: IntakeSnapshot }>("/api/studio/intakes", {
     method: "POST",
-    body: JSON.stringify({ kind: "GARMENT", sourceMode, description, idempotencyKey: key() }),
+    body: JSON.stringify({ kind: "GARMENT", sourceMode, description, idempotencyKey: idempotencyKey ?? key() }),
   });
+}
+
+export type IntakeRecoveryStep = "build" | "confirm" | "receipt" | "reconcile" | "source";
+
+export function intakeRecoveryStep(intake: IntakeSnapshot): IntakeRecoveryStep {
+  if (intake.reconciliation?.state === "INDETERMINATE") return "reconcile";
+  if (intake.wardrobeItemId || intake.state === "COMMITTED") return "receipt";
+  if (["ANALYZING", "GENERATING"].includes(intake.state)) return "build";
+  if (
+    intake.state === "DECISION"
+    && intake.candidate
+    && ["COMPLETE", "APPROVED"].includes(intake.candidate.status)
+  ) return "confirm";
+  return "source";
 }
 
 export async function listActiveIntakes() {
@@ -132,11 +189,26 @@ export async function analyzeIntake(intake: IntakeSnapshot, description?: string
   });
 }
 
-export async function generateGarment(intake: IntakeSnapshot, correction?: string) {
+export async function generateGarment(
+  intake: IntakeSnapshot,
+  correction?: string,
+  correctionAuthority?: StudioCorrectionAuthority,
+) {
   return engineRequest<{ intake: IntakeSnapshot; reused: boolean }>(`/api/studio/intakes/${intake.id}/generate`, {
     method: "POST",
-    body: JSON.stringify({ expectedVersion: intake.version, operation: "GARMENT_FRONT", correction }),
+    body: JSON.stringify({
+      expectedVersion: intake.version,
+      operation: "GARMENT_FRONT",
+      correction,
+      correctionGenerationId: correctionAuthority?.generationId,
+      decisionReceiptId: correctionAuthority?.decisionReceiptId,
+    }),
   });
+}
+
+function requireCandidateGenerationId(intake: IntakeSnapshot): string {
+  if (intake.candidate?.generationId) return intake.candidate.generationId;
+  throw new StudioEngineError(409, "INVALID_TRANSITION", "The exact garment candidate is unavailable.", "Reload the current intake before deciding or saving.");
 }
 
 export async function decideIntake(
@@ -146,14 +218,23 @@ export async function decideIntake(
 ) {
   return engineRequest<{ intake: IntakeSnapshot }>(`/api/studio/intakes/${intake.id}/decision`, {
     method: "POST",
-    body: JSON.stringify({ expectedVersion: intake.version, decision, note }),
+    body: JSON.stringify({
+      expectedVersion: intake.version,
+      generationId: requireCandidateGenerationId(intake),
+      decision,
+      note,
+    }),
   });
 }
 
 export async function commitIntake(intake: IntakeSnapshot, facts: IntakeFacts) {
   return engineRequest<{ intake: IntakeSnapshot; wardrobeItem: { id: string; state: "DRAFT" } }>(`/api/studio/intakes/${intake.id}/commit`, {
     method: "POST",
-    body: JSON.stringify({ expectedVersion: intake.version, facts }),
+    body: JSON.stringify({
+      expectedVersion: intake.version,
+      generationId: requireCandidateGenerationId(intake),
+      facts,
+    }),
   });
 }
 

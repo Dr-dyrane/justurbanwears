@@ -3,15 +3,91 @@
 /* Same-origin operator-protected private asset responses. */
 /* eslint-disable @next/next/no-img-element */
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Check, CircleAlert, Clock3, ImagePlus, LoaderCircle, Maximize2, Plus, Shirt, Sparkles, UserRound, X } from "lucide-react";
 import { WardrobeMotion } from "../../brand/wardrobe-motion";
 import { StudioDisclosureRow } from "../atoms/studio-disclosure-row";
 import { StudioTaskSheet } from "../atoms/studio-task-sheet";
-import { StudioEngineError } from "./engine-client";
+import {
+  studioDecisionNoteSha256,
+  studioDecisionReceiptMatches,
+  StudioEngineError,
+} from "./engine-client";
 import { addWearModel, decideWear, generateWear, readWear, type WearGeneration, type WearModel, type WearOperation, type WearWorkspace } from "./wear-client";
 
-type Step = "choose" | "add-model" | "working" | "review" | "edit" | "failed" | "saved";
+type Step = "choose" | "add-model" | "working" | "review" | "edit" | "failed" | "reconcile" | "saved";
+type PendingCommand = "ADD_MODEL" | "DECIDE_EDIT" | "DECIDE_KEEP" | "DECIDE_REJECT" | "GENERATE" | "RETRY";
+type WearCorrectionAuthority = { generationId: string; decisionReceiptId: string };
+
+const WEAR_POLL_BASE_MS = 1_600;
+const WEAR_POLL_MAX_BACKOFF_MS = 8_000;
+const WEAR_CONNECTION_MESSAGE = "Connection interrupted. Studio is still checking this existing Wear task; no new generation was started.";
+const validWearRequestId = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function wearRequestStorageKey(wardrobeItemId: string) {
+  return `juw.studio.wear.request.${wardrobeItemId}.v1`;
+}
+
+export function createWearRequestId() {
+  return globalThis.crypto.randomUUID();
+}
+
+function readWearRequestId(wardrobeItemId: string) {
+  if (typeof window === "undefined") return undefined;
+  try {
+    const value = window.sessionStorage.getItem(wearRequestStorageKey(wardrobeItemId));
+    return value && validWearRequestId.test(value) ? value : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function writeWearRequestId(wardrobeItemId: string, requestId: string) {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.setItem(wearRequestStorageKey(wardrobeItemId), requestId);
+  } catch {
+    // The in-memory recovery state remains authoritative for this mount.
+  }
+}
+
+function clearWearRequestId(wardrobeItemId: string, expectedRequestId?: string) {
+  if (typeof window === "undefined") return;
+  try {
+    const key = wearRequestStorageKey(wardrobeItemId);
+    const current = window.sessionStorage.getItem(key);
+    if (!expectedRequestId || current === expectedRequestId) window.sessionStorage.removeItem(key);
+  } catch {
+    // Session storage is a reload aid, not a runtime dependency.
+  }
+}
+
+export function wearPollDelay(failureCount: number) {
+  const exponent = Math.min(8, Math.max(0, Math.floor(failureCount) - 1));
+  return Math.min(WEAR_POLL_BASE_MS * (2 ** exponent), WEAR_POLL_MAX_BACKOFF_MS);
+}
+
+export async function runWearSingleFlight<T>(
+  guard: { current: boolean },
+  command: () => Promise<T>,
+): Promise<T | undefined> {
+  if (guard.current) return undefined;
+  guard.current = true;
+  try {
+    return await command();
+  } finally {
+    guard.current = false;
+  }
+}
+
+function wearGenerationError(generation: Pick<WearGeneration, "retryAvailable">) {
+  return new StudioEngineError(
+    502,
+    "GENERATION_FAILED",
+    "That view was not created.",
+    generation.retryAvailable ? "Try once more." : "Choose another view.",
+  );
+}
 
 export function WearSheet({ onDismiss, open, returnFocus, wardrobeItemId }: {
   onDismiss(): void;
@@ -21,19 +97,29 @@ export function WearSheet({ onDismiss, open, returnFocus, wardrobeItemId }: {
 }) {
   const fileRef = useRef<HTMLInputElement>(null);
   const closePreviewRef = useRef<HTMLButtonElement>(null);
+  const expandPreviewRef = useRef<HTMLButtonElement>(null);
+  const commandInFlightRef = useRef(false);
+  const recoveryFallbackRef = useRef<Extract<Step, "choose" | "edit">>("choose");
   const [workspace, setWorkspace] = useState<WearWorkspace>();
   const [step, setStep] = useState<Step>("choose");
   const [operation, setOperation] = useState<WearOperation>();
   const [selectedModel, setSelectedModel] = useState<WearModel>();
   const [selected, setSelected] = useState<WearGeneration>();
+  const [pendingRequestId, setPendingRequestId] = useState<string>();
   const [file, setFile] = useState<File>();
   const [name, setName] = useState("");
   const [licenseUrl, setLicenseUrl] = useState("");
   const [authorityConfirmed, setAuthorityConfirmed] = useState(false);
   const [note, setNote] = useState("");
   const [error, setError] = useState<StudioEngineError>();
+  const [connectionMessage, setConnectionMessage] = useState<string>();
+  const [pendingCommand, setPendingCommand] = useState<PendingCommand>();
+  const [hydrated, setHydrated] = useState(false);
+  const [hydrationAttempt, setHydrationAttempt] = useState(0);
+  const [hydrationError, setHydrationError] = useState<StudioEngineError>();
   const [expanded, setExpanded] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const commandBusy = pendingCommand !== undefined;
   const modelPreview = useMemo(() => file ? URL.createObjectURL(file) : undefined, [file]);
   const latestTryOnByModel = useMemo(() => {
     const latest = new Map<string, WearGeneration>();
@@ -48,98 +134,406 @@ export function WearSheet({ onDismiss, open, returnFocus, wardrobeItemId }: {
     .filter((generation) => generation.state === "REJECTED" || generation.state === "FAILED")
     .reverse(), [workspace]);
 
+  const rememberWearRequest = useCallback((requestId: string, fallback: Extract<Step, "choose" | "edit">) => {
+    recoveryFallbackRef.current = fallback;
+    setPendingRequestId(requestId);
+    writeWearRequestId(wardrobeItemId, requestId);
+  }, [wardrobeItemId]);
+
+  const clearRememberedWearRequest = useCallback((requestId?: string) => {
+    setPendingRequestId((current) => current === requestId || !requestId ? undefined : current);
+    clearWearRequestId(wardrobeItemId, requestId);
+  }, [wardrobeItemId]);
+
+  const applyTrackedGeneration = useCallback((generation: WearGeneration, options: { reusedApproval?: boolean } = {}) => {
+    setSelected(generation);
+    setOperation(generation.operation);
+    if (generation.requiresReconciliation || generation.state === "INDETERMINATE") {
+      setPendingRequestId(undefined);
+      setError(undefined);
+      setStep("reconcile");
+      return;
+    }
+    if (["PENDING", "RUNNING"].includes(generation.state)) {
+      setPendingRequestId(generation.requestId);
+      writeWearRequestId(wardrobeItemId, generation.requestId);
+      setError(undefined);
+      setStep("working");
+      return;
+    }
+    clearRememberedWearRequest(generation.requestId);
+    if (generation.state === "COMPLETE") {
+      setError(undefined);
+      setStep("review");
+    } else if (generation.state === "APPROVED" && options.reusedApproval) {
+      setError(undefined);
+      setStep("saved");
+    } else if (generation.state === "FAILED") {
+      setError(wearGenerationError(generation));
+      setStep("failed");
+    } else {
+      setStep("choose");
+    }
+  }, [clearRememberedWearRequest, wardrobeItemId]);
+
   useEffect(() => () => { if (modelPreview) URL.revokeObjectURL(modelPreview); }, [modelPreview]);
 
   useEffect(() => {
     if (!open) return;
+    let cancelled = false;
+    const rememberedRequestId = readWearRequestId(wardrobeItemId);
+    setHydrated(false);
+    setWorkspace(undefined);
+    setSelected(undefined);
+    setPendingRequestId(rememberedRequestId);
+    setStep("choose");
     setError(undefined);
+    setConnectionMessage(undefined);
+    setHydrationError(undefined);
+    setFile(undefined);
+    setName("");
+    setLicenseUrl("");
+    setAuthorityConfirmed(false);
+    setNote("");
+    setHistoryOpen(false);
     void readWear(wardrobeItemId).then(({ workspace: value }) => {
+      if (cancelled || commandInFlightRef.current) return;
       setWorkspace(value);
+      const remembered = rememberedRequestId
+        ? value.generations.find((generation) => generation.requestId === rememberedRequestId)
+        : undefined;
       const latest = value.generations.at(-1);
-      if (latest?.state === "COMPLETE") { setSelected(latest); setStep("review"); }
-      else if (latest && ["PENDING", "RUNNING"].includes(latest.state)) { setSelected(latest); setStep("working"); }
-      else setStep("choose");
-    }).catch((caught) => setError(caught));
-  }, [open, wardrobeItemId]);
+      if (remembered) applyTrackedGeneration(remembered, { reusedApproval: true });
+      else {
+        if (rememberedRequestId) clearRememberedWearRequest(rememberedRequestId);
+        if (latest?.state === "INDETERMINATE") applyTrackedGeneration(latest);
+        else if (latest?.state === "COMPLETE") applyTrackedGeneration(latest);
+        else if (latest && ["PENDING", "RUNNING"].includes(latest.state)) applyTrackedGeneration(latest);
+        else if (latest?.state === "FAILED") applyTrackedGeneration(latest);
+        else setStep("choose");
+      }
+      setHydrated(true);
+    }).catch((caught) => {
+      if (!cancelled && !commandInFlightRef.current) {
+        const nextError = caught instanceof StudioEngineError
+          ? caught
+          : new StudioEngineError(0, "NETWORK_UNAVAILABLE", "Studio could not restore Wear.", "Try the connection again.");
+        setError(nextError);
+        setHydrationError(nextError);
+      }
+    });
+    return () => { cancelled = true; };
+  }, [applyTrackedGeneration, clearRememberedWearRequest, hydrationAttempt, open, wardrobeItemId]);
 
   useEffect(() => {
-    if (!open || step !== "working") return;
-    const timeout = window.setTimeout(() => {
-      void readWear(wardrobeItemId).then(({ workspace: value }) => {
+    const selectedGenerationId = selected?.id;
+    const trackedRequestId = pendingRequestId ?? selected?.requestId;
+    if (!open || step !== "working" || commandBusy || (!selectedGenerationId && !trackedRequestId)) return;
+    let cancelled = false;
+    let consecutiveFailures = 0;
+    let timeout: number | undefined;
+
+    const schedulePoll = (delay: number) => {
+      if (cancelled) return;
+      timeout = window.setTimeout(() => void poll(), delay);
+    };
+
+    const poll = async () => {
+      try {
+        const { workspace: value } = await readWear(wardrobeItemId);
+        if (cancelled) return;
+        consecutiveFailures = 0;
+        setConnectionMessage(undefined);
         setWorkspace(value);
-        const latest = value.generations.at(-1);
-        if (latest?.state === "COMPLETE") { setSelected(latest); setStep("review"); }
-        else if (latest?.state === "FAILED") { setSelected(latest); setError(new StudioEngineError(502, "GENERATION_FAILED", "That view was not created.", latest.retryAvailable ? "Try once more." : "Choose another view.")); setStep("failed"); }
-      }).catch((caught) => setError(caught));
-    }, 1600);
-    return () => window.clearTimeout(timeout);
-  }, [open, step, wardrobeItemId, workspace]);
+        const tracked = value.generations.find((generation) => (
+          trackedRequestId ? generation.requestId === trackedRequestId : generation.id === selectedGenerationId
+        ));
+        if (tracked) {
+          applyTrackedGeneration(tracked, { reusedApproval: true });
+          if (["PENDING", "RUNNING"].includes(tracked.state)) schedulePoll(WEAR_POLL_BASE_MS);
+        } else {
+          const scopedReconciliation = [...value.generations].reverse().find((generation) => (
+            generation.state === "INDETERMINATE"
+            && generation.operation === operation
+            && generation.modelProfileId === (selectedModel?.id ?? null)
+          ));
+          if (scopedReconciliation) {
+            applyTrackedGeneration(scopedReconciliation);
+          } else {
+            clearRememberedWearRequest(trackedRequestId);
+            setError(new StudioEngineError(409, "GENERATION_NOT_FOUND", "That Wear command did not start.", "Choose the view again when ready."));
+            setStep(recoveryFallbackRef.current);
+          }
+        }
+      } catch {
+        if (cancelled) return;
+        consecutiveFailures += 1;
+        setConnectionMessage(WEAR_CONNECTION_MESSAGE);
+        schedulePoll(wearPollDelay(consecutiveFailures));
+      }
+    };
+
+    schedulePoll(WEAR_POLL_BASE_MS);
+    return () => {
+      cancelled = true;
+      if (timeout !== undefined) window.clearTimeout(timeout);
+    };
+  }, [applyTrackedGeneration, clearRememberedWearRequest, commandBusy, open, operation, pendingRequestId, selected?.id, selected?.requestId, selectedModel?.id, step, wardrobeItemId]);
 
   useEffect(() => {
-    if (expanded) requestAnimationFrame(() => closePreviewRef.current?.focus({ preventScroll: true }));
+    if (!expanded) return;
+    requestAnimationFrame(() => closePreviewRef.current?.focus({ preventScroll: true }));
+    function containExpandedPreviewFocus(event: KeyboardEvent) {
+      if (event.key === "Tab") {
+        event.preventDefault();
+        closePreviewRef.current?.focus({ preventScroll: true });
+      } else if (event.key === "Escape") {
+        event.preventDefault();
+        event.stopPropagation();
+        closeExpandedPreview();
+      }
+    }
+    window.addEventListener("keydown", containExpandedPreviewFocus, { capture: true });
+    return () => window.removeEventListener("keydown", containExpandedPreviewFocus, { capture: true });
   }, [expanded]);
 
+  function closeExpandedPreview() {
+    setExpanded(false);
+    requestAnimationFrame(() => expandPreviewRef.current?.focus({ preventScroll: true }));
+  }
+
+  async function withCommandLock(command: PendingCommand, action: () => Promise<void>) {
+    await runWearSingleFlight(commandInFlightRef, async () => {
+      setPendingCommand(command);
+      setError(undefined);
+      setConnectionMessage(undefined);
+      try {
+        await action();
+      } finally {
+        setPendingCommand(undefined);
+      }
+    });
+  }
+
   async function run(nextOperation: WearOperation, model?: WearModel, parent?: WearGeneration, correction?: string) {
-    setError(undefined);
+    await withCommandLock("GENERATE", () => runUnlocked(nextOperation, model, parent, correction));
+  }
+
+  async function runUnlocked(
+    nextOperation: WearOperation,
+    model?: WearModel,
+    parent?: WearGeneration,
+    correction?: string,
+    correctionAuthority?: WearCorrectionAuthority,
+  ) {
+    const requestId = createWearRequestId();
+    rememberWearRequest(requestId, correction ? "edit" : "choose");
     setOperation(nextOperation);
     setSelectedModel(model);
+    setSelected(undefined);
     setStep("working");
     try {
       const result = await generateWear(wardrobeItemId, {
+        requestId,
         operation: nextOperation,
         modelProfileId: model?.id,
         parentGenerationId: parent?.id,
         correction,
+        correctionGenerationId: correctionAuthority?.generationId,
+        decisionReceiptId: correctionAuthority?.decisionReceiptId,
       });
       setWorkspace(result.workspace);
-      const candidate = [...result.workspace.generations].reverse().find((item) => item.operation === nextOperation && item.modelProfileId === (model?.id ?? parent?.modelProfileId ?? null));
+      const candidate = result.workspace.generations.find((item) => (
+        item.id === result.generationId && item.requestId === requestId
+      ));
       if (!candidate) throw new StudioEngineError(500, "ENGINE_ERROR", "The Wear view was not saved.", "Try once more.");
-      setSelected(candidate);
-      setStep(candidate.outputUrl ? "review" : candidate.state === "FAILED" ? "failed" : "working");
+      applyTrackedGeneration(candidate, { reusedApproval: result.reused });
     } catch (caught) {
-      setError(caught instanceof StudioEngineError ? caught : new StudioEngineError(500, "ENGINE_ERROR", "Studio could not make that view."));
+      const commandError = caught instanceof StudioEngineError ? caught : new StudioEngineError(500, "ENGINE_ERROR", "Studio could not make that view.");
+      setError(commandError);
       const refreshed = await readWear(wardrobeItemId).catch(() => null);
-      const failed = refreshed?.workspace.generations.at(-1);
+      const desiredModelId = model?.id ?? parent?.modelProfileId ?? null;
+      const exact = refreshed?.workspace.generations.find((item) => item.requestId === requestId);
+      const scopedReconciliation = [...(refreshed?.workspace.generations ?? [])].reverse().find((item) => (
+          item.state === "INDETERMINATE"
+          && item.operation === nextOperation
+          && item.modelProfileId === desiredModelId
+        ));
       if (refreshed) setWorkspace(refreshed.workspace);
-      if (failed?.state === "FAILED") { setSelected(failed); setStep("failed"); }
-      else setStep("choose");
+      if (exact) {
+        setConnectionMessage(WEAR_CONNECTION_MESSAGE);
+        applyTrackedGeneration(exact, { reusedApproval: true });
+      } else if (scopedReconciliation) {
+        applyTrackedGeneration(scopedReconciliation);
+      } else if (!refreshed && (commandError.status === 0 || commandError.status === 409 || commandError.status >= 500)) {
+        setConnectionMessage(WEAR_CONNECTION_MESSAGE);
+        setStep("working");
+      } else {
+        clearRememberedWearRequest(requestId);
+        setStep(correction ? "edit" : "choose");
+      }
     }
   }
 
-  async function decide(decision: "KEEP" | "EDIT" | "REJECT") {
+  async function decide(decision: "KEEP" | "REJECT") {
     if (!selected) return;
-    try {
-      const result = await decideWear(wardrobeItemId, selected.id, decision, note.trim() || undefined);
-      setWorkspace(result.workspace);
-      if (decision === "KEEP") setStep("saved");
-      else if (decision === "EDIT") setStep("edit");
-      else setStep("choose");
-    } catch (caught) {
-      setError(caught instanceof StudioEngineError ? caught : new StudioEngineError(500, "ENGINE_ERROR", "Studio could not save that decision."));
-    }
+    const pendingDecision = decision === "KEEP" ? "DECIDE_KEEP" : "DECIDE_REJECT";
+    await withCommandLock(pendingDecision, async () => {
+      const expectedNoteSha256 = await studioDecisionNoteSha256();
+      try {
+        const result = await decideWear(wardrobeItemId, selected.id, decision);
+        const decided = result.workspace.generations.find((generation) => generation.id === selected.id);
+        if (!studioDecisionReceiptMatches({
+          receipt: decided?.decisionReceipt,
+          generationId: selected.id,
+          decision,
+          noteSha256: expectedNoteSha256,
+        })) {
+          throw new StudioEngineError(409, "DECISION_CONFLICT", "Another decision changed this view.", "Reload the current Wear state.");
+        }
+        setWorkspace(result.workspace);
+        if (decision === "KEEP") setStep("saved");
+        else setStep("choose");
+      } catch (caught) {
+        const decisionError = caught instanceof StudioEngineError ? caught : new StudioEngineError(500, "ENGINE_ERROR", "Studio could not save that decision.");
+        const refreshed = await readWear(wardrobeItemId).catch(() => null);
+        const reconciled = refreshed?.workspace.generations.find((generation) => generation.id === selected.id);
+        if (refreshed) setWorkspace(refreshed.workspace);
+        const matchesDecision = studioDecisionReceiptMatches({
+          receipt: reconciled?.decisionReceipt,
+          generationId: selected.id,
+          decision,
+          noteSha256: expectedNoteSha256,
+        });
+        if (decision === "KEEP" && reconciled?.state === "APPROVED" && matchesDecision) {
+          setError(undefined);
+          setStep("saved");
+        } else if (decision === "REJECT" && reconciled?.state === "REJECTED" && matchesDecision) {
+          setError(undefined);
+          setStep("choose");
+        } else {
+          setError(decisionError);
+        }
+      }
+    });
+  }
+
+  async function applyCorrection() {
+    if (!selected || !note.trim()) return;
+    const correction = note.trim();
+    await withCommandLock("DECIDE_EDIT", async () => {
+      const expectedNoteSha256 = await studioDecisionNoteSha256(correction);
+      let currentWorkspace = workspace;
+      let correctionReceipt: WearGeneration["decisionReceipt"] = null;
+      try {
+        const result = await decideWear(wardrobeItemId, selected.id, "EDIT", correction);
+        const decided = result.workspace.generations.find((generation) => generation.id === selected.id);
+        if (!studioDecisionReceiptMatches({
+          receipt: decided?.decisionReceipt,
+          generationId: selected.id,
+          decision: "EDIT",
+          noteSha256: expectedNoteSha256,
+        })) {
+          throw new StudioEngineError(409, "DECISION_CONFLICT", "Another decision changed this view.", "Review the current Wear state before spending again.");
+        }
+        correctionReceipt = decided?.decisionReceipt ?? null;
+        currentWorkspace = result.workspace;
+        setWorkspace(result.workspace);
+      } catch (caught) {
+        const decisionError = caught instanceof StudioEngineError ? caught : new StudioEngineError(500, "ENGINE_ERROR", "Studio could not save that correction.");
+        const refreshed = await readWear(wardrobeItemId).catch(() => null);
+        const reconciled = refreshed?.workspace.generations.find((generation) => generation.id === selected.id);
+        if (refreshed) {
+          currentWorkspace = refreshed.workspace;
+          setWorkspace(refreshed.workspace);
+        }
+        if (!studioDecisionReceiptMatches({
+          receipt: reconciled?.decisionReceipt,
+          generationId: selected.id,
+          decision: "EDIT",
+          noteSha256: expectedNoteSha256,
+        })) {
+          setError(decisionError);
+          setStep("edit");
+          return;
+        }
+        correctionReceipt = reconciled?.decisionReceipt ?? null;
+      }
+      const model = currentWorkspace?.models.find((item) => item.id === selected.modelProfileId) ?? selectedModel;
+      const parent = selected.operation === "EDITORIAL_MODEL"
+        ? currentWorkspace?.generations.find((generation) => generation.id === selected.parentGenerationId)
+        : undefined;
+      await runUnlocked(selected.operation, model, parent, correction, {
+        generationId: selected.id,
+        decisionReceiptId: correctionReceipt!.receiptId,
+      });
+    });
   }
 
   async function addModel() {
     if (!file || !name.trim() || !licenseUrl.trim() || !authorityConfirmed) return;
-    setStep("working");
-    try {
-      const result = await addWearModel(wardrobeItemId, { file, name: name.trim(), licenseUrl: licenseUrl.trim() });
-      setWorkspace(result.workspace);
-      await run("MODEL_TRY_ON", result.model);
-    } catch (caught) {
-      setError(caught instanceof StudioEngineError ? caught : new StudioEngineError(500, "ENGINE_ERROR", "Studio could not add that model."));
-      setStep("add-model");
-    }
+    await withCommandLock("ADD_MODEL", async () => {
+      setStep("working");
+      try {
+        const result = await addWearModel(wardrobeItemId, { file, name: name.trim(), licenseUrl: licenseUrl.trim() });
+        setWorkspace(result.workspace);
+        await runUnlocked("MODEL_TRY_ON", result.model);
+      } catch (caught) {
+        setError(caught instanceof StudioEngineError ? caught : new StudioEngineError(500, "ENGINE_ERROR", "Studio could not add that model."));
+        setStep("add-model");
+      }
+    });
   }
 
   async function retry() {
     if (!selected?.retryAvailable) return;
-    await decideWear(wardrobeItemId, selected.id, "RETRY");
-    const model = workspace?.models.find((item) => item.id === selected.modelProfileId);
-    const parent = selected.operation === "EDITORIAL_MODEL"
-      ? workspace?.generations.find((item) => item.id === selected.parentGenerationId && item.operation === "MODEL_TRY_ON" && item.state === "APPROVED")
-      : undefined;
-    await run(selected.operation, model, parent);
+    await withCommandLock("RETRY", async () => {
+      const expectedNoteSha256 = await studioDecisionNoteSha256();
+      try {
+        const result = await decideWear(wardrobeItemId, selected.id, "RETRY");
+        setWorkspace(result.workspace);
+        const decided = result.workspace.generations.find((generation) => generation.id === selected.id);
+        if (!studioDecisionReceiptMatches({
+          receipt: decided?.decisionReceipt,
+          generationId: selected.id,
+          decision: "RETRY",
+          noteSha256: expectedNoteSha256,
+        })) {
+          throw new StudioEngineError(409, "DECISION_CONFLICT", "Another decision changed this view.", "Review the current Wear state before spending again.");
+        }
+        const model = result.workspace.models.find((item) => item.id === selected.modelProfileId);
+        const parent = selected.operation === "EDITORIAL_MODEL"
+          ? result.workspace.generations.find((item) => item.id === selected.parentGenerationId && item.operation === "MODEL_TRY_ON" && item.state === "APPROVED")
+          : undefined;
+        await runUnlocked(selected.operation, model, parent, undefined, {
+          generationId: selected.id,
+          decisionReceiptId: decided!.decisionReceipt!.receiptId,
+        });
+      } catch (caught) {
+        const retryError = caught instanceof StudioEngineError ? caught : new StudioEngineError(500, "ENGINE_ERROR", "Studio could not retry that view.");
+        const refreshed = await readWear(wardrobeItemId).catch(() => null);
+        const reconciled = refreshed?.workspace.generations.find((generation) => generation.id === selected.id);
+        if (refreshed) setWorkspace(refreshed.workspace);
+        if (studioDecisionReceiptMatches({
+          receipt: reconciled?.decisionReceipt,
+          generationId: selected.id,
+          decision: "RETRY",
+          noteSha256: expectedNoteSha256,
+        })) {
+          const model = refreshed?.workspace.models.find((item) => item.id === selected.modelProfileId);
+          const parent = selected.operation === "EDITORIAL_MODEL"
+            ? refreshed?.workspace.generations.find((item) => item.id === selected.parentGenerationId && item.operation === "MODEL_TRY_ON" && item.state === "APPROVED")
+            : undefined;
+          await runUnlocked(selected.operation, model, parent, undefined, {
+            generationId: selected.id,
+            decisionReceiptId: reconciled!.decisionReceipt!.receiptId,
+          });
+        } else {
+          setError(retryError);
+          setStep("failed");
+        }
+      }
+    });
   }
 
   function finishDismiss() {
@@ -148,11 +542,37 @@ export function WearSheet({ onDismiss, open, returnFocus, wardrobeItemId }: {
     return true;
   }
 
+  function cancelCorrectionDraft() {
+    setNote("");
+    setError(undefined);
+    setStep("review");
+  }
+
+  function cancelModelDraft() {
+    setFile(undefined);
+    setName("");
+    setLicenseUrl("");
+    setAuthorityConfirmed(false);
+    setError(undefined);
+    setStep("choose");
+  }
+
+  function chooseAnotherView() {
+    clearRememberedWearRequest(selected?.requestId ?? pendingRequestId);
+    setSelected(undefined);
+    setOperation(undefined);
+    setError(undefined);
+    setConnectionMessage(undefined);
+    setStep("choose");
+  }
+
   function requestDismiss() {
     if (expanded) {
-      setExpanded(false);
+      closeExpandedPreview();
       return false;
     }
+
+    if (step === "reconcile") return finishDismiss();
 
     if (
       step === "working"
@@ -174,48 +594,66 @@ export function WearSheet({ onDismiss, open, returnFocus, wardrobeItemId }: {
     return finishDismiss();
   }
 
-  const footer = step === "review" ? (
+  const footer = !hydrated ? hydrationError ? (
+    <button className="button button-primary" onClick={() => setHydrationAttempt((attempt) => attempt + 1)} type="button">Try connection</button>
+  ) : undefined : step === "review" ? (
     <>
-      <button className="button button-secondary" onClick={() => void decide("EDIT")} type="button">Edit</button>
-      <button className="button button-primary" onClick={() => void decide("KEEP")} type="button"><Check aria-hidden="true" size={17} />Keep</button>
+      <button className="button button-secondary" disabled={commandBusy} onClick={() => { setError(undefined); setNote(""); setStep("edit"); }} type="button">Fix one thing</button>
+      <button aria-busy={pendingCommand === "DECIDE_KEEP" || undefined} className="button button-primary" disabled={commandBusy} onClick={() => void decide("KEEP")} type="button"><Check aria-hidden="true" size={17} />{pendingCommand === "DECIDE_KEEP" ? "Saving…" : "Keep"}</button>
     </>
   ) : step === "edit" ? (
     <>
-      <button className="button button-secondary" onClick={() => setStep("review")} type="button">Cancel</button>
-      <button className="button button-primary" disabled={!note.trim()} onClick={() => selected && void run(
-        selected.operation,
-        workspace?.models.find((model) => model.id === selected.modelProfileId) ?? selectedModel,
-        selected.operation === "EDITORIAL_MODEL"
-          ? workspace?.generations.find((generation) => generation.id === selected.parentGenerationId)
-          : undefined,
-        note.trim(),
-      )} type="button">Try correction</button>
+      <button className="button button-secondary" disabled={commandBusy} onClick={cancelCorrectionDraft} type="button">Cancel</button>
+      <button aria-busy={pendingCommand === "DECIDE_EDIT" || undefined} className="button button-primary" disabled={commandBusy || !note.trim()} onClick={() => void applyCorrection()} type="button">{pendingCommand === "DECIDE_EDIT" ? "Applying…" : "Try correction"}</button>
     </>
   ) : step === "add-model" ? (
     <>
-      <button className="button button-secondary" onClick={() => setStep("choose")} type="button">Cancel</button>
-      <button className="button button-primary" disabled={!file || !name.trim() || !licenseUrl.trim() || !authorityConfirmed} onClick={() => void addModel()} type="button">Add & try on</button>
+      <button className="button button-secondary" disabled={commandBusy} onClick={cancelModelDraft} type="button">Cancel</button>
+      <button aria-busy={pendingCommand === "ADD_MODEL" || undefined} className="button button-primary" disabled={commandBusy || !file || !name.trim() || !licenseUrl.trim() || !authorityConfirmed} onClick={() => void addModel()} type="button">{pendingCommand === "ADD_MODEL" ? "Adding…" : "Add & try on"}</button>
     </>
   ) : step === "saved" ? (
     <button className="button button-primary" onClick={finishDismiss} type="button">Done</button>
-  ) : step === "failed" ? (
-    <button className="button button-primary" disabled={!selected?.retryAvailable} onClick={() => void retry()} type="button">Try once</button>
+  ) : step === "failed" ? selected?.retryAvailable ? (
+    <button aria-busy={pendingCommand === "RETRY" || undefined} className="button button-primary" disabled={commandBusy} onClick={() => void retry()} type="button">{pendingCommand === "RETRY" ? "Starting…" : <span>Try once</span>}</button>
+  ) : (
+    <button className="button button-primary" onClick={chooseAnotherView} type="button">Choose another view</button>
+  ) : step === "reconcile" ? (
+    <>
+      <button className="button button-secondary" onClick={chooseAnotherView} type="button">Other view</button>
+      <button className="button button-primary" onClick={finishDismiss} type="button">Done</button>
+    </>
   ) : undefined;
 
   return (
     <StudioTaskSheet
+      busy={commandBusy && step !== "working"}
+      busyLabel="Saving the current Wear action"
       className="studio-wear-task-sheet"
       eyebrow="Private media"
       footer={footer}
-      onBack={["add-model", "review", "edit"].includes(step) ? () => setStep(step === "add-model" ? "choose" : "choose") : undefined}
+      onBack={!commandBusy && ["add-model", "review", "edit", "failed"].includes(step)
+        ? () => step === "edit" ? cancelCorrectionDraft() : step === "add-model" ? cancelModelDraft() : chooseAnotherView()
+        : undefined}
       onDismiss={requestDismiss}
       open={open}
-      progress={step === "choose" ? 18 : step === "working" ? 58 : step === "review" || step === "edit" ? 82 : 100}
+      progress={step === "reconcile" ? undefined : step === "choose" ? 18 : step === "working" ? 58 : step === "review" || step === "edit" ? 82 : 100}
       progressLabel="Wear media progress"
       returnFocus={returnFocus}
       title="Wear"
     >
-      {step === "choose" ? (
+      {!hydrated && hydrationError ? (
+        <section aria-live="assertive" className="studio-task-question" role="alert">
+          <CircleAlert aria-hidden="true" size={28} />
+          <p className="eyebrow">Wear unavailable</p>
+          <h3>Saved work could not be restored.</h3>
+          <p>{hydrationError.message} {hydrationError.recovery}</p>
+        </section>
+      ) : !hydrated ? (
+        <section aria-live="polite" className="studio-build-state" role="status">
+          <div className="studio-build-visual"><Shirt aria-hidden="true" size={70} strokeWidth={1.1} /><span><LoaderCircle aria-hidden="true" className="studio-spin" size={21} /></span></div>
+          <div><p className="eyebrow">Wear</p><h3>Opening saved work.</h3><p>Restoring the current private view.</p></div>
+        </section>
+      ) : step === "choose" ? (
         <section className="studio-task-question">
           <p className="eyebrow">Choose</p>
           <h3>Make a view.</h3>
@@ -257,26 +695,28 @@ export function WearSheet({ onDismiss, open, returnFocus, wardrobeItemId }: {
       ) : null}
 
       {step === "working" ? (
-        <section aria-live="polite" className="studio-build-state" role="status">
+        <section aria-busy="true" aria-live="polite" className="studio-build-state" role="status">
           <div className="studio-build-visual"><Shirt aria-hidden="true" size={70} strokeWidth={1.1} /><span><LoaderCircle aria-hidden="true" className="studio-spin" size={21} /></span></div>
-          <div><p className="eyebrow">Making</p><h3>{operation === "MANNEQUIN_FRONT" ? "Mannequin front." : operation === "EDITORIAL_MODEL" ? "Editorial background." : `Try-on${selectedModel ? ` · ${selectedModel.name}` : ""}.`}</h3><p>Private until kept.</p></div>
+          <div><p className="eyebrow">Making</p><h3>{operation === "MANNEQUIN_FRONT" ? "Mannequin front." : operation === "EDITORIAL_MODEL" ? "Editorial background." : `Try-on${selectedModel ? ` · ${selectedModel.name}` : ""}.`}</h3><p>Private until kept.</p>{connectionMessage ? <p className="studio-task-error">{connectionMessage}</p> : null}</div>
         </section>
       ) : null}
 
       {step === "failed" ? <section aria-live="assertive" className="studio-task-question"><p className="eyebrow">Not made</p><h3>Try once?</h3><p>{error?.message}</p></section> : null}
 
+      {step === "reconcile" ? <section aria-live="assertive" className="studio-task-question" role="alert"><CircleAlert aria-hidden="true" size={28} /><p className="eyebrow">Reconciliation required</p><h3>No new paid attempt will start.</h3><p>An administrator must reconcile this Wear attempt before Studio can continue.</p></section> : null}
+
       {step === "review" && selected?.outputUrl ? (
         <section className="studio-wear-review">
-          <div className="studio-wear-review-image"><img alt={`${selected.operation.toLowerCase().replaceAll("_", " ")} review`} src={selected.outputUrl} /><button aria-label="Expand Wear image" className="studio-lens-action" onClick={() => setExpanded(true)} type="button"><Maximize2 aria-hidden="true" size={17} />Expand</button></div>
-          <div><p className="eyebrow">Review</p><h3>Keep this view?</h3><p>Front only · private</p><button className="studio-text-action" onClick={() => void decide("REJECT")} type="button">Reject</button></div>
+          <div className="studio-wear-review-image"><img alt={`${selected.operation.toLowerCase().replaceAll("_", " ")} review`} src={selected.outputUrl} /><button aria-label="Expand Wear image" className="studio-lens-action" onClick={() => setExpanded(true)} ref={expandPreviewRef} type="button"><Maximize2 aria-hidden="true" size={17} />Expand</button></div>
+          <div><p className="eyebrow">Review</p><h3>Keep this view?</h3><p>Front only · private</p><button aria-busy={pendingCommand === "DECIDE_REJECT" || undefined} className="studio-text-action" disabled={commandBusy} onClick={() => void decide("REJECT")} type="button">{pendingCommand === "DECIDE_REJECT" ? "Rejecting…" : "Reject"}</button>{error ? <p className="studio-task-error" role="alert">{error.message} {error.recovery}</p> : null}</div>
         </section>
       ) : null}
 
-      {step === "edit" ? <section className="studio-task-question"><p className="eyebrow">Correction</p><h3>What changes?</h3><label className="studio-field"><span>One correction</span><textarea maxLength={500} onChange={(event) => setNote(event.target.value)} rows={6} value={note} /></label></section> : null}
+      {step === "edit" ? <section className="studio-task-question"><p className="eyebrow">Correction</p><h3>What changes?</h3><label className="studio-field"><span>One correction</span><textarea maxLength={500} onChange={(event) => setNote(event.target.value)} rows={6} value={note} /></label>{error ? <p className="studio-task-error" role="alert">{error.message} {error.recovery}</p> : null}</section> : null}
 
       {step === "saved" && selected?.outputUrl ? <section className="studio-task-receipt"><div className="studio-receipt-visual"><img alt="Approved private Wear view" src={selected.outputUrl} /></div><div aria-live="polite" className="studio-receipt-copy"><div className="juw-receipt-motion"><WardrobeMotion artwork="logo" polarity="auto" size="sm" variant="success" /></div><p className="eyebrow">Kept</p><h3>View saved.</h3><p>Private · not in Shop</p></div></section> : null}
 
-      {expanded && selected?.outputUrl ? <div aria-label="Expanded Wear review" aria-modal="true" className="studio-receipt-preview" role="dialog"><img alt="Expanded private Wear review" src={selected.outputUrl} /><button aria-label="Close expanded Wear image" className="studio-icon-action" onClick={() => setExpanded(false)} ref={closePreviewRef} type="button"><X aria-hidden="true" size={19} /></button></div> : null}
+      {expanded && selected?.outputUrl ? <div aria-label="Expanded Wear review" aria-modal="true" className="studio-receipt-preview" role="dialog"><img alt="Expanded private Wear review" src={selected.outputUrl} /><button aria-label="Close expanded Wear image" className="studio-icon-action" onClick={closeExpandedPreview} ref={closePreviewRef} type="button"><X aria-hidden="true" size={19} /></button></div> : null}
       <span aria-live="polite" className="sr-only">{step === "working" ? "Wear generation in progress" : error?.message || ""}</span>
     </StudioTaskSheet>
   );

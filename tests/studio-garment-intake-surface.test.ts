@@ -1,12 +1,19 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import {
+  intakeRecoveryStep,
+  studioDecisionNoteSha256,
+  studioDecisionReceiptMatches,
+  type IntakeSnapshot,
+} from "../components/studio/garment-intake/engine-client";
 
 const root = process.cwd();
 const sheet = readFileSync(`${root}/components/studio/garment-intake/garment-intake-sheet.tsx`, "utf8");
 const client = readFileSync(`${root}/components/studio/garment-intake/engine-client.ts`, "utf8");
 const workbench = readFileSync(`${root}/components/studio/wardrobe-workbench.tsx`, "utf8");
 const css = readFileSync(`${root}/app/foundation.css`, "utf8");
+const adaptiveCss = readFileSync(`${root}/app/studio-adaptive-workspace.css`, "utf8");
 
 test("garment intake is one progressive mounted sheet with no select controls", () => {
   for (const step of ["start", "source", "build", "confirm", "edit", "wear", "receipt"]) {
@@ -29,6 +36,35 @@ test("garment intake is one progressive mounted sheet with no select controls", 
   assert.doesNotMatch(workbench, /function GarmentIntakeDialog/);
 });
 
+test("garment intake keeps one visual stage, one control surface, and stable photo inputs", () => {
+  const workspaceStart = sheet.indexOf("<StudioAdaptiveWorkspace active={open}");
+  const workspaceEnd = sheet.indexOf("</StudioAdaptiveWorkspace>", workspaceStart);
+  assert.notEqual(workspaceStart, -1);
+  assert.notEqual(workspaceEnd, -1);
+  assert.equal(sheet.match(/<StudioAdaptiveWorkspace/g)?.length, 1);
+  assert.equal(sheet.match(/aria-label="Take garment photo"/g)?.length, 1);
+  assert.equal(sheet.match(/aria-label="Choose garment photo"/g)?.length, 1);
+  assert.ok(sheet.indexOf('aria-label="Take garment photo"') < workspaceStart);
+  assert.ok(sheet.indexOf('aria-label="Choose garment photo"') < workspaceStart);
+  assert.match(sheet, /event\.currentTarget\.value = ""/);
+  assert.equal(sheet.match(/tabIndex=\{-1\} type="file"/g)?.length, 2);
+  assert.match(sheet, /function clearPreview\(\)[\s\S]*URL\.revokeObjectURL\(previewUrlRef\.current\)/);
+  assert.match(sheet, /const nextPreview = URL\.createObjectURL\(nextFile\)[\s\S]*previewUrlRef\.current = nextPreview/);
+  assert.match(sheet, /useEffect\(\(\) => \(\) => \{[\s\S]*URL\.revokeObjectURL\(previewUrlRef\.current\)/);
+  assert.doesNotMatch(sheet, /useMemo\(\(\) => file \? URL\.createObjectURL/);
+  assert.match(sheet, /className=\{`juw-intake-v2-stage is-\$\{step\}`\}/);
+  assert.doesNotMatch(sheet, /<div aria-label=\{`\$\{stageCopy\.title\}/);
+  assert.match(sheet.slice(workspaceStart, workspaceEnd), /juw-intake-v2-actions/);
+  assert.match(sheet, /event\.preventDefault\(\)[\s\S]*requestCloseAndThen\(\(\) => window\.location\.assign\(destination\)\)/);
+  assert.match(sheet, /step === "reconcile"[\s\S]*onClick=\{requestClose\}/);
+  assert.doesNotMatch(sheet, /studio-source-preview|studio-build-visual|studio-confirm-hero|studio-receipt-visual/);
+
+  assert.match(adaptiveCss, /\.studio-garment-task-sheet\.is-adaptive-host[\s\S]*?max-width: calc\(100vw - 16px\)/);
+  assert.match(adaptiveCss, /\.studio-garment-task-sheet\.is-adaptive-host \.studio-task-sheet-body[\s\S]*?overflow: hidden/);
+  assert.match(adaptiveCss, /\.juw-intake-v2-content[\s\S]*?min-height: 100%/);
+  assert.match(adaptiveCss, /\.juw-intake-v2-actions[\s\S]*?position: sticky/);
+});
+
 test("every host uses the truthful progressive intake surface", () => {
   assert.match(workbench, /<GarmentIntakeSheet/);
   assert.doesNotMatch(workbench, /engineEnabled/);
@@ -43,8 +79,143 @@ test("client keeps providers and private Blob paths behind same-origin engine ro
   assert.match(client, /\/api\/studio\/intakes/);
   assert.match(client, /credentials: "same-origin"/);
   assert.match(client, /cache: "no-store"/);
+  assert.match(client, /AbortSignal\.timeout\(STUDIO_CLIENT_REQUEST_TIMEOUT_MS\)/);
   assert.doesNotMatch(client, /VERCEL_|BLOB_|provider|modelId|blob\.vercel-storage/);
   assert.match(client, /assets\/\$\{intake\.candidate\.assetId\}/);
+  assert.match(client, /generationId: requireCandidateGenerationId\(intake\)/);
+  assert.match(client, /correctionGenerationId: correctionAuthority\?\.generationId/);
+  assert.match(client, /decisionReceiptId: correctionAuthority\?\.decisionReceiptId/);
+});
+
+test("garment intake commands are single-flight and creation reuses one reload-stable intent", () => {
+  assert.match(sheet, /const commandInFlightRef = useRef\(false\)/);
+  assert.match(sheet, /if \(commandInFlightRef\.current\) return false/);
+  assert.match(sheet, /if \(!claimCommand\(\)\) return/);
+  assert.match(sheet, /if \(intake\?\.reconciliation \|\| !canKeep \|\| !claimCommand\(\)\) return/);
+  assert.match(sheet, /if \(!intake \|\| !reviewedGenerationId \|\| intake\.reconciliation \|\| retryUsed \|\| !claimCommand\(\)\) return/);
+  assert.match(sheet, /window\.sessionStorage\.getItem\(intakeIntentStorageKey\)/);
+  assert.match(sheet, /window\.sessionStorage\.setItem\(intakeIntentStorageKey, JSON\.stringify\(value\)\)/);
+  assert.match(sheet, /intakeIntentFingerprint\(sourceMode!, description\)/);
+  assert.match(sheet, /markIntakeIntentDispatched\(\)/);
+  assert.match(sheet, /client\.createIntake\(sourceMode!, description\.trim\(\) \|\| undefined, idempotencyKey\)/);
+  assert.match(sheet, /finishDismiss\(\{ preserveIntent: true \}\)/);
+  assert.match(client, /description\?: string, idempotencyKey\?: string/);
+  assert.match(client, /idempotencyKey: idempotencyKey \?\? key\(\)/);
+});
+
+test("paid follow-up requires the exact generation, decision, and normalized note receipt", async () => {
+  const emptyNoteSha256 = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
+  const correctionSha256 = await studioDecisionNoteSha256("correction");
+  assert.equal(await studioDecisionNoteSha256(), emptyNoteSha256);
+  assert.equal(await studioDecisionNoteSha256("  correction  "), correctionSha256);
+
+  const receipt = {
+    receiptId: "receipt-1",
+    generationId: "generation-1",
+    decision: "RETRY" as const,
+    noteSha256: correctionSha256,
+    decidedAt: "2026-08-26T00:00:00.000Z",
+  };
+  assert.equal(studioDecisionReceiptMatches({
+    receipt,
+    generationId: "generation-1",
+    decision: "RETRY",
+    noteSha256: correctionSha256,
+  }), true);
+  assert.equal(studioDecisionReceiptMatches({
+    receipt,
+    generationId: "generation-2",
+    decision: "RETRY",
+    noteSha256: correctionSha256,
+  }), false);
+  assert.equal(studioDecisionReceiptMatches({
+    receipt,
+    generationId: "generation-1",
+    decision: "EDIT",
+    noteSha256: correctionSha256,
+  }), false);
+  assert.equal(studioDecisionReceiptMatches({
+    receipt,
+    generationId: "generation-1",
+    decision: "RETRY",
+    noteSha256: emptyNoteSha256,
+  }), false);
+
+  const retryStart = sheet.indexOf("async function retry()");
+  const retryEnd = sheet.length;
+  assert.notEqual(retryStart, -1);
+  assert.notEqual(retryEnd, -1);
+  const retry = sheet.slice(retryStart, retryEnd);
+  assert.match(retry, /studioDecisionReceiptMatches/);
+  assert.match(retry, /const correction = "Keep the garment truth\. Improve the clean product-front view\.";\s*const decisionNote = correction/);
+  assert.ok(retry.indexOf("studioDecisionReceiptMatches") < retry.indexOf("await performBuild"));
+  assert.match(retry, /generationId: reviewedGenerationId,\s*decisionReceiptId: decision\.intake\.decisionReceipt!\.receiptId/);
+  assert.match(retry, /generationId: reviewedGenerationId,\s*decisionReceiptId: reconciled\.intake\.decisionReceipt!\.receiptId/);
+});
+
+test("intake recovery projects only the current state, never rejected history", () => {
+  const base: IntakeSnapshot = {
+    id: "intake-1",
+    kind: "GARMENT",
+    sourceMode: "UPLOAD",
+    state: "REVIEW",
+    version: 2,
+    assets: [],
+  };
+  assert.equal(intakeRecoveryStep({ ...base, state: "ANALYZING" }), "build");
+  assert.equal(intakeRecoveryStep({ ...base, state: "GENERATING" }), "build");
+  assert.equal(intakeRecoveryStep({
+    ...base,
+    state: "DECISION",
+    candidate: { assetId: "asset-1", generationId: "generation-1", status: "COMPLETE" },
+  }), "confirm");
+  assert.equal(intakeRecoveryStep({
+    ...base,
+    state: "REVIEW",
+    candidate: { assetId: "asset-old", generationId: "generation-old", status: "REJECTED" },
+  }), "source");
+  assert.equal(intakeRecoveryStep({
+    ...base,
+    state: "FAILED",
+    reconciliation: {
+      state: "INDETERMINATE",
+      retryAllowed: false,
+      message: "Administrator reconciliation required.",
+    },
+  }), "reconcile");
+  assert.equal(intakeRecoveryStep({ ...base, state: "COMMITTED", wardrobeItemId: "wardrobe-1" }), "receipt");
+});
+
+test("ambiguous intake mutations reconcile by read without automatic generation", () => {
+  assert.match(sheet, /async function reconcileIntake\(intakeId: string\)/);
+  assert.match(sheet, /await client\.getIntake\(intakeId\)/);
+  assert.match(sheet, /setIntake\(decided\.intake\)/);
+  assert.match(sheet, /reconciled\.intake\.candidate\?\.status === "APPROVED"/);
+  assert.match(sheet, /committedReconciliation = await reconcileIntake/);
+  const reconciliation = sheet.slice(
+    sheet.indexOf("async function reconcileIntake"),
+    sheet.indexOf("function resumeIntake"),
+  );
+  assert.doesNotMatch(reconciliation, /generateGarment|analyzeIntake|createIntake/);
+});
+
+test("active intake polling reconnects with bounded backoff and stays read-only", () => {
+  const pollStart = sheet.indexOf("const poll = async () =>");
+  const pollEnd = sheet.indexOf("}, [client, open, pollingIntakeId, pollingIntakeState]);", pollStart);
+  assert.notEqual(pollStart, -1);
+  assert.notEqual(pollEnd, -1);
+  const poll = sheet.slice(pollStart, pollEnd);
+  assert.match(poll, /await getIntake\(intakeId\)/);
+  assert.match(poll, /Connection interrupted\. Studio is still working; reconnecting…/);
+  assert.match(poll, /Math\.min\(14_400/);
+  assert.doesNotMatch(poll, /generateGarment|createIntake|analyzeIntake/);
+  assert.doesNotMatch(sheet, /busy=\{working\}/);
+  assert.match(sheet, /onBack=\{!working &&/);
+  assert.match(sheet, /Building…/);
+  assert.match(sheet, /Keeping…/);
+  assert.match(sheet, /Trying again…/);
+  assert.match(sheet, /No new paid attempt will start\./);
+  assert.match(sheet, /if \(intake\?\.reconciliation \|\|/);
 });
 
 test("new sheet material follows the scoped liquid-glass and accessibility contract", () => {

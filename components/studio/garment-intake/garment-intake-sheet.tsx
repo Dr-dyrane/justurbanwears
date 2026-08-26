@@ -3,10 +3,11 @@
 /* Engine previews are same-origin, operator-protected asset responses. */
 /* eslint-disable @next/next/no-img-element */
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Camera,
   Check,
+  CircleAlert,
   CircleDashed,
   ImagePlus,
   LoaderCircle,
@@ -25,18 +26,24 @@ import type { GarmentCategory } from "../../../lib/studio/domain/entities";
 import { LifecycleBadge } from "../atoms/lifecycle-badge";
 import { StudioLink } from "../atoms/studio-link";
 import { StudioDisclosureRow } from "../atoms/studio-disclosure-row";
-import { StudioTaskSheet } from "../atoms/studio-task-sheet";
+import { StudioTaskSheet, type StudioTaskSheetControls } from "../atoms/studio-task-sheet";
+import { StudioAdaptiveWorkspace } from "../workspace/studio-adaptive-workspace";
 import {
+  intakeRecoveryStep,
+  studioDecisionNoteSha256,
+  studioDecisionReceiptMatches,
   studioEngineIntakeClient,
   StudioEngineError,
   type GarmentIntakeClient,
+  type StudioCorrectionAuthority,
   type IntakeFacts,
   type IntakeSnapshot,
   type IntakeSourceMode,
 } from "./engine-client";
 
-type IntakeStep = "start" | "source" | "build" | "confirm" | "edit" | "wear" | "receipt";
+type IntakeStep = "start" | "source" | "build" | "confirm" | "edit" | "wear" | "receipt" | "reconcile";
 type BuildStage = "READING" | "GARMENT" | "VIEWS" | "READY";
+type PendingAction = "BUILD" | "KEEP" | "RETRY";
 
 interface GarmentIntakeSheetProps {
   client?: GarmentIntakeClient;
@@ -67,6 +74,66 @@ const emptyFacts: IntakeFacts = {
   condition: "Excellent",
   price: 0,
 };
+
+const activeIntakeStates = ["ANALYZING", "GENERATING"];
+const intakeIntentStorageKey = "juw.studio.garment-intake.intent.v1";
+const validIntakeIntentKey = /^[a-zA-Z0-9._:-]{8,160}$/;
+
+type StoredIntakeIntent = {
+  dispatched: boolean;
+  fingerprint: string;
+  key: string;
+};
+
+function createIntakeIntentKey() {
+  return `studio-intake:${globalThis.crypto?.randomUUID?.() ?? `${Date.now()}:${Math.random().toString(36).slice(2)}`}`;
+}
+
+function intakeIntentFingerprint(sourceMode: IntakeSourceMode, description?: string) {
+  const normalizedDescription = (description ?? "").trim().replace(/\s+/g, " ");
+  return `${sourceMode}:${normalizedDescription}`;
+}
+
+function readStoredIntakeIntent(): StoredIntakeIntent | undefined {
+  if (typeof window === "undefined") return undefined;
+  try {
+    const stored = window.sessionStorage.getItem(intakeIntentStorageKey);
+    if (!stored) return undefined;
+    if (validIntakeIntentKey.test(stored)) {
+      return { dispatched: true, fingerprint: "", key: stored };
+    }
+    const parsed = JSON.parse(stored) as Partial<StoredIntakeIntent>;
+    return typeof parsed.key === "string"
+      && validIntakeIntentKey.test(parsed.key)
+      && typeof parsed.fingerprint === "string"
+      && typeof parsed.dispatched === "boolean"
+      ? { dispatched: parsed.dispatched, fingerprint: parsed.fingerprint, key: parsed.key }
+      : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function writeStoredIntakeIntent(value: StoredIntakeIntent) {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.setItem(intakeIntentStorageKey, JSON.stringify(value));
+  } catch {
+    // The in-memory ref remains stable when storage is unavailable.
+  }
+}
+
+function clearStoredIntakeIntentKey(expected?: string) {
+  if (typeof window === "undefined") return;
+  try {
+    const stored = readStoredIntakeIntent();
+    if (!expected || stored?.key === expected) {
+      window.sessionStorage.removeItem(intakeIntentStorageKey);
+    }
+  } catch {
+    // Storage is an optional reload aid, not a runtime dependency.
+  }
+}
 
 function formatPrice(value: number) {
   return value > 0
@@ -100,6 +167,10 @@ export function GarmentIntakeSheet({
   returnFocus,
 }: GarmentIntakeSheetProps) {
   const cameraInputRef = useRef<HTMLInputElement>(null);
+  const commandInFlightRef = useRef(false);
+  const factsBeforeEditRef = useRef<IntakeFacts | undefined>(undefined);
+  const intakeIntentRef = useRef<StoredIntakeIntent | undefined>(undefined);
+  const previewUrlRef = useRef<string | undefined>(undefined);
   const receiptExpandRef = useRef<HTMLButtonElement>(null);
   const receiptPreviewCloseRef = useRef<HTMLButtonElement>(null);
   const uploadInputRef = useRef<HTMLInputElement>(null);
@@ -111,7 +182,9 @@ export function GarmentIntakeSheet({
   const [facts, setFacts] = useState<IntakeFacts>(emptyFacts);
   const [buildStage, setBuildStage] = useState<BuildStage>("READING");
   const [error, setError] = useState<StudioEngineError>();
-  const [working, setWorking] = useState(false);
+  const [pendingAction, setPendingAction] = useState<PendingAction>();
+  const [pollingNotice, setPollingNotice] = useState<string>();
+  const [preview, setPreview] = useState<string>();
   const [retryUsed, setRetryUsed] = useState(false);
   const [wardrobeItemId, setWardrobeItemId] = useState<string>();
   const [receiptPreviewOpen, setReceiptPreviewOpen] = useState(false);
@@ -119,17 +192,19 @@ export function GarmentIntakeSheet({
   const [recoveryLoading, setRecoveryLoading] = useState(false);
 
   const candidatePreview = intake ? client.candidateUrl(intake) : undefined;
-  const progress = ({ start: 8, source: 24, build: 54, confirm: 70, edit: 70, wear: 88, receipt: 100 } satisfies Record<IntakeStep, number>)[step];
+  const pollingIntakeId = intake?.id;
+  const pollingIntakeState = intake?.state;
+  const working = pendingAction !== undefined;
+  const progress = ({ start: 8, source: 24, build: 54, confirm: 70, edit: 70, wear: 88, receipt: 100, reconcile: 70 } satisfies Record<IntakeStep, number>)[step];
   const canKeep = Boolean(facts.title && facts.category && facts.colour);
   const sourceLabel = sourceMode === "DESCRIBE" ? "Description" : sourceMode === "CAMERA" ? "Camera" : "Photos";
 
-  const preview = useMemo(() => file ? URL.createObjectURL(file) : undefined, [file]);
   const currentImage = candidatePreview ?? (intake ? client.sourceUrl?.(intake) : undefined) ?? preview;
   const hasDurableSource = Boolean(intake?.assets.some((asset) => asset.role === "SOURCE"));
 
   useEffect(() => () => {
-    if (preview) URL.revokeObjectURL(preview);
-  }, [preview]);
+    if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+  }, []);
 
   useEffect(() => {
     if (!open || step !== "start" || !client.listActiveIntakes) return;
@@ -144,17 +219,43 @@ export function GarmentIntakeSheet({
   }, [client, open, step]);
 
   useEffect(() => {
-    if (!open || !intake || !client.getIntake || !["ANALYZING", "GENERATING"].includes(intake.state)) return;
-    const timeout = window.setTimeout(() => {
-      void client.getIntake!(intake.id).then(({ intake: refreshed }) => {
-        setIntake(refreshed);
-        setFacts(normalizeFacts(refreshed.facts));
-        if (refreshed.candidate) setStep("confirm");
-        else if (refreshed.state === "FAILED") setStep("source");
-      }).catch(() => undefined);
-    }, 1_800);
-    return () => window.clearTimeout(timeout);
-  }, [client, intake, open]);
+    if (!open || !pollingIntakeId || !pollingIntakeState || !client.getIntake || !activeIntakeStates.includes(pollingIntakeState)) return;
+    const getIntake = client.getIntake;
+    const intakeId = pollingIntakeId;
+    let cancelled = false;
+    let failures = 0;
+    let timeout: number | undefined;
+
+    const schedule = (delay: number) => {
+      timeout = window.setTimeout(() => {
+        void poll();
+      }, delay);
+    };
+
+    const poll = async () => {
+      try {
+        const { intake: refreshed } = await getIntake(intakeId);
+        if (cancelled) return;
+        failures = 0;
+        setPollingNotice(undefined);
+        const recoveredStep = applyIntakeSnapshot(refreshed);
+        if (recoveredStep === "build") {
+          schedule(1_800);
+        }
+      } catch {
+        if (cancelled) return;
+        failures += 1;
+        setPollingNotice("Connection interrupted. Studio is still working; reconnecting…");
+        schedule(Math.min(14_400, 1_800 * (2 ** Math.min(failures, 3))));
+      }
+    };
+
+    schedule(1_800);
+    return () => {
+      cancelled = true;
+      if (timeout !== undefined) window.clearTimeout(timeout);
+    };
+  }, [client, open, pollingIntakeId, pollingIntakeState]);
 
   useEffect(() => {
     if (!receiptPreviewOpen) return;
@@ -182,15 +283,71 @@ export function GarmentIntakeSheet({
     requestAnimationFrame(() => receiptExpandRef.current?.focus({ preventScroll: true }));
   }, [receiptPreviewOpen, step]);
 
-  function reset() {
+  function claimCommand() {
+    if (commandInFlightRef.current) return false;
+    commandInFlightRef.current = true;
+    return true;
+  }
+
+  function releaseCommand() {
+    commandInFlightRef.current = false;
+  }
+
+  function intakeIntentKey() {
+    const fingerprint = intakeIntentFingerprint(sourceMode!, description);
+    const stored = intakeIntentRef.current ?? readStoredIntakeIntent();
+    if (stored?.fingerprint && stored.fingerprint !== fingerprint && stored.dispatched) {
+      throw new StudioEngineError(
+        409,
+        "INTAKE_INTENT_CONFLICT",
+        "An earlier garment start still needs recovery.",
+        "Continue the unfinished intake or deliberately discard it before starting a different garment.",
+      );
+    }
+    const value: StoredIntakeIntent = stored && (!stored.fingerprint || stored.fingerprint === fingerprint)
+      ? { ...stored, fingerprint }
+      : { dispatched: false, fingerprint, key: createIntakeIntentKey() };
+    intakeIntentRef.current = value;
+    writeStoredIntakeIntent(value);
+    return value.key;
+  }
+
+  function markIntakeIntentDispatched() {
+    const current = intakeIntentRef.current;
+    if (!current) return;
+    const dispatched = { ...current, dispatched: true };
+    intakeIntentRef.current = dispatched;
+    writeStoredIntakeIntent(dispatched);
+  }
+
+  function settleIntakeIntent() {
+    const value = intakeIntentRef.current ?? readStoredIntakeIntent();
+    clearStoredIntakeIntentKey(value?.key);
+    intakeIntentRef.current = undefined;
+  }
+
+  function clearPreview() {
+    if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
+    previewUrlRef.current = undefined;
+    setPreview(undefined);
+  }
+
+  function reset(options: { preserveIntent?: boolean } = {}) {
+    if (!options.preserveIntent) clearStoredIntakeIntentKey();
+    intakeIntentRef.current = options.preserveIntent
+      ? intakeIntentRef.current ?? readStoredIntakeIntent()
+      : undefined;
+    factsBeforeEditRef.current = undefined;
     setStep("start");
     setSourceMode(null);
     setDescription("");
     setFile(null);
+    clearPreview();
     setIntake(undefined);
     setFacts(emptyFacts);
     setError(undefined);
-    setWorking(false);
+    setPendingAction(undefined);
+    setPollingNotice(undefined);
     setRetryUsed(false);
     setWardrobeItemId(undefined);
     setReceiptPreviewOpen(false);
@@ -198,8 +355,8 @@ export function GarmentIntakeSheet({
     setRecoveryLoading(false);
   }
 
-  function finishDismiss() {
-    reset();
+  function finishDismiss(options: { preserveIntent?: boolean } = {}) {
+    reset(options);
     onDismiss();
     return true;
   }
@@ -210,12 +367,14 @@ export function GarmentIntakeSheet({
       return false;
     }
 
-    if (
-      (working || step === "build")
-      && !window.confirm("Leave this Studio task? The active request may still finish, but this intake view will close.")
-    ) {
-      return false;
+    if (working || step === "build") {
+      if (!window.confirm("Leave this Studio task? The active request may still finish, and Studio will preserve this intake for recovery.")) {
+        return false;
+      }
+      return finishDismiss({ preserveIntent: true });
     }
+
+    if (step === "reconcile") return finishDismiss();
 
     const garmentSaved = Boolean(wardrobeItemId) || step === "wear" || step === "receipt";
     if (
@@ -232,32 +391,72 @@ export function GarmentIntakeSheet({
   function back() {
     setError(undefined);
     if (step === "source") setStep("start");
-    else if (step === "edit") setStep("confirm");
-    else if (step === "confirm") setStep("source");
+    else if (step === "edit") cancelFactsEdit();
     else if (step === "wear") setStep("confirm");
+  }
+
+  function beginFactsEdit() {
+    factsBeforeEditRef.current = { ...facts };
+    setStep("edit");
+  }
+
+  function cancelFactsEdit() {
+    if (factsBeforeEditRef.current) setFacts(factsBeforeEditRef.current);
+    factsBeforeEditRef.current = undefined;
+    setStep("confirm");
+  }
+
+  function finishFactsEdit() {
+    factsBeforeEditRef.current = undefined;
+    setStep("confirm");
   }
 
   function chooseDescription() {
     setSourceMode("DESCRIBE");
     setFile(null);
+    clearPreview();
     setStep("source");
   }
 
-  function resumeIntake(next: IntakeSnapshot) {
+  function applyIntakeSnapshot(next: IntakeSnapshot) {
+    const recoveredStep = intakeRecoveryStep(next);
     setIntake(next);
     setSourceMode(next.sourceMode);
     setDescription(next.description ?? "");
     setFacts(normalizeFacts(next.facts));
     setWardrobeItemId(next.wardrobeItemId);
+    if (recoveredStep === "build") {
+      setBuildStage(next.state === "ANALYZING" ? "READING" : "GARMENT");
+    } else if (recoveredStep === "confirm") {
+      setBuildStage("READY");
+    }
+    setStep(recoveredStep);
+    return recoveredStep;
+  }
+
+  async function reconcileIntake(intakeId: string) {
+    if (!client.getIntake) return null;
+    const result = await client.getIntake(intakeId).catch(() => null);
+    if (!result) return null;
+    settleIntakeIntent();
+    setPollingNotice(undefined);
+    const recoveredStep = applyIntakeSnapshot(result.intake);
+    return { intake: result.intake, recoveredStep };
+  }
+
+  function resumeIntake(next: IntakeSnapshot) {
+    settleIntakeIntent();
     setError(undefined);
-    if (next.wardrobeItemId || next.state === "COMMITTED") setStep("receipt");
-    else if (next.candidate) setStep("confirm");
-    else if (["ANALYZING", "GENERATING"].includes(next.state)) setStep("build");
-    else setStep("source");
+    setPollingNotice(undefined);
+    applyIntakeSnapshot(next);
   }
 
   function chooseFile(mode: Extract<IntakeSourceMode, "CAMERA" | "UPLOAD">, nextFile: File | null) {
     if (!nextFile) return;
+    clearPreview();
+    const nextPreview = URL.createObjectURL(nextFile);
+    previewUrlRef.current = nextPreview;
+    setPreview(nextPreview);
     setSourceMode(mode);
     setFile(nextFile);
     setDescription("");
@@ -265,34 +464,74 @@ export function GarmentIntakeSheet({
     setError(undefined);
   }
 
-  async function runBuild(correction?: string) {
-    if (!sourceMode || (sourceMode === "DESCRIBE" ? !description.trim() : !file && !hasDurableSource)) return;
-    setWorking(true);
+  async function performBuild(
+    correction?: string,
+    startingIntake = intake,
+    correctionAuthority?: StudioCorrectionAuthority,
+  ) {
     setError(undefined);
+    setPollingNotice(undefined);
     setBuildStage("READING");
     setStep("build");
+    let nextIntake = startingIntake;
 
     try {
-      let nextIntake = intake;
       if (!nextIntake) {
-        nextIntake = (await client.createIntake(sourceMode, description.trim() || undefined)).intake;
-        if (file) nextIntake = (await client.addSource(nextIntake.id, file)).intake;
+        const idempotencyKey = intakeIntentKey();
+        markIntakeIntentDispatched();
+        nextIntake = (await client.createIntake(sourceMode!, description.trim() || undefined, idempotencyKey)).intake;
+        setIntake(nextIntake);
+        settleIntakeIntent();
+      }
+      if (nextIntake.reconciliation?.state === "INDETERMINATE") {
+        applyIntakeSnapshot(nextIntake);
+        return;
+      }
+      if (file && !nextIntake.assets.some((asset) => asset.role === "SOURCE")) {
+        nextIntake = (await client.addSource(nextIntake.id, file)).intake;
+        setIntake(nextIntake);
       }
       if (["DRAFT", "FAILED"].includes(nextIntake.state) && !Object.keys(nextIntake.facts ?? {}).length) {
         nextIntake = (await client.analyzeIntake(nextIntake, description.trim() || undefined)).intake;
+        setIntake(nextIntake);
         setFacts(normalizeFacts(nextIntake.facts));
       }
       setIntake(nextIntake);
+      if (activeIntakeStates.includes(nextIntake.state)) {
+        setBuildStage(nextIntake.state === "ANALYZING" ? "READING" : "GARMENT");
+        return;
+      }
+      if (nextIntake.reconciliation?.state === "INDETERMINATE") {
+        applyIntakeSnapshot(nextIntake);
+        return;
+      }
       setBuildStage("GARMENT");
-      const generated = await client.generateGarment(nextIntake, correction);
+      const generated = await client.generateGarment(nextIntake, correction, correctionAuthority);
       setIntake(generated.intake);
       setFacts((current) => normalizeFacts({ ...current, ...generated.intake.facts }));
+      if (activeIntakeStates.includes(generated.intake.state)) {
+        setBuildStage(generated.intake.state === "ANALYZING" ? "READING" : "GARMENT");
+        return;
+      }
       setBuildStage("VIEWS");
       requestAnimationFrame(() => {
         setBuildStage("READY");
         window.setTimeout(() => setStep("confirm"), 180);
       });
     } catch (caught) {
+      const ambiguous = !(caught instanceof StudioEngineError)
+        || caught.status === 0
+        || caught.status === 409
+        || caught.status >= 500;
+      const reconciled = ambiguous && nextIntake?.id ? await reconcileIntake(nextIntake.id) : null;
+      if (reconciled?.recoveredStep === "reconcile") {
+        setError(undefined);
+        return;
+      }
+      if (reconciled && reconciled.intake.state !== "FAILED") {
+        setError(undefined);
+        return;
+      }
       if (isExplicitlyUnavailable(caught)) {
         setError(caught as StudioEngineError);
         setStep("source");
@@ -302,98 +541,219 @@ export function GarmentIntakeSheet({
           : new StudioEngineError(500, "ENGINE_ERROR", "Studio could not finish that action."));
         setStep("source");
       }
+    }
+  }
+
+  async function runBuild(correction?: string) {
+    if (intake?.reconciliation || !sourceMode || (sourceMode === "DESCRIBE" ? !description.trim() : !file && !hasDurableSource)) return;
+    if (!claimCommand()) return;
+    setPendingAction("BUILD");
+    try {
+      await performBuild(correction);
     } finally {
-      setWorking(false);
+      setPendingAction(undefined);
+      releaseCommand();
     }
   }
 
   async function keep() {
-    if (!canKeep || working) return;
-    setWorking(true);
+    if (intake?.reconciliation || !canKeep || !claimCommand()) return;
+    setPendingAction("KEEP");
     setError(undefined);
     try {
       if (intake) {
         const decided = await client.decideIntake(intake, "KEEP");
+        setIntake(decided.intake);
         const committed = await client.commitIntake(decided.intake, facts);
         setIntake(committed.intake);
         setWardrobeItemId(committed.wardrobeItem.id);
       }
       setStep("wear");
     } catch (caught) {
-      setError(caught instanceof StudioEngineError
+      const keepError = caught instanceof StudioEngineError
         ? caught
-        : new StudioEngineError(500, "ENGINE_ERROR", "Studio could not save this garment."));
+        : new StudioEngineError(500, "ENGINE_ERROR", "Studio could not save this garment.");
+      const reconciled = intake ? await reconcileIntake(intake.id) : null;
+      if (reconciled?.intake.wardrobeItemId || reconciled?.intake.state === "COMMITTED") {
+        setError(undefined);
+        setStep("receipt");
+      } else if (
+        reconciled?.intake.state === "DECISION"
+        && reconciled.intake.candidate?.status === "APPROVED"
+      ) {
+        try {
+          const committed = await client.commitIntake(reconciled.intake, facts);
+          setIntake(committed.intake);
+          setWardrobeItemId(committed.wardrobeItem.id);
+          setError(undefined);
+          setStep("receipt");
+        } catch {
+          const committedReconciliation = await reconcileIntake(reconciled.intake.id);
+          if (committedReconciliation?.intake.wardrobeItemId || committedReconciliation?.intake.state === "COMMITTED") {
+            setError(undefined);
+            setStep("receipt");
+          } else {
+            setError(keepError);
+          }
+        }
+      } else {
+        setError(keepError);
+      }
     } finally {
-      setWorking(false);
+      setPendingAction(undefined);
+      releaseCommand();
     }
   }
 
   async function retry() {
-    if (!intake || retryUsed || working) return;
+    const reviewedGenerationId = intake?.candidate?.generationId;
+    if (!intake || !reviewedGenerationId || intake.reconciliation || retryUsed || !claimCommand()) return;
+    const correction = "Keep the garment truth. Improve the clean product-front view.";
+    const decisionNote = correction;
+    let expectedNoteSha256 = "";
     setRetryUsed(true);
-    setWorking(true);
+    setPendingAction("RETRY");
     setError(undefined);
     try {
-      const decision = await client.decideIntake(intake, "RETRY", "One operator-requested correction");
+      expectedNoteSha256 = await studioDecisionNoteSha256(decisionNote);
+      const decision = await client.decideIntake(intake, "RETRY", decisionNote);
+      if (!studioDecisionReceiptMatches({
+        receipt: decision.intake.decisionReceipt,
+        generationId: reviewedGenerationId,
+        decision: "RETRY",
+        noteSha256: expectedNoteSha256,
+      })) {
+        throw new StudioEngineError(409, "DECISION_CONFLICT", "Another decision changed this candidate.", "Review the current garment state before spending again.");
+      }
       setIntake(decision.intake);
-      setWorking(false);
-      await runBuild("Keep the garment truth. Improve the clean product-front view.");
+      await performBuild(correction, decision.intake, {
+        generationId: reviewedGenerationId,
+        decisionReceiptId: decision.intake.decisionReceipt!.receiptId,
+      });
     } catch (caught) {
-      setWorking(false);
-      setError(caught instanceof StudioEngineError
+      const retryError = caught instanceof StudioEngineError
         ? caught
-        : new StudioEngineError(500, "GENERATION_FAILED", "Studio could not make another view."));
+        : new StudioEngineError(500, "GENERATION_FAILED", "Studio could not make another view.");
+      const reconciled = await reconcileIntake(intake.id);
+      if (reconciled && expectedNoteSha256 && studioDecisionReceiptMatches({
+        receipt: reconciled.intake.decisionReceipt,
+        generationId: reviewedGenerationId,
+        decision: "RETRY",
+        noteSha256: expectedNoteSha256,
+      })) {
+        setError(undefined);
+        await performBuild(correction, reconciled.intake, {
+          generationId: reviewedGenerationId,
+          decisionReceiptId: reconciled.intake.decisionReceipt!.receiptId,
+        });
+      } else if (reconciled && reconciled.recoveredStep !== "source") {
+        setError(undefined);
+      } else {
+        setError(retryError);
+      }
+    } finally {
+      setPendingAction(undefined);
+      releaseCommand();
     }
   }
 
-  const footer = step === "source" ? (
+  const renderFooter = ({ requestClose, requestCloseAndThen }: StudioTaskSheetControls) => step === "source" ? (
     <>
       <button className="button button-secondary" onClick={back} type="button">Back</button>
-      <button className="button button-primary" disabled={working || (sourceMode === "DESCRIBE" ? !description.trim() : !file && !hasDurableSource)} onClick={() => void runBuild()} type="button">
-        Build garment
+      <button className="button button-primary" data-studio-workspace-primary="true" disabled={working || (sourceMode === "DESCRIBE" ? !description.trim() : !file && !hasDurableSource)} onClick={() => void runBuild()} type="button">
+        {pendingAction === "BUILD" ? <LoaderCircle aria-hidden="true" className="studio-spin" size={16} /> : null}
+        {pendingAction === "BUILD" ? "Building…" : "Build garment"}
       </button>
     </>
   ) : step === "confirm" ? (
     <>
-      <button className="button button-secondary" onClick={() => setStep("edit")} type="button"><Pencil aria-hidden="true" size={16} />Edit</button>
-      <button className="button button-primary" disabled={!canKeep || working} onClick={() => void keep()} type="button">
-        {working ? <LoaderCircle aria-hidden="true" className="studio-spin" size={16} /> : <Check aria-hidden="true" size={16} />}Keep
+      <button className="button button-secondary" disabled={working} onClick={beginFactsEdit} type="button"><Pencil aria-hidden="true" size={16} />Edit</button>
+      <button className="button button-primary" data-studio-workspace-primary="true" disabled={!canKeep || working} onClick={() => void keep()} type="button">
+        {pendingAction === "KEEP" ? <LoaderCircle aria-hidden="true" className="studio-spin" size={16} /> : <Check aria-hidden="true" size={16} />}
+        {pendingAction === "KEEP" ? "Keeping…" : "Keep"}
       </button>
     </>
   ) : step === "edit" ? (
     <>
-      <button className="button button-secondary" onClick={() => setStep("confirm")} type="button">Cancel</button>
-      <button className="button button-primary" disabled={!canKeep} onClick={() => setStep("confirm")} type="button">Done</button>
+      <button className="button button-secondary" onClick={cancelFactsEdit} type="button">Cancel</button>
+      <button className="button button-primary" data-studio-workspace-primary="true" disabled={!canKeep || working} onClick={finishFactsEdit} type="button">Done</button>
     </>
   ) : step === "wear" ? (
-    <button className="button button-primary" onClick={() => setStep("receipt")} type="button">Not now</button>
+    <button className="button button-primary" data-studio-workspace-primary="true" onClick={() => setStep("receipt")} type="button">Not now</button>
   ) : step === "receipt" ? (
     <>
-      <StudioLink className="button button-secondary" href={wardrobeItemId ? `/studio/wardrobe/${encodeURIComponent(wardrobeItemId)}` : "/studio/wardrobe"}>Open garment</StudioLink>
-      <button className="button button-primary" onClick={finishDismiss} type="button">Done</button>
+      <StudioLink className="button button-secondary" href={wardrobeItemId ? `/studio/wardrobe/${encodeURIComponent(wardrobeItemId)}` : "/studio/wardrobe"} onClick={(event) => {
+        event.preventDefault();
+        const destination = event.currentTarget.href;
+        requestCloseAndThen(() => window.location.assign(destination));
+      }}>Open garment</StudioLink>
+      <button className="button button-primary" data-studio-workspace-primary="true" onClick={requestClose} type="button">Done</button>
     </>
+  ) : step === "reconcile" ? (
+    <button className="button button-primary" data-studio-workspace-primary="true" onClick={requestClose} type="button">Done</button>
   ) : undefined;
+
+  const stageCopy = step === "start"
+    ? { detail: "Photo or description", title: "Add one garment" }
+    : step === "source"
+      ? { detail: sourceMode === "DESCRIBE" ? "Describe only what is visible" : "Source ready", title: "Your garment" }
+      : step === "build"
+        ? { detail: buildStage === "READY" ? "Ready to review" : "Preparing one clean garment view", title: "Building" }
+        : step === "confirm" || step === "edit"
+          ? { detail: "Check the garment facts", title: facts.title || "Review garment" }
+          : step === "wear"
+            ? { detail: "The private wardrobe record is ready", title: facts.title || "Garment saved" }
+            : step === "receipt"
+              ? { detail: "Private · not for sale", title: facts.title || "In Wardrobe" }
+              : { detail: "No new paid attempt will start", title: "Needs review" };
+
+  const intakeStage = (
+    <div className={`juw-intake-v2-stage is-${step}`}>
+      <div className="juw-intake-v2-media">
+        {currentImage
+          ? <img alt={`${facts.title || "Selected garment"} preview`} src={currentImage} />
+          : <span aria-hidden="true"><Shirt size={84} strokeWidth={1} /></span>}
+        {step === "build" ? (
+          <span aria-hidden="true" className="juw-intake-v2-building"><LoaderCircle className="studio-spin" size={24} /></span>
+        ) : null}
+      </div>
+      <div className="juw-intake-v2-stage-copy">
+        <small>{stageCopy.detail}</small>
+        <strong>{stageCopy.title}</strong>
+      </div>
+      {step === "receipt" && currentImage ? (
+        <button aria-label="Expand garment preview" className="studio-lens-action" onClick={() => setReceiptPreviewOpen(true)} ref={receiptExpandRef} type="button">
+          <Maximize2 aria-hidden="true" size={17} />Expand
+        </button>
+      ) : null}
+    </div>
+  );
 
   return (
     <StudioTaskSheet
-      className="studio-garment-task-sheet"
+      className="studio-garment-task-sheet is-adaptive-host"
       eyebrow={sourceMode ? sourceLabel : "New garment"}
-      footer={footer}
-      onBack={["source", "confirm", "edit", "wear"].includes(step) ? back : undefined}
+      onBack={!working && ["source", "edit", "wear"].includes(step) ? back : undefined}
       onDismiss={requestDismiss}
       open={open}
-      progress={step === "receipt" ? undefined : progress}
+      progress={step === "receipt" || step === "reconcile" ? undefined : progress}
       progressLabel={`Garment intake ${progress}% complete`}
       returnFocus={returnFocus}
-      title={step === "receipt" ? "In wardrobe" : "Garment intake"}
+      title={step === "receipt" ? "In wardrobe" : step === "reconcile" ? "Needs review" : "Garment intake"}
     >
-      {step === "start" ? (
+      {({ requestClose, requestCloseAndThen }) => <>
+      <input aria-label="Take garment photo" className="studio-visually-hidden-file" ref={cameraInputRef} accept="image/*" capture="environment" onClick={(event) => { event.currentTarget.value = ""; }} onChange={(event) => chooseFile("CAMERA", event.target.files?.[0] ?? null)} tabIndex={-1} type="file" />
+      <input aria-label="Choose garment photo" className="studio-visually-hidden-file" ref={uploadInputRef} accept="image/*" onClick={(event) => { event.currentTarget.value = ""; }} onChange={(event) => chooseFile("UPLOAD", event.target.files?.[0] ?? null)} tabIndex={-1} type="file" />
+
+      <StudioAdaptiveWorkspace active={open} className="juw-intake-v2" stage={intakeStage} surfaceLabel="Add garment controls">
+        <div className="juw-intake-v2-content">
+          {step === "start" ? (
         <section className="studio-task-question">
           <p className="eyebrow">Start</p>
           <h3>Show us the piece.</h3>
           {recoverableIntakes.length ? (
             <div className="studio-disclosure-group studio-intake-start-options" aria-label="Unfinished garment intakes">
-              {recoverableIntakes.map((recoverable) => <StudioDisclosureRow detail={recoverable.facts?.title || "Unfinished garment"} icon={<RotateCcw size={19} />} key={recoverable.id} label="Continue" onClick={() => resumeIntake(recoverable)} />)}
+              {recoverableIntakes.map((recoverable) => <StudioDisclosureRow detail={recoverable.reconciliation ? "Needs administrator reconciliation" : recoverable.facts?.title || "Unfinished garment"} icon={<RotateCcw size={19} />} key={recoverable.id} label="Continue" onClick={() => resumeIntake(recoverable)} />)}
             </div>
           ) : recoveryLoading ? <p className="studio-inline-state"><LoaderCircle aria-hidden="true" className="studio-spin" size={15} />Checking unfinished work…</p> : null}
           <div className="studio-disclosure-group studio-intake-start-options">
@@ -401,8 +761,6 @@ export function GarmentIntakeSheet({
             <StudioDisclosureRow detail="Choose photo" icon={<Upload size={19} />} label="Photos" onClick={() => uploadInputRef.current?.click()} />
             <StudioDisclosureRow detail="Use words" icon={<Pencil size={19} />} label="Describe" onClick={chooseDescription} />
           </div>
-          <input aria-label="Take garment photo" className="studio-visually-hidden-file" ref={cameraInputRef} accept="image/*" capture="environment" onChange={(event) => chooseFile("CAMERA", event.target.files?.[0] ?? null)} type="file" />
-          <input aria-label="Choose garment photo" className="studio-visually-hidden-file" ref={uploadInputRef} accept="image/*" onChange={(event) => chooseFile("UPLOAD", event.target.files?.[0] ?? null)} type="file" />
         </section>
       ) : null}
 
@@ -416,9 +774,9 @@ export function GarmentIntakeSheet({
               <textarea maxLength={600} onChange={(event) => setDescription(event.target.value)} placeholder="Coral gathered two-piece set…" rows={7} value={description} />
             </label>
           ) : currentImage ? (
-            <div className="studio-source-preview">
-              <img alt="Selected garment source" src={currentImage} />
-              <button className="studio-lens-action" onClick={() => (sourceMode === "CAMERA" ? cameraInputRef : uploadInputRef).current?.click()} type="button">
+            <div className="juw-intake-v2-source-status">
+              <span><Check aria-hidden="true" size={17} /><strong>Photo ready</strong></span>
+              <button className="studio-text-action" onClick={() => (sourceMode === "CAMERA" ? cameraInputRef : uploadInputRef).current?.click()} type="button">
                 <ImagePlus aria-hidden="true" size={17} />Replace
               </button>
             </div>
@@ -434,10 +792,6 @@ export function GarmentIntakeSheet({
 
       {step === "build" ? (
         <section className="studio-build-state" aria-live="polite" role="status">
-          <div className="studio-build-visual">
-            {currentImage ? <img alt="Garment source being prepared" src={currentImage} /> : <Shirt aria-hidden="true" size={70} strokeWidth={1.1} />}
-            <span><LoaderCircle aria-hidden="true" className="studio-spin" size={21} /></span>
-          </div>
           <div>
             <p className="eyebrow">Build</p>
             <h3>{buildStage === "READY" ? "Ready to review." : "Making the garment."}</h3>
@@ -448,15 +802,22 @@ export function GarmentIntakeSheet({
                 return <li className={stage === buildStage ? "is-active" : complete ? "is-complete" : undefined} key={stage}>{complete ? <Check size={15} /> : <span />}{stage.toLowerCase()}</li>;
               })}
             </ol>
+            {pollingNotice ? <p className="studio-inline-state"><CircleDashed aria-hidden="true" size={15} />{pollingNotice}</p> : null}
           </div>
+        </section>
+      ) : null}
+
+      {step === "reconcile" ? (
+        <section aria-live="assertive" className="studio-task-question" role="alert">
+          <CircleAlert aria-hidden="true" size={28} />
+          <p className="eyebrow">Reconciliation required</p>
+          <h3>No new paid attempt will start.</h3>
+          <p>{intake?.reconciliation?.message ?? "An administrator must reconcile this attempt before Studio can continue."}</p>
         </section>
       ) : null}
 
       {step === "confirm" ? (
         <section className="studio-confirm-state">
-          <div className="studio-confirm-hero">
-            {currentImage ? <img alt={`${facts.title || "Garment"} review`} src={currentImage} /> : <Shirt aria-hidden="true" size={72} strokeWidth={1.05} />}
-          </div>
           <div className="studio-confirm-copy">
             <p className="eyebrow">Confirm</p>
             <h3>{facts.title || "Name this garment"}</h3>
@@ -468,8 +829,11 @@ export function GarmentIntakeSheet({
               <div><dt>Price</dt><dd>{formatPrice(facts.price)}</dd></div>
             </dl>
             <div className="studio-decision-actions">
-              <button className="studio-text-action" onClick={() => setStep("edit")} type="button"><Pencil size={15} />Edit</button>
-              <button className="studio-text-action" disabled={retryUsed || working} onClick={() => void retry()} type="button"><RotateCcw size={15} />{retryUsed ? "Retry used" : "Try again"}</button>
+              <button className="studio-text-action" disabled={working} onClick={beginFactsEdit} type="button"><Pencil size={15} />Edit</button>
+              <button className="studio-text-action" disabled={retryUsed || working} onClick={() => void retry()} type="button">
+                {pendingAction === "RETRY" ? <LoaderCircle aria-hidden="true" className="studio-spin" size={15} /> : <RotateCcw size={15} />}
+                {pendingAction === "RETRY" ? "Trying again…" : retryUsed ? "Retry used" : "Try again"}
+              </button>
             </div>
             {error ? <p className="studio-task-error" role="alert">{error.message} {error.recovery}</p> : null}
           </div>
@@ -519,14 +883,6 @@ export function GarmentIntakeSheet({
 
       {step === "receipt" ? (
         <section className="studio-task-receipt">
-          <div className="studio-receipt-visual">
-            {currentImage ? <img alt={`${facts.title} saved garment preview`} src={currentImage} /> : <Shirt aria-hidden="true" size={72} strokeWidth={1.05} />}
-            {currentImage ? (
-              <button aria-label="Expand garment preview" className="studio-lens-action" onClick={() => setReceiptPreviewOpen(true)} ref={receiptExpandRef} type="button">
-                <Maximize2 aria-hidden="true" size={17} />Expand
-              </button>
-            ) : null}
-          </div>
           <div aria-live="polite" className="studio-receipt-copy">
             <div className="juw-receipt-motion">
               <WardrobeMotion artwork="logo" polarity="auto" size="sm" variant="success" />
@@ -539,6 +895,10 @@ export function GarmentIntakeSheet({
           </div>
         </section>
       ) : null}
+
+          {step === "start" || step === "build" ? null : <div className="juw-intake-v2-actions">{renderFooter({ requestClose, requestCloseAndThen })}</div>}
+        </div>
+      </StudioAdaptiveWorkspace>
 
       {receiptPreviewOpen && currentImage ? (
         <div
@@ -557,6 +917,7 @@ export function GarmentIntakeSheet({
       ) : null}
 
       <span aria-live="polite" className="sr-only">{working ? `${buildStage.toLowerCase()} in progress` : error?.message ?? ""}</span>
+      </>}
     </StudioTaskSheet>
   );
 }

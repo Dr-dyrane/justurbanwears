@@ -1,4 +1,4 @@
-import { StudioEngineError } from "./engine-client";
+import { StudioEngineError, type StudioDecisionReceipt } from "./engine-client";
 
 export type WearOperation = "MANNEQUIN_FRONT" | "MODEL_TRY_ON" | "EDITORIAL_MODEL";
 
@@ -12,13 +12,16 @@ export interface WearModel {
 
 export interface WearGeneration {
   id: string;
+  requestId: string;
   operation: WearOperation;
-  state: "PENDING" | "RUNNING" | "COMPLETE" | "APPROVED" | "REJECTED" | "FAILED";
+  state: "PENDING" | "RUNNING" | "COMPLETE" | "APPROVED" | "REJECTED" | "FAILED" | "INDETERMINATE";
   modelProfileId: string | null;
   parentGenerationId: string | null;
   outputAssetId: string | null;
   outputUrl: string | null;
   retryAvailable: boolean;
+  requiresReconciliation: boolean;
+  decisionReceipt: StudioDecisionReceipt | null;
   createdAt: string;
 }
 
@@ -33,6 +36,8 @@ export interface WearWorkspace {
   publicationState: "PRIVATE_DRAFT";
 }
 
+const STUDIO_CLIENT_REQUEST_TIMEOUT_MS = 60_000;
+
 interface EngineErrorBody { error?: { code?: string; message?: string; recovery?: string } }
 
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
@@ -42,6 +47,7 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
       cache: "no-store",
       credentials: "same-origin",
       ...init,
+      signal: init?.signal ?? AbortSignal.timeout(STUDIO_CLIENT_REQUEST_TIMEOUT_MS),
       headers: init?.body instanceof FormData ? init.headers : { "Content-Type": "application/json", ...init?.headers },
     });
   } catch {
@@ -59,12 +65,15 @@ export function readWear(wardrobeItemId: string) {
 }
 
 export function generateWear(wardrobeItemId: string, input: {
+  requestId: string;
   operation: WearOperation;
   modelProfileId?: string;
   parentGenerationId?: string;
   correction?: string;
+  correctionGenerationId?: string;
+  decisionReceiptId?: string;
 }) {
-  return request<{ workspace: WearWorkspace; reused: boolean }>(`/api/studio/wardrobe/${wardrobeItemId}/wear`, { method: "POST", body: JSON.stringify(input) });
+  return request<{ generationId: string; workspace: WearWorkspace; reused: boolean }>(`/api/studio/wardrobe/${wardrobeItemId}/wear`, { method: "POST", body: JSON.stringify(input) });
 }
 
 export function decideWear(wardrobeItemId: string, generationId: string, decision: "KEEP" | "EDIT" | "REJECT" | "RETRY", note?: string) {
