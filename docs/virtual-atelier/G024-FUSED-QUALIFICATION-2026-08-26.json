@@ -1,0 +1,82 @@
+{
+  "schemaVersion": 1,
+  "recordType": "ATELIER_SHADOW_QUALIFICATION",
+  "garmentId": "024",
+  "view": "07",
+  "stage": "SIBLING_07_RECOVERY",
+  "executedAt": "2026-08-26T13:07:18.810Z",
+  "reviewedAt": "2026-08-26T13:11:40.1219988Z",
+  "promotionAllowed": false,
+  "nonPromotableReasons": [
+    "The exact locked private G024/05 master was unavailable; the accepted Shop derivative was used only for shadow calibration.",
+    "Semantic QA rejected the output."
+  ],
+  "transport": {
+    "model": "openai/gpt-image-2",
+    "provider": "openai-via-vercel-ai-gateway",
+    "authorityRevision": "LULU_V4_2026-08-25.6",
+    "physicalReferenceCount": 3,
+    "orderedReferences": [
+      {
+        "slot": 1,
+        "role": "ACCEPTED_05_PUBLIC_DERIVATIVE_SHADOW_ONLY",
+        "sha256": "89587d8d41d8b4135c07499ff2bd556a198cd10a576db08d34e3107210da8fe7"
+      },
+      {
+        "slot": 2,
+        "role": "FUSED_IDENTITY_REAR_RECOVERY_BOARD",
+        "sha256": "1befdabdaa954722730e98209a40703c64e829c5a794448e8b708024060c0824"
+      },
+      {
+        "slot": 3,
+        "role": "LOCKED_ATELIER_ROOM_PLATE",
+        "sha256": "0b591197d2de1b490c4305ac0aed4d1089564562c7b1005411a8340168aabb72"
+      }
+    ],
+    "promptSha256": "5ad664d2f1ef4a6569e224516ee1874dd0f0ee201300b02272a6c7a104984f0b",
+    "technicalDecision": "PASS",
+    "servedModels": [
+      "openai/gpt-image-2"
+    ],
+    "warnings": [],
+    "costUsd": 0.077736,
+    "usage": {
+      "inputTokens": 4773,
+      "outputTokens": 1372,
+      "totalTokens": 6145
+    },
+    "durationMs": 45474,
+    "output": {
+      "sha256": "844556aaef56f50270a545f5d992368229041d0f849eee590446b0581232f2bd",
+      "mimeType": "image/jpeg",
+      "width": 1024,
+      "height": 1536,
+      "byteSize": 183894,
+      "retainedPrivatelyBeforePolicy": true
+    }
+  },
+  "semanticReview": {
+    "decision": "REJECT",
+    "candidateMayBecomeParent": false,
+    "candidateMayBePromoted": false,
+    "passingGates": [
+      "one opaque image",
+      "full head-to-toe framing",
+      "no text or watermark",
+      "no invented rear zip, cut-out or ornament"
+    ],
+    "failedGates": [
+      "identity drift",
+      "body geometry drift",
+      "shoulder-flounce and hem drift",
+      "mirrored view grammar",
+      "locked room regeneration",
+      "synthetic skin and fabric response"
+    ]
+  },
+  "conclusion": {
+    "fusedTransport": "QUALIFIED",
+    "onePassSceneRegeneration": "REJECTED",
+    "nextBoundedExperiment": "Generate a transparent, same-canvas subject layer from the accepted parent and fused authority, validate alpha/identity/body/garment/view first, then composite it deterministically over the exact room bytes. Do not regenerate the room."
+  }
+}

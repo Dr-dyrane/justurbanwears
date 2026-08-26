@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "kitId": "lulu-v4-portable-authority-kit",
-  "authorityRevision": "LULU_V4_2026-08-25.4",
+  "authorityRevision": "LULU_V4_2026-08-25.7",
   "privacy": "PRIVATE_PRODUCTION_ONLY",
   "purpose": "Cross-machine restore and approval overlay for the immutable Lulu V4 authority packet",
   "assets": [

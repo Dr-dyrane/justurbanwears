@@ -1,10 +1,46 @@
 {
   "schemaVersion": 1,
-  "suiteRevision": "JUW_ATELIER_PROVIDER_CALIBRATION_2026-08-26.1",
+  "suiteRevision": "JUW_ATELIER_PROVIDER_CALIBRATION_2026-08-26.3",
   "purpose": "Qualify a provider, model and adapter revision against accepted truth and known failure modes before production routing.",
   "requiredVerdict": "ALL_CASES_PASS_WITH_ONE_INDEPENDENT_REVIEW",
   "humanApprovalRequired": true,
   "cases": [
+    {
+      "id": "G004_FOUNDING_POSITIVE_TARGET",
+      "garmentId": "004",
+      "kind": "POSITIVE_COMPARISON_TARGET",
+      "evidence": "docs/virtual-atelier/garments/004.md",
+      "assetManifest": "docs/virtual-atelier/g004-positive-target-calibration.v1.json",
+      "calibrationRevision": "g004-positive-target-shop-derivatives-2026-08-26.1",
+      "calibrationManifestSha256": "451368db5dd7845fc716dbb661d7bd9153297a99802f6f8f1c441babda8aa635",
+      "expectedReadbackReceiptSha256": "516438224ef2117c328baffde236fb7d8e3565ea6d8477147754b6de77773dc0",
+      "providerVisualDenialManifest": "docs/virtual-atelier/g004-provider-visual-denial.v1.json",
+      "providerVisualDenialRevision": "g004-provider-visual-denial-2026-08-26.1",
+      "providerVisualDenialManifestSha256": "360cbf8ab42d7ca344c4296d87d28f112f809ce6952069ab664731044c0ad1d3",
+      "providerVisualDenialRole": "PROVIDER_DENIAL_ONLY",
+      "providerVisualDenialNonClaims": [
+        "ARBITRARY_SUBIMAGE_DETECTION",
+        "LARGE_WARP_DETECTION",
+        "UNTRUSTED_MOSAIC_DETECTION"
+      ],
+      "canonicalOriginalsStatus": "UNAVAILABLE",
+      "derivativeDecision": "VERSION_LOCK_PUBLIC_SHOP_DERIVATIVES",
+      "lockedDerivativeSha256": [
+        "87761a70a863246f53290bb58f31bfa252300dbbb281b3640fd1329c227d980d",
+        "7fb2c3399598ae52b29abf66fde4942fd7f57a6b09a646f61b6e834a0fe3e5fb",
+        "1af3f21b3f84eb90b95a7b5f879a8eed550dd7946b9c96c26d72d43e8f481a59"
+      ],
+      "mustProve": [
+        "the exact 05, 06 and 07 derivative containers and decoded pixels pass content-addressed readback",
+        "05 controls front camera, room, scale and translation grammar only",
+        "06 controls left-profile grammar, heel-aware stature, poise and scene integration only",
+        "07 controls right-rear-three-quarter grammar, look-back poise, heel-aware stature and scene integration only",
+        "real identity, body and current-garment evidence always outrank G004",
+        "G004 never enters provider references, parent locks, garment construction, colour, jewellery or styling transfer",
+        "exact and lossy full-frame G004 derivative duplicates are denied under the version-locked normalized RGB NCC/MAE policy before provider transport",
+        "the v1 denial policy is not represented as arbitrary-subimage, large-warp or untrusted-mosaic detection, and raw constituents are checked before app-owned composition"
+      ]
+    },
     {
       "id": "G005_HOLISTIC_SUBJECT_LOCK",
       "garmentId": "005",

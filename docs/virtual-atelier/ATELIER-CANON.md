@@ -148,7 +148,15 @@ When an accepted parent exists, do not regenerate the room to fix another layer.
 
 ## 8. Cross-garment drift guardrails
 
-The current candidate must be compared with direct authority and a small multi-era baseline, not only with the immediately preceding garment. Use G001/G004 for founding room and view grammar, G005 for holistic subject translation, G009 for the dedicated angle-canon lesson, and corrected G023/G024 for recent source-safe and body-continuity checks. These generated precedents remain secondary to real Lulu identity/body evidence and direct garment evidence.
+The current candidate must be compared with direct authority and a small
+multi-era baseline, not only with the immediately preceding garment. Use G001
+for founding room lineage; use only the exact pixel-verified, evaluator-only
+G004 derivative revision in `g004-positive-target-calibration.v1.json` for its
+declared front/profile/rear camera, scale, poise and view-grammar axes; use G005
+for holistic subject translation, G009 for the dedicated angle-canon lesson,
+and corrected G023/G024 for recent source-safe and body-continuity checks. G004
+never enters generation or parenting, and all generated precedents remain
+secondary to real Lulu identity/body evidence and direct garment evidence.
 
 Review the following independently:
 
@@ -159,7 +167,7 @@ Review the following independently:
 - semantic role correctness for 01–07; and
 - independent 05 → 06/07 lineage.
 
-View 03 must be an anonymous neutral mannequin presentation on the established warm cocoa catalogue backdrop, never a white or pale seamless sweep. Source walls, curtains, tile, room light or distinctive source-mannequin geometry have no authority. View 03 is garment-presentation-only and must not enter Lulu FACE, BODY, pre-room SUBJECT or final 05 authority stacks. If a generic mannequin silhouette degrades garment transfer, create a separate anonymous garment-transfer form calibrated to Lulu's accepted body geometry; the body canon controls the form, never the reverse. View 04 must be a genuinely close visible-detail presentation, not a second full-front hero and never fibre proof. Views 02 and 07 remain quarantined as inferred garment-rear presentation whenever direct rear evidence is absent.
+View 03 must be an anonymous neutral mannequin presentation. Source walls, curtains, tile, room light or distinctive mannequin geometry have no authority. View 04 must be a genuinely close visible-detail presentation, not a second full-front hero and never fibre proof. Views 02 and 07 remain quarantined as inferred garment-rear presentation whenever direct rear evidence is absent.
 
 Do not correct profile or rear drift by optimizing one isolated body region. Preserve the evidence-supported relationship from torso through waist, pelvis, hip, rear contour and upper thigh as one balanced adult silhouette.
 

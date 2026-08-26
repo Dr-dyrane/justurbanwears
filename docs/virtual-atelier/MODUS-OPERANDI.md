@@ -14,7 +14,11 @@ The governing outcome is materially equivalent accepted truth:
 - the frame is photographically believable; and
 - the exact accepted bytes, decision and lineage are recoverable.
 
-Human approval remains the final semblance gate. A provider, similarity metric or automated review cannot silently approve Lulu.
+Human approval remains the final semblance gate. A provider, similarity metric
+or automated review cannot silently approve Lulu. In Studio this does not mean
+the user inspects every attempt: the closed technical and semantic gates run in
+private, and human review begins only after the exact artifact reaches
+`SEMANTIC_PASS`.
 
 ## 1. Authority before prompt
 
@@ -55,13 +59,13 @@ The optimized Studio runtime kit is the private manifest at `lib/server/private-
 
 The manifest's `authorityRevision`, per-asset SHA-256, byte size, MIME type, width, height and private pathname are the restore contract. A packaged board is a transport convenience, not new evidence. If a provider cannot receive the mandatory authorities without omission, the operation is `BLOCKED_CAPABILITY`.
 
-The current manifest uses top-level approval and role semantics but does not yet store explicit per-asset `acceptance` and `lockedStatus` fields. Do not infer a new authority from that schema gap. A future authority revision should add those fields and re-sync the private manifest atomically.
+Private revision `LULU_V4_2026-08-25.7` closes the former schema ambiguity. All 11 assets declare `acceptance: ACCEPTED_OPERATIONAL_AUTHORITY` and `lockedStatus: LOCKED_IMMUTABLE`; the private manifest and every unchanged asset byte were read back and verified. A later revision may not weaken those fields or silently substitute pixels.
 
 ## 3. Private restore and preflight
 
 On any authorized machine:
 
-1. restore the 11 manifest objects from private Blob or the approved encrypted backup;
+1. restore the private manifest and its 11 authority asset objects from private Blob or the approved encrypted backup;
 2. verify every exact byte count and SHA-256 before use;
 3. verify decoded dimensions and MIME type;
 4. verify private access fails without authorization;
@@ -81,7 +85,7 @@ Always name the semantic role before mapping it to a filename or provider slot.
 | --- | --- | --- |
 | 01 | `GARMENT_FRONT` | Direct visible front construction only |
 | 02 | `GARMENT_BACK` | Direct rear when available; otherwise conservative inferred presentation |
-| 03 | `MANNEQUIN_FRONT` | Anonymous neutral mannequin on the warm cocoa catalogue backdrop; garment-presentation-only, never Lulu identity/body authority |
+| 03 | `MANNEQUIN_FRONT` | Anonymous neutral mannequin; source room has no authority |
 | 04 | `FABRIC_DETAIL` | Close visible construction/material response; never fibre proof |
 | 05 | `MODEL_FRONT` / `FRONT_MASTER` | Accepted Lulu front master in the locked atelier |
 | 06 | `MODEL_LEFT_PROFILE` | Independent sibling from accepted 05 with side canon |
@@ -103,34 +107,65 @@ Historical Shop filenames map differently. Export only through `scripts/virtual-
 
 Generate or isolate each view independently. No candidate may parent another candidate.
 
+For Studio, these are not a separate legacy lane. The same
+`prepare -> generate once -> review -> lock/reuse` facade and durable lifecycle
+run `GARMENT_01_FRONT`, `GARMENT_02_BACK`, `GARMENT_03_MANNEQUIN` and
+`GARMENT_04_DETAIL`. Each is a parentless root over server-resolved
+`DIRECT_GARMENT_EVIDENCE` and the same garment-truth receipt. The operation is
+identified by its semantic facts and hashes, never by a garment-number branch.
+
 - 01 is the working construction authority after acceptance.
 - 02 is quarantined as inferred unless direct rear evidence supports it.
-- 03 must remove the source environment and use an anonymous neutral mannequin on the warm cocoa catalogue backdrop, never a white/pale sweep.
-- 03 must not enter FACE, BODY, pre-room SUBJECT or final 05 authority. If a mannequin shape harms transfer, use a separate anonymous Lulu-proportioned garment-transfer form controlled by the body canon.
+- 03 must remove the source environment and use an anonymous neutral presentation.
 - 04 must be a genuine close visible-detail view, not a duplicate full-front hero.
 
 Review garment construction before model work. Reject invented seams, closures, pockets, motifs, weave, fibre claims or source-room reconstruction.
 
+Subject synthesis requires the exact same-garment `GARMENT_FRONT_LOCK`,
+`GARMENT_BACK_LOCK`, `MANNEQUIN_FRONT_LOCK` and `FABRIC_DETAIL_LOCK`. Locking
+an inferred 02 preserves its quarantine; it never upgrades the rear to direct
+construction evidence.
+
 ### 5.3 Build one garment-specific subject
 
-The subject chain is mandatory and staged: FACE identity first; BODY identity second while preserving FACE; then one complete pre-room subject render and lock. Do not collapse these stages into one final 05 invocation.
+Studio begins only after the independent same-garment 01, 02, 03 and 04 locks
+resolve. Use those locks, the complete real-face operation board, approved V4
+face translation lock, whole-body canon and direct real-body evidence. Declare
+this as a holistic subject synthesis rather than disguising it as a local face
+edit.
 
-The successful G005 method is the precedent:
+The successful G005 method is the historical manual precedent:
 
-1. create and gate FACE from complete real-face authority plus accepted garment truth;
-2. create and gate BODY from the accepted FACE parent plus body canon and direct real-body evidence;
-3. create the complete neutral-staged pre-room subject from the accepted BODY parent;
-4. review the whole frame, not only the face;
-5. obtain explicit user approval; and
-6. lock the exact accepted bytes as the garment-specific subject parent.
+1. create a full subject from the complete authorities;
+2. if needed, run one bounded second pass using the first candidate as translation context while retaining all real authorities;
+3. review the whole frame, not only the face;
+4. obtain explicit user approval; and
+5. lock the exact accepted bytes as the garment-specific subject parent.
 
-Automated pixel-difference rejection does not override an explicit, informed whole-frame user approval. Conversely, apparent likeness does not override construction or authority failure.
+During the actual manual G005 run, PASS A and PASS B were shown so the user
+could make the recorded whole-frame judgment. Preserve that fact in the audit;
+do not convert it into Studio disclosure behavior. In Studio the first attempt
+and, if needed, its one server-derived bounded correction remain private. Each
+must traverse `GARMENT -> FACE -> BODY -> ROOM -> FINAL_INTEGRATION` in order;
+a stage-excluded gate is `NOT_APPLICABLE`, and later applicable gates are
+`NOT_EVALUATED` after the first failure. The correction has a distinct semantic
+identity and repeats the complete chain. A second, unclassified or
+indeterminate failure blocks without another spend.
+
+Only the exact artifact that reaches `SEMANTIC_PASS` is readable through the
+authenticated app-owned media boundary and eligible for whole-frame user
+review. The historical G005 approval overrode an automated pixel-difference
+objection for its deliberate rebase. It did not override garment, identity,
+body, provenance or another closed semantic failure. Conversely, apparent
+likeness does not override construction or authority failure.
 
 ### 5.4 Resolve styling and create 05
 
 Run the required official Fashion Nova advisory check and record `KEEP`, `REFINE`, `REPLACE` or `NO_CLOSE_MATCH`. It may guide footwear and restrained accessories only.
 
-Place the intact accepted subject into `juw.atelier.empty-plate.v1`. Preserve identity, body, garment, hair and accepted subject geometry. Create one clean, head-to-toe 05 front master. Review and lock it before either sibling begins.
+Place the intact accepted subject into the exact approved room authority. Preserve identity, body, garment, hair and accepted subject geometry. Create one clean, head-to-toe 05 front master. Review and lock it before either sibling begins.
+
+The current `juw.atelier.empty-plate.v1` is 1024×1280 while the Studio transparent-subject/final-composite profile is 1024×1536. Studio `ROOM_FINAL_05`, `SIBLING_06` and `SIBLING_07_*` operations are therefore `BLOCKED_AUTHORITY_CANVAS` before claim or spend. Do not resize, crop, pad, extend or regenerate the plate. Resume only after a separately approved exact 1024×1536 room is hashed, privately read back and selected by a new authority revision.
 
 ### 5.5 Create 06 and 07 as siblings
 
@@ -138,6 +173,7 @@ Both operations branch directly from accepted 05.
 
 - 06 receives the face board, side body canon, direct angle evidence, exact room and garment safeguard.
 - 07 receives the face board, rear operation board, direct rear/profile evidence, exact room and garment safeguard.
+- The V4 translation control is explicit during holistic subject synthesis. Final 05 inherits it through the accepted subject; 06/07 inherit it through accepted 05 while still receiving direct face, angle and room truth. Do not add a fifth direct provider input or drop a governing role.
 - 06 never receives 07, and 07 never receives 06.
 - Neither inferred rotation becomes new garment-construction evidence.
 
@@ -157,7 +193,7 @@ Run separate gates for:
 - full-frame format and artifacts; and
 - privacy/provenance.
 
-Record the exact user decision. Copy accepted bytes unchanged into `locked/`, update the private manifest and state, then export Shop derivatives. Publication requires catalogue/database verification, a READY deployment, affected-route smoke, seven-view gallery verification when seven views exist, and a clean console. A partial publication must explicitly omit unaccepted views; G017 is the precedent.
+Record the exact user decision. For a legacy manual run, copy the reviewed accepted bytes unchanged into `locked/`. For every Studio stage, the facade projection contains no image bytes; its authenticated review-media service refuses all pre-semantic-pass and failed states, verifies the content-addressed artifact during readback and re-authorizes the current projection before returning it. For a Studio transparent-subject run, materialize and store the deterministic room composite before semantic and human review; `Keep` binds that exact composite hash, and lock promotes those same bytes without post-approval image creation. Update the private manifest and state, then export Shop derivatives. Publication requires catalogue/database verification, a READY deployment, affected-route smoke, seven-view gallery verification when seven views exist, and a clean console. A partial publication must explicitly omit unaccepted views; G017 is the precedent. See `ENGINE-GUIDE.md` for the engine-specific ledger and artifact order.
 
 ## 6. Operation record required for every invocation
 
@@ -186,6 +222,14 @@ Record after invocation:
 
 ADR 0046 defines the provider-neutral semantic hash, execution hash and event ledger. The portable core is implemented in `scripts/virtual-atelier/operation-identity.mjs`; it derives canonical semantic and provider execution identities, fails closed on provider capability, separates artifact/evaluation identity and enforces lock reuse and unsafe-retry reconciliation. The private JSON operation record plus `state/current.json` remain the recovery authorities until Studio provider routing is cut over to the ledger.
 
+The ledger, local claim/fence, raw-byte checkpoints and four-command facade are
+the single implementation contract for independent 01–04, subject and 05–07
+operations. This working-tree scope does not assert production readiness: the
+database migration, complete server composition, authority/canvas preflight and
+semantic provider qualification must pass before deployment. Until that
+cutover is complete, the private JSON operation record plus
+`state/current.json` remain the production recovery authorities.
+
 Before trusting a restored environment, run:
 
 ```bash
@@ -198,12 +242,34 @@ This verifies only the universal immutable Lulu/atelier kit, the selected garmen
 
 Do not compare a new candidate only with the immediately preceding garment. Use a small multi-era baseline:
 
-- G001/05–07 and G004/05–07 for founding room, camera and view grammar;
+- G001/05–07 for founding room and camera lineage;
+- the exact version-locked G004/05–07 derivative calibration for positive
+  front/profile/rear camera, scale, poise and view-grammar targets only;
 - G005 for the approved holistic subject/rebase method;
 - G009 for the angle-canon failure and correction lesson;
 - G023 for source-safe 03 and too-slim body rebase;
 - G024 for the latest accepted front/profile/rear balance; and
 - the direct real face/body authorities, which outrank every generated precedent.
+
+G004 is pixel-bound, not nominal. Its missing canonical private originals are
+not restored. The deliberate evaluator-only derivative revision is
+`g004-positive-target-shop-derivatives-2026-08-26.1`, with manifest SHA-256
+`451368db5dd7845fc716dbb661d7bd9153297a99802f6f8f1c441babda8aa635`
+and readback receipt
+`516438224ef2117c328baffde236fb7d8e3565ea6d8477147754b6de77773dc0`.
+Applicable stages preflight the exact three containers before spend and re-read
+them for semantic QA. These pixels never enter generation, parenting, direct
+truth or cross-garment styling/garment transfer.
+
+Provider denial is independently versioned as
+`g004-provider-visual-denial-2026-08-26.1`, manifest SHA-256
+`360cbf8ab42d7ca344c4296d87d28f112f809ce6952069ab664731044c0ad1d3`.
+Its normalized RGB NCC/MAE gate denies calibrated full-frame derivatives after
+lossy codec, colour, mirror, tiny alignment and small geometric changes before
+provider transport. V1 deliberately does not claim arbitrary-subimage,
+large-warp or untrusted-mosaic detection; every raw constituent is checked
+before app-owned composition. It binds only the derivative calibration and
+does not recover or impersonate the unavailable canonical originals.
 
 Review 01–04 and 05–07 separately. A visually attractive frame can still fail its semantic role, and a correct role can still fail likeness or garment truth.
 
@@ -234,9 +300,21 @@ The workflow is portable only when all answers are yes:
 - Are rejected and no-output attempts prevented from parenting?
 - Can the exact accepted bytes and user decision be recovered?
 - Can a new provider be calibrated before production use?
+- Can the exact G004 derivative containers and decoded pixels reproduce the
+  versioned manifest/readback receipt without pretending the originals exist?
 - Can publication be tied to an exact deployment and live smoke?
 - Can all private identity/body/source media remain outside public Git and browser DTOs?
 
 If any answer is no, the environment is not production-ready even if it can generate an image.
 
-Provider qualification uses `docs/virtual-atelier/provider-calibration.v1.json`. A provider/model/adapter revision must pass G005 identity synthesis, the G009 angle false-pass correction, G017 terminal provider failure, G023 source-room/body correction and the complete G024 sequence. Qualification never auto-approves a generated Lulu candidate.
+Provider qualification uses `docs/virtual-atelier/provider-calibration.v1.json`.
+A provider/model/adapter/calibration revision must pass the exact G004 positive
+comparison target, G005 identity synthesis, the G009 angle false-pass
+correction, G017 terminal provider failure, G023 source-room/body correction
+and the complete G024 sequence. Qualification never auto-approves a generated
+Lulu candidate. Production accepts this result only through the internal
+qualified-evaluator resolver: one canonical receipt must bind all six case
+evidence hashes, an independent-review receipt and both exact evaluator
+descriptors. Caller evaluator functions and literal PASS declarations have no
+authority. With no installed bundle, construction stops zero-spend at
+`QUALIFICATION_NOT_PASSED`.

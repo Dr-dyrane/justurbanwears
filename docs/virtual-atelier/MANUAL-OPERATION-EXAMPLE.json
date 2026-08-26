@@ -1,0 +1,103 @@
+{
+  "operationId": "atelier:009:model-front:469e56e03873c32863da6698",
+  "workflowRevision": "2026-08-26.107",
+  "garmentId": "009",
+  "stage": "ROOM_FINAL_05",
+  "view": "05",
+  "operationType": "ROOM_FINAL_05",
+  "status": "PREPARED_NOT_INVOKED",
+  "correctionOrdinal": 0,
+  "correctionBudget": 1,
+  "parentAssets": [
+    "garment.009.subject.core.lock.v1"
+  ],
+  "referenceStack": [
+    {
+      "slot": 1,
+      "assetId": "garment.009.subject.core.lock.v1",
+      "path": "../../storage/garments/drop-02/009/locked/subject-core.png",
+      "sha256": "1111111111111111111111111111111111111111111111111111111111111111"
+    },
+    {
+      "slot": 2,
+      "assetId": "garment.009.view.01.accepted",
+      "path": "../../storage/garments/drop-02/009/locked/01-garment-front.png",
+      "sha256": "2222222222222222222222222222222222222222222222222222222222222222"
+    },
+    {
+      "slot": 3,
+      "assetId": "juw.atelier.empty-plate.v1",
+      "path": "../../storage/virtual-atelier/room/approved-1024x1536.png",
+      "sha256": "3333333333333333333333333333333333333333333333333333333333333333"
+    }
+  ],
+  "authorityStack": {
+    "parent": [
+      "garment.009.subject.core.lock.v1"
+    ],
+    "garment": [
+      "garment.009.view.01.accepted"
+    ],
+    "atelier": [
+      "juw.atelier.empty-plate.v1"
+    ]
+  },
+  "changeSet": [
+    "Place the exact accepted subject in the exact locked room; change only the declared footwear/styling delta."
+  ],
+  "immutableSet": [
+    "identity",
+    "body",
+    "garment",
+    "hair",
+    "pose",
+    "hands",
+    "atelier",
+    "brand icon",
+    "camera",
+    "lighting",
+    "output geometry"
+  ],
+  "outputContract": [
+    "one clean full-body 1024x1536 image",
+    "no text, labels, cards, crops, or triptych"
+  ],
+  "renderQualityContract": {
+    "photographicRealism": "one coherent natural catalogue photograph",
+    "skinTexture": "natural pores, tonal variation, and highlight rolloff",
+    "garmentTexture": "source-supported surface, folds, tension, drape, and sheen only",
+    "lightingIntegration": "one shared light field with truthful contact shadow and material response",
+    "opticsPerspective": "level natural perspective with preserved stature",
+    "artifactRejection": [
+      "plastic or poreless skin",
+      "pasted texture, cutout halos, synthetic HDR, or CGI sheen"
+    ]
+  },
+  "fashionNovaCheck": {
+    "operationId": "g009-fashion-nova-styling-check-example",
+    "publisher": "Fashion Nova",
+    "officialUrl": "https://www.fashionnova.com/products/example-product",
+    "resolvedOfficialUrl": "https://www.fashionnova.com/products/example-product",
+    "pageTitle": "Example product — replace with the recorded live title",
+    "accessedOn": "2026-08-26",
+    "matchedGarmentFacts": [
+      "replace with the evidence-backed garment-family match"
+    ],
+    "decision": "REFINE",
+    "selectedStylingDirection": "replace with the bounded footwear/accessory decision",
+    "authority": "ADVISORY_STYLING_ONLY",
+    "passedAsImageReference": false
+  },
+  "failureGates": [
+    "garment drift",
+    "identity drift",
+    "body drift",
+    "atelier or icon drift",
+    "wrong view, malformed anatomy, synthetic texture, or wrong canvas"
+  ],
+  "semanticIdentity": {
+    "contractVersion": "juw.atelier-manual-semantic-identity.v1",
+    "operationId": "atelier:009:model-front:469e56e03873c32863da6698",
+    "semanticOperationHash": "469e56e03873c32863da669824d3c740044386a7960d477bf5fcbe8505acd672"
+  }
+}

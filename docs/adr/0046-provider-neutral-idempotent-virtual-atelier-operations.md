@@ -41,7 +41,16 @@ This ADR extends ADR 0040. The production authority order remains:
 
 Separate semantic operation identity from provider execution identity.
 
-Implementation note (2026-08-26): `scripts/virtual-atelier/operation-identity.mjs` now provides canonical semantic identity, execution identity, artifact/evaluation hashes, capability preflight and append-only ledger projection. `scripts/virtual-atelier/verify-portable-bundle.mjs` verifies the minimal private authority and active-garment packet. Existing provider calls are not yet routed through the ledger; that migration remains explicitly pending rather than being represented as complete.
+Implementation note (2026-08-26):
+`scripts/virtual-atelier/operation-identity.mjs` provides canonical semantic
+identity, execution identity, artifact/evaluation hashes, capability preflight
+and append-only ledger projection. The local Studio implementation extends the
+same durable four-command contract across independent 01–04, subject and
+05–07 operations, including private ordered QA and review-media authorization.
+`scripts/virtual-atelier/verify-portable-bundle.mjs` verifies the minimal
+private authority and active-garment packet. Database migration, complete
+production composition and provider qualification remain pending; this note is
+not a deployed-cutover claim.
 
 Studio and the orchestrator create one immutable, provider-neutral
 `AtelierOperation`. A provider adapter compiles that operation into a concrete
@@ -106,6 +115,25 @@ operator or model does not author it.
 The operation cannot reach preflight until every required authority resolves to
 an asset ID and exact hash. `unknownFacts` and `prohibitedInferences` are first-
 class constraints, not prose buried in a prompt.
+
+### Independent garment-view roots
+
+Views 01–04 are first-class semantic operations, not preparation performed by
+a different generator:
+
+```text
+GARMENT_01_FRONT
+GARMENT_02_BACK
+GARMENT_03_MANNEQUIN
+GARMENT_04_DETAIL
+```
+
+Each resolves the same server-owned direct-garment evidence class and has no
+stage parent. Their semantic hashes differ by declared view role, output
+contract and view-specific truth boundary, not by garment-number runtime code.
+No candidate from one may be an authority or provider parent for another.
+Subject synthesis requires immutable same-garment front, back, mannequin and
+detail locks; an inferred rear lock remains inferred.
 
 ## Three hashes
 
@@ -245,10 +273,13 @@ Side and terminal states:
 Invariants:
 
 - `RESOLVED` requires every mandatory authority.
+- 01–04 are independent parentless roots through the same lifecycle; all four
+  exact same-garment locks are required before subject synthesis.
 - 06 and 07 independently parent accepted 05 and never each other.
 - Only explicit user approval permits `LOCKED`.
 - Packet and publication cannot precede lock.
-- A preview or unreviewed candidate cannot be published.
+- A preview or unreviewed candidate cannot be published, and candidate bytes
+  are not operator-readable before `SEMANTIC_PASS`.
 - Accepted layers cannot be regenerated to fix another layer.
 
 ## Event ledger and projections
@@ -337,6 +368,39 @@ hash because its change set and `correctionOf` differ.
 Failure after the budget transitions to `BLOCKED_USER_DIRECTION`. The engine
 does not silently begin another attempt or expand the correction region.
 
+### Private ordered comparison and disclosure
+
+The engine records one fixed semantic sequence against the exact same review
+artifact:
+
+```text
+GARMENT -> FACE -> BODY -> ROOM -> FINAL_INTEGRATION
+```
+
+A gate excluded by the declared stage is `NOT_APPLICABLE`. When one applicable
+gate fails, all later applicable gates are `NOT_EVALUATED`; a later apparent
+pass cannot dilute the first failure. The server may derive the single bounded
+correction, record it through the same review command under server authority
+and generate the distinct correction operation. The correction repeats the
+complete ordered sequence. A second failure, an unclassified failure or an
+indeterminate provider result stops privately without another paid call.
+
+Materialization and evaluator access do not create operator media access. The
+sanitized facade projection contains no bytes or storage locators. An
+authenticated app-owned media service may return only the exact
+content-addressed review artifact whose current projection is
+`SEMANTIC_PASS`, `USER_APPROVED` or `LOCKED`. It verifies operation ownership,
+artifact identity and hash, performs private readback, then re-authorizes the
+same projection and artifact to close the read-time race. Every earlier,
+failed, rejected, superseded or blocked state is unreadable.
+
+G005 remains historical evidence that a manual operator displayed PASS A and
+PASS B for an informed whole-frame decision. That manual disclosure is not a
+Studio invariant. Studio keeps a failed first attempt and its bounded
+correction private and reveals only the artifact that completes closed
+semantic QA. Historical approval over a pixel-difference objection did not and
+does not waive a closed authority or semantic failure.
+
 ## Privacy and provenance
 
 - Real face/body media and private garment evidence use opaque asset IDs.
@@ -374,9 +438,18 @@ Studio pages, Search and Ask Studio all dispatch the same commands. None calls a
 provider directly. Studio shows semantic operation, missing evidence, view,
 stage, approval and next action; provider names and private canon stay hidden.
 
+The public command shape is the narrower four-moment facade
+`prepare -> generate once -> review -> lock/reuse` for every stage from
+`GARMENT_01_FRONT` through `SIBLING_07_RECOVERY`; the orchestration commands
+above remain internal capabilities. `generate once` may complete the one
+server-owned private correction loop, but it is not authority for a browser to
+read intermediate bytes. The app-owned review-media boundary opens only for
+the exact semantic-pass artifact.
+
 The operator's primary candidate actions are `Keep`, `Fix one thing` and
-`Reject`. Accepted bytes are returned immediately for an already locked
-semantic hash, providing the fast-render path.
+`Reject`; `Fix one thing` is omitted when the background gate already consumed
+the semantic root's correction budget. Accepted bytes are returned immediately
+for an already locked semantic hash, providing the fast-render path.
 
 ## Provider qualification
 
@@ -390,9 +463,36 @@ use. The suite covers at least:
 - identity and hairstyle stability;
 - local correction with immutable surroundings.
 
-Qualification is performed once per material provider/model/adapter revision,
+The G004 founding target is a closed pixel-bound case, not an anchor-name
+attestation. Because its canonical private originals are unavailable, the
+separate revision `g004-positive-target-shop-derivatives-2026-08-26.1`
+deliberately locks the three public 1120x1400 Shop derivatives as
+evaluator-only positive targets. Applicable operations must verify exact
+container and decoded-pixel hashes before paid dispatch and again at semantic
+QA. The engine independently re-verifies resolver output, gives the evaluator
+only one stage-selected frame and checks that frame again after evaluation.
+Those bytes may not become provider references, parents, direct truth or
+cross-garment transfer authority; identifiers, hashes and exact decoded pixels
+are denied again before provider transport. The separate full-frame visual gate
+is revision `g004-provider-visual-denial-2026-08-26.1`, manifest SHA-256
+`360cbf8ab42d7ca344c4296d87d28f112f809ce6952069ab664731044c0ad1d3`.
+Its normalized RGB NCC/MAE policy also denies calibrated duplicates after lossy
+codec, colour, mirror, tiny alignment and small geometric changes before intent
+or dispatch. V1 does not claim arbitrary-subimage, large-warp or untrusted-
+mosaic detection, so raw constituents are checked before app-owned composition.
+This derivative-only denial revision never impersonates or recovers the missing
+original asset IDs or bytes.
+
+Qualification is performed once per material provider/model/adapter/calibration revision,
 not for every garment. Failure disables the adapter for the unsupported
 capability rather than weakening an operation.
+
+Production composition does not accept evaluator functions or qualification
+claims from its caller. A server-owned resolver must return the exact technical
+and semantic implementations plus safe descriptors bound to one canonical
+six-case PASS receipt and independent-review receipt. Until that audited bundle
+exists, runtime construction fails `QUALIFICATION_NOT_PASSED` before any port or
+provider is invoked.
 
 ## Migration
 
@@ -403,13 +503,16 @@ capability rather than weakening an operation.
    legacy execution fields remain unknown.
 4. Prove that current accepted asset and lineage hashes remain unchanged.
 5. Build ledger projection and diff it against current state.
-6. Wrap built-in ImageGen as the first adapter without regenerating accepted
-   work.
-7. Wrap the current Gateway/Flux path as a second adapter.
-8. Shadow-write events and existing state for one new garment.
-9. Cut Studio reads and commands to the event projection.
+6. Qualify the exact OpenAI-only GPT Image 2 Gateway adapter without
+   regenerating accepted work or enabling provider fallback.
+7. Apply the database migration and compose the same durable facade for
+   independent 01–04, subject and 05–07 stages.
+8. Shadow-write events and existing state against the fixed calibration suite;
+   do not use an unreviewed next garment as the migration experiment.
+9. Cut Studio reads, commands and authenticated review media to the event
+   projection.
 10. Remove model-coupled semantic fingerprinting and direct provider paths only
-    after parity, crash recovery and rollback pass.
+    after parity, crash recovery, disclosure-boundary and rollback tests pass.
 
 ## Rollback
 
@@ -438,8 +541,17 @@ not semantic hashes, approvals or locked bytes.
   Atelier reproduction contract.
 - Ledger replay reconstructs the exact approved current projection.
 - Existing accepted artifacts and lineage survive migration byte-for-byte.
+- Independent 01–04 operations use the same facade, ledger, QA, decision and
+  lock lifecycle; none parents another, and subject synthesis requires all four
+  exact same-garment locks.
 - 05/06/07 lineage violations and rejected-parent attempts are rejected.
 - Correction budget and immutable sets are enforced.
+- Semantic gates run in exact garment/face/body/room/final order, later
+  applicable gates are not evaluated after a failure, and a correction repeats
+  the complete chain under a distinct semantic identity.
+- Candidate media is unreadable before semantic pass and remains bound to the
+  authenticated operation and exact content-addressed artifact during
+  readback.
 - No private path, media, prompt or identity metric enters a public projection.
 - UI, Search and Ask Studio derive the same semantic operation for the same
   normalized intent.

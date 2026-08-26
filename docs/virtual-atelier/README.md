@@ -105,6 +105,13 @@ Running the same semantic declaration returns its locked result regardless of pr
 
 Garments 001, 002, and 003 remain accepted lineage. Garment 004 is `COMPLETE_LOCKED` and packeted: `004/05` is the front master, while `004/06` and `004/07` are accepted sibling views branching independently from `004/05`. There is no pending Garment 004 generation operation. The neutral V4 face-front candidate is now explicitly approved and locked as the public translation asset at `/lulu.png`. It may parent downstream V4 renders, while the verified real Lulu photographs remain the dominant identity truth.
 
+`COMPLETE_LOCKED` describes G004's historical acceptance record; it is not a
+claim that the canonical private 05–07 bytes are presently readable. Those
+originals and packet are unavailable. Studio calibration deliberately locks
+the exact public 1120x1400 Shop derivatives under the separate evaluator-only
+revision in `g004-positive-target-calibration.v1.json`, without reusing or
+restoring the missing canonical asset identities.
+
 ## Human approval
 
 Generated output remains `MODEL_REFERENCE` provenance. Human approval may promote it into an approved styled reference, but never rewrites its provenance into direct photography.

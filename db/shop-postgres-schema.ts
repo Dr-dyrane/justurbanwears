@@ -1500,3 +1500,373 @@ export const studioPhysicalObservations = pgTable("studio_physical_observations"
     ${table.note} is null or length(${table.note}) <= 240
   `),
 ]);
+
+// Provider-neutral Atelier operations are durable intent records. They do not
+// replace the legacy Studio generation tables: an operation captures the
+// approved production declaration, while one or more executions capture paid
+// provider attempts against that immutable declaration.
+export const studioAtelierOperations = pgTable("studio_atelier_operations", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  operatorSubject: text("operator_subject").notNull(),
+  operationKey: varchar("operation_key", { length: 160 }).notNull(),
+  garmentId: varchar("garment_id", { length: 80 }).notNull(),
+  view: varchar("view", { length: 24 }).notNull(),
+  stage: varchar("stage", { length: 48 }).notNull(),
+  contractVersion: varchar("contract_version", { length: 64 }).notNull(),
+  workflowRevision: varchar("workflow_revision", { length: 80 }).notNull(),
+  semanticHash: varchar("semantic_hash", { length: 64 }).notNull(),
+  rootSemanticHash: varchar("root_semantic_hash", { length: 64 }).notNull(),
+  correctionOfSemanticHash: varchar("correction_of_semantic_hash", { length: 64 }),
+  correctionOrdinal: integer("correction_ordinal").default(0).notNull(),
+  declarationReceipt: jsonb("declaration_receipt").$type<Record<string, unknown>>().notNull(),
+  truthReceipt: jsonb("truth_receipt").$type<Record<string, unknown>>().notNull(),
+  canonicalOperation: jsonb("canonical_operation").$type<Record<string, unknown>>().notNull(),
+  parentAssets: jsonb("parent_assets").$type<Array<Record<string, unknown>>>().notNull(),
+  authorityStack: jsonb("authority_stack").$type<Array<Record<string, unknown>>>().notNull(),
+  changeSet: jsonb("change_set").$type<Array<Record<string, unknown>>>().notNull(),
+  immutableSet: jsonb("immutable_set").$type<Array<Record<string, unknown>>>().notNull(),
+  outputContract: jsonb("output_contract").$type<Record<string, unknown>>().notNull(),
+  failureGates: jsonb("failure_gates").$type<string[]>().notNull(),
+  state: varchar("state", { length: 24 }).default("PLANNED").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("studio_atelier_operations_operator_key_unique").on(
+    table.operatorSubject,
+    table.operationKey,
+  ),
+  uniqueIndex("studio_atelier_operations_operator_semantic_unique").on(
+    table.operatorSubject,
+    table.semanticHash,
+  ),
+  uniqueIndex("studio_atelier_operations_one_correction_per_root_unique")
+    .on(table.operatorSubject, table.rootSemanticHash)
+    .where(sql`${table.correctionOfSemanticHash} is not null`),
+  index("studio_atelier_operations_garment_view_idx").on(
+    table.operatorSubject,
+    table.garmentId,
+    table.view,
+    table.createdAt,
+  ),
+  check("studio_atelier_operations_key_present", sql`length(trim(${table.operationKey})) > 0`),
+  check("studio_atelier_operations_garment_present", sql`length(trim(${table.garmentId})) > 0`),
+  check("studio_atelier_operations_contract_present", sql`length(trim(${table.contractVersion})) > 0`),
+  check("studio_atelier_operations_workflow_present", sql`length(trim(${table.workflowRevision})) > 0`),
+  check("studio_atelier_operations_semantic_hash", sql`${table.semanticHash} ~ '^[0-9a-f]{64}$'`),
+  check("studio_atelier_operations_root_semantic_hash", sql`${table.rootSemanticHash} ~ '^[0-9a-f]{64}$'`),
+  check("studio_atelier_operations_correction_hash", sql`
+    ${table.correctionOfSemanticHash} is null
+    or ${table.correctionOfSemanticHash} ~ '^[0-9a-f]{64}$'
+  `),
+  check("studio_atelier_operations_correction_lineage", sql`
+    (${table.correctionOfSemanticHash} is null
+      and ${table.correctionOrdinal} = 0
+      and ${table.rootSemanticHash} = ${table.semanticHash})
+    or (${table.correctionOfSemanticHash} is not null
+      and ${table.correctionOrdinal} = 1
+      and ${table.rootSemanticHash} <> ${table.semanticHash})
+  `),
+  check("studio_atelier_operations_declaration_receipt", sql`
+    jsonb_typeof(${table.declarationReceipt}) = 'object'
+    and ${table.declarationReceipt}->>'sourceHash' ~ '^[0-9a-f]{64}$'
+    and length(trim(${table.declarationReceipt}->>'schemaVersion')) > 0
+    and length(trim(${table.declarationReceipt}->>'validatorRevision')) > 0
+    and jsonb_typeof(${table.declarationReceipt}->'fileVerification') = 'object'
+    and ${table.declarationReceipt}->'fileVerification'->>'status' = 'PASS'
+    and ${table.declarationReceipt}->'fileVerification'->>'receiptHash' ~ '^[0-9a-f]{64}$'
+    and ${table.declarationReceipt}->'fileVerification'->>'manifestHash' ~ '^[0-9a-f]{64}$'
+  `),
+  check("studio_atelier_operations_truth_receipt", sql`
+    jsonb_typeof(${table.truthReceipt}) = 'object'
+    and length(trim(${table.truthReceipt}->>'bundleVersion')) > 0
+    and ${table.truthReceipt}->>'stateFileHash' ~ '^[0-9a-f]{64}$'
+    and length(trim(${table.truthReceipt}->>'manifestRevision')) > 0
+    and ${table.truthReceipt}->>'manifestHash' ~ '^[0-9a-f]{64}$'
+    and ${table.truthReceipt}->>'garmentTruthRevision' ~ '^[a-zA-Z0-9._:/-]{1,240}$'
+    and ${table.truthReceipt}->>'garmentTruthSourceHash' ~ '^[0-9a-f]{64}$'
+  `),
+  check("studio_atelier_operations_canonical_object", sql`jsonb_typeof(${table.canonicalOperation}) = 'object'`),
+  check("studio_atelier_operations_parent_array", sql`jsonb_typeof(${table.parentAssets}) = 'array'`),
+  check("studio_atelier_operations_authority_array", sql`jsonb_typeof(${table.authorityStack}) = 'array'`),
+  check("studio_atelier_operations_change_array", sql`jsonb_typeof(${table.changeSet}) = 'array'`),
+  check("studio_atelier_operations_immutable_array", sql`jsonb_typeof(${table.immutableSet}) = 'array'`),
+  check("studio_atelier_operations_output_object", sql`jsonb_typeof(${table.outputContract}) = 'object'`),
+  check("studio_atelier_operations_failure_array", sql`jsonb_typeof(${table.failureGates}) = 'array'`),
+  check("studio_atelier_operations_state_known", sql`
+    ${table.state} in ('PLANNED', 'ACTIVE', 'COMPLETE', 'FAILED', 'QUARANTINED', 'INDETERMINATE')
+  `),
+]);
+
+export const studioAtelierExecutions = pgTable("studio_atelier_executions", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  operationId: uuid("operation_id")
+    .notNull()
+    .references(() => studioAtelierOperations.id, { onDelete: "restrict" }),
+  attempt: integer("attempt").notNull(),
+  state: varchar("state", { length: 24 }).default("INTENT").notNull(),
+  adapter: varchar("adapter", { length: 80 }).notNull(),
+  model: text("model").notNull(),
+  executionHash: varchar("execution_hash", { length: 64 }).notNull(),
+  promptVersion: varchar("prompt_version", { length: 64 }).notNull(),
+  compiledPrompt: text("compiled_prompt").notNull(),
+  promptHash: varchar("prompt_hash", { length: 64 }).notNull(),
+  orderedBindings: jsonb("ordered_bindings").$type<Array<Record<string, unknown>>>().notNull(),
+  parameters: jsonb("parameters").$type<Record<string, unknown>>().notNull(),
+  executionToken: uuid("execution_token"),
+  leaseFence: integer("lease_fence").default(0).notNull(),
+  startedAt: timestamp("started_at", { withTimezone: true }),
+  leaseExpiresAt: timestamp("lease_expires_at", { withTimezone: true }),
+  providerInvocationStartedAt: timestamp("provider_invocation_started_at", { withTimezone: true }),
+  providerResultReceivedAt: timestamp("provider_result_received_at", { withTimezone: true }),
+  providerResultManifest: jsonb("provider_result_manifest").$type<Record<string, unknown>>(),
+  usage: jsonb("usage").$type<Record<string, unknown>>(),
+  costUsd: text("cost_usd"),
+  warnings: jsonb("warnings").$type<Array<Record<string, unknown>>>().default([]).notNull(),
+  sanitizedResponses: jsonb("sanitized_responses").$type<Array<Record<string, unknown>>>().default([]).notNull(),
+  requestIds: jsonb("request_ids").$type<string[]>().default([]).notNull(),
+  durationMs: integer("duration_ms"),
+  errorCode: varchar("error_code", { length: 96 }),
+  errorMessage: text("error_message"),
+  completedAt: timestamp("completed_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("studio_atelier_executions_operation_attempt_unique").on(table.operationId, table.attempt),
+  uniqueIndex("studio_atelier_executions_operation_hash_unique").on(table.operationId, table.executionHash),
+  uniqueIndex("studio_atelier_executions_active_operation_unique")
+    .on(table.operationId)
+    .where(sql`${table.state} in ('RUNNING', 'PERSISTING')`),
+  index("studio_atelier_executions_operation_created_idx").on(table.operationId, table.createdAt),
+  index("studio_atelier_executions_recovery_idx").on(table.state, table.leaseExpiresAt),
+  check("studio_atelier_executions_attempt_positive", sql`${table.attempt} > 0`),
+  check("studio_atelier_executions_state_known", sql`
+    ${table.state} in ('INTENT', 'RUNNING', 'PERSISTING', 'COMPLETE', 'FAILED', 'QUARANTINED', 'INDETERMINATE')
+  `),
+  check("studio_atelier_executions_execution_hash", sql`${table.executionHash} ~ '^[0-9a-f]{64}$'`),
+  check("studio_atelier_executions_prompt_hash", sql`${table.promptHash} ~ '^[0-9a-f]{64}$'`),
+  check("studio_atelier_executions_prompt_present", sql`length(trim(${table.compiledPrompt})) > 0`),
+  check("studio_atelier_executions_bindings_array", sql`jsonb_typeof(${table.orderedBindings}) = 'array'`),
+  check("studio_atelier_executions_parameters_object", sql`jsonb_typeof(${table.parameters}) = 'object'`),
+  check("studio_atelier_executions_usage_object", sql`${table.usage} is null or jsonb_typeof(${table.usage}) = 'object'`),
+  check("studio_atelier_executions_result_manifest_object", sql`
+    ${table.providerResultManifest} is null
+    or jsonb_typeof(${table.providerResultManifest}) = 'object'
+  `),
+  check("studio_atelier_executions_warnings_array", sql`jsonb_typeof(${table.warnings}) = 'array'`),
+  check("studio_atelier_executions_responses_array", sql`jsonb_typeof(${table.sanitizedResponses}) = 'array'`),
+  check("studio_atelier_executions_request_ids_array", sql`jsonb_typeof(${table.requestIds}) = 'array'`),
+  check("studio_atelier_executions_cost", sql`
+    ${table.costUsd} is null or ${table.costUsd} ~ '^[0-9]+([.][0-9]+)?$'
+  `),
+  check("studio_atelier_executions_duration_nonnegative", sql`${table.durationMs} is null or ${table.durationMs} >= 0`),
+  check("studio_atelier_executions_fence_nonnegative", sql`${table.leaseFence} >= 0`),
+  check("studio_atelier_executions_provider_checkpoints", sql`
+    (${table.providerInvocationStartedAt} is null
+      and ${table.providerResultReceivedAt} is null
+      and ${table.providerResultManifest} is null)
+    or (${table.providerInvocationStartedAt} is not null
+      and ${table.providerResultReceivedAt} is null
+      and ${table.providerResultManifest} is null)
+    or (${table.providerInvocationStartedAt} is not null
+      and ${table.providerResultReceivedAt} is not null
+      and ${table.providerResultManifest} is not null)
+  `),
+  check("studio_atelier_executions_lease", sql`
+    (${table.state} = 'INTENT'
+      and ${table.executionToken} is null
+      and ${table.startedAt} is null
+      and ${table.leaseExpiresAt} is null
+      and ${table.completedAt} is null)
+    or (${table.state} in ('RUNNING', 'PERSISTING')
+      and ${table.executionToken} is not null
+      and ${table.leaseFence} > 0
+      and ${table.startedAt} is not null
+      and ${table.leaseExpiresAt} is not null
+      and ${table.completedAt} is null)
+    or (${table.state} in ('COMPLETE', 'FAILED', 'QUARANTINED', 'INDETERMINATE')
+      and ${table.executionToken} is null
+      and ${table.startedAt} is not null
+      and ${table.leaseExpiresAt} is null
+      and ${table.completedAt} is not null)
+  `),
+  check("studio_atelier_executions_complete_accounting", sql`
+    ${table.state} <> 'COMPLETE'
+    or (${table.providerInvocationStartedAt} is not null
+      and ${table.providerResultReceivedAt} is not null
+      and ${table.providerResultManifest} is not null
+      and ${table.usage} is not null
+      and ${table.costUsd} is not null
+      and ${table.durationMs} is not null)
+  `),
+  check("studio_atelier_executions_exception_reason", sql`
+    ${table.state} not in ('QUARANTINED', 'INDETERMINATE') or ${table.errorCode} is not null
+  `),
+]);
+
+// Artifacts are append-only, private, content-addressed records. Provider bytes
+// are written and read back from Blob before a row is inserted, so cost or QA
+// policy can quarantine an output without discarding the paid result.
+export const studioAtelierArtifacts = pgTable("studio_atelier_artifacts", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  executionId: uuid("execution_id")
+    .notNull()
+    .references(() => studioAtelierExecutions.id, { onDelete: "restrict" }),
+  ordinal: integer("ordinal").notNull(),
+  kind: varchar("kind", { length: 32 }).notNull(),
+  role: varchar("role", { length: 80 }).notNull(),
+  state: varchar("state", { length: 24 }).default("STORED").notNull(),
+  blobPathname: text("blob_pathname").notNull(),
+  blobUrl: text("blob_url").notNull(),
+  mimeType: varchar("mime_type", { length: 120 }).notNull(),
+  byteSize: integer("byte_size").notNull(),
+  width: integer("width"),
+  height: integer("height"),
+  sha256: varchar("sha256", { length: 64 }).notNull(),
+  metadata: jsonb("metadata").$type<Record<string, unknown>>().default({}).notNull(),
+  quarantineReason: text("quarantine_reason"),
+  privacy: varchar("privacy", { length: 24 }).default("PRIVATE").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("studio_atelier_artifacts_execution_kind_ordinal_unique").on(
+    table.executionId,
+    table.kind,
+    table.ordinal,
+  ),
+  index("studio_atelier_artifacts_execution_created_idx").on(table.executionId, table.createdAt),
+  index("studio_atelier_artifacts_sha_idx").on(table.sha256),
+  check("studio_atelier_artifacts_ordinal_bounded", sql`${table.ordinal} >= 0 and ${table.ordinal} < 64`),
+  check("studio_atelier_artifacts_kind_known", sql`
+    ${table.kind} in ('PROVIDER_RAW', 'NORMALIZED', 'SUBJECT_LAYER', 'COMPOSITE', 'DIAGNOSTIC')
+  `),
+  check("studio_atelier_artifacts_state_known", sql`${table.state} in ('STORED', 'QUARANTINED')`),
+  check("studio_atelier_artifacts_bytes_positive", sql`${table.byteSize} > 0`),
+  check("studio_atelier_artifacts_dimensions", sql`
+    (${table.width} is null and ${table.height} is null)
+    or (${table.width} > 0 and ${table.height} > 0)
+  `),
+  check("studio_atelier_artifacts_sha256", sql`${table.sha256} ~ '^[0-9a-f]{64}$'`),
+  check("studio_atelier_artifacts_content_addressed", sql`position(${table.sha256} in ${table.blobPathname}) > 0`),
+  check("studio_atelier_artifacts_metadata_object", sql`jsonb_typeof(${table.metadata}) = 'object'`),
+  check("studio_atelier_artifacts_quarantine_pair", sql`
+    (${table.state} = 'STORED' and ${table.quarantineReason} is null)
+    or (${table.state} = 'QUARANTINED' and length(trim(${table.quarantineReason})) > 0)
+  `),
+  check("studio_atelier_artifacts_private_only", sql`${table.privacy} = 'PRIVATE'`),
+]);
+
+// Review and lock state is intentionally separate from execution state.
+// COMPLETE on an execution means bytes were materialized; only this projection
+// can say that semantic QA, user approval or a lock exists.
+export const studioAtelierOperationProjections = pgTable("studio_atelier_operation_projections", {
+  operationId: uuid("operation_id")
+    .primaryKey()
+    .references(() => studioAtelierOperations.id, { onDelete: "restrict" }),
+  version: integer("version").default(0).notNull(),
+  state: varchar("state", { length: 40 }).default("DRAFT").notNull(),
+  technicalDecision: varchar("technical_decision", { length: 16 }).default("PENDING").notNull(),
+  semanticDecision: varchar("semantic_decision", { length: 16 }).default("PENDING").notNull(),
+  userDecision: varchar("user_decision", { length: 16 }).default("PENDING").notNull(),
+  correctionAuthorized: boolean("correction_authorized").default(false).notNull(),
+  materializedExecutionId: uuid("materialized_execution_id")
+    .references(() => studioAtelierExecutions.id, { onDelete: "restrict" }),
+  materializedArtifactId: uuid("materialized_artifact_id")
+    .references(() => studioAtelierArtifacts.id, { onDelete: "restrict" }),
+  materializedArtifactSha256: varchar("materialized_artifact_sha256", { length: 64 }),
+  lockedArtifactId: uuid("locked_artifact_id")
+    .references(() => studioAtelierArtifacts.id, { onDelete: "restrict" }),
+  lockedAssetId: varchar("locked_asset_id", { length: 200 }),
+  lockedArtifactSha256: varchar("locked_artifact_sha256", { length: 64 }),
+  lockedParentDescriptor: jsonb("locked_parent_descriptor").$type<Record<string, unknown>>(),
+  supersededByOperationId: uuid("superseded_by_operation_id")
+    .references(() => studioAtelierOperations.id, { onDelete: "restrict" }),
+  blockedReason: varchar("blocked_reason", { length: 96 }),
+  lastEventHash: varchar("last_event_hash", { length: 64 }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("studio_atelier_operation_projections_locked_asset_unique")
+    .on(table.lockedAssetId)
+    .where(sql`${table.lockedAssetId} is not null and ${table.state} = 'LOCKED'`),
+  index("studio_atelier_operation_projections_state_idx").on(table.state, table.updatedAt),
+  check("studio_atelier_operation_projections_version_nonnegative", sql`${table.version} >= 0`),
+  check("studio_atelier_operation_projections_state_known", sql`
+    ${table.state} in (
+      'DRAFT', 'MATERIALIZED', 'TECHNICAL_PASS', 'TECHNICAL_FAIL', 'SEMANTIC_PASS', 'SEMANTIC_FAIL',
+      'USER_APPROVED', 'USER_REJECTED', 'LOCKED', 'SUPERSEDED',
+      'BLOCKED_USER_DIRECTION'
+    )
+  `),
+  check("studio_atelier_operation_projections_technical_known", sql`
+    ${table.technicalDecision} in ('PENDING', 'PASS', 'FAIL')
+  `),
+  check("studio_atelier_operation_projections_semantic_known", sql`
+    ${table.semanticDecision} in ('PENDING', 'PASS', 'FAIL')
+  `),
+  check("studio_atelier_operation_projections_user_known", sql`
+    ${table.userDecision} in ('PENDING', 'APPROVED', 'REJECTED')
+  `),
+  check("studio_atelier_operation_projections_materialized_tuple", sql`
+    (${table.materializedExecutionId} is null
+      and ${table.materializedArtifactId} is null
+      and ${table.materializedArtifactSha256} is null)
+    or (${table.materializedExecutionId} is not null
+      and ${table.materializedArtifactId} is not null
+      and ${table.materializedArtifactSha256} ~ '^[0-9a-f]{64}$')
+  `),
+  check("studio_atelier_operation_projections_lock_tuple", sql`
+    (${table.state} = 'LOCKED'
+      and ${table.lockedArtifactId} is not null
+      and length(trim(${table.lockedAssetId})) > 0
+      and ${table.lockedArtifactSha256} ~ '^[0-9a-f]{64}$'
+      and jsonb_typeof(${table.lockedParentDescriptor}) = 'object')
+    or (${table.state} <> 'LOCKED')
+  `),
+  check("studio_atelier_operation_projections_event_hash", sql`
+    ${table.lastEventHash} is null or ${table.lastEventHash} ~ '^[0-9a-f]{64}$'
+  `),
+]);
+
+// The event ledger is append-only. Repository commands update the projection
+// and insert one hash-chained event in the same compare-and-swap statement.
+export const studioAtelierEvents = pgTable("studio_atelier_events", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  operationId: uuid("operation_id")
+    .notNull()
+    .references(() => studioAtelierOperations.id, { onDelete: "restrict" }),
+  sequence: integer("sequence").notNull(),
+  eventType: varchar("event_type", { length: 48 }).notNull(),
+  expectedVersion: integer("expected_version").notNull(),
+  resultingVersion: integer("resulting_version").notNull(),
+  executionId: uuid("execution_id")
+    .references(() => studioAtelierExecutions.id, { onDelete: "restrict" }),
+  artifactId: uuid("artifact_id")
+    .references(() => studioAtelierArtifacts.id, { onDelete: "restrict" }),
+  actorSubject: text("actor_subject").notNull(),
+  payload: jsonb("payload").$type<Record<string, unknown>>().default({}).notNull(),
+  previousEventHash: varchar("previous_event_hash", { length: 64 }),
+  eventHash: varchar("event_hash", { length: 64 }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("studio_atelier_events_operation_sequence_unique").on(table.operationId, table.sequence),
+  uniqueIndex("studio_atelier_events_hash_unique").on(table.eventHash),
+  index("studio_atelier_events_operation_created_idx").on(table.operationId, table.createdAt),
+  check("studio_atelier_events_sequence_positive", sql`${table.sequence} > 0`),
+  check("studio_atelier_events_versions", sql`
+    ${table.expectedVersion} >= 0
+    and ${table.resultingVersion} = ${table.expectedVersion} + 1
+    and ${table.sequence} = ${table.resultingVersion}
+  `),
+  check("studio_atelier_events_type_known", sql`
+    ${table.eventType} in (
+      'MATERIALIZED', 'TECHNICAL_PASS', 'TECHNICAL_FAIL', 'SEMANTIC_PASS', 'SEMANTIC_FAIL',
+      'USER_APPROVED', 'USER_REJECTED', 'LOCKED', 'SUPERSEDED',
+      'CORRECTION_AUTHORIZED', 'BLOCKED_USER_DIRECTION'
+    )
+  `),
+  check("studio_atelier_events_actor_present", sql`length(trim(${table.actorSubject})) > 0`),
+  check("studio_atelier_events_payload_object", sql`jsonb_typeof(${table.payload}) = 'object'`),
+  check("studio_atelier_events_previous_hash", sql`
+    ${table.previousEventHash} is null or ${table.previousEventHash} ~ '^[0-9a-f]{64}$'
+  `),
+  check("studio_atelier_events_hash", sql`${table.eventHash} ~ '^[0-9a-f]{64}$'`),
+]);

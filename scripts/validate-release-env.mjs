@@ -60,8 +60,9 @@ function validateStudioEnvironment() {
   const emails = (process.env.STUDIO_OPERATOR_EMAILS ?? "").split(",").map((email) => email.trim()).filter(Boolean);
   if (!emails.length) errors.push("STUDIO_OPERATOR_EMAILS is required when Studio auth is enabled");
   if (emails.some((email) => !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))) errors.push("STUDIO_OPERATOR_EMAILS contains an invalid email address");
+  if (process.env.STUDIO_AI_IMAGE_MODEL?.trim() !== "openai/gpt-image-2") errors.push("STUDIO_AI_IMAGE_MODEL must be openai/gpt-image-2");
   const cost = Number(process.env.STUDIO_AI_IMAGE_COST_CAP_USD);
-  if (!Number.isFinite(cost) || cost <= 0 || cost > 1) errors.push("STUDIO_AI_IMAGE_COST_CAP_USD must be greater than 0 and no more than 1");
+  if (cost !== 0.10) errors.push("STUDIO_AI_IMAGE_COST_CAP_USD must be exactly 0.10");
   return errors;
 }
 
@@ -74,7 +75,8 @@ if (mode === "--template") {
   const days = Number(values.get("SHOP_RETURN_WINDOW_DAYS"));
   if (!Number.isInteger(days) || days < 1 || days > 90) errors.push("SHOP_RETURN_WINDOW_DAYS must default to a whole number from 1 through 90");
   const cap = Number(values.get("STUDIO_AI_IMAGE_COST_CAP_USD"));
-  if (!Number.isFinite(cap) || cap <= 0 || cap > 1) errors.push("STUDIO_AI_IMAGE_COST_CAP_USD must have a safe positive default no greater than 1");
+  if (values.get("STUDIO_AI_IMAGE_MODEL") !== "openai/gpt-image-2") errors.push("STUDIO_AI_IMAGE_MODEL must default to openai/gpt-image-2");
+  if (cap !== 0.10) errors.push("STUDIO_AI_IMAGE_COST_CAP_USD must default to exactly 0.10");
   if (errors.length) fail(errors);
   console.log(`✓ .env.example defines ${values.size} unique release variables`);
   process.exit(0);

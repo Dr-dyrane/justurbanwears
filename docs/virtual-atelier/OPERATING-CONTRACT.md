@@ -7,13 +7,12 @@ This is the normative contract for JUW model-reference generation. When another 
 Every garment follows this exact order:
 
 ```text
-GARMENT PHOTO INTAKE
-→ GARMENT TRUTH + ACCEPTED 01–04
-→ FACE IDENTITY PASS
-→ BODY IDENTITY PASS WHILE PRESERVING FACE
-→ COMPLETE PRE-ROOM SUBJECT RENDER + SUBJECT LOCK
+GARMENT INTAKE
+→ INDEPENDENT 01 + 02 + 03 + 04 LOCKS
+→ REAL FACE AUTHORITY
+→ BODY CANON
 → FASHION NOVA ACCESSORY STYLING CHECK
-→ ATTACH LOCKED ROOM WITHOUT REGENERATING THE SUBJECT
+→ LOCKED ROOM
 → 05 FRONT MASTER
 → 06 OR 07 AS INDEPENDENT SIBLING VIEWS
 ```
@@ -25,14 +24,10 @@ The garment ID is the first input to the main flow. It resolves the garment cons
 `06` and `07` are sibling branches from the accepted `05`:
 
 ```text
-GARMENT PHOTOS → GARMENT/01–04 → FACE PASS → BODY PASS → PRE-ROOM SUBJECT LOCK
-                                                              ↓
-                                              STYLING → ROOM ATTACH → 05
-                                                                        ├→ 06
-                                                                        └→ 07
+                    ┌→ 06
+GARMENT→FACE→BODY→ROOM→05
+                    └→ 07
 ```
-
-Face, body, pre-room subject synthesis and room attachment are separate gated operations. A provider call that combines them into one new full-frame `05` has skipped the canonical flow and must be rejected even when the final frame appears plausible.
 
 Neither sibling may parent the other. `06 → 07` and `07 → 06` are forbidden production lineages. An accepted sibling may be inspected later for collection coherence, but it has no generation authority over the other sibling.
 
@@ -44,7 +39,7 @@ Within the five-reference image-generation boundary, the identity/body/room core
 - direct real-Lulu angle contact
 - the exact locked room
 
-These authority roles are mandatory; their ordering and any truth-preserving packaged reference are adaptive. The validator checks membership and lineage, while human review decides whether the resulting frame is realistic.
+These authority roles are mandatory; their ordering and any truth-preserving packaged reference are adaptive. The validator checks membership and lineage, closed semantic QA runs first, and subsequent human review decides whether a passing frame should be kept.
 
 Do not drop an angle-specific body crop to make room for a weaker translation convenience. Current-garment construction remains controlled by accepted `05`; unknown side or rear construction stays unknown. If a new garment exposes a direct angle-specific construction fact that cannot fit this boundary, stop and resolve a truthful packaged authority or a declared garment-only pass before model generation.
 
@@ -73,13 +68,54 @@ The check may conclude `KEEP`, `REFINE`, `REPLACE`, or `NO_CLOSE_MATCH`. The fin
 The authority gates are sequential:
 
 ```text
-face fails                         → stop before body
-face passes, body fails            → preserve face; correct body only
-face and body pass, room fails      → preserve Lulu; correct room only
-face, body and room pass            → create or lock the garment view
+garment fails                              → stop before face
+garment passes, face fails                 → preserve garment; stop before body
+garment and face pass, body fails          → preserve garment + face; correct body only
+garment, face and body pass, room authority fails
+                                            → hard block; do not spend to invent/fix authority
+room authority passes, final integration fails
+                                            → one stage-safe bounded correction or block
+all applicable gates pass                  → reveal exact bytes for human review
 ```
 
-Later stages may not rewrite an earlier accepted gate.
+Later stages may not rewrite an earlier accepted gate. Reveal is not lock:
+only the user's subsequent `Keep` locks the exact reviewed bytes.
+
+### Private background gate and disclosure boundary
+
+The sequential authority gates run privately. Materialized provider bytes are
+not a reviewable candidate. Studio may show progress, but it must not return an
+artifact URL, image bytes, thumbnail, gallery row or `Keep` action while an
+operation is `DRAFT`, `MATERIALIZED`, `TECHNICAL_PASS`, `TECHNICAL_FAIL` or
+`SEMANTIC_FAIL`. This is a media-access invariant, not only a projection-shape
+rule: the authenticated app-owned review-media service must refuse the bytes in
+those states, then re-authorize the same operation and content-addressed
+artifact after private readback before returning anything.
+
+The private evaluator records the gates in this exact order against the exact
+same artifact and the versioned multi-era audit baseline:
+
+```text
+GARMENT → FACE → BODY → ROOM → FINAL INTEGRATION
+```
+
+Every declared stage records the five positions in that order. A position the
+stage contract excludes is `NOT_APPLICABLE`. If one applicable gate fails,
+every later applicable gate is `NOT_EVALUATED`. It is invalid to claim a body,
+room or final result after face failure, or a room/final result after body
+failure. One server-derived `FIX_ONE_THING` may create one new semantic
+correction operation. That correction is not an implicit retry: it has its own
+operation identity and must repeat the complete gate chain. It consumes the
+single correction budget for the semantic root. A second failure, an
+unclassified failure or an uncertain provider outcome stops at
+`BLOCKED_USER_DIRECTION` or its equivalent without another provider call.
+
+Only `SEMANTIC_PASS` makes the exact private artifact reviewable;
+`USER_APPROVED` and `LOCKED` retain access to that same artifact. The user's
+subsequent `Keep` decision authorizes locking those exact reviewed bytes; it
+does not authorize a post-review regeneration. A human `Fix one thing` is
+available only when the root correction budget remains. `06`, `07`, export and
+publication remain unavailable until the required parent is `LOCKED`.
 
 ## 1. Authority layers
 
@@ -126,8 +162,6 @@ Controls torso-to-leg ratio, shoulder and arm volume, bust, waist position, wais
 
 Real Lulu photographs remain body evidence truth. `LULU_V4_BODY_CANON_SOURCE.png` and `LULU_V4_BODY_THREE_VIEW_CANON.png` are user-approved modeled silhouette and garment-transfer controls, not verified measurements or direct photographic identity evidence. The front/side/back crop files are operational slices of the three-view plate, not independent authorities. Printed height or weight on any source card must not enter canon metadata.
 
-The accepted Garment 004 `05–07` set is the approved secondary JUW body-translation reference: `05` for full-height stature and front waist-to-hip balance, `06` for soft-left-profile waist and side/rear projection, and `07` for right-rear-three-quarter waist-to-hip continuity and rear projection. It never outranks real Lulu body evidence or the V4 body canon, never supplies face identity or another garment's construction, and must be normalized for Garment 004 fabric stiffness, heels, pose, camera and perspective.
-
 Do not convert the canon into prose such as “make her curvier.” Use the approved plate as a balanced geometric control. Do not enlarge one characteristic at the expense of proportional balance.
 
 ### Atelier
@@ -168,6 +202,63 @@ For the active garment, accepted `05` is the garment-specific front translation 
 
 Accepted `06` and `07` remain sibling outputs. Neither is a translation authority for generating the other.
 
+### G004 positive-target calibration boundary
+
+G004 is a special **positive evaluation target**, not merely one label in the
+multi-era anchor list. Its canonical private 05/06/07 PNG originals and packet
+could not be recovered from the checkout, Git object database or recorded
+71-object private Blob audit. They therefore remain unavailable and may not be
+claimed as restored, presently readable, qualified or available as a live
+lock. Their historical accepted/locked ledger record remains intact.
+
+The exact already-public 1120x1400 Shop WebP derivatives are deliberately
+version-locked as the separate evaluator-only revision
+`g004-positive-target-shop-derivatives-2026-08-26.1` in
+`g004-positive-target-calibration.v1.json`. Manifest SHA-256 is
+`451368db5dd7845fc716dbb661d7bd9153297a99802f6f8f1c441babda8aa635`;
+the container-plus-decoded-pixel readback receipt is
+`516438224ef2117c328baffde236fb7d8e3565ea6d8477147754b6de77773dc0`.
+This derivative revision does not inherit the missing originals' asset IDs and
+does not alter their historical hashes.
+
+Stage binding is exact:
+
+- `SUBJECT_A`, `SUBJECT_B`, and `ROOM_FINAL_05` compare against derivative 05;
+- `SIBLING_06` compares against derivative 06;
+- `SIBLING_07_CORE` and `SIBLING_07_RECOVERY` compare against derivative 07;
+- `GARMENT_01_FRONT` through `GARMENT_04_DETAIL` record G004 as
+  `NOT_APPLICABLE`, because G004 predates the canonical independent 01–04 set.
+
+Before applicable paid dispatch and again before semantic QA, the server must
+read all three content-addressed containers and verify MIME, byte size,
+1120x1400 geometry, SHA-256 and decoded sRGB RGBA pixel SHA-256. The evaluator
+receives the candidate bytes and a fresh copy of only the stage-selected G004
+target; the engine verifies that copy again after evaluation. The durable QA
+event records only safe hashes, target/view, positive axes and transfer
+exclusions; it never records media bytes or a storage pathname.
+
+G004/05 may measure front camera/room family, subject scale, front grammar,
+scene integration and secondary identity translation. G004/06 may measure
+left-profile grammar, heel-aware stature, poise and scene integration. G004/07
+may measure right-rear-three-quarter grammar, look-back poise, heel-aware
+stature and scene integration. All three are subordinate to real Lulu identity
+and body material and the current garment's direct evidence. They must never
+become provider references, parent locks, direct identity/body/current-garment
+truth or sources of garment colour, construction, jewellery, footwear or
+styling. Known canonical/derivative IDs and hashes plus exact derivative decoded
+pixels are denied before provider transport. The normalized full-frame visual
+denial policy is separately locked as
+`g004-provider-visual-denial-2026-08-26.1`, manifest SHA-256
+`360cbf8ab42d7ca344c4296d87d28f112f809ce6952069ab664731044c0ad1d3`;
+it also denies calibrated lossy-codec, colour, mirror, tiny-alignment and small
+geometric duplicates before provider intent or dispatch. V1 does not claim
+arbitrary-subimage, large-warp or untrusted-mosaic detection, so every raw
+constituent is checked before an app-owned board or composite is assembled.
+Neither denial manifest restores or impersonates the unavailable canonical
+originals. Any G004 mismatch dominates the failure reason and blocks without
+speculative correction spend, even when the same evaluation names a mutable
+gate.
+
 ### View grammar
 
 - `05` — clean full-body FRONT MASTER
@@ -192,7 +283,46 @@ Working production slots use:
 
 Historical Drop 01 Shop filenames used `04` for model front, `05` for model rear three-quarter, `06` for fabric detail, and `07` for model left profile. Numeric positions are therefore not authority. Database sync and public export must map by semantic role, never by number alone.
 
+Production evaluator authority is internal and receipt-bound. A route or
+composition caller may provide infrastructure implementations, but never a
+technical/semantic evaluator function, evaluator descriptor or qualification
+PASS declaration. The internal bundle must bind the exact six calibration-case
+evidence hashes, independent-review receipt and evaluator descriptors to one
+canonical qualification receipt. No passing bundle is currently installed;
+production therefore fails `QUALIFICATION_NOT_PASSED` before any evaluator,
+execution intent or provider call.
+
 Public derivatives must preserve the locked master's aspect ratio. Never force a private portrait into the Shop frame by independently resizing width and height. Use the checked-in semantic exporter only after `01–07` are accepted and locked; it contains the intact source with one isotropic scale and fills any remaining `1120×1400` canvas area from a softened copy of that same image. Private masters remain immutable and authoritative.
+
+### Durable independent garment stages 01–04
+
+This is the mandatory production architecture, not a deployed-cutover claim.
+The current legacy Studio routes must remain held until authenticated route,
+repository, evaluator, review-media and migration composition are qualified as
+one release atom. In that composed engine, views 01–04 are not handed to a
+separate legacy generator. They use the same strict declaration compiler,
+four-command facade, paid
+claim/fence, immutable artifact ledger, private ordered QA, review decision and
+lock lifecycle as subject and model stages:
+
+| Engine stage | Result | Parent rule | Truth boundary |
+| --- | --- | --- | --- |
+| `GARMENT_01_FRONT` | `GARMENT_FRONT` / view `01` | no stage parent | direct visible front construction |
+| `GARMENT_02_BACK` | `GARMENT_BACK` / view `02` | no stage parent | direct rear when present; otherwise quarantined inferred presentation |
+| `GARMENT_03_MANNEQUIN` | `MANNEQUIN_FRONT` / view `03` | no stage parent | anonymous neutral mannequin; source environment and distinctive source mannequin have no authority |
+| `GARMENT_04_DETAIL` | `FABRIC_DETAIL` / view `04` | no stage parent | close source-visible construction/material response; never fibre proof |
+
+All four operations resolve the server-owned `DIRECT_GARMENT_EVIDENCE` stack
+and garment truth. They are independent roots: an output or candidate from one
+view is not a provider reference, parent or authority for another. Accepted
+locks may be compared together only for set-level consistency after generation.
+
+Subject synthesis is blocked until the same garment has exact immutable
+`GARMENT_FRONT_LOCK`, `GARMENT_BACK_LOCK`, `MANNEQUIN_FRONT_LOCK` and
+`FABRIC_DETAIL_LOCK` parents. The back lock retains its direct-versus-inferred
+classification; locking it never upgrades inferred rear construction to direct
+evidence. These are semantic recipes, not garment-number branches. Every new
+garment provides data to the same four stages.
 
 ## 2. Immutable-state rule
 
@@ -208,56 +338,72 @@ Examples:
 
 If the available tool cannot isolate the requested change, stop and disclose the limitation before generation. Do not simulate a local edit with a full-scene synthesis while calling the other layers “locked.”
 
-Each candidate receives at most one bounded correction with one changed variable. If that correction fails, reject the candidate and begin a new declared operation rather than accumulating invisible drift.
+Each semantic root receives at most one bounded correction with one changed variable. If that correction fails, block for user direction rather than accumulating invisible drift. A later user-authorized restart is a new declared root, never an automatic third attempt.
 
 ### Holistic subject synthesis and rebase
 
 The pixel-preservation rule above applies to a declared local correction. It does not forbid a deliberately declared **holistic subject synthesis** whose purpose is to resolve face, body, garment fit, hair, pose, hands, footwear, and neutral staging into one new full-frame subject master.
 
-Use this staged mode for every new garment-specific Lulu subject. It is not optional when the intended output is a new full-frame person. All of the following must be true:
+Use this mode only when all of the following are true:
 
-1. the garment front and body target have already been explicitly accepted;
+1. the same garment's independent 01, 02, 03 and 04 artifacts plus the body
+   target have already been explicitly accepted and locked;
 2. the complete independent real-face authority stack is present;
 3. the operation is declared as `HOLISTIC_SUBJECT_SYNTHESIS`, not a local face edit;
 4. the user reviews the entire frame, not only the face; and
 5. the accepted output is rebased as a new garment-specific subject lock.
 
-For a five-image generation boundary, resolve the stages in this order:
+### G005 legacy disclosure history versus Studio execution
+
+The following two-pass recipe is preserved because it is what the authorized
+manual G005 operation actually did. PASS A and PASS B were exposed during that
+manual session so the user could make the recorded whole-frame judgment. That
+disclosure is audit history, not a Studio engine instruction and not permission
+to expose a failed or merely materialized candidate.
+
+For a five-image generation boundary, the historical manual recipe was:
 
 ```text
-FACE IDENTITY PASS
-accepted garment 01 or garment-transfer control
+LEGACY MANUAL PASS A
+accepted body target
 + F01–F10 real-face contact
 + raw frontal morphology
 + raw open-eye three-quarter geometry
 + approved V4 translation lock
-→ face-resolved neutral subject candidate
+→ face-translated full-frame candidate
 
-BODY IDENTITY PASS
-accepted FACE candidate as the identity parent
-+ approved whole-body canon
-+ direct real-body angle evidence
-+ accepted garment 01
-→ body-resolved candidate that preserves the accepted face
-
-PRE-ROOM SUBJECT RENDER
-accepted BODY candidate as the sole person parent
-+ accepted garment safeguards
-+ resolved styling except any explicitly deferred accessory
-→ complete neutral-staged subject candidate
-
-ROOM / 05
-accepted PRE-ROOM SUBJECT LOCK as the sole person parent
-+ exact locked room
-+ only an explicitly deferred accessory, if any
-→ final 05 without regenerating face, body, garment or pose
+LEGACY MANUAL PASS B — one bounded correction
+accepted body target
++ PASS A candidate as translation donor
++ F01–F10 real-face contact
++ raw frontal morphology
++ raw open-eye three-quarter geometry
+→ review candidate
 ```
 
-The contact sheet includes the real polished frontal lock, so its separate crop is represented without displacing an independent authority input. The current recent direct face still may occupy its own auxiliary slot when it materially strengthens an angle, but it never replaces the complete real authority. Hair remains unchanged unless the user explicitly unlocks it.
+The contact sheet includes the real polished frontal lock, so its separate crop is represented without displacing an independent authority input. Hair remains unchanged unless the user explicitly unlocks it.
 
-Human approval of PASS B supersedes automated pixel-difference objections for that holistic operation because the user is accepting the entire newly synthesized frame. The accepted frame then becomes immutable. Downstream ROOM/`05` work must parent that exact subject lock and may not return to PASS A, the earlier body target, or a rejected correction as the visual parent.
+In Studio, PASS A is simply the first private semantic operation. If it passes
+the complete closed gate chain, that exact artifact may be revealed. If it
+fails and the evidence identifies one bounded repair, the server may create the
+PASS-B-equivalent correction privately and must repeat the entire chain. The
+user sees only the exact artifact that reaches `SEMANTIC_PASS`; the interface
+does not show failed PASS A beside PASS B for comparison. The historical G005
+approval superseded a pixel-difference objection for a deliberately rebased
+whole frame; it did not waive garment truth, identity, body, provenance or
+other closed semantic failures, and it does not authorize a Studio user to
+override `SEMANTIC_FAIL`.
 
-The subject lock does not waive the garment-set gate. Complete and approve `01–04` before FACE begins. View `03` is garment-presentation-only and may never control Lulu identity or body. If mannequin geometry degrades garment transfer, create an anonymous Lulu-proportioned garment-transfer form controlled by the body canon; do not let the source mannequin override the body. The pre-room subject lock may parent only the current garment's ROOM/final-`05` operation; it does not directly parent `06` or `07`. Only the accepted room-composited `05` may parent those sibling views.
+After `SEMANTIC_PASS`, human acceptance makes the reviewed frame immutable.
+Downstream ROOM/`05` work must parent that exact subject lock and may not return
+to PASS A, the earlier body target, or a rejected correction as the visual
+parent.
+
+The 01–04 garment-set gate precedes subject synthesis; all four locks remain
+immutable while the subject is built and composed into the room. The subject
+lock may parent only the current garment's ROOM/final-`05` operation; it does
+not directly parent `06` or `07`. Only the accepted room-composited `05` may
+parent those sibling views.
 
 If the user explicitly accepts every subject layer except footwear or another named accessory, record a `SUBJECT_CORE_LOCK` rather than claiming whole-frame acceptance. The exact subject pixels may parent ROOM/`05`, but the deferred accessory is excluded from its authority and must be the only person-layer change declared for the styling/ROOM/`05` operation. The final `05` requires whole-frame approval and closes the deferred styling decision. Identity, body, garment, hair, pose, hands, and framing remain immutable throughout that operation.
 
@@ -265,67 +411,58 @@ This exception never converts a generated subject lock into direct identity or g
 
 ## 3. Operation declaration
 
-Before execution, resolve:
+Before handing a declaration to the engine, resolve the exact camelCase JSON
+contract represented by `docs/virtual-atelier/MANUAL-OPERATION-EXAMPLE.json`.
+The checked-in test loads that literal example, so documentation and validator
+cannot silently drift into incompatible snake_case/camelCase shapes.
 
-```yaml
-operation_id: gNNN-vVV-rNNN
-garment_id: NNN
-view: "05 | 06 | 07"
-parent_assets: []
-authority_stack:
-  garment: []
-  identity: []
-  body: []
-  translation: []
-  atelier: []
-  brand: []
-  pose: []
-change_set: []
-immutable_set: []
-output_contract: []
-fashionNovaCheck:
-  operationId: ""
-  publisher: "Fashion Nova"
-  officialUrl: ""
-  resolvedOfficialUrl: ""
-  pageTitle: ""
-  accessedOn: "YYYY-MM-DD"
-  matchedGarmentFacts: []
-  decision: "KEEP | REFINE | REPLACE | NO_CLOSE_MATCH"
-  noCloseMatchReason: "required only for NO_CLOSE_MATCH"
-  selectedStylingDirection: ""
-  authority: "ADVISORY_STYLING_ONLY"
-  passedAsImageReference: false
-renderQualityContract:
-  photographicRealism: ""
-  skinTexture: ""
-  garmentTexture: ""
-  lightingIntegration: ""
-  opticsPerspective: ""
-  artifactRejection: []
-renderQualityReview:
-  photographicRealism: "PASS | FAIL"
-  skinTexture: "PASS | FAIL"
-  garmentTexture: "PASS | FAIL"
-  lightingIntegration: "PASS | FAIL"
-  opticsPerspective: "PASS | FAIL"
-  artifactRejection: "PASS | FAIL"
-failure_gates: []
-prompt_verbatim: ""
-generation_tool: ""
-output_path: ""
-output_sha256: ""
-```
+`stage` is mandatory and must map exactly:
 
-No operation proceeds with unresolved required assets or an incomplete `renderQualityContract`. A `05` operation also requires a complete `fashionNovaCheck`. Before any `05`, `06`, or `07` invocation, run the checked-in operation validator and record its pass:
+| Stage | View |
+| --- | --- |
+| `GARMENT_01_FRONT` | `01` |
+| `GARMENT_02_BACK` | `02` |
+| `GARMENT_03_MANNEQUIN` | `03` |
+| `GARMENT_04_DETAIL` | `04` |
+| `SUBJECT_A`, `SUBJECT_B` | `SUBJECT` |
+| `ROOM_FINAL_05` | `05` |
+| `SIBLING_06` | `06` |
+| `SIBLING_07_CORE`, `SIBLING_07_RECOVERY` | `07` |
+
+No operation proceeds with unresolved required assets or an incomplete
+`renderQualityContract`. A `ROOM_FINAL_05` operation also requires a complete
+`fashionNovaCheck` and exactly one accepted subject parent plus the current
+garment safeguard and exact room. It must not re-add face or body as provider
+authority: those truths are already carried by the immutable subject lock and
+remain private evaluator comparison authority.
+
+Run the checked-in operation validator before engine preparation and record its
+semantic pass:
 
 ```bash
 npm run atelier:verify:operation -- storage/garments/drop-02/NNN/operations/<operation>.json
 ```
 
-Every executed operation must persist the exact prompt verbatim—not only a summary—together with the ordered reference paths, slot roles, exclusions, tool/mode, generated source path when available, durable workspace output path, dimensions, byte size and SHA-256. Record every bounded correction as its own operation/prompt, and record independent review plus the user's exact acceptance or rejection statement. A useful or accepted generation without this reproduction record is incomplete and may not become canon.
+This command returns `PASS SEMANTIC_PREFLIGHT_ONLY`; it cannot grant paid
+dispatch because it has no execution identity, durable claim or reconciliation
+checkpoint. `paidInvocationAllowed` remains false. Only the server-owned engine
+may compile prompt prose, persist execution identity, acquire the claim/fence
+and dispatch once.
 
-For `06` and `07`, the sibling view must not appear in `parent_assets` or any authority list.
+Every executed operation must persist the exact compiler-produced prompt—not
+only a summary—together with the ordered reference paths, slot roles,
+exclusions, adapter/model, execution identity and checkpoints, generated source
+path when available, durable workspace output path, dimensions, byte size and
+SHA-256. The server derives every bounded correction from the exact failed
+receipt and records it as a distinct operation; a manual caller cannot create a
+paid retry. Record independent review plus the user's exact acceptance or
+rejection statement. A useful or accepted generation without this reproduction
+record is incomplete and may not become canon.
+
+For Studio `01`–`04`, `parentAssets` is empty and the exact direct garment
+evidence is resolved as server-owned authority. One early-view candidate may
+not appear in another early-view operation. For `06` and `07`, the sibling
+view must not appear in `parentAssets` or any authority list.
 
 ## 4. Output contract
 
@@ -371,7 +508,7 @@ Exact standalone canonical icon only.
 
 ### View gate
 
-The requested 05/06/07 grammar is unambiguous and complete.
+The requested 01–07 semantic role is unambiguous and complete; 05/06/07 also obey their fixed model-view grammar.
 
 ### Lineage gate
 
@@ -385,7 +522,7 @@ One clean full image with no unrequested text, labels, panels, or crops.
 
 Skin, garment, footwear and room read as one photograph. Natural skin detail remains visible; garment wash, folds, tension, fraying, stitching, drape and sheen follow the garment evidence and pose; lighting and contact shadows agree across the frame; perspective preserves Lulu's stature. Reject poreless or waxy skin, invented material texture, pasted detail, halos, synthetic HDR, CGI sheen, excessive smoothing or sharpening, and any cutout-like room integration.
 
-A model-view operation may not claim `GATE_PASS`, `ACCEPTED` or `LOCKED` until every named `renderQualityReview` result is recorded as `PASS`. A failure in any gate rejects the candidate.
+No operation may claim `GATE_PASS`, `ACCEPTED` or `LOCKED` until every applicable `renderQualityReview` result is recorded as `PASS` and each stage-excluded result is explicitly non-applicable under its closed schema. A failure in any gate rejects the candidate.
 
 ### Semantic-role drift gate
 
@@ -407,6 +544,8 @@ A supplied seller price always overrides this fallback. A later explicit price c
 
 ## 6. State transitions
 
+The legacy manual record uses:
+
 ```text
 DRAFT
 → READY
@@ -417,6 +556,22 @@ DRAFT
 ```
 
 Rejected assets never become parents. Acceptance and rejection must be written to `state/current.json` before another operation begins.
+
+The Studio engine uses the durable projection for every stage from
+`GARMENT_01_FRONT` through `SIBLING_07_RECOVERY`:
+
+```text
+DRAFT
+→ MATERIALIZED
+→ TECHNICAL_PASS | TECHNICAL_FAIL
+→ SEMANTIC_PASS | SEMANTIC_FAIL
+→ USER_APPROVED | USER_REJECTED
+→ LOCKED | SUPERSEDED | BLOCKED_USER_DIRECTION
+```
+
+Materialization and technical pass are private. The optional single correction
+is a new linked semantic operation, not a backward state transition or a replay
+of the same provider invocation.
 
 ## 7. Privacy and provenance
 

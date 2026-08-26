@@ -1,4 +1,8 @@
 export const STUDIO_GPT_IMAGE_2_MODEL = "openai/gpt-image-2" as const;
+export const STUDIO_GPT_IMAGE_2_ADAPTER = "vercel-ai-gateway/openai-gpt-image-2" as const;
+export const STUDIO_GPT_IMAGE_2_ADAPTER_VERSION = "atelier-gpt-image-2-v2" as const;
+export const STUDIO_GPT_IMAGE_2_POLICY_REVISION = "2026-08-26.3" as const;
+export const STUDIO_GPT_IMAGE_2_MAX_REFERENCES = 4 as const;
 export const STUDIO_GPT_IMAGE_2_TIMEOUT_MS = 180_000 as const;
 export const STUDIO_GPT_IMAGE_2_SIZE = "1024x1536" as const;
 export const STUDIO_GPT_IMAGE_2_QUALITY = "medium" as const;

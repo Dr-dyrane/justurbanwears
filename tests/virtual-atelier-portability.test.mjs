@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import {
   appendAtelierEvent,
+  canonicalStringify,
   deriveArtifactHash,
   deriveEvaluationHash,
   deriveExecutionIdentity,
@@ -142,6 +144,12 @@ test("portable authority and provider calibration manifests cover the required e
   const authority = JSON.parse(readFileSync("lib/server/private-asset-manifests/lulu-v4.json", "utf8"));
   const portable = JSON.parse(readFileSync("docs/virtual-atelier/portable-authority-kit.v1.json", "utf8"));
   const calibration = JSON.parse(readFileSync("docs/virtual-atelier/provider-calibration.v1.json", "utf8"));
+  const g004 = JSON.parse(readFileSync("docs/virtual-atelier/g004-positive-target-calibration.v1.json", "utf8"));
+  const g004VisualDenial = JSON.parse(readFileSync(
+    "docs/virtual-atelier/g004-provider-visual-denial.v1.json",
+    "utf8",
+  ));
+  const g004Case = calibration.cases[0];
   assert.equal(portable.authorityRevision, authority.authorityRevision);
   assert.deepEqual(portable.assets.map((asset) => asset.id).sort(), authority.assets.map((asset) => asset.id).sort());
   assert.ok(portable.assets.every((asset) => asset.acceptanceStatus === "APPROVED" && asset.lockedStatus === "IMMUTABLE_AUTHORITY"));
@@ -152,6 +160,61 @@ test("portable authority and provider calibration manifests cover the required e
     "lulu.face.real.v4.front-lock",
   ]);
   assert.ok(portable.supplementalRestoreAssets.every((asset) => asset.acceptanceStatus === "APPROVED" && asset.lockedStatus === "IMMUTABLE_REAL_IDENTITY_AUTHORITY"));
-  assert.deepEqual(calibration.cases.map((item) => item.garmentId), ["005", "009", "017", "023", "024"]);
+  assert.deepEqual(calibration.cases.map((item) => item.garmentId), ["004", "005", "009", "017", "023", "024"]);
   assert.equal(calibration.humanApprovalRequired, true);
+  assert.equal(g004.role, "POSITIVE_EVALUATION_TARGET");
+  assert.equal(g004.providerReferenceAllowed, false);
+  assert.equal(g004.parentLockAllowed, false);
+  assert.deepEqual(g004.assets.map((asset) => asset.view), ["05", "06", "07"]);
+  assert.deepEqual(g004.assets.map((asset) => asset.sha256), g004Case.lockedDerivativeSha256);
+  assert.equal(
+    g004Case.providerVisualDenialManifest,
+    "docs/virtual-atelier/g004-provider-visual-denial.v1.json",
+  );
+  assert.equal(g004Case.providerVisualDenialRevision, g004VisualDenial.revision);
+  assert.equal(g004Case.providerVisualDenialRole, "PROVIDER_DENIAL_ONLY");
+  assert.deepEqual(g004Case.providerVisualDenialNonClaims, [
+    "ARBITRARY_SUBIMAGE_DETECTION",
+    "LARGE_WARP_DETECTION",
+    "UNTRUSTED_MOSAIC_DETECTION",
+  ]);
+  assert.equal(g004VisualDenial.sourceCalibrationRevision, g004.revision);
+  assert.equal(
+    g004VisualDenial.sourceCalibrationManifestSha256,
+    g004Case.calibrationManifestSha256,
+  );
+  assert.equal(g004VisualDenial.canonicalOriginalsStatus, "UNAVAILABLE");
+  assert.equal(g004VisualDenial.role, "PROVIDER_DENIAL_ONLY");
+  assert.equal(g004VisualDenial.providerReferenceAllowed, false);
+  assert.deepEqual(
+    g004VisualDenial.assets.map((asset) => asset.id),
+    g004.assets.map((asset) => asset.id),
+  );
+  assert.deepEqual(g004VisualDenial.normalization, {
+    sharpVersion: "0.34.5",
+    autoOrient: true,
+    alphaBackground: "#ffffff",
+    colourSpace: "srgb",
+    width: 32,
+    height: 40,
+    channels: 3,
+    fit: "fill",
+    kernel: "lanczos3",
+  });
+  assert.deepEqual(g004VisualDenial.comparison, {
+    transforms: ["IDENTITY", "HORIZONTAL_MIRROR"],
+    alignmentOffsets: [-1, 0, 1],
+    luminanceWeights: [54, 183, 19],
+    denyNccPpm: 970000,
+    combinedNccPpm: 880000,
+    combinedRgbMaePpm: 55000,
+  });
+  assert.equal(g004VisualDenial.calibrationEvidence.falsePositiveCount, 0);
+  assert.match(g004VisualDenial.nonClaim, /does not claim/i);
+  assert.equal(
+    createHash("sha256")
+      .update(canonicalStringify(g004VisualDenial))
+      .digest("hex"),
+    g004Case.providerVisualDenialManifestSha256,
+  );
 });

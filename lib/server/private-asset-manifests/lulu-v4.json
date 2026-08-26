@@ -1,16 +1,18 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 3,
   "authorityId": "lulu-v4",
-  "authorityRevision": "LULU_V4_2026-08-25.4",
+  "authorityRevision": "LULU_V4_2026-08-25.7",
   "privacy": "PRIVATE_PRODUCTION_ONLY",
   "publishable": false,
-  "manifestPathname": "studio/model-authorities/lulu-v4/LULU_V4_2026-08-25.4/manifest.json",
+  "manifestPathname": "studio/model-authorities/lulu-v4/LULU_V4_2026-08-25.7/manifest.json",
   "assets": [
     {
       "id": "lulu.face.operation-board.full.v1",
       "role": "COMPLETE_REAL_FACE_OPERATION_BOARD",
       "authority": "identity",
-      "pathname": "studio/model-authorities/lulu-v4/LULU_V4_2026-08-25.4/2ad1a716ec59f65d66e3f83c8d391959696f9539befe520f50889fdd33aa931b.png",
+      "acceptance": "ACCEPTED_OPERATIONAL_AUTHORITY",
+      "lockedStatus": "LOCKED_IMMUTABLE",
+      "pathname": "studio/model-authorities/lulu-v4/LULU_V4_2026-08-25.7/2ad1a716ec59f65d66e3f83c8d391959696f9539befe520f50889fdd33aa931b.png",
       "sha256": "2ad1a716ec59f65d66e3f83c8d391959696f9539befe520f50889fdd33aa931b",
       "byteSize": 3053490,
       "width": 1536,
@@ -21,7 +23,9 @@
       "id": "lulu.face.v4.front.lock.v1",
       "role": "APPROVED_V4_TRANSLATION_LOCK",
       "authority": "translation",
-      "pathname": "studio/model-authorities/lulu-v4/LULU_V4_2026-08-25.4/99674cf5941a19093fd2152a3022cb72adf756ffcba15260abdb252a6323c723.png",
+      "acceptance": "ACCEPTED_OPERATIONAL_AUTHORITY",
+      "lockedStatus": "LOCKED_IMMUTABLE",
+      "pathname": "studio/model-authorities/lulu-v4/LULU_V4_2026-08-25.7/99674cf5941a19093fd2152a3022cb72adf756ffcba15260abdb252a6323c723.png",
       "sha256": "99674cf5941a19093fd2152a3022cb72adf756ffcba15260abdb252a6323c723",
       "byteSize": 1961596,
       "width": 1122,
@@ -32,7 +36,9 @@
       "id": "lulu.body.canon.v4",
       "role": "APPROVED_BODY_SILHOUETTE_CONTROL",
       "authority": "body",
-      "pathname": "studio/model-authorities/lulu-v4/LULU_V4_2026-08-25.4/c0f1b11473f7fe0d086fd845e3e53cd2e7302db4f0cacde18983d7b66eb629d9.png",
+      "acceptance": "ACCEPTED_OPERATIONAL_AUTHORITY",
+      "lockedStatus": "LOCKED_IMMUTABLE",
+      "pathname": "studio/model-authorities/lulu-v4/LULU_V4_2026-08-25.7/c0f1b11473f7fe0d086fd845e3e53cd2e7302db4f0cacde18983d7b66eb629d9.png",
       "sha256": "c0f1b11473f7fe0d086fd845e3e53cd2e7302db4f0cacde18983d7b66eb629d9",
       "byteSize": 1016787,
       "width": 1022,
@@ -43,7 +49,9 @@
       "id": "lulu.body.canon.v4.three-view",
       "role": "APPROVED_THREE_VIEW_TRANSFER_CONTROL",
       "authority": "body",
-      "pathname": "studio/model-authorities/lulu-v4/LULU_V4_2026-08-25.4/cbbb130a6bd4dee99f9ef4d1dbc883f9a3ea0f6a72378ade685963b5c2130e14.png",
+      "acceptance": "ACCEPTED_OPERATIONAL_AUTHORITY",
+      "lockedStatus": "LOCKED_IMMUTABLE",
+      "pathname": "studio/model-authorities/lulu-v4/LULU_V4_2026-08-25.7/cbbb130a6bd4dee99f9ef4d1dbc883f9a3ea0f6a72378ade685963b5c2130e14.png",
       "sha256": "cbbb130a6bd4dee99f9ef4d1dbc883f9a3ea0f6a72378ade685963b5c2130e14",
       "byteSize": 873107,
       "width": 1022,
@@ -54,7 +62,9 @@
       "id": "lulu.body.canon.v4.front",
       "role": "FRONT_BODY_OPERATION_CONTROL",
       "authority": "body",
-      "pathname": "studio/model-authorities/lulu-v4/LULU_V4_2026-08-25.4/08bd144387d3a3be2f6e08d00c85318aee8942324388544bfdec9788f681febd.png",
+      "acceptance": "ACCEPTED_OPERATIONAL_AUTHORITY",
+      "lockedStatus": "LOCKED_IMMUTABLE",
+      "pathname": "studio/model-authorities/lulu-v4/LULU_V4_2026-08-25.7/08bd144387d3a3be2f6e08d00c85318aee8942324388544bfdec9788f681febd.png",
       "sha256": "08bd144387d3a3be2f6e08d00c85318aee8942324388544bfdec9788f681febd",
       "byteSize": 316111,
       "width": 341,
@@ -65,7 +75,9 @@
       "id": "lulu.body.canon.v4.side",
       "role": "LEFT_PROFILE_BODY_OPERATION_CONTROL",
       "authority": "body",
-      "pathname": "studio/model-authorities/lulu-v4/LULU_V4_2026-08-25.4/f046469a3bcc83fb4e6c0d588ee3c3d8a5813ab69f048d7e39fff77e799234ad.png",
+      "acceptance": "ACCEPTED_OPERATIONAL_AUTHORITY",
+      "lockedStatus": "LOCKED_IMMUTABLE",
+      "pathname": "studio/model-authorities/lulu-v4/LULU_V4_2026-08-25.7/f046469a3bcc83fb4e6c0d588ee3c3d8a5813ab69f048d7e39fff77e799234ad.png",
       "sha256": "f046469a3bcc83fb4e6c0d588ee3c3d8a5813ab69f048d7e39fff77e799234ad",
       "byteSize": 285036,
       "width": 340,
@@ -76,7 +88,9 @@
       "id": "lulu.body.canon.v4.back",
       "role": "RIGHT_REAR_THREE_QUARTER_BODY_OPERATION_CONTROL",
       "authority": "body",
-      "pathname": "studio/model-authorities/lulu-v4/LULU_V4_2026-08-25.4/4758397a783dde383cb59fd7105197c41f08f278be4ca48915be38f5d60bc499.png",
+      "acceptance": "ACCEPTED_OPERATIONAL_AUTHORITY",
+      "lockedStatus": "LOCKED_IMMUTABLE",
+      "pathname": "studio/model-authorities/lulu-v4/LULU_V4_2026-08-25.7/4758397a783dde383cb59fd7105197c41f08f278be4ca48915be38f5d60bc499.png",
       "sha256": "4758397a783dde383cb59fd7105197c41f08f278be4ca48915be38f5d60bc499",
       "byteSize": 275206,
       "width": 341,
@@ -87,7 +101,9 @@
       "id": "lulu.body.real.angle-contact.v4",
       "role": "DIRECT_SIDE_AND_REAR_BODY_EVIDENCE",
       "authority": "body",
-      "pathname": "studio/model-authorities/lulu-v4/LULU_V4_2026-08-25.4/7650b7996ded2c127e529c4b7af3874ab6e937b97c75efedcb68756c9d104c60.jpg",
+      "acceptance": "ACCEPTED_OPERATIONAL_AUTHORITY",
+      "lockedStatus": "LOCKED_IMMUTABLE",
+      "pathname": "studio/model-authorities/lulu-v4/LULU_V4_2026-08-25.7/7650b7996ded2c127e529c4b7af3874ab6e937b97c75efedcb68756c9d104c60.jpg",
       "sha256": "7650b7996ded2c127e529c4b7af3874ab6e937b97c75efedcb68756c9d104c60",
       "byteSize": 296366,
       "width": 1080,
@@ -98,7 +114,9 @@
       "id": "lulu.body.real.gym-rear-profile.v4",
       "role": "DIRECT_REAR_PROFILE_BODY_EVIDENCE",
       "authority": "body",
-      "pathname": "studio/model-authorities/lulu-v4/LULU_V4_2026-08-25.4/553c3801ff5479a7672cce58ec2e3052c1c09bed5d4f10f410e9b01a136b1ebe.jpg",
+      "acceptance": "ACCEPTED_OPERATIONAL_AUTHORITY",
+      "lockedStatus": "LOCKED_IMMUTABLE",
+      "pathname": "studio/model-authorities/lulu-v4/LULU_V4_2026-08-25.7/553c3801ff5479a7672cce58ec2e3052c1c09bed5d4f10f410e9b01a136b1ebe.jpg",
       "sha256": "553c3801ff5479a7672cce58ec2e3052c1c09bed5d4f10f410e9b01a136b1ebe",
       "byteSize": 84993,
       "width": 360,
@@ -109,7 +127,9 @@
       "id": "lulu.body.rear.operation-board.full.v1",
       "role": "PACKAGED_REAR_OPERATION_BOARD",
       "authority": "body",
-      "pathname": "studio/model-authorities/lulu-v4/LULU_V4_2026-08-25.4/4deac0f9ac3dcfde9ec779bbc605f4ffc3c2334370feca7df79130ad0cabcb30.png",
+      "acceptance": "ACCEPTED_OPERATIONAL_AUTHORITY",
+      "lockedStatus": "LOCKED_IMMUTABLE",
+      "pathname": "studio/model-authorities/lulu-v4/LULU_V4_2026-08-25.7/4deac0f9ac3dcfde9ec779bbc605f4ffc3c2334370feca7df79130ad0cabcb30.png",
       "sha256": "4deac0f9ac3dcfde9ec779bbc605f4ffc3c2334370feca7df79130ad0cabcb30",
       "byteSize": 1540464,
       "width": 1800,
@@ -120,7 +140,9 @@
       "id": "juw.atelier.empty-plate.v1",
       "role": "LOCKED_ATELIER_ROOM_PLATE",
       "authority": "atelier",
-      "pathname": "studio/model-authorities/lulu-v4/LULU_V4_2026-08-25.4/0b591197d2de1b490c4305ac0aed4d1089564562c7b1005411a8340168aabb72.png",
+      "acceptance": "ACCEPTED_OPERATIONAL_AUTHORITY",
+      "lockedStatus": "LOCKED_IMMUTABLE",
+      "pathname": "studio/model-authorities/lulu-v4/LULU_V4_2026-08-25.7/0b591197d2de1b490c4305ac0aed4d1089564562c7b1005411a8340168aabb72.png",
       "sha256": "0b591197d2de1b490c4305ac0aed4d1089564562c7b1005411a8340168aabb72",
       "byteSize": 1144381,
       "width": 1024,
@@ -166,5 +188,183 @@
       "lulu.body.real.gym-rear-profile.v4",
       "lulu.body.rear.operation-board.full.v1"
     ]
+  },
+  "maxPhysicalReferences": 4,
+  "operationPacks": {
+    "SUBJECT_A": {
+      "view": "SUBJECT",
+      "dynamicReferenceSlots": [
+        "GARMENT_FRONT_LOCK"
+      ],
+      "staticReferences": [
+        {
+          "kind": "ASSET",
+          "assetId": "lulu.face.operation-board.full.v1"
+        },
+        {
+          "kind": "COMPOSITE_BOARD",
+          "id": "lulu.pack.subject-a.front-authority.v1",
+          "role": "SUBJECT_A_TRANSLATION_FACE_BOARD",
+          "authority": "body",
+          "componentAssetIds": [
+            "lulu.face.v4.front.lock.v1",
+            "lulu.body.canon.v4.front",
+            "lulu.body.real.angle-contact.v4"
+          ]
+        }
+      ]
+    },
+    "SUBJECT_B": {
+      "view": "SUBJECT",
+      "dynamicReferenceSlots": [
+        "ELIGIBLE_PASS_A_PARENT",
+        "GARMENT_FRONT_LOCK"
+      ],
+      "staticReferences": [
+        {
+          "kind": "ASSET",
+          "assetId": "lulu.face.operation-board.full.v1"
+        },
+        {
+          "kind": "COMPOSITE_BOARD",
+          "id": "lulu.pack.subject-b.front-body.v1",
+          "role": "SUBJECT_B_TRANSLATION_FACE_BOARD",
+          "authority": "body",
+          "componentAssetIds": [
+            "lulu.body.canon.v4.front",
+            "lulu.body.real.angle-contact.v4"
+          ]
+        }
+      ]
+    },
+    "ROOM_FINAL_05": {
+      "view": "05",
+      "dynamicReferenceSlots": [
+        "ACCEPTED_SUBJECT_LOCK",
+        "GARMENT_FRONT_LOCK"
+      ],
+      "staticReferences": [
+        {
+          "kind": "ASSET",
+          "assetId": "juw.atelier.empty-plate.v1"
+        }
+      ]
+    },
+    "SIBLING_06": {
+      "view": "06",
+      "dynamicReferenceSlots": [
+        "ACCEPTED_CURRENT_GARMENT_05"
+      ],
+      "staticReferences": [
+        {
+          "kind": "ASSET",
+          "assetId": "lulu.face.operation-board.full.v1"
+        },
+        {
+          "kind": "COMPOSITE_BOARD",
+          "id": "lulu.pack.sibling-06.side-body.v1",
+          "role": "SIDE_BODY_ANGLE_BOARD",
+          "authority": "body",
+          "componentAssetIds": [
+            "lulu.body.canon.v4.side",
+            "lulu.body.real.angle-contact.v4"
+          ]
+        },
+        {
+          "kind": "ASSET",
+          "assetId": "juw.atelier.empty-plate.v1"
+        }
+      ]
+    },
+    "SIBLING_07_CORE": {
+      "view": "07",
+      "dynamicReferenceSlots": [
+        "ACCEPTED_CURRENT_GARMENT_05"
+      ],
+      "staticReferences": [
+        {
+          "kind": "ASSET",
+          "assetId": "lulu.face.operation-board.full.v1"
+        },
+        {
+          "kind": "COMPOSITE_BOARD",
+          "id": "lulu.pack.sibling-07.rear-body.v1",
+          "role": "BACK_BODY_ANGLE_BOARD",
+          "authority": "body",
+          "componentAssetIds": [
+            "lulu.body.canon.v4.back",
+            "lulu.body.real.angle-contact.v4"
+          ]
+        },
+        {
+          "kind": "ASSET",
+          "assetId": "juw.atelier.empty-plate.v1"
+        }
+      ]
+    },
+    "SIBLING_07_RECOVERY": {
+      "view": "07",
+      "dynamicReferenceSlots": [
+        "ACCEPTED_CURRENT_GARMENT_05"
+      ],
+      "staticReferences": [
+        {
+          "kind": "FUSED_ATTESTED_BOARD",
+          "id": "lulu.pack.sibling-07.identity-rear-recovery.v1",
+          "role": "FUSED_IDENTITY_REAR_RECOVERY_BOARD",
+          "authority": "identity",
+          "boardSpec": {
+            "version": "LULU_FUSED_IDENTITY_REAR_RECOVERY_BOARD_V1",
+            "width": 1536,
+            "height": 2048,
+            "background": "#eee9e1",
+            "faceCell": {
+              "left": 32,
+              "top": 32,
+              "width": 1472,
+              "height": 1248
+            },
+            "rearCell": {
+              "left": 32,
+              "top": 1312,
+              "width": 1472,
+              "height": 704
+            },
+            "mimeType": "image/png",
+            "expectedSha256": "1befdabdaa954722730e98209a40703c64e829c5a794448e8b708024060c0824",
+            "expectedByteSize": 3415602
+          },
+          "sourceAttestations": [
+            {
+              "assetId": "lulu.face.operation-board.full.v1",
+              "sha256": "2ad1a716ec59f65d66e3f83c8d391959696f9539befe520f50889fdd33aa931b",
+              "constituents": []
+            },
+            {
+              "assetId": "lulu.body.rear.operation-board.full.v1",
+              "sha256": "4deac0f9ac3dcfde9ec779bbc605f4ffc3c2334370feca7df79130ad0cabcb30",
+              "constituents": [
+                {
+                  "assetId": "lulu.body.canon.v4.back",
+                  "sha256": "4758397a783dde383cb59fd7105197c41f08f278be4ca48915be38f5d60bc499"
+                },
+                {
+                  "assetId": "lulu.body.real.angle-contact.v4",
+                  "sha256": "7650b7996ded2c127e529c4b7af3874ab6e937b97c75efedcb68756c9d104c60"
+                },
+                {
+                  "assetId": "lulu.body.real.gym-rear-profile.v4",
+                  "sha256": "553c3801ff5479a7672cce58ec2e3052c1c09bed5d4f10f410e9b01a136b1ebe"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "ASSET",
+          "assetId": "juw.atelier.empty-plate.v1"
+        }
+      ]
+    }
   }
 }

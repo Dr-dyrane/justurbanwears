@@ -1,0 +1,409 @@
+{
+  "fixtureVersion": "juw.studio-atelier-declaration-goldens.v1",
+  "earlyGarmentCases": [
+    {
+      "name": "garment-01-front",
+      "stage": "GARMENT_01_FRONT",
+      "expectedSourceHash": "a54e7832be7694d97719b5d7d6eca4c0452d0ec46a8436126d88feeb40626738",
+      "expectedSemanticHash": "f4c33765c6a8b3e9193233e8e7272dcb0d15ce46f2d92279647cce7330bc44cd"
+    },
+    {
+      "name": "garment-02-back",
+      "stage": "GARMENT_02_BACK",
+      "expectedSourceHash": "e5c145e3a16101a551c6905936daa871808a26f29f5009883393ff99a389916a",
+      "expectedSemanticHash": "4edf20cc5cf220ac8b18491b6b85b2a1927837ea6ade206d4ae10d9ad75781b2"
+    },
+    {
+      "name": "garment-03-mannequin",
+      "stage": "GARMENT_03_MANNEQUIN",
+      "expectedSourceHash": "ba870868452a098eb28c7eb3b11344f4a1f67735fec33df218832d5f5ee77c16",
+      "expectedSemanticHash": "79e5cacf63f8bca4bd25a477790aa9fcf9cac4c340a09e90327bf633fd47e8d2"
+    },
+    {
+      "name": "garment-04-detail",
+      "stage": "GARMENT_04_DETAIL",
+      "expectedSourceHash": "d782324367c53b8e1a3500d9a34b9cf995bf74dd50c5fd32fe43aa9adeaad4f4",
+      "expectedSemanticHash": "cfd034141231160cdc307dbfd81778556f695ed10fb551022b3d5998716ba119"
+    }
+  ],
+  "cases": [
+    {
+      "name": "subject-a",
+      "expectedSourceHash": "8eeffb83300b91aa3a6b7aabcadc5f8492431a11cbf187f0fc3f02df6e773b8c",
+      "expectedSemanticHash": "13369830b42507aa3a2178bbebd3bbcd982081718836f77d5b2b23009878d652",
+      "declaration": {
+        "declarationVersion": "juw.studio-atelier-declaration.v1",
+        "garmentId": "900",
+        "stage": "SUBJECT_A",
+        "changes": [
+          {
+            "layer": "COMPOSITION",
+            "action": "SYNTHESIZE",
+            "region": { "kind": "WHOLE_LAYER" },
+            "deltaCode": "CREATE_GARMENT_SPECIFIC_SUBJECT"
+          }
+        ],
+        "immutables": [
+          { "layer": "GARMENT", "preservation": "SEMANTIC_TRUTH" },
+          { "layer": "HAIR", "preservation": "SEMANTIC_TRUTH" }
+        ],
+        "garmentIntent": {
+          "constructionPolicy": "VISIBLE_DIRECT_EVIDENCE_ONLY",
+          "surfacePolicy": "SOURCE_SUPPORTED_ONLY",
+          "facts": ["Synthetic black structured dress with a straight hem."],
+          "unknownFacts": ["Rear fastening is not visible."],
+          "prohibitedInferences": ["Do not invent rear ornament."]
+        },
+        "sceneIntent": {
+          "kind": "SUBJECT_STAGE",
+          "backgroundPolicy": "NEUTRAL_GENERATIVE_STAGE",
+          "atelierPolicy": "EXCLUDED",
+          "brandIconPolicy": "EXCLUDED"
+        },
+        "cameraIntent": {
+          "framing": "FULL_BODY_HEAD_TO_TOE",
+          "perspective": "LEVEL_NATURAL_CATALOGUE",
+          "scalePolicy": "PRESERVE_STATURE",
+          "orientation": "FRONT"
+        },
+        "poseIntent": {
+          "grammar": "SUBJECT_FRONT",
+          "lookBack": false,
+          "adjustments": [],
+          "anatomyPolicy": "NATURAL_PLAUSIBLE"
+        },
+        "stylingIntent": {
+          "mode": "DECLARE_SUBJECT_DIRECTION",
+          "hairPolicy": "PRESERVE_LOCKED",
+          "footwearDirectionCode": "RESTRAINED_BLACK_HEELS",
+          "accessoryDirectionCode": "MINIMAL_GOLD_ACCESSORIES"
+        },
+        "correctionIntent": { "mode": "NONE" },
+        "qualityProfile": "JUW_PHOTOREALISM_V1"
+      }
+    },
+    {
+      "name": "subject-b",
+      "expectedSourceHash": "6cb1b4b7cd83a5c38785c9bb0bb821dede9e38a1f3a3a84b3cf707622e759004",
+      "expectedSemanticHash": "0f84bf44a060b1b3e62ccf3f0a9bbe0739549ffecfb1a0ed7f255db54536a1fd",
+      "declaration": {
+        "declarationVersion": "juw.studio-atelier-declaration.v1",
+        "garmentId": "900",
+        "stage": "SUBJECT_B",
+        "changes": [
+          {
+            "layer": "IDENTITY",
+            "action": "REFINE",
+            "region": { "kind": "NAMED_REGION", "code": "FACE_TRANSLATION" },
+            "deltaCode": "REFINE_IDENTITY_TRANSLATION"
+          }
+        ],
+        "immutables": [
+          { "layer": "GARMENT", "preservation": "SEMANTIC_TRUTH" },
+          { "layer": "HAIR", "preservation": "SEMANTIC_TRUTH" }
+        ],
+        "garmentIntent": {
+          "constructionPolicy": "VISIBLE_DIRECT_EVIDENCE_ONLY",
+          "surfacePolicy": "SOURCE_SUPPORTED_ONLY",
+          "facts": ["Synthetic black structured dress with a straight hem."],
+          "unknownFacts": ["Rear fastening is not visible."],
+          "prohibitedInferences": ["Do not invent rear ornament."]
+        },
+        "sceneIntent": {
+          "kind": "SUBJECT_STAGE",
+          "backgroundPolicy": "NEUTRAL_GENERATIVE_STAGE",
+          "atelierPolicy": "EXCLUDED",
+          "brandIconPolicy": "EXCLUDED"
+        },
+        "cameraIntent": {
+          "framing": "FULL_BODY_HEAD_TO_TOE",
+          "perspective": "LEVEL_NATURAL_CATALOGUE",
+          "scalePolicy": "PRESERVE_STATURE",
+          "orientation": "FRONT"
+        },
+        "poseIntent": {
+          "grammar": "SUBJECT_FRONT",
+          "lookBack": false,
+          "adjustments": [],
+          "anatomyPolicy": "NATURAL_PLAUSIBLE"
+        },
+        "stylingIntent": {
+          "mode": "PRESERVE_SUBJECT_A",
+          "hairPolicy": "PRESERVE_LOCKED"
+        },
+        "correctionIntent": { "mode": "NONE" },
+        "qualityProfile": "JUW_PHOTOREALISM_V1"
+      }
+    },
+    {
+      "name": "room-final-05",
+      "expectedSourceHash": "e4d4de9909c2a0f6c9cc0fada62a0fd3dff962095e85f54d705db0cbafd20005",
+      "expectedSemanticHash": "c4b98074be9625e2b0be821abe1755e16bb4cd6e297aa79fd565b0a07e5f14bd",
+      "declaration": {
+        "declarationVersion": "juw.studio-atelier-declaration.v1",
+        "garmentId": "900",
+        "stage": "ROOM_FINAL_05",
+        "changes": [
+          {
+            "layer": "COMPOSITION",
+            "action": "COMPOSE",
+            "region": { "kind": "WHOLE_LAYER" },
+            "deltaCode": "COMPOSITE_ACCEPTED_SUBJECT_OVER_LOCKED_ROOM"
+          }
+        ],
+        "immutables": [
+          { "layer": "IDENTITY", "preservation": "SEMANTIC_TRUTH" },
+          { "layer": "BODY", "preservation": "SEMANTIC_TRUTH" },
+          { "layer": "GARMENT", "preservation": "SEMANTIC_TRUTH" },
+          { "layer": "HAIR", "preservation": "SEMANTIC_TRUTH" },
+          { "layer": "POSE", "preservation": "SEMANTIC_TRUTH" },
+          { "layer": "HANDS", "preservation": "SEMANTIC_TRUTH" },
+          { "layer": "ATELIER", "preservation": "PIXEL_EXACT" },
+          { "layer": "BRAND_ICON", "preservation": "PIXEL_EXACT" },
+          { "layer": "CAMERA", "preservation": "SEMANTIC_TRUTH" },
+          { "layer": "LIGHTING", "preservation": "SEMANTIC_TRUTH" },
+          { "layer": "OUTPUT_GEOMETRY", "preservation": "SEMANTIC_TRUTH" }
+        ],
+        "garmentIntent": {
+          "constructionPolicy": "VISIBLE_DIRECT_EVIDENCE_ONLY",
+          "surfacePolicy": "SOURCE_SUPPORTED_ONLY",
+          "facts": ["Synthetic black structured dress with a straight hem."],
+          "unknownFacts": ["Rear fastening is not visible."],
+          "prohibitedInferences": ["Do not invent rear ornament."]
+        },
+        "sceneIntent": {
+          "kind": "LOCKED_ATELIER_COMPOSITE",
+          "backgroundPolicy": "DETERMINISTIC_EXACT_ROOM_COMPOSITE",
+          "atelierPolicy": "PIXEL_EXACT",
+          "brandIconPolicy": "PIXEL_EXACT"
+        },
+        "cameraIntent": {
+          "framing": "FULL_BODY_HEAD_TO_TOE",
+          "perspective": "LEVEL_NATURAL_CATALOGUE",
+          "scalePolicy": "PRESERVE_STATURE",
+          "orientation": "FRONT"
+        },
+        "poseIntent": {
+          "grammar": "FRONT_MASTER",
+          "lookBack": false,
+          "adjustments": [],
+          "anatomyPolicy": "NATURAL_PLAUSIBLE"
+        },
+        "stylingIntent": {
+          "mode": "FASHION_NOVA_ADVISORY",
+          "hairPolicy": "PRESERVE_LOCKED",
+          "check": {
+            "operationId": "g900-fashion-nova-v001",
+            "publisher": "Fashion Nova",
+            "officialUrl": "https://www.fashionnova.com/collections/dresses",
+            "resolvedOfficialUrl": "https://www.fashionnova.com/collections/dresses",
+            "pageTitle": "Dresses",
+            "accessedOn": "2026-08-26",
+            "matchedGarmentFacts": ["Structured black dress."],
+            "decision": "KEEP",
+            "selectedStylingDirection": "Keep restrained black heels and minimal gold accessories.",
+            "authority": "ADVISORY_STYLING_ONLY",
+            "passedAsImageReference": false
+          }
+        },
+        "correctionIntent": { "mode": "NONE" },
+        "qualityProfile": "JUW_PHOTOREALISM_V1"
+      }
+    },
+    {
+      "name": "sibling-06",
+      "expectedSourceHash": "72ff5dfb68495e4db17bf76949824ce9135c30d118bcda023603fb52f96357b9",
+      "expectedSemanticHash": "c9b1a0e6e4bc2913b717ea9b38bdc71e80e47846959450d118b2cee1002d97c7",
+      "declaration": {
+        "declarationVersion": "juw.studio-atelier-declaration.v1",
+        "garmentId": "900",
+        "stage": "SIBLING_06",
+        "changes": [
+          {
+            "layer": "POSE",
+            "action": "REORIENT",
+            "region": { "kind": "WHOLE_LAYER" },
+            "deltaCode": "REORIENT_ACCEPTED_05_TO_LEFT_PROFILE"
+          }
+        ],
+        "immutables": [
+          { "layer": "IDENTITY", "preservation": "SEMANTIC_TRUTH" },
+          { "layer": "BODY", "preservation": "SEMANTIC_TRUTH" },
+          { "layer": "GARMENT", "preservation": "SEMANTIC_TRUTH" },
+          { "layer": "HAIR", "preservation": "SEMANTIC_TRUTH" },
+          { "layer": "FOOTWEAR", "preservation": "SEMANTIC_TRUTH" },
+          { "layer": "STYLING", "preservation": "SEMANTIC_TRUTH" },
+          { "layer": "ATELIER", "preservation": "PIXEL_EXACT" },
+          { "layer": "BRAND_ICON", "preservation": "PIXEL_EXACT" },
+          { "layer": "LIGHTING", "preservation": "SEMANTIC_TRUTH" },
+          { "layer": "OUTPUT_GEOMETRY", "preservation": "SEMANTIC_TRUTH" }
+        ],
+        "garmentIntent": {
+          "constructionPolicy": "VISIBLE_DIRECT_EVIDENCE_ONLY",
+          "surfacePolicy": "SOURCE_SUPPORTED_ONLY",
+          "facts": ["Synthetic black structured dress with a straight hem."],
+          "unknownFacts": ["Rear fastening is not visible."],
+          "prohibitedInferences": ["Do not invent rear ornament."]
+        },
+        "sceneIntent": {
+          "kind": "LOCKED_ATELIER_COMPOSITE",
+          "backgroundPolicy": "DETERMINISTIC_EXACT_ROOM_COMPOSITE",
+          "atelierPolicy": "PIXEL_EXACT",
+          "brandIconPolicy": "PIXEL_EXACT"
+        },
+        "cameraIntent": {
+          "framing": "FULL_BODY_HEAD_TO_TOE",
+          "perspective": "LEVEL_NATURAL_CATALOGUE",
+          "scalePolicy": "PRESERVE_STATURE",
+          "orientation": "SOFT_LEFT_PROFILE_SLIGHT_3Q"
+        },
+        "poseIntent": {
+          "grammar": "SOFT_LEFT_PROFILE_SLIGHT_3Q",
+          "lookBack": false,
+          "adjustments": ["CHIN_ANGLE", "HAND_POSITION", "SHOULDER_OPENNESS", "WEIGHT_DISTRIBUTION"],
+          "anatomyPolicy": "NATURAL_PLAUSIBLE"
+        },
+        "stylingIntent": {
+          "mode": "INHERIT_ACCEPTED_05",
+          "hairPolicy": "PRESERVE_LOCKED"
+        },
+        "correctionIntent": { "mode": "NONE" },
+        "qualityProfile": "JUW_PHOTOREALISM_V1"
+      }
+    },
+    {
+      "name": "sibling-07-core",
+      "expectedSourceHash": "8dacd4dfee5245ea5211706ee8ce98d814936b0d06242ccd18bca7bd80675208",
+      "expectedSemanticHash": "b129f0cabfdde8042c8eafd36493fc5c69382cb36435e061a00bff1ef501b677",
+      "declaration": {
+        "declarationVersion": "juw.studio-atelier-declaration.v1",
+        "garmentId": "900",
+        "stage": "SIBLING_07_CORE",
+        "changes": [
+          {
+            "layer": "POSE",
+            "action": "REORIENT",
+            "region": { "kind": "WHOLE_LAYER" },
+            "deltaCode": "REORIENT_ACCEPTED_05_TO_RIGHT_REAR_3Q"
+          }
+        ],
+        "immutables": [
+          { "layer": "IDENTITY", "preservation": "SEMANTIC_TRUTH" },
+          { "layer": "BODY", "preservation": "SEMANTIC_TRUTH" },
+          { "layer": "GARMENT", "preservation": "SEMANTIC_TRUTH" },
+          { "layer": "HAIR", "preservation": "SEMANTIC_TRUTH" },
+          { "layer": "FOOTWEAR", "preservation": "SEMANTIC_TRUTH" },
+          { "layer": "STYLING", "preservation": "SEMANTIC_TRUTH" },
+          { "layer": "ATELIER", "preservation": "PIXEL_EXACT" },
+          { "layer": "BRAND_ICON", "preservation": "PIXEL_EXACT" },
+          { "layer": "LIGHTING", "preservation": "SEMANTIC_TRUTH" },
+          { "layer": "OUTPUT_GEOMETRY", "preservation": "SEMANTIC_TRUTH" }
+        ],
+        "garmentIntent": {
+          "constructionPolicy": "VISIBLE_DIRECT_EVIDENCE_ONLY",
+          "surfacePolicy": "SOURCE_SUPPORTED_ONLY",
+          "facts": ["Synthetic black structured dress with a straight hem."],
+          "unknownFacts": ["Rear fastening is not visible."],
+          "prohibitedInferences": ["Do not invent rear ornament."]
+        },
+        "sceneIntent": {
+          "kind": "LOCKED_ATELIER_COMPOSITE",
+          "backgroundPolicy": "DETERMINISTIC_EXACT_ROOM_COMPOSITE",
+          "atelierPolicy": "PIXEL_EXACT",
+          "brandIconPolicy": "PIXEL_EXACT"
+        },
+        "cameraIntent": {
+          "framing": "FULL_BODY_HEAD_TO_TOE",
+          "perspective": "LEVEL_NATURAL_CATALOGUE",
+          "scalePolicy": "PRESERVE_STATURE",
+          "orientation": "RIGHT_REAR_3Q"
+        },
+        "poseIntent": {
+          "grammar": "RIGHT_REAR_3Q_LOOK_BACK",
+          "lookBack": true,
+          "adjustments": ["CHIN_ANGLE", "HAND_POSITION", "SHOULDER_OPENNESS", "WEIGHT_DISTRIBUTION"],
+          "anatomyPolicy": "NATURAL_PLAUSIBLE"
+        },
+        "stylingIntent": {
+          "mode": "INHERIT_ACCEPTED_05",
+          "hairPolicy": "PRESERVE_LOCKED"
+        },
+        "rearEvidenceIntent": {
+          "basis": "NO_DIRECT_GARMENT_BACK",
+          "constructionTreatment": "CONSERVATIVE_INFERRED_PRESENTATION",
+          "recoveryEvidence": "CORE_ONLY",
+          "mayBecomeDirectEvidence": false
+        },
+        "correctionIntent": { "mode": "NONE" },
+        "qualityProfile": "JUW_PHOTOREALISM_V1"
+      }
+    },
+    {
+      "name": "sibling-07-recovery",
+      "expectedSourceHash": "923059ae79ae7b4663b5aff84ab4568fcf44fe94531db8b5b665ba55f13edb06",
+      "expectedSemanticHash": "a30e8a6a76a411c91c31675b948cca54a31e005babca69643ced51d84721b4e3",
+      "declaration": {
+        "declarationVersion": "juw.studio-atelier-declaration.v1",
+        "garmentId": "900",
+        "stage": "SIBLING_07_RECOVERY",
+        "changes": [
+          {
+            "layer": "POSE",
+            "action": "REORIENT",
+            "region": { "kind": "WHOLE_LAYER" },
+            "deltaCode": "RECOVER_RIGHT_REAR_3Q_WITH_REAR_PROFILE"
+          }
+        ],
+        "immutables": [
+          { "layer": "IDENTITY", "preservation": "SEMANTIC_TRUTH" },
+          { "layer": "BODY", "preservation": "SEMANTIC_TRUTH" },
+          { "layer": "GARMENT", "preservation": "SEMANTIC_TRUTH" },
+          { "layer": "HAIR", "preservation": "SEMANTIC_TRUTH" },
+          { "layer": "FOOTWEAR", "preservation": "SEMANTIC_TRUTH" },
+          { "layer": "STYLING", "preservation": "SEMANTIC_TRUTH" },
+          { "layer": "ATELIER", "preservation": "PIXEL_EXACT" },
+          { "layer": "BRAND_ICON", "preservation": "PIXEL_EXACT" },
+          { "layer": "LIGHTING", "preservation": "SEMANTIC_TRUTH" },
+          { "layer": "OUTPUT_GEOMETRY", "preservation": "SEMANTIC_TRUTH" }
+        ],
+        "garmentIntent": {
+          "constructionPolicy": "VISIBLE_DIRECT_EVIDENCE_ONLY",
+          "surfacePolicy": "SOURCE_SUPPORTED_ONLY",
+          "facts": ["Synthetic black structured dress with a straight hem."],
+          "unknownFacts": ["Rear fastening is not visible."],
+          "prohibitedInferences": ["Do not invent rear ornament."]
+        },
+        "sceneIntent": {
+          "kind": "LOCKED_ATELIER_COMPOSITE",
+          "backgroundPolicy": "DETERMINISTIC_EXACT_ROOM_COMPOSITE",
+          "atelierPolicy": "PIXEL_EXACT",
+          "brandIconPolicy": "PIXEL_EXACT"
+        },
+        "cameraIntent": {
+          "framing": "FULL_BODY_HEAD_TO_TOE",
+          "perspective": "LEVEL_NATURAL_CATALOGUE",
+          "scalePolicy": "PRESERVE_STATURE",
+          "orientation": "RIGHT_REAR_3Q"
+        },
+        "poseIntent": {
+          "grammar": "RIGHT_REAR_3Q_LOOK_BACK",
+          "lookBack": true,
+          "adjustments": ["CHIN_ANGLE", "HAND_POSITION", "SHOULDER_OPENNESS", "WEIGHT_DISTRIBUTION"],
+          "anatomyPolicy": "NATURAL_PLAUSIBLE"
+        },
+        "stylingIntent": {
+          "mode": "INHERIT_ACCEPTED_05",
+          "hairPolicy": "PRESERVE_LOCKED"
+        },
+        "rearEvidenceIntent": {
+          "basis": "NO_DIRECT_GARMENT_BACK",
+          "constructionTreatment": "CONSERVATIVE_INFERRED_PRESENTATION",
+          "recoveryEvidence": "GYM_REAR_PROFILE_REQUIRED",
+          "mayBecomeDirectEvidence": false
+        },
+        "correctionIntent": { "mode": "NONE" },
+        "qualityProfile": "JUW_PHOTOREALISM_V1"
+      }
+    }
+  ]
+}

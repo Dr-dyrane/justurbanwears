@@ -1,0 +1,95 @@
+{
+  "schemaVersion": "juw.atelier-g004-positive-target-calibration.v1",
+  "calibrationId": "G004_FOUNDING_POSITIVE_TARGET",
+  "revision": "g004-positive-target-shop-derivatives-2026-08-26.1",
+  "lockedOn": "2026-08-26",
+  "decision": "VERSION_LOCK_PUBLIC_SHOP_DERIVATIVES",
+  "canonicalOriginals": {
+    "status": "UNAVAILABLE",
+    "recordedAuditScope": [
+      "CHECKOUT",
+      "GIT_HISTORY_AND_OBJECT_DATABASE",
+      "PRIVATE_BLOB_71_OBJECT_SNAPSHOT"
+    ],
+    "rule": "These derivatives are a new calibration revision. They do not recover, replace, or inherit the canonical-original asset IDs."
+  },
+  "sourceCatalogueRevision": "2026-08-26-catalogue-35",
+  "role": "POSITIVE_EVALUATION_TARGET",
+  "authorityPrecedence": "DIRECT_REAL_IDENTITY_BODY_AND_CURRENT_GARMENT_EVIDENCE_OUTRANK",
+  "providerReferenceAllowed": false,
+  "parentLockAllowed": false,
+  "pixelHashAlgorithm": "sha256-srgb-rgba-u8-row-major",
+  "prohibitedTransferScopes": [
+    "DIRECT_IDENTITY_TRUTH",
+    "DIRECT_BODY_TRUTH",
+    "CURRENT_GARMENT_CONSTRUCTION",
+    "CURRENT_GARMENT_COLOUR_TEXTURE",
+    "ACCESSORY_STYLING",
+    "PROVIDER_REFERENCE",
+    "PARENT_LOCK"
+  ],
+  "assets": [
+    {
+      "id": "g004.calibration.view.05.shop-derivative.v1",
+      "view": "05",
+      "recordedCanonicalAssetId": "garment.004.view.05.accepted",
+      "recordedCanonicalSha256": "30b1ae108761fb238c767339ff8a6c9fc98683d573926b821ce3895dfef9b483",
+      "sourcePath": "/shop/products/black-ivory-folded-neck-column-dress/04-model-front.webp",
+      "blobPathname": "shop/catalogue/87761a70a863246f53290bb58f31bfa252300dbbb281b3640fd1329c227d980d/products/black-ivory-folded-neck-column-dress/04-model-front.webp",
+      "mimeType": "image/webp",
+      "byteSize": 188594,
+      "width": 1120,
+      "height": 1400,
+      "sha256": "87761a70a863246f53290bb58f31bfa252300dbbb281b3640fd1329c227d980d",
+      "pixelSha256": "b1693a6395fa3d6eccfcc20d6bf96023ef9051819e6656295560d8d351dee42f",
+      "positiveTargetAxes": [
+        "ROOM_LAYOUT",
+        "CAMERA_FAMILY",
+        "SUBJECT_SCALE",
+        "FRONT_VIEW_GRAMMAR",
+        "SCENE_INTEGRATION",
+        "SECONDARY_IDENTITY_TRANSLATION"
+      ]
+    },
+    {
+      "id": "g004.calibration.view.06.shop-derivative.v1",
+      "view": "06",
+      "recordedCanonicalAssetId": "garment.004.view.06.accepted",
+      "recordedCanonicalSha256": "c75814d1ba3515c771531eec23b11afaf24d4102d9988c7d7bbd1ad8f77f4205",
+      "sourcePath": "/shop/products/black-ivory-folded-neck-column-dress/07-model-left-profile.webp",
+      "blobPathname": "shop/catalogue/7fb2c3399598ae52b29abf66fde4942fd7f57a6b09a646f61b6e834a0fe3e5fb/products/black-ivory-folded-neck-column-dress/07-model-left-profile.webp",
+      "mimeType": "image/webp",
+      "byteSize": 203824,
+      "width": 1120,
+      "height": 1400,
+      "sha256": "7fb2c3399598ae52b29abf66fde4942fd7f57a6b09a646f61b6e834a0fe3e5fb",
+      "pixelSha256": "f41a92191ffb07e7db6e4dba28a163af691df7b061a54d4c7f7240b3500a8633",
+      "positiveTargetAxes": [
+        "LEFT_PROFILE_GRAMMAR",
+        "HEEL_AWARE_STATURE",
+        "POISE",
+        "SCENE_INTEGRATION"
+      ]
+    },
+    {
+      "id": "g004.calibration.view.07.shop-derivative.v1",
+      "view": "07",
+      "recordedCanonicalAssetId": "garment.004.view.07.accepted",
+      "recordedCanonicalSha256": "753aac4f61bc0c603862feeadd13c51ffc1489ae524070dd338a9a56cc1b3291",
+      "sourcePath": "/shop/products/black-ivory-folded-neck-column-dress/05-model-rear-three-quarter.webp",
+      "blobPathname": "shop/catalogue/1af3f21b3f84eb90b95a7b5f879a8eed550dd7946b9c96c26d72d43e8f481a59/products/black-ivory-folded-neck-column-dress/05-model-rear-three-quarter.webp",
+      "mimeType": "image/webp",
+      "byteSize": 212804,
+      "width": 1120,
+      "height": 1400,
+      "sha256": "1af3f21b3f84eb90b95a7b5f879a8eed550dd7946b9c96c26d72d43e8f481a59",
+      "pixelSha256": "995602801d33eee13412f6afe5f794199edd4e38ae624f2612488ccadeeb44ab",
+      "positiveTargetAxes": [
+        "RIGHT_REAR_THREE_QUARTER_GRAMMAR",
+        "LOOK_BACK_POISE",
+        "HEEL_AWARE_STATURE",
+        "SCENE_INTEGRATION"
+      ]
+    }
+  ]
+}
