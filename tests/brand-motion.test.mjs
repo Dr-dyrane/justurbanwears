@@ -125,7 +125,7 @@ test("WardrobeMotion always resolves through the untouched master and complete m
   assert.match(studioLoading, /className="studio-loading studio-loading-brand"/);
   assert.match(studioLoading, /<WardrobeMotion loop polarity="auto" size="sm" variant="loader" \/>/);
   assert.match(globalLoading, /<GlobalBrandLoadingStage \/>/);
-  assert.match(globalStage, /GLOBAL_BRAND_LOADING_DELAY_MS = 420/);
+  assert.match(globalStage, /GLOBAL_BRAND_LOADING_DELAY_MS = 0/);
   assert.match(globalStage, /window\.setTimeout\(\(\) => setRevealed\(true\), delayMs\)/);
   assert.match(globalStage, /polarity="auto" size="md" variant="loader"/);
   assert.match(globalStage, /aria-live="polite"/);

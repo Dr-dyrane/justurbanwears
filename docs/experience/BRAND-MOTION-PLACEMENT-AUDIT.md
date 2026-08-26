@@ -30,7 +30,7 @@ The centered-logo mark is an exact crop of the approved logo source. The seal is
 
 | Surface | Artwork / variant | Reason |
 | --- | --- | --- |
-| Global delayed route wait | Circular seal / `loader` | Shared continuity across Site, Shop, and Studio; covers both App Router suspense and qualified same-origin document navigation, and mounts only after 420ms so fast navigation remains visually immediate |
+| Global route wait | Circular seal / `loader` | Shared continuity across Site, Shop, and Studio; App Router suspense and qualified same-origin document navigation both acknowledge user intent immediately, while the animation remains presentation-only |
 | Global 404 | Centered-logo mark / `404` | A rare narrative absence where the wardrobe story improves recovery without delaying the action |
 | Missing customer order | Centered-logo mark / `empty` | A rare missing-record state with a single recovery path, distinct from routine empty collections |
 | Order reserved or payment confirmed | Centered-logo mark / `success` | Runs once when the order has crossed an authoritative milestone; surrounding copy preserves payment truth |
@@ -67,7 +67,7 @@ These are candidates, not blanket authorization to add motion.
 
 1. Never render more than one `WardrobeMotion` in a production view.
 2. Use the centered-logo artwork for narrative meaning and the seal for compact waiting only.
-3. Do not show a loader for work that finishes within the global 420ms threshold.
+3. Page-navigation clicks and App Router suspense boundaries acknowledge immediately; no loader threshold or animation may delay route mounting.
 4. Loading text remains a separate live-region status; the artwork is decorative.
 5. Success motion runs only after authoritative completion and never substitutes for a receipt.
 6. Entrance, 404, empty, and success are one-shot by default. Only footer and ambient may loop.

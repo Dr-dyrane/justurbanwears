@@ -95,5 +95,5 @@ export function DocumentNavigationLoadingStage() {
     };
   }, []);
 
-  return active ? <GlobalBrandLoadingStage /> : null;
+  return active ? <GlobalBrandLoadingStage delayMs={0} /> : null;
 }

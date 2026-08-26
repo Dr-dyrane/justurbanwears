@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { WardrobeMotion } from "./wardrobe-motion";
 import styles from "./global-brand-loading-stage.module.css";
 
-export const GLOBAL_BRAND_LOADING_DELAY_MS = 420;
+export const GLOBAL_BRAND_LOADING_DELAY_MS = 0;
 
 type GlobalBrandLoadingStageProps = {
   delayMs?: number;

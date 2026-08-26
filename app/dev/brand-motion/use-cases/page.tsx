@@ -21,7 +21,7 @@ export default function BrandMotionUseCasesPreviewPage() {
       <section className={styles.grid}>
         <article className={`${styles.card} ${styles.loading}`}>
           <WardrobeMotion loop polarity="auto" size="md" variant="loader" />
-          <div><small>01 · Continuity</small><h2>Opening the next view.</h2><p>Global route wait · appears only after 420ms.</p></div>
+          <div><small>01 · Continuity</small><h2>Opening the next view.</h2><p>Page-navigation feedback is immediate · animation never gates route mounting.</p></div>
         </article>
 
         <article className={`${styles.card} ${styles.success}`}>

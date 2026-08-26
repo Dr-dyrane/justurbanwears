@@ -26,6 +26,6 @@ test("the root build bridges slow native document navigation into the brand stag
   assert.match(bridge, /event\.button !== 0/);
   assert.match(bridge, /destination\.origin === window\.location\.origin/);
   assert.match(bridge, /isSameDocumentDestination\(destination\)/);
-  assert.match(bridge, /active \? <GlobalBrandLoadingStage \/> : null/);
-  assert.match(stage, /GLOBAL_BRAND_LOADING_DELAY_MS = 420/);
+  assert.match(bridge, /active \? <GlobalBrandLoadingStage delayMs=\{0\} \/> : null/);
+  assert.match(stage, /GLOBAL_BRAND_LOADING_DELAY_MS = 0/);
 });
