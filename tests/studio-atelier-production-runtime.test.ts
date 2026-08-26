@@ -399,23 +399,45 @@ test("stage scoping is semantic and never garment-number based", () => {
   assert.equal(studioAtelierProductionScopeForStage("SIBLING_07_RECOVERY"), "FINAL_SCENE");
 });
 
-test("Vercel packages only the two runtime G004 authority manifests from docs", () => {
+test("Vercel packages Virtual Atelier runtime docs while excluding non-runtime inputs", () => {
   const lines = readFileSync(new URL("../.vercelignore", import.meta.url), "utf8")
     .replaceAll("\r\n", "\n")
-    .split("\n");
-  const requiredRules = [
-    "/docs/**",
-    "!/docs/virtual-atelier/",
-    "!/docs/virtual-atelier/g004-positive-target-calibration.v1.json",
-    "!/docs/virtual-atelier/g004-provider-visual-denial.v1.json",
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0 && !line.startsWith("#"));
+  const excludedDocRules = [
+    "/docs/adr/",
+    "/docs/architecture/",
+    "/docs/data/",
+    "/docs/evidence/",
+    "/docs/experience/",
+    "/docs/identity/",
+    "/docs/operations/",
+    "/docs/order-flows/",
+    "/docs/performance/",
+    "/docs/screenshots/",
+    "/docs/shop-portal/",
   ];
-  const positions = requiredRules.map((rule) => lines.indexOf(rule));
+  const excludedNonRuntimeRules = [
+    "/drizzle/",
+    "/scripts/shop-db/",
+    "/tests/",
+    "/storage/",
+  ];
 
-  assert.ok(positions.every((position) => position >= 0));
-  assert.deepEqual(positions, [...positions].sort((left, right) => left - right));
-  assert.equal(lines.includes("/docs/"), false);
   assert.deepEqual(
-    lines.filter((line) => line.startsWith("!/docs/")),
-    requiredRules.slice(1),
+    lines.filter((line) => /^!?\/?docs\//.test(line)),
+    excludedDocRules,
+  );
+  assert.ok(excludedNonRuntimeRules.every((rule) => lines.includes(rule)));
+  assert.equal(
+    lines.some((line) => /^!?\/?docs\/virtual-atelier(?:\/|$)/.test(line)),
+    false,
+  );
+  assert.equal(
+    lines.some((line) => line.startsWith("!") && excludedNonRuntimeRules.some(
+      (rule) => line.slice(1).startsWith(rule),
+    )),
+    false,
   );
 });
