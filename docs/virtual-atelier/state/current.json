@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "workflowRevision": "2026-08-26.112",
-  "updatedAt": "2026-08-26T19:04:51Z",
+  "workflowRevision": "2026-08-26.113",
+  "updatedAt": "2026-08-26T19:32:30Z",
   "model": "LULU_V4",
   "activeGarment": "027",
   "activeView": "PRIVATE_INTAKE_FRONT_ONLY",
-  "status": "GARMENTS_025_AND_026_DEPLOYED_UNVERIFIED_DATABASE_RELEASE_BLOCKED_AVAILABILITY_UNAVAILABLE_GARMENT_027_PRIVATE_INTAKE_RECORDED",
+  "status": "GARMENTS_025_AND_026_LIVE_VERIFIED_GARMENT_027_PRIVATE_INTAKE_RECORDED",
   "identityReview": {
     "candidateId": "lulu.face.v4.front.candidate.v1",
     "acceptedAssetId": "lulu.face.v4.front.lock.v1",
@@ -1813,8 +1813,8 @@
       "rejectedCandidatesMayParent": false,
       "localAvailability":{"status":"VERIFIED_IN_AUTHORITATIVE_RELEASE_CHECKOUT","checkedAt":"2026-08-26T18:46:54Z","sourceManifestVerified":true,"lockedManifestVerified":true,"lockedViewCount":7,"operationDecisionRecordsVerified":true,"publicDerivativeExportVerified":true},
       "releaseIdentity":{"sku":"JUW-049","slug":"dark-navy-draped-cowl-neck-side-cascade-maxi-dress","simulatedPriceNgn":32500},
-      "shopRelease":{"catalogueRevision":"2026-08-26-catalogue-36","catalogueManifestChecksum":"5bd76e6cfb84f839afff10b077d70cc31b1dfca998014798932f74c832c4bb5f","cataloguePresentationChecksum":"97e6d5add123a406e697a6002dd2a99574c4c084a0b102869691c9fcd32ede1c","publicRoot":"public/shop/products/dark-navy-draped-cowl-neck-side-cascade-maxi-dress","mediaCount":7,"publicBlobActiveAssetCount":282,"publicBlobLegacyAssetCount":11,"sourceCommit":"0883f9a087a8108e7359be00796ff9655c05c9fb","deployedCommit":"0883f9a087a8108e7359be00796ff9655c05c9fb","deploymentId":"dpl_GpRVaFvDuDwo5nDPamv76dWgB51w","deployment":"https://justurbanwears-rfx5agf49-drdyranes-projects.vercel.app","databaseMutation":"NOT_APPLIED_NO_DIRECT_ADMIN_CREDENTIAL","availabilityApi":"UNAVAILABLE_FAIL_CLOSED","productionSmoke":"27_OF_27_PASS","experienceSmoke":"21_OF_21_PASS","browserProductGallery":"7_OF_7_1120X1400_LOADED_AND_TRAVERSED","browserConsole":"CLEAN","state":"DEPLOYED_UNVERIFIED_DATABASE_BLOCKED","verifiedAt":"2026-08-26T19:04:51Z"},
-      "releaseGate": "DEPLOYED_UNVERIFIED_DATABASE_RELEASE_BLOCKED_AVAILABILITY_UNAVAILABLE"
+      "shopRelease":{"catalogueRevision":"2026-08-26-catalogue-36","catalogueManifestChecksum":"5bd76e6cfb84f839afff10b077d70cc31b1dfca998014798932f74c832c4bb5f","cataloguePresentationChecksum":"97e6d5add123a406e697a6002dd2a99574c4c084a0b102869691c9fcd32ede1c","publicRoot":"public/shop/products/dark-navy-draped-cowl-neck-side-cascade-maxi-dress","mediaCount":7,"publicBlobActiveAssetCount":282,"publicBlobLegacyAssetCount":11,"sourceCommit":"0883f9a087a8108e7359be00796ff9655c05c9fb","deployedCommit":"0883f9a087a8108e7359be00796ff9655c05c9fb","deploymentId":"dpl_GpRVaFvDuDwo5nDPamv76dWgB51w","deployment":"https://justurbanwears-rfx5agf49-drdyranes-projects.vercel.app","databaseMutation":"APPLIED_GUARDED_ATOMIC_CATALOGUE_RELEASE","databaseReleaseGitSha":"a3d795f9b0b81d72c0ebdcaa8a8c3997a8b87e17","databaseMigrationCount":1,"databaseMigration":"0014_legacy_generation_fence","databaseRowCount":44,"availabilityApi":"CONFIRMED","productPageAvailability":"AVAILABLE_ADD_TO_BAG","productionSmoke":"27_OF_27_PASS_POST_DATABASE_RELEASE","experienceSmoke":"21_OF_21_PASS","browserProductGallery":"7_OF_7_1120X1400_LOADED_AND_TRAVERSED","browserConsole":"CLEAN","state":"LIVE_VERIFIED","verifiedAt":"2026-08-26T19:32:30Z"},
+      "releaseGate": "LIVE_VERIFIED"
     },
     "026": {
       "status": "01_07_AND_IDENTITY_STAGES_USER_ACCEPTED_PRIVATE_LOCKED_PUBLIC_RELEASE_AUTHORIZED",
@@ -1846,8 +1846,8 @@
       "imageGenerationReservation":"RELEASED_NO_NEW_GENERATION_FOR_USER_SUPPLIED_LOCKS",
       "userDecision":{"statement":"use these","recordedAt":"2026-08-26T18:33:50Z","approvedViews":["06","07"]},
       "releaseIdentity":{"sku":"JUW-050","slug":"neon-chartreuse-asymmetric-ruched-knot-maxi-dress","simulatedPriceNgn":32500},
-      "shopRelease":{"catalogueRevision":"2026-08-26-catalogue-36","catalogueManifestChecksum":"5bd76e6cfb84f839afff10b077d70cc31b1dfca998014798932f74c832c4bb5f","cataloguePresentationChecksum":"97e6d5add123a406e697a6002dd2a99574c4c084a0b102869691c9fcd32ede1c","publicRoot":"public/shop/products/neon-chartreuse-asymmetric-ruched-knot-maxi-dress","mediaCount":7,"publicBlobActiveAssetCount":282,"publicBlobLegacyAssetCount":11,"sourceCommit":"0883f9a087a8108e7359be00796ff9655c05c9fb","deployedCommit":"0883f9a087a8108e7359be00796ff9655c05c9fb","deploymentId":"dpl_GpRVaFvDuDwo5nDPamv76dWgB51w","deployment":"https://justurbanwears-rfx5agf49-drdyranes-projects.vercel.app","databaseMutation":"NOT_APPLIED_NO_DIRECT_ADMIN_CREDENTIAL","availabilityApi":"UNAVAILABLE_FAIL_CLOSED","productionSmoke":"27_OF_27_PASS","experienceSmoke":"21_OF_21_PASS","browserProductGallery":"7_OF_7_1120X1400_LOADED_AND_TRAVERSED","browserConsole":"CLEAN","state":"DEPLOYED_UNVERIFIED_DATABASE_BLOCKED","verifiedAt":"2026-08-26T19:04:51Z"},
-      "releaseGate":"DEPLOYED_UNVERIFIED_DATABASE_RELEASE_BLOCKED_AVAILABILITY_UNAVAILABLE"
+      "shopRelease":{"catalogueRevision":"2026-08-26-catalogue-36","catalogueManifestChecksum":"5bd76e6cfb84f839afff10b077d70cc31b1dfca998014798932f74c832c4bb5f","cataloguePresentationChecksum":"97e6d5add123a406e697a6002dd2a99574c4c084a0b102869691c9fcd32ede1c","publicRoot":"public/shop/products/neon-chartreuse-asymmetric-ruched-knot-maxi-dress","mediaCount":7,"publicBlobActiveAssetCount":282,"publicBlobLegacyAssetCount":11,"sourceCommit":"0883f9a087a8108e7359be00796ff9655c05c9fb","deployedCommit":"0883f9a087a8108e7359be00796ff9655c05c9fb","deploymentId":"dpl_GpRVaFvDuDwo5nDPamv76dWgB51w","deployment":"https://justurbanwears-rfx5agf49-drdyranes-projects.vercel.app","databaseMutation":"APPLIED_GUARDED_ATOMIC_CATALOGUE_RELEASE","databaseReleaseGitSha":"a3d795f9b0b81d72c0ebdcaa8a8c3997a8b87e17","databaseMigrationCount":1,"databaseMigration":"0014_legacy_generation_fence","databaseRowCount":44,"availabilityApi":"CONFIRMED","productPageAvailability":"AVAILABLE_ADD_TO_BAG","productionSmoke":"27_OF_27_PASS_POST_DATABASE_RELEASE","experienceSmoke":"21_OF_21_PASS","browserProductGallery":"7_OF_7_1120X1400_LOADED_AND_TRAVERSED","browserConsole":"CLEAN","state":"LIVE_VERIFIED","verifiedAt":"2026-08-26T19:32:30Z"},
+      "releaseGate":"LIVE_VERIFIED"
     },
     "027": {
       "status":"PRIVATE_INTAKE_RECORDED_FRONT_ONLY_NO_GENERATION_OR_RELEASE_AUTHORITY",
@@ -1900,10 +1900,10 @@
     }
   },
   "nextOperation": {
-    "operationId": "g025-g026-shop-release-catalogue-36-database-resume",
-    "garmentId": "025_026",
-    "view": "SHOP_RELEASE",
-    "status": "BLOCKED_DIRECT_PRODUCTION_DATABASE_ADMIN_CREDENTIAL_REQUIRED"
+    "operationId": "g027-private-intake-awaiting-generation-authority",
+    "garmentId": "027",
+    "view": "PRIVATE_INTAKE_FRONT_ONLY",
+    "status": "READY_AWAITING_SEPARATE_GENERATION_AUTHORITY"
   },
-  "requiredNext": "Resume the existing catalogue-36 release with a usable production DATABASE_URL_UNPOOLED or equivalent direct Neon admin execution context, then run the guarded check/apply and reverify JUW-049/JUW-050 availability. Do not regenerate or re-export media. Preserve G027 as a private front-only intake until separate generation authority."
+  "requiredNext": "Preserve G025 and G026 as live-verified catalogue-36 releases. Preserve G027 as a private front-only intake until separate generation authority."
 }
