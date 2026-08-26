@@ -101,6 +101,35 @@ test("authority failure yields null truth instead of false zeroes", () => {
   assert.ok(projection.degradedSources.some((item) => item.source === "AUTHORITY"));
 });
 
+test("connected draft continuation opens the exact private garment", () => {
+  const authority = fixture();
+  authority.notifications = [];
+  authority.pieces = [
+    { ...authority.pieces[0], availability: "PRIVATE", wardrobeItemId: "wardrobe-private-025" },
+    { ...authority.pieces[0], pieceKey: "private-without-record", availability: "PRIVATE", wardrobeItemId: null },
+  ];
+
+  const projection = projectConnectedStudioApplication({ operator, now, authority });
+
+  assert.deepEqual(projection.continueAction, {
+    id: "drafts",
+    label: "Finish 2 drafts",
+    href: "/studio/wardrobe/wardrobe-private-025",
+    openCount: 2,
+    source: "CONNECTED",
+  });
+});
+
+test("connected draft continuation falls back to the private collection when no dossier exists", () => {
+  const authority = fixture();
+  authority.notifications = [];
+  authority.pieces = [{ ...authority.pieces[0], availability: "PRIVATE", wardrobeItemId: null }];
+
+  const projection = projectConnectedStudioApplication({ operator, now, authority });
+
+  assert.equal(projection.continueAction?.href, "/studio/wardrobe?collection=private");
+});
+
 test("search documents are bounded, canonical and deterministic", () => {
   const first = projectConnectedStudioApplication({ operator, now, authority: fixture() });
   const second = projectConnectedStudioApplication({ operator, now, authority: fixture() });

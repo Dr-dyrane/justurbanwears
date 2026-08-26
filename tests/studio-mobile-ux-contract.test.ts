@@ -182,7 +182,7 @@ test("operator copy and recovery stay action-led", () => {
   assert.match(directCaptures, /sourceMode === "APPROVED_FRONT"/);
   assert.match(directCaptures, /heading\.scrollIntoView/);
   assert.match(directCaptures, /prefers-reduced-motion: reduce/);
-  assert.match(directCaptures, /aiFlow\.source \? <button className="button button-primary studio-ai-create" disabled=\{!aiFlow\.confirmed\}/);
+  assert.match(directCaptures, /aiFlow\.source \? <button className="button button-primary studio-ai-create" disabled=\{busy \|\| !aiFlow\.confirmed\}/);
   assert.doesNotMatch(directCaptures, /disabled=\{!aiFlow\.source \|\| !aiFlow\.confirmed\}/);
   assert.match(directCaptures, /Only Lulu sees this/);
   assert.doesNotMatch(wardrobe, /truth gates|catalogue projection/i);

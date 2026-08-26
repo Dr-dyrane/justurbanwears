@@ -206,8 +206,8 @@ test("the checked-in manifest validates all 44 catalogue products and immutable 
 });
 
 test("the release manifest exactly matches the approved browser presentation seeds", () => {
-  const tsx = join(repositoryRoot, "node_modules/.bin/tsx");
-  const source = execFileSync(tsx, [
+  const tsx = fileURLToPath(import.meta.resolve("tsx/cli"));
+  const source = execFileSync(process.execPath, [tsx,
     "-e",
     "import { WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS as rows } from './lib/wardrobe-public-view/seeds.ts'; console.log(JSON.stringify(rows));",
   ], { cwd: repositoryRoot, encoding: "utf8" });

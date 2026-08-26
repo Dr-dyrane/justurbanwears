@@ -434,6 +434,17 @@ test("separates evidence review, funds confirmation, fulfillment, versioning, an
     writeOff: 0,
   });
   assert.equal(inventory.onHand + inventory.sold - inventory.returned + inventory.writeOff, 1);
+  const needsAction = await service.pageOperatorOrders(operator, {
+    page: 1,
+    limit: 50,
+    search: "",
+    filter: "NEEDS_ACTION",
+  });
+  assert.equal(
+    needsAction.orders.some((candidate) => candidate.reference === order.reference),
+    false,
+    "a completed order with correction available is not due work",
+  );
 });
 
 test("records the amount received and corrects the payment audit without rewriting the original confirmation", async () => {

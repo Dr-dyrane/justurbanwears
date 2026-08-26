@@ -41,15 +41,13 @@ import {
   type IntakeSourceMode,
 } from "./engine-client";
 
-type IntakeStep = "start" | "source" | "build" | "confirm" | "edit" | "wear" | "receipt" | "reconcile";
+type IntakeStep = "start" | "source" | "build" | "confirm" | "edit" | "receipt" | "reconcile";
 type BuildStage = "READING" | "GARMENT" | "VIEWS" | "READY";
 type PendingAction = "BUILD" | "KEEP" | "RETRY";
 
 interface GarmentIntakeSheetProps {
   client?: GarmentIntakeClient;
-  onBuildSet?(wardrobeItemId: string): void;
   onDismiss(): void;
-  onOpenWear?(wardrobeItemId: string): void;
   open: boolean;
   returnFocus?: HTMLElement | null;
 }
@@ -160,14 +158,13 @@ function isExplicitlyUnavailable(error: unknown) {
 
 export function GarmentIntakeSheet({
   client = studioEngineIntakeClient,
-  onBuildSet,
   onDismiss,
-  onOpenWear,
   open,
   returnFocus,
 }: GarmentIntakeSheetProps) {
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const commandInFlightRef = useRef(false);
+  const explicitCommittedNavigationRef = useRef(false);
   const factsBeforeEditRef = useRef<IntakeFacts | undefined>(undefined);
   const intakeIntentRef = useRef<StoredIntakeIntent | undefined>(undefined);
   const previewUrlRef = useRef<string | undefined>(undefined);
@@ -189,13 +186,15 @@ export function GarmentIntakeSheet({
   const [wardrobeItemId, setWardrobeItemId] = useState<string>();
   const [receiptPreviewOpen, setReceiptPreviewOpen] = useState(false);
   const [recoverableIntakes, setRecoverableIntakes] = useState<IntakeSnapshot[]>([]);
-  const [recoveryLoading, setRecoveryLoading] = useState(false);
+  const [recoveryStatus, setRecoveryStatus] = useState<"error" | "idle" | "loading" | "ready">("idle");
+  const [recoveryError, setRecoveryError] = useState("");
+  const [recoveryReload, setRecoveryReload] = useState(0);
 
   const candidatePreview = intake ? client.candidateUrl(intake) : undefined;
   const pollingIntakeId = intake?.id;
   const pollingIntakeState = intake?.state;
   const working = pendingAction !== undefined;
-  const progress = ({ start: 8, source: 24, build: 54, confirm: 70, edit: 70, wear: 88, receipt: 100, reconcile: 70 } satisfies Record<IntakeStep, number>)[step];
+  const progress = ({ start: 8, source: 24, build: 54, confirm: 70, edit: 70, receipt: 100, reconcile: 70 } satisfies Record<IntakeStep, number>)[step];
   const canKeep = Boolean(facts.title && facts.category && facts.colour);
   const sourceLabel = sourceMode === "DESCRIBE" ? "Description" : sourceMode === "CAMERA" ? "Camera" : "Photos";
 
@@ -209,14 +208,19 @@ export function GarmentIntakeSheet({
   useEffect(() => {
     if (!open || step !== "start" || !client.listActiveIntakes) return;
     let current = true;
-    setRecoveryLoading(true);
+    setRecoveryStatus("loading");
+    setRecoveryError("");
     void client.listActiveIntakes().then((result) => {
-      if (current) setRecoverableIntakes(result.intakes);
-    }).catch(() => undefined).finally(() => {
-      if (current) setRecoveryLoading(false);
+      if (!current) return;
+      setRecoverableIntakes(result.intakes);
+      setRecoveryStatus("ready");
+    }).catch((caught: unknown) => {
+      if (!current) return;
+      setRecoveryError(caught instanceof Error ? caught.message : "Unfinished garment work could not be checked.");
+      setRecoveryStatus("error");
     });
     return () => { current = false; };
-  }, [client, open, step]);
+  }, [client, open, recoveryReload, step]);
 
   useEffect(() => {
     if (!open || !pollingIntakeId || !pollingIntakeState || !client.getIntake || !activeIntakeStates.includes(pollingIntakeState)) return;
@@ -352,12 +356,24 @@ export function GarmentIntakeSheet({
     setWardrobeItemId(undefined);
     setReceiptPreviewOpen(false);
     setRecoverableIntakes([]);
-    setRecoveryLoading(false);
+    setRecoveryStatus("idle");
+    setRecoveryError("");
+    explicitCommittedNavigationRef.current = false;
   }
 
   function finishDismiss(options: { preserveIntent?: boolean } = {}) {
     reset(options);
     onDismiss();
+    return true;
+  }
+
+  function finishCommittedDismiss() {
+    const destination = wardrobeItemId
+      ? `/studio/wardrobe/${encodeURIComponent(wardrobeItemId)}`
+      : "/studio/wardrobe?collection=private";
+    reset();
+    onDismiss();
+    window.location.assign(destination);
     return true;
   }
 
@@ -376,7 +392,8 @@ export function GarmentIntakeSheet({
 
     if (step === "reconcile") return finishDismiss();
 
-    const garmentSaved = Boolean(wardrobeItemId) || step === "wear" || step === "receipt";
+    const garmentSaved = Boolean(wardrobeItemId) || step === "receipt";
+    if (garmentSaved && !explicitCommittedNavigationRef.current) return finishCommittedDismiss();
     if (
       !garmentSaved
       && step !== "start"
@@ -392,7 +409,6 @@ export function GarmentIntakeSheet({
     setError(undefined);
     if (step === "source") setStep("start");
     else if (step === "edit") cancelFactsEdit();
-    else if (step === "wear") setStep("confirm");
   }
 
   function beginFactsEdit() {
@@ -568,7 +584,7 @@ export function GarmentIntakeSheet({
         setIntake(committed.intake);
         setWardrobeItemId(committed.wardrobeItem.id);
       }
-      setStep("wear");
+      setStep("receipt");
     } catch (caught) {
       const keepError = caught instanceof StudioEngineError
         ? caught
@@ -678,16 +694,20 @@ export function GarmentIntakeSheet({
       <button className="button button-secondary" onClick={cancelFactsEdit} type="button">Cancel</button>
       <button className="button button-primary" data-studio-workspace-primary="true" disabled={!canKeep || working} onClick={finishFactsEdit} type="button">Done</button>
     </>
-  ) : step === "wear" ? (
-    <button className="button button-primary" data-studio-workspace-primary="true" onClick={() => setStep("receipt")} type="button">Not now</button>
   ) : step === "receipt" ? (
     <>
-      <StudioLink className="button button-secondary" href={wardrobeItemId ? `/studio/wardrobe/${encodeURIComponent(wardrobeItemId)}` : "/studio/wardrobe"} onClick={(event) => {
+      <StudioLink className="button button-secondary" href="/studio/wardrobe?collection=private" onClick={(event) => {
         event.preventDefault();
         const destination = event.currentTarget.href;
+        explicitCommittedNavigationRef.current = true;
+        requestCloseAndThen(() => window.location.assign(destination));
+      }}>Back to Wardrobe</StudioLink>
+      <StudioLink className="button button-primary" data-studio-workspace-primary="true" href={wardrobeItemId ? `/studio/wardrobe/${encodeURIComponent(wardrobeItemId)}` : "/studio/wardrobe?collection=private"} onClick={(event) => {
+        event.preventDefault();
+        const destination = event.currentTarget.href;
+        explicitCommittedNavigationRef.current = true;
         requestCloseAndThen(() => window.location.assign(destination));
       }}>Open garment</StudioLink>
-      <button className="button button-primary" data-studio-workspace-primary="true" onClick={requestClose} type="button">Done</button>
     </>
   ) : step === "reconcile" ? (
     <button className="button button-primary" data-studio-workspace-primary="true" onClick={requestClose} type="button">Done</button>
@@ -701,11 +721,9 @@ export function GarmentIntakeSheet({
         ? { detail: buildStage === "READY" ? "Ready to review" : "Preparing one clean garment view", title: "Building" }
         : step === "confirm" || step === "edit"
           ? { detail: "Check the garment facts", title: facts.title || "Review garment" }
-          : step === "wear"
-            ? { detail: "The private wardrobe record is ready", title: facts.title || "Garment saved" }
-            : step === "receipt"
-              ? { detail: "Private · not for sale", title: facts.title || "In Wardrobe" }
-              : { detail: "No new paid attempt will start", title: "Needs review" };
+          : step === "receipt"
+            ? { detail: "Private · not for sale", title: facts.title || "In Wardrobe" }
+            : { detail: "No new paid attempt will start", title: "Needs review" };
 
   const intakeStage = (
     <div className={`juw-intake-v2-stage is-${step}`}>
@@ -733,7 +751,7 @@ export function GarmentIntakeSheet({
     <StudioTaskSheet
       className="studio-garment-task-sheet is-adaptive-host"
       eyebrow={sourceMode ? sourceLabel : "New garment"}
-      onBack={!working && ["source", "edit", "wear"].includes(step) ? back : undefined}
+      onBack={!working && ["source", "edit"].includes(step) ? back : undefined}
       onDismiss={requestDismiss}
       open={open}
       progress={step === "receipt" || step === "reconcile" ? undefined : progress}
@@ -751,16 +769,24 @@ export function GarmentIntakeSheet({
         <section className="studio-task-question">
           <p className="eyebrow">Start</p>
           <h3>Show us the piece.</h3>
-          {recoverableIntakes.length ? (
+          {recoveryStatus === "error" ? (
+            <div className="studio-engine-error" role="alert">
+              <CircleDashed aria-hidden="true" size={19} />
+              <span><strong>We couldn&apos;t check unfinished work.</strong><small>{recoveryError || "Reconnect before starting another garment."}</small></span>
+              <button className="button button-secondary" onClick={() => setRecoveryReload((value) => value + 1)} type="button">Try again</button>
+            </div>
+          ) : recoverableIntakes.length && recoveryStatus === "ready" ? (
             <div className="studio-disclosure-group studio-intake-start-options" aria-label="Unfinished garment intakes">
               {recoverableIntakes.map((recoverable) => <StudioDisclosureRow detail={recoverable.reconciliation ? "Needs administrator reconciliation" : recoverable.facts?.title || "Unfinished garment"} icon={<RotateCcw size={19} />} key={recoverable.id} label="Continue" onClick={() => resumeIntake(recoverable)} />)}
             </div>
-          ) : recoveryLoading ? <p className="studio-inline-state"><LoaderCircle aria-hidden="true" className="studio-spin" size={15} />Checking unfinished work…</p> : null}
-          <div className="studio-disclosure-group studio-intake-start-options">
-            <StudioDisclosureRow detail="Take photo" icon={<Camera size={19} />} label="Camera" onClick={() => cameraInputRef.current?.click()} />
-            <StudioDisclosureRow detail="Choose photo" icon={<Upload size={19} />} label="Photos" onClick={() => uploadInputRef.current?.click()} />
-            <StudioDisclosureRow detail="Use words" icon={<Pencil size={19} />} label="Describe" onClick={chooseDescription} />
-          </div>
+          ) : recoveryStatus === "loading" || (client.listActiveIntakes && recoveryStatus === "idle") ? <p className="studio-inline-state"><LoaderCircle aria-hidden="true" className="studio-spin" size={15} />Checking unfinished work…</p> : null}
+          {!client.listActiveIntakes || recoveryStatus === "ready" ? (
+            <div className="studio-disclosure-group studio-intake-start-options">
+              <StudioDisclosureRow detail="Take photo" icon={<Camera size={19} />} label="Camera" onClick={() => cameraInputRef.current?.click()} />
+              <StudioDisclosureRow detail="Choose photo" icon={<Upload size={19} />} label="Photos" onClick={() => uploadInputRef.current?.click()} />
+              <StudioDisclosureRow detail="Use words" icon={<Pencil size={19} />} label="Describe" onClick={chooseDescription} />
+            </div>
+          ) : null}
         </section>
       ) : null}
 
@@ -865,22 +891,6 @@ export function GarmentIntakeSheet({
         </section>
       ) : null}
 
-      {step === "wear" ? (
-        <section className="studio-task-question">
-          <p className="eyebrow">Next</p>
-          <h3>Continue in Atelier?</h3>
-          {onBuildSet || onOpenWear ? (
-            <div className="studio-disclosure-group studio-wear-options">
-              {onBuildSet
-                ? <StudioDisclosureRow detail="Resume the next saved view" icon={<Sparkles size={19} />} label="Continue Genesis" onClick={() => wardrobeItemId && onBuildSet(wardrobeItemId)} />
-                : onOpenWear
-                  ? <StudioDisclosureRow detail="Choose one presentation view" icon={<Shirt size={19} />} label="Open Wear" onClick={() => wardrobeItemId && onOpenWear(wardrobeItemId)} />
-                  : null}
-            </div>
-          ) : <p>This simulator stops before private media work.</p>}
-        </section>
-      ) : null}
-
       {step === "receipt" ? (
         <section className="studio-task-receipt">
           <div aria-live="polite" className="studio-receipt-copy">
@@ -889,7 +899,7 @@ export function GarmentIntakeSheet({
             </div>
             <p className="eyebrow">Saved</p>
             <h3>{facts.title} is in Wardrobe.</h3>
-            <p>Continue in Atelier any time.</p>
+            <p>Add the remaining product photos, then review the Shop preview.</p>
             <div className="studio-receipt-state"><LifecycleBadge state="DRAFT" /><small>Private · not for sale</small></div>
             <small className="studio-receipt-id">{wardrobeItemId}</small>
           </div>

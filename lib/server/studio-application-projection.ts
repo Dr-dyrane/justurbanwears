@@ -1,4 +1,8 @@
 import { shopProducts } from "../shop/catalog";
+import {
+  studioOrderHasDueReturnWork,
+  studioOrderHasDueWork,
+} from "../shop/order-presentation";
 import { CURRENT_SHOP_DROP } from "../shop/current-drop";
 import {
   SHOP_COLLECTION_COMPATIBILITY,
@@ -213,7 +217,7 @@ function connectedSummary(authority: StudioAuthoritySnapshot): StudioSummary {
     piece.availability === "PRIVATE" || piece.hasLocationMismatch
   )).length;
   const actionableOrders = authority.orders.filter((order) => (
-    order.allowedTransitions.length > 0 || order.allowedReturnTransitions.length > 0
+    studioOrderHasDueWork(order)
   )).length;
   return {
     attention: metric(
@@ -242,7 +246,7 @@ function connectedContinueAction(
   openCount: number,
 ): StudioContinueAction {
   const returns = authority.orders.filter((order) => (
-    Boolean(order.return && order.allowedReturnTransitions.length)
+    studioOrderHasDueReturnWork(order)
   ));
   if (returns.length) return {
     id: "returns",
@@ -253,7 +257,7 @@ function connectedContinueAction(
   };
 
   const orders = authority.orders.filter((order) => (
-    order.allowedTransitions.length > 0 && !order.return
+    studioOrderHasDueWork(order) && !studioOrderHasDueReturnWork(order)
   ));
   if (orders.length) return {
     id: "orders",
@@ -273,10 +277,13 @@ function connectedContinueAction(
   };
 
   const drafts = authority.pieces.filter((piece) => piece.availability === "PRIVATE");
+  const exactDraft = drafts.find((piece) => piece.wardrobeItemId);
   if (drafts.length) return {
     id: "drafts",
     label: `Finish ${drafts.length} draft${drafts.length === 1 ? "" : "s"}`,
-    href: "/studio/wardrobe",
+    href: exactDraft?.wardrobeItemId
+      ? `/studio/wardrobe/${encodeURIComponent(exactDraft.wardrobeItemId)}`
+      : "/studio/wardrobe?collection=private",
     openCount,
     source: "CONNECTED",
   };

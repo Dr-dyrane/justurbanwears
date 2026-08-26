@@ -7,7 +7,6 @@ import { StudioLoadingStage } from "./atoms/studio-loading-stage";
 import { StudioLink } from "./atoms/studio-link";
 import { StudioStackPage } from "./atoms/studio-stack-page";
 import { WearSheet } from "./garment-intake/wear-sheet";
-import { GarmentSetBuilder } from "./garment-set-builder";
 import { StudioMediaViewerProvider } from "./media-viewer";
 import { useStudio } from "./studio-provider";
 import { PieceWorkspaceView } from "./wardrobe-workbench";
@@ -17,7 +16,6 @@ export function GarmentDossier() {
   const params = useParams<{ id: string }>();
   const searchParams = useSearchParams();
   const studio = useStudio();
-  const [setWardrobeItemId, setSetWardrobeItemId] = useState<string | null>(null);
   const [wearWardrobeItemId, setWearWardrobeItemId] = useState<string | null>(null);
   const requestedId = decodeURIComponent(String(params.id ?? ""));
   const garment = studio.garments.find((candidate) =>
@@ -46,17 +44,9 @@ export function GarmentDossier() {
           garment={garment}
           initialAction={searchParams.get("action") === "price" ? "price" : undefined}
           layout="adaptive"
-          onBuildSet={(piece) => setSetWardrobeItemId(piece.privateWardrobeItemId ?? null)}
           onDismiss={() => window.location.assign(studioScenarioHref("/studio/wardrobe", studio.scenario))}
           onContinueMedia={(piece) => setWearWardrobeItemId(piece.privateWardrobeItemId ?? null)}
         />
-        {setWardrobeItemId ? (
-          <GarmentSetBuilder
-            onDismiss={() => setSetWardrobeItemId(null)}
-            open
-            wardrobeItemId={setWardrobeItemId}
-          />
-        ) : null}
         {wearWardrobeItemId ? (
           <WearSheet
             onDismiss={() => setWearWardrobeItemId(null)}

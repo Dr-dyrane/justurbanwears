@@ -160,8 +160,12 @@ test("Studio posts structured facts, role-gates finance UX, and covers return re
   assert.match(detail, /Could not refresh order/);
   assert.match(detail, /if \(quiet\) setError\(""\)/);
   assert.match(detail, /const commandPendingRef = useRef\(false\)/);
-  assert.match(detail, /if \(commandPendingRef\.current \|\| pending/);
+  assert.match(detail, /if \([\s\S]*?commandPendingRef\.current[\s\S]*?\|\| pending/);
   assert.match(detail, /commandPendingRef\.current = true;[\s\S]*?finally \{[\s\S]*?commandPendingRef\.current = false/);
+  assert.match(detail, /const activeMutationRef = useRef<string \| null>\(null\)/);
+  assert.match(detail, /!onMutationStart\(commandKey\)/);
+  assert.match(detail, /onReconcile\(order\.version\)/);
+  assert.match(detail, /reconciled\.version > order\.version/);
   assert.match(route, /requireOperatorActor/);
   assert.match(route, /getShopBlob\("private", evidence\.blobPathname/);
   assert.doesNotMatch(route, /blobUrl|downloadUrl/);
@@ -208,6 +212,10 @@ test("commerce surfaces use customer language and expose the exact next Studio a
   assert.ok(inbox.indexOf("studio-piece-next") < inbox.indexOf("studio-connected-order-list"));
   assert.ok(inbox.indexOf("studio-connected-order-list") < inbox.indexOf('title="Customer order"'));
   assert.match(inbox, /<StudioTaskSheet[\s\S]*?onSubmit=\{createAssistedOrder\}[\s\S]*?title="Customer order"/);
+  assert.match(inbox, /const createPendingRef = useRef\(false\)/);
+  assert.match(inbox, /createIntentRef\.current\?\.fingerprint === fingerprint/);
+  assert.match(inbox, /idempotencyKey: intent\.idempotencyKey/);
+  assert.match(inbox, /safely reuse this reservation attempt/);
   assert.match(inbox, /<details className="studio-stack-filter">[\s\S]*?<summary>Find orders/);
   assert.match(detail, /id=\{isNextAction \? "studio-order-next-action"/);
   assert.match(detail, /open=\{isNextAction \|\| undefined\}/);

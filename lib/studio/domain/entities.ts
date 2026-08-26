@@ -124,6 +124,21 @@ export interface DynamicPublicationProjection {
   drop?: string;
 }
 
+/**
+ * Read-only readiness for Studio's ordinary three-photo Shop path. This is not
+ * an Atelier 01–07 acceptance, lock, export, or publication authority.
+ */
+export type StudioNativeShopReadiness =
+  | {
+      path: "STUDIO_NATIVE_THREE_PHOTO";
+      state: "READY";
+    }
+  | {
+      path: "STUDIO_NATIVE_THREE_PHOTO";
+      state: "BLOCKED";
+      blockers: string[];
+    };
+
 export type PublicListingMediaSlot = WardrobePublicMediaSlot;
 export type PublicListingMediaProjection = WardrobePublicMedia;
 export type PublicModelAnchorProjection = WardrobePublicModelAnchor;
@@ -158,6 +173,7 @@ export interface Garment {
   createdAt: string;
   privateWardrobeItemId?: string;
   dynamicPublication?: DynamicPublicationProjection;
+  nativeShopReadiness?: StudioNativeShopReadiness;
 }
 
 export type PublicListingProjection = WardrobePublicProduct;

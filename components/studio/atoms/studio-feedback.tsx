@@ -23,10 +23,6 @@ export function StudioFeedback({
 }: StudioFeedbackProps) {
   const isError = state === "error";
   const classes = ["studio-feedback", `is-${state}`, className].filter(Boolean).join(" ");
-  const motionVariant = state === "loading"
-    ? "loader"
-    : state === "success" ? "success" : "empty";
-
   return (
     <div
       {...props}
@@ -37,14 +33,30 @@ export function StudioFeedback({
       data-studio-feedback={state}
       role={isError ? "alert" : "status"}
     >
-      {state === "loading" || state === "success" || state === "error" ? (
+      {state === "loading" ? (
         <WardrobeMotion
           artwork="logo"
           className="studio-feedback-motion"
-          loop={state === "loading"}
+          loop
           polarity="auto"
           size="sm"
-          variant={motionVariant}
+          variant="loader"
+        />
+      ) : state === "success" ? (
+        <WardrobeMotion
+          artwork="logo"
+          className="studio-feedback-motion"
+          polarity="auto"
+          size="sm"
+          variant="success"
+        />
+      ) : state === "error" ? (
+        <WardrobeMotion
+          artwork="logo"
+          className="studio-feedback-motion"
+          polarity="auto"
+          size="sm"
+          variant="empty"
         />
       ) : null}
       <div className="studio-feedback-copy">

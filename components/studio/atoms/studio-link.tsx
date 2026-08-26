@@ -21,7 +21,6 @@ export function StudioLink({ children, href: requestedHref, ...props }: StudioLi
     onClick?.(event);
     if (
       event.defaultPrevented
-      || persistence !== "unavailable"
       || event.button !== 0
       || event.metaKey
       || event.ctrlKey
@@ -36,8 +35,14 @@ export function StudioLink({ children, href: requestedHref, ...props }: StudioLi
       && Boolean(destination.hash);
     if (samePageHash) return;
 
-    if (!window.confirm("This work is not saved. Leave this page?")) {
+    if (persistence === "unavailable" && !window.confirm("This work is not saved. Leave this page?")) {
       event.preventDefault();
+      return;
+    }
+
+    if (destination.origin === window.location.origin) {
+      event.currentTarget.dataset.pending = "true";
+      event.currentTarget.setAttribute("aria-busy", "true");
     }
   }
 

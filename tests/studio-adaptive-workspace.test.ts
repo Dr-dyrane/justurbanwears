@@ -109,6 +109,9 @@ test("responsive posture is capacity-derived and keeps a measured safe canvas", 
   assert.match(css, /\.juw-order-v2-overview/);
   assert.match(css, /\.juw-order-v2-content \.studio-connected-detail-grid,[\s\S]*?grid-template-columns: 1fr/);
   assert.match(css, /\.juw-order-v2-content \.studio-connected-order-summary \{[\s\S]*?position: static/);
+  assert.match(css, /@media \(max-height: 599px\) and \(orientation: landscape\)[\s\S]*?\.studio-adaptive-workspace-grip,\s*\.studio-adaptive-workspace-grip > button \{[\s\S]*?min-height: 44px/);
+  assert.match(css, /\.studio-adaptive-workspace-grip > button > small \{[\s\S]*?font-size: 12px/);
+  assert.match(css, /\.juw-intake-v2-stage-copy small \{[\s\S]*?font-size: 12px/);
 });
 
 test("the shared workspace stylesheet is emitted once at the Studio boundary", () => {

@@ -16,7 +16,7 @@ const css = readFileSync(`${root}/app/foundation.css`, "utf8");
 const adaptiveCss = readFileSync(`${root}/app/studio-adaptive-workspace.css`, "utf8");
 
 test("garment intake is one progressive mounted sheet with no select controls", () => {
-  for (const step of ["start", "source", "build", "confirm", "edit", "wear", "receipt"]) {
+  for (const step of ["start", "source", "build", "confirm", "edit", "receipt"]) {
     assert.match(sheet, new RegExp(`"${step}"`));
   }
   assert.match(sheet, /Camera/);
@@ -31,9 +31,27 @@ test("garment intake is one progressive mounted sheet with no select controls", 
   assert.match(sheet, /event\.key === "Tab"/);
   assert.match(sheet, /aria-modal="true"/);
   assert.doesNotMatch(sheet, /<select/);
+  assert.doesNotMatch(sheet, /Continue Genesis|Continue in Atelier|Not now/);
+  assert.match(sheet, /Add the remaining product photos, then review the Shop preview/);
   assert.doesNotMatch(sheet, /studio\.createGarment/);
   assert.match(workbench, /<GarmentIntakeSheet/);
   assert.doesNotMatch(workbench, /function GarmentIntakeDialog/);
+});
+
+test("Wardrobe keeps Add garment visible and never replaces the next seller task with Genesis", () => {
+  assert.match(workbench, /className="studio-wardrobe-add-trigger"/);
+  assert.doesNotMatch(workbench, /nextGarment \? \(\s*<button className="studio-wardrobe-add-trigger"/);
+  assert.match(workbench, /workspace\.nextAction\.kind !== "CAPTURE"/);
+  assert.doesNotMatch(workbench, /Build missing views|Continue Genesis/);
+});
+
+test("publication state fails closed and recovers from an ambiguous publish response", () => {
+  assert.match(workbench, /garment\.dynamicPublication\?\.state === "PUBLISHED"/);
+  assert.match(workbench, /const authoritativePublicationState = lifecycleWorkspace\?\.state \?\? garment\.dynamicPublication\?\.state/);
+  assert.match(workbench, /const publicationCommandRef = useRef\(false\)/);
+  assert.match(workbench, /if \([^\n]*publicationCommandRef\.current\) return/);
+  assert.match(workbench, /const recovered = await readPublicationReview\(\)\.catch\(\(\) => null\)/);
+  assert.match(workbench, /recovered\?\.state === "PUBLISHED"/);
 });
 
 test("garment intake keeps one visual stage, one control surface, and stable photo inputs", () => {
@@ -56,6 +74,10 @@ test("garment intake keeps one visual stage, one control surface, and stable pho
   assert.doesNotMatch(sheet, /<div aria-label=\{`\$\{stageCopy\.title\}/);
   assert.match(sheet.slice(workspaceStart, workspaceEnd), /juw-intake-v2-actions/);
   assert.match(sheet, /event\.preventDefault\(\)[\s\S]*requestCloseAndThen\(\(\) => window\.location\.assign\(destination\)\)/);
+  assert.match(sheet, /function finishCommittedDismiss\(\)[\s\S]*window\.location\.assign\(destination\)/);
+  assert.match(sheet, /garmentSaved && !explicitCommittedNavigationRef\.current/);
+  assert.match(sheet, /className="button button-primary" data-studio-workspace-primary="true"[\s\S]*>Open garment<\/StudioLink>/);
+  assert.match(sheet, /href="\/studio\/wardrobe\?collection=private"[\s\S]*>Back to Wardrobe<\/StudioLink>/);
   assert.match(sheet, /step === "reconcile"[\s\S]*onClick=\{requestClose\}/);
   assert.doesNotMatch(sheet, /studio-source-preview|studio-build-visual|studio-confirm-hero|studio-receipt-visual/);
 
@@ -216,6 +238,13 @@ test("active intake polling reconnects with bounded backoff and stays read-only"
   assert.match(sheet, /Trying again…/);
   assert.match(sheet, /No new paid attempt will start\./);
   assert.match(sheet, /if \(intake\?\.reconciliation \|\|/);
+});
+
+test("intake discovery fails closed before offering a fresh paid workflow", () => {
+  assert.match(sheet, /setRecoveryStatus\("error"\)/);
+  assert.match(sheet, /We couldn&apos;t check unfinished work\./);
+  assert.match(sheet, /!client\.listActiveIntakes \|\| recoveryStatus === "ready"/);
+  assert.match(sheet, /setRecoveryReload\(\(value\) => value \+ 1\)/);
 });
 
 test("new sheet material follows the scoped liquid-glass and accessibility contract", () => {

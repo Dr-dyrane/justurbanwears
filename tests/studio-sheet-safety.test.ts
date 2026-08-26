@@ -65,7 +65,7 @@ test("garment intake keeps nested previews and active work before closing", () =
   assert.match(garmentIntake, /receiptPreviewOpen[\s\S]*setReceiptPreviewOpen\(false\)[\s\S]*return false/);
   assert.match(garmentIntake, /working \|\| step === "build"/);
   assert.match(garmentIntake, /Discard this garment intake/);
-  assert.match(garmentIntake, /Boolean\(wardrobeItemId\) \|\| step === "wear" \|\| step === "receipt"/);
+  assert.match(garmentIntake, /Boolean\(wardrobeItemId\) \|\| step === "receipt"/);
   assert.match(garmentIntake, /onDismiss=\{requestDismiss\}/);
   assert.match(garmentIntake, /requestCloseAndThen\(\(\) => window\.location\.assign\(destination\)\)/);
   assert.match(garmentIntake, /data-studio-workspace-primary="true" onClick=\{requestClose\}/);

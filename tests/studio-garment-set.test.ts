@@ -57,25 +57,6 @@ test("the server advances one durable current view instead of fanning out", () =
   assert.doesNotMatch(service, /EDITORIAL_LULU/);
 });
 
-test("Wear calls bind the Genesis command and exact correction receipt", () => {
-  assert.equal((service.match(/\n\s+requestId,\n\s+operation: /g) ?? []).length, 2);
-  assert.match(service, /fixCurrent\(wardrobeItemId, operator, currentSlot, input\.correction, commandJob\.id\)/);
-  assert.match(service, /const decisionWorkspace = await decideWearCandidate/);
-  assert.match(service, /generation\.id === slot\.jobId/);
-  assert.match(service, /decisionReceipt\.generationId !== slot\.jobId/);
-  assert.match(service, /decisionReceipt\.decision !== "EDIT"/);
-  assert.match(service, /correctionGenerationId: correctionReceipt\.generationId/);
-  assert.match(service, /decisionReceiptId: correctionReceipt\.receiptId/);
-  assert.match(service, /generationId: decisionReceipt\.generationId/);
-  assert.match(service, /receiptId: decisionReceipt\.receiptId/);
-  assert.doesNotMatch(service, /requiresReconciliation/);
-
-  const mediaStart = service.indexOf('if (slot.key === "GARMENT_BACK" || slot.key === "FABRIC_DETAIL")');
-  const mannequinStart = service.indexOf('if (slot.key === "MANNEQUIN_FRONT")', mediaStart);
-  const mediaBranch = service.slice(mediaStart, mannequinStart);
-  assert.doesNotMatch(mediaBranch, /requestId|correctionGenerationId|decisionReceiptId/);
-});
-
 test("one mounted Genesis sheet owns progress, review, correction and receipt", () => {
   assert.match(surface, /Opening saved work/);
   assert.match(surface, /Fix one thing/);

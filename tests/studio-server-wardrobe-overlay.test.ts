@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   createServerWardrobeOverlayRepository,
+  loadServerWardrobeItems,
 } from "../lib/studio/db/server-wardrobe-overlay";
 import type { Garment, InventoryRecord } from "../lib/studio/domain/entities";
 import { createEmptyStudioSnapshot } from "../lib/studio/domain/state";
@@ -46,6 +47,35 @@ const localInventory: InventoryRecord = {
   state: "READY",
   updatedAt: localGarment.createdAt,
 };
+
+test("connected Wardrobe distinguishes a verified empty collection from unavailable or invalid truth", async () => {
+  const verifiedEmpty = await loadServerWardrobeItems(async () => Response.json({ items: [] }));
+  assert.deepEqual(verifiedEmpty, []);
+
+  await assert.rejects(
+    loadServerWardrobeItems(async () => Response.json(
+      { error: { message: "temporarily unavailable" } },
+      { status: 503 },
+    )),
+    /Connected Wardrobe is unavailable/u,
+  );
+  await assert.rejects(
+    loadServerWardrobeItems(async () => Response.json({ items: [{ id: "partial-row" }] })),
+    /unverified data/u,
+  );
+});
+
+test("a connected Wardrobe loader failure rejects hydration instead of erasing the server overlay", async () => {
+  const repository = createServerWardrobeOverlayRepository({
+    read: async () => createEmptyStudioSnapshot(),
+    write: async () => undefined,
+    subscribe: () => () => undefined,
+  }, async () => {
+    throw new Error("Connected Wardrobe is unavailable. Try again.");
+  });
+
+  await assert.rejects(repository.read(), /Connected Wardrobe is unavailable/u);
+});
 
 test("server Wardrobe drafts hydrate as a private read overlay and never persist to browser state", async () => {
   const local = {

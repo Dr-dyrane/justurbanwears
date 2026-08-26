@@ -6,7 +6,6 @@ import {
   ShieldCheck,
   Truck,
 } from "lucide-react";
-import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { formatNaira } from "../../lib/shop/catalog";
@@ -26,6 +25,7 @@ import type {
   ShopServerOrder,
 } from "../../lib/shop/server-order/types";
 import { StudioFeedback } from "./atoms/studio-feedback";
+import { StudioLink as Link } from "./atoms/studio-link";
 import { StudioLoadingStage } from "./atoms/studio-loading-stage";
 import { StudioStackPage } from "./atoms/studio-stack-page";
 import { useStudioStackRegistration } from "./navigation/studio-stack-context";
@@ -107,18 +107,26 @@ function localDateTime(value: string | null): string {
 }
 
 function MutationAction({
+  mutationBlocked,
   operatorRole,
   order,
   transition,
   isNextAction = false,
   onApplied,
+  onMutationEnd,
+  onMutationStart,
+  onReconcile,
   onVersionConflict,
 }: {
+  mutationBlocked: boolean;
   operatorRole: OperatorRole;
   order: ShopServerOrder;
   transition: StudioTransition;
   isNextAction?: boolean;
   onApplied(order: ShopServerOrder, notice: string): void;
+  onMutationEnd(key: string): void;
+  onMutationStart(key: string): boolean;
+  onReconcile(expectedVersion: number): Promise<ShopServerOrder | null>;
   onVersionConflict(): void;
 }) {
   const [pending, setPending] = useState(false);
@@ -160,7 +168,11 @@ function MutationAction({
     || (transition.dimension === "REFUND" && transition.target === "COMPLETED")
     || (transition.dimension === "CANCELLATION_REFUND" && transition.target === "COMPLETED");
   const adminLocked = financeAction && operatorRole !== "admin";
-  const label = studioOrderActionLabel(transition, order.fulfillment.kind);
+  const label = studioOrderActionLabel(
+    transition,
+    order.fulfillment.kind,
+    order.fulfillmentFacts.pickupAppointment,
+  );
   const confirmationId = `studio-confirm-${transitionKey(transition).toLowerCase().replaceAll(":", "-")}-${order.version}`;
   const noteRequired = requiresNote(transition);
   const returnRefundCap = order.return?.items.reduce(
@@ -256,11 +268,21 @@ function MutationAction({
   }
 
   async function applyTransition() {
-    if (commandPendingRef.current || pending || !confirmed || !fieldsValid || adminLocked) return;
+    const commandKey = `${transitionKey(transition)}:${order.version}`;
+    if (
+      commandPendingRef.current
+      || pending
+      || mutationBlocked
+      || !confirmed
+      || !fieldsValid
+      || adminLocked
+      || !onMutationStart(commandKey)
+    ) return;
     commandPendingRef.current = true;
     setPending(true);
     setError("");
     const returnMutation = isReturnTransition(transition);
+    let authoritativeClientFailure = false;
     try {
       const response = await fetch(
         `/api/studio/orders/${encodeURIComponent(order.reference)}/${returnMutation ? "returns/transitions" : "transitions"}`,
@@ -302,6 +324,7 @@ function MutationAction({
         order?: ShopServerOrder;
         error?: { code?: string; message?: string };
       };
+      authoritativeClientFailure = response.status >= 400 && response.status < 500;
       if (!response.ok || !body.ok || !body.order) {
         if (body.error?.code === "VERSION_CONFLICT") onVersionConflict();
         const mapped = mapConnectedOrderFailure(response.status, body.error?.code);
@@ -313,10 +336,22 @@ function MutationAction({
         `${label} saved. Order is ${orderStateLabel(body.order.lifecycleStatus).toLowerCase()}. Next: ${nextTransition ? studioOrderNextActionLabel(body.order) : "return to Orders"}.`,
       );
     } catch (cause) {
+      if (!authoritativeClientFailure) {
+        const reconciled = await onReconcile(order.version).catch(() => null);
+        if (reconciled && reconciled.version > order.version) {
+          const nextTransition = nextStudioOrderTransition(reconciled);
+          onApplied(
+            reconciled,
+            `Latest order state recovered after the connection dropped. Next: ${nextTransition ? studioOrderNextActionLabel(reconciled) : "return to Orders"}.`,
+          );
+          return;
+        }
+      }
       setError(cause instanceof Error ? cause.message : "The order could not be updated.");
     } finally {
       commandPendingRef.current = false;
       setPending(false);
+      onMutationEnd(commandKey);
     }
   }
 
@@ -408,7 +443,7 @@ function MutationAction({
         <button
           aria-busy={pending}
           className={`button ${transition.dimension === "LIFECYCLE" || transition.target === "REVIEW_REJECTED" || transition.target === "REJECTED" || transition.target === "FAILED" ? "button-secondary" : "button-primary"}`}
-          disabled={pending || !confirmed || !fieldsValid || adminLocked}
+          disabled={pending || mutationBlocked || !confirmed || !fieldsValid || adminLocked}
           onClick={() => void applyTransition()}
           type="button"
         >
@@ -429,6 +464,9 @@ export function ConnectedOrderDetail() {
   const [error, setError] = useState("");
   const [updateNotice, setUpdateNotice] = useState("");
   const [refreshing, setRefreshing] = useState(false);
+  const [activeMutationKey, setActiveMutationKey] = useState<string | null>(null);
+  const activeMutationRef = useRef<string | null>(null);
+  const manualRefreshPendingRef = useRef(false);
   const updateNoticeRef = useRef<HTMLParagraphElement>(null);
   useStudioStackRegistration({
     backHref: "/studio/orders",
@@ -453,19 +491,27 @@ export function ConnectedOrderDetail() {
       };
       if (response.status === 404) {
         setState("not-found");
-        return;
+        return null;
       }
       if (!response.ok || !body.ok || !body.order) {
         throw new Error("This order could not be opened.");
       }
-      setOrder(body.order);
+      if (signal?.aborted) return null;
+      const latestOrder = body.order;
+      setOrder((current) => (
+        current && current.reference === latestOrder.reference && current.version > latestOrder.version
+          ? current
+          : latestOrder
+      ));
       setOperatorRole(body.operatorRole === "admin" ? "admin" : "operator");
       setState("ready");
       setError("");
+      return latestOrder;
     } catch (cause: unknown) {
-      if (signal?.aborted) return;
+      if (signal?.aborted) return null;
       setError(cause instanceof Error ? cause.message : "This order could not be opened.");
       if (!quiet) setState("error");
+      return null;
     } finally {
       setRefreshing(false);
     }
@@ -477,11 +523,58 @@ export function ConnectedOrderDetail() {
     return () => controller.abort();
   }, [loadOrder]);
 
+  useEffect(() => {
+    if (state !== "ready" || activeMutationKey !== null) return;
+    const controller = new AbortController();
+    let pollInFlight = false;
+    const poll = () => {
+      if (
+        document.visibilityState !== "visible"
+        || pollInFlight
+        || activeMutationRef.current !== null
+      ) return;
+      pollInFlight = true;
+      void loadOrder(controller.signal, true).finally(() => {
+        pollInFlight = false;
+      });
+    };
+    const interval = window.setInterval(poll, 15_000);
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") poll();
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => {
+      window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      controller.abort();
+    };
+  }, [activeMutationKey, loadOrder, state]);
+
   const timeline = useMemo(
     () => [...(order?.events ?? [])].sort((left, right) => left.occurredAt.localeCompare(right.occurredAt)),
     [order?.events],
   );
   const primaryTransition = order ? nextStudioOrderTransition(order) : undefined;
+  const startMutation = useCallback((key: string) => {
+    if (activeMutationRef.current) return false;
+    activeMutationRef.current = key;
+    setActiveMutationKey(key);
+    return true;
+  }, []);
+  const endMutation = useCallback((key: string) => {
+    if (activeMutationRef.current !== key) return;
+    activeMutationRef.current = null;
+    setActiveMutationKey(null);
+  }, []);
+  const checkForUpdates = useCallback(async () => {
+    if (manualRefreshPendingRef.current || activeMutationRef.current !== null) return;
+    manualRefreshPendingRef.current = true;
+    try {
+      await loadOrder(undefined, true);
+    } finally {
+      manualRefreshPendingRef.current = false;
+    }
+  }, [loadOrder]);
   if (state === "loading") {
     return <StudioLoadingStage label="Opening order…" />;
   }
@@ -512,7 +605,13 @@ export function ConnectedOrderDetail() {
     <MutationAction
       isNextAction={primaryTransition ? transitionKey(transition) === transitionKey(primaryTransition) : false}
       key={`${transitionKey(transition)}:${order.version}`}
+      mutationBlocked={activeMutationKey !== null}
       onApplied={applyOrderUpdate}
+      onMutationEnd={endMutation}
+      onMutationStart={startMutation}
+      onReconcile={(expectedVersion) => loadOrder(undefined, true).then((latest) => (
+        latest && latest.version >= expectedVersion ? latest : null
+      ))}
       onVersionConflict={() => void loadOrder(undefined, true)}
       operatorRole={operatorRole}
       order={order}
@@ -540,6 +639,8 @@ export function ConnectedOrderDetail() {
                 {primaryTransition ? studioOrderNextActionLabel(order) : "Order is up to date"}
               </h2>
             </header>
+            <button aria-busy={refreshing} className="button button-secondary" disabled={refreshing || activeMutationKey !== null} onClick={() => void checkForUpdates()} type="button">{refreshing ? "Checking…" : "Check for updates"}</button>
+            {error ? <StudioFeedback detail={error} state="error" title="Could not refresh order" /> : null}
             {primaryTransition
               ? action(primaryTransition)
               : <StudioFeedback detail="No customer or fulfilment action is currently due." state="success" title="Nothing waiting" />}
@@ -640,8 +741,6 @@ export function ConnectedOrderDetail() {
           <details className="studio-transition-action studio-order-timeline">
             <summary>Order timeline<span>{timeline.length} update{timeline.length === 1 ? "" : "s"}</span></summary>
             <div className="studio-transition-action-body">
-              <button aria-busy={refreshing} className="button button-secondary" disabled={refreshing} onClick={() => void loadOrder(undefined, true)} type="button">{refreshing ? "Checking…" : "Check for updates"}</button>
-              {error ? <StudioFeedback detail={error} state="error" title="Could not refresh order" /> : null}
               <ol>
                 {timeline.map((event, index) => (
                   <li aria-current={index === timeline.length - 1 ? "step" : undefined} key={event.id}>

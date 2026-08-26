@@ -4,7 +4,13 @@ import {
   pendingCaptureView,
   type OperatorSafePendingCapture,
 } from "../engine/pending-capture-contracts";
-import type { Garment, GarmentCategory, InventoryRecord, StudioListing } from "../domain/entities";
+import type {
+  Garment,
+  GarmentCategory,
+  InventoryRecord,
+  StudioListing,
+  StudioNativeShopReadiness,
+} from "../domain/entities";
 import type { StudioSnapshot } from "../domain/state";
 import type { StudioRepository } from "../services/contracts";
 
@@ -12,13 +18,35 @@ const SERVER_GARMENT_PREFIX = "studio-server-garment-";
 const SERVER_INVENTORY_PREFIX = "studio-server-inventory-";
 const SERVER_LISTING_PREFIX = "studio-server-listing-";
 
-type ServerWardrobeLoader = () => Promise<OperatorSafeWardrobeItem[]>;
+type ServerWardrobeItem = OperatorSafeWardrobeItem & {
+  nativeShopReadiness?: StudioNativeShopReadiness;
+};
+type ServerWardrobeLoader = () => Promise<ServerWardrobeItem[]>;
+type ServerWardrobeFetch = (
+  input: RequestInfo | URL,
+  init?: RequestInit,
+) => Promise<Response>;
+
+export class ServerWardrobeReadError extends Error {
+  constructor(message = "Connected Wardrobe is unavailable. Try again.") {
+    super(message);
+    this.name = "ServerWardrobeReadError";
+  }
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
-function isWardrobeItem(value: unknown): value is OperatorSafeWardrobeItem {
+function isNativeShopReadiness(value: unknown): value is StudioNativeShopReadiness {
+  if (!isRecord(value) || value.path !== "STUDIO_NATIVE_THREE_PHOTO") return false;
+  if (value.state === "READY") return !("blockers" in value);
+  return value.state === "BLOCKED"
+    && Array.isArray(value.blockers)
+    && value.blockers.every((blocker) => typeof blocker === "string" && Boolean(blocker.trim()));
+}
+
+function isWardrobeItem(value: unknown): value is ServerWardrobeItem {
   if (!isRecord(value)) return false;
   return typeof value.id === "string"
     && typeof value.intakeId === "string"
@@ -37,7 +65,9 @@ function isWardrobeItem(value: unknown): value is OperatorSafeWardrobeItem {
       Array.isArray(value.directCaptures)
       && value.directCaptures.every(isDirectCapture)
     ))
-    && (value.publication === undefined || isPublication(value.publication, value.id));
+    && (value.publication === undefined || isPublication(value.publication, value.id))
+    && (value.nativeShopReadiness === undefined || isNativeShopReadiness(value.nativeShopReadiness))
+    && !(value.publication !== undefined && value.nativeShopReadiness !== undefined);
 }
 
 function isPublication(value: unknown, wardrobeItemId: string) {
@@ -112,7 +142,7 @@ function lifecycleState(item: OperatorSafeWardrobeItem): Garment["state"] {
   return item.state === "DRAFT" ? "DRAFT" : "READY";
 }
 
-function mapServerGarment(item: OperatorSafeWardrobeItem, legacy?: Garment): Garment {
+function mapServerGarment(item: ServerWardrobeItem, legacy?: Garment): Garment {
   const approvedAssetPath = item.approvedAssetId
     ? `/api/studio/intakes/${item.intakeId}/assets/${item.approvedAssetId}` as const
     : undefined;
@@ -163,6 +193,7 @@ function mapServerGarment(item: OperatorSafeWardrobeItem, legacy?: Garment): Gar
     } : {}),
     createdAt: legacy?.createdAt ?? item.createdAt,
     privateWardrobeItemId: item.id,
+    ...(item.nativeShopReadiness ? { nativeShopReadiness: item.nativeShopReadiness } : {}),
     ...(item.publication ? { dynamicPublication: {
       publicationId: item.publication.publicationId,
       wardrobeItemId: item.publication.wardrobeItemId,
@@ -178,7 +209,7 @@ function mapServerGarment(item: OperatorSafeWardrobeItem, legacy?: Garment): Gar
   };
 }
 
-function mapServerListing(item: OperatorSafeWardrobeItem, garment: Garment, legacy?: StudioListing): StudioListing | null {
+function mapServerListing(item: ServerWardrobeItem, garment: Garment, legacy?: StudioListing): StudioListing | null {
   if (!item.publication) return null;
   const state = lifecycleState(item);
   const publicProjection = legacy?.publicProjection ? {
@@ -209,7 +240,7 @@ function mapServerListing(item: OperatorSafeWardrobeItem, garment: Garment, lega
   };
 }
 
-function mapServerInventory(item: OperatorSafeWardrobeItem, garment: Garment, listing: StudioListing | null, legacy?: InventoryRecord): InventoryRecord {
+function mapServerInventory(item: ServerWardrobeItem, garment: Garment, listing: StudioListing | null, legacy?: InventoryRecord): InventoryRecord {
   const inventory = item.publication?.inventory;
   return {
     ...legacy,
@@ -240,7 +271,7 @@ export function stripServerWardrobeOverlay(snapshot: StudioSnapshot): StudioSnap
 
 export function mergeServerWardrobeOverlay(
   snapshot: StudioSnapshot,
-  items: OperatorSafeWardrobeItem[],
+  items: ServerWardrobeItem[],
 ): StudioSnapshot {
   const local = stripServerWardrobeOverlay(snapshot);
   const garments = [...local.garments];
@@ -276,27 +307,38 @@ export function mergeServerWardrobeOverlay(
   };
 }
 
-export async function loadServerWardrobeItems(): Promise<OperatorSafeWardrobeItem[]> {
+export async function loadServerWardrobeItems(
+  fetchWardrobe: ServerWardrobeFetch = globalThis.fetch,
+): Promise<ServerWardrobeItem[]> {
+  let response: Response;
   try {
-    const response = await fetch("/api/studio/wardrobe", {
+    response = await fetchWardrobe("/api/studio/wardrobe", {
       cache: "no-store",
       credentials: "same-origin",
       headers: { accept: "application/json" },
     });
-    if (!response.ok) return [];
-    const body: unknown = await response.json();
-    if (!isRecord(body) || !Array.isArray(body.items)) return [];
-    return body.items.filter(isWardrobeItem);
   } catch {
-    return [];
+    throw new ServerWardrobeReadError();
   }
+  if (!response.ok) throw new ServerWardrobeReadError();
+
+  let body: unknown;
+  try {
+    body = await response.json();
+  } catch {
+    throw new ServerWardrobeReadError("Connected Wardrobe returned an unreadable response. Try again.");
+  }
+  if (!isRecord(body) || !Array.isArray(body.items) || !body.items.every(isWardrobeItem)) {
+    throw new ServerWardrobeReadError("Connected Wardrobe returned unverified data. Try again.");
+  }
+  return body.items;
 }
 
 export function createServerWardrobeOverlayRepository(
   repository: StudioRepository,
   loadItems: ServerWardrobeLoader = loadServerWardrobeItems,
 ): StudioRepository {
-  let overlay: OperatorSafeWardrobeItem[] = [];
+  let overlay: ServerWardrobeItem[] = [];
   return {
     async read() {
       const snapshot = await repository.read();

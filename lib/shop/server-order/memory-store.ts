@@ -1,5 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import type { ShopOrderStatus } from "../domain/entities";
+import { studioOrderHasDueWork } from "../order-presentation";
 import { trackingUrlForOrder } from "./commerce-guidance";
 import {
   PAYMENT_EVIDENCE_RECEIVED_NOTICE,
@@ -228,12 +229,7 @@ function orderMatchesQuery(order: ShopServerOrder, query: ShopOrderListQuery): b
   if (query.filter === "COMPLETED") return order.lifecycleStatus === "COMPLETED";
   if (query.filter === "CANCELLED") return order.lifecycleStatus === "CANCELLED" || order.lifecycleStatus === "EXPIRED";
   if (query.filter === "RETURNS") return Boolean(order.return);
-  return Boolean(
-    order.allowedTransitions.length
-    || order.allowedReturnTransitions.length
-    || order.cancellationRecovery?.status === "PENDING"
-    || order.cancellationRecovery?.status === "FAILED",
-  );
+  return studioOrderHasDueWork(order);
 }
 
 export class MemoryShopOrderStore implements ShopOrderStore {

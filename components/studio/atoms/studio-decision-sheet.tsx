@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { StudioFeedback } from "./studio-feedback";
 import { StudioTaskSheet } from "./studio-task-sheet";
 
@@ -52,12 +52,6 @@ export function StudioDecisionSheet({
   const [phase, setPhase] = useState<DecisionPhase>("review");
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    if (!open) return;
-    setPhase("review");
-    setError("");
-  }, [open, title]);
-
   async function confirm() {
     if (phase === "loading") return;
     setPhase("loading");
@@ -85,6 +79,13 @@ export function StudioDecisionSheet({
     <button className="button button-primary" onClick={requestClose} type="button">Done</button>
   ) : undefined;
 
+  function dismiss() {
+    if (phase === "loading") return false;
+    setPhase("review");
+    setError("");
+    onDismiss();
+  }
+
   return (
     <StudioTaskSheet
       busy={phase === "loading"}
@@ -93,10 +94,7 @@ export function StudioDecisionSheet({
       eyebrow={eyebrow}
       fallbackFocus={fallbackFocus}
       footer={footer}
-      onDismiss={() => {
-        if (phase === "loading") return false;
-        onDismiss();
-      }}
+      onDismiss={dismiss}
       open={open}
       returnFocus={returnFocus}
       title={title}

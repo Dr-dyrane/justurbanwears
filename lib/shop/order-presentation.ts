@@ -215,6 +215,7 @@ export type StudioOrderTransition = ShopOperatorTransition | ShopOperatorReturnT
 export function studioOrderActionLabel(
   transition: StudioOrderTransition | undefined,
   fulfillmentKind: "DELIVERY" | "PICKUP" = "DELIVERY",
+  pickupAppointment: string | null = null,
 ): string {
   if (!transition) return "Open order";
   if (transition.dimension === "FUNDS_CONFIRMATION") {
@@ -243,7 +244,9 @@ export function studioOrderActionLabel(
     if (transition.target === "COMPLETED") return "Mark refund sent";
     return "Flag refund problem";
   }
-  if (transition.dimension === "PICKUP") return "Schedule pickup";
+  if (transition.dimension === "PICKUP") {
+    return pickupAppointment ? "Reschedule pickup" : "Schedule pickup";
+  }
   if (transition.dimension === "CANCELLATION_REFUND") {
     if (transition.target === "PENDING") return "Retry cancellation refund";
     if (transition.target === "COMPLETED") return "Record full refund";
@@ -253,21 +256,101 @@ export function studioOrderActionLabel(
 }
 
 export function nextStudioOrderTransition(order: ShopServerOrder): StudioOrderTransition | undefined {
-  return order.allowedReturnTransitions[0]
-    ?? order.allowedTransitions.find((item) => item.dimension === "LIFECYCLE" && item.target === "EXPIRED")
-    ?? order.allowedTransitions.find((item) => item.dimension === "PAYMENT_REVIEW")
-    ?? order.allowedTransitions.find((item) => item.dimension === "FUNDS_CONFIRMATION")
-    ?? order.allowedTransitions.find((item) => item.dimension === "CANCELLATION_REFUND")
-    ?? order.allowedTransitions.find((item) => item.dimension === "PICKUP")
-    ?? order.allowedTransitions.find((item) => item.dimension === "FULFILLMENT")
-    ?? order.allowedTransitions.find((item) => item.dimension === "LIFECYCLE");
+  const allowed: readonly StudioOrderTransition[] = [
+    ...order.allowedReturnTransitions,
+    ...order.allowedTransitions,
+  ];
+  const find = (dimension: StudioOrderTransition["dimension"], target: string) => (
+    allowed.find((transition) => transition.dimension === dimension && transition.target === target)
+  );
+
+  if (order.return?.status === "REQUESTED") {
+    return find("RETURN", "APPROVED") ?? find("RETURN", "REJECTED");
+  }
+  if (order.return?.status === "APPROVED") return find("RETURN", "RECEIVED");
+  if (order.return?.status === "RECEIVED") {
+    if (order.return.refundStatus === "NOT_STARTED") return find("REFUND", "PENDING");
+    if (order.return.refundStatus === "PENDING" || order.return.refundStatus === "FAILED") {
+      return find("REFUND", "COMPLETED") ?? find("REFUND", "FAILED");
+    }
+    if (order.return.refundStatus === "COMPLETED") {
+      return find("RETURN_RESOLUTION", "RESOLVE_ITEMS");
+    }
+  }
+
+  if (order.cancellationRecovery?.status === "PENDING") {
+    return find("CANCELLATION_REFUND", "COMPLETED")
+      ?? find("CANCELLATION_REFUND", "FAILED");
+  }
+  if (order.cancellationRecovery?.status === "FAILED") {
+    return find("CANCELLATION_REFUND", "PENDING");
+  }
+  if (order.lifecycleStatus !== "ACTIVE") return undefined;
+
+  const expiry = find("LIFECYCLE", "EXPIRED");
+  if (expiry) return expiry;
+
+  if (order.paymentReviewStatus === "EVIDENCE_RECEIVED") {
+    return find("PAYMENT_REVIEW", "UNDER_REVIEW")
+      ?? find("PAYMENT_REVIEW", "REVIEW_APPROVED")
+      ?? find("PAYMENT_REVIEW", "REVIEW_REJECTED");
+  }
+  if (order.paymentReviewStatus === "UNDER_REVIEW") {
+    return find("PAYMENT_REVIEW", "REVIEW_APPROVED")
+      ?? find("PAYMENT_REVIEW", "REVIEW_REJECTED");
+  }
+  if (
+    order.paymentReviewStatus === "REVIEW_APPROVED"
+    && order.fundsConfirmationStatus === "UNCONFIRMED"
+  ) {
+    return find("FUNDS_CONFIRMATION", "CONFIRMED");
+  }
+  if (
+    order.paymentReviewStatus !== "REVIEW_APPROVED"
+    || order.fundsConfirmationStatus !== "CONFIRMED"
+  ) return undefined;
+
+  if (order.fulfillmentStatus === "NOT_STARTED") {
+    return find("FULFILLMENT", "QUALITY_CHECK");
+  }
+  if (order.fulfillmentStatus === "QUALITY_CHECK") {
+    return find("FULFILLMENT", "READY_FOR_HANDOFF");
+  }
+  if (order.fulfillmentStatus === "READY_FOR_HANDOFF") {
+    if (order.fulfillment.kind === "PICKUP") {
+      return order.fulfillmentFacts.pickupAppointment
+        ? find("FULFILLMENT", "DELIVERED")
+        : find("PICKUP", "SCHEDULED");
+    }
+    return find("FULFILLMENT", "IN_TRANSIT");
+  }
+  if (order.fulfillmentStatus === "IN_TRANSIT") {
+    return find("FULFILLMENT", "DELIVERED");
+  }
+  return undefined;
+}
+
+export function studioOrderHasDueWork(order: ShopServerOrder): boolean {
+  return Boolean(nextStudioOrderTransition(order));
+}
+
+export function studioOrderHasDueReturnWork(order: ShopServerOrder): boolean {
+  const transition = nextStudioOrderTransition(order);
+  return transition?.dimension === "RETURN"
+    || transition?.dimension === "REFUND"
+    || transition?.dimension === "RETURN_RESOLUTION";
 }
 
 export function studioOrderNextActionLabel(order: ShopServerOrder): string {
-  if (order.return?.status === "REQUESTED") return "Review return";
-  if (order.paymentReviewStatus === "EVIDENCE_RECEIVED") return "Check receipt";
-  if (order.paymentReviewStatus === "UNDER_REVIEW") return "Review receipt";
-  return studioOrderActionLabel(nextStudioOrderTransition(order), order.fulfillment.kind);
+  const transition = nextStudioOrderTransition(order);
+  if (transition?.dimension === "RETURN" && order.return?.status === "REQUESTED") return "Review return";
+  if (transition?.dimension === "PAYMENT_REVIEW" && order.paymentReviewStatus === "EVIDENCE_RECEIVED") return "Check receipt";
+  if (transition?.dimension === "PAYMENT_REVIEW" && order.paymentReviewStatus === "UNDER_REVIEW") return "Review receipt";
+  return studioOrderActionLabel(
+    transition,
+    order.fulfillment.kind,
+    order.fulfillmentFacts.pickupAppointment,
+  );
 }
 
 export type OrderStateDimension =

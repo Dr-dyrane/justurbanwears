@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 import sharp from "sharp";
 import { SHOP_CATALOGUE_MANIFEST } from "../scripts/shop-db/catalogue-manifest.mjs";
 import { isSafeShopProductMediaUrl } from "../lib/shop/public-media";
@@ -15,7 +16,7 @@ import {
   normalizeStudioPublicationImage,
 } from "../lib/studio/engine/catalogue-publication-service";
 
-const root = new URL("..", import.meta.url).pathname;
+const root = fileURLToPath(new URL("..", import.meta.url));
 const wardrobeItemId = "01234567-89ab-4cde-8f01-23456789abcd";
 const slug = "coral-evening-dress-0123456789ab4cde8f0123456789abcd";
 const blobOrigin = "https://example.public.blob.vercel-storage.com";
@@ -191,7 +192,9 @@ test("publication is one atomic guarded statement and Piece owns Review to Publi
   assert.match(workbench, /publicMediaConfirmed: true/);
   assert.match(workbench, /Make public/);
   assert.match(workbench, /response\.status === 409/);
-  assert.match(workbench, /publicationKeyRef\.current = `studio-publish:/);
+  assert.match(workbench, /getOrCreateSessionCommandKey\(\{/);
+  assert.match(workbench, /revision: publicationRevision/);
+  assert.match(workbench, /clearSessionCommandKey\(\{/);
   assert.match(workbench, /setPublicationReview\(null\)/);
   assert.match(workbench, /setPublicationReload\(\(value\) => value \+ 1\)/);
   assert.match(migration, /studio_catalogue_publications_wardrobe_unique/);

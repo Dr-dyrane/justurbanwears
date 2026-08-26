@@ -258,7 +258,8 @@ export function loadMigrations(migrationDirectory) {
   const journal = JSON.parse(readFileSync(join(migrationDirectory, "meta/_journal.json"), "utf8"));
   invariant(Array.isArray(journal.entries), "Drizzle migration journal is invalid.");
   return journal.entries.map((entry) => {
-    const source = readFileSync(join(migrationDirectory, `${entry.tag}.sql`), "utf8");
+    const source = readFileSync(join(migrationDirectory, `${entry.tag}.sql`), "utf8")
+      .replace(/\r\n/g, "\n");
     return {
       tag: entry.tag,
       createdAt: Number(entry.when),

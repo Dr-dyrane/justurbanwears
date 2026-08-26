@@ -33,6 +33,7 @@ test("garment public and destructive changes never use a native browser confirm"
     assert.match(lifecycle, new RegExp(`requestDecision\\(\\"${action}\\"`));
   }
   assert.match(lifecycle, /<StudioDecisionSheet/);
+  assert.match(lifecycle, /getOrCreateSessionCommandKey\(\{/);
   assert.match(lifecycle, /idempotencyKey: publicationKeyRef\.current/);
 });
 
@@ -45,7 +46,11 @@ test("reversible Home preferences apply immediately and expose Undo", () => {
 });
 
 test("branded feedback motion covers pending, success and error states", () => {
-  assert.match(feedback, /state === "loading" \|\| state === "success" \|\| state === "error"/);
-  assert.match(feedback, /state === "success" \? "success" : "empty"/);
-  assert.match(feedback, /loop=\{state === "loading"\}/);
+  assert.match(feedback, /state === "loading" \?/);
+  assert.match(feedback, /state === "success" \?/);
+  assert.match(feedback, /state === "error" \?/);
+  assert.match(feedback, /variant="loader"/);
+  assert.match(feedback, /variant="success"/);
+  assert.match(feedback, /variant="empty"/);
+  assert.match(feedback, /\r?\n\s+loop\r?\n/);
 });

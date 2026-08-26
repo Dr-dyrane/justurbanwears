@@ -30,6 +30,10 @@ import {
   type StudioDecisionResult,
 } from "./atoms/studio-decision-sheet";
 import { StudioMediaButton, type StudioMediaItem } from "./media-viewer";
+import {
+  clearSessionCommandKey,
+  getOrCreateSessionCommandKey,
+} from "../../lib/studio/idempotency/session-command-key";
 
 type ErrorBody = { error?: { message?: string; recovery?: string } };
 type GarmentDecision = "ARCHIVE" | "DISCARD_REVISION" | "PUBLISH_REVISION" | "REPUBLISH" | "UNPUBLISH";
@@ -46,6 +50,21 @@ function stateLabel(state: GarmentLifecycleWorkspace["state"]) {
   return state === "PUBLISHED" ? "Live in Shop"
     : state === "UNPUBLISHED" ? "Private · off Shop"
       : state === "ARCHIVED" ? "Archived" : "Private";
+}
+
+function sameFacts(left: IntakeFacts, right: IntakeFacts) {
+  return JSON.stringify(left) === JSON.stringify(right);
+}
+
+function commandIsReflected(
+  workspace: GarmentLifecycleWorkspace,
+  command: GarmentLifecycleCommand,
+) {
+  if (command.command === "SAVE_FACTS") return sameFacts(workspace.editableFacts, command.facts);
+  if (command.command === "PUBLISH_REVISION" || command.command === "REPUBLISH") return workspace.state === "PUBLISHED";
+  if (command.command === "UNPUBLISH") return workspace.state === "UNPUBLISHED";
+  if (command.command === "ARCHIVE") return workspace.state === "ARCHIVED";
+  return !workspace.draft;
 }
 
 async function responseJson<T>(response: Response): Promise<T> {
@@ -78,14 +97,36 @@ export function GarmentLifecyclePanel({
   const priceRef = useRef<HTMLInputElement>(null);
   const panelRef = useRef<HTMLElement>(null);
   const initialActionHandledRef = useRef(false);
-  const publicationKeyRef = useRef(`studio-revision:${wardrobeItemId}:${crypto.randomUUID()}`);
+  const commandInFlightRef = useRef(false);
+  const publicationKeyRef = useRef("");
+  const publicationCommandScope = `revision-publication:${wardrobeItemId}`;
 
   const accept = useCallback((next: GarmentLifecycleWorkspace) => {
+    if (next.draft) {
+      publicationKeyRef.current = getOrCreateSessionCommandKey({
+        keyPrefix: `studio-revision:${wardrobeItemId}`,
+        revision: next.draft.expectedRevision,
+        scope: publicationCommandScope,
+      });
+    } else {
+      clearSessionCommandKey({ scope: publicationCommandScope });
+      publicationKeyRef.current = "";
+    }
     setWorkspace(next);
     setDraftFacts(next.editableFacts);
     setError("");
     onWorkspaceChange?.(next);
-  }, [onWorkspaceChange]);
+  }, [onWorkspaceChange, publicationCommandScope, wardrobeItemId]);
+
+  const readWorkspace = useCallback(async (signal?: AbortSignal) => {
+    const response = await fetch(`/api/studio/wardrobe/${encodeURIComponent(wardrobeItemId)}/lifecycle`, {
+      cache: "no-store",
+      credentials: "same-origin",
+      headers: { accept: "application/json" },
+      signal,
+    });
+    return (await responseJson<{ workspace: GarmentLifecycleWorkspace }>(response)).workspace;
+  }, [wardrobeItemId]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -95,19 +136,14 @@ export function GarmentLifecyclePanel({
     setMilestone(null);
     setDecision(null);
     setDecisionReturnFocus(null);
-    publicationKeyRef.current = `studio-revision:${wardrobeItemId}:${crypto.randomUUID()}`;
-    void fetch(`/api/studio/wardrobe/${encodeURIComponent(wardrobeItemId)}/lifecycle`, {
-      cache: "no-store",
-      credentials: "same-origin",
-      headers: { accept: "application/json" },
-      signal: controller.signal,
-    }).then((response) => responseJson<{ workspace: GarmentLifecycleWorkspace }>(response))
-      .then((body) => accept(body.workspace))
+    publicationKeyRef.current = "";
+    void readWorkspace(controller.signal)
+      .then(accept)
       .catch((caught: unknown) => {
         if (!controller.signal.aborted) setError(caught instanceof Error ? caught.message : "Piece controls are unavailable.");
       });
     return () => controller.abort();
-  }, [accept, reload, wardrobeItemId]);
+  }, [accept, readWorkspace, reload, wardrobeItemId]);
 
   useEffect(() => {
     if (
@@ -125,10 +161,14 @@ export function GarmentLifecyclePanel({
   }, [initialAction, wardrobeItemId, workspace]);
 
   async function command(value: GarmentLifecycleCommand, action: string): Promise<StudioDecisionResult> {
-    if (busy) return { error: "Another Studio change is still finishing.", ok: false };
+    if (commandInFlightRef.current) return { error: "Another Studio change is still finishing.", ok: false };
+    commandInFlightRef.current = true;
     setBusy(action);
     setError("");
     setMilestone(null);
+    const publicationIdentity = value.command === "PUBLISH_REVISION"
+      ? { key: value.idempotencyKey, revision: value.expectedRevision }
+      : null;
     try {
       const response = await fetch(`/api/studio/wardrobe/${encodeURIComponent(wardrobeItemId)}/lifecycle`, {
         method: "POST",
@@ -137,19 +177,39 @@ export function GarmentLifecyclePanel({
         body: JSON.stringify(value),
       });
       const body = await responseJson<{ workspace: GarmentLifecycleWorkspace }>(response);
+      if (publicationIdentity) clearSessionCommandKey({
+        ...publicationIdentity,
+        scope: publicationCommandScope,
+      });
       accept(body.workspace);
       if (value.command === "SAVE_FACTS") setEditing(false);
       if (value.command === "PUBLISH_REVISION") {
-        publicationKeyRef.current = `studio-revision:${wardrobeItemId}:${crypto.randomUUID()}`;
         setMilestone("published");
       }
       if (value.command === "REPUBLISH") setMilestone("returned");
       return { ok: true };
     } catch (caught) {
       const message = caught instanceof Error ? caught.message : "That action did not finish.";
+      const reconciled = await readWorkspace().catch(() => null);
+      if (reconciled) {
+        accept(reconciled);
+        if (commandIsReflected(reconciled, value)) {
+          if (publicationIdentity) clearSessionCommandKey({
+            ...publicationIdentity,
+            scope: publicationCommandScope,
+          });
+          if (value.command === "SAVE_FACTS") setEditing(false);
+          if (value.command === "PUBLISH_REVISION") {
+            setMilestone("published");
+          }
+          if (value.command === "REPUBLISH") setMilestone("returned");
+          return { ok: true };
+        }
+      }
       setError(message);
       return { error: message, ok: false };
     } finally {
+      commandInFlightRef.current = false;
       setBusy("");
     }
   }
@@ -163,6 +223,11 @@ export function GarmentLifecyclePanel({
   async function executeDecision(nextDecision: GarmentDecision): Promise<StudioDecisionResult> {
     if (nextDecision === "PUBLISH_REVISION") {
       if (!workspace?.draft) return { error: "This private revision is no longer available.", ok: false };
+      publicationKeyRef.current ||= getOrCreateSessionCommandKey({
+        keyPrefix: `studio-revision:${wardrobeItemId}`,
+        revision: workspace.draft.expectedRevision,
+        scope: publicationCommandScope,
+      });
       return command({
         command: "PUBLISH_REVISION",
         confirmation: "PUBLISH_REVISION",
@@ -202,7 +267,9 @@ export function GarmentLifecyclePanel({
   }
 
   async function replaceMedia(role: GarmentRevisionMediaRole, file?: File) {
-    if (!file || !workspace || busy) return;
+    if (!file || !workspace || commandInFlightRef.current) return;
+    commandInFlightRef.current = true;
+    const expectedVersion = workspace.itemVersion;
     setBusy(role);
     setError("");
     const body = new FormData();
@@ -218,8 +285,14 @@ export function GarmentLifecyclePanel({
       const result = await responseJson<{ workspace: GarmentLifecycleWorkspace }>(response);
       accept(result.workspace);
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "That photo did not save.");
+      const reconciled = await readWorkspace().catch(() => null);
+      if (reconciled && reconciled.itemVersion > expectedVersion) {
+        accept(reconciled);
+      } else {
+        setError(caught instanceof Error ? caught.message : "That photo did not save.");
+      }
     } finally {
+      commandInFlightRef.current = false;
       setBusy("");
     }
   }

@@ -6,6 +6,8 @@ import test from "node:test";
 const routeLinkConsumers = [
   "components/studio/app-shell.tsx",
   "components/studio/studio-home.tsx",
+  "components/studio/connected-order-inbox.tsx",
+  "components/studio/connected-order-detail.tsx",
   "components/studio/operations-desk.tsx",
   "components/garment/garment-library.tsx",
   "components/garment/garment-detail.tsx",
@@ -31,4 +33,7 @@ test("Studio route links use the reliable native document boundary", () => {
   assert.match(link, /event\.ctrlKey/u);
   assert.match(link, /samePageHash/u);
   assert.match(link, /This work is not saved\. Leave this page\?/u);
+  assert.match(link, /event\.currentTarget\.dataset\.pending = "true"/u);
+  assert.match(link, /setAttribute\("aria-busy", "true"\)/u);
+  assert.match(source("app/studio-stack-navigation.css"), /a\[data-pending="true"\]/u);
 });
