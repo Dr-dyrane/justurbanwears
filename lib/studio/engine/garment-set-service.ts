@@ -256,7 +256,12 @@ async function advanceCurrent(
   wardrobeItemId: string,
   operator: StudioOperator,
   slot: GarmentSetSlot,
+  requestId: string,
   correction?: string,
+  correctionReceipt?: {
+    generationId: string;
+    receiptId: string;
+  },
 ) {
   if (slot.key === "GARMENT_BACK" || slot.key === "FABRIC_DETAIL") {
     await createMediaCompletion({
@@ -272,8 +277,13 @@ async function advanceCurrent(
     await generateWearCandidate({
       wardrobeItemId,
       operator,
+      requestId,
       operation: "MANNEQUIN_FRONT",
       ...(correction ? { correction } : {}),
+      ...(correctionReceipt ? {
+        correctionGenerationId: correctionReceipt.generationId,
+        decisionReceiptId: correctionReceipt.receiptId,
+      } : {}),
     });
     return;
   }
@@ -291,9 +301,14 @@ async function advanceCurrent(
     await generateWearCandidate({
       wardrobeItemId,
       operator,
+      requestId,
       operation: "MODEL_TRY_ON",
       modelProfileId: lulu.id,
       ...(correction ? { correction } : {}),
+      ...(correctionReceipt ? {
+        correctionGenerationId: correctionReceipt.generationId,
+        decisionReceiptId: correctionReceipt.receiptId,
+      } : {}),
     });
   }
 }
@@ -330,6 +345,7 @@ async function fixCurrent(
   operator: StudioOperator,
   slot: GarmentSetSlot,
   correction: string,
+  requestId: string,
 ) {
   if (!slot.jobId) {
     throw new StudioEngineError("INVALID_TRANSITION", 409, "That view is not ready.", "Open the current saved step.");
@@ -344,14 +360,39 @@ async function fixCurrent(
     });
     return;
   }
-  await decideWearCandidate({
+  const decisionWorkspace = await decideWearCandidate({
     wardrobeItemId,
     generationId: slot.jobId,
     operator,
     decision: "EDIT",
     note: correction,
   });
-  await advanceCurrent(wardrobeItemId, operator, slot, correction);
+  const decisionReceipt = decisionWorkspace.generations.find(
+    (generation) => generation.id === slot.jobId,
+  )?.decisionReceipt;
+  if (
+    !decisionReceipt
+    || decisionReceipt.generationId !== slot.jobId
+    || decisionReceipt.decision !== "EDIT"
+  ) {
+    throw new StudioEngineError(
+      "ENGINE_UNAVAILABLE",
+      503,
+      "Studio could not confirm the saved correction decision.",
+      "Reload this Genesis task before retrying. No generation was started.",
+    );
+  }
+  await advanceCurrent(
+    wardrobeItemId,
+    operator,
+    slot,
+    requestId,
+    correction,
+    {
+      generationId: decisionReceipt.generationId,
+      receiptId: decisionReceipt.receiptId,
+    },
+  );
 }
 
 export async function commandGarmentSet(
@@ -406,7 +447,7 @@ export async function commandGarmentSet(
       if (currentWorkspace.nextAction !== "ADVANCE") {
         throw new StudioEngineError("INVALID_TRANSITION", 409, "That step is already underway.", "Continue from the current saved step.");
       }
-      await advanceCurrent(wardrobeItemId, operator, currentSlot);
+      await advanceCurrent(wardrobeItemId, operator, currentSlot, commandJob.id);
     } else if (input.command === "KEEP_CURRENT") {
       if (currentWorkspace.nextAction !== "REVIEW") {
         throw new StudioEngineError("INVALID_TRANSITION", 409, "That view is not awaiting review.", "Continue from the current saved step.");
@@ -416,7 +457,7 @@ export async function commandGarmentSet(
       if (currentWorkspace.nextAction !== "REVIEW") {
         throw new StudioEngineError("INVALID_TRANSITION", 409, "That view is not awaiting review.", "Continue from the current saved step.");
       }
-      await fixCurrent(wardrobeItemId, operator, currentSlot, input.correction);
+      await fixCurrent(wardrobeItemId, operator, currentSlot, input.correction, commandJob.id);
     } else {
       if (currentWorkspace.nextAction !== "REVIEW") {
         throw new StudioEngineError("INVALID_TRANSITION", 409, "That view is not awaiting review.", "Continue from the current saved step.");

@@ -27,22 +27,28 @@ export const createIntakeSchema = z.object({
 export const analyzeIntakeSchema = z.object({
   description: z.string().trim().max(2_000).optional(),
   expectedVersion: z.number().int().positive(),
+  recoveryOnly: z.boolean().optional(),
 });
 
 export const generateIntakeSchema = z.object({
   expectedVersion: z.number().int().positive(),
   operation: z.literal("GARMENT_FRONT"),
   correction: z.string().trim().max(500).optional(),
+  correctionGenerationId: z.string().uuid().optional(),
+  decisionReceiptId: z.string().regex(/^[0-9a-f]{64}$/).optional(),
+  recoveryOnly: z.boolean().optional(),
 });
 
 export const decisionSchema = z.object({
   expectedVersion: z.number().int().positive(),
+  generationId: z.string().uuid(),
   decision: z.enum(["KEEP", "EDIT", "REJECT", "RETRY"]),
   note: z.string().trim().max(500).optional(),
 });
 
 export const commitIntakeSchema = z.object({
   expectedVersion: z.number().int().positive(),
+  generationId: z.string().uuid(),
   facts: intakeFactsSchema,
 });
 
@@ -54,10 +60,14 @@ export const wearOperationSchema = z.enum([
 export type WearOperation = z.infer<typeof wearOperationSchema>;
 
 export const createWearGenerationSchema = z.object({
+  requestId: z.string().uuid(),
   operation: wearOperationSchema,
   modelProfileId: z.string().uuid().optional(),
   parentGenerationId: z.string().uuid().optional(),
   correction: z.string().trim().max(500).optional(),
+  correctionGenerationId: z.string().uuid().optional(),
+  decisionReceiptId: z.string().regex(/^[0-9a-f]{64}$/).optional(),
+  recoveryOnly: z.boolean().optional(),
 }).superRefine((value, context) => {
   if (value.operation === "MODEL_TRY_ON" && !value.modelProfileId) {
     context.addIssue({ code: "custom", path: ["modelProfileId"], message: "Choose a model." });
@@ -86,15 +96,26 @@ export type OperatorSafeModelProfile = {
   sourceAssetUrl: string;
 };
 
+export type OperatorSafeDecisionReceipt = {
+  receiptId: string;
+  generationId: string;
+  decision: "KEEP" | "EDIT" | "REJECT" | "RETRY";
+  noteSha256: string;
+  decidedAt: string;
+};
+
 export type OperatorSafeWearGeneration = {
   id: string;
+  requestId: string;
   operation: WearOperation;
-  state: "PENDING" | "RUNNING" | "COMPLETE" | "APPROVED" | "REJECTED" | "FAILED";
+  state: "PENDING" | "RUNNING" | "COMPLETE" | "APPROVED" | "REJECTED" | "FAILED" | "INDETERMINATE";
   modelProfileId: string | null;
   parentGenerationId: string | null;
   outputAssetId: string | null;
   outputUrl: string | null;
   retryAvailable: boolean;
+  requiresReconciliation: boolean;
+  decisionReceipt: OperatorSafeDecisionReceipt | null;
   createdAt: string;
 };
 
@@ -126,8 +147,15 @@ export type OperatorSafeIntake = {
   description: string | null;
   facts: Partial<IntakeFacts>;
   assets: OperatorSafeAsset[];
-  candidate?: { generationId: string; assetId: string; status: "COMPLETE" | "APPROVED" | "REJECTED" };
+  candidate?: { generationId: string; assetId: string; status: "COMPLETE" | "APPROVED" };
+  retryableGeneration?: { generationId: string; status: "FAILED" | "REJECTED" };
+  decisionReceipt?: OperatorSafeDecisionReceipt;
   wardrobeItemId?: string;
+  reconciliation?: {
+    state: "INDETERMINATE";
+    retryAllowed: false;
+    message: string;
+  };
 };
 
 export type OperatorSafeWardrobeItem = IntakeFacts & {

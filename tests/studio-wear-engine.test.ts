@@ -3,6 +3,11 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 import { buildWearPrompt, studioGatewayPolicy } from "../lib/ai/studio-gateway";
 import { createModelProfileSchema, createWearGenerationSchema } from "../lib/studio/engine/contracts";
+import {
+  isTerminalWearRequestReplay,
+  legacyWearRequiresNonZdrConsent,
+  wearGenerationResponse,
+} from "../lib/studio/engine/wear-service";
 
 const root = new URL("../", import.meta.url);
 const source = (path: string) => readFile(new URL(path, root), "utf8");
@@ -13,6 +18,26 @@ test("Wear prompts preserve ordered authority and visible-front truth", () => {
   assert.match(prompt, /Source image 2 is adult identity\/body\/pose authority/);
   assert.match(prompt, /Do not infer or show a back, closure, lining, pockets/);
   assert.equal(studioGatewayPolicy.wearPromptVersions.EDITORIAL_MODEL, "editorial-model-v2");
+  assert.equal(studioGatewayPolicy.legacyImageModel, "openai/gpt-image-2");
+  assert.equal(studioGatewayPolicy.legacyImageSize, "1024x1536");
+  assert.equal(studioGatewayPolicy.legacyImageCostCapUsd, 0.10);
+  assert.equal(studioGatewayPolicy.imageModel, "bfl/flux-2-klein-4b");
+  assert.equal(studioGatewayPolicy.imageAspectRatio, "4:5");
+  assert.equal(studioGatewayPolicy.imageCostCapUsd, 0.025);
+});
+
+test("legacy Wear fails closed for private identity until durable non-ZDR consent is resolved", () => {
+  assert.equal(legacyWearRequiresNonZdrConsent("MANNEQUIN_FRONT"), false);
+  assert.equal(legacyWearRequiresNonZdrConsent("MODEL_TRY_ON"), true);
+  assert.equal(legacyWearRequiresNonZdrConsent("EDITORIAL_MODEL"), true);
+});
+
+test("an exact terminal Wear request replay returns its saved projection without another dispatch", () => {
+  const requestId = "11111111-1111-4111-8111-111111111111";
+  assert.equal(isTerminalWearRequestReplay({ state: "FAILED", requestId }, requestId), true);
+  assert.equal(isTerminalWearRequestReplay({ state: "REJECTED", requestId }, requestId), true);
+  assert.equal(isTerminalWearRequestReplay({ state: "PENDING", requestId }, requestId), false);
+  assert.equal(isTerminalWearRequestReplay({ state: "FAILED", requestId: "22222222-2222-4222-8222-222222222222" }, requestId), false);
 });
 
 test("Editorial prompt replaces the backdrop while freezing the approved subject", () => {
@@ -28,8 +53,26 @@ test("Editorial prompt replaces the backdrop while freezing the approved subject
 test("Wear input requires model, approved parent, and explicit stock authority", () => {
   assert.equal(createWearGenerationSchema.safeParse({ operation: "MODEL_TRY_ON" }).success, false);
   assert.equal(createWearGenerationSchema.safeParse({ operation: "EDITORIAL_MODEL" }).success, false);
+  assert.equal(createWearGenerationSchema.safeParse({
+    requestId: "11111111-1111-4111-8111-111111111111",
+    operation: "MODEL_TRY_ON",
+    modelProfileId: "22222222-2222-4222-8222-222222222222",
+  }).success, true);
   assert.equal(createModelProfileSchema.safeParse({ name: "Adult model", licenseUrl: "https://www.pexels.com/photo/1", authorityConfirmed: "false" }).success, false);
   assert.equal(createModelProfileSchema.safeParse({ name: "Adult model", licenseUrl: "https://www.pexels.com/photo/1", authorityConfirmed: "true" }).success, true);
+});
+
+test("Wear generation responses bind the exact durable generation", () => {
+  const workspace = { generations: [{ id: "newer-cross-tab-generation" }] };
+  assert.deepEqual(wearGenerationResponse({
+    generationId: "command-owned-generation",
+    workspace,
+    reused: true,
+  }), {
+    generationId: "command-owned-generation",
+    workspace,
+    reused: true,
+  });
 });
 
 test("migration and service enforce durable private generation lineage", async () => {
@@ -45,10 +88,26 @@ test("migration and service enforce durable private generation lineage", async (
   assert.match(migration, /studio_model_profiles/);
   assert.match(snapshot, /studio_generations_model_profile_id_studio_model_profiles_id_fk/);
   const serviceBody = service.slice(service.indexOf("export async function generateWearCandidate"));
+  const semanticParameters = serviceBody.slice(
+    serviceBody.indexOf("const parameters = {"),
+    serviceBody.indexOf("const fingerprint = generationFingerprint"),
+  );
+  const persistedGeneration = serviceBody.slice(
+    serviceBody.indexOf("createOrReuseGeneration({"),
+    serviceBody.indexOf("if (generation.outputAssetId"),
+  );
+  assert.doesNotMatch(semanticParameters, /requestId/u);
+  assert.match(persistedGeneration, /requestId: input\.requestId/u);
   assert.ok(serviceBody.indexOf("createOrReuseGeneration") < serviceBody.indexOf("generateWearImage"));
-  assert.ok(serviceBody.indexOf("usage: generated.usage") < serviceBody.indexOf("imageCostCapUsd"));
+  assert.ok(serviceBody.indexOf("persistStudioGenerationProviderResult") < serviceBody.indexOf("legacyImageCostCapUsd"));
+  assert.ok(serviceBody.indexOf("checkpointPaidGenerationResult") < serviceBody.indexOf("legacyImageCostCapUsd"));
+  assert.ok(serviceBody.indexOf("legacyImageCostCapUsd") < serviceBody.indexOf("outputAssetId: output.id"));
   assert.match(service, /sourceReferences/);
-  assert.match(service, /generation\.state !== "COMPLETE" \|\| !generation\.outputAssetId/);
+  assert.match(service, /claimGenerationDecision/);
+  assert.match(service, /appendDecisionOnce/);
+  const generationBody = serviceBody.slice(0, serviceBody.indexOf("export async function decideWearCandidate"));
+  assert.equal((generationBody.match(/return wearGenerationResponse\(/g) ?? []).length, 9);
+  assert.ok(generationBody.indexOf("legacyWearRequiresNonZdrConsent") < generationBody.indexOf("createOrReuseGeneration({"));
   assert.ok(service.indexOf("const effectiveModelProfileId = model?.id ?? null") < service.indexOf("const prior ="));
   assert.match(service, /decision: "RETRY"/);
   assert.match(route, /requireStudioOperator/);

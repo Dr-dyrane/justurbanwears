@@ -15,26 +15,40 @@ import type {
   MediaCompletionRole,
   MediaCompletionSourceMode,
 } from "../studio/engine/media-completion-contracts";
+import {
+  STUDIO_GPT_IMAGE_2_COST_CAP_USD,
+  STUDIO_GPT_IMAGE_2_MODEL,
+  STUDIO_GPT_IMAGE_2_SIZE,
+  STUDIO_GPT_IMAGE_2_TIMEOUT_MS,
+  STUDIO_MEDIA_COMPLETION_IMAGE_ASPECT_RATIO,
+  STUDIO_MEDIA_COMPLETION_IMAGE_COST_CAP_USD,
+  STUDIO_MEDIA_COMPLETION_IMAGE_MODEL,
+  STUDIO_MEDIA_COMPLETION_IMAGE_TIMEOUT_MS,
+  studioGptImage2ProviderOptions,
+  studioMediaCompletionProviderOptions,
+} from "./studio-image-policy";
+import { sanitizeStudioProviderEvidence } from "./studio-provider-evidence";
 
 const DEFAULT_TEXT_MODEL = "google/gemini-2.5-flash-lite";
-const DEFAULT_TEXT_FALLBACK = "google/gemini-2.5-flash";
-const DEFAULT_IMAGE_MODEL = "bfl/flux-2-klein-4b";
-const DEFAULT_IMAGE_COST_CAP_USD = 0.025;
-const APPROVED_IMAGE_MODEL_CEILINGS_USD: Readonly<Record<string, number>> = Object.freeze({
-  // AI Gateway currently reports about $0.021 for the 4:5 edit used by
-  // Studio. Keep a narrow allowance above that observed price while still
-  // failing closed if provider pricing moves materially.
-  "bfl/flux-2-klein-4b": DEFAULT_IMAGE_COST_CAP_USD,
-});
+const DEFAULT_ANALYSIS_COST_CAP_USD = 0.01;
 
 export const studioGatewayPolicy = {
   textModel: process.env.STUDIO_AI_TEXT_MODEL || DEFAULT_TEXT_MODEL,
   sourceValidationModel: process.env.STUDIO_AI_SOURCE_VALIDATION_MODEL
     || process.env.STUDIO_AI_TEXT_MODEL
     || DEFAULT_TEXT_MODEL,
-  imageModel: process.env.STUDIO_AI_IMAGE_MODEL || DEFAULT_IMAGE_MODEL,
-  imageCostCapUsd: Number(
-    process.env.STUDIO_AI_IMAGE_COST_CAP_USD || String(DEFAULT_IMAGE_COST_CAP_USD),
+  // Compatibility fields consumed by the existing media-completion services.
+  // That lane intentionally remains on its accepted BFL policy.
+  imageModel: STUDIO_MEDIA_COMPLETION_IMAGE_MODEL,
+  imageCostCapUsd: STUDIO_MEDIA_COMPLETION_IMAGE_COST_CAP_USD,
+  imageAspectRatio: STUDIO_MEDIA_COMPLETION_IMAGE_ASPECT_RATIO,
+  imageTimeoutMs: STUDIO_MEDIA_COMPLETION_IMAGE_TIMEOUT_MS,
+  // Intake and Wear are the isolated legacy paid-image lane.
+  legacyImageModel: STUDIO_GPT_IMAGE_2_MODEL,
+  legacyImageCostCapUsd: STUDIO_GPT_IMAGE_2_COST_CAP_USD,
+  legacyImageSize: STUDIO_GPT_IMAGE_2_SIZE,
+  analysisCostCapUsd: Number(
+    process.env.STUDIO_AI_ANALYSIS_COST_CAP_USD || String(DEFAULT_ANALYSIS_COST_CAP_USD),
   ),
   promptVersion: "garment-front-v2",
   mediaCompletionPromptVersions: Object.freeze({
@@ -67,12 +81,40 @@ export class StudioGatewayError extends StudioEngineError {
     recovery: string,
     readonly upstream: StudioGatewayFailureMetadata,
     readonly accounting: Readonly<{ usage: Record<string, number> | null; costUsd: number | null }> = { usage: null, costUsd: null },
+    readonly durationMs: number | null = null,
   ) {
     super("GENERATION_FAILED", 502, message, recovery);
   }
 }
 
-function failureAccounting(error: unknown): Readonly<{ usage: Record<string, number> | null; costUsd: number | null }> {
+function strictFailureCost(value: unknown): number | null {
+  if (typeof value === "number") {
+    return Number.isFinite(value) && value >= 0 ? value : null;
+  }
+  if (typeof value !== "string" || !/^[0-9]+(?:[.][0-9]+)?$/.test(value)) return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+export function sanitizeStudioGatewayFailureAccounting(error: unknown): Readonly<{
+  usage: Record<string, number> | null;
+  costUsd: number | null;
+}> {
+  const records = errorChain(error).filter((item): item is Record<string, unknown> => typeof item === "object" && item !== null);
+  const usageRecord = records.map((record) => record.usage).find((value): value is Record<string, unknown> => typeof value === "object" && value !== null);
+  const usage = usageRecord
+    ? Object.fromEntries(Object.entries(usageRecord).filter((entry): entry is [string, number] => typeof entry[1] === "number" && Number.isFinite(entry[1])))
+    : null;
+  const costValues = records.flatMap((record) => {
+    const metadata = typeof record.providerMetadata === "object" && record.providerMetadata !== null ? record.providerMetadata as Record<string, unknown> : null;
+    const gateway = metadata && typeof metadata.gateway === "object" && metadata.gateway !== null ? metadata.gateway as Record<string, unknown> : null;
+    return [record.cost, record.costUsd, gateway?.cost];
+  });
+  const costUsd = costValues.map(strictFailureCost).find((value): value is number => value !== null) ?? null;
+  return Object.freeze({ usage: usage && Object.keys(usage).length ? usage : null, costUsd });
+}
+
+function baselineMediaCompletionFailureAccounting(error: unknown): Readonly<{ usage: Record<string, number> | null; costUsd: number | null }> {
   const records = errorChain(error).filter((item): item is Record<string, unknown> => typeof item === "object" && item !== null);
   const usageRecord = records.map((record) => record.usage).find((value): value is Record<string, unknown> => typeof value === "object" && value !== null);
   const usage = usageRecord
@@ -195,8 +237,18 @@ function analysisSourcePart(sourceDataUrl: string): FilePart {
 }
 
 export function assertStudioImageBudget(): void {
-  const modelCeiling = APPROVED_IMAGE_MODEL_CEILINGS_USD[studioGatewayPolicy.imageModel];
-  if (modelCeiling === undefined || studioGatewayPolicy.imageCostCapUsd < modelCeiling) {
+  const policy: { legacyImageModel: string; legacyImageCostCapUsd: number } = studioGatewayPolicy;
+  const configuredModel = process.env.STUDIO_AI_IMAGE_MODEL?.trim();
+  const configuredCostCap = process.env.STUDIO_AI_IMAGE_COST_CAP_USD?.trim();
+  if (
+    policy.legacyImageModel !== STUDIO_GPT_IMAGE_2_MODEL
+    || policy.legacyImageCostCapUsd !== STUDIO_GPT_IMAGE_2_COST_CAP_USD
+    || (configuredModel !== undefined && configuredModel !== STUDIO_GPT_IMAGE_2_MODEL)
+    || (
+      configuredCostCap !== undefined
+      && Number(configuredCostCap) !== STUDIO_GPT_IMAGE_2_COST_CAP_USD
+    )
+  ) {
     throw new StudioEngineError(
       "GENERATION_FAILED",
       503,
@@ -222,15 +274,58 @@ export function buildGarmentFrontPrompt(input: {
   ].filter(Boolean).join(" ");
 }
 
-export async function analyzeGarmentFacts(input: {
-  description: string;
-  sourceDataUrl?: string;
-}): Promise<{ facts: IntakeFacts; usage: Record<string, unknown>; model: string }> {
-  const instruction = [
+export function buildGarmentAnalysisPrompt(input: { description: string }): string {
+  return [
     "Extract the garment facts into the required schema.",
     "Describe only visible or supplied garment truth. Use Size on request when unknown; use Excellent · real-worn wardrobe piece when condition is not supplied; use price 0 when unknown.",
     `Operator description: ${input.description || "No description supplied."}`,
   ].join("\n");
+}
+
+export function assertStudioAnalysisBudget(
+  costCapUsd = studioGatewayPolicy.analysisCostCapUsd,
+): void {
+  if (
+    !Number.isFinite(costCapUsd)
+    || costCapUsd < 0
+  ) {
+    throw new StudioEngineError(
+      "GENERATION_FAILED",
+      503,
+      "The analysis cost policy is invalid.",
+      "Ask an administrator to restore the finite Studio analysis budget before retrying.",
+    );
+  }
+}
+
+function assertStudioMediaCompletionImageBudget(): void {
+  if (
+    studioGatewayPolicy.imageModel !== STUDIO_MEDIA_COMPLETION_IMAGE_MODEL
+    || studioGatewayPolicy.imageCostCapUsd !== STUDIO_MEDIA_COMPLETION_IMAGE_COST_CAP_USD
+  ) {
+    throw new StudioEngineError(
+      "GENERATION_FAILED",
+      503,
+      "The media-completion image model is outside the accepted budget.",
+      "Use the source photo until the media-completion policy is restored.",
+    );
+  }
+}
+
+export async function analyzeGarmentFacts(input: {
+  description: string;
+  sourceDataUrl?: string;
+  prompt?: string;
+}): Promise<{
+  facts: IntakeFacts;
+  rawText: string;
+  usage: Record<string, unknown>;
+  costUsd: number | null;
+  model: string;
+  providerEvidence: ReturnType<typeof sanitizeStudioProviderEvidence>;
+}> {
+  const instruction = input.prompt ?? buildGarmentAnalysisPrompt(input);
+  const startedAt = performance.now();
   try {
     const result = await generateText({
       model: studioGatewayPolicy.textModel,
@@ -247,16 +342,29 @@ export async function analyzeGarmentFacts(input: {
       providerOptions: {
         gateway: {
           caching: "auto",
-          sort: "cost",
-          models: [DEFAULT_TEXT_FALLBACK],
           tags: ["studio:garment-intake", "stage:analysis"],
         },
       },
     });
+    const metadata = (result.providerMetadata ?? {}) as Record<string, unknown>;
+    const gateway = metadata.gateway && typeof metadata.gateway === "object"
+      ? metadata.gateway as Record<string, unknown>
+      : {};
+    const parsedCost = gatewayCostSchema.safeParse(gateway.cost);
     return {
       facts: result.output,
+      rawText: result.text || JSON.stringify(result.output),
       usage: result.usage as unknown as Record<string, unknown>,
+      costUsd: parsedCost.success && Number.isFinite(parsedCost.data) && parsedCost.data >= 0
+        ? parsedCost.data
+        : null,
       model: studioGatewayPolicy.textModel,
+      providerEvidence: sanitizeStudioProviderEvidence({
+        result,
+        requestedModel: studioGatewayPolicy.textModel,
+        requestedProvider: studioGatewayPolicy.textModel.split("/", 1)[0] ?? null,
+        durationMs: performance.now() - startedAt,
+      }),
     };
   } catch (error) {
     if (error instanceof StudioEngineError) throw error;
@@ -264,6 +372,7 @@ export async function analyzeGarmentFacts(input: {
       "The garment details could not be read safely.",
       "Edit the description or use a clearer photo.",
       sanitizeStudioGatewayFailure("analysis", studioGatewayPolicy.textModel, error),
+      sanitizeStudioGatewayFailureAccounting(error),
     );
   }
 }
@@ -339,7 +448,7 @@ export async function validateMediaCompletionSource(input: {
       "The source photo could not be checked.",
       "Use a clearer role-matching photo.",
       sanitizeStudioGatewayFailure("analysis", studioGatewayPolicy.sourceValidationModel, error),
-      failureAccounting(error),
+      baselineMediaCompletionFailureAccounting(error),
     );
   }
 }
@@ -352,17 +461,20 @@ export async function generateGarmentFront(input: {
 }) {
   const prompt = input.prompt ?? buildGarmentFrontPrompt(input);
   assertStudioImageBudget();
+  const startedAt = performance.now();
   try {
     const result = await generateImage({
-      model: studioGatewayPolicy.imageModel,
+      model: studioGatewayPolicy.legacyImageModel,
       prompt: input.source
         ? { images: [input.source.bytes], text: prompt }
         : prompt,
-      aspectRatio: "4:5",
+      size: studioGatewayPolicy.legacyImageSize,
       n: 1,
       maxRetries: 0,
-      abortSignal: AbortSignal.timeout(60_000),
-      providerOptions: { gateway: { sort: "cost" } },
+      abortSignal: AbortSignal.timeout(STUDIO_GPT_IMAGE_2_TIMEOUT_MS),
+      providerOptions: studioGptImage2ProviderOptions({
+        tags: ["studio:garment-intake", "stage:generation"],
+      }),
     });
     const metadata = result.providerMetadata as Record<string, unknown>;
     const gateway = metadata.gateway && typeof metadata.gateway === "object"
@@ -378,13 +490,19 @@ export async function generateGarmentFront(input: {
       usage: result.usage as unknown as Record<string, unknown>,
       costUsd,
       prompt,
+      providerEvidence: sanitizeStudioProviderEvidence({
+        result,
+        requestedModel: studioGatewayPolicy.legacyImageModel,
+        requestedProvider: "openai",
+        durationMs: performance.now() - startedAt,
+      }),
     };
   } catch (error) {
     if (error instanceof StudioEngineError) throw error;
     throw new StudioGatewayError(
       "The garment image was not created.",
       "Try once more or edit the garment details.",
-      sanitizeStudioGatewayFailure("generation", studioGatewayPolicy.imageModel, error),
+      sanitizeStudioGatewayFailure("generation", studioGatewayPolicy.legacyImageModel, error),
     );
   }
 }
@@ -448,16 +566,16 @@ export async function generateMediaCompletionImage(input: {
   prompt: string;
   source: { bytes: Uint8Array; mimeType: string };
 }) {
-  assertStudioImageBudget();
+  assertStudioMediaCompletionImageBudget();
   try {
     const result = await generateImage({
       model: studioGatewayPolicy.imageModel,
       prompt: { images: [input.source.bytes], text: input.prompt },
-      aspectRatio: "4:5",
+      aspectRatio: studioGatewayPolicy.imageAspectRatio,
       n: 1,
       maxRetries: 0,
-      abortSignal: AbortSignal.timeout(60_000),
-      providerOptions: { gateway: { sort: "cost" } },
+      abortSignal: AbortSignal.timeout(studioGatewayPolicy.imageTimeoutMs),
+      providerOptions: studioMediaCompletionProviderOptions(),
     });
     const metadata = result.providerMetadata as Record<string, unknown>;
     const gateway = metadata.gateway && typeof metadata.gateway === "object"
@@ -478,7 +596,7 @@ export async function generateMediaCompletionImage(input: {
       "The AI view was not created.",
       "Use the source photo or try once more.",
       sanitizeStudioGatewayFailure("generation", studioGatewayPolicy.imageModel, error),
-      failureAccounting(error),
+      baselineMediaCompletionFailureAccounting(error),
     );
   }
 }
@@ -532,15 +650,18 @@ export async function generateWearImage(input: {
   sources: Array<{ bytes: Uint8Array; mimeType: string }>;
 }) {
   assertStudioImageBudget();
+  const startedAt = performance.now();
   try {
     const result = await generateImage({
-      model: studioGatewayPolicy.imageModel,
+      model: studioGatewayPolicy.legacyImageModel,
       prompt: { images: input.sources.map((source) => source.bytes), text: input.prompt },
-      aspectRatio: "4:5",
+      size: studioGatewayPolicy.legacyImageSize,
       n: 1,
       maxRetries: 0,
-      abortSignal: AbortSignal.timeout(60_000),
-      providerOptions: { gateway: { sort: "cost" } },
+      abortSignal: AbortSignal.timeout(STUDIO_GPT_IMAGE_2_TIMEOUT_MS),
+      providerOptions: studioGptImage2ProviderOptions({
+        tags: ["studio:wear", "stage:generation"],
+      }),
     });
     const metadata = result.providerMetadata as Record<string, unknown>;
     const gateway = metadata.gateway && typeof metadata.gateway === "object"
@@ -552,14 +673,20 @@ export async function generateWearImage(input: {
       mimeType: result.image.mediaType,
       usage: result.usage as unknown as Record<string, unknown>,
       costUsd: parsedCost.success && Number.isFinite(parsedCost.data) ? parsedCost.data : null,
+      providerEvidence: sanitizeStudioProviderEvidence({
+        result,
+        requestedModel: studioGatewayPolicy.legacyImageModel,
+        requestedProvider: "openai",
+        durationMs: performance.now() - startedAt,
+      }),
     };
   } catch (error) {
     if (error instanceof StudioEngineError) throw error;
     throw new StudioGatewayError(
       "The Wear image was not created.",
       "Try once more or keep the last view.",
-      sanitizeStudioGatewayFailure("generation", studioGatewayPolicy.imageModel, error),
-      failureAccounting(error),
+      sanitizeStudioGatewayFailure("generation", studioGatewayPolicy.legacyImageModel, error),
+      sanitizeStudioGatewayFailureAccounting(error),
     );
   }
 }

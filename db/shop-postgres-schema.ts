@@ -758,6 +758,7 @@ export const studioGenerationState = pgEnum("studio_generation_state", [
   "APPROVED",
   "REJECTED",
   "FAILED",
+  "INDETERMINATE",
 ]);
 export const studioDecisionKind = pgEnum("studio_decision_kind", [
   "KEEP",
@@ -772,6 +773,8 @@ export const studioIntakes = pgTable("studio_intakes", {
   operatorEmail: text("operator_email").notNull(),
   kind: studioIntakeKind("kind").notNull(),
   sourceMode: studioSourceMode("source_mode").notNull(),
+  sourceAssetId: uuid("source_asset_id"),
+  sourceSha256: varchar("source_sha256", { length: 64 }),
   description: text("description"),
   facts: jsonb("facts").$type<Record<string, string | number | null>>().default({}).notNull(),
   state: studioIntakeState("state").default("DRAFT").notNull(),
@@ -788,6 +791,10 @@ export const studioIntakes = pgTable("studio_intakes", {
   index("studio_intakes_operator_updated_idx").on(table.operatorSubject, table.updatedAt),
   check("studio_intakes_version_positive", sql`${table.version} > 0`),
   check("studio_intakes_facts_object", sql`jsonb_typeof(${table.facts}) = 'object'`),
+  check("studio_intakes_source_binding", sql`
+    (${table.sourceAssetId} is null and ${table.sourceSha256} is null)
+    or (${table.sourceAssetId} is not null and ${table.sourceSha256} ~ '^[0-9a-f]{64}$')
+  `),
 ]);
 
 export const studioAssets = pgTable("studio_assets", {
@@ -847,6 +854,8 @@ export const studioGenerations = pgTable("studio_generations", {
   intakeId: uuid("intake_id")
     .notNull()
     .references(() => studioIntakes.id, { onDelete: "cascade" }),
+  requestId: uuid("request_id"),
+  paidScopeKey: varchar("paid_scope_key", { length: 160 }),
   modelProfileId: uuid("model_profile_id").references(() => studioModelProfiles.id, { onDelete: "restrict" }),
   operation: varchar("operation", { length: 40 }).notNull(),
   state: studioGenerationState("state").default("PENDING").notNull(),
@@ -857,6 +866,19 @@ export const studioGenerations = pgTable("studio_generations", {
   sourceHashes: jsonb("source_hashes").$type<string[]>().notNull(),
   fingerprint: varchar("fingerprint", { length: 64 }).notNull(),
   parameters: jsonb("parameters").$type<Record<string, unknown>>().notNull(),
+  executionToken: uuid("execution_token"),
+  startedAt: timestamp("started_at", { withTimezone: true }),
+  leaseExpiresAt: timestamp("lease_expires_at", { withTimezone: true }),
+  providerInvocationStartedAt: timestamp("provider_invocation_started_at", { withTimezone: true }),
+  providerResultReceivedAt: timestamp("provider_result_received_at", { withTimezone: true }),
+  providerResultBlobPathname: text("provider_result_blob_pathname"),
+  providerResultMimeType: varchar("provider_result_mime_type", { length: 80 }),
+  providerResultByteSize: integer("provider_result_byte_size"),
+  providerResultSha256: varchar("provider_result_sha256", { length: 64 }),
+  providerResultMetadata: jsonb("provider_result_metadata").$type<Record<string, unknown>>(),
+  finalDecision: studioDecisionKind("final_decision"),
+  finalDecisionNoteSha256: varchar("final_decision_note_sha256", { length: 64 }),
+  decidedAt: timestamp("decided_at", { withTimezone: true }),
   outputAssetId: uuid("output_asset_id").references(() => studioAssets.id, { onDelete: "set null" }),
   usage: jsonb("usage").$type<Record<string, unknown>>(),
   costUsd: text("cost_usd"),
@@ -865,12 +887,82 @@ export const studioGenerations = pgTable("studio_generations", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 }, (table) => [
   uniqueIndex("studio_generations_intake_fingerprint_unique").on(table.intakeId, table.fingerprint),
+  uniqueIndex("studio_generations_intake_request_unique").on(table.intakeId, table.requestId).where(sql`${table.requestId} is not null`),
+  uniqueIndex("studio_generations_paid_scope_fence_unique").on(table.paidScopeKey).where(sql`${table.paidScopeKey} is not null`),
+  uniqueIndex("studio_generations_active_paid_scope_unique").on(
+    table.intakeId,
+    table.operation,
+    sql`(case
+      when ${table.operation} = 'MODEL_TRY_ON'
+        then 'model:' || coalesce(${table.parameters}->>'modelProfileId', 'missing')
+      when ${table.operation} = 'EDITORIAL_MODEL'
+        then 'parent:' || coalesce(${table.parameters}->>'parentGenerationId', 'missing')
+      else 'base'
+    end)`,
+    sql`(coalesce(${table.parameters}->>'attempt', '1'))`,
+  ).where(sql`
+    ${table.state} in ('PENDING', 'RUNNING')
+    and ${table.operation} in (
+      'GARMENT_ANALYSIS', 'GARMENT_FRONT', 'MANNEQUIN_FRONT',
+      'MODEL_TRY_ON', 'EDITORIAL_MODEL'
+    )
+  `),
   index("studio_generations_intake_created_idx").on(table.intakeId, table.createdAt),
+  index("studio_generations_running_lease_idx").on(table.leaseExpiresAt).where(sql`${table.state} = 'RUNNING'`),
   check("studio_generations_prompt_hash", sql`${table.promptHash} ~ '^[0-9a-f]{64}$'`),
   check("studio_generations_fingerprint", sql`${table.fingerprint} ~ '^[0-9a-f]{64}$'`),
   check("studio_generations_source_ids_array", sql`jsonb_typeof(${table.sourceAssetIds}) = 'array'`),
   check("studio_generations_source_hashes_array", sql`jsonb_typeof(${table.sourceHashes}) = 'array'`),
   check("studio_generations_parameters_object", sql`jsonb_typeof(${table.parameters}) = 'object'`),
+  check("studio_generations_paid_attempt", sql`
+    ${table.operation} not in (
+      'GARMENT_ANALYSIS', 'GARMENT_FRONT', 'MANNEQUIN_FRONT',
+      'MODEL_TRY_ON', 'EDITORIAL_MODEL'
+    ) or (
+      jsonb_typeof(${table.parameters}->'attempt') = 'number'
+      and (${table.parameters}->>'attempt')::integer between 1 and 2
+    )
+  `),
+  check("studio_generations_execution_lease", sql`
+    (${table.state} = 'RUNNING'
+      and ${table.executionToken} is not null
+      and ${table.startedAt} is not null
+      and ${table.leaseExpiresAt} is not null)
+    or (${table.state} <> 'RUNNING' and ${table.leaseExpiresAt} is null)
+  `),
+  check("studio_generations_provider_checkpoints", sql`
+    (${table.providerInvocationStartedAt} is null
+      and ${table.providerResultReceivedAt} is null
+      and ${table.providerResultBlobPathname} is null
+      and ${table.providerResultMimeType} is null
+      and ${table.providerResultByteSize} is null
+      and ${table.providerResultSha256} is null)
+    or (${table.providerInvocationStartedAt} is not null
+      and ${table.providerResultReceivedAt} is null
+      and ${table.providerResultBlobPathname} is null
+      and ${table.providerResultMimeType} is null
+      and ${table.providerResultByteSize} is null
+      and ${table.providerResultSha256} is null)
+    or (${table.providerInvocationStartedAt} is not null
+      and ${table.providerResultReceivedAt} is not null
+      and ${table.providerResultBlobPathname} is not null
+      and ${table.providerResultMimeType} is not null
+      and ${table.providerResultByteSize} > 0
+      and ${table.providerResultSha256} ~ '^[0-9a-f]{64}$')
+  `),
+  check("studio_generations_provider_result_metadata", sql`
+    ${table.providerResultMetadata} is null
+    or jsonb_typeof(${table.providerResultMetadata}) = 'object'
+  `),
+  check("studio_generations_indeterminate_reason", sql`
+    ${table.state} <> 'INDETERMINATE' or ${table.errorCode} is not null
+  `),
+  check("studio_generations_final_decision", sql`
+    (${table.finalDecision} is null and ${table.finalDecisionNoteSha256} is null and ${table.decidedAt} is null)
+    or (${table.finalDecision} is not null
+      and ${table.finalDecisionNoteSha256} ~ '^[0-9a-f]{64}$'
+      and ${table.decidedAt} is not null)
+  `),
 ]);
 
 export const studioDecisions = pgTable("studio_decisions", {
@@ -882,8 +974,12 @@ export const studioDecisions = pgTable("studio_decisions", {
   actorSubject: text("actor_subject").notNull(),
   decision: studioDecisionKind("decision").notNull(),
   note: text("note"),
+  idempotencyKey: varchar("idempotency_key", { length: 160 }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-}, (table) => [index("studio_decisions_intake_created_idx").on(table.intakeId, table.createdAt)]);
+}, (table) => [
+  index("studio_decisions_intake_created_idx").on(table.intakeId, table.createdAt),
+  uniqueIndex("studio_decisions_idempotency_unique").on(table.idempotencyKey).where(sql`${table.idempotencyKey} is not null`),
+]);
 
 export const studioWardrobeItems = pgTable("studio_wardrobe_items", {
   id: uuid("id").defaultRandom().primaryKey(),

@@ -1,24 +1,54 @@
 import { get } from "@vercel/blob";
-import { buildWearPrompt, generateWearImage, StudioGatewayError, studioGatewayPolicy } from "../../ai/studio-gateway";
+import {
+  assertStudioImageBudget,
+  buildWearPrompt,
+  generateWearImage,
+  studioGatewayPolicy,
+} from "../../ai/studio-gateway";
 import { getShopBlobToken, putShopBlob } from "../../server/vercel-blob";
 import {
   addStudioAsset,
-  appendDecision,
-  claimGeneration,
+  appendDecisionOnce,
+  assertNoConflictingActiveStudioGeneration,
+  assertStudioCorrectionDecisionReceipt,
+  assertStudioGenerationRequestIdentity,
+  checkpointPaidGenerationResult,
+  claimGenerationDecision,
+  claimPaidGeneration,
   createOrReuseGeneration,
   createOrReuseStockModel,
+  finalGenerationDecisionReceipt,
+  findGenerationByFingerprint,
+  findGenerationByRequestId,
   getGeneration,
   getOwnedAsset,
   getOwnedModelProfile,
   getOwnedWardrobeItem,
   listGenerationsForIntake,
+  listLatestDecisionReceiptsForIntake,
   listOwnedModelProfiles,
   mapModelProfile,
-  updateGeneration,
+  markPaidGenerationIndeterminate,
+  markPaidGenerationInvocationStarted,
+  quarantinePaidGenerationResult,
+  recoverPaidGenerationWithoutDispatch,
+  transitionGenerationState,
 } from "../../server/studio-intake-repository";
+import {
+  executeStudioPaidGeneration,
+  studioPaidAccountingQuarantineReason,
+  studioPaidProviderEvidenceQuarantineReason,
+  StudioPaidGenerationIndeterminateError,
+} from "../../server/studio-generation-execution";
+import {
+  persistStudioGenerationOutput,
+  persistStudioGenerationProviderResult,
+  readStudioGenerationProviderResult,
+} from "../../server/studio-generation-result-store";
 import type { StudioOperator } from "../../server/studio-operator";
 import {
   intakeFactsSchema,
+  type OperatorSafeDecisionReceipt,
   type OperatorSafeWearGeneration,
   type OperatorSafeWearWorkspace,
   type WearOperation,
@@ -57,12 +87,54 @@ function assetUrl(wardrobeItemId: string, assetId: string) {
   return `/api/studio/wardrobe/${wardrobeItemId}/assets/${assetId}`;
 }
 
-function safeGeneration(generation: Awaited<ReturnType<typeof listGenerationsForIntake>>[number], wardrobeItemId: string): OperatorSafeWearGeneration | null {
+function indeterminateWearError(): StudioEngineError {
+  return new StudioEngineError(
+    "GENERATION_FAILED",
+    409,
+    "Studio cannot confirm whether the paid Wear call returned.",
+    "Ask an administrator to reconcile this attempt. Starting another paid attempt is blocked.",
+  );
+}
+
+export function wearGenerationResponse<T>(input: {
+  generationId: string;
+  workspace: T;
+  reused: boolean;
+}) {
+  return input;
+}
+
+export function legacyWearRequiresNonZdrConsent(operation: WearOperation): boolean {
+  return operation === "MODEL_TRY_ON" || operation === "EDITORIAL_MODEL";
+}
+
+export function isTerminalWearRequestReplay(input: {
+  state: string;
+  requestId: string | null;
+}, requestId: string): boolean {
+  return input.requestId === requestId && (input.state === "FAILED" || input.state === "REJECTED");
+}
+
+function missingLegacyWearConsentError(): StudioEngineError {
+  return new StudioEngineError(
+    "INVALID_TRANSITION",
+    409,
+    "Private identity cannot be sent to this image provider yet.",
+    "Use the durable Atelier flow after its exact provider-retention consent receipt is available. No paid call was started.",
+  );
+}
+
+function safeGeneration(
+  generation: Awaited<ReturnType<typeof listGenerationsForIntake>>[number],
+  wardrobeItemId: string,
+  decisionReceipt: OperatorSafeDecisionReceipt | null,
+): OperatorSafeWearGeneration | null {
   if (!(["MANNEQUIN_FRONT", "MODEL_TRY_ON", "EDITORIAL_MODEL"] as string[]).includes(generation.operation)) return null;
   const parameters = generation.parameters as { attempt?: unknown };
   const attempt = Number(parameters.attempt || 1);
   return {
     id: generation.id,
+    requestId: generation.requestId ?? generation.id,
     operation: generation.operation as WearOperation,
     state: generation.state,
     modelProfileId: generation.modelProfileId,
@@ -72,6 +144,8 @@ function safeGeneration(generation: Awaited<ReturnType<typeof listGenerationsFor
     outputAssetId: generation.outputAssetId,
     outputUrl: generation.outputAssetId ? assetUrl(wardrobeItemId, generation.outputAssetId) : null,
     retryAvailable: attempt < 2 && ["FAILED", "REJECTED"].includes(generation.state),
+    requiresReconciliation: generation.state === "INDETERMINATE",
+    decisionReceipt,
     createdAt: generation.createdAt.toISOString(),
   };
 }
@@ -79,9 +153,10 @@ function safeGeneration(generation: Awaited<ReturnType<typeof listGenerationsFor
 export async function getWearWorkspace(wardrobeItemId: string, operator: StudioOperator): Promise<OperatorSafeWearWorkspace> {
   const item = await getOwnedWardrobeItem(wardrobeItemId, operator.subject);
   if (!item.approvedAssetId) throw new StudioEngineError("INVALID_TRANSITION", 409, "Keep a garment image first.", "Return to garment intake.");
-  const [models, generations] = await Promise.all([
+  const [models, generations, decisionReceipts] = await Promise.all([
     listOwnedModelProfiles(operator.subject),
     listGenerationsForIntake(item.intakeId),
+    listLatestDecisionReceiptsForIntake(item.intakeId),
   ]);
   return {
     wardrobeItemId,
@@ -89,7 +164,11 @@ export async function getWearWorkspace(wardrobeItemId: string, operator: StudioO
     title: item.title,
     garmentAssetUrl: assetUrl(wardrobeItemId, item.approvedAssetId),
     models: models.map((profile) => mapModelProfile(profile, wardrobeItemId)),
-    generations: generations.map((generation) => safeGeneration(generation, wardrobeItemId)).filter(Boolean) as OperatorSafeWearGeneration[],
+    generations: generations.map((generation) => safeGeneration(
+      generation,
+      wardrobeItemId,
+      decisionReceipts.get(generation.id) ?? finalGenerationDecisionReceipt(generation),
+    )).filter(Boolean) as OperatorSafeWearGeneration[],
     missingViews: ["GARMENT_BACK", "FABRIC_DETAIL"],
     publicationState: "PRIVATE_DRAFT",
   };
@@ -147,10 +226,14 @@ async function generatedSource(input: {
 export async function generateWearCandidate(input: {
   wardrobeItemId: string;
   operator: StudioOperator;
+  requestId: string;
   operation: WearOperation;
   modelProfileId?: string;
   parentGenerationId?: string;
   correction?: string;
+  correctionGenerationId?: string;
+  decisionReceiptId?: string;
+  recoveryOnly?: boolean;
 }) {
   const item = await getOwnedWardrobeItem(input.wardrobeItemId, input.operator.subject);
   if (!item.approvedAssetId) throw new StudioEngineError("INVALID_TRANSITION", 409, "Keep a garment image first.", "Return to garment intake.");
@@ -171,12 +254,74 @@ export async function generateWearCandidate(input: {
   }
 
   const effectiveModelProfileId = model?.id ?? null;
+  const requestGeneration = await findGenerationByRequestId({
+    intakeId: item.intakeId,
+    requestId: input.requestId,
+  });
+  if (
+    requestGeneration
+    && (
+      requestGeneration.operation !== input.operation
+      || (requestGeneration.modelProfileId ?? null) !== effectiveModelProfileId
+      || (
+        input.operation === "EDITORIAL_MODEL"
+        && (requestGeneration.parameters as { parentGenerationId?: unknown }).parentGenerationId !== parent?.id
+      )
+    )
+  ) {
+    throw new StudioEngineError(
+      "INVALID_REQUEST",
+      409,
+      "That Wear request key already belongs to a different command.",
+      "Resume the saved command or start a new Wear intent.",
+    );
+  }
   const prior = (await listGenerationsForIntake(item.intakeId)).filter((generation) =>
     generation.operation === input.operation
-    && (generation.modelProfileId ?? null) === effectiveModelProfileId
+    && (input.operation !== "MODEL_TRY_ON" || (generation.modelProfileId ?? null) === effectiveModelProfileId)
+    && (
+      input.operation !== "EDITORIAL_MODEL"
+      || (generation.parameters as { parentGenerationId?: unknown }).parentGenerationId === parent?.id
+    )
   );
-  const attempt = 1 + prior.filter((generation) => ["FAILED", "REJECTED"].includes(generation.state)).length;
+  if (prior.some((generation) => generation.state === "INDETERMINATE")) {
+    throw indeterminateWearError();
+  }
+  const requestAttempt = Number((requestGeneration?.parameters as { attempt?: unknown } | undefined)?.attempt ?? 0);
+  const attempt = requestGeneration
+    ? requestAttempt
+    : 1 + prior.filter((generation) => ["FAILED", "REJECTED"].includes(generation.state)).length;
+  if (!Number.isInteger(attempt) || attempt < 1) {
+    throw new StudioEngineError("INVALID_REQUEST", 409, "The saved Wear request has an invalid attempt.", "Ask an administrator to reconcile the saved command.");
+  }
   if (attempt > 2) throw new StudioEngineError("INVALID_TRANSITION", 409, "The retry has already been used.", "Keep the last view or choose another model.");
+  const savedCorrectionGenerationId = requestGeneration
+    && typeof (requestGeneration.parameters as { correctionGenerationId?: unknown }).correctionGenerationId === "string"
+    ? (requestGeneration.parameters as { correctionGenerationId: string }).correctionGenerationId
+    : null;
+  const correctionGeneration = requestGeneration
+    ? savedCorrectionGenerationId
+      ? prior.find((generation) => generation.id === savedCorrectionGenerationId)
+        ?? await getGeneration(savedCorrectionGenerationId, item.intakeId)
+      : null
+    : [...prior].reverse().find((generation) =>
+      generation.state === "FAILED" || generation.state === "REJECTED"
+    ) ?? null;
+  if (attempt > 1) {
+    if (!correctionGeneration) {
+      throw new StudioEngineError("INVALID_TRANSITION", 409, "The correction source is unavailable.", "Reload Wear before trying again.");
+    }
+    const receipts = await listLatestDecisionReceiptsForIntake(item.intakeId);
+    assertStudioCorrectionDecisionReceipt({
+      expectedGenerationId: input.correctionGenerationId,
+      expectedReceiptId: input.decisionReceiptId,
+      expectedCorrection: input.correction,
+      generationId: correctionGeneration.id,
+      receipt: receipts.get(correctionGeneration.id) ?? finalGenerationDecisionReceipt(correctionGeneration),
+    });
+  } else if (input.correction || input.correctionGenerationId || input.decisionReceiptId) {
+    throw new StudioEngineError("INVALID_REQUEST", 409, "This first attempt cannot use a correction receipt.", "Start from the current Wear authority.");
+  }
 
   const modelImage = model ? await privateImage(model.sourceBlobPathname, model.sourceSha256) : null;
   const parentImage = parent?.outputAssetId
@@ -190,27 +335,30 @@ export async function generateWearCandidate(input: {
     : [garment.asset.id];
   const sourceHashes = sources.map((source) => source.sha256);
   const promptVersion = studioGatewayPolicy.wearPromptVersions[input.operation];
+  const garmentFacts = {
+    title: item.title,
+    category: intakeFactsSchema.shape.category.parse(item.category),
+    colour: item.colour,
+    sizeLabel: item.sizeLabel,
+    condition: item.condition,
+    price: item.price,
+  };
   const prompt = buildWearPrompt({
     operation: input.operation,
-    facts: {
-      title: item.title,
-      category: intakeFactsSchema.shape.category.parse(item.category),
-      colour: item.colour,
-      sizeLabel: item.sizeLabel,
-      condition: item.condition,
-      price: item.price,
-    },
+    facts: garmentFacts,
     modelName: model?.name,
     correction: input.correction,
   });
   const parameters = {
-    aspectRatio: "4:5",
+    size: studioGatewayPolicy.legacyImageSize,
     attempt,
     correction: input.correction || null,
     modelAuthority: model?.authorityId || null,
     modelProfileId: model?.id || null,
     modelSourceSha256: model?.sourceSha256 || null,
     parentGenerationId: parent?.id || null,
+    correctionGenerationId: correctionGeneration?.id ?? null,
+    decisionReceiptId: input.decisionReceiptId ?? null,
     sourceReferences: input.operation === "EDITORIAL_MODEL"
       ? [{ kind: "STUDIO_ASSET", id: parent!.outputAssetId!, sha256: parentImage!.sha256 }]
       : [
@@ -220,18 +368,60 @@ export async function generateWearCandidate(input: {
   };
   const fingerprint = generationFingerprint({
     sourceHashes,
-    facts: item,
+    facts: garmentFacts,
     operation: input.operation,
     promptVersion,
-    model: studioGatewayPolicy.imageModel,
+    model: studioGatewayPolicy.legacyImageModel,
     parameters,
   });
-  const generation = await createOrReuseGeneration({
+  if (requestGeneration) assertStudioGenerationRequestIdentity(requestGeneration, fingerprint);
+  if (requestGeneration && isTerminalWearRequestReplay(requestGeneration, input.requestId)) {
+    return wearGenerationResponse({
+      generationId: requestGeneration.id,
+      workspace: await getWearWorkspace(input.wardrobeItemId, input.operator),
+      reused: true,
+    });
+  }
+  if (requestGeneration?.outputAssetId && ["COMPLETE", "APPROVED"].includes(requestGeneration.state)) {
+    return wearGenerationResponse({
+      generationId: requestGeneration.id,
+      workspace: await getWearWorkspace(input.wardrobeItemId, input.operator),
+      reused: true,
+    });
+  }
+  const reusable = requestGeneration ? null : prior.find((candidate) => {
+    const candidateAttempt = Number((candidate.parameters as { attempt?: unknown }).attempt ?? 1);
+    return candidateAttempt === attempt
+      && Boolean(candidate.outputAssetId)
+      && (candidate.state === "COMPLETE" || candidate.state === "APPROVED");
+  });
+  if (reusable) {
+    assertNoConflictingActiveStudioGeneration(reusable, fingerprint);
+    return wearGenerationResponse({
+      generationId: reusable.id,
+      workspace: await getWearWorkspace(input.wardrobeItemId, input.operator),
+      reused: true,
+    });
+  }
+  const existingGeneration = requestGeneration
+    ?? await findGenerationByFingerprint({ intakeId: item.intakeId, fingerprint });
+  if (
+    legacyWearRequiresNonZdrConsent(input.operation)
+    && !existingGeneration?.providerInvocationStartedAt
+    && !existingGeneration?.providerResultReceivedAt
+  ) {
+    throw missingLegacyWearConsentError();
+  }
+  if (input.recoveryOnly && !existingGeneration) {
+    throw new StudioEngineError("INVALID_TRANSITION", 409, "There is no saved Wear command to recover.", "Start generation explicitly when you are ready to allow a paid dispatch.");
+  }
+  const generation = existingGeneration ?? await createOrReuseGeneration({
     intakeId: item.intakeId,
+    requestId: input.requestId,
     modelProfileId: model?.id || null,
     operation: input.operation,
     state: "PENDING",
-    model: studioGatewayPolicy.imageModel,
+    model: studioGatewayPolicy.legacyImageModel,
     promptVersion,
     promptHash: sha256(prompt),
     sourceAssetIds,
@@ -240,26 +430,135 @@ export async function generateWearCandidate(input: {
     parameters,
   });
   if (generation.outputAssetId && ["COMPLETE", "APPROVED"].includes(generation.state)) {
-    return { workspace: await getWearWorkspace(input.wardrobeItemId, input.operator), reused: true };
-  }
-  if (!(await claimGeneration(generation.id))) return { workspace: await getWearWorkspace(input.wardrobeItemId, input.operator), reused: true };
-  try {
-    const generated = await generateWearImage({ prompt, sources });
-    await updateGeneration(generation.id, {
-      usage: generated.usage,
-      costUsd: generated.costUsd === null ? null : generated.costUsd.toFixed(6),
+    return wearGenerationResponse({
+      generationId: generation.id,
+      workspace: await getWearWorkspace(input.wardrobeItemId, input.operator),
+      reused: true,
     });
-    if (generated.costUsd === null || generated.costUsd > studioGatewayPolicy.imageCostCapUsd) {
-      throw new StudioEngineError("GENERATION_FAILED", 502, "The image exceeded the Studio cost policy.", "Ask an administrator to review the image budget.");
+  }
+  if (input.recoveryOnly) {
+    const recovery = await recoverPaidGenerationWithoutDispatch(generation.id);
+    if (recovery.kind === "READY_TO_DISPATCH" || recovery.kind === "JOINED") {
+      return wearGenerationResponse({
+        generationId: generation.id,
+        workspace: await getWearWorkspace(input.wardrobeItemId, input.operator),
+        reused: true,
+      });
     }
-    const verified = verifyStudioImage(generated.bytes, generated.mimeType);
+    if (recovery.kind === "INDETERMINATE") throw indeterminateWearError();
+  }
+  if (!generation.providerInvocationStartedAt && !generation.providerResultReceivedAt) assertStudioImageBudget();
+  let execution;
+  try {
+    execution = await executeStudioPaidGeneration({
+      claim: () => claimPaidGeneration(generation.id),
+      markInvocationStarted: (executionToken) => markPaidGenerationInvocationStarted({
+        id: generation.id,
+        executionToken,
+      }),
+      invoke: async () => {
+        const generated = await generateWearImage({ prompt, sources });
+        return {
+          bytes: generated.bytes,
+          mimeType: generated.mimeType,
+          usage: generated.usage,
+          costUsd: generated.costUsd,
+          providerEvidence: generated.providerEvidence,
+        };
+      },
+      persistResult: (result) => persistStudioGenerationProviderResult({
+        intakeId: item.intakeId,
+        generationId: generation.id,
+        result,
+      }),
+      readRetainedResult: () => readStudioGenerationProviderResult({
+        intakeId: item.intakeId,
+        generationId: generation.id,
+      }),
+      checkpointResult: (executionToken, result) => checkpointPaidGenerationResult({
+        id: generation.id,
+        executionToken,
+        result,
+      }),
+      markIndeterminate: (executionToken) => markPaidGenerationIndeterminate({
+        id: generation.id,
+        executionToken,
+      }),
+      markResultConflictIndeterminate: (executionToken) => quarantinePaidGenerationResult({
+        id: generation.id,
+        executionToken,
+        errorCode: "PROVIDER_RESULT_CONFLICT",
+      }),
+    });
+  } catch (error) {
+    if (error instanceof StudioPaidGenerationIndeterminateError) throw indeterminateWearError();
+    throw error;
+  }
+  if (execution.kind === "JOINED") {
+    return wearGenerationResponse({
+      generationId: generation.id,
+      workspace: await getWearWorkspace(input.wardrobeItemId, input.operator),
+      reused: true,
+    });
+  }
+  if (execution.kind === "INDETERMINATE") throw indeterminateWearError();
+  if (execution.kind === "TERMINAL") {
+    if (execution.row.outputAssetId && ["COMPLETE", "APPROVED"].includes(execution.row.state)) {
+      return wearGenerationResponse({
+        generationId: generation.id,
+        workspace: await getWearWorkspace(input.wardrobeItemId, input.operator),
+        reused: true,
+      });
+    }
+    throw new StudioEngineError("INVALID_TRANSITION", 409, "This Wear attempt is closed.", "Review the current Wear state.");
+  }
+
+  const providerEvidenceReason = studioPaidProviderEvidenceQuarantineReason(
+    execution.result,
+    studioGatewayPolicy.legacyImageModel,
+    "openai",
+  );
+  const accountingReason = studioPaidAccountingQuarantineReason(
+    execution.result.costUsd,
+    studioGatewayPolicy.legacyImageCostCapUsd,
+  );
+  if (providerEvidenceReason || accountingReason) {
+    await quarantinePaidGenerationResult({
+      id: generation.id,
+      executionToken: execution.executionToken,
+      errorCode: accountingReason ?? providerEvidenceReason!,
+    });
+    throw indeterminateWearError();
+  }
+
+  let verified: ReturnType<typeof verifyStudioImage>;
+  try {
+    verified = verifyStudioImage(execution.result.bytes, execution.result.mimeType);
+  } catch {
+    await quarantinePaidGenerationResult({
+      id: generation.id,
+      executionToken: execution.executionToken,
+      errorCode: "INVALID_PROVIDER_IMAGE",
+    });
+    throw indeterminateWearError();
+  }
+  if (verified.mimeType !== "image/jpeg" || verified.width !== 1024 || verified.height !== 1536) {
+    await quarantinePaidGenerationResult({
+      id: generation.id,
+      executionToken: execution.executionToken,
+      errorCode: "OUTPUT_CONTRACT_MISMATCH",
+    });
+    throw indeterminateWearError();
+  }
+
+  try {
     const outputHash = sha256(verified.bytes);
     const pathname = `studio/intakes/${item.intakeId}/generations/${generation.id}/${outputHash}.${verified.extension}`;
-    const blob = await putShopBlob("private", pathname, Buffer.from(verified.bytes), {
-      addRandomSuffix: false,
-      allowOverwrite: false,
-      contentType: verified.mimeType,
-      cacheControlMaxAge: 31_536_000,
+    const blob = await persistStudioGenerationOutput({
+      pathname,
+      bytes: verified.bytes,
+      mimeType: verified.mimeType,
+      sha256: outputHash,
     });
     const role = input.operation === "EDITORIAL_MODEL" ? "EDITORIAL_MODEL" : input.operation;
     const output = await addStudioAsset({
@@ -273,16 +572,35 @@ export async function generateWearCandidate(input: {
       height: verified.height,
       sha256: outputHash,
     });
-    await updateGeneration(generation.id, { state: "COMPLETE", outputAssetId: output.id });
-    return { workspace: await getWearWorkspace(input.wardrobeItemId, input.operator), reused: false };
-  } catch (error) {
-    const accounting = error instanceof StudioGatewayError ? error.accounting : null;
-    await updateGeneration(generation.id, {
-      state: "FAILED",
-      errorCode: error instanceof StudioEngineError ? error.code : "GENERATION_FAILED",
-      ...(accounting?.usage ? { usage: accounting.usage } : {}),
-      ...(accounting?.costUsd !== null && accounting?.costUsd !== undefined ? { costUsd: accounting.costUsd.toFixed(6) } : {}),
+    const transitioned = await transitionGenerationState({
+      id: generation.id,
+      expectedState: "RUNNING",
+      executionToken: execution.executionToken,
+      state: "COMPLETE",
+      update: { outputAssetId: output.id },
     });
+    if (!transitioned) {
+      return wearGenerationResponse({
+        generationId: generation.id,
+        workspace: await getWearWorkspace(input.wardrobeItemId, input.operator),
+        reused: true,
+      });
+    }
+    return wearGenerationResponse({
+      generationId: generation.id,
+      workspace: await getWearWorkspace(input.wardrobeItemId, input.operator),
+      reused: false,
+    });
+  } catch (error) {
+    if (error instanceof StudioEngineError) {
+      await transitionGenerationState({
+        id: generation.id,
+        expectedState: "RUNNING",
+        executionToken: execution.executionToken,
+        state: "FAILED",
+        update: { errorCode: error.code },
+      }).catch(() => undefined);
+    }
     throw error;
   }
 }
@@ -294,16 +612,20 @@ export async function decideWearCandidate(input: {
   decision: "KEEP" | "EDIT" | "REJECT" | "RETRY";
   note?: string;
 }) {
+  if (input.decision === "EDIT" && !input.note?.trim()) {
+    throw new StudioEngineError("INVALID_REQUEST", 400, "Name the one correction to make.", "Enter one bounded correction before choosing Edit.");
+  }
   const item = await getOwnedWardrobeItem(input.wardrobeItemId, input.operator.subject);
   const generation = await getGeneration(input.generationId, item.intakeId);
   if (!generation) {
     throw new StudioEngineError("INVALID_TRANSITION", 409, "That view is not awaiting review.", "Open the latest Wear view.");
   }
+  if (generation.state === "INDETERMINATE") throw indeterminateWearError();
   if (input.decision === "RETRY") {
     if (!(generation.state === "FAILED" || generation.state === "REJECTED")) {
       throw new StudioEngineError("INVALID_TRANSITION", 409, "That view does not need a retry.", "Review the current view.");
     }
-    await appendDecision({
+    await appendDecisionOnce({
       intakeId: item.intakeId,
       generationId: generation.id,
       actorSubject: input.operator.subject,
@@ -312,18 +634,25 @@ export async function decideWearCandidate(input: {
     });
     return getWearWorkspace(input.wardrobeItemId, input.operator);
   }
-  if (generation.state !== "COMPLETE" || !generation.outputAssetId) {
+  if (!generation.outputAssetId) {
     throw new StudioEngineError("INVALID_TRANSITION", 409, "That view is not awaiting review.", "Open the latest completed Wear view.");
   }
-  await appendDecision({
+  const decisionClaim = await claimGenerationDecision({
+    id: generation.id,
+    expectedState: "COMPLETE",
+    state: input.decision === "KEEP" ? "APPROVED" : "REJECTED",
+    decision: input.decision,
+    note: input.note,
+  });
+  if (decisionClaim === "CONFLICT") {
+    throw new StudioEngineError("INVALID_TRANSITION", 409, "That view already has a different decision.", "Reload the current Wear state.");
+  }
+  await appendDecisionOnce({
     intakeId: item.intakeId,
     generationId: generation.id,
     actorSubject: input.operator.subject,
     decision: input.decision,
     note: input.note,
-  });
-  await updateGeneration(generation.id, {
-    state: input.decision === "KEEP" ? "APPROVED" : "REJECTED",
   });
   return getWearWorkspace(input.wardrobeItemId, input.operator);
 }

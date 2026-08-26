@@ -10,6 +10,7 @@ import {
 import { StudioEngineError } from "../lib/studio/engine/errors";
 import { generationExecutionFingerprint, generationFingerprint } from "../lib/studio/engine/fingerprint";
 import { assertIntakeTransition } from "../lib/studio/engine/state";
+import { readFile } from "node:fs/promises";
 
 test("browser contracts reject provider, identity and blob controls", () => {
   assert.equal(createIntakeSchema.safeParse({
@@ -33,9 +34,14 @@ test("browser contracts reject provider, identity and blob controls", () => {
     operation: "GARMENT_FRONT",
     model: "paid/model",
   }).success, true);
-  assert.equal(decisionSchema.safeParse({ expectedVersion: 3, decision: "KEEP" }).success, true);
+  assert.equal(decisionSchema.safeParse({
+    expectedVersion: 3,
+    generationId: "11111111-1111-4111-8111-111111111111",
+    decision: "KEEP",
+  }).success, true);
   assert.equal(commitIntakeSchema.safeParse({
     expectedVersion: 4,
+    generationId: "11111111-1111-4111-8111-111111111111",
     facts: {
       title: "Coral shirt",
       category: "Shirt",
@@ -120,4 +126,13 @@ test("image verifier checks bytes rather than trusting MIME", () => {
     (error: unknown) => error instanceof StudioEngineError && error.code === "INVALID_ASSET",
   );
   assert.throws(() => verifyStudioImage(new TextEncoder().encode("not an image"), "image/png"));
+});
+
+test("legacy garment generation retains paid output before applying the cost policy", async () => {
+  const service = await readFile(new URL("../lib/studio/engine/service.ts", import.meta.url), "utf8");
+  const body = service.slice(service.indexOf("export async function generateStudioCandidate"));
+  const accountingPolicy = body.indexOf("const accountingReason = studioPaidAccountingQuarantineReason");
+  assert.ok(body.indexOf("persistStudioGenerationProviderResult") < accountingPolicy);
+  assert.ok(body.indexOf("checkpointPaidGenerationResult") < accountingPolicy);
+  assert.ok(accountingPolicy < body.indexOf("outputAssetId: output.id"));
 });

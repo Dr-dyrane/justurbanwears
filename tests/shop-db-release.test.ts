@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { existsSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
@@ -540,6 +541,122 @@ test("migration planning verifies every applied hash and only permits a journal 
       /not a prefix/,
     );
   }
+});
+
+test("legacy generation state migration is safe inside the release transaction", () => {
+  const migration = readFileSync(
+    join(repositoryRoot, "drizzle/shop-postgres/0014_legacy_generation_fence.sql"),
+    "utf8",
+  );
+  assert.doesNotMatch(migration, /ALTER TYPE[^;]+ADD VALUE 'INDETERMINATE'/s);
+  assert.match(migration, /RENAME TO "studio_generation_state_pre_0014"/);
+  assert.match(migration, /CREATE TYPE "public"\."studio_generation_state" AS ENUM\([\s\S]*'INDETERMINATE'/);
+  assert.match(migration, /USING "state"::text::"public"\."studio_generation_state"/);
+  assert.ok(
+    migration.indexOf("CREATE TYPE") < migration.indexOf("MIGRATED_RUNNING_RECONCILIATION"),
+    "the complete replacement enum must exist before migration data uses INDETERMINATE",
+  );
+  assert.equal(existsSync(join(repositoryRoot, "drizzle/shop-postgres/0017_amazing_hydra.sql")), false);
+  assert.equal(existsSync(join(repositoryRoot, "drizzle/shop-postgres/0018_motionless_leech.sql")), false);
+});
+
+test("active paid command uniqueness reconciles legacy duplicates before indexing", () => {
+  const migration = readFileSync(
+    join(repositoryRoot, "drizzle/shop-postgres/0014_legacy_generation_fence.sql"),
+    "utf8",
+  );
+  const attemptRepairOffset = migration.indexOf("jsonb_set");
+  const permanentScopeBackfillOffset = migration.indexOf("'studio-paid-scope:v1:'");
+  const permanentScopeReconciliationOffset = migration.indexOf("ranked_paid_scopes");
+  const permanentScopeIndexOffset = migration.indexOf(
+    'CREATE UNIQUE INDEX "studio_generations_paid_scope_fence_unique"',
+  );
+  assert.match(migration, /jsonb_set\("parameters", '\{attempt\}', '1'::jsonb, true\)/);
+  assert.match(migration, /'studio-paid-scope:v1:'[\s\S]*generation\."intake_id"::text[\s\S]*generation\."operation"/);
+  assert.match(migration, /THEN 'model:' \|\| coalesce\(generation\."parameters"->>'modelProfileId', 'missing'\)/);
+  assert.match(migration, /THEN 'parent:' \|\| coalesce\(generation\."parameters"->>'parentGenerationId', 'missing'\)/);
+  assert.match(migration, /\|\| ':' \|\| coalesce\(generation\."parameters"->>'attempt', '1'\)/);
+  assert.match(migration, /PARTITION BY generation\."paid_scope_key"/);
+  assert.match(migration, /DUPLICATE_PAID_SCOPE_RECONCILIATION/);
+  assert.match(migration, /DUPLICATE_PAID_SCOPE_SUPERSEDED/);
+  assert.match(migration, /SET "paid_scope_key" = null/);
+  const permanentReconciliation = migration.slice(
+    permanentScopeReconciliationOffset,
+    migration.indexOf("WITH ranked_active_paid"),
+  );
+  assert.match(permanentReconciliation, /WHERE generation\."paid_scope_key" IS NOT NULL/);
+  assert.match(
+    permanentReconciliation,
+    /WHEN generation\."state" = 'APPROVED' THEN 0[\s\S]*WHEN generation\."state" = 'COMPLETE' OR generation\."output_asset_id" IS NOT NULL THEN 1[\s\S]*WHEN generation\."state" = 'REJECTED' THEN 2[\s\S]*WHEN generation\."state" = 'FAILED' THEN 5[\s\S]*ELSE 6/,
+  );
+  assert.match(permanentReconciliation, /WHEN ranked\."state" = 'RUNNING' THEN 'INDETERMINATE'/);
+  assert.match(permanentReconciliation, /WHEN ranked\."state" = 'PENDING' THEN 'FAILED'/);
+  assert.doesNotMatch(
+    permanentReconciliation,
+    /WHERE generation\."state" IN \('PENDING', 'RUNNING'\)/,
+    "permanent-scope reconciliation must consider terminal and active generations together",
+  );
+  assert.doesNotMatch(migration, /DELETE\s+FROM\s+"studio_generations"/i);
+  assert.match(migration, /row_number\(\) OVER/);
+  assert.match(migration, /DUPLICATE_ACTIVE_RECONCILIATION/);
+  assert.match(migration, /modelProfileId/);
+  assert.match(migration, /parentGenerationId/);
+  assert.match(migration, /coalesce\(generation\."parameters"->>'attempt', '1'\)/);
+  assert.match(migration, /studio_generations_paid_scope_fence_unique/);
+  assert.match(migration, /studio_generations_active_paid_scope_unique/);
+  assert.ok(
+    attemptRepairOffset < permanentScopeBackfillOffset,
+    "legacy attempts must be canonical before permanent paid-scope keys are derived",
+  );
+  assert.ok(
+    permanentScopeBackfillOffset < permanentScopeReconciliationOffset,
+    "all legacy paid rows must receive their canonical scope before duplicates are ranked",
+  );
+  assert.ok(
+    permanentScopeReconciliationOffset < permanentScopeIndexOffset,
+    "duplicate permanent scopes must be quarantined before the unique dispatch fence is installed",
+  );
+  assert.ok(
+    attemptRepairOffset < migration.indexOf("ranked_active_paid"),
+    "legacy paid attempts must be canonicalized before active work is ranked",
+  );
+  assert.ok(
+    migration.indexOf("ranked_active_paid")
+      < migration.indexOf('CREATE UNIQUE INDEX "studio_generations_active_paid_scope_unique"'),
+    "legacy duplicates must be reconciled before the active paid scope is made unique",
+  );
+  assert.ok(
+    migration.indexOf("ranked_active_paid") < migration.indexOf("studio_generations_paid_attempt\" CHECK"),
+    "legacy attempts and duplicates must be repaired before the paid-attempt check is installed",
+  );
+});
+
+test("legacy intake sources and exact decision notes are backfilled before their fences", () => {
+  const migration = readFileSync(
+    join(repositoryRoot, "drizzle/shop-postgres/0014_legacy_generation_fence.sql"),
+    "utf8",
+  );
+  assert.match(migration, /DISTINCT ON \(asset\."intake_id"\)/);
+  assert.match(migration, /asset\."role" = 'SOURCE'/);
+  assert.match(migration, /ORDER BY asset\."intake_id", asset\."created_at", asset\."id"/);
+  assert.doesNotMatch(migration, /DELETE\s+FROM\s+"studio_assets"/i);
+  assert.ok(
+    migration.indexOf("deterministic_source") < migration.indexOf("studio_intakes_source_binding\" CHECK"),
+    "source IDs and hashes must be bound before the source-pair check is installed",
+  );
+
+  const normalizedFixture = "  preserve the approved neckline  ".trim();
+  const selectedNoteHash = createHash("sha256").update(normalizedFixture).digest("hex");
+  const emptyNoteHash = createHash("sha256").update("").digest("hex");
+  assert.notEqual(selectedNoteHash, emptyNoteHash, "the decision-note fixture must exercise a nonempty digest");
+  assert.match(migration, /CREATE EXTENSION IF NOT EXISTS "pgcrypto"/);
+  assert.match(migration, /coalesce\(nullif\(btrim\(selected\."note"\), ''\), ''\) AS "normalized_note"/);
+  assert.match(migration, /encode\(digest\(resolved\."normalized_note", 'sha256'\), 'hex'\)/);
+  assert.doesNotMatch(migration, new RegExp(emptyNoteHash));
+  assert.ok(
+    migration.indexOf("selected_decisions") < migration.indexOf("studio_generations_final_decision\" CHECK"),
+    "the selected decision and its exact normalized note must be bound before the decision check",
+  );
 });
 
 test("the forward SKU migration covers every retired alias and preserves inventory through cascade", () => {
