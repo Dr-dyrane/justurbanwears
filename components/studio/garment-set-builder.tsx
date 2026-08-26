@@ -85,6 +85,7 @@ function slotStatus(slot: GarmentSetSlot, current: boolean) {
   if (slot.state === "KEPT") return "Kept";
   if (current && slot.state === "REVIEW") return "Review";
   if (current && slot.state === "BUILDING") return "Preparing";
+  if (slot.requiresReconciliation) return "Reconciliation required";
   if (slot.state === "FAILED") return slot.canRetry ? "Correction available" : "Source needed";
   if (slot.state === "WAITING") return "Waiting";
   return current ? "Next" : "Later";
@@ -311,14 +312,20 @@ export function GarmentSetBuilder({
   ) : workspace?.nextAction === "DONE" ? (
     <button className="button button-primary" onClick={onDismiss} type="button">Done</button>
   ) : workspace?.nextAction === "BLOCKED" ? (
-    <a
-      className="button button-primary"
-      href={current?.key === "LULU_TRY_ON"
-        ? "/studio/models"
-        : `/studio/wardrobe/${encodeURIComponent(wardrobeItemId)}`}
-    >
-      {workspace.nextActionLabel}
-    </a>
+    current?.requiresReconciliation ? (
+      <button aria-disabled="true" className="button button-primary" disabled type="button">
+        Reconciliation required
+      </button>
+    ) : (
+      <a
+        className="button button-primary"
+        href={current?.key === "LULU_TRY_ON"
+          ? "/studio/models"
+          : `/studio/wardrobe/${encodeURIComponent(wardrobeItemId)}`}
+      >
+        {workspace.nextActionLabel}
+      </a>
+    )
   ) : undefined;
 
   return (
@@ -357,7 +364,7 @@ export function GarmentSetBuilder({
         ) : failedWithoutFeedback ? (
           <div className="studio-set-feedback is-error" ref={feedbackRef} role="status" tabIndex={-1}>
             <AlertCircle aria-hidden="true" size={18} />
-            <span><strong>View not made</strong><small>{current.canRetry ? "The last attempt stayed out of the set. Try this view again." : workspace?.missingEvidence ?? "Add the required evidence to continue."}</small></span>
+            <span><strong>{current.requiresReconciliation ? "Provider result uncertain" : "View not made"}</strong><small>{current.canRetry ? "The last attempt stayed out of the set. Try this view again." : workspace?.missingEvidence ?? "Add the required evidence to continue."}</small></span>
           </div>
         ) : !workspace ? (
           <div aria-live="polite" className="studio-set-feedback is-pending" role="status">

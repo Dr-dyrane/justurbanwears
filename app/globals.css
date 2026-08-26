@@ -1,5 +1,9 @@
 @import "tailwindcss";
 @import "mapbox-gl/dist/mapbox-gl.css";
+@import "tw-animate-css";
+@source "../node_modules/streamdown/dist/*.js";
+
+@custom-variant dark (&:is([data-theme="dark"] *));
 
 :root {
   /* justurban wears Studio — pastel orange / nude semantic theme */
@@ -38,6 +42,38 @@
   --radius-pill: 999px;
   --rail-width: 176px;
   color-scheme: light dark;
+  /* AI Elements inherits the JUW palette instead of introducing a second theme. */
+  --background: var(--canvas);
+  --foreground: var(--text);
+  --card: var(--surface);
+  --card-foreground: var(--text);
+  --popover: var(--surface);
+  --popover-foreground: var(--text);
+  --primary: var(--action);
+  --primary-foreground: var(--text-inverse);
+  --secondary: var(--surface-subtle);
+  --secondary-foreground: var(--text);
+  --muted: var(--surface-subtle);
+  --muted-foreground: var(--text-soft);
+  --accent: var(--action-soft);
+  --accent-foreground: var(--text);
+  --destructive: var(--critical);
+  --input: var(--border);
+  --ring: var(--focus);
+  --chart-1: var(--accent-orange);
+  --chart-2: var(--accent-salmon);
+  --chart-3: var(--positive);
+  --chart-4: var(--caution);
+  --chart-5: var(--critical);
+  --radius: var(--radius-sm);
+  --sidebar: var(--surface);
+  --sidebar-foreground: var(--text);
+  --sidebar-primary: var(--action);
+  --sidebar-primary-foreground: var(--text-inverse);
+  --sidebar-accent: var(--surface-subtle);
+  --sidebar-accent-foreground: var(--text);
+  --sidebar-border: var(--border);
+  --sidebar-ring: var(--focus);
 }
 
 * {
@@ -2902,4 +2938,65 @@ a {
   .light-table::before {
     transform: none !important;
   }
+}
+
+@theme inline {
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-background: var(--background);
+}
+
+html[data-theme="dark"] {
+  --background: var(--dyrane-dark-canvas);
+  --foreground: var(--dyrane-dark-ink);
+  --card: var(--dyrane-dark-surface);
+  --card-foreground: var(--dyrane-dark-ink);
+  --popover: var(--dyrane-dark-surface-strong);
+  --popover-foreground: var(--dyrane-dark-ink);
+  --primary: var(--dyrane-dark-action);
+  --primary-foreground: var(--dyrane-dark-action-ink);
+  --secondary: var(--dyrane-dark-surface-muted);
+  --secondary-foreground: var(--dyrane-dark-ink);
+  --muted: var(--dyrane-dark-surface-muted);
+  --muted-foreground: var(--dyrane-dark-muted);
+  --accent: var(--dyrane-dark-accent-soft);
+  --accent-foreground: var(--dyrane-dark-ink);
+  --input: var(--dyrane-dark-line);
+  --ring: var(--dyrane-dark-accent);
+  --sidebar: var(--dyrane-dark-surface);
+  --sidebar-foreground: var(--dyrane-dark-ink);
+  --sidebar-primary: var(--dyrane-dark-action);
+  --sidebar-primary-foreground: var(--dyrane-dark-action-ink);
+  --sidebar-accent: var(--dyrane-dark-surface-muted);
+  --sidebar-accent-foreground: var(--dyrane-dark-ink);
+  --sidebar-border: var(--dyrane-dark-line);
+  --sidebar-ring: var(--dyrane-dark-accent);
 }

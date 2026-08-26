@@ -4,6 +4,10 @@ import { z } from "zod";
 import { getStudioDb } from "../../db/shop-postgres";
 import { getShopBlobToken, putShopBlob } from "./vercel-blob";
 import { getShopOrderService } from "../shop/server-order/runtime";
+import {
+  studioOrderHasDueReturnWork,
+  studioOrderHasDueWork,
+} from "../shop/order-presentation";
 import type { ShopOperatorActor, ShopServerOrder } from "../shop/server-order/types";
 import { createOrReuseStockModel, getOwnedModelProfile, listOwnedModelProfiles } from "./studio-intake-repository";
 import { getPhysicalPiece, listPhysicalPieces } from "./studio-stocktake-repository";
@@ -554,7 +558,9 @@ export async function listStudioMediaAuthority(operator: StudioOperator): Promis
         publication.sku,
         job.role as operation,
         job.state,
-        case when job.output_blob_pathname is null then null
+        case when job.state not in ('COMPLETE', 'APPROVED', 'REJECTED')
+          or job.error_code = 'PAID_RESULT_POLICY_BLOCKED'
+          or job.output_blob_pathname is null then null
           else '/api/studio/wardrobe/' || wardrobe.id::text || '/completions/' || job.id::text || '/asset'
         end as output_url,
         null::text as model_name,
@@ -643,7 +649,7 @@ function pieceWithHold(
 }
 
 function notificationForOrder(order: ShopServerOrder): StudioAuthorityNotification | null {
-  const returnWork = order.return && order.allowedReturnTransitions.length > 0;
+  const returnWork = studioOrderHasDueReturnWork(order);
   if (returnWork) return {
     id: `return:${order.reference}:v${order.version}:${order.return!.status}:${order.return!.refundStatus}`,
     kind: "RETURN",
@@ -654,13 +660,13 @@ function notificationForOrder(order: ShopServerOrder): StudioAuthorityNotificati
     actionLabel: "Review return",
     createdAt: order.return!.requestedAt,
   };
-  if (!order.allowedTransitions.length) return null;
+  if (!studioOrderHasDueWork(order)) return null;
   return {
     id: `order:${order.reference}:v${order.version}:${order.paymentReviewStatus}:${order.fundsConfirmationStatus}:${order.fulfillmentStatus}`,
     kind: "ORDER",
     tone: order.paymentReviewStatus === "EVIDENCE_RECEIVED" ? "attention" : "neutral",
     title: `Order waiting · ${order.reference}`,
-    detail: `${order.lines[0]?.name ?? "Order"} has one legal next action.`,
+    detail: `${order.lines[0]?.name ?? "Order"} has a next action due.`,
     href: `/studio/orders/${order.reference}#studio-order-next-action`,
     actionLabel: "Open order",
     createdAt: order.savedAt,

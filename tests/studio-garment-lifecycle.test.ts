@@ -99,6 +99,15 @@ test("Piece exposes direct price, media, visibility and history controls", () =>
   assert.match(lifecyclePanel, /priceRef\.current\?\.focus/);
 });
 
+test("lifecycle mutations are synchronous single-flight and reconcile authoritative state", () => {
+  assert.match(lifecyclePanel, /const commandInFlightRef = useRef\(false\)/);
+  assert.match(lifecyclePanel, /if \(commandInFlightRef\.current\) return \{ error: "Another Studio change is still finishing\."/);
+  assert.match(lifecyclePanel, /const reconciled = await readWorkspace\(\)\.catch\(\(\) => null\)/);
+  assert.match(lifecyclePanel, /commandIsReflected\(reconciled, value\)/);
+  assert.match(lifecyclePanel, /reconciled\.itemVersion > expectedVersion/);
+  assert.match(lifecyclePanel, /commandInFlightRef\.current = false/);
+});
+
 test("unfinished durable intakes are discoverable and resumable", () => {
   assert.match(intakeRoute, /export async function GET/);
   assert.match(intakeRoute, /listRecoverableIntakes/);

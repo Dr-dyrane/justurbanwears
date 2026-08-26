@@ -54,6 +54,7 @@ export type GarmentSetSlot = {
   assetUrl?: string;
   jobId?: string;
   canRetry?: boolean;
+  requiresReconciliation?: boolean;
   inferred?: boolean;
 };
 

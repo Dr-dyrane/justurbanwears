@@ -52,6 +52,12 @@ test("the server advances one durable current view instead of fanning out", () =
   assert.match(service, /garment-genesis-command-v1/);
   assert.match(service, /command\.parameters\.idempotencyKey !== input\.idempotencyKey/);
   assert.match(service, /claimGenerationCommand\(commandJob\.id\)/);
+  assert.match(service, /const decisionWorkspace = await decideWearCandidate/);
+  assert.match(service, /decisionReceipt\.generationId !== slot\.jobId/);
+  assert.match(service, /decisionReceipt\.decision !== "EDIT"/);
+  assert.match(service, /correctionGenerationId: correctionReceipt\.generationId/);
+  assert.match(service, /decisionReceiptId: correctionReceipt\.receiptId/);
+  assert.match(service, /Reload this Genesis task before retrying\. No generation was started\./);
   assert.match(repository, /inArray\(studioGenerations\.state, \["PENDING", "FAILED"\]\)/);
   assert.doesNotMatch(service, /Promise\.allSettled\(tasks\)/);
   assert.doesNotMatch(service, /EDITORIAL_LULU/);

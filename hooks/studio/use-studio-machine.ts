@@ -178,8 +178,11 @@ export function useStudioMachine(service: StudioService) {
       .then((snapshot) => {
         if (active) dispatch({ type: "HYDRATION_SUCCEEDED", snapshot });
       })
-      .catch(() => {
-        if (active) dispatch({ type: "HYDRATION_FAILED" });
+      .catch((cause: unknown) => {
+        if (active) dispatch({
+          type: "HYDRATION_FAILED",
+          message: cause instanceof Error ? cause.message : undefined,
+        });
       });
     return () => {
       active = false;

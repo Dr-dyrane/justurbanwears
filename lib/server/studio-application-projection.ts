@@ -34,6 +34,7 @@ import {
 } from "./studio-collection-repository";
 import type { StudioOperator } from "./studio-operator";
 import type { StudioAuthoritySnapshot } from "../studio/services/studio-authority-client";
+import { sha256 } from "../studio/engine/fingerprint";
 
 const CURRENT_COMPATIBILITY_SKUS: ReadonlySet<string> = new Set(
   SHOP_COLLECTION_COMPATIBILITY
@@ -52,6 +53,21 @@ const SEARCH_KIND_ORDER: Record<StudioSearchDocument["kind"], number> = {
   MEDIA: 7,
   UPDATE: 8,
 };
+
+const STUDIO_OPERATOR_STORAGE_SCOPE_VERSION = "juw.studio.operator-storage-scope.v1";
+
+/** Never expose the authenticated subject itself to browser storage keys. */
+export function studioOperatorStorageScope(subject: string): string {
+  return sha256(`${STUDIO_OPERATOR_STORAGE_SCOPE_VERSION}\n${subject}`);
+}
+
+function projectedOperator(operator: StudioOperator): StudioApplicationProjection["operator"] {
+  return {
+    displayName: operator.displayName,
+    role: operator.role,
+    storageScope: studioOperatorStorageScope(operator.subject),
+  };
+}
 
 const unavailableMetric = (): StudioSummaryMetric => ({
   value: null,
@@ -367,7 +383,7 @@ export function projectConnectedStudioApplication(input: {
     projectionVersion: STUDIO_APPLICATION_PROJECTION_VERSION,
     generatedAt: input.now,
     mode: { kind: "CONNECTED" },
-    operator: { displayName: input.operator.displayName, role: input.operator.role },
+    operator: projectedOperator(input.operator),
     sourceRevisions: [
       ...(authority ? [{
         source: "AUTHORITY" as const,
@@ -460,7 +476,7 @@ export function projectScenarioStudioApplication(input: {
     projectionVersion: STUDIO_APPLICATION_PROJECTION_VERSION,
     generatedAt: input.now,
     mode,
-    operator: { displayName: input.operator.displayName, role: input.operator.role },
+    operator: projectedOperator(input.operator),
     sourceRevisions: [{
       source: "SCENARIO",
       revision: `scenario:${input.scenario}`,

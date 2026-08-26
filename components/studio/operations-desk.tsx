@@ -15,6 +15,10 @@ import {
   UserRound,
 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
+import {
+  studioOrderHasDueReturnWork,
+  studioOrderHasDueWork,
+} from "../../lib/shop/order-presentation";
 import type { StudioLifecycleState } from "../../lib/studio/domain/entities";
 import type { StudioAuthorityPiece } from "../../lib/studio/services/studio-authority-client";
 import { LifecycleMeta, STUDIO_LIFECYCLE_PRESENTATION } from "./atoms/lifecycle-meta";
@@ -62,7 +66,7 @@ export function OperationsDesk() {
   const holds = snapshot?.holds ?? [];
   const orders = snapshot?.orders ?? [];
   const activeHolds = holds.filter((hold) => hold.status === "ACTIVE");
-  const actionOrders = orders.filter((order) => order.allowedTransitions.length || order.allowedReturnTransitions.length);
+  const actionOrders = orders.filter(studioOrderHasDueWork);
   const mismatches = pieces.filter((piece) => piece.hasLocationMismatch);
   const segments = [
     { key: "attention", label: "Attention", count: mismatches.length + actionOrders.length },
@@ -85,7 +89,7 @@ export function OperationsDesk() {
   const selected = pieces.find((piece) => piece.pieceKey === selectedKey) ?? null;
   const holdPiece = pieces.find((piece) => piece.pieceKey === holdPieceKey) ?? null;
   const nextMismatch = mismatches[0] ?? null;
-  const nextActionOrder = actionOrders.find((order) => order.allowedReturnTransitions.length > 0)
+  const nextActionOrder = actionOrders.find(studioOrderHasDueReturnWork)
     ?? actionOrders[0]
     ?? null;
   const nextHeldPiece = activeHolds
@@ -225,10 +229,10 @@ export function OperationsDesk() {
         <span>{nextMismatch || nextActionOrder ? <CircleAlert aria-hidden="true" size={20} /> : <Check aria-hidden="true" size={20} />}</span>
         <div>
           <small>Continue</small>
-          <strong>{nextMismatch ? `Reconcile ${nextMismatch.title}` : nextActionOrder ? (nextActionOrder.return ? "Review return" : "Continue order") : nextHeldPiece ? `Review hold for ${nextHeldPiece.title}` : "Inventory reconciled"}</strong>
-          <p>{nextMismatch ? `${nextMismatch.observedLocationLabel ?? "Last seen location"} differs from ${nextMismatch.expectedLocationLabel}.` : nextActionOrder ? `${nextActionOrder.reference} has a legal next action.` : nextHeldPiece ? "Confirm the customer hold is still current." : "No exception is waiting. A stocktake is the next available check."}</p>
+          <strong>{nextMismatch ? `Reconcile ${nextMismatch.title}` : nextActionOrder ? (studioOrderHasDueReturnWork(nextActionOrder) ? "Review return" : "Continue order") : nextHeldPiece ? `Review hold for ${nextHeldPiece.title}` : "Inventory reconciled"}</strong>
+          <p>{nextMismatch ? `${nextMismatch.observedLocationLabel ?? "Last seen location"} differs from ${nextMismatch.expectedLocationLabel}.` : nextActionOrder ? `${nextActionOrder.reference} has a next action due.` : nextHeldPiece ? "Confirm the customer hold is still current." : "No exception is waiting. A stocktake is the next available check."}</p>
         </div>
-        {nextMismatch ? <button className="button button-primary" onClick={(event) => openPiece(nextMismatch, event.currentTarget)} type="button">Review location</button> : nextActionOrder ? <Link className="button button-primary" href={`/studio/orders/${nextActionOrder.reference}#studio-order-next-action`}>{nextActionOrder.return ? "Review return" : "Open order"}</Link> : nextHeldPiece ? <button className="button button-primary" onClick={(event) => openPiece(nextHeldPiece, event.currentTarget)} type="button">Review hold</button> : <Link className="button button-primary" href="/studio/stocktake">Start stocktake</Link>}
+        {nextMismatch ? <button className="button button-primary" onClick={(event) => openPiece(nextMismatch, event.currentTarget)} type="button">Review location</button> : nextActionOrder ? <Link className="button button-primary" href={`/studio/orders/${nextActionOrder.reference}#studio-order-next-action`}>{studioOrderHasDueReturnWork(nextActionOrder) ? "Review return" : "Open order"}</Link> : nextHeldPiece ? <button className="button button-primary" onClick={(event) => openPiece(nextHeldPiece, event.currentTarget)} type="button">Review hold</button> : <Link className="button button-primary" href="/studio/stocktake">Start stocktake</Link>}
       </section>
 
       <StudioSegmentedView active={activeView} label="Operations workspace" onSelect={selectView} pending={viewPending} segments={segments} />
@@ -237,7 +241,10 @@ export function OperationsDesk() {
         <StudioStackSection className="studio-operation-section studio-stack-panel" id="studio-view-attention" aria-labelledby="studio-tab-attention" role="tabpanel">
           {mismatches.length || actionOrders.length ? <div className="studio-operation-cards">
             {mismatches.map((piece) => <article className="studio-operation-card studio-compact-row" data-state-tone="critical" key={`location:${piece.pieceKey}`}><button className="studio-operation-card-trigger" onClick={(event) => openPiece(piece, event.currentTarget)} type="button"><div className="studio-card-heading"><div><small>{piece.sku ?? "Private piece"}</small><h3>{piece.title}</h3></div><CircleAlert aria-label="Location differs" size={18} /></div><dl><div><dt>Expected</dt><dd>{piece.expectedLocationLabel}</dd></div><div><dt>Last seen</dt><dd>{piece.observedLocationLabel ?? "Not confirmed"}</dd></div></dl><span className="studio-operation-card-open"><span className="sr-only">Review location</span><ChevronRight aria-hidden="true" size={17} /></span></button></article>)}
-            {actionOrders.map((order) => <article className="studio-operation-card studio-compact-row" data-state-tone={order.return ? "critical" : "caution"} key={`order:${order.reference}`}><Link className="studio-operation-card-trigger" href={`/studio/orders/${order.reference}#studio-order-next-action`}><div className="studio-card-heading"><div><small>{order.reference}</small><h3>{order.lines[0]?.name ?? "Wardrobe order"}</h3><LifecycleMeta state={order.return ? "DRAFT" : "RESERVED"} /></div></div><dl><div><dt>Exception</dt><dd>{order.return ? "Return needs review" : "Order needs action"}</dd></div><div><dt>Payment</dt><dd>{order.fundsConfirmationStatus.toLowerCase()}</dd></div></dl><span className="studio-operation-card-open"><span className="sr-only">Open in Orders</span><ChevronRight aria-hidden="true" size={17} /></span></Link></article>)}
+            {actionOrders.map((order) => {
+              const hasReturnWork = studioOrderHasDueReturnWork(order);
+              return <article className="studio-operation-card studio-compact-row" data-state-tone={hasReturnWork ? "critical" : "caution"} key={`order:${order.reference}`}><Link className="studio-operation-card-trigger" href={`/studio/orders/${order.reference}#studio-order-next-action`}><div className="studio-card-heading"><div><small>{order.reference}</small><h3>{order.lines[0]?.name ?? "Wardrobe order"}</h3><LifecycleMeta state={hasReturnWork ? "DRAFT" : "RESERVED"} /></div></div><dl><div><dt>Exception</dt><dd>{hasReturnWork ? "Return needs review" : "Order needs action"}</dd></div><div><dt>Payment</dt><dd>{order.fundsConfirmationStatus.toLowerCase()}</dd></div></dl><span className="studio-operation-card-open"><span className="sr-only">Open in Orders</span><ChevronRight aria-hidden="true" size={17} /></span></Link></article>;
+            })}
           </div> : <StudioFeedback state="empty" title="Nothing needs attention" />}
         </StudioStackSection>
       ) : null}

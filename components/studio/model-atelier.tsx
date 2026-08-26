@@ -239,7 +239,14 @@ export function ModelAtelier() {
 
         {selected ? <div className={`studio-model-stage${activeView === "profile" ? "" : " is-panel-only"}`}>
           {activeView === "profile" ? <div className={`studio-model-portrait${selected.kind === "LULU_V3" ? " is-approved" : ""}`}><img alt={`${selected.name}, private approved model authority`} className="studio-model-approved-image" height={1619} src={selected.kind === "LULU_V3" ? APPROVED_PUBLIC_MODEL_PREVIEW.src : selected.sourceAssetUrl} width={972} /><div className="studio-model-master-caption"><small>{selected.kind === "LULU_V3" ? "Approved default" : "Usage confirmed"}</small><strong>{selected.name}</strong><span>Ready for try-ons</span></div></div> : null}
-          <StudioStackSection className="studio-model-profile studio-stack-panel" meta={<LifecycleMeta state={selected.state === "READY" ? "READY" : "DRAFT"} />} role="tabpanel" title={selected.name}>
+          <StudioStackSection
+            aria-labelledby={`studio-tab-${activeView}`}
+            className="studio-model-profile studio-stack-panel"
+            id={`studio-view-${activeView}`}
+            meta={<LifecycleMeta state={selected.state === "READY" ? "READY" : "DRAFT"} />}
+            role="tabpanel"
+            title={selected.name}
+          >
             {activeView === "styling" ? <dl className="studio-model-facts"><div><dt>Hair</dt><dd>{styling(selected).hair}</dd></div><div><dt>Makeup</dt><dd>{styling(selected).makeup}</dd></div><div><dt>Direction</dt><dd>{styling(selected).direction}</dd></div></dl> : null}
             {activeView === "authority" ? <dl className="studio-model-facts"><div><dt>Confirmed</dt><dd>{new Intl.DateTimeFormat("en-NG", { dateStyle: "medium" }).format(new Date(selected.authorityConfirmedAt))}</dd></div><div><dt>Source</dt><dd>{selected.licenseUrl ? <a href={selected.licenseUrl} rel="noreferrer" target="_blank">Open usage source</a> : "Lulu private authority"}</dd></div><div><dt>Allowed</dt><dd>{String(selected.authority.allowedUse ?? "Private Studio try-on generation")}</dd></div><div><dt>Restricted</dt><dd>{String(selected.authority.restrictedUse ?? "No public use without separate approval")}</dd></div></dl> : null}
             <div className="studio-model-profile-actions">{selected.kind === "LULU_V3" && activeView === "profile" ? <div className="studio-model-lock-note"><Lock aria-hidden="true" size={16} /><span><strong>Lulu stays consistent.</strong><small>Add another model for a different identity.</small></span></div> : selected.kind !== "LULU_V3" && activeView === "styling" ? <button className="button button-primary" onClick={(event) => openTask("edit", event.currentTarget)} type="button"><Pencil aria-hidden="true" size={16} />Edit styling</button> : selected.kind !== "LULU_V3" && activeView === "authority" ? <button className="button button-secondary" onClick={(event) => { setReturnFocus(event.currentTarget); setArchiveOpen(true); }} type="button"><Archive aria-hidden="true" size={16} />Withdraw</button> : null}</div>

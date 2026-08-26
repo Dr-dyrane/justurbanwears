@@ -21,7 +21,8 @@ export type MediaCompletionState =
   | "COMPLETE"
   | "APPROVED"
   | "REJECTED"
-  | "FAILED";
+  | "FAILED"
+  | "INDETERMINATE";
 
 export const mediaCompletionDecisionSchema = z.object({
   decision: z.enum(["KEEP", "RETRY", "REJECT"]),
@@ -39,6 +40,7 @@ export type OperatorSafeMediaCompletionJob = {
   assetUrl?: string;
   attempt: 1 | 2;
   canRetry: boolean;
+  requiresReconciliation: boolean;
   createdAt: string;
   updatedAt: string;
   pollAfterMs?: number;

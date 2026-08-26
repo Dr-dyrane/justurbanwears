@@ -168,6 +168,10 @@ test("Piece surface uses one workspace, durable captures, and a universal access
   assert.match(workbench, /Approved Shop previews appear here\./);
   assert.match(workbench, /VIEW_OPERATIONS/);
   assert.match(workbench, /Approve Shop preview/);
+  assert.match(workbench, /setPublicationNeedsRefresh\(true\)/);
+  assert.match(workbench, /function dismissShop\(\)[\s\S]*window\.location\.assign\(`\/studio\/wardrobe\/\$\{encodeURIComponent\(garment\.id\)\}`\)/);
+  assert.match(workbench, /onDismiss=\{dismissShop\}/);
+  assert.match(workbench, /aria-live="polite"><strong>Live in Shop/);
   assert.match(viewer, /onCancel/);
   assert.match(viewer, /popstate/);
   assert.match(viewer, /addEventListener\("keydown", onEscape, true\)/);

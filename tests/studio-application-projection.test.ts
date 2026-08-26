@@ -5,6 +5,7 @@ import { SHOP_COLLECTION_COMPATIBILITY } from "../lib/shop/collection-compatibil
 import {
   projectConnectedStudioApplication,
   projectScenarioStudioApplication,
+  studioOperatorStorageScope,
 } from "../lib/server/studio-application-projection";
 import type { StudioOperator } from "../lib/server/studio-operator";
 
@@ -86,7 +87,23 @@ test("connected projection redacts private authority and customer details", () =
   assert.doesNotMatch(serialized, /private-subject|lulu@example\.com|private\/source|private\/output/);
   assert.doesNotMatch(serialized, /canonVersion|private-provider|license|Private Customer|\+234/);
   assert.match(serialized, /Teal Draped Mini Set/);
-  assert.deepEqual(projection.operator, { displayName: "Lulu", role: "admin" });
+  assert.deepEqual(projection.operator, {
+    displayName: "Lulu",
+    role: "admin",
+    storageScope: studioOperatorStorageScope(operator.subject),
+  });
+  assert.match(projection.operator.storageScope, /^[0-9a-f]{64}$/);
+  assert.doesNotMatch(serialized, new RegExp(operator.subject));
+});
+
+test("operator browser storage scopes are opaque, stable and identity-specific", () => {
+  const first = studioOperatorStorageScope(operator.subject);
+  const repeated = studioOperatorStorageScope(operator.subject);
+  const other = studioOperatorStorageScope("different-private-subject");
+
+  assert.equal(first, repeated);
+  assert.notEqual(first, other);
+  assert.equal(first.includes(operator.subject), false);
 });
 
 test("authority failure yields null truth instead of false zeroes", () => {

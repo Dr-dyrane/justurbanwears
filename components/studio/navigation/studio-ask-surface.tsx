@@ -1,35 +1,67 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useChat } from "@ai-sdk/react";
+import { DefaultChatTransport } from "ai";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowRight,
+  Check,
   CircleAlert,
+  ListTodo,
   LoaderCircle,
   RotateCcw,
+  Save,
   Sparkles,
+  Square,
+  Trash2,
 } from "lucide-react";
+import { Message, MessageContent, MessageResponse } from "../../ai-elements/message";
+import { Suggestion, Suggestions } from "../../ai-elements/suggestion";
+import { Task, TaskContent, TaskItem, TaskTrigger } from "../../ai-elements/task";
+import type { StudioAssistantUIMessage } from "../../../lib/ai/studio-assistant-agent";
+import { studioOrderHasDueWork } from "../../../lib/shop/order-presentation";
 import {
   normalizeStudioAssistantText,
-  resolveStudioAssistant,
+  resolveStudioAssistantWorkflow,
+  studioAssistantFallbackText,
   type StudioAssistantBlock,
   type StudioAssistantContext,
   type StudioAssistantDocument,
   type StudioAssistantResponse,
+  type StudioAssistantTaskDraft,
+  type StudioAssistantWorkflowResponse,
 } from "../../../lib/studio/assistant/experience";
 import type { StudioSearchDocument } from "../../../lib/studio/application/contracts";
 import { STUDIO_SERVICES } from "../../../lib/studio/service-registry";
+import { StudioDecisionSheet } from "../atoms/studio-decision-sheet";
 import { StudioLoadingStage } from "../atoms/studio-loading-stage";
 import { StudioLink as Link } from "../atoms/studio-link";
+import { StudioTaskSheet } from "../atoms/studio-task-sheet";
 import { useStudio } from "../studio-provider";
 
-type AskTurn = {
+type RestoredTurn = {
   id: string;
   query: string;
-  response?: StudioAssistantResponse;
-  state: "complete" | "error" | "resolving";
+  workflow?: StudioAssistantWorkflowResponse;
+  state: "complete" | "error";
 };
 
-const STORAGE_KEY = "juw.studio.ask.v1";
+type FallbackTurn = {
+  id: string;
+  query: string;
+  workflow: StudioAssistantWorkflowResponse;
+};
+
+type StoredStudioAssistantTask = Omit<StudioAssistantTaskDraft, "sourceQuery"> & {
+  createdAt: string;
+  expiresAt: string;
+  status: "DONE" | "OPEN";
+};
+
+const MAX_QUERY_LENGTH = 1_200;
+const TASK_RETENTION_MS = 30 * 24 * 60 * 60 * 1_000;
+const STORAGE_KEY = "juw.studio.ask.v2";
+const TASKS_STORAGE_KEY = "juw.studio.ask.tasks.v2";
 const STARTERS = [
   "What needs attention?",
   "Create a new drop",
@@ -42,21 +74,154 @@ function assistantTokens(values: Array<string | null | undefined>) {
 }
 
 function storedQuery(value: unknown) {
-  if (typeof value === "string") return value.trim();
+  if (typeof value === "string") return value.trim().slice(0, MAX_QUERY_LENGTH);
   if (!value || typeof value !== "object") return "";
   const candidate = value as { query?: unknown };
-  return typeof candidate.query === "string" ? candidate.query.trim() : "";
+  return typeof candidate.query === "string" ? candidate.query.trim().slice(0, MAX_QUERY_LENGTH) : "";
 }
 
-function restoreQueries() {
+function restoreQueries(storageKey: string) {
   try {
-    const stored = window.sessionStorage.getItem(STORAGE_KEY);
+    const stored = window.sessionStorage.getItem(storageKey);
     if (!stored) return [];
     const value = JSON.parse(stored) as unknown;
     return Array.isArray(value) ? value.map(storedQuery).filter(Boolean).slice(-12) : [];
   } catch {
     return [];
   }
+}
+
+function messageText(message: StudioAssistantUIMessage) {
+  return message.parts
+    .filter((part): part is Extract<typeof part, { type: "text" }> => part.type === "text")
+    .map((part) => part.text)
+    .join("\n")
+    .trim();
+}
+
+function requestTextMessages(messages: StudioAssistantUIMessage[]) {
+  return messages
+    .filter((message) => message.role === "user" || message.role === "assistant")
+    .map((message) => ({
+      id: message.id,
+      parts: message.parts
+        .filter((part): part is Extract<typeof part, { type: "text" }> => part.type === "text")
+        .map((part) => ({ text: part.text.slice(0, MAX_QUERY_LENGTH), type: "text" as const })),
+      role: message.role,
+    }))
+    .filter((message) => message.parts.some((part) => part.text.trim()))
+    .slice(-8);
+}
+
+function isSafeStudioHref(href: string) {
+  try {
+    const origin = "https://studio.invalid";
+    const parsed = new URL(href, origin);
+    return parsed.origin === origin
+      && `${parsed.pathname}${parsed.search}${parsed.hash}` === href
+      && (parsed.pathname === "/studio" || parsed.pathname.startsWith("/studio/"));
+  } catch {
+    return false;
+  }
+}
+
+function isStudioAssistantTaskDraft(value: unknown): value is StudioAssistantTaskDraft {
+  if (!value || typeof value !== "object") return false;
+  const candidate = value as Partial<StudioAssistantTaskDraft>;
+  return candidate.schemaVersion === "studio-assistant-task/v1"
+    && candidate.state === "PROPOSED"
+    && candidate.storage === "DEVICE_PRIVATE"
+    && candidate.requiresOwningWorkflowConfirmation === true
+    && typeof candidate.id === "string" && candidate.id.length <= 160
+    && typeof candidate.title === "string" && candidate.title.length <= 240
+    && typeof candidate.objective === "string" && candidate.objective.length <= 1_200
+    && typeof candidate.consequence === "string" && candidate.consequence.length <= 1_200
+    && typeof candidate.sourceQuery === "string" && candidate.sourceQuery.length <= MAX_QUERY_LENGTH
+    && (candidate.risk === "R0" || candidate.risk === "R1" || candidate.risk === "R2" || candidate.risk === "R3")
+    && Boolean(candidate.action)
+    && typeof candidate.action?.label === "string" && candidate.action.label.length <= 240
+    && typeof candidate.action?.href === "string"
+    && isSafeStudioHref(candidate.action.href)
+    && Array.isArray(candidate.steps) && candidate.steps.length > 0 && candidate.steps.length <= 8
+    && candidate.steps.every((step) => Boolean(
+      step
+      && typeof step.id === "string" && step.id.length <= 160
+      && typeof step.label === "string" && step.label.length <= 500,
+    ));
+}
+
+function isStoredStudioAssistantTask(value: unknown): value is StoredStudioAssistantTask {
+  if (!value || typeof value !== "object") return false;
+  const candidate = value as Partial<StoredStudioAssistantTask> & { sourceQuery?: unknown };
+  return candidate.schemaVersion === "studio-assistant-task/v1"
+    && candidate.state === "PROPOSED"
+    && candidate.storage === "DEVICE_PRIVATE"
+    && candidate.requiresOwningWorkflowConfirmation === true
+    && candidate.sourceQuery === undefined
+    && typeof candidate.id === "string" && candidate.id.length <= 160
+    && typeof candidate.title === "string" && candidate.title.length <= 240
+    && typeof candidate.objective === "string" && candidate.objective.length <= 1_200
+    && typeof candidate.consequence === "string" && candidate.consequence.length <= 1_200
+    && (candidate.risk === "R0" || candidate.risk === "R1" || candidate.risk === "R2" || candidate.risk === "R3")
+    && Boolean(candidate.action)
+    && typeof candidate.action?.label === "string" && candidate.action.label.length <= 240
+    && typeof candidate.action?.href === "string"
+    && isSafeStudioHref(candidate.action.href)
+    && Array.isArray(candidate.steps) && candidate.steps.length > 0 && candidate.steps.length <= 8
+    && candidate.steps.every((step) => Boolean(
+      step
+      && typeof step.id === "string" && step.id.length <= 160
+      && typeof step.label === "string" && step.label.length <= 500,
+    ))
+    && typeof candidate.createdAt === "string" && Number.isFinite(Date.parse(candidate.createdAt))
+    && typeof candidate.expiresAt === "string" && Date.parse(candidate.expiresAt) > Date.now()
+    && (candidate.status === "OPEN" || candidate.status === "DONE");
+}
+
+function restoreTasks(storageKey: string) {
+  try {
+    const stored = window.localStorage.getItem(storageKey);
+    if (!stored) return [];
+    const value = JSON.parse(stored) as unknown;
+    if (!Array.isArray(value)) return [];
+    const tasks = value.filter(isStoredStudioAssistantTask).slice(-24);
+    if (tasks.length !== value.length) {
+      window.localStorage.setItem(storageKey, JSON.stringify(tasks));
+    }
+    return tasks;
+  } catch {
+    return [];
+  }
+}
+
+function persistTasks(storageKey: string, tasks: StoredStudioAssistantTask[]) {
+  try {
+    window.localStorage.setItem(storageKey, JSON.stringify(tasks.slice(-24)));
+    return true;
+  } catch {
+    // Device storage can be unavailable; the current conversation stays usable.
+    return false;
+  }
+}
+
+function storedTaskFromDraft(task: StudioAssistantTaskDraft): StoredStudioAssistantTask {
+  const createdAt = new Date().toISOString();
+  return {
+    action: task.action,
+    consequence: task.consequence,
+    createdAt,
+    expiresAt: new Date(Date.now() + TASK_RETENTION_MS).toISOString(),
+    id: task.id,
+    objective: task.objective,
+    requiresOwningWorkflowConfirmation: true,
+    risk: task.risk,
+    schemaVersion: "studio-assistant-task/v1",
+    state: "PROPOSED",
+    status: "OPEN",
+    steps: task.steps,
+    storage: "DEVICE_PRIVATE",
+    title: task.title,
+  };
 }
 
 function pieceDetail(input: { availability?: string; category: string; colour?: string; state?: string }) {
@@ -262,7 +427,7 @@ function buildContext(studio: ReturnType<typeof useStudio>): StudioAssistantCont
     ? Math.max(
         connected.notifications.length,
         connected.pieces.filter((piece) => piece.availability === "PRIVATE" || piece.hasLocationMismatch).length
-          + connected.orders.filter((order) => order.allowedTransitions.length > 0 || order.allowedReturnTransitions.length > 0).length,
+          + connected.orders.filter(studioOrderHasDueWork).length,
       )
     : studio.scenario
       ? studio.garments.filter((garment) => garment.state === "DRAFT" || garment.state === "ERROR").length
@@ -271,6 +436,12 @@ function buildContext(studio: ReturnType<typeof useStudio>): StudioAssistantCont
     || studio.listings.filter((listing) => listing.state === "PUBLISHED").length;
 
   return {
+    continueAction: studio.application.snapshot?.continueAction
+      ? {
+          href: studio.application.snapshot.continueAction.href,
+          label: studio.application.snapshot.continueAction.label,
+        }
+      : null,
     documents,
     provenance: projected
       ? {
@@ -390,104 +561,348 @@ function AssistantBlock({ block }: { block: StudioAssistantBlock }) {
   );
 }
 
+function AssistantWorkflowCard({
+  busy,
+  onPrompt,
+  onSaveTask,
+  savedTaskIds,
+  workflow,
+}: {
+  busy: boolean;
+  onPrompt(prompt: string): void;
+  onSaveTask(task: StudioAssistantTaskDraft, returnFocus: HTMLElement): void;
+  savedTaskIds: Set<string>;
+  workflow: StudioAssistantWorkflowResponse;
+}) {
+  const task = workflow.taskDraft;
+  const saved = Boolean(task && savedTaskIds.has(task.id));
+  return (
+    <div className="studio-ask-response">
+      {workflow.response.blocks.map((block, index) => (
+        <AssistantBlock block={block} key={`${block.kind}:${index}`} />
+      ))}
+
+      {task ? (
+        <section className="studio-ask-task-draft">
+          <Task defaultOpen={false}>
+            <TaskTrigger className="studio-ask-task-trigger" title={task.title}>
+              <span><ListTodo aria-hidden="true" size={17} />Suggested task</span>
+              <strong>{task.title}</strong>
+              <small>{riskLabel(task.risk)} · saved only on this device</small>
+            </TaskTrigger>
+            <TaskContent className="studio-ask-task-content">
+              {task.steps.map((step) => (
+                <TaskItem className="studio-ask-task-step" key={step.id}>
+                  <Check aria-hidden="true" size={14} />{step.label}
+                </TaskItem>
+              ))}
+            </TaskContent>
+          </Task>
+          <div className="studio-ask-task-actions">
+            <button
+              className="button button-secondary"
+              disabled={busy || saved}
+              onClick={(event) => onSaveTask(task, event.currentTarget)}
+              type="button"
+            >
+              {saved ? <Check aria-hidden="true" size={15} /> : <Save aria-hidden="true" size={15} />}
+              {saved ? "Task saved" : "Save task"}
+            </button>
+            <small>This does not run the workflow.</small>
+          </div>
+        </section>
+      ) : null}
+
+      {workflow.suggestions.length ? (
+        <Suggestions className="studio-ask-suggestions" aria-label="Suggested follow-up questions">
+          {workflow.suggestions.map((suggestion) => (
+            <Suggestion
+              className="studio-ask-suggestion"
+              disabled={busy}
+              key={suggestion.id}
+              onClick={onPrompt}
+              suggestion={suggestion.prompt}
+            >
+              {suggestion.label}
+            </Suggestion>
+          ))}
+        </Suggestions>
+      ) : null}
+
+      <small
+        className={`studio-ask-provenance is-${workflow.response.provenance.status}`}
+        title={workflow.response.provenance.generatedAt ?? undefined}
+      >
+        {workflow.response.provenance.label} · {workflow.response.provenance.detail}
+        {provenanceTime(workflow.response.provenance.generatedAt)
+          ? ` · ${provenanceTime(workflow.response.provenance.generatedAt)}`
+          : ""}
+      </small>
+    </div>
+  );
+}
+
+function AssistantFallbackMessage({
+  busy,
+  onPrompt,
+  onSaveTask,
+  savedTaskIds,
+  turn,
+}: {
+  busy: boolean;
+  onPrompt(prompt: string): void;
+  onSaveTask(task: StudioAssistantTaskDraft, returnFocus: HTMLElement): void;
+  savedTaskIds: Set<string>;
+  turn: FallbackTurn;
+}) {
+  return (
+    <Message className="studio-ask-message" from="assistant">
+      <MessageContent className="studio-ask-message-content">
+        <small className="studio-ask-fallback-label">Safe local guidance · agent connection unavailable</small>
+        <MessageResponse className="studio-ask-model-response">{studioAssistantFallbackText(turn.workflow)}</MessageResponse>
+        <AssistantWorkflowCard
+          busy={busy}
+          onPrompt={onPrompt}
+          onSaveTask={onSaveTask}
+          savedTaskIds={savedTaskIds}
+          workflow={turn.workflow}
+        />
+      </MessageContent>
+    </Message>
+  );
+}
+
 export function StudioAskSurface() {
   const studio = useStudio();
   const askCapability = studio.scenario
     ? "AVAILABLE"
     : studio.application.snapshot?.capabilities.find((capability) => capability.id === "ASK_READ")?.state ?? "UNAVAILABLE";
   const context = useMemo(() => buildContext(studio), [studio]);
+  const operator = studio.application.snapshot?.operator;
+  const storageScope = encodeURIComponent((studio.scenario
+    ? `scenario:${studio.scenario}:${operator?.storageScope ?? "unavailable"}`
+    : `connected:${operator?.storageScope ?? "unavailable"}`
+  ));
+  const sessionStorageKey = `${STORAGE_KEY}:${storageScope}`;
+  const tasksStorageKey = `${TASKS_STORAGE_KEY}:${storageScope}`;
   const [query, setQuery] = useState("");
-  const [turns, setTurns] = useState<AskTurn[]>([]);
+  const [queryError, setQueryError] = useState("");
+  const [restoredTurns, setRestoredTurns] = useState<RestoredTurn[]>([]);
+  const [fallbackTurns, setFallbackTurns] = useState<FallbackTurn[]>([]);
+  const [tasks, setTasks] = useState<StoredStudioAssistantTask[]>([]);
+  const [taskStorageError, setTaskStorageError] = useState("");
+  const [selectedTask, setSelectedTask] = useState<StudioAssistantTaskDraft | null>(null);
+  const [taskReturnFocus, setTaskReturnFocus] = useState<HTMLElement | null>(null);
+  const [tasksOpen, setTasksOpen] = useState(false);
   const [restored, setRestored] = useState(false);
   const [restoreQueue, setRestoreQueue] = useState<string[] | null>(null);
-  const timerRef = useRef<number | null>(null);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const flightRef = useRef(false);
+  const pendingRef = useRef<{ id: string; query: string } | null>(null);
+  const messagesRef = useRef<StudioAssistantUIMessage[]>([]);
   const endRef = useRef<HTMLDivElement>(null);
-  const resolving = turns.some((turn) => turn.state === "resolving");
+  const [inputElement, setInputElement] = useState<HTMLTextAreaElement | null>(null);
+  const [tasksButtonElement, setTasksButtonElement] = useState<HTMLButtonElement | null>(null);
+
+  const transport = useMemo(() => new DefaultChatTransport<StudioAssistantUIMessage>({
+    api: "/api/studio/ask",
+    prepareSendMessagesRequest: ({ messages }) => ({
+      body: {
+        messages: requestTextMessages(messages),
+        ...(studio.scenario ? { scenario: studio.scenario } : {}),
+      },
+    }),
+  }), [studio.scenario]);
+
+  const addFallback = useCallback((active: { id: string; query: string }) => {
+    const lastUserIndex = messagesRef.current.findLastIndex((message) => message.role === "user");
+    const freshAssistantMessages = messagesRef.current.slice(lastUserIndex + 1);
+    const alreadyHasWorkflow = freshAssistantMessages.some((message) => message.parts.some((part) => (
+      part.type === "tool-resolveStudioRequest" && part.state === "output-available"
+    )));
+    if (alreadyHasWorkflow) return;
+    setFallbackTurns((current) => current.some((turn) => turn.id === active.id)
+      ? current
+      : [...current, {
+          id: active.id,
+          query: active.query,
+          workflow: resolveStudioAssistantWorkflow(active.query, context),
+        }].slice(-12));
+  }, [context]);
+
+  const {
+    clearError,
+    error,
+    messages,
+    sendMessage,
+    setMessages,
+    status,
+    stop,
+  } = useChat<StudioAssistantUIMessage>({
+    id: `studio-ask-${studio.scenario ?? "connected"}`,
+    onError: () => {
+      if (pendingRef.current) addFallback(pendingRef.current);
+      pendingRef.current = null;
+      flightRef.current = false;
+    },
+    onFinish: ({ isAbort, isError }) => {
+      if (isError && pendingRef.current) addFallback(pendingRef.current);
+      if (!isAbort || pendingRef.current) pendingRef.current = null;
+      flightRef.current = false;
+    },
+    transport,
+  });
+  const busy = status === "submitted" || status === "streaming";
+  const savedTaskIds = useMemo(() => new Set(tasks.map((task) => task.id)), [tasks]);
+  const openTaskCount = tasks.filter((task) => task.status === "OPEN").length;
+  const hasConversation = restoredTurns.length > 0 || messages.length > 0 || fallbackTurns.length > 0;
 
   useEffect(() => {
-    setRestoreQueue(restoreQueries());
-  }, []);
+    const frame = window.requestAnimationFrame(() => {
+      setFallbackTurns([]);
+      setMessages([]);
+      setRestored(false);
+      setRestoredTurns([]);
+      setRestoreQueue(restoreQueries(sessionStorageKey));
+      setTasks(restoreTasks(tasksStorageKey));
+      setTaskStorageError("");
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [sessionStorageKey, setMessages, tasksStorageKey]);
+
+  useEffect(() => {
+    messagesRef.current = messages;
+  }, [messages]);
 
   useEffect(() => {
     if (restored || restoreQueue === null) return;
     if (!restoreQueue.length) {
-      setRestored(true);
-      setRestoreQueue(null);
-      return;
+      const frame = window.requestAnimationFrame(() => {
+        setRestored(true);
+        setRestoreQueue(null);
+      });
+      return () => window.cancelAnimationFrame(frame);
     }
     const applicationSettled = Boolean(studio.scenario)
       || studio.application.status === "ready"
       || studio.application.status === "error";
     if (!applicationSettled) return;
-    setTurns(restoreQueue.map((stored, index) => {
+    const nextTurns = restoreQueue.map((stored, index) => {
       try {
         return {
           id: `restored-${index}`,
           query: stored,
-          response: resolveStudioAssistant(stored, context),
+          workflow: resolveStudioAssistantWorkflow(stored, context),
           state: "complete" as const,
         };
       } catch {
         return { id: `restored-${index}`, query: stored, state: "error" as const };
       }
-    }));
-    setRestored(true);
-    setRestoreQueue(null);
+    });
+    const frame = window.requestAnimationFrame(() => {
+      setRestoredTurns(nextTurns);
+      setRestored(true);
+      setRestoreQueue(null);
+    });
+    return () => window.cancelAnimationFrame(frame);
   }, [context, restoreQueue, restored, studio.application.status, studio.scenario]);
 
   useEffect(() => {
     if (!restored) return;
-    const frame = window.requestAnimationFrame(() => inputRef.current?.focus({ preventScroll: true }));
-    return () => window.cancelAnimationFrame(frame);
-  }, [restored]);
-
-  useEffect(() => {
-    if (!restored) return;
+    const liveQueries = messages
+      .filter((message) => message.role === "user")
+      .map(messageText)
+      .filter(Boolean);
     try {
-      window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(
-        turns.filter((turn) => turn.state === "complete").map((turn) => turn.query).slice(-12),
+      window.sessionStorage.setItem(sessionStorageKey, JSON.stringify(
+        [...restoredTurns.filter((turn) => turn.state === "complete").map((turn) => turn.query), ...liveQueries].slice(-12),
       ));
     } catch {
       // A private browsing policy may disable session storage; chat remains usable.
     }
-  }, [restored, turns]);
+  }, [messages, restored, restoredTurns, sessionStorageKey]);
 
   useEffect(() => {
-    if (!turns.length) return;
+    if (!hasConversation) return;
     endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
-  }, [turns]);
-
-  useEffect(() => () => {
-    if (timerRef.current !== null) window.clearTimeout(timerRef.current);
-  }, []);
+  }, [fallbackTurns, hasConversation, messages, status]);
 
   const submit = useCallback((requestedQuery: string) => {
     const cleanQuery = requestedQuery.trim();
-    if (!cleanQuery || resolving) return;
-    const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    const pendingTurn: AskTurn = { id, query: cleanQuery, state: "resolving" };
+    if (!cleanQuery || flightRef.current || status === "submitted" || status === "streaming") return;
+    if (cleanQuery.length > MAX_QUERY_LENGTH) {
+      setQueryError(`Keep the request to ${MAX_QUERY_LENGTH.toLocaleString("en-NG")} characters or fewer.`);
+      return;
+    }
+    const active = { id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, query: cleanQuery };
+    flightRef.current = true;
+    pendingRef.current = active;
+    if (status === "error") clearError();
+    setQueryError("");
     setQuery("");
-    setTurns((current) => [...current, pendingTurn].slice(-12));
-    timerRef.current = window.setTimeout(() => {
-      try {
-        const resolved = resolveStudioAssistant(cleanQuery, context);
-        setTurns((current) => current.map((turn) => turn.id === id ? { ...turn, response: resolved, state: "complete" } : turn));
-      } catch {
-        setTurns((current) => current.map((turn) => turn.id === id ? { ...turn, state: "error" } : turn));
-      } finally {
-        timerRef.current = null;
-      }
-    }, 180);
-  }, [context, resolving]);
+    void sendMessage({ messageId: active.id, text: cleanQuery }).catch(() => {
+      addFallback(active);
+      pendingRef.current = null;
+      flightRef.current = false;
+    });
+  }, [addFallback, clearError, sendMessage, status]);
 
   function resetConversation() {
-    if (timerRef.current !== null) window.clearTimeout(timerRef.current);
-    timerRef.current = null;
-    setTurns([]);
+    if (busy) void stop();
+    flightRef.current = false;
+    pendingRef.current = null;
+    setMessages([]);
+    setRestoredTurns([]);
+    setFallbackTurns([]);
     setQuery("");
-    try { window.sessionStorage.removeItem(STORAGE_KEY); } catch { /* Keep the UI usable. */ }
-    window.requestAnimationFrame(() => inputRef.current?.focus({ preventScroll: true }));
+    setQueryError("");
+    clearError();
+    try { window.sessionStorage.removeItem(sessionStorageKey); } catch { /* Keep the UI usable. */ }
+    window.requestAnimationFrame(() => inputElement?.focus({ preventScroll: true }));
+  }
+
+  function prepareTaskSave(task: StudioAssistantTaskDraft, returnFocus: HTMLElement) {
+    if (!isStudioAssistantTaskDraft(task)) {
+      setTaskStorageError("That task draft is incomplete. Ask Studio to prepare it again.");
+      setTasksOpen(true);
+      return;
+    }
+    setTaskStorageError("");
+    setTaskReturnFocus(returnFocus);
+    setSelectedTask(task);
+  }
+
+  async function confirmTaskSave() {
+    if (!selectedTask) return { error: "Choose a task to save.", ok: false as const };
+    const existing = tasks.find((task) => task.id === selectedTask.id);
+    const next = existing
+      ? tasks
+      : [...tasks, storedTaskFromDraft(selectedTask)].slice(-24);
+    if (!persistTasks(tasksStorageKey, next)) {
+      return { error: "This browser did not allow device storage. The Studio workflow was not changed.", ok: false as const };
+    }
+    setTaskStorageError("");
+    setTasks(next);
+    return { ok: true as const };
+  }
+
+  function setTaskStatus(taskId: string, taskStatus: StoredStudioAssistantTask["status"]) {
+    const next = tasks.map((task) => task.id === taskId ? { ...task, status: taskStatus } : task);
+    if (persistTasks(tasksStorageKey, next)) {
+      setTaskStorageError("");
+      setTasks(next);
+      return;
+    }
+    setTaskStorageError("This browser could not update the saved task. No Studio record changed.");
+  }
+
+  function deleteTask(taskId: string) {
+    const next = tasks.filter((task) => task.id !== taskId);
+    if (persistTasks(tasksStorageKey, next)) {
+      setTaskStorageError("");
+      setTasks(next);
+      return;
+    }
+    setTaskStorageError("This browser could not remove the saved task. No Studio record changed.");
   }
 
   if (!studio.scenario && (studio.application.status === "idle" || studio.application.status === "loading")) {
@@ -509,39 +924,139 @@ export function StudioAskSurface() {
   return (
     <section className="studio-ask-page">
       <div aria-live="polite" className="studio-ask-thread">
-        {!turns.length ? (
+        <div className="studio-ask-session-tools">
+          {hasConversation ? (
+            <button onClick={resetConversation} type="button"><RotateCcw aria-hidden="true" size={15} />New</button>
+          ) : null}
+          <button onClick={() => setTasksOpen(true)} ref={setTasksButtonElement} type="button">
+            <ListTodo aria-hidden="true" size={15} />Tasks{openTaskCount ? <span>{openTaskCount}</span> : null}
+          </button>
+          {busy ? (
+            <button onClick={() => void stop()} type="button"><Square aria-hidden="true" size={13} />Stop</button>
+          ) : null}
+        </div>
+
+        {!hasConversation ? (
           <div className="studio-ask-welcome">
             <Sparkles aria-hidden="true" size={24} />
             <h1>What needs doing?</h1>
-            <div>{STARTERS.map((starter) => <button disabled={resolving} key={starter} onClick={() => submit(starter)} type="button">{starter}</button>)}</div>
+            <p>Ask naturally. Studio will answer, surface the right next action, and prepare safe task options.</p>
+            <div>{STARTERS.map((starter) => <button disabled={busy} key={starter} onClick={() => submit(starter)} type="button">{starter}</button>)}</div>
           </div>
         ) : (
           <>
-            <div className="studio-ask-session-tools">
-              <button onClick={resetConversation} type="button"><RotateCcw aria-hidden="true" size={15} />New</button>
-            </div>
-            {turns.map((turn) => (
+            {restoredTurns.map((turn) => (
               <article className="studio-ask-turn" key={turn.id}>
                 <p className="studio-ask-operator">{turn.query}</p>
-                {turn.state === "resolving" ? (
-                  <div className="studio-ask-resolving" role="status"><LoaderCircle aria-hidden="true" size={17} />Reading Studio</div>
-                ) : turn.state === "error" ? (
+                {turn.state === "error" ? (
                   <div className="studio-ask-error" role="alert">
                     <CircleAlert aria-hidden="true" size={18} />
-                    <span><strong>Studio could not resolve that.</strong><small>Your request was not applied.</small></span>
+                    <span><strong>Studio could not restore that request.</strong><small>No Studio change was applied.</small></span>
                     <button onClick={() => submit(turn.query)} type="button">Try again</button>
                   </div>
-                ) : turn.response ? (
-                  <div className="studio-ask-response">
-                    {turn.response.blocks.map((block, index) => <AssistantBlock block={block} key={`${turn.id}:${block.kind}:${index}`} />)}
-                    <small className={`studio-ask-provenance is-${turn.response.provenance.status}`} title={turn.response.provenance.generatedAt ?? undefined}>
-                      {turn.response.provenance.label} · {turn.response.provenance.detail}
-                      {provenanceTime(turn.response.provenance.generatedAt) ? ` · ${provenanceTime(turn.response.provenance.generatedAt)}` : ""}
-                    </small>
-                  </div>
+                ) : turn.workflow ? (
+                  <>
+                    <small className="studio-ask-restored">Refreshed against current Studio truth</small>
+                    <AssistantWorkflowCard
+                      busy={busy}
+                      onPrompt={submit}
+                      onSaveTask={prepareTaskSave}
+                      savedTaskIds={savedTaskIds}
+                      workflow={turn.workflow}
+                    />
+                  </>
                 ) : null}
               </article>
             ))}
+
+            {messages.map((message) => (
+              <Fragment key={message.id}>
+              <Message className="studio-ask-message" from={message.role}>
+                <MessageContent className="studio-ask-message-content">
+                  {message.parts.map((part, partIndex) => {
+                    if (part.type === "text") {
+                      if (!part.text.trim()) return null;
+                      return message.role === "user" ? (
+                        <p className="studio-ask-operator" key={`${message.id}:text:${partIndex}`}>{part.text}</p>
+                      ) : (
+                        <MessageResponse
+                          className="studio-ask-model-response"
+                          isAnimating={part.state === "streaming"}
+                          key={`${message.id}:text:${partIndex}`}
+                        >
+                          {part.text}
+                        </MessageResponse>
+                      );
+                    }
+                    if (part.type !== "tool-resolveStudioRequest") return null;
+                    if (part.state === "input-streaming" || part.state === "input-available") {
+                      return (
+                        <div className="studio-ask-resolving" key={`${message.id}:tool:${partIndex}`} role="status">
+                          <LoaderCircle aria-hidden="true" size={17} />Reading Studio
+                        </div>
+                      );
+                    }
+                    if (part.state === "output-available") {
+                      return (
+                        <AssistantWorkflowCard
+                          busy={busy}
+                          key={`${message.id}:tool:${partIndex}`}
+                          onPrompt={submit}
+                          onSaveTask={prepareTaskSave}
+                          savedTaskIds={savedTaskIds}
+                          workflow={part.output}
+                        />
+                      );
+                    }
+                    if (part.state === "output-error") {
+                      return (
+                        <div className="studio-ask-error" key={`${message.id}:tool:${partIndex}`} role="alert">
+                          <CircleAlert aria-hidden="true" size={18} />
+                          <span><strong>Studio truth could not be read.</strong><small>No Studio change was applied.</small></span>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })}
+                </MessageContent>
+              </Message>
+              {message.role === "user" ? fallbackTurns
+                .filter((turn) => turn.id === message.id)
+                .map((turn) => (
+                  <AssistantFallbackMessage
+                    busy={busy}
+                    key={`fallback:${turn.id}`}
+                    onPrompt={submit}
+                    onSaveTask={prepareTaskSave}
+                    savedTaskIds={savedTaskIds}
+                    turn={turn}
+                  />
+                )) : null}
+              </Fragment>
+            ))}
+            {fallbackTurns.filter((turn) => !messages.some((message) => message.id === turn.id)).map((turn) => (
+              <Fragment key={`unmatched-fallback:${turn.id}`}>
+                <Message className="studio-ask-message" from="user">
+                  <MessageContent className="studio-ask-message-content">
+                    <p className="studio-ask-operator">{turn.query}</p>
+                  </MessageContent>
+                </Message>
+                <AssistantFallbackMessage
+                  busy={busy}
+                  onPrompt={submit}
+                  onSaveTask={prepareTaskSave}
+                  savedTaskIds={savedTaskIds}
+                  turn={turn}
+                />
+              </Fragment>
+            ))}
+
+            {error ? (
+              <div className="studio-ask-error" role="alert">
+                <CircleAlert aria-hidden="true" size={18} />
+                <span><strong>The conversational reply paused.</strong><small>Trusted Studio actions above remain safe; no change was applied.</small></span>
+              </div>
+            ) : null}
           </>
         )}
         <div ref={endRef} />
@@ -558,27 +1073,112 @@ export function StudioAskSurface() {
           <label>
             <span className="sr-only">Ask Studio</span>
             <textarea
-              disabled={resolving}
-              onChange={(event) => setQuery(event.target.value)}
+              aria-describedby={queryError ? "studio-ask-query-error" : undefined}
+              aria-invalid={queryError ? true : undefined}
+              disabled={busy}
+              maxLength={MAX_QUERY_LENGTH}
+              onChange={(event) => {
+                setQuery(event.target.value);
+                if (queryError) setQueryError("");
+              }}
               onKeyDown={(event) => {
                 if (event.key !== "Enter" || event.shiftKey || event.nativeEvent.isComposing) return;
                 event.preventDefault();
                 submit(query);
               }}
               placeholder="Ask about Studio or find a record"
-              ref={inputRef}
+              ref={setInputElement}
               rows={1}
               value={query}
             />
           </label>
-          <button aria-label="Send to Ask Studio" className="studio-ai-send" disabled={!query.trim() || resolving} type="submit">
-            {resolving ? <LoaderCircle aria-hidden="true" size={18} /> : <ArrowRight aria-hidden="true" size={18} />}
+          <button
+            aria-label="Send to Ask Studio"
+            className="studio-ai-send"
+            data-busy={busy || undefined}
+            disabled={!query.trim() || busy}
+            type="submit"
+          >
+            {busy ? <LoaderCircle aria-hidden="true" size={18} /> : <ArrowRight aria-hidden="true" size={18} />}
           </button>
         </form>
+        {queryError ? <p className="studio-ask-query-error" id="studio-ask-query-error" role="alert">{queryError}</p> : null}
         {askCapability === "READ_ONLY_COMPATIBILITY"
           ? <p>Service guidance only while connected records are unavailable.</p>
           : null}
       </div>
+
+      <StudioDecisionSheet
+        busyLabel="Saving task on this device"
+        confirmLabel="Save task"
+        consequence="This saves a private task plan on this device. It does not run the workflow or change any Studio record."
+        fallbackFocus={inputElement}
+        onConfirm={confirmTaskSave}
+        onDismiss={() => setSelectedTask(null)}
+        open={Boolean(selectedTask)}
+        receiptDetail="The task is available under My tasks for 30 days on this device. No Wardrobe, Shop, Order, stock, media, or approval state changed."
+        receiptTitle="Task saved privately"
+        returnFocus={taskReturnFocus}
+        summary={selectedTask ? `${selectedTask.title}: ${selectedTask.objective}` : "Review this task before saving it."}
+        title={selectedTask?.title ?? "Save task"}
+      >
+        {selectedTask ? (
+          <Task defaultOpen>
+            <TaskTrigger title="Task steps" />
+            <TaskContent>
+              {selectedTask.steps.map((step) => <TaskItem key={step.id}>{step.label}</TaskItem>)}
+            </TaskContent>
+          </Task>
+        ) : null}
+      </StudioDecisionSheet>
+
+      <StudioTaskSheet
+        className="studio-ask-tasks-sheet"
+        eyebrow="Device private · 30 days"
+        fallbackFocus={inputElement}
+        onDismiss={() => setTasksOpen(false)}
+        open={tasksOpen}
+        returnFocus={tasksButtonElement}
+        title="My tasks"
+      >
+        {taskStorageError ? (
+          <div className="studio-ask-error" role="alert">
+            <CircleAlert aria-hidden="true" size={18} />
+            <span><strong>Saved task update paused.</strong><small>{taskStorageError}</small></span>
+            <button onClick={() => setTaskStorageError("")} type="button">Dismiss</button>
+          </div>
+        ) : null}
+        {tasks.length ? (
+          <div className="studio-ask-task-list">
+            {tasks.map((task) => (
+              <article className={task.status === "DONE" ? "is-done" : ""} key={task.id}>
+                <header><strong>{task.title}</strong><small>{task.status === "DONE" ? "Done" : riskLabel(task.risk)}</small></header>
+                <p>{task.objective}</p>
+                <div>
+                  <Link className="button button-primary" href={task.action.href}>Continue<ArrowRight aria-hidden="true" size={15} /></Link>
+                  <button
+                    className="button button-secondary"
+                    onClick={() => setTaskStatus(task.id, task.status === "DONE" ? "OPEN" : "DONE")}
+                    type="button"
+                  >
+                    {task.status === "DONE" ? "Reopen" : "Mark done"}
+                  </button>
+                  <button
+                    aria-label={`Delete ${task.title}`}
+                    className="studio-ask-task-remove"
+                    onClick={() => deleteTask(task.id)}
+                    type="button"
+                  >
+                    <Trash2 aria-hidden="true" size={15} />Delete
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div className="studio-quiet-empty"><ListTodo aria-hidden="true" size={21} /><div><strong>No saved tasks</strong><p>Ask Studio for a workflow, then save its suggested task here.</p></div></div>
+        )}
+      </StudioTaskSheet>
     </section>
   );
 }

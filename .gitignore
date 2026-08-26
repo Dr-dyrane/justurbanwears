@@ -56,5 +56,10 @@ yarn-error.log*
 # Local Codex task state and private workspace topology.
 /.codex/
 
+# Local browser-verification output and screenshots.
+/.playwright-mcp/
+/juw-intake-*.png
+/studio-*.png
+
 # Private identity and garment source material. Never commit or deploy.
 /storage/

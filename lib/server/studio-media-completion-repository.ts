@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { and, desc, eq, lte, sql } from "drizzle-orm";
+import { and, desc, eq, isNotNull, isNull, lte, or, sql } from "drizzle-orm";
 import {
   studioMediaCompletionJobs,
   studioPendingProductCaptures,
@@ -15,10 +15,140 @@ import type { PendingCaptureRow } from "./studio-pending-capture-repository";
 
 export type MediaCompletionJobRow = typeof studioMediaCompletionJobs.$inferSelect;
 
+export const MEDIA_COMPLETION_0015_REQUIRED_COLUMNS = Object.freeze([
+  "validation_invocation_started_at",
+  "validation_result_received_at",
+  "provider_invocation_started_at",
+  "provider_result_received_at",
+  "provider_result_blob_pathname",
+  "provider_result_mime_type",
+  "provider_result_byte_size",
+  "provider_result_sha256",
+] as const);
+
+export const MEDIA_COMPLETION_0015_REQUIRED_CONSTRAINTS = Object.freeze([
+  "studio_media_completion_jobs_validation_checkpoints",
+  "studio_media_completion_jobs_provider_checkpoints",
+  "studio_media_completion_jobs_state_known",
+  "studio_media_completion_jobs_output_complete",
+] as const);
+
+type MediaCompletionSchemaPrerequisiteRow = Readonly<{
+  kind: "COLUMN" | "CONSTRAINT";
+  name: string;
+}>;
+
+export function missingMediaCompletionSchemaPrerequisites(
+  rows: readonly MediaCompletionSchemaPrerequisiteRow[],
+): string[] {
+  const available = new Set(rows.map((row) => `${row.kind}:${row.name}`));
+  return [
+    ...MEDIA_COMPLETION_0015_REQUIRED_COLUMNS.map((name) => `COLUMN:${name}`),
+    ...MEDIA_COMPLETION_0015_REQUIRED_CONSTRAINTS.map((name) => `CONSTRAINT:${name}`),
+  ].filter((required) => !available.has(required));
+}
+
+type StudioDb = Awaited<ReturnType<typeof getStudioDb>>;
+let mediaCompletionSchemaReady = false;
+
+async function assertMediaCompletionSchemaReady(database: StudioDb): Promise<void> {
+  if (mediaCompletionSchemaReady) return;
+  const result = await database.execute<MediaCompletionSchemaPrerequisiteRow>(sql`
+    select 'COLUMN'::text as kind, column_name::text as name
+    from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'studio_media_completion_jobs'
+      and column_name in (
+        'validation_invocation_started_at',
+        'validation_result_received_at',
+        'provider_invocation_started_at',
+        'provider_result_received_at',
+        'provider_result_blob_pathname',
+        'provider_result_mime_type',
+        'provider_result_byte_size',
+        'provider_result_sha256'
+      )
+    union all
+    select 'CONSTRAINT'::text as kind, constraint_name::text as name
+    from information_schema.table_constraints
+    where table_schema = 'public'
+      and table_name = 'studio_media_completion_jobs'
+      and constraint_name in (
+        'studio_media_completion_jobs_validation_checkpoints',
+        'studio_media_completion_jobs_provider_checkpoints',
+        'studio_media_completion_jobs_state_known',
+        'studio_media_completion_jobs_output_complete'
+      )
+  `);
+  const rows = ("rows" in result ? result.rows : result) as MediaCompletionSchemaPrerequisiteRow[];
+  const missing = missingMediaCompletionSchemaPrerequisites(Array.isArray(rows) ? rows : []);
+  if (missing.length) {
+    throw new StudioEngineError(
+      "ENGINE_UNAVAILABLE",
+      503,
+      "Studio media generation is not ready.",
+      "Apply database migration 0015_media_completion_dispatch_fence. No generation was started.",
+    );
+  }
+  // Only a successful inspection is cached. A missing or temporarily
+  // unavailable schema is checked again on the next request.
+  mediaCompletionSchemaReady = true;
+}
+
+async function getMediaCompletionDb(): Promise<StudioDb> {
+  const database = await getStudioDb();
+  await assertMediaCompletionSchemaReady(database);
+  return database;
+}
+
 // Gateway validation and generation have bounded 30s + 60s abort signals.
-// Ten minutes leaves ample upload/normalization headroom before a crashed
-// invocation can be fenced off and exposed as a retryable failure.
+// Ten minutes leaves ample upload/normalization headroom before recovery must
+// classify the durable dispatch checkpoints. Recovery never guesses that a
+// started provider invocation was free to repeat.
 const MEDIA_COMPLETION_LEASE_MS = 10 * 60 * 1_000;
+
+type MediaCompletionRecoveryCheckpoints = Pick<
+  MediaCompletionJobRow,
+  | "validationInvocationStartedAt"
+  | "validationResultReceivedAt"
+  | "providerInvocationStartedAt"
+  | "providerResultReceivedAt"
+  | "providerResultBlobPathname"
+  | "providerResultMimeType"
+  | "providerResultByteSize"
+  | "providerResultSha256"
+>;
+
+export function hasRetainedMediaCompletionProviderResult(
+  job: MediaCompletionRecoveryCheckpoints,
+): boolean {
+  return Boolean(
+    job.providerInvocationStartedAt
+    && job.providerResultReceivedAt
+    && job.providerResultBlobPathname
+    && job.providerResultMimeType
+    && job.providerResultByteSize
+    && job.providerResultByteSize > 0
+    && job.providerResultSha256
+    && /^[0-9a-f]{64}$/.test(job.providerResultSha256),
+  );
+}
+
+export type ExpiredMediaCompletionDisposition =
+  | "REQUEUE_PRE_DISPATCH"
+  | "RESUME_RETAINED_RESULT"
+  | "INDETERMINATE_RECONCILIATION";
+
+export function classifyExpiredMediaCompletionClaim(
+  job: MediaCompletionRecoveryCheckpoints,
+): ExpiredMediaCompletionDisposition {
+  if (hasRetainedMediaCompletionProviderResult(job)) return "RESUME_RETAINED_RESULT";
+  if (job.providerInvocationStartedAt) return "INDETERMINATE_RECONCILIATION";
+  if (job.validationInvocationStartedAt && !job.validationResultReceivedAt) {
+    return "INDETERMINATE_RECONCILIATION";
+  }
+  return "REQUEUE_PRE_DISPATCH";
+}
 
 export async function listMediaCompletionJobs(input: {
   operatorSubject: string;
@@ -26,7 +156,8 @@ export async function listMediaCompletionJobs(input: {
   targetKey: string;
   role: MediaCompletionRole;
 }): Promise<MediaCompletionJobRow[]> {
-  return (await getStudioDb()).select().from(studioMediaCompletionJobs).where(and(
+  const database = await getMediaCompletionDb();
+  return database.select().from(studioMediaCompletionJobs).where(and(
     eq(studioMediaCompletionJobs.operatorSubject, input.operatorSubject),
     eq(studioMediaCompletionJobs.targetKind, input.targetKind),
     eq(studioMediaCompletionJobs.targetKey, input.targetKey),
@@ -38,7 +169,8 @@ export async function getOwnedMediaCompletionJob(input: {
   id: string;
   operatorSubject: string;
 }): Promise<MediaCompletionJobRow> {
-  const [job] = await (await getStudioDb()).select().from(studioMediaCompletionJobs).where(and(
+  const database = await getMediaCompletionDb();
+  const [job] = await database.select().from(studioMediaCompletionJobs).where(and(
     eq(studioMediaCompletionJobs.id, input.id),
     eq(studioMediaCompletionJobs.operatorSubject, input.operatorSubject),
   )).limit(1);
@@ -51,7 +183,7 @@ export async function getOwnedMediaCompletionJob(input: {
 export async function createOrReuseMediaCompletionJob(
   input: typeof studioMediaCompletionJobs.$inferInsert,
 ): Promise<MediaCompletionJobRow> {
-  const db = await getStudioDb();
+  const db = await getMediaCompletionDb();
   await db.insert(studioMediaCompletionJobs).values(input).onConflictDoNothing();
   const [job] = await db.select().from(studioMediaCompletionJobs).where(and(
     eq(studioMediaCompletionJobs.operatorSubject, input.operatorSubject),
@@ -69,7 +201,8 @@ export async function createOrReuseMediaCompletionJob(
 export async function claimMediaCompletionJob(id: string): Promise<string | null> {
   const executionToken = randomUUID();
   const startedAt = new Date();
-  const claimed = await (await getStudioDb()).update(studioMediaCompletionJobs).set({
+  const database = await getMediaCompletionDb();
+  const claimed = await database.update(studioMediaCompletionJobs).set({
     state: "RUNNING",
     executionToken,
     startedAt,
@@ -87,7 +220,8 @@ export async function updateRunningMediaCompletionJob(
   executionToken: string,
   update: Partial<typeof studioMediaCompletionJobs.$inferInsert>,
 ): Promise<boolean> {
-  const updated = await (await getStudioDb()).update(studioMediaCompletionJobs).set({
+  const database = await getMediaCompletionDb();
+  const updated = await database.update(studioMediaCompletionJobs).set({
     ...update,
     updatedAt: new Date(),
   }).where(and(
@@ -104,29 +238,96 @@ export async function recoverStaleMediaCompletionJobs(input: {
   targetKey: string;
   role: MediaCompletionRole;
 }): Promise<number> {
-  const recovered = await (await getStudioDb()).update(studioMediaCompletionJobs).set({
-    state: "FAILED",
-    executionToken: null,
-    startedAt: null,
-    leaseExpiresAt: null,
-    errorCode: "STALE_EXECUTION",
-    updatedAt: new Date(),
-  }).where(and(
+  const db = await getMediaCompletionDb();
+  const expiredScope = [
     eq(studioMediaCompletionJobs.operatorSubject, input.operatorSubject),
     eq(studioMediaCompletionJobs.targetKind, input.targetKind),
     eq(studioMediaCompletionJobs.targetKey, input.targetKey),
     eq(studioMediaCompletionJobs.role, input.role),
     eq(studioMediaCompletionJobs.state, "RUNNING"),
     lte(studioMediaCompletionJobs.leaseExpiresAt, new Date()),
+  ] as const;
+
+  // A complete raw-result checkpoint can safely resume local normalization on
+  // the same attempt. It must never open a new paid generation attempt.
+  const retained = await db.update(studioMediaCompletionJobs).set({
+    state: "PENDING",
+    executionToken: null,
+    startedAt: null,
+    leaseExpiresAt: null,
+    errorCode: "RETAINED_RESULT_RESUME",
+    updatedAt: new Date(),
+  }).where(and(...expiredScope,
+    isNotNull(studioMediaCompletionJobs.providerResultReceivedAt),
+    isNotNull(studioMediaCompletionJobs.providerResultBlobPathname),
+    isNotNull(studioMediaCompletionJobs.providerResultMimeType),
+    isNotNull(studioMediaCompletionJobs.providerResultByteSize),
+    isNotNull(studioMediaCompletionJobs.providerResultSha256),
   )).returning({ id: studioMediaCompletionJobs.id });
-  return recovered.length;
+
+  // Before either provider call starts, or after validation has a complete
+  // result but before image dispatch, the same attempt is safe to requeue.
+  const preDispatch = await db.update(studioMediaCompletionJobs).set({
+    state: "PENDING",
+    executionToken: null,
+    startedAt: null,
+    leaseExpiresAt: null,
+    errorCode: null,
+    updatedAt: new Date(),
+  }).where(and(...expiredScope,
+    isNull(studioMediaCompletionJobs.providerInvocationStartedAt),
+    or(
+      isNull(studioMediaCompletionJobs.validationInvocationStartedAt),
+      isNotNull(studioMediaCompletionJobs.validationResultReceivedAt),
+    ),
+  )).returning({ id: studioMediaCompletionJobs.id });
+
+  // Any remaining expired claim crossed a paid dispatch fence without a
+  // complete retained result. Fail closed for explicit reconciliation.
+  const indeterminate = await db.update(studioMediaCompletionJobs).set({
+    state: "INDETERMINATE",
+    executionToken: null,
+    startedAt: null,
+    leaseExpiresAt: null,
+    errorCode: "RECONCILIATION_REQUIRED",
+    updatedAt: new Date(),
+  }).where(and(...expiredScope)).returning({ id: studioMediaCompletionJobs.id });
+
+  return retained.length + preDispatch.length + indeterminate.length;
+}
+
+export async function requeueRetainedMediaCompletionResult(input: {
+  id: string;
+  operatorSubject: string;
+}): Promise<boolean> {
+  const database = await getMediaCompletionDb();
+  const requeued = await database.update(studioMediaCompletionJobs).set({
+    state: "PENDING",
+    executionToken: null,
+    startedAt: null,
+    leaseExpiresAt: null,
+    errorCode: "RETAINED_RESULT_RESUME",
+    updatedAt: new Date(),
+  }).where(and(
+    eq(studioMediaCompletionJobs.id, input.id),
+    eq(studioMediaCompletionJobs.operatorSubject, input.operatorSubject),
+    eq(studioMediaCompletionJobs.state, "FAILED"),
+    isNotNull(studioMediaCompletionJobs.providerResultReceivedAt),
+    isNotNull(studioMediaCompletionJobs.providerResultBlobPathname),
+    isNotNull(studioMediaCompletionJobs.providerResultMimeType),
+    isNotNull(studioMediaCompletionJobs.providerResultByteSize),
+    isNotNull(studioMediaCompletionJobs.providerResultSha256),
+    sql`${studioMediaCompletionJobs.errorCode} is distinct from 'PAID_RESULT_POLICY_BLOCKED'`,
+  )).returning({ id: studioMediaCompletionJobs.id });
+  return requeued.length === 1;
 }
 
 export async function rejectMediaCompletionJob(input: {
   id: string;
   operatorSubject: string;
 }): Promise<MediaCompletionJobRow> {
-  const [job] = await (await getStudioDb()).update(studioMediaCompletionJobs).set({
+  const database = await getMediaCompletionDb();
+  const [job] = await database.update(studioMediaCompletionJobs).set({
     state: "REJECTED",
     rejectedAt: new Date(),
     approvedAt: null,
@@ -152,7 +353,7 @@ export async function approveAndPromoteMediaCompletionJob(input: {
   captureKey: string;
   truthConfirmed: boolean;
 }): Promise<MediaCompletionJobRow> {
-  const db = await getStudioDb();
+  const db = await getMediaCompletionDb();
   const result = await db.execute(sql`
     with approved_job as (
       update studio_media_completion_jobs
@@ -216,7 +417,8 @@ export async function captureHasApprovedMediaLineage(input: {
 }): Promise<boolean> {
   if (input.capture.origin === "DIRECT") return input.capture.completionJobId === null;
   if (input.capture.origin !== "AI_DERIVED" || !input.capture.completionJobId) return false;
-  const [lineage] = await (await getStudioDb()).select({ id: studioMediaCompletionJobs.id }).from(
+  const database = await getMediaCompletionDb();
+  const [lineage] = await database.select({ id: studioMediaCompletionJobs.id }).from(
     studioMediaCompletionJobs,
   ).where(and(
     eq(studioMediaCompletionJobs.id, input.capture.completionJobId),
@@ -232,7 +434,7 @@ export async function captureHasApprovedMediaLineage(input: {
 }
 
 export function isTerminalMediaCompletionState(state: string): state is MediaCompletionState {
-  return ["COMPLETE", "APPROVED", "REJECTED", "FAILED"].includes(state);
+  return ["COMPLETE", "APPROVED", "REJECTED", "FAILED", "INDETERMINATE"].includes(state);
 }
 
 // Keep the promoted capture table anchored in this server-only repository.

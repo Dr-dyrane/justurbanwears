@@ -116,6 +116,8 @@ export type StudioApplicationProjection = {
   operator: {
     displayName: string;
     role: "operator" | "admin";
+    /** Server-derived opaque identity for browser-private storage partitioning. */
+    storageScope: string;
   };
   sourceRevisions: readonly StudioSourceRevision[];
   summary: StudioSummary;

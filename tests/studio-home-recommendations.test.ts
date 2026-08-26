@@ -20,6 +20,11 @@ test("Home keeps one primary recommendation and exposes concise direct paths", (
   assert.doesNotMatch(home, /label: "(?:Change|Switch) drop"/);
   assert.match(home, /projected\?\.continueAction/);
   assert.match(home, /primaryOpenCount/);
+  assert.match(home, /scenario \? scenarioPrimaryTask\.count/);
+  assert.match(home, /selectStudioHomeGate/);
+  assert.match(home, /Studio could not open/);
+  assert.match(home, /data-experience-action="primary"/);
+  assert.doesNotMatch(home, /href: "\/studio"/);
 });
 
 test("the drop recommendation opens the existing collection sheet", () => {

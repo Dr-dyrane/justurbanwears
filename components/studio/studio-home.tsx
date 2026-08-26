@@ -18,7 +18,12 @@ import {
   ArrangeStudioHomeControl,
   StudioServiceList,
 } from "./navigation/studio-service-list";
+import {
+  studioOrderHasDueReturnWork,
+  studioOrderHasDueWork,
+} from "../../lib/shop/order-presentation";
 import { projectStudioDropScopes } from "../../lib/studio/projections/drop-context";
+import { selectStudioHomeGate } from "../../lib/studio/application/home-gate";
 import { useStudio } from "./studio-provider";
 
 export function StudioHome() {
@@ -54,12 +59,14 @@ export function StudioHome() {
     ? connected?.orders.filter((order) => order.lifecycleStatus === "ACTIVE").length ?? 0
     : projected?.summary.orders.value ?? null;
   const orderWork = connected
-    ? connected.orders.filter((order) => order.allowedTransitions.length > 0 && !order.return).length
+    ? connected.orders.filter((order) => (
+        studioOrderHasDueWork(order) && !studioOrderHasDueReturnWork(order)
+      )).length
     : scenario
       ? 0
       : null;
   const returnWork = connected
-    ? connected.orders.filter((order) => Boolean(order.return && order.allowedReturnTransitions.length)).length
+    ? connected.orders.filter(studioOrderHasDueReturnWork).length
     : scenario
       ? 0
       : null;
@@ -74,8 +81,30 @@ export function StudioHome() {
       ?? garments.filter((garment) => garment.availability === "AVAILABLE").length
     : projected?.summary.available.value ?? null;
 
-  if (hydration === "idle" || hydration === "restoring" || (!scenario && (authority.status === "idle" || authority.status === "loading"))) {
+  const homeGate = selectStudioHomeGate({
+    applicationStatus: application.status,
+    authorityStatus: authority.status,
+    hydration,
+    scenario: Boolean(scenario),
+  });
+  if (homeGate === "loading") {
     return <StudioLoadingStage label="Opening Lulu Studio…" />;
+  }
+  if (homeGate === "error") {
+    return (
+      <div className="studio-ops-page studio-business-home studio-atelier-home studio-premium-surface studio-home-control-plane">
+        <div className="studio-quiet-empty" role="alert">
+          <RotateCcw aria-hidden="true" size={22} />
+          <div><strong>Studio could not open</strong><p>{application.error || authority.error}</p></div>
+          <button
+            className="button button-primary"
+            data-experience-action="primary"
+            onClick={() => void Promise.all([authority.refresh(), application.refresh()])}
+            type="button"
+          >Try again</button>
+        </div>
+      </div>
+    );
   }
 
   const scenarioTasks = [
@@ -108,14 +137,14 @@ export function StudioHome() {
   const primaryTask = scenario
     ? scenarioPrimaryTask
     : projected?.continueAction ?? {
-        count: null,
-        href: "/studio",
-        key: "unavailable",
-        label: "Open Studio",
+        count: 0,
+        href: "/studio/wardrobe?intake=1",
+        key: "clear",
+        label: "Add the next piece",
         openCount: 0,
         source: "CONNECTED" as const,
       };
-  const primaryOpenCount = scenario ? workCount : projected?.continueAction?.openCount ?? null;
+  const primaryOpenCount = scenario ? scenarioPrimaryTask.count : projected?.continueAction?.openCount ?? null;
   const dropContext = projectStudioDropScopes(garments, listings);
   const currentDropIds = new Set(dropContext.scopes.find((scope) => scope.key === "current")?.garmentIds ?? []);
   const canEditPrice = (garment: (typeof garments)[number]) => (
@@ -168,14 +197,6 @@ export function StudioHome() {
 
   return (
     <div className="studio-ops-page studio-business-home studio-atelier-home studio-premium-surface studio-home-control-plane">
-      {!scenario && (authority.status === "error" || application.status === "error") ? (
-        <div className="studio-quiet-empty" role="alert">
-          <RotateCcw aria-hidden="true" size={22} />
-          <div><strong>Live state unavailable</strong><p>{application.error || authority.error}</p></div>
-          <button className="button button-secondary" onClick={() => void Promise.all([authority.refresh(), application.refresh()])} type="button">Try again</button>
-        </div>
-      ) : null}
-
       <section aria-label={`Recommended · ${truthLabel}`} className="studio-home-recommendation">
         <span>Recommended</span>
         <Link data-experience-action="primary" href={primaryTask.href}>

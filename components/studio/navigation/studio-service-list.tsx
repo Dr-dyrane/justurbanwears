@@ -14,6 +14,10 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useStudioServiceOrder } from "../../../hooks/studio/use-studio-service-order";
+import {
+  studioOrderHasDueReturnWork,
+  studioOrderHasDueWork,
+} from "../../../lib/shop/order-presentation";
 import { projectStudioDropScopes } from "../../../lib/studio/projections/drop-context";
 import type { StudioPrimaryServiceKey } from "../../../lib/studio/service-registry";
 import { StudioLink as Link } from "../atoms/studio-link";
@@ -42,8 +46,10 @@ function useServiceStatuses(): Record<StudioPrimaryServiceKey, string> {
     ? connected?.pieces.filter((piece) => piece.availability === "AVAILABLE").length ?? 0
     : projected?.summary.available.value ?? null;
   const readyModels = connected?.models.filter((model) => model.state === "READY").length ?? 0;
-  const actionableOrders = connected?.orders.filter((order) => order.allowedTransitions.length > 0 && !order.return).length ?? 0;
-  const actionableReturns = connected?.orders.filter((order) => Boolean(order.return && order.allowedReturnTransitions.length)).length ?? 0;
+  const actionableOrders = connected?.orders.filter((order) => (
+    studioOrderHasDueWork(order) && !studioOrderHasDueReturnWork(order)
+  )).length ?? 0;
+  const actionableReturns = connected?.orders.filter(studioOrderHasDueReturnWork).length ?? 0;
   const localAttention = Math.max(privatePieces + actionableOrders + actionableReturns, connected?.notifications.length ?? 0);
   const attention = studio.scenario ? localAttention : projected?.summary.attention.value ?? null;
   const media = connected?.media.length ?? studio.shoots.length;

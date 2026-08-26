@@ -66,7 +66,7 @@ export type StudioAuthorityMedia = {
   title: string;
   sku: string | null;
   operation: "GARMENT_FRONT" | "GARMENT_BACK" | "FABRIC_DETAIL" | "MANNEQUIN_FRONT" | "MODEL_TRY_ON" | "EDITORIAL_MODEL";
-  state: "PENDING" | "RUNNING" | "COMPLETE" | "APPROVED" | "REJECTED" | "FAILED";
+  state: "PENDING" | "RUNNING" | "COMPLETE" | "APPROVED" | "REJECTED" | "FAILED" | "INDETERMINATE";
   outputUrl: string | null;
   modelName: string | null;
   costUsd: string | null;

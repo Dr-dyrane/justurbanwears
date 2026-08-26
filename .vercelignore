@@ -8,6 +8,9 @@
 !/docs/virtual-atelier/g004-provider-visual-denial.v1.json
 /storage/
 /.codex/
+/.playwright-mcp/
+/juw-intake-*.png
+/studio-*.png
 /design/identity-2026/**
 !/design/identity-2026/justurban-app-icon.svg
 !/design/identity-2026/justurban-wordmark.svg

@@ -1025,6 +1025,14 @@ export const studioMediaCompletionJobs = pgTable("studio_media_completion_jobs",
   executionToken: uuid("execution_token"),
   startedAt: timestamp("started_at", { withTimezone: true }),
   leaseExpiresAt: timestamp("lease_expires_at", { withTimezone: true }),
+  validationInvocationStartedAt: timestamp("validation_invocation_started_at", { withTimezone: true }),
+  validationResultReceivedAt: timestamp("validation_result_received_at", { withTimezone: true }),
+  providerInvocationStartedAt: timestamp("provider_invocation_started_at", { withTimezone: true }),
+  providerResultReceivedAt: timestamp("provider_result_received_at", { withTimezone: true }),
+  providerResultBlobPathname: text("provider_result_blob_pathname"),
+  providerResultMimeType: varchar("provider_result_mime_type", { length: 80 }),
+  providerResultByteSize: integer("provider_result_byte_size"),
+  providerResultSha256: varchar("provider_result_sha256", { length: 64 }),
   model: text("model").notNull(),
   promptVersion: varchar("prompt_version", { length: 48 }).notNull(),
   promptHash: varchar("prompt_hash", { length: 64 }).notNull(),
@@ -1074,7 +1082,7 @@ export const studioMediaCompletionJobs = pgTable("studio_media_completion_jobs",
   ),
   check("studio_media_completion_jobs_target_known", sql`${table.targetKind} in ('PENDING_PRODUCT', 'WARDROBE_ITEM')`),
   check("studio_media_completion_jobs_role_known", sql`${table.role} in ('GARMENT_FRONT', 'GARMENT_BACK', 'FABRIC_DETAIL')`),
-  check("studio_media_completion_jobs_state_known", sql`${table.state} in ('PENDING', 'RUNNING', 'COMPLETE', 'APPROVED', 'REJECTED', 'FAILED')`),
+  check("studio_media_completion_jobs_state_known", sql`${table.state} in ('PENDING', 'RUNNING', 'COMPLETE', 'APPROVED', 'REJECTED', 'FAILED', 'INDETERMINATE')`),
   check("studio_media_completion_jobs_attempt_bounded", sql`${table.attempt} in (1, 2)`),
   check("studio_media_completion_jobs_execution_lease", sql`
     (${table.state} = 'RUNNING'
@@ -1090,8 +1098,37 @@ export const studioMediaCompletionJobs = pgTable("studio_media_completion_jobs",
   check("studio_media_completion_jobs_fingerprint", sql`${table.fingerprint} ~ '^[0-9a-f]{64}$'`),
   check("studio_media_completion_jobs_source_sha256", sql`${table.sourceSha256} ~ '^[0-9a-f]{64}$'`),
   check("studio_media_completion_jobs_source_bytes_positive", sql`${table.sourceByteSize} > 0`),
+  check("studio_media_completion_jobs_validation_checkpoints", sql`
+    (${table.validationInvocationStartedAt} is null
+      and ${table.validationResultReceivedAt} is null)
+    or (${table.validationInvocationStartedAt} is not null
+      and ${table.validationResultReceivedAt} is null)
+    or (${table.validationInvocationStartedAt} is not null
+      and ${table.validationResultReceivedAt} is not null
+      and ${table.sourceValidation} is not null)
+  `),
+  check("studio_media_completion_jobs_provider_checkpoints", sql`
+    (${table.providerInvocationStartedAt} is null
+      and ${table.providerResultReceivedAt} is null
+      and ${table.providerResultBlobPathname} is null
+      and ${table.providerResultMimeType} is null
+      and ${table.providerResultByteSize} is null
+      and ${table.providerResultSha256} is null)
+    or (${table.providerInvocationStartedAt} is not null
+      and ${table.providerResultReceivedAt} is null
+      and ${table.providerResultBlobPathname} is null
+      and ${table.providerResultMimeType} is null
+      and ${table.providerResultByteSize} is null
+      and ${table.providerResultSha256} is null)
+    or (${table.providerInvocationStartedAt} is not null
+      and ${table.providerResultReceivedAt} is not null
+      and ${table.providerResultBlobPathname} is not null
+      and ${table.providerResultMimeType} is not null
+      and ${table.providerResultByteSize} > 0
+      and ${table.providerResultSha256} ~ '^[0-9a-f]{64}$')
+  `),
   check("studio_media_completion_jobs_output_complete", sql`
-    (${table.state} in ('PENDING', 'RUNNING', 'FAILED')
+    (${table.state} in ('PENDING', 'RUNNING', 'FAILED', 'INDETERMINATE')
       and ${table.approvedAt} is null and ${table.rejectedAt} is null)
     or (${table.state} = 'COMPLETE'
       and ${table.sourceValidation} is not null

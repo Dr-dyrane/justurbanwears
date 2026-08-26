@@ -547,6 +547,93 @@ test("migration planning verifies every applied hash and only permits a journal 
   }
 });
 
+test("the migration journal preserves the deployed 0014 prefix and appends media before Atelier", () => {
+  const journal = JSON.parse(readFileSync(
+    join(repositoryRoot, "drizzle/shop-postgres/meta/_journal.json"),
+    "utf8",
+  )) as {
+    entries: Array<{
+      idx: number;
+      version: string;
+      when: number;
+      tag: string;
+      breakpoints: boolean;
+    }>;
+  };
+  const deployedPrefix = [
+    [0, 1786424677663, "0000_normal_scorpion"],
+    [1, 1786436117456, "0001_magenta_deadpool"],
+    [2, 1786455218567, "0002_deep_steel_serpent"],
+    [3, 1786533439945, "0003_quick_gauntlet"],
+    [4, 1786611111618, "0004_fixed_betty_ross"],
+    [5, 1786670273055, "0005_dazzling_sister_grimm"],
+    [6, 1786692544071, "0006_jittery_joystick"],
+    [7, 1786709628913, "0007_material_cyclops"],
+    [8, 1786732272467, "0008_studio_media_completions"],
+    [9, 1786942770461, "0009_studio_stocktakes"],
+    [10, 1787021602577, "0010_eminent_phalanx"],
+    [11, 1787024792776, "0011_motionless_the_call"],
+    [12, 1787527283538, "0012_quick_overlord"],
+    [13, 1787657187822, "0013_flowery_nicolaos"],
+    [14, 1787761931852, "0014_legacy_generation_fence"],
+  ];
+  const suffix = [
+    [15, 1787770575959, "0015_media_completion_dispatch_fence"],
+    [16, 1787770588520, "0016_studio_atelier_ledger"],
+  ];
+
+  assert.deepEqual(
+    journal.entries.slice(0, deployedPrefix.length).map(({ idx, when, tag }) => [idx, when, tag]),
+    deployedPrefix,
+  );
+  assert.deepEqual(
+    journal.entries.slice(deployedPrefix.length).map(({ idx, when, tag }) => [idx, when, tag]),
+    suffix,
+  );
+  for (const [index, entry] of journal.entries.entries()) {
+    assert.equal(entry.idx, index);
+    assert.equal(entry.version, "7");
+    assert.equal(entry.breakpoints, true);
+    if (index > 0) assert.ok(entry.when > journal.entries[index - 1].when);
+  }
+
+  const migrations = loadMigrations(join(repositoryRoot, "drizzle/shop-postgres"));
+  assert.equal(migrations[14].tag, "0014_legacy_generation_fence");
+  assert.equal(migrations[14].hash, "c2e5156f1973ae70054d4450ad75e22268588cb3bd96dfeccbfdb77acbfbc6fa");
+  const deployedRows = migrations.slice(0, deployedPrefix.length).map((migration) => ({
+    hash: migration.hash,
+    created_at: migration.createdAt,
+  }));
+  const plan = decideMigrations(migrations, deployedRows);
+  assert.equal(plan.applied, deployedPrefix.length);
+  assert.deepEqual(plan.pending.map((migration) => migration.tag), [
+    "0015_media_completion_dispatch_fence",
+    "0016_studio_atelier_ledger",
+  ]);
+  assert.equal(existsSync(join(repositoryRoot, "drizzle/shop-postgres/0014_daffy_echo.sql")), false);
+  assert.equal(existsSync(join(repositoryRoot, "drizzle/shop-postgres/0016_fair_yellowjacket.sql")), false);
+});
+
+test("the media dispatch fence quarantines ambiguous legacy work before enabling recovery", () => {
+  const migration = readFileSync(
+    join(repositoryRoot, "drizzle/shop-postgres/0015_media_completion_dispatch_fence.sql"),
+    "utf8",
+  );
+  const providerColumns = migration.indexOf('ADD COLUMN "provider_result_sha256"');
+  const reconciliation = migration.indexOf('MIGRATED_RUNNING_RECONCILIATION');
+  const stateConstraint = migration.indexOf(
+    'ADD CONSTRAINT "studio_media_completion_jobs_state_known"',
+  );
+
+  assert.ok(providerColumns >= 0 && providerColumns < reconciliation);
+  assert.ok(reconciliation < stateConstraint);
+  assert.match(migration, /"state" = 'INDETERMINATE'/);
+  assert.match(migration, /"state" = 'RUNNING'/);
+  assert.match(migration, /"state" = 'FAILED' AND "error_code" = 'STALE_EXECUTION'/);
+  assert.match(migration, /MIGRATED_STALE_RECONCILIATION/);
+  assert.doesNotMatch(migration, /DELETE\s+FROM\s+"studio_media_completion_jobs"/i);
+});
+
 test("legacy generation state migration is safe inside the release transaction", () => {
   const migration = readFileSync(
     join(repositoryRoot, "drizzle/shop-postgres/0014_legacy_generation_fence.sql"),

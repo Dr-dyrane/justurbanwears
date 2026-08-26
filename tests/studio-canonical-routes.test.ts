@@ -25,7 +25,7 @@ test("the compatibility media archive stays inside the canonical namespace", () 
   const detail = readFileSync(`${root}/components/shoot/shoot-detail.tsx`, "utf8");
   assert.doesNotMatch(gallery + composer + detail, /href="\/shoots|push\(`\/shoots/);
   assert.match(gallery, /\/studio\/media\/new/);
-  assert.match(composer, /generated \? `\/studio\/media\/\$\{generated\.id\}`/);
+  assert.match(composer, /router\.push\(`\/studio\/media\/\$\{generation\.id\}`\)/);
   assert.match(detail, /Return to Media/);
 });
 

@@ -58,6 +58,7 @@ function actionLabel(slot: GarmentSetSlot | null, action: GarmentSetNextAction):
   if (!slot) return "Front set ready";
   if (action === "REVIEW") return `Review ${slot.label.toLowerCase()}`;
   if (action === "WAIT") return `Preparing ${slot.label.toLowerCase()}`;
+  if (slot.requiresReconciliation) return "Reconciliation required";
   if (action === "BLOCKED") return `Add ${slot.label.toLowerCase()} evidence`;
   if (slot.state === "FAILED") return `Try ${slot.label.toLowerCase()} again`;
   return `Make ${slot.label.toLowerCase()}`;
@@ -65,6 +66,9 @@ function actionLabel(slot: GarmentSetSlot | null, action: GarmentSetNextAction):
 
 function missingEvidenceFor(slot: GarmentSetSlot | null): string | null {
   if (!slot || (slot.state !== "WAITING" && !(slot.state === "FAILED" && !slot.canRetry))) return null;
+  if (slot.requiresReconciliation) {
+    return "Studio cannot confirm the provider result. An administrator must reconcile this saved attempt; no retry will run.";
+  }
   if (slot.key === "LULU_TRY_ON") return "Current approved Lulu authority";
   if (slot.key === "GARMENT_BACK") return "A clear full-back photo";
   if (slot.key === "FABRIC_DETAIL") return "A clear fabric close-up";
@@ -78,6 +82,7 @@ function workspaceRevision(slots: GarmentSetSlot[]): string {
     jobId: slot.jobId ?? null,
     assetUrl: slot.assetUrl ?? null,
     canRetry: slot.canRetry ?? null,
+    requiresReconciliation: slot.requiresReconciliation ?? false,
   })))).slice(0, 24);
 }
 
@@ -152,7 +157,11 @@ export async function readGarmentSet(
       label: "Product back",
       state: mediaState(back?.state),
       ...(back?.assetUrl ? { assetUrl: back.assetUrl } : {}),
-      ...(back ? { jobId: back.id, canRetry: back.canRetry } : {}),
+      ...(back ? {
+        jobId: back.id,
+        canRetry: back.canRetry,
+        requiresReconciliation: back.requiresReconciliation,
+      } : {}),
       inferred: back?.sourceMode === "APPROVED_FRONT",
     },
     {
@@ -161,7 +170,11 @@ export async function readGarmentSet(
       label: "Mannequin front",
       state: mediaState(mannequin?.state),
       ...(mannequin?.outputUrl ? { assetUrl: mannequin.outputUrl } : {}),
-      ...(mannequin ? { jobId: mannequin.id, canRetry: mannequin.retryAvailable } : {}),
+      ...(mannequin ? {
+        jobId: mannequin.id,
+        canRetry: mannequin.retryAvailable,
+        requiresReconciliation: mannequin.requiresReconciliation,
+      } : {}),
     },
     {
       key: "FABRIC_DETAIL",
@@ -169,7 +182,11 @@ export async function readGarmentSet(
       label: "Fabric detail",
       state: mediaState(detail?.state),
       ...(detail?.assetUrl ? { assetUrl: detail.assetUrl } : {}),
-      ...(detail ? { jobId: detail.id, canRetry: detail.canRetry } : {}),
+      ...(detail ? {
+        jobId: detail.id,
+        canRetry: detail.canRetry,
+        requiresReconciliation: detail.requiresReconciliation,
+      } : {}),
       inferred: detail?.sourceMode === "APPROVED_FRONT",
     },
     {
@@ -178,7 +195,11 @@ export async function readGarmentSet(
       label: "Lulu front",
       state: lulu ? mediaState(luluTryOn?.state) : "WAITING",
       ...(luluTryOn?.outputUrl ? { assetUrl: luluTryOn.outputUrl } : {}),
-      ...(luluTryOn ? { jobId: luluTryOn.id, canRetry: luluTryOn.retryAvailable } : {}),
+      ...(luluTryOn ? {
+        jobId: luluTryOn.id,
+        canRetry: luluTryOn.retryAvailable,
+        requiresReconciliation: luluTryOn.requiresReconciliation,
+      } : {}),
     },
   ];
 

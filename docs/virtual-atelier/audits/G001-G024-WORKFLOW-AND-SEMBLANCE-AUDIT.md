@@ -287,7 +287,7 @@ Limits:
 
 Face continuity is materially better than body-angle continuity across the collection. Stable elements include the centre-part low bun, complexion family, eye/brow relationship, restrained catalogue expression and front/profile/rear turn logic. Variation is greatest at three-quarter angles, where cheek/jaw width, nose depth and face length can move toward a generic editorial model.
 
-The control response is not to promote one generated face as the only parent. Every 05–07 operation must receive the complete real-face operation board plus the approved translation lock. The generated lock supplies repeatability; real multi-angle photographs supply truth.
+The control response is not to promote one generated face as the only parent. Holistic subject synthesis receives both the complete real-face operation board and the approved V4 translation lock. Final 05 inherits that translation through the accepted subject; 06/07 inherit it through accepted 05 while also receiving the complete face board and direct angle/room authority. This preserves the governing sibling core without inventing a fifth direct provider input. The generated lock supplies repeatability; real multi-angle photographs supply truth.
 
 Body semblance must be reviewed as a connected adult silhouette. The authority-supported relationships are torso-to-waist definition, lateral hip breadth, rear/profile depth, pelvis-to-upper-thigh continuity, thigh/leg balance and heel-aware stature. A correction that changes only one contour fails even if it superficially answers the latest complaint.
 
@@ -330,6 +330,13 @@ ADR 0046 correctly separates semantic operation hash, provider execution hash, a
 
 Impact: prompts and JSON records are durable, but cross-provider retries, duplicate-cost prevention, reconciliation and qualification are still manual.
 
+### Post-audit remediation update — 2026-08-26
+
+- Private manifest revision `LULU_V4_2026-08-25.7` now records explicit `acceptance: ACCEPTED_OPERATIONAL_AUTHORITY` and `lockedStatus: LOCKED_IMMUTABLE` on all 11 unchanged assets. The 9,338-byte manifest (SHA-256 `d245096f4582e6638bbc9ab1c9abe41df9aa447736372824cdc6803d651824bb`) and all 11 objects passed private Blob readback.
+- The ADR 0046 semantic/execution hashes, database fence, crash checkpoints, immutable artifact ledger, closed QA contracts and four-command model-view facade are implemented, tested and deployed fail-closed. Migration, same-canvas room authority and semantic provider qualification are still pending; paid cutover remains blocked.
+- The current exact room remains 1024×1280 and cannot satisfy the locked 1024×1536 Studio final profile. Final-scene execution is intentionally blocked before claim or spend until a separately approved same-canvas room exists.
+- The durable facade now covers independent 01–04 roots, subject synthesis and 05/06/07 operations through one lifecycle. Production cutover remains fail-closed until migration, server composition, same-canvas room preflight and the closed qualification suite pass in the deployed environment.
+
 ## What “portable anywhere” requires
 
 ### Already durable
@@ -347,9 +354,9 @@ Impact: prompts and JSON records are durable, but cross-provider retries, duplic
 
 1. Recover exact G005/01 bytes.
 2. Correct the two G022 asset-index hashes.
-3. Add explicit per-asset acceptance/lock state in the next private authority revision.
+3. ~~Add explicit per-asset acceptance/lock state in the next private authority revision.~~ Completed and privately verified in `.7`.
 4. Create and test an encrypted authority-bundle restore command.
-5. Implement ADR 0046's semantic ledger and provider adapters.
+5. Apply the production migration and complete qualification/cutover of the implemented ADR 0046 ledger and exact GPT Image 2 Gateway adapter.
 6. Add a versioned provider qualification suite using G024 plus G005, G009, G017 and G023 failure cases.
 
 ## Provider qualification set

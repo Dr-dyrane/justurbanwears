@@ -3,6 +3,8 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
   resolveStudioAssistant,
+  resolveStudioAssistantWorkflow,
+  studioAssistantFallbackText,
   type StudioAssistantBlock,
   type StudioAssistantContext,
   type StudioAssistantDocument,
@@ -128,6 +130,47 @@ test("piece intake is a private draft handoff", () => {
   assert.match(handoff?.consequence ?? "", /until intake is saved/i);
 });
 
+test("workflow responses add bounded suggestions and stable device-private task drafts", () => {
+  const dress = resolveStudioAssistantWorkflow("Add a new dress", context);
+  const shirt = resolveStudioAssistantWorkflow("Create a new shirt", context);
+
+  assert.equal(dress.schemaVersion, "studio-assistant-workflow/v1");
+  assert.ok(dress.suggestions.length >= 2 && dress.suggestions.length <= 3);
+  assert.equal(dress.taskDraft?.schemaVersion, "studio-assistant-task/v1");
+  assert.equal(dress.taskDraft?.state, "PROPOSED");
+  assert.equal(dress.taskDraft?.storage, "DEVICE_PRIVATE");
+  assert.equal(dress.taskDraft?.requiresOwningWorkflowConfirmation, true);
+  assert.equal(dress.taskDraft?.action.href, "/studio/wardrobe?intake=1");
+  assert.equal(dress.taskDraft?.id, shirt.taskDraft?.id);
+});
+
+test("ambiguous requests offer bounded help but never create a task", () => {
+  const workflow = resolveStudioAssistantWorkflow("Change the coral price", context);
+  assert.equal(workflow.taskDraft, null);
+  assert.equal(workflow.suggestions.length, 2);
+  assert.ok(workflow.response.blocks.some((candidate) => candidate.kind === "clarification"));
+});
+
+test("task drafts reject external and path-traversing handoffs", () => {
+  for (const href of ["https://example.com/private", "/studio/../api/private"]) {
+    const unsafeContext: StudioAssistantContext = {
+      ...context,
+      documents: [document({ href, id: "piece:unsafe", identifiers: ["unsafe"], kind: "Piece", label: "Unsafe record" })],
+    };
+    const workflow = resolveStudioAssistantWorkflow("Delete unsafe", unsafeContext);
+    assert.equal(workflow.taskDraft, null);
+  }
+});
+
+test("workflow fallback prose is concise and deterministic", () => {
+  const workflow = resolveStudioAssistantWorkflow("Change JUW-001 price", context);
+  const first = studioAssistantFallbackText(workflow);
+  assert.equal(first, studioAssistantFallbackText(workflow));
+  assert.match(first, /Change price/);
+  assert.match(first, /unchanged until you confirm/i);
+  assert.ok(first.length < 400);
+});
+
 test("collection language opens collection scope without claiming a drop mutation", () => {
   const response = resolveStudioAssistant("Switch JUW-001 to another drop", context);
   const handoff = block(response, "handoff");
@@ -164,7 +207,7 @@ test("publication is always a high-impact review handoff", () => {
   const response = resolveStudioAssistant("Publish JUW-001", context);
   const handoff = block(response, "handoff");
   assert.equal(response.risk, "R3");
-  assert.equal(handoff?.action.href, "/studio/wardrobe?view=publishing&garment=g-001");
+  assert.equal(handoff?.action.href, "/studio/wardrobe/g-001");
   assert.match(handoff?.consequence ?? "", /nothing goes live/i);
 });
 
@@ -223,8 +266,14 @@ test("the durable route replaces the fake modal modes and preserves keyboard and
   assert.doesNotMatch(commandCenter, /askMode|aria-label="Ask Studio mode"|Read-only agent/);
   assert.match(surface, /window\.sessionStorage/);
   assert.match(surface, /map\(\(turn\) => turn\.query\)/);
-  assert.match(surface, /resolveStudioAssistant\(stored, context\)/);
-  assert.match(surface, /provenanceTime\(turn\.response\.provenance\.generatedAt\)/);
+  assert.match(surface, /resolveStudioAssistantWorkflow\(stored, context\)/);
+  assert.match(surface, /useChat<StudioAssistantUIMessage>/);
+  assert.match(surface, /new DefaultChatTransport<StudioAssistantUIMessage>/);
+  assert.match(surface, /MessageResponse/);
+  assert.match(surface, /StudioDecisionSheet/);
+  assert.match(surface, /flightRef\.current/);
+  assert.match(surface, /TASKS_STORAGE_KEY/);
+  assert.doesNotMatch(surface, /window\.setTimeout/);
   assert.match(surface, /event\.key !== "Enter" \|\| event\.shiftKey/);
   assert.doesNotMatch(surface, /Changes finish in their owning stack/);
   assert.match(surface, /placeholder="Ask about Studio or find a record"/);
@@ -239,4 +288,25 @@ test("the durable route replaces the fake modal modes and preserves keyboard and
   assert.match(surface, /Ask Studio is unavailable/);
   assert.match(stack, /pathname\.startsWith\("\/studio\/ask"\)/);
   assert.match(page, /<StudioAskSurface \/>/);
+});
+
+test("the Ask surface keeps prompts, fallbacks and private tasks consistent", () => {
+  const surface = readFileSync(`${root}/components/studio/navigation/studio-ask-surface.tsx`, "utf8");
+  const decisionSheet = readFileSync(`${root}/components/studio/atoms/studio-decision-sheet.tsx`, "utf8");
+  const styles = readFileSync(`${root}/app/studio-stack-navigation.css`, "utf8");
+
+  assert.match(surface, /const MAX_QUERY_LENGTH = 1_200/);
+  assert.match(surface, /maxLength=\{MAX_QUERY_LENGTH\}/);
+  assert.match(surface, /messageId: active\.id/);
+  assert.match(surface, /turn\.id === message\.id/);
+  assert.match(surface, /TASK_RETENTION_MS = 30/);
+  assert.match(surface, /Omit<StudioAssistantTaskDraft, "sourceQuery">/);
+  assert.match(surface, /TASKS_STORAGE_KEY}:\$\{storageScope\}/);
+  assert.match(surface, /operator\?\.storageScope/);
+  assert.doesNotMatch(surface, /operator\?\.role \?\? "unknown"|operator\?\.displayName \?\? "unknown"/);
+  assert.match(surface, /function deleteTask/);
+  assert.doesNotMatch(styles, /\.studio-ai-send:disabled svg/);
+  assert.match(styles, /\.studio-ai-send\[data-busy="true"\] svg/);
+  assert.doesNotMatch(decisionSheet, /useEffect/);
+  assert.match(decisionSheet, /function dismiss\(\)/);
 });

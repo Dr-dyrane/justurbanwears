@@ -29,7 +29,7 @@ import { createWardrobePublicProduct } from "../projections/public-listing";
 export type StudioCommand =
   | { type: "HYDRATION_REQUESTED" }
   | { type: "HYDRATION_SUCCEEDED"; snapshot: StudioSnapshot }
-  | { type: "HYDRATION_FAILED" }
+  | { type: "HYDRATION_FAILED"; message?: string }
   | { type: "EXTERNAL_STATE_RECEIVED"; snapshot: StudioSnapshot }
   | { type: "PERSISTENCE_FAILED" }
   | { type: "MODEL_CREATED"; model: StudioModel }
@@ -137,7 +137,7 @@ export function studioReducer(
         ...state,
         hydration: "degraded",
         persistence: "unavailable",
-        lastError: "Local Studio storage is unavailable.",
+        lastError: command.message?.trim() || "Studio data could not be verified. Try again.",
       };
     case "EXTERNAL_STATE_RECEIVED":
       return {

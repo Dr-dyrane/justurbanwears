@@ -41,6 +41,7 @@ export interface StudioAssistantSummary {
 }
 
 export interface StudioAssistantContext {
+  continueAction?: StudioAssistantAction | null;
   documents: StudioAssistantDocument[];
   provenance: {
     detail: string;
@@ -104,6 +105,44 @@ export interface StudioAssistantResponse {
   intent: StudioAssistantIntent;
   provenance: StudioAssistantContext["provenance"];
   risk: StudioAssistantRisk;
+}
+
+export interface StudioAssistantPromptSuggestion {
+  id: string;
+  label: string;
+  prompt: string;
+}
+
+export interface StudioAssistantTaskStep {
+  id: string;
+  label: string;
+}
+
+/**
+ * A task draft is a device-private plan, never an executable Studio command.
+ * The action always hands the operator to the owning domain workflow where
+ * current truth, preview, confirmation and receipts remain authoritative.
+ */
+export interface StudioAssistantTaskDraft {
+  action: StudioAssistantAction;
+  consequence: string;
+  id: string;
+  objective: string;
+  requiresOwningWorkflowConfirmation: true;
+  risk: StudioAssistantRisk;
+  schemaVersion: "studio-assistant-task/v1";
+  sourceQuery: string;
+  state: "PROPOSED";
+  steps: StudioAssistantTaskStep[];
+  storage: "DEVICE_PRIVATE";
+  title: string;
+}
+
+export interface StudioAssistantWorkflowResponse {
+  response: StudioAssistantResponse;
+  schemaVersion: "studio-assistant-workflow/v1";
+  suggestions: StudioAssistantPromptSuggestion[];
+  taskDraft: StudioAssistantTaskDraft | null;
 }
 
 const STATUS_PATTERN = /\b(attention|brief|overview|summary|status|today|waiting|what(?:'s| is) happening)\b/i;
@@ -337,6 +376,14 @@ export function resolveStudioAssistant(
         ],
         kind: "metrics",
       },
+      ...(context.continueAction ? [{
+        action: context.continueAction,
+        body: "Resume the highest-priority open Studio work from its owning workspace.",
+        consequence: "Opening the workspace does not apply a change.",
+        kind: "handoff" as const,
+        risk: "R0" as const,
+        title: "Continue next",
+      }] : []),
       ...(summary.review ? [{
         items: [
           { detail: `${summary.review} media item${summary.review === 1 ? "" : "s"} awaiting a decision`, href: "/studio/media", id: "review:media", kind: "Media" as const, label: "Review Atelier" },
@@ -427,9 +474,7 @@ export function resolveStudioAssistant(
     const target = exactTarget(context, query, "Piece");
     return response(context, "CHANGE", "R3", [{
       action: {
-        href: target
-          ? `/studio/wardrobe?view=publishing&garment=${encodeURIComponent(target.entityId ?? target.id.replace(/^piece:/, ""))}`
-          : "/studio/wardrobe?view=publishing",
+        href: target ? target.href : "/studio/wardrobe?view=publishing",
         label: "Review Shop",
       },
       body: target
@@ -555,4 +600,121 @@ export function resolveStudioAssistant(
     kind: "recovery",
     title: "I could not resolve that safely",
   }]);
+}
+
+function stableAssistantId(value: string) {
+  let hash = 0x811c9dc5;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return (hash >>> 0).toString(36);
+}
+
+function safeStudioAction(action: StudioAssistantAction) {
+  try {
+    const origin = "https://studio.invalid";
+    const parsed = new URL(action.href, origin);
+    const canonical = `${parsed.pathname}${parsed.search}${parsed.hash}`;
+    return parsed.origin === origin
+      && canonical === action.href
+      && (parsed.pathname === "/studio" || parsed.pathname.startsWith("/studio/"));
+  } catch {
+    return false;
+  }
+}
+
+function taskDraftForResponse(rawQuery: string, assistantResponse: StudioAssistantResponse) {
+  const handoff = assistantResponse.blocks.find((block) => block.kind === "handoff");
+  if (!handoff || handoff.risk === "R0" || !safeStudioAction(handoff.action)) return null;
+
+  const stableSeed = [handoff.title, handoff.action.href, handoff.risk].join("|");
+  const confirmationStep = handoff.risk === "R1"
+    ? "Save the private draft only when its details are ready"
+    : "Review the consequence and confirm only in the owning workflow";
+  return {
+    action: handoff.action,
+    consequence: handoff.consequence,
+    id: `studio-task-${stableAssistantId(stableSeed)}`,
+    objective: handoff.body,
+    requiresOwningWorkflowConfirmation: true,
+    risk: handoff.risk,
+    schemaVersion: "studio-assistant-task/v1",
+    sourceQuery: rawQuery.trim(),
+    state: "PROPOSED",
+    steps: [
+      { id: "open", label: `Open ${handoff.action.label.toLocaleLowerCase("en-NG")}` },
+      { id: "verify", label: "Verify the exact record and current Studio state" },
+      { id: "confirm", label: confirmationStep },
+    ],
+    storage: "DEVICE_PRIVATE",
+    title: handoff.title,
+  } satisfies StudioAssistantTaskDraft;
+}
+
+function promptSuggestions(
+  assistantResponse: StudioAssistantResponse,
+  taskDraft: StudioAssistantTaskDraft | null,
+): StudioAssistantPromptSuggestion[] {
+  const hasClarification = assistantResponse.blocks.some((block) => block.kind === "clarification");
+  const suggestions = hasClarification
+    ? [
+        { label: "Show matching pieces", prompt: "Show the matching pieces" },
+        { label: "Explain the safe next step", prompt: "Explain the safe next step" },
+      ]
+    : assistantResponse.intent === "CREATE"
+      ? [
+          { label: "Check blockers", prompt: "What could block this task?" },
+          { label: "Show current priorities", prompt: "What needs attention?" },
+          { label: "Explain the workflow", prompt: "Explain how this Studio workflow works" },
+        ]
+      : assistantResponse.intent === "CHANGE" || assistantResponse.intent === "REVERSE"
+        ? [
+            { label: "Check impact", prompt: "What should I verify before this change?" },
+            { label: "Show current priorities", prompt: "What needs attention?" },
+          ]
+        : assistantResponse.intent === "RESOLVE"
+          ? [
+              { label: "Choose the next task", prompt: "What should I work on first?" },
+              { label: "Show private drafts", prompt: "Show private Wardrobe drafts" },
+              { label: "Review orders", prompt: "Show orders that need attention" },
+            ]
+          : [
+              { label: "Show current priorities", prompt: "What needs attention?" },
+              { label: "Find a record", prompt: "Help me find a Studio record" },
+              { label: "Show capabilities", prompt: "What can you help with?" },
+            ];
+
+  return suggestions.slice(0, taskDraft ? 3 : 2).map((suggestion) => ({
+    ...suggestion,
+    id: `studio-suggestion-${stableAssistantId(`${assistantResponse.intent}|${suggestion.prompt}`)}`,
+  }));
+}
+
+export function resolveStudioAssistantWorkflow(
+  rawQuery: string,
+  context: StudioAssistantContext,
+): StudioAssistantWorkflowResponse {
+  const assistantResponse = resolveStudioAssistant(rawQuery, context);
+  const taskDraft = taskDraftForResponse(rawQuery, assistantResponse);
+  return {
+    response: assistantResponse,
+    schemaVersion: "studio-assistant-workflow/v1",
+    suggestions: promptSuggestions(assistantResponse, taskDraft),
+    taskDraft,
+  };
+}
+
+export function studioAssistantFallbackText(workflow: StudioAssistantWorkflowResponse) {
+  const block = workflow.response.blocks.find((candidate) => (
+    candidate.kind === "answer"
+    || candidate.kind === "clarification"
+    || candidate.kind === "handoff"
+    || candidate.kind === "recovery"
+  ));
+  if (!block) return "I found the relevant Studio records below. Choose one to continue safely.";
+  if (block.kind === "answer") return `**${block.title}**\n\n${block.body}`;
+  if (block.kind === "clarification") return `**${block.title}**\n\n${block.body}`;
+  if (block.kind === "handoff") return `**${block.title}**\n\n${block.body} ${block.consequence}`;
+  return `**${block.title}**\n\n${block.body}`;
 }

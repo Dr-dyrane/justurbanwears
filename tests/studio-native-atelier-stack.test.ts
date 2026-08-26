@@ -22,15 +22,18 @@ test("Atelier routes use the shared native stack and feedback grammar", () => {
 });
 
 test("Atelier gallery rows keep only image, title, media state, and disclosure", () => {
-  assert.match(gallery, /className="shoot-card-copy"><h2>\{item\.title\}<\/h2><p><span>\{label\(item\.operation\)\}<\/span><LifecycleMeta/);
+  assert.match(gallery, /className="shoot-card-copy"><h2>\{item\.title\}<\/h2><p><span>\{label\(item\.operation\)\}<\/span><MediaStateMeta/);
   assert.match(gallery, /className="shoot-card-disclosure"/);
   assert.doesNotMatch(gallery, /item\.createdAt|item\.modelName|shoot-card-overlay/);
 });
 
-test("Atelier record keeps one primary decision and collapses correction and provenance", () => {
-  assert.match(detail, /Keep view[\s\S]*?<details className="studio-transition-action review-secondary-decisions">/);
-  assert.match(detail, /Fix or reject/);
-  assert.match(detail, /Add correction[\s\S]*?Retry once/);
+test("Atelier record keeps one adaptive review surface and the canonical decision grammar", () => {
+  assert.equal(detail.match(/<StudioAdaptiveWorkspace/g)?.length, 1);
+  assert.doesNotMatch(detail, /<aside className="review-panel"|<div className="review-workspace"/);
+  assert.match(detail, />Keep<\/button>[\s\S]*?<details className="studio-transition-action review-secondary-decisions">/);
+  assert.match(detail, /Fix one thing or Reject/);
+  assert.match(detail, /required rows=\{3\}[\s\S]*?>Fix one thing<\/button>[\s\S]*?>Reject<\/button>/);
+  assert.doesNotMatch(detail, /Retry once|Add correction|>Optional</);
   assert.match(detail, /<summary>Generation history<span>Provenance<\/span><\/summary>/);
   assert.match(detail, /Generation history[\s\S]*?media\.createdAt/);
   assert.match(detail, /<StudioFeedback detail=\{receipt\} state="success" title="Saved"/);

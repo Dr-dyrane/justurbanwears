@@ -11,8 +11,10 @@ import {
   claimMediaCompletionJob,
   createOrReuseMediaCompletionJob,
   getOwnedMediaCompletionJob,
+  hasRetainedMediaCompletionProviderResult,
   listMediaCompletionJobs,
   recoverStaleMediaCompletionJobs,
+  requeueRetainedMediaCompletionResult,
   rejectMediaCompletionJob,
   updateRunningMediaCompletionJob,
   type MediaCompletionJobRow,
@@ -94,6 +96,7 @@ async function putPrivateContentAddressed(input: {
   bytes: Uint8Array;
   mimeType: string;
   expectedSha256: string;
+  verifyAsStudioImage?: boolean;
 }) {
   const readExact = async () => {
     const found = await get(input.pathname, {
@@ -103,7 +106,10 @@ async function putPrivateContentAddressed(input: {
     });
     if (!found || found.statusCode !== 200) return null;
     const bytes = new Uint8Array(await new Response(found.stream).arrayBuffer());
-    return sha256(verifyStudioImage(bytes, found.blob.contentType).bytes) === input.expectedSha256
+    const verifiedBytes = input.verifyAsStudioImage === false
+      ? bytes
+      : verifyStudioImage(bytes, found.blob.contentType).bytes;
+    return sha256(verifiedBytes) === input.expectedSha256
       ? found.blob.pathname
       : null;
   };
@@ -287,8 +293,95 @@ async function readAuthoritySource(job: MediaCompletionJobRow): Promise<PrivateS
   };
 }
 
+type RetainedProviderResult = {
+  bytes: Uint8Array;
+  mimeType: string;
+  usage: Record<string, unknown>;
+  costUsd: number | null;
+};
+
+function providerResultExtension(mimeType: string): string {
+  if (mimeType === "image/jpeg") return "jpg";
+  if (mimeType === "image/png") return "png";
+  if (mimeType === "image/webp") return "webp";
+  return "bin";
+}
+
+function providerResultContentType(mimeType: string): string {
+  return ["image/jpeg", "image/png", "image/webp"].includes(mimeType)
+    ? mimeType
+    : "application/octet-stream";
+}
+
+async function readRetainedProviderResult(job: MediaCompletionJobRow): Promise<RetainedProviderResult> {
+  if (!hasRetainedMediaCompletionProviderResult(job)) {
+    throw new StudioEngineError(
+      "INVALID_TRANSITION",
+      409,
+      "That paid result is incomplete.",
+      "Ask an administrator to reconcile this view.",
+    );
+  }
+  const pathname = job.providerResultBlobPathname!;
+  const mimeType = job.providerResultMimeType!;
+  const expectedByteSize = job.providerResultByteSize!;
+  const expectedSha256 = job.providerResultSha256!;
+  const result = await get(pathname, {
+    access: "private",
+    token: getShopBlobToken("private"),
+    useCache: false,
+  });
+  if (!result || result.statusCode !== 200) {
+    throw new StudioEngineError(
+      "ENGINE_UNAVAILABLE",
+      503,
+      "The retained paid result is unavailable.",
+      "Ask an administrator to reconcile this view.",
+    );
+  }
+  const bytes = new Uint8Array(await new Response(result.stream).arrayBuffer());
+  if (bytes.byteLength !== expectedByteSize || sha256(bytes) !== expectedSha256) {
+    throw new StudioEngineError(
+      "INVALID_ASSET",
+      503,
+      "The retained paid result did not verify.",
+      "Ask an administrator to reconcile this view.",
+    );
+  }
+  const parsedCost = job.costUsd === null ? null : Number(job.costUsd);
+  return {
+    bytes,
+    mimeType,
+    usage: job.usage ?? {},
+    costUsd: parsedCost !== null && Number.isFinite(parsedCost) && parsedCost >= 0 ? parsedCost : null,
+  };
+}
+
+function storedValidationEligibility(
+  job: MediaCompletionJobRow,
+  role: MediaCompletionRole,
+): boolean | null {
+  const validation = job.sourceValidation;
+  if (
+    !job.validationResultReceivedAt
+    || !validation
+    || validation.validationState !== "COMPLETE"
+  ) return null;
+  const expected = role === "GARMENT_FRONT"
+    ? "FULL_FRONT"
+    : role === "GARMENT_BACK" ? "FULL_BACK" : "FABRIC_CLOSEUP";
+  if (validation.observedRole !== expected) return false;
+  return role === "FABRIC_DETAIL"
+    ? validation.surfaceResolved === true
+    : validation.completeCoverage === true && validation.unobstructed === true;
+}
+
 function jobAssetUrl(job: MediaCompletionJobRow): string | undefined {
-  if (!job.outputBlobPathname) return undefined;
+  if (
+    !["COMPLETE", "APPROVED", "REJECTED"].includes(job.state)
+    || job.errorCode === "PAID_RESULT_POLICY_BLOCKED"
+    || !job.outputBlobPathname
+  ) return undefined;
   const target = job.targetKind === "PENDING_PRODUCT"
     ? `/api/studio/pending-products/${encodeURIComponent(job.targetKey)}`
     : `/api/studio/wardrobe/${encodeURIComponent(job.targetKey)}`;
@@ -301,6 +394,12 @@ function jobSourceMode(job: MediaCompletionJobRow): MediaCompletionSourceMode {
 }
 
 export function operatorSafeMediaCompletionJob(job: MediaCompletionJobRow): OperatorSafeMediaCompletionJob {
+  const retainedResultCanResume = job.state === "FAILED"
+    && job.errorCode !== "PAID_RESULT_POLICY_BLOCKED"
+    && hasRetainedMediaCompletionProviderResult(job);
+  const newAttemptAllowed = job.errorCode !== "PAID_RESULT_POLICY_BLOCKED"
+    && job.attempt < 2
+    && ["COMPLETE", "REJECTED", "FAILED"].includes(job.state);
   return {
     id: job.id,
     role: job.role as MediaCompletionRole,
@@ -308,7 +407,8 @@ export function operatorSafeMediaCompletionJob(job: MediaCompletionJobRow): Oper
     state: job.state as OperatorSafeMediaCompletionJob["state"],
     ...(jobAssetUrl(job) ? { assetUrl: jobAssetUrl(job) } : {}),
     attempt: job.attempt as 1 | 2,
-    canRetry: job.attempt < 2 && ["COMPLETE", "REJECTED", "FAILED"].includes(job.state),
+    canRetry: retainedResultCanResume || newAttemptAllowed,
+    requiresReconciliation: job.state === "INDETERMINATE",
     createdAt: job.createdAt.toISOString(),
     updatedAt: job.updatedAt.toISOString(),
     ...(["PENDING", "RUNNING"].includes(job.state) ? { pollAfterMs: 1_500 } : {}),
@@ -394,6 +494,11 @@ async function executeCompletion(input: {
   if (!executionToken) {
     return getOwnedMediaCompletionJob({ id: job.id, operatorSubject: input.operator.subject });
   }
+  let validationDispatchStarted = Boolean(job.validationInvocationStartedAt);
+  let validationResultCheckpointed = Boolean(job.validationResultReceivedAt);
+  let providerDispatchStarted = Boolean(job.providerInvocationStartedAt);
+  let providerResultCheckpointed = hasRetainedMediaCompletionProviderResult(job);
+  let paidResultPolicyBlocked = false;
   try {
     // A different-source concurrent request can only reuse this attempt slot.
     // Once claimed, execute the authority and correction persisted by the slot
@@ -418,25 +523,47 @@ async function executeCompletion(input: {
         "Start the next available attempt.",
       );
     }
-    const sourceCheck = await validateMediaCompletionSource({
-      role: sourceMode === "APPROVED_FRONT" ? "GARMENT_FRONT" : input.role,
-      source: { bytes: source.bytes, mimeType: source.mimeType },
-    });
-    if (!(await updateRunningMediaCompletionJob(job.id, executionToken, {
-      sourceValidation: {
-        ...sourceCheck.validation,
-        authorityRole: sourceMode === "APPROVED_FRONT" ? "GARMENT_FRONT" : input.role,
-        sourceMode,
-        targetRole: input.role,
-        validationState: "COMPLETE",
-      },
-      validationUsage: sourceCheck.usage,
-      validationCostUsd: sourceCheck.costUsd === null ? null : sourceCheck.costUsd.toFixed(6),
-    }))) {
-      throw new StudioEngineError("INVALID_TRANSITION", 409, "That AI view stopped safely.", "Open the latest view.");
+    const validationRole = sourceMode === "APPROVED_FRONT" ? "GARMENT_FRONT" : input.role;
+    let sourceEligible = storedValidationEligibility(job, validationRole);
+    if (providerResultCheckpointed) sourceEligible = true;
+    if (sourceEligible === null) {
+      if (validationDispatchStarted && !validationResultCheckpointed) {
+        throw new StudioEngineError(
+          "INVALID_TRANSITION",
+          409,
+          "The source check needs reconciliation.",
+          "Ask an administrator to reconcile this view.",
+        );
+      }
+      const validationInvocationStartedAt = new Date();
+      if (!(await updateRunningMediaCompletionJob(job.id, executionToken, {
+        validationInvocationStartedAt,
+      }))) {
+        throw new StudioEngineError("INVALID_TRANSITION", 409, "That AI view stopped safely.", "Open the latest view.");
+      }
+      validationDispatchStarted = true;
+      const sourceCheck = await validateMediaCompletionSource({
+        role: validationRole,
+        source: { bytes: source.bytes, mimeType: source.mimeType },
+      });
+      if (!(await updateRunningMediaCompletionJob(job.id, executionToken, {
+        validationResultReceivedAt: new Date(),
+        sourceValidation: {
+          ...sourceCheck.validation,
+          authorityRole: validationRole,
+          sourceMode,
+          targetRole: input.role,
+          validationState: "COMPLETE",
+        },
+        validationUsage: sourceCheck.usage,
+        validationCostUsd: sourceCheck.costUsd === null ? null : sourceCheck.costUsd.toFixed(6),
+      }))) {
+        throw new StudioEngineError("INVALID_TRANSITION", 409, "That AI view stopped safely.", "Open the latest view.");
+      }
+      validationResultCheckpointed = true;
+      sourceEligible = sourceCheck.eligible;
     }
-    if (!sourceCheck.eligible) {
-      const validationRole = sourceMode === "APPROVED_FRONT" ? "GARMENT_FRONT" : input.role;
+    if (!sourceEligible) {
       const needed = validationRole === "GARMENT_FRONT"
         ? "a clear full-front photo"
         : validationRole === "GARMENT_BACK" ? "a clear full-back photo" : "a clear fabric close-up";
@@ -447,25 +574,63 @@ async function executeCompletion(input: {
         sourceMode === "APPROVED_FRONT" ? "Keep a clearer product front first." : "Choose a role-matching source photo.",
       );
     }
-    const generated = await generateMediaCompletionImage({
-      prompt,
-      source: { bytes: source.bytes, mimeType: source.mimeType },
-    });
-    if (!(await updateRunningMediaCompletionJob(job.id, executionToken, {
-      usage: generated.usage,
-      costUsd: generated.costUsd === null ? null : generated.costUsd.toFixed(6),
-    }))) {
-      throw new StudioEngineError("INVALID_TRANSITION", 409, "That AI view stopped safely.", "Open the latest view.");
+    let providerResult: RetainedProviderResult;
+    if (providerResultCheckpointed) {
+      providerResult = await readRetainedProviderResult(job);
+    } else {
+      if (providerDispatchStarted) {
+        throw new StudioEngineError(
+          "INVALID_TRANSITION",
+          409,
+          "The paid image request needs reconciliation.",
+          "Ask an administrator to reconcile this view.",
+        );
+      }
+      if (!(await updateRunningMediaCompletionJob(job.id, executionToken, {
+        providerInvocationStartedAt: new Date(),
+      }))) {
+        throw new StudioEngineError("INVALID_TRANSITION", 409, "That AI view stopped safely.", "Open the latest view.");
+      }
+      providerDispatchStarted = true;
+      const generated = await generateMediaCompletionImage({
+        prompt,
+        source: { bytes: source.bytes, mimeType: source.mimeType },
+      });
+
+      // Persist the exact provider bytes before decode, normalization or cost
+      // policy. A crash after this checkpoint resumes only local work.
+      const rawHash = sha256(generated.bytes);
+      const operatorKey = sha256(input.operator.subject).slice(0, 20);
+      const rawMimeType = providerResultContentType(generated.mimeType);
+      const rawPathname = `studio/operators/${operatorKey}/media-completions/${job.id}/provider-raw/${rawHash}.${providerResultExtension(rawMimeType)}`;
+      const storedRawPathname = await putPrivateContentAddressed({
+        pathname: rawPathname,
+        bytes: generated.bytes,
+        mimeType: rawMimeType,
+        expectedSha256: rawHash,
+        verifyAsStudioImage: false,
+      });
+      if (!(await updateRunningMediaCompletionJob(job.id, executionToken, {
+        providerResultReceivedAt: new Date(),
+        providerResultBlobPathname: storedRawPathname,
+        providerResultMimeType: rawMimeType,
+        providerResultByteSize: generated.bytes.byteLength,
+        providerResultSha256: rawHash,
+        usage: generated.usage,
+        costUsd: generated.costUsd === null ? null : generated.costUsd.toFixed(6),
+      }))) {
+        throw new StudioEngineError("INVALID_TRANSITION", 409, "That AI view stopped safely.", "Open the latest view.");
+      }
+      providerResultCheckpointed = true;
+      providerResult = {
+        bytes: generated.bytes,
+        mimeType: rawMimeType,
+        usage: generated.usage,
+        costUsd: generated.costUsd,
+      };
     }
-    if (generated.costUsd === null || generated.costUsd > studioGatewayPolicy.imageCostCapUsd) {
-      throw new StudioEngineError(
-        "GENERATION_FAILED",
-        502,
-        "The AI view exceeded the Studio cost policy.",
-        "Use the source photo instead.",
-      );
-    }
-    const normalizedBytes = await normalizeGeneratedImage(generated.bytes);
+
+    const normalizedBytes = await normalizeGeneratedImage(providerResult.bytes);
     const verified = verifyStudioImage(normalizedBytes, "image/webp");
     const outputHash = sha256(verified.bytes);
     const operatorKey = sha256(input.operator.subject).slice(0, 20);
@@ -477,10 +642,6 @@ async function executeCompletion(input: {
       expectedSha256: outputHash,
     });
     if (!(await updateRunningMediaCompletionJob(job.id, executionToken, {
-      state: "COMPLETE",
-      executionToken: null,
-      startedAt: null,
-      leaseExpiresAt: null,
       outputBlobPathname: storedPathname,
       outputMimeType: verified.mimeType,
       outputByteSize: verified.bytes.byteLength,
@@ -491,15 +652,41 @@ async function executeCompletion(input: {
     }))) {
       throw new StudioEngineError("INVALID_TRANSITION", 409, "That AI view stopped safely.", "Open the latest view.");
     }
-  } catch (error) {
-    const accounting = error instanceof StudioGatewayError ? error.accounting : null;
-    const validationFailure = error instanceof StudioGatewayError && error.upstream.stage === "analysis";
-    await updateRunningMediaCompletionJob(job.id, executionToken, {
-      state: "FAILED",
+    // Materialize the paid result before enforcing accounting policy. Missing
+    // or excessive cost then leaves a private failed/quarantined record with
+    // recoverable bytes instead of silently losing the provider output.
+    if (providerResult.costUsd === null || providerResult.costUsd > studioGatewayPolicy.imageCostCapUsd) {
+      paidResultPolicyBlocked = true;
+      throw new StudioEngineError(
+        "GENERATION_FAILED",
+        502,
+        "The AI view exceeded the Studio cost policy.",
+        "Use the source photo instead.",
+      );
+    }
+    if (!(await updateRunningMediaCompletionJob(job.id, executionToken, {
+      state: "COMPLETE",
       executionToken: null,
       startedAt: null,
       leaseExpiresAt: null,
-      errorCode: error instanceof StudioEngineError ? error.code : "GENERATION_FAILED",
+    }))) {
+      throw new StudioEngineError("INVALID_TRANSITION", 409, "That AI view stopped safely.", "Open the latest view.");
+    }
+  } catch (error) {
+    const accounting = error instanceof StudioGatewayError ? error.accounting : null;
+    const validationFailure = error instanceof StudioGatewayError && error.upstream.stage === "analysis";
+    const requiresReconciliation = (validationDispatchStarted && !validationResultCheckpointed)
+      || (providerDispatchStarted && !providerResultCheckpointed);
+    await updateRunningMediaCompletionJob(job.id, executionToken, {
+      state: requiresReconciliation ? "INDETERMINATE" : "FAILED",
+      executionToken: null,
+      startedAt: null,
+      leaseExpiresAt: null,
+      errorCode: requiresReconciliation
+        ? "RECONCILIATION_REQUIRED"
+        : paidResultPolicyBlocked
+          ? "PAID_RESULT_POLICY_BLOCKED"
+          : error instanceof StudioEngineError ? error.code : "GENERATION_FAILED",
       ...(accounting?.usage
         ? validationFailure ? { validationUsage: accounting.usage } : { usage: accounting.usage }
         : {}),
@@ -512,6 +699,38 @@ async function executeCompletion(input: {
     throw error;
   }
   return getOwnedMediaCompletionJob({ id: job.id, operatorSubject: input.operator.subject });
+}
+
+async function resumeRetainedCompletion(input: {
+  job: MediaCompletionJobRow;
+  target: ResolvedTarget;
+  role: MediaCompletionRole;
+  operator: StudioOperator;
+}): Promise<MediaCompletionJobRow> {
+  if (
+    !hasRetainedMediaCompletionProviderResult(input.job)
+    || input.job.errorCode === "PAID_RESULT_POLICY_BLOCKED"
+  ) return input.job;
+  if (input.job.state === "FAILED") {
+    const requeued = await requeueRetainedMediaCompletionResult({
+      id: input.job.id,
+      operatorSubject: input.operator.subject,
+    });
+    if (!requeued) {
+      return getOwnedMediaCompletionJob({ id: input.job.id, operatorSubject: input.operator.subject });
+    }
+  } else if (input.job.state !== "PENDING") {
+    return input.job;
+  }
+  return executeCompletion({
+    target: input.target,
+    role: input.role,
+    operator: input.operator,
+    source: await readAuthoritySource(input.job),
+    sourceMode: jobSourceMode(input.job),
+    correction: input.job.correction ?? undefined,
+    attempt: input.job.attempt as 1 | 2,
+  });
 }
 
 export async function createMediaCompletion(input: {
@@ -564,6 +783,19 @@ export async function createMediaCompletion(input: {
     role,
   });
   const latest = prior[0];
+  if (
+    latest
+    && ["PENDING", "FAILED"].includes(latest.state)
+    && hasRetainedMediaCompletionProviderResult(latest)
+  ) {
+    const resumed = await resumeRetainedCompletion({
+      job: latest,
+      target,
+      role,
+      operator: input.operator,
+    });
+    return { job: operatorSafeMediaCompletionJob(resumed) };
+  }
   const attempt = latest && ["FAILED", "REJECTED"].includes(latest.state)
     ? latest.attempt + 1
     : latest?.attempt ?? 1;
@@ -604,7 +836,17 @@ export async function readLatestMediaCompletion(input: {
     targetKey: target.key,
     role: parsedRole.data,
   });
-  return { job: jobs[0] ? operatorSafeMediaCompletionJob(jobs[0]) : null };
+  const latest = jobs[0];
+  if (latest?.state === "PENDING" && hasRetainedMediaCompletionProviderResult(latest)) {
+    const resumed = await resumeRetainedCompletion({
+      job: latest,
+      target,
+      role: parsedRole.data,
+      operator: input.operator,
+    });
+    return { job: operatorSafeMediaCompletionJob(resumed) };
+  }
+  return { job: latest ? operatorSafeMediaCompletionJob(latest) : null };
 }
 
 export async function decideMediaCompletion(input: {
@@ -643,6 +885,18 @@ export async function decideMediaCompletion(input: {
       })),
     };
   }
+  if (job.state === "FAILED" && hasRetainedMediaCompletionProviderResult(job)) {
+    if (job.errorCode === "PAID_RESULT_POLICY_BLOCKED") {
+      throw new StudioEngineError(
+        "INVALID_TRANSITION",
+        409,
+        "That retained result is blocked by Studio policy.",
+        "Ask an administrator to reconcile this view.",
+      );
+    }
+    const resumed = await resumeRetainedCompletion({ job, target, role, operator: input.operator });
+    return { job: operatorSafeMediaCompletionJob(resumed) };
+  }
   if (job.attempt >= 2 || !["COMPLETE", "FAILED", "REJECTED"].includes(job.state)) {
     throw new StudioEngineError("INVALID_TRANSITION", 409, "That AI view cannot be retried.", "Use the source photo instead.");
   }
@@ -674,6 +928,8 @@ export async function readMediaCompletionAsset(input: {
   if (
     job.targetKind !== target.kind
     || job.targetKey !== target.key
+    || !["COMPLETE", "APPROVED", "REJECTED"].includes(job.state)
+    || job.errorCode === "PAID_RESULT_POLICY_BLOCKED"
     || !job.outputBlobPathname
     || !job.outputMimeType
     || !job.outputByteSize

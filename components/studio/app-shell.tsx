@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useSearchParams } from "next/navigation";
-import { ArrowLeft, ClipboardList } from "lucide-react";
+import { ArrowLeft, ClipboardList, RotateCcw } from "lucide-react";
 import { useMobileChrome } from "../../hooks/use-mobile-chrome";
 import type { StudioOperator } from "../../lib/server/studio-operator";
 import {
@@ -28,6 +28,12 @@ function AppShellFrame({ children, operator }: { children: React.ReactNode; oper
   const fallback = studioStackFallback(pathname, searchParams.get("view"));
   const registered = useStudioStackDescriptor();
   const stack = registered ?? fallback;
+  const hydrationDependsOnWardrobe = pathname === "/studio"
+    || pathname.startsWith("/studio/wardrobe")
+    || pathname.startsWith("/studio/ask");
+  const hydrationUnavailable = !studio.scenario
+    && hydrationDependsOnWardrobe
+    && studio.hydration === "degraded";
 
   return (
     <div
@@ -65,7 +71,16 @@ function AppShellFrame({ children, operator }: { children: React.ReactNode; oper
         ) : null}
 
         <main className={`page-canvas${isHome ? "" : " studio-native-canvas"}`} id="studio-content">
-          {scenarioRouteSupported ? children : (
+          {hydrationUnavailable ? (
+            <section className="studio-quiet-empty" role="alert">
+              <RotateCcw aria-hidden="true" size={24} />
+              <div>
+                <strong>Studio data could not be verified.</strong>
+                <p>{studio.lastError || "Connected Wardrobe is unavailable. Try again."}</p>
+              </div>
+              <button className="button button-primary" onClick={() => window.location.reload()} type="button">Try again</button>
+            </section>
+          ) : scenarioRouteSupported ? children : (
             <section className="studio-quiet-empty" role="status">
               <ClipboardList aria-hidden="true" size={24} />
               <div>

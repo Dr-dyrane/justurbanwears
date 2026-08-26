@@ -114,21 +114,6 @@ export function sanitizeStudioGatewayFailureAccounting(error: unknown): Readonly
   return Object.freeze({ usage: usage && Object.keys(usage).length ? usage : null, costUsd });
 }
 
-function baselineMediaCompletionFailureAccounting(error: unknown): Readonly<{ usage: Record<string, number> | null; costUsd: number | null }> {
-  const records = errorChain(error).filter((item): item is Record<string, unknown> => typeof item === "object" && item !== null);
-  const usageRecord = records.map((record) => record.usage).find((value): value is Record<string, unknown> => typeof value === "object" && value !== null);
-  const usage = usageRecord
-    ? Object.fromEntries(Object.entries(usageRecord).filter((entry): entry is [string, number] => typeof entry[1] === "number" && Number.isFinite(entry[1])))
-    : null;
-  const costValues = records.flatMap((record) => {
-    const metadata = typeof record.providerMetadata === "object" && record.providerMetadata !== null ? record.providerMetadata as Record<string, unknown> : null;
-    const gateway = metadata && typeof metadata.gateway === "object" && metadata.gateway !== null ? metadata.gateway as Record<string, unknown> : null;
-    return [record.cost, record.costUsd, gateway?.cost];
-  });
-  const costUsd = costValues.map(Number).find(Number.isFinite) ?? null;
-  return Object.freeze({ usage: usage && Object.keys(usage).length ? usage : null, costUsd });
-}
-
 const SAFE_REQUEST_ID_HEADERS = [
   "x-ai-gateway-generation-id",
   "x-request-id",
@@ -448,7 +433,7 @@ export async function validateMediaCompletionSource(input: {
       "The source photo could not be checked.",
       "Use a clearer role-matching photo.",
       sanitizeStudioGatewayFailure("analysis", studioGatewayPolicy.sourceValidationModel, error),
-      baselineMediaCompletionFailureAccounting(error),
+      sanitizeStudioGatewayFailureAccounting(error),
     );
   }
 }
@@ -567,6 +552,7 @@ export async function generateMediaCompletionImage(input: {
   source: { bytes: Uint8Array; mimeType: string };
 }) {
   assertStudioMediaCompletionImageBudget();
+  const startedAt = performance.now();
   try {
     const result = await generateImage({
       model: studioGatewayPolicy.imageModel,
@@ -589,6 +575,12 @@ export async function generateMediaCompletionImage(input: {
       costUsd: parsedCost.success && Number.isFinite(parsedCost.data) && parsedCost.data >= 0
         ? parsedCost.data
         : null,
+      providerEvidence: sanitizeStudioProviderEvidence({
+        result,
+        requestedModel: studioGatewayPolicy.imageModel,
+        requestedProvider: studioGatewayPolicy.imageModel.split("/", 1)[0] ?? null,
+        durationMs: performance.now() - startedAt,
+      }),
     };
   } catch (error) {
     if (error instanceof StudioEngineError) throw error;
@@ -596,7 +588,7 @@ export async function generateMediaCompletionImage(input: {
       "The AI view was not created.",
       "Use the source photo or try once more.",
       sanitizeStudioGatewayFailure("generation", studioGatewayPolicy.imageModel, error),
-      baselineMediaCompletionFailureAccounting(error),
+      sanitizeStudioGatewayFailureAccounting(error),
     );
   }
 }
