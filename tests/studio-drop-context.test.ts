@@ -213,7 +213,7 @@ test("keeps all four UI scopes present when the wardrobe is empty", () => {
   ]);
 });
 
-test("keeps the canonical Drop 02 boundary at the released twenty-three pieces", () => {
+test("keeps the canonical Drop 02 boundary at the released twenty-four pieces", () => {
   const currentSkus = WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS
     .filter((product) => product.drop === CURRENT_SHOP_DROP)
     .map((product) => product.sku);
@@ -222,14 +222,14 @@ test("keeps the canonical Drop 02 boundary at the released twenty-three pieces",
     "JUW-025", "JUW-026", "JUW-027", "JUW-028",
     "JUW-029", "JUW-030", "JUW-031", "JUW-032",
     "JUW-033", "JUW-034", "JUW-035", "JUW-036",
-    "JUW-037", "JUW-038", "JUW-039", "JUW-040", "JUW-041", "JUW-042", "JUW-043", "JUW-044", "JUW-045", "JUW-046", "JUW-047",
+    "JUW-037", "JUW-038", "JUW-039", "JUW-040", "JUW-041", "JUW-042", "JUW-043", "JUW-044", "JUW-045", "JUW-046", "JUW-047", "JUW-048",
   ]);
 });
 
 test("keeps collection membership explicit and independent from sold or archive lifecycle labels", () => {
   assert.equal(DROP_01_COMPATIBILITY_SKUS.length, 18);
-  assert.equal(DROP_02_COMPATIBILITY_SKUS.length, 23);
-  assert.equal(new Set([...DROP_01_COMPATIBILITY_SKUS, ...DROP_02_COMPATIBILITY_SKUS]).size, 41);
+  assert.equal(DROP_02_COMPATIBILITY_SKUS.length, 24);
+  assert.equal(new Set([...DROP_01_COMPATIBILITY_SKUS, ...DROP_02_COMPATIBILITY_SKUS]).size, 42);
   assert.equal(compatibilityCollectionForSku("JUW-004")?.label, "Drop 01");
   assert.equal(compatibilityCollectionForSku("JUW-040")?.label, "Drop 02");
   assert.equal(compatibilityCollectionForSku("JUW-041")?.label, "Drop 02");
@@ -239,6 +239,7 @@ test("keeps collection membership explicit and independent from sold or archive 
   assert.equal(compatibilityCollectionForSku("JUW-045")?.label, "Drop 02");
   assert.equal(compatibilityCollectionForSku("JUW-046")?.label, "Drop 02");
   assert.equal(compatibilityCollectionForSku("JUW-047")?.label, "Drop 02");
+  assert.equal(compatibilityCollectionForSku("JUW-048")?.label, "Drop 02");
   assert.equal(compatibilityCollectionForSku("JUW-017"), null);
 
   const sold = garment("sold-drop-01", {

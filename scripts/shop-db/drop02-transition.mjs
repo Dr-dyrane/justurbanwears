@@ -31,6 +31,7 @@ export const DROP02_TRANSITION_SKUS = Object.freeze([
   "JUW-045",
   "JUW-046",
   "JUW-047",
+  "JUW-048",
 ]);
 
 const EXPECTED_CATALOGUE_SKUS = Object.freeze([
@@ -258,9 +259,9 @@ export async function applyDrop02TransitionInTransaction(transaction, manifest) 
   ))[0];
   invariant(
     catalogueState
-      && numberValue(catalogueState.catalogue_count) === 41
-      && numberValue(catalogueState.expected_catalogue_count) === 41
-      && numberValue(catalogueState.expected_inventory_count) === 41,
+      && numberValue(catalogueState.catalogue_count) === 42
+      && numberValue(catalogueState.expected_catalogue_count) === 42
+      && numberValue(catalogueState.expected_inventory_count) === 42,
     "DROP02_TRANSITION_CATALOGUE_MISMATCH",
   );
 

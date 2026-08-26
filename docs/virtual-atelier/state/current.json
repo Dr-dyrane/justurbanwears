@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "workflowRevision": "2026-08-25.87",
-  "updatedAt": "2026-08-26T01:56:56Z",
+  "workflowRevision": "2026-08-26.89",
+  "updatedAt": "2026-08-26T02:51:00Z",
   "model": "LULU_V4",
-  "activeGarment": "023",
-  "activeView": "COMPLETE",
-  "status": "GARMENT_023_CORRECTED_01_07_PRIVATE_LOCKED_LIVE_VERIFIED_CATALOGUE_34",
+  "activeGarment": "024",
+  "activeView": "SHOP_RELEASE",
+  "status": "GARMENT_024_01_07_PRIVATE_LOCKED_SHOP_RELEASE_NEXT_GARMENT_023_REMAINS_LIVE_VERIFIED",
   "identityReview": {
     "candidateId": "lulu.face.v4.front.candidate.v1",
     "acceptedAssetId": "lulu.face.v4.front.lock.v1",
@@ -1757,8 +1757,37 @@
       "shopRelease": {"catalogueRevision":"2026-08-25-catalogue-34","catalogueManifestChecksum":"56db5b2b7e934123a791daff0693d01aef8058db4ca7cd56bf2df224d52629d6","cataloguePresentationChecksum":"252557e5349c0c90faaf36819a91d81806d310388f7728a0095c577ab1c24833","publicRoot":"public/shop/products/scarlet-asymmetric-cascade-ruched-mini-dress","mediaCount":7,"publicBlobActiveAssetCount":261,"publicBlobLegacyAssetCount":11,"sourceCommit":"f0c84a72c398d27ec2c7ea9964f2301e3a798136","deployedCommit":"f0c84a72c398d27ec2c7ea9964f2301e3a798136","deploymentId":"dpl_Ey1pf39wtYTY4wZrC5YUCsSw9amt","deployment":"https://justurbanwears-3rdtfpa2i-drdyranes-projects.vercel.app","databaseSkuPresent":true,"availability":"AVAILABLE","availabilityApi":"CONFIRMED","studioPublicationCount":1,"catalogueRowCount":41,"productionSmoke":"24_OF_24_PASS","experienceSmoke":"18_OF_18_PASS","browserProductGallery":"7_OF_7_1120X1400_ISOTROPIC_CORRECTED_03_05_06_07_VISUALLY_VERIFIED","browserCollectionPieceCount":23,"browserConsole":"CLEAN","state":"LIVE_VERIFIED","verifiedAt":"2026-08-26T01:56:56Z","status":"LIVE_VERIFIED"},
       "consentAndPermission": {"realGarmentReferencesRemainPrivate":true,"realIdentityAndBodyReferencesRemainPrivate":true,"publicDerivativesApproved":true},
       "rejectedCandidatesMayParent": false
+    },
+    "024": {
+      "status": "01_07_USER_AUTHORIZED_AUTONOMOUSLY_ACCEPTED_PRIVATE_LOCKED_RELEASE_PENDING",
+      "sku": "JUW-048",
+      "name": "Black Asymmetric Sculpted-Shoulder Mini Dress",
+      "slug": "black-asymmetric-sculpted-shoulder-mini-dress",
+      "price": 27500,
+      "sourceManifest": "storage/garments/drop-02/024/source/manifest.json",
+      "sourceManifestSha256": "d8524e791aa89a638a41f15a690e532ab9e23f6cbfcbd53feca4eee057607771",
+      "classification": "DIRECT_CAPTURE_FRONT_FAMILY_ONLY",
+      "reservedViews": ["01","02","03","04","05","06","07"],
+      "views": {
+        "01":{"role":"GARMENT_FRONT","path":"storage/garments/drop-02/024/locked/01-garment-front.png","sha256":"fd99f57f47df94f99fc1f2571780b07a86be36271d9816bca9888d77ec1bbfef","dimensions":"971x1620","status":"ACCEPTED_LOCKED"},
+        "02":{"role":"GARMENT_BACK","path":"storage/garments/drop-02/024/locked/02-garment-back.png","sha256":"c6413173c8e8ac72184d26c875d9cb1eac4a289e22f632d2cfb1907616913100","dimensions":"971x1619","status":"ACCEPTED_LOCKED_INFERRED_REAR_PRESENTATION"},
+        "03":{"role":"MANNEQUIN_FRONT","path":"storage/garments/drop-02/024/locked/03-mannequin-front.png","sha256":"ec8da0a4da82e6a0d5e4cc8ccb07935286cd4b7688c758e263822754c9eb7236","dimensions":"971x1619","status":"ACCEPTED_LOCKED_SOURCE_SAFE_NEUTRAL"},
+        "04":{"role":"FABRIC_DETAIL","path":"storage/garments/drop-02/024/locked/04-fabric-detail.png","sha256":"49c4195c3fd12119104bf69f94bbff0ef50b3e4abc35c17d548b4f03b2412071","dimensions":"1122x1402","status":"ACCEPTED_LOCKED_MODEL_COMPLETED_PRESENTATION_ONLY"},
+        "05":{"role":"MODEL_FRONT","path":"storage/garments/drop-02/024/locked/05-on-lulu-front.png","sha256":"a4fe690baf8b5bf0cf3212978bb68dd4fbd8a6abd2b797e5d80750016d39c47e","dimensions":"1024x1535","status":"ACCEPTED_LOCKED_FRONT_MASTER"},
+        "06":{"role":"MODEL_LEFT_PROFILE","path":"storage/garments/drop-02/024/locked/06-on-lulu-left-profile.png","sha256":"45d5afaa61c601c019bce3d584ada27a97680ad509f160894655eabd38287117","dimensions":"1024x1535","status":"ACCEPTED_LOCKED_BODY_CANON_CORRECTED_INDEPENDENT_SIBLING"},
+        "07":{"role":"MODEL_REAR_THREE_QUARTER","path":"storage/garments/drop-02/024/locked/07-on-lulu-right-rear-3q.png","sha256":"7e40da69dfd6cfdfac2f5971eab8d7adbf3906962c1347db0a79364fc7611cc2","dimensions":"1024x1535","status":"ACCEPTED_LOCKED_BODY_CANON_CORRECTED_INDEPENDENT_SIBLING_INFERRED_REAR_PRESENTATION"}
+      },
+      "lockedManifestSha256":"334169865876054239d6cb6cdc54565de46c55acd03d6f39b72ea3c32fe2291d",
+      "operationRecords":["storage/garments/drop-02/024/operations/g024-v01-r001.json","storage/garments/drop-02/024/operations/g024-v02-r001.json","storage/garments/drop-02/024/operations/g024-v03-r001.json","storage/garments/drop-02/024/operations/g024-v04-r001.json","storage/garments/drop-02/024/operations/g024-v05-r001.json","storage/garments/drop-02/024/operations/g024-v06-r001.json","storage/garments/drop-02/024/operations/g024-v07-r001.json","storage/garments/drop-02/024/operations/g024-v07-r002.json"],
+      "consentAndPermission":{"realGarmentReferencesRemainPrivate":true,"realIdentityAndBodyReferencesRemainPrivate":true,"publicDerivativesApproved":true},
+      "rejectedCandidatesMayParent":false
     }
   },
-  "nextOperation": null,
-  "requiredNext": "None. Corrected Garment 023 catalogue revision 34 is live verified."
+  "nextOperation": {
+    "operationId": "g024-shop-media-export-v001",
+    "garmentId": "024",
+    "view": "SHOP_01_07",
+    "status": "READY_FOR_EXPORT_AND_CATALOGUE_INTEGRATION"
+  },
+  "requiredNext": "Export G024 01–07 into Shop-safe public derivatives, integrate JUW-048 into catalogue revision 35, deploy and production-smoke the canonical product route."
 }

@@ -50,9 +50,9 @@ test("the lifecycle fixture overlays the complete sanitized catalogue", () => {
   );
   assert.deepEqual(snapshot.orders.map((order) => order.state), ["RESERVED", "SOLD"]);
   assert.deepEqual(snapshot.returns.map((returnCase) => returnCase.state), ["DRAFT"]);
-  assert.equal(snapshot.garments.length, 48);
-  assert.equal(snapshot.listings.length, 41);
-  assert.equal(snapshot.inventory.length, 48);
+  assert.equal(snapshot.garments.length, 49);
+  assert.equal(snapshot.listings.length, 42);
+  assert.equal(snapshot.inventory.length, 49);
   assert.equal(
     snapshot.listings
       .filter((listing) => listing.garmentId.startsWith("scenario-garment-"))
@@ -65,7 +65,7 @@ test("the lifecycle fixture overlays the complete sanitized catalogue", () => {
 
   const drops = projectStudioDropScopes(snapshot.garments, snapshot.listings);
   assert.deepEqual(drops.scopes.map(({ key, count }) => ({ key, count })), [
-    { key: "current", count: 23 },
+    { key: "current", count: 24 },
     { key: "past", count: 18 },
     { key: "studio", count: 0 },
     { key: "private", count: 7 },

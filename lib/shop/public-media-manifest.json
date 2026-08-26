@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "catalogueRevision": "2026-08-25-catalogue-34",
-  "catalogueChecksum": "56db5b2b7e934123a791daff0693d01aef8058db4ca7cd56bf2df224d52629d6",
-  "cataloguePresentationChecksum": "252557e5349c0c90faaf36819a91d81806d310388f7728a0095c577ab1c24833",
+  "catalogueRevision": "2026-08-26-catalogue-35",
+  "catalogueChecksum": "9ba2922a4fb56051ad722b73c93991e6bed88ba46b2f81bc4c06e7492b8adbc1",
+  "cataloguePresentationChecksum": "4fdb12d9c6c89b393249647717dd531cee1510a6516d9605bb27bd8305f19b5b",
   "legacyAssets": [
     {
       "sourcePath": "/shop/products/black-cropped-tee-pink-distressed-shorts-set/04-model-front.webp",
@@ -101,6 +101,62 @@
       "sha256": "35ad162ba8a9b3e50a8288ddc03dda350926dc95b93e7541a08405f711a5347c",
       "size": 1802736,
       "contentType": "image/png"
+    },
+    {
+      "sourcePath": "/shop/products/black-asymmetric-sculpted-shoulder-mini-dress/01-garment-front.webp",
+      "pathname": "shop/catalogue/2b6f1641d280dab014fb774bc9c7d5ef4d3b9f2987528c7623a08ba429bb076b/products/black-asymmetric-sculpted-shoulder-mini-dress/01-garment-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/2b6f1641d280dab014fb774bc9c7d5ef4d3b9f2987528c7623a08ba429bb076b/products/black-asymmetric-sculpted-shoulder-mini-dress/01-garment-front.webp",
+      "sha256": "2b6f1641d280dab014fb774bc9c7d5ef4d3b9f2987528c7623a08ba429bb076b",
+      "size": 36668,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/black-asymmetric-sculpted-shoulder-mini-dress/02-garment-back.webp",
+      "pathname": "shop/catalogue/61954c3368a132774cc111a43055972fa017d9a08eaa6f0308fb519f053ac123/products/black-asymmetric-sculpted-shoulder-mini-dress/02-garment-back.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/61954c3368a132774cc111a43055972fa017d9a08eaa6f0308fb519f053ac123/products/black-asymmetric-sculpted-shoulder-mini-dress/02-garment-back.webp",
+      "sha256": "61954c3368a132774cc111a43055972fa017d9a08eaa6f0308fb519f053ac123",
+      "size": 29864,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/black-asymmetric-sculpted-shoulder-mini-dress/03-mannequin-front.webp",
+      "pathname": "shop/catalogue/b05257c4bab8a27e773a39cf8051cd0cb2707d3d97234e3ac12b604b229e364e/products/black-asymmetric-sculpted-shoulder-mini-dress/03-mannequin-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/b05257c4bab8a27e773a39cf8051cd0cb2707d3d97234e3ac12b604b229e364e/products/black-asymmetric-sculpted-shoulder-mini-dress/03-mannequin-front.webp",
+      "sha256": "b05257c4bab8a27e773a39cf8051cd0cb2707d3d97234e3ac12b604b229e364e",
+      "size": 36838,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/black-asymmetric-sculpted-shoulder-mini-dress/04-model-front.webp",
+      "pathname": "shop/catalogue/89587d8d41d8b4135c07499ff2bd556a198cd10a576db08d34e3107210da8fe7/products/black-asymmetric-sculpted-shoulder-mini-dress/04-model-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/89587d8d41d8b4135c07499ff2bd556a198cd10a576db08d34e3107210da8fe7/products/black-asymmetric-sculpted-shoulder-mini-dress/04-model-front.webp",
+      "sha256": "89587d8d41d8b4135c07499ff2bd556a198cd10a576db08d34e3107210da8fe7",
+      "size": 183554,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/black-asymmetric-sculpted-shoulder-mini-dress/05-model-rear-three-quarter.webp",
+      "pathname": "shop/catalogue/f81386b0182a8fba623007d6408c57314b36373ff04c1f270103e9b11f8f2f6c/products/black-asymmetric-sculpted-shoulder-mini-dress/05-model-rear-three-quarter.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/f81386b0182a8fba623007d6408c57314b36373ff04c1f270103e9b11f8f2f6c/products/black-asymmetric-sculpted-shoulder-mini-dress/05-model-rear-three-quarter.webp",
+      "sha256": "f81386b0182a8fba623007d6408c57314b36373ff04c1f270103e9b11f8f2f6c",
+      "size": 183454,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/black-asymmetric-sculpted-shoulder-mini-dress/06-fabric-detail.webp",
+      "pathname": "shop/catalogue/0b91285009d5f292661c0becdec7f5f1e08926dacd4db223361d170e2e9868ba/products/black-asymmetric-sculpted-shoulder-mini-dress/06-fabric-detail.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/0b91285009d5f292661c0becdec7f5f1e08926dacd4db223361d170e2e9868ba/products/black-asymmetric-sculpted-shoulder-mini-dress/06-fabric-detail.webp",
+      "sha256": "0b91285009d5f292661c0becdec7f5f1e08926dacd4db223361d170e2e9868ba",
+      "size": 52350,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/black-asymmetric-sculpted-shoulder-mini-dress/07-model-left-profile.webp",
+      "pathname": "shop/catalogue/460de9cbed0ae058332d215b9ed20e42b1f0a3d3004b05e3e347af1e58a512d8/products/black-asymmetric-sculpted-shoulder-mini-dress/07-model-left-profile.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/460de9cbed0ae058332d215b9ed20e42b1f0a3d3004b05e3e347af1e58a512d8/products/black-asymmetric-sculpted-shoulder-mini-dress/07-model-left-profile.webp",
+      "sha256": "460de9cbed0ae058332d215b9ed20e42b1f0a3d3004b05e3e347af1e58a512d8",
+      "size": 203180,
+      "contentType": "image/webp"
     },
     {
       "sourcePath": "/shop/products/black-cropped-tee-blue-distressed-shorts-set/01-garment-front.webp",

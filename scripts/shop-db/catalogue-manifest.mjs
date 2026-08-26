@@ -30,6 +30,7 @@ const V4_MODEL_SLUGS = new Set([
   "scarlet-rosette-halter-cutout-ruched-mini-dress",
   "crimson-asymmetric-draped-satin-maxi-dress",
   "scarlet-asymmetric-cascade-ruched-mini-dress",
+  "black-asymmetric-sculpted-shoulder-mini-dress",
 ]);
 
 const V3_MODEL_FRONT_SLUGS = new Set([
@@ -119,7 +120,7 @@ function presentation(product) {
  */
 export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
   schemaVersion: 2,
-  revision: "2026-08-25-catalogue-34",
+  revision: "2026-08-26-catalogue-35",
   products: Object.freeze([
     presentation({
       slug: "coral-drift-dress",
@@ -962,6 +963,26 @@ export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
       note: "A scarlet long-sleeve mini shaped by an asymmetric neckline, dense ruching and one fluid hip cascade.",
       story: "A wide gathered neckline rises toward one shoulder above diagonal bodice drape, while close skirt ruching resolves into a rosette knot and an extended asymmetric ruffle.",
       details: ["Asymmetric gathered neckline", "Long fitted sleeves", "Dense ruched mini silhouette", "Rosette hip knot with extended cascade"],
+      measurements: [],
+      mediaSlots: ["MODEL_FRONT", "MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
+    }),
+    presentation({
+      slug: "black-asymmetric-sculpted-shoulder-mini-dress",
+      sku: "JUW-048",
+      name: "Black Asymmetric Sculpted-Shoulder Mini Dress",
+      category: "Dresses",
+      price: 27500,
+      taggedSize: "Size on request",
+      fit: "Measurements confirmed before payment",
+      condition: "Condition confirmed before payment",
+      colour: "Deep black",
+      availability: "AVAILABLE",
+      drop: "Drop 02",
+      tone: "coral",
+      silhouette: "dress",
+      note: "A deep-black long-sleeve mini shaped by a sculpted asymmetric neckline and layered shoulder flounce.",
+      story: "A sweeping neckline exposes one shoulder while a layered flounce frames the other, above a smooth close-fitting mini silhouette.",
+      details: ["Sculpted asymmetric neckline", "Layered right-shoulder flounce", "Two fitted long sleeves", "Smooth bodycon mini silhouette"],
       measurements: [],
       mediaSlots: ["MODEL_FRONT", "MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
     }),

@@ -56,6 +56,7 @@ export const WARDROBE_APPROVED_V4_MODEL_SLUGS = Object.freeze([
   "scarlet-rosette-halter-cutout-ruched-mini-dress",
   "crimson-asymmetric-draped-satin-maxi-dress",
   "scarlet-asymmetric-cascade-ruched-mini-dress",
+  "black-asymmetric-sculpted-shoulder-mini-dress",
 ] as const);
 
 export const WARDROBE_APPROVED_MODEL_FRONT_SLUGS = Object.freeze([
@@ -97,6 +98,7 @@ export const WARDROBE_APPROVED_MODEL_SUPPLEMENTAL_SLOTS = Object.freeze({
   "scarlet-rosette-halter-cutout-ruched-mini-dress": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "crimson-asymmetric-draped-satin-maxi-dress": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "scarlet-asymmetric-cascade-ruched-mini-dress": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
+  "black-asymmetric-sculpted-shoulder-mini-dress": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "coral-drift-dress": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "moss-square-knit": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "cocoa-pleat-trouser": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
@@ -802,6 +804,25 @@ export const WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS: readonly WardrobePublicProduc
     note: "A scarlet long-sleeve mini shaped by an asymmetric neckline, dense ruching and one fluid hip cascade.",
     story: "A wide gathered neckline rises toward one shoulder above diagonal bodice drape, while close skirt ruching resolves into a rosette knot and an extended asymmetric ruffle.",
     details: ["Asymmetric gathered neckline", "Long fitted sleeves", "Dense ruched mini silhouette", "Rosette hip knot with extended cascade"],
+    measurements: [],
+  }),
+  migrationSeed({
+    slug: "black-asymmetric-sculpted-shoulder-mini-dress",
+    sku: "JUW-048",
+    name: "Black Asymmetric Sculpted-Shoulder Mini Dress",
+    category: "Dresses",
+    price: 27500,
+    taggedSize: "Size on request",
+    fit: "Measurements confirmed before payment",
+    condition: "Condition confirmed before payment",
+    colour: "Deep black",
+    availability: "AVAILABLE",
+    drop: "Drop 02",
+    tone: "coral",
+    silhouette: "dress",
+    note: "A deep-black long-sleeve mini shaped by a sculpted asymmetric neckline and layered shoulder flounce.",
+    story: "A sweeping neckline exposes one shoulder while a layered flounce frames the other, above a smooth close-fitting mini silhouette.",
+    details: ["Sculpted asymmetric neckline", "Layered right-shoulder flounce", "Two fitted long sleeves", "Smooth bodycon mini silhouette"],
     measurements: [],
   }),
 ]);
