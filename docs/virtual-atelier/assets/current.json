@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-26T15:11:00Z",
+  "updatedAt": "2026-08-26T16:08:00Z",
   "assets": [
     {
       "id": "packet.canon.v1",
@@ -3802,6 +3802,27 @@
     },
     {
       "id":"garment.025.front-confirmation","filename":"03-source-front-confirmation.jpeg","aliases":["../garments/drop-02/025/source/03-source-front-confirmation.jpeg"],"kind":"source-photo","role":"Garment 025 front construction confirmation","provenance":"DIRECT_CAPTURE","privacy":"private","storage":"repo-storage-ignored","status":"available","required":true,"sha256":"6bff59fb435e41b43f8747cbe192fe694dff94414ab1e5f06cb78b86fe825387","bytes":47854,"authority":["garment"],"garmentId":"025","view":"SOURCE","notes":"Direct 360x480 confirmation of the same visible cowl, shoulder-panel, fitted waist, diagonal drape and side-cascade construction."
+    },
+    {
+      "id":"garment.025.view.01.accepted","filename":"01-garment-front.png","aliases":["../garments/drop-02/025/locked/01-garment-front.png"],"kind":"generated-output","role":"Accepted Garment 025 front presentation","provenance":"MODEL_REFERENCE","privacy":"private","storage":"repo-storage-ignored","status":"user-accepted-locked","required":true,"sha256":"34d59ad5ef4e4ea6371533514723a0f745a555b49f4c31424283d4b358f4b8a4","bytes":1465624,"authority":["garment","presentation"],"garmentId":"025","view":"01","notes":"Accepted 968x1625 front presentation preserving the direct cowl, shoulder inserts, diagonal drape, wearer-left cascade and maxi silhouette."
+    },
+    {
+      "id":"garment.025.view.02.accepted","filename":"02-garment-back.png","aliases":["../garments/drop-02/025/locked/02-garment-back.png"],"kind":"generated-output","role":"Accepted Garment 025 inferred rear presentation","provenance":"MODEL_REFERENCE","privacy":"private","storage":"repo-storage-ignored","status":"user-accepted-locked-inferred-rear-presentation","required":true,"sha256":"9206423e0506d5e50b07c2d27eeac540544a3aa9af12e5502ea854fe545cfc06","bytes":1132197,"authority":["garment","presentation"],"garmentId":"025","view":"02","notes":"Accepted 1086x1448 deliberately plain inferred rear presentation; never direct rear construction evidence."
+    },
+    {
+      "id":"garment.025.view.03.accepted","filename":"03-mannequin-front.png","aliases":["../garments/drop-02/025/locked/03-mannequin-front.png"],"kind":"generated-output","role":"Accepted source-safe neutral Garment 025 mannequin front","provenance":"MODEL_REFERENCE","privacy":"private","storage":"repo-storage-ignored","status":"user-accepted-locked-source-safe-neutral","required":true,"sha256":"422fde9bb76c121faecba38f4dd06a1574fa5b265ba09a134624f626a49beef1","bytes":1686324,"authority":["garment","presentation"],"garmentId":"025","view":"03","notes":"Accepted 1024x1536 anonymous gray mannequin on a seamless neutral sweep with no private source-room reconstruction."
+    },
+    {
+      "id":"garment.025.view.04.accepted","filename":"04-fabric-detail.png","aliases":["../garments/drop-02/025/locked/04-fabric-detail.png"],"kind":"generated-output","role":"Accepted Garment 025 visible-construction detail","provenance":"MODEL_REFERENCE","privacy":"private","storage":"repo-storage-ignored","status":"user-accepted-locked-model-completed-presentation-only","required":true,"sha256":"3c8c31ed7d36bd49dcda960bdbb98948749f02aad63cdb96a35bef065143b025","bytes":1582783,"authority":["garment","presentation"],"garmentId":"025","view":"04","notes":"Accepted 1023x1537 garment-only cowl, shoulder-insert and diagonal-drape detail; never fibre evidence."
+    },
+    {
+      "id":"garment.025.view.05.accepted","filename":"05-on-lulu-front.png","aliases":["../garments/drop-02/025/locked/05-on-lulu-front.png"],"kind":"generated-output","role":"Accepted Garment 025 real-Lulu front master in the canonical atelier","provenance":"MODEL_REFERENCE","privacy":"private","storage":"repo-storage-ignored","status":"user-authorized-accepted-locked-front-master","required":true,"sha256":"27c210203b804a1a14190a7f8463f2b6fd714135568dfab7a1a1f404af961568","bytes":2301657,"authority":["identity","body","garment","styling","atelier","presentation"],"garmentId":"025","view":"05","notes":"Accepted 1024x1536 front master preserving adult Lulu, connected body balance, G025 ankle-length garment truth, black styling and the canonical atelier."
+    },
+    {
+      "id":"garment.025.view.06.accepted","filename":"06-on-lulu-left-profile.png","aliases":["../garments/drop-02/025/locked/06-on-lulu-left-profile.png"],"kind":"generated-output","role":"Accepted Garment 025 independent left-profile sibling","provenance":"MODEL_REFERENCE","privacy":"private","storage":"repo-storage-ignored","status":"user-authorized-accepted-locked-independent-sibling","required":true,"sha256":"ba82782012f09c3f536826422c58dc0f5be46517feb8f67f689b2c37b4b6ec98","bytes":2241262,"authority":["identity","body","garment","styling","atelier","presentation"],"garmentId":"025","view":"06","notes":"Accepted 1024x1536 independent soft-left-profile sibling grounded in accepted 05, dedicated side canon and direct multi-angle evidence; it may not parent 07."
+    },
+    {
+      "id":"garment.025.view.07.accepted","filename":"07-on-lulu-right-rear-three-quarter.png","aliases":["../garments/drop-02/025/locked/07-on-lulu-right-rear-three-quarter.png"],"kind":"generated-output","role":"Accepted Garment 025 independent right rear-three-quarter sibling","provenance":"MODEL_REFERENCE","privacy":"private","storage":"repo-storage-ignored","status":"user-authorized-accepted-locked-independent-sibling-inferred-rear-presentation","required":true,"sha256":"c523d1c61c43208db739c7645e6847402daaf73ff3d040251c8f0374199fb721","bytes":2156950,"authority":["identity","body","garment","styling","atelier","presentation"],"garmentId":"025","view":"07","notes":"Accepted 1024x1536 independent right rear-three-quarter sibling from accepted 05 using approved orientation, real identity and the complete rear-operation board; garment rear remains inferred and this view may not parent 06."
     }
   ]
 }

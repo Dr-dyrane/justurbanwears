@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "workflowRevision": "2026-08-26.98",
-  "updatedAt": "2026-08-26T15:11:00Z",
+  "workflowRevision": "2026-08-26.106",
+  "updatedAt": "2026-08-26T16:08:00Z",
   "model": "LULU_V4",
   "activeGarment": "025",
-  "activeView": "01-04",
-  "status": "GARMENT_025_VIEWS_01_04_CANDIDATES_REVIEW_PASS_AWAITING_USER_APPROVAL_05_07_NOT_STARTED",
+  "activeView": "01-07",
+  "status": "GARMENT_025_01_07_USER_AUTHORIZED_PRIVATE_LOCKED_AWAITING_RELEASE_METADATA",
   "identityReview": {
     "candidateId": "lulu.face.v4.front.candidate.v1",
     "acceptedAssetId": "lulu.face.v4.front.lock.v1",
@@ -1782,6 +1782,28 @@
       "shopRelease":{"catalogueRevision":"2026-08-26-catalogue-35","catalogueManifestChecksum":"9ba2922a4fb56051ad722b73c93991e6bed88ba46b2f81bc4c06e7492b8adbc1","cataloguePresentationChecksum":"4fdb12d9c6c89b393249647717dd531cee1510a6516d9605bb27bd8305f19b5b","publicRoot":"public/shop/products/black-asymmetric-sculpted-shoulder-mini-dress","mediaCount":7,"publicBlobActiveAssetCount":268,"publicBlobLegacyAssetCount":11,"sourceCommit":"502df1f996a82addf3e19c771b30ef60f3526087","deployedCommit":"502df1f996a82addf3e19c771b30ef60f3526087","deploymentId":"dpl_Ek1ymMrNqUYHwrteCJVw9dTmn59y","deployment":"https://justurbanwears-nuagir9pi-drdyranes-projects.vercel.app","databaseSkuPresent":true,"availability":"AVAILABLE","availabilityApi":"CONFIRMED","studioPublicationCount":1,"catalogueRowCount":42,"productionSmoke":"25_OF_25_PASS","experienceSmoke":"19_OF_19_PASS","browserProductGallery":"7_OF_7_1120X1400_ISOTROPIC_VISUALLY_VERIFIED_01_AND_07","browserCollectionPieceCount":24,"browserConsole":"CLEAN","state":"LIVE_VERIFIED","verifiedAt":"2026-08-26T05:40:25Z","status":"LIVE_VERIFIED"},
       "consentAndPermission":{"realGarmentReferencesRemainPrivate":true,"realIdentityAndBodyReferencesRemainPrivate":true,"publicDerivativesApproved":true},
       "rejectedCandidatesMayParent":false
+    },
+    "025": {
+      "status": "01_07_USER_AUTHORIZED_ACCEPTED_PRIVATE_LOCKED_AWAITING_RELEASE_METADATA",
+      "name": "Dark Navy Draped Cowl-Neck Side-Cascade Maxi Dress",
+      "sourceManifest": "storage/garments/drop-02/025/source/manifest.json",
+      "sourceManifestSha256": "5d59a5da7bfa62e0904ee0664b64850692d0516d8785712161432c02aefad445",
+      "classification": "DIRECT_CAPTURE_FRONT_FAMILY_ONLY",
+      "reservedViews": ["01","02","03","04","05","06","07"],
+      "views": {
+        "01":{"role":"GARMENT_FRONT","path":"storage/garments/drop-02/025/locked/01-garment-front.png","sha256":"34d59ad5ef4e4ea6371533514723a0f745a555b49f4c31424283d4b358f4b8a4","dimensions":"968x1625","status":"ACCEPTED_LOCKED"},
+        "02":{"role":"GARMENT_BACK","path":"storage/garments/drop-02/025/locked/02-garment-back.png","sha256":"9206423e0506d5e50b07c2d27eeac540544a3aa9af12e5502ea854fe545cfc06","dimensions":"1086x1448","status":"ACCEPTED_LOCKED_INFERRED_REAR_PRESENTATION"},
+        "03":{"role":"MANNEQUIN_FRONT","path":"storage/garments/drop-02/025/locked/03-mannequin-front.png","sha256":"422fde9bb76c121faecba38f4dd06a1574fa5b265ba09a134624f626a49beef1","dimensions":"1024x1536","status":"ACCEPTED_LOCKED_SOURCE_SAFE_NEUTRAL"},
+        "04":{"role":"FABRIC_DETAIL","path":"storage/garments/drop-02/025/locked/04-fabric-detail.png","sha256":"3c8c31ed7d36bd49dcda960bdbb98948749f02aad63cdb96a35bef065143b025","dimensions":"1023x1537","status":"ACCEPTED_LOCKED_MODEL_COMPLETED_PRESENTATION_ONLY"},
+        "05":{"role":"MODEL_FRONT","path":"storage/garments/drop-02/025/locked/05-on-lulu-front.png","sha256":"27c210203b804a1a14190a7f8463f2b6fd714135568dfab7a1a1f404af961568","dimensions":"1024x1536","status":"ACCEPTED_LOCKED_FRONT_MASTER"},
+        "06":{"role":"MODEL_LEFT_PROFILE","path":"storage/garments/drop-02/025/locked/06-on-lulu-left-profile.png","sha256":"ba82782012f09c3f536826422c58dc0f5be46517feb8f67f689b2c37b4b6ec98","dimensions":"1024x1536","status":"ACCEPTED_LOCKED_INDEPENDENT_SIBLING"},
+        "07":{"role":"MODEL_REAR_THREE_QUARTER","path":"storage/garments/drop-02/025/locked/07-on-lulu-right-rear-three-quarter.png","sha256":"c523d1c61c43208db739c7645e6847402daaf73ff3d040251c8f0374199fb721","dimensions":"1024x1536","status":"ACCEPTED_LOCKED_INDEPENDENT_SIBLING_INFERRED_GARMENT_REAR_PRESENTATION"}
+      },
+      "lockedManifestSha256": "28a036e78d04837660ce465672aa6faf03476a5acd0501de1cbedda9f1013637",
+      "operationRecords": ["storage/garments/drop-02/025/operations/g025-v01-r001.json","storage/garments/drop-02/025/operations/g025-v02-r001.json","storage/garments/drop-02/025/operations/g025-v03-r001.json","storage/garments/drop-02/025/operations/g025-v04-r001.json","storage/garments/drop-02/025/operations/g025-v04-r002.json","storage/garments/drop-02/025/operations/g025-v05-r001.json","storage/garments/drop-02/025/operations/g025-v05-r002.json","storage/garments/drop-02/025/operations/g025-v06-r001.json","storage/garments/drop-02/025/operations/g025-v07-r001.json"],
+      "consentAndPermission": {"realGarmentReferencesRemainPrivate":true,"realIdentityAndBodyReferencesRemainPrivate":true,"publicDerivativesApproved":true},
+      "rejectedCandidatesMayParent": false,
+      "releaseGate": "SKU_PRODUCT_NAME_SLUG_AND_PRICE_REQUIRED_BEFORE_EXPORT_OR_PUBLICATION"
     }
   },
   "qualityAudit": {
@@ -1812,10 +1834,10 @@
     "completedAt": "2026-08-26T14:15:05Z"
   },
   "nextOperation": {
-    "operationId": "g025-garment-set-approval-v001",
+    "operationId": "g025-shop-media-export-v001",
     "garmentId": "025",
-    "view": "01-04",
-    "status": "AWAITING_USER_APPROVAL"
+    "view": "01-07",
+    "status": "BLOCKED_PENDING_AUTHORITATIVE_RELEASE_METADATA"
   },
-  "requiredNext": "Obtain user approval or precise corrections for G025 candidates 01-04. On approval, lock only the approved bytes, write the private locked manifest and accepted asset entries, and update state before starting Lulu model view 05."
+  "requiredNext": "Resolve the authoritative SKU, product name, slug and price before preparing G025 shop-media export and catalogue integration. Do not invent release metadata."
 }
