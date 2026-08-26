@@ -2,12 +2,15 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
+import { moveFocusFromWorkspaceGrip } from "../components/studio/workspace/studio-workspace-focus";
+
 const root = process.cwd();
 const read = (path: string) => readFileSync(`${root}/${path}`, "utf8");
 const component = read("components/studio/workspace/studio-adaptive-workspace.tsx");
 const css = read("app/studio-adaptive-workspace.css");
 const dossier = read("components/studio/garment-dossier.tsx");
 const dossierLayout = read("app/(studio)/studio/wardrobe/[id]/layout.tsx");
+const focusHelper = read("components/studio/workspace/studio-workspace-focus.ts");
 const layout = read("app/(studio)/layout.tsx");
 const workbench = read("components/studio/wardrobe-workbench.tsx");
 
@@ -19,12 +22,45 @@ test("adaptive workspace is one persistent, non-modal stage and surface", () => 
   assert.match(component, /aria-expanded=\{expanded\}/);
   assert.match(component, /data-side-surface=\{sideSurface \? "true" : "false"\}/);
   assert.match(component, /hidden=\{sideSurface\}/);
-  assert.match(component, /querySelector<HTMLElement>\("\[data-studio-workspace-primary='true'\]"\)/);
+  assert.match(component, /moveFocusFromWorkspaceGrip\(surfaceContentRef\.current, gripButtonRef\.current\)/);
+  assert.match(focusHelper, /\[data-studio-workspace-primary='true'\]:not\(:disabled\)/);
   assert.match(component, /ResizeObserver/);
   assert.match(component, /observer\.observe\(root\)/);
   assert.match(component, /return \(\) => observer\.disconnect\(\)/);
   assert.doesNotMatch(component, /--studio-workspace-surface-width/);
   assert.doesNotMatch(component, /<dialog|aria-modal|window\.history|provider|prompt/i);
+});
+
+test("focus moves to an enabled surface control before the mobile grip is hidden", () => {
+  const grip = {} as HTMLElement;
+  const enabledControl = {} as HTMLElement;
+  let activeElement: Element | null = grip;
+  const selectors: string[] = [];
+  enabledControl.focus = () => { activeElement = enabledControl; };
+  const content = {
+    focus: () => { activeElement = content as unknown as HTMLElement; },
+    querySelector: (selector: string) => {
+      selectors.push(selector);
+      return selector.includes("data-studio-workspace-primary") ? null : enabledControl;
+    },
+  } as unknown as HTMLElement;
+
+  assert.equal(moveFocusFromWorkspaceGrip(content, grip, () => activeElement), true);
+  assert.equal(activeElement, enabledControl);
+  assert.match(selectors[0], /:not\(:disabled\)/);
+  assert.match(selectors[1], /button:not\(:disabled\)/);
+});
+
+test("focus falls back to the surface content when no enabled control exists", () => {
+  const grip = {} as HTMLElement;
+  let activeElement: Element | null = grip;
+  const content = {
+    focus: () => { activeElement = content as unknown as HTMLElement; },
+    querySelector: () => null,
+  } as unknown as HTMLElement;
+
+  assert.equal(moveFocusFromWorkspaceGrip(content, grip, () => activeElement), true);
+  assert.equal(activeElement, content);
 });
 
 test("Piece route opts in once while the embedded Piece sheet stays compatible", () => {
