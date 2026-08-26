@@ -13,6 +13,72 @@ Postgres is authoritative for server catalogue rows and operational inventory af
 
 A preview command must use `SHOP_DB_TARGET=preview` and the dedicated preview branch host. Never reuse the production host as a preview target. Vercel's `VERCEL_ENV`, when present, must agree with the declared target.
 
+## Resolve production access without guessing
+
+The canonical production resource is the Neon project `justurbanwears-db` with project ID `calm-glade-28091571`, primary branch `main` (`br-mute-paper-awfdn96n`), and database `neondb`. These identifiers are routing guards, not credentials. Verify them freshly through the authenticated Neon connector before every release; do not hard-code an endpoint hostname because Neon may rotate computes.
+
+Use this order:
+
+1. Search the Neon connector for `justurbanwears-db` and require the exact project ID above. Describe the project and require the primary/default branch above plus database `neondb`.
+2. Request a connection string for that exact project, branch and database. The release requires a direct endpoint. If the connector returns a hostname containing `-pooler`, request or derive the corresponding direct endpoint only after the project and branch identity have passed; Neon direct and pooled endpoints use the same branch credentials, and the direct hostname omits `-pooler`.
+3. Stage only `DATABASE_URL_UNPOOLED` in a unique temporary file outside the repository with permission mode `0600`. In Codex, keep the returned value inside the same secure tool/runtime call and write it directly to the file while emitting only the sanitized host and database. Never send the value through a PTY or terminal `write_stdin`: terminals can echo the input into task logs. Never place the URL in shell history, process arguments, tool output, tracked `.env` files, Markdown, JSON, Git, or conversation text.
+4. If the connector cannot access the canonical project, use the authenticated Vercel Marketplace SSO flow for the existing `justurbanwears-db` resource and copy the direct connection from its Connect dialog without displaying it. Do not substitute a different Neon project.
+5. Vercel CLI downloads and `vercel env run` may expose protected values only as `[SENSITIVE]` or empty strings. Treat those as redacted placeholders, not as credentials and not as evidence that Neon is unavailable. Continue with the connector/SSO flow above.
+
+Before any database command, set a task-specific path without using a broad or common environment name:
+
+```bash
+JUW_DB_ENV_FILE=/private/tmp/juw-shop-release-<unique>.env
+```
+
+The file must contain exactly one non-empty `DATABASE_URL_UNPOOLED` assignment and must be deleted immediately after verification, whether the release succeeds or fails. Never commit it or leave it in `/private/tmp` for a later task.
+
+## Guarded production sequence
+
+Start from the committed release checkout. `git status --porcelain` must be empty. Compute the release identity from the checked-in manifest rather than copying an old revision:
+
+```bash
+git rev-parse HEAD
+node -e "Promise.all([import('./scripts/shop-db/catalogue-manifest.mjs'),import('./scripts/shop-db/release-core.mjs')]).then(([m,c])=>console.log(JSON.stringify({revision:m.SHOP_CATALOGUE_MANIFEST.revision,rowCount:m.SHOP_CATALOGUE_MANIFEST.products.length,checksum:c.manifestChecksum(m.SHOP_CATALOGUE_MANIFEST)},null,2)))"
+```
+
+Parse the staged direct URL locally and set `SHOP_DB_EXPECTED_HOST` and `SHOP_DB_EXPECTED_DATABASE` to its exact hostname and decoded database name without printing the URL. Then run the read-only schema preflight:
+
+```bash
+SHOP_DB_TARGET=production \
+SHOP_DB_EXPECTED_HOST=<fresh-direct-host> \
+SHOP_DB_EXPECTED_DATABASE=neondb \
+node --env-file="$JUW_DB_ENV_FILE" scripts/shop-db/release.mjs check
+```
+
+A pending migration that exists in the checked-in journal is applied inside the atomic release. Do not run it separately. Apply the reviewed release once:
+
+```bash
+SHOP_DB_TARGET=production \
+SHOP_DB_EXPECTED_HOST=<fresh-direct-host> \
+SHOP_DB_EXPECTED_DATABASE=neondb \
+SHOP_DB_PRODUCTION_CONFIRM=APPLY_JUSTURBANWEARS_PRODUCTION \
+SHOP_DB_EXPECTED_MANIFEST_CHECKSUM=<fresh-local-checksum> \
+SHOP_DB_GIT_SHA=<committed-release-sha> \
+node --env-file="$JUW_DB_ENV_FILE" scripts/shop-db/shop-release.mjs
+```
+
+The command must report the expected target, migration count, `catalogue apply` or ledger-safe `catalogue noop`, exact row count and exact checksum. Then verify independently:
+
+```bash
+SHOP_DB_TARGET=production \
+SHOP_DB_EXPECTED_HOST=<fresh-direct-host> \
+SHOP_DB_EXPECTED_DATABASE=neondb \
+SHOP_DB_EXPECTED_MANIFEST_CHECKSUM=<fresh-local-checksum> \
+node --env-file="$JUW_DB_ENV_FILE" scripts/shop-db/catalogue.mjs verify
+
+npm run smoke:production
+```
+
+After the server catalogue cache expires, POST each newly released slug and its exact `taggedSize` to `/api/shop/catalogue/availability`. Require HTTP `200` with `{"status":"CONFIRMED"}`. Also require each affected product page to show its checked-in price, `data-state="available"`, and the purchase action. Only then record `LIVE_VERIFIED` in the garment briefs and `docs/virtual-atelier/state/current.json`.
+
+If identity resolution, the direct connection, any guard, the atomic apply, independent verification, affected-SKU availability, or the production smoke fails, stop with the exact failed gate. Never weaken fail-closed availability, use a pooled URL for administration, operate on an adjacent project, replay a stale connection from task history, or claim the release is live.
+
 ## Command matrix
 
 | Purpose | Command | Writes |

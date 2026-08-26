@@ -51,3 +51,9 @@ The repository is public. Never commit real face photographs, body plates, Whats
 ## State discipline
 
 User approval is authoritative. After each approval or rejection, update `docs/virtual-atelier/state/current.json` before beginning another operation. Do not rely on conversational memory to carry state.
+
+## Catalogue publication recovery
+
+Before declaring a Shop database release blocked, read `docs/data/SHOP_DATABASE.md` and follow its connector-first production credential recovery. Vercel CLI exports may replace protected values with `[SENSITIVE]`; that placeholder is not a database outage and is not a usable credential. Resolve the canonical `justurbanwears-db` project through the authenticated Neon connector, verify the production project/branch/database identity, and use a direct non-pooler connection only through a mode-`0600` temporary environment file. Never print, paste into tracked files, or commit a connection string.
+
+Predecessor tasks are emergency audit evidence, not the operating procedure. The checked-in database guide, current manifest, garment brief, and durable state must contain everything required for the next release. A release is not `LIVE_VERIFIED` until the guarded atomic database apply, exact manifest verification, affected-SKU availability checks, and production smoke all pass.
