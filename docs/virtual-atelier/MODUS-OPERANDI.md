@@ -75,7 +75,10 @@ On any authorized machine:
 
 `storage/` is an authorized local working archive, not the portable contract by itself. A copied directory without its manifest and hashes is not a valid restore.
 
-The current full asset preflight has two known G022 metadata-hash failures recorded in the G001–G024 audit. They are metadata defects, not authority to alter the private source pixels.
+The two G022 metadata-hash defects recorded by the original G001–G024 audit
+were corrected in the tracked asset index without altering private source
+pixels. Correct metadata does not prove that ignored private bytes are present;
+a restored environment must still read back and verify the exact files.
 
 ## 4. Semantic view contract
 
@@ -224,10 +227,14 @@ ADR 0046 defines the provider-neutral semantic hash, execution hash and event le
 
 The ledger, local claim/fence, raw-byte checkpoints and four-command facade are
 the single implementation contract for independent 01–04, subject and 05–07
-operations. This working-tree scope does not assert production readiness: the
-database migration, complete server composition, authority/canvas preflight and
-semantic provider qualification must pass before deployment. Until that
-cutover is complete, the private JSON operation record plus
+operations. The code, five authenticated route handlers and persistence
+migrations were introduced at `a6ef79b`, remain present in current `main`, and
+production migrations `0015` and `0016` are applied. This does not assert
+operational readiness: the deployed
+route runtime remains `ENGINE_DISABLED`, the canonical qualification bundle is
+absent, and final-scene authority/canvas preflight remains blocked without an
+exact approved 1024x1536 room. Until paid cutover is complete, the private JSON
+operation record plus
 `state/current.json` remain the production recovery authorities.
 
 Before trusting a restored environment, run:

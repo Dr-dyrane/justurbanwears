@@ -1,6 +1,6 @@
 # ADR 0046: Provider-neutral idempotent Virtual Atelier operations
 
-- Status: Accepted; portability core implemented, Studio provider-routing cutover pending
+- Status: Accepted; fail-closed code and routes deployed, production migrations applied, operational provider-routing cutover pending
 - Date: 2026-08-22
 - Owner: Virtual Atelier Engine
 - Scope: canonical generation/edit operations, provider adapters, execution identity, lifecycle, QA and Studio projection; existing identity, body, garment, room and view authorities remain unchanged
@@ -44,13 +44,17 @@ Separate semantic operation identity from provider execution identity.
 Implementation note (2026-08-26):
 `scripts/virtual-atelier/operation-identity.mjs` provides canonical semantic
 identity, execution identity, artifact/evaluation hashes, capability preflight
-and append-only ledger projection. The local Studio implementation extends the
-same durable four-command contract across independent 01–04, subject and
-05–07 operations, including private ordered QA and review-media authorization.
+and append-only ledger projection. The Studio implementation and five
+authenticated route handlers were introduced at exact commit `a6ef79b` and
+remain present in current `main`; the same
+durable four-command contract covers independent 01–04, subject and 05–07
+operations, including private ordered QA and review-media authorization.
 `scripts/virtual-atelier/verify-portable-bundle.mjs` verifies the minimal
-private authority and active-garment packet. Database migration, complete
-production composition and provider qualification remain pending; this note is
-not a deployed-cutover claim.
+private authority and active-garment packet. Production migrations `0015` and
+`0016` are applied. Operational cutover remains pending because the deployed
+route runtime is `ENGINE_DISABLED`, the canonical qualification-bundle resolver
+returns `null`, and the exact 1024x1536 room authority is absent. This is not an
+enabled paid-cutover claim.
 
 Studio and the orchestrator create one immutable, provider-neutral
 `AtelierOperation`. A provider adapter compiles that operation into a concrete
@@ -505,8 +509,9 @@ provider is invoked.
 5. Build ledger projection and diff it against current state.
 6. Qualify the exact OpenAI-only GPT Image 2 Gateway adapter without
    regenerating accepted work or enabling provider fallback.
-7. Apply the database migration and compose the same durable facade for
-   independent 01–04, subject and 05–07 stages.
+7. Production migrations `0015` and `0016` are applied. Compose and enable the
+   same durable facade for independent 01–04, subject and 05–07 stages only as
+   one verified runtime atom.
 8. Shadow-write events and existing state against the fixed calibration suite;
    do not use an unreviewed next garment as the migration experiment.
 9. Cut Studio reads, commands and authenticated review media to the event

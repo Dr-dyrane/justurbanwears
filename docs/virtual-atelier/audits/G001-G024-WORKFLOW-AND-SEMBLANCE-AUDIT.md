@@ -4,7 +4,7 @@ Audit date: 2026-08-26
 
 Scope: private accepted media for Garments 001–024, semantic views 01–07, authority media, operation/state records, relevant Git history and legacy JUW task decisions
 
-Outcome: the manual workflow is creatively proven and substantially durable, but portable replay still has four concrete gaps: one missing accepted byte asset, two incorrect asset-index hashes, an authority-manifest schema ambiguity, and an unimplemented provider-neutral ledger/qualification layer.
+Original outcome at audit time: the manual workflow was creatively proven and substantially durable, but portable replay still had four concrete gaps: one missing accepted byte asset, two incorrect asset-index hashes, an authority-manifest schema ambiguity, and an unimplemented provider-neutral ledger/qualification layer. The implementation-resolution and remediation sections below are the current status of those findings.
 
 ## Implementation resolution — 2026-08-26
 
@@ -279,7 +279,7 @@ Limits:
 | G019 | 01–07 | Fast complete workflow | Profile/rear silhouette begins recent straightening |
 | G020 | 01–07 | Strong garment recognition | Side/rear body authority is underexpressed |
 | G021 | 01–07 | Stable identity/room in model views | 03 is stylized, not neutral; body remains straightened |
-| G022 | 01–07 | Stable face/room and full release | Two source hashes are wrong in asset index |
+| G022 | 01–07 | Stable face/room and full release | Original source-hash metadata defect is resolved; private pixels were unchanged |
 | G023 | 01–07 corrected | Source-safe 03 and full-body rebase | 04 too broad; initial subject may not parent |
 | G024 | 01–07 | Strongest recent front/profile/rear recovery | Use with direct canon, never as sole future authority |
 
@@ -307,35 +307,53 @@ Impact: a fresh machine cannot reconstruct the exact accepted G005 garment-front
 
 Required repair: recover the exact bytes from an approved private archive or Blob, verify the recorded hash/dimensions and add them to the private lock. Do not regenerate a replacement under the old asset ID.
 
-### 2. Two G022 asset-index hashes are incorrect
+### 2. Resolved — two G022 asset-index hashes were incorrect
 
-`node scripts/virtual-atelier/verify-assets.mjs --json` currently fails only these required objects:
+At the initial audit, `node scripts/virtual-atelier/verify-assets.mjs --json`
+failed these required objects:
 
 - `garment.022.close-front-primary`: indexed `b4cf536b…f004`, actual private byte hash `b4cfaf68…f004`;
 - `garment.022.full-front-continuity`: indexed `dda34b66…4642`, actual private byte hash `dda34d06…4642`.
 
-The private source manifest agrees with the actual files. Impact: complete preflight fails even though no pixel repair is needed. The tracked asset-index metadata should be corrected in one bounded repair with no source-byte change.
+The private source manifest agreed with the actual files. The tracked index now
+records exact hashes
+`b4cfaf68d4a118c19c08a21b8ff92ed90da435b1e798f422ec56b96109f8f004`
+and
+`dda34d069d3bc421b51c7e4f7ca50687625bfcd39df6b409b16b9e8ebe284642`.
+That bounded metadata repair changed no private source pixels, so this is no
+longer an open defect. A restored environment must still read back the ignored
+private bytes rather than inferring their availability from correct metadata.
 
-### 3. Private authority manifest lacks explicit per-asset lock fields
+### 3. Resolved — private authority manifest lacked explicit per-asset lock fields
 
-The private Lulu V4 manifest is operational and includes 11 assets with exact pathnames, SHA-256, dimensions, byte size and MIME type under `LULU_V4_2026-08-25.4`. Its approval/lock state is implied by the authority revision and semantic roles rather than declared on every asset.
+At the initial audit, private Lulu V4 revision `LULU_V4_2026-08-25.4`
+included 11 exact assets but implied approval/lock state rather than declaring
+it per asset.
 
-Impact: a third-party operator could misread an operational control as merely available media.
+Revision `LULU_V4_2026-08-25.7` now declares
+`ACCEPTED_OPERATIONAL_AUTHORITY` and `LOCKED_IMMUTABLE` per asset. Its manifest
+and all 11 unchanged objects passed private readback, so this finding is
+resolved without any accepted-byte change.
 
-Required repair: a future authority revision should add explicit per-asset `acceptance` and `lockedStatus`, update the sync validator and atomically replace the private manifest. Existing bytes and hashes must not change.
+### 4. Implemented and deployed fail-closed — operational cutover remains pending
 
-### 4. Provider-neutral replay remains proposed
+ADR 0046 is accepted and its semantic operation hash, provider execution hash,
+artifact hash, evaluation hash, capability preflight, event ledger,
+idempotency contract and authenticated route handlers were introduced at
+`a6ef79b` and remain present in current `main`. Production migrations `0015`
+and `0016` are applied.
 
-ADR 0046 correctly separates semantic operation hash, provider execution hash, artifact hash and evaluation hash, and defines capability preflight, event ledger, idempotency and provider qualification. It remains `Proposed`.
-
-Impact: prompts and JSON records are durable, but cross-provider retries, duplicate-cost prevention, reconciliation and qualification are still manual.
+Operational provider work remains fail-closed: the deployed route runtime is
+`ENGINE_DISABLED`, the canonical qualification-bundle resolver returns `null`,
+and the exact 1024x1536 final-scene room authority is absent. Deployment and
+migration application therefore do not imply paid cutover.
 
 ### Post-audit remediation update — 2026-08-26
 
 - Private manifest revision `LULU_V4_2026-08-25.7` now records explicit `acceptance: ACCEPTED_OPERATIONAL_AUTHORITY` and `lockedStatus: LOCKED_IMMUTABLE` on all 11 unchanged assets. The 9,338-byte manifest (SHA-256 `d245096f4582e6638bbc9ab1c9abe41df9aa447736372824cdc6803d651824bb`) and all 11 objects passed private Blob readback.
-- The ADR 0046 semantic/execution hashes, database fence, crash checkpoints, immutable artifact ledger, closed QA contracts and four-command model-view facade are implemented, tested and deployed fail-closed. Migration, same-canvas room authority and semantic provider qualification are still pending; paid cutover remains blocked.
+- The ADR 0046 semantic/execution hashes, database fence, crash checkpoints, immutable artifact ledger, closed QA contracts and four-command facade were introduced fail-closed at `a6ef79b` and remain present in current `main`. Production migrations `0015` and `0016` are applied. Runtime composition, same-canvas room authority and semantic provider qualification remain pending; paid cutover remains blocked.
 - The current exact room remains 1024×1280 and cannot satisfy the locked 1024×1536 Studio final profile. Final-scene execution is intentionally blocked before claim or spend until a separately approved same-canvas room exists.
-- The durable facade now covers independent 01–04 roots, subject synthesis and 05/06/07 operations through one lifecycle. Production cutover remains fail-closed until migration, server composition, same-canvas room preflight and the closed qualification suite pass in the deployed environment.
+- The durable facade now covers independent 01–04 roots, subject synthesis and 05/06/07 operations through one lifecycle. Production cutover remains fail-closed until the deployed route runtime is enabled with verified server composition, same-canvas room preflight and the closed qualification suite.
 
 ## What “portable anywhere” requires
 
@@ -353,10 +371,10 @@ Impact: prompts and JSON records are durable, but cross-provider retries, duplic
 ### Still required
 
 1. Recover exact G005/01 bytes.
-2. Correct the two G022 asset-index hashes.
+2. ~~Correct the two G022 asset-index hashes.~~ Completed without changing private source pixels.
 3. ~~Add explicit per-asset acceptance/lock state in the next private authority revision.~~ Completed and privately verified in `.7`.
 4. Create and test an encrypted authority-bundle restore command.
-5. Apply the production migration and complete qualification/cutover of the implemented ADR 0046 ledger and exact GPT Image 2 Gateway adapter.
+5. Production migrations `0015` and `0016` are applied; complete verified route-runtime composition, qualification and cutover of the implemented ADR 0046 ledger and exact GPT Image 2 Gateway adapter.
 6. Add a versioned provider qualification suite using G024 plus G005, G009, G017 and G023 failure cases.
 
 ## Provider qualification set

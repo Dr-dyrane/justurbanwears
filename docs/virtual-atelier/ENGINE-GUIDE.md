@@ -9,19 +9,24 @@
   OpenAI-only
 - Final-scene production status: preflight-blocked by the approved room canvas
   mismatch described below
-- Runtime cutover status: local working-tree implementation with a fail-closed
-  production composition/readiness boundary; migration `0016`, the eight
-  durable-facade ports, five production infrastructure ports, end-to-end route
-  wiring and the closed semantic qualification suite are not deployed
+- Deployment status: engine code, persistence migrations `0015` and `0016`,
+  and five authenticated Atelier route handlers were introduced at exact
+  commit `a6ef79b` and remain present in current `main`; both production
+  migrations are applied
+- Operational cutover status: fail-closed. The deployed route runtime returns
+  `ENGINE_DISABLED`, the canonical qualification-bundle resolver returns
+  `null`, and no separately approved exact 1024x1536 room authority exists
 - Updated: 2026-08-26
 
 This guide turns the manual evidence accumulated from Garments 001 through 024
 into one reusable **01–07 semantic-view engine contract**. The durable facade
 scope includes independent 01–04 garment production, subject synthesis, 05 and
 the independent 06/07 siblings. It does not plan or encode the next garment.
-This is working-tree scope, not a deployed-cutover claim; production remains
-blocked until migration, concrete server ports, authority/canvas preflight and
-the closed qualification suite pass.
+This is deployed fail-closed architecture, not an enabled paid-cutover claim.
+Production dispatch remains blocked until the concrete server ports and route
+runtime are composed, authority/canvas preflight passes and the canonical
+closed qualification bundle is installed. The applied migrations do not, by
+themselves, authorize provider work.
 `OPERATING-CONTRACT.md`, `ATELIER-CANON.md`, current state, garment truth,
 the exact asset manifest and the Runbook remain the sources of production
 truth. The engine compiles and carries that truth without weakening it.
