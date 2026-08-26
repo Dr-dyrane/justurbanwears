@@ -22,7 +22,8 @@ interface StudioTaskSheetProps {
   children: React.ReactNode;
   className?: string;
   eyebrow?: string;
-  footer?: React.ReactNode;
+  footer?: React.ReactNode | ((requestClose: () => void) => React.ReactNode);
+  fallbackFocus?: HTMLElement | null;
   onBack?: () => void;
   onDismiss(): boolean | void;
   onSubmit?: React.FormEventHandler<HTMLFormElement>;
@@ -39,6 +40,7 @@ export function StudioTaskSheet({
   children,
   className = "",
   eyebrow,
+  fallbackFocus,
   footer,
   onBack,
   onDismiss,
@@ -110,9 +112,15 @@ export function StudioTaskSheet({
   }, [open, requestClose]);
 
   const restoreFocus = useCallback(() => {
-    const target = returnFocus ?? fallbackReturnFocusRef.current;
+    const target = returnFocus?.isConnected
+      ? returnFocus
+      : fallbackFocus?.isConnected
+        ? fallbackFocus
+        : fallbackReturnFocusRef.current?.isConnected
+          ? fallbackReturnFocusRef.current
+          : null;
     window.requestAnimationFrame(() => target?.focus({ preventScroll: true }));
-  }, [returnFocus]);
+  }, [fallbackFocus, returnFocus]);
 
   if (!mounted) return null;
 
@@ -174,7 +182,11 @@ export function StudioTaskSheet({
         ) : (
           <div className="studio-task-sheet-body">{children}</div>
         )}
-        {footer ? <footer className="studio-task-sheet-footer">{footer}</footer> : null}
+        {footer ? (
+          <footer className="studio-task-sheet-footer">
+            {typeof footer === "function" ? footer(requestClose) : footer}
+          </footer>
+        ) : null}
       </div>
     </dialog>,
     document.body,

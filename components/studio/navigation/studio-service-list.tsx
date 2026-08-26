@@ -17,6 +17,7 @@ import { useStudioServiceOrder } from "../../../hooks/studio/use-studio-service-
 import { projectStudioDropScopes } from "../../../lib/studio/projections/drop-context";
 import type { StudioPrimaryServiceKey } from "../../../lib/studio/service-registry";
 import { StudioLink as Link } from "../atoms/studio-link";
+import { StudioFeedback } from "../atoms/studio-feedback";
 import { StudioTaskSheet } from "../atoms/studio-task-sheet";
 import { useStudio } from "../studio-provider";
 
@@ -91,8 +92,31 @@ export function StudioServiceList() {
 export function ArrangeStudioHomeControl() {
   const [open, setOpen] = useState(false);
   const [returnFocus, setReturnFocus] = useState<HTMLButtonElement | null>(null);
+  const [receipt, setReceipt] = useState<{
+    detail: string;
+    previousOrder: StudioPrimaryServiceKey[] | null;
+  } | null>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
-  const { moveService, orderedServices, resetServiceOrder } = useStudioServiceOrder();
+  const {
+    moveService,
+    orderedServices,
+    resetServiceOrder,
+    setServiceOrder,
+  } = useStudioServiceOrder();
+
+  function move(key: StudioPrimaryServiceKey, label: string, direction: -1 | 1) {
+    const previousOrder = moveService(key, direction);
+    if (!previousOrder) return;
+    setReceipt({
+      detail: `${label} moved ${direction < 0 ? "up" : "down"}.`,
+      previousOrder,
+    });
+  }
+
+  function reset() {
+    const previousOrder = resetServiceOrder();
+    setReceipt({ detail: "Default order restored.", previousOrder });
+  }
 
   return (
     <>
@@ -124,13 +148,25 @@ export function ArrangeStudioHomeControl() {
               <div className="studio-arrange-row" key={service.key}>
                 <strong>{service.label}</strong>
                 <span>
-                  <button aria-label={`Move ${service.label} up`} disabled={index === 0} onClick={() => moveService(service.key, -1)} type="button"><ArrowUp aria-hidden="true" size={17} /></button>
-                  <button aria-label={`Move ${service.label} down`} disabled={index === orderedServices.length - 1} onClick={() => moveService(service.key, 1)} type="button"><ArrowDown aria-hidden="true" size={17} /></button>
+                  <button aria-label={`Move ${service.label} up`} disabled={index === 0} onClick={() => move(service.key, service.label, -1)} type="button"><ArrowUp aria-hidden="true" size={17} /></button>
+                  <button aria-label={`Move ${service.label} down`} disabled={index === orderedServices.length - 1} onClick={() => move(service.key, service.label, 1)} type="button"><ArrowDown aria-hidden="true" size={17} /></button>
                 </span>
               </div>
             ))}
           </div>
-          <button className="button button-secondary" onClick={resetServiceOrder} type="button"><RotateCcw aria-hidden="true" size={15} />Reset order</button>
+          <button className="button button-secondary studio-arrange-reset" onClick={reset} type="button"><RotateCcw aria-hidden="true" size={15} />Reset order</button>
+          {receipt ? (
+            <StudioFeedback
+              action={receipt.previousOrder ? <button className="button button-secondary" onClick={() => {
+                setServiceOrder(receipt.previousOrder!);
+                setReceipt({ detail: "Previous order restored.", previousOrder: null });
+              }} type="button">Undo</button> : undefined}
+              className="studio-arrange-feedback"
+              detail={receipt.detail}
+              state="success"
+              title="Home updated"
+            />
+          ) : null}
         </div>
       </StudioTaskSheet>
     </>

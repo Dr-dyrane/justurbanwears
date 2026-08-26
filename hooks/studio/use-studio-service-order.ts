@@ -53,26 +53,35 @@ export function useStudioServiceOrder() {
     };
   }, []);
 
-  const moveService = useCallback((key: StudioPrimaryServiceKey, direction: -1 | 1) => {
-    const current = readOrder();
-    const index = current.indexOf(key);
-    const target = index + direction;
-    if (index < 0 || target < 0 || target >= current.length) return;
-    const next = [...current];
-    [next[index], next[target]] = [next[target], next[index]];
+  const setServiceOrder = useCallback((value: readonly StudioPrimaryServiceKey[]) => {
+    const next = normalizeOrder(value);
     setOrder(next);
     persistOrder(next);
   }, []);
 
+  const moveService = useCallback((key: StudioPrimaryServiceKey, direction: -1 | 1) => {
+    const current = readOrder();
+    const index = current.indexOf(key);
+    const target = index + direction;
+    if (index < 0 || target < 0 || target >= current.length) return null;
+    const next = [...current];
+    [next[index], next[target]] = [next[target], next[index]];
+    setOrder(next);
+    persistOrder(next);
+    return current;
+  }, []);
+
   const resetServiceOrder = useCallback(() => {
+    const current = readOrder();
     const next = [...STUDIO_PRIMARY_SERVICE_KEYS];
     setOrder(next);
     persistOrder(next);
+    return current;
   }, []);
 
   const orderedServices = useMemo(() => order.map((key) => (
     STUDIO_PRIMARY_SERVICES.find((service) => service.key === key)
   )).filter((service): service is (typeof STUDIO_PRIMARY_SERVICES)[number] => Boolean(service)), [order]);
 
-  return { moveService, order, orderedServices, resetServiceOrder };
+  return { moveService, order, orderedServices, resetServiceOrder, setServiceOrder };
 }

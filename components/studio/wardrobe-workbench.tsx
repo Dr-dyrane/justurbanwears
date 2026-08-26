@@ -1048,7 +1048,15 @@ export function WardrobeWorkbench() {
           {scopedListings.length ? <><div className="studio-publishing-queue">{pagedListings.map((listing) => {
             const garment = studio.garments.find((candidate) => candidate.id === listing.garmentId);
             const status = STUDIO_LIFECYCLE_PRESENTATION[listing.state];
-            return garment ? <StudioLink className="studio-publishing-row studio-compact-row" data-state-tone={status.tone} href={garmentDossierHref(garment)} key={listing.id}><span><small>{garment.sku}</small><strong>{listing.title}</strong><LifecycleMeta state={listing.state} /></span><ArrowRight aria-hidden="true" size={17} /></StudioLink> : null;
+            if (!garment) return null;
+            const cover = studioGarmentCover(garment, listing);
+            return <StudioLink className="studio-publishing-row studio-compact-row" data-state-tone={status.tone} href={garmentDossierHref(garment)} key={listing.id}>
+              <span aria-hidden="true" className={`studio-publishing-media${cover ? " is-photo" : ""}`} data-variant={garment.visual}>
+                {cover ? <img alt="" height={cover.height} loading="lazy" src={cover.src} width={cover.width} /> : <Shirt size={22} strokeWidth={1.4} />}
+              </span>
+              <span className="studio-publishing-copy"><small>{garment.sku}</small><strong>{listing.title}</strong><LifecycleMeta state={listing.state} /></span>
+              <ArrowRight aria-hidden="true" size={17} />
+            </StudioLink>;
           })}</div><StudioPager label="Publishing pages" onPageChange={setPublishingPage} page={safePublishingPage} pageSize={publishingPageSize} total={scopedListings.length} /></> : <div className="studio-quiet-empty"><Send aria-hidden="true" size={24} strokeWidth={1.5} /><div><strong>No Shop previews</strong><p>Approved Shop previews appear here.</p></div></div>}
         </section>
       )}

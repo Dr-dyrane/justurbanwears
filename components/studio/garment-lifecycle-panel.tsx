@@ -25,9 +25,14 @@ import type {
   GarmentRevisionMediaRole,
 } from "../../lib/studio/engine/garment-lifecycle-contracts";
 import { WardrobeMotion } from "../brand/wardrobe-motion";
+import {
+  StudioDecisionSheet,
+  type StudioDecisionResult,
+} from "./atoms/studio-decision-sheet";
 import { StudioMediaButton, type StudioMediaItem } from "./media-viewer";
 
 type ErrorBody = { error?: { message?: string; recovery?: string } };
+type GarmentDecision = "ARCHIVE" | "DISCARD_REVISION" | "PUBLISH_REVISION" | "REPUBLISH" | "UNPUBLISH";
 
 function formatNaira(value: number) {
   return new Intl.NumberFormat("en-NG", {
@@ -66,9 +71,12 @@ export function GarmentLifecyclePanel({
   const [historyOpen, setHistoryOpen] = useState(false);
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
+  const [decision, setDecision] = useState<GarmentDecision | null>(null);
+  const [decisionReturnFocus, setDecisionReturnFocus] = useState<HTMLElement | null>(null);
   const [milestone, setMilestone] = useState<"published" | "returned" | null>(null);
   const [reload, setReload] = useState(0);
   const priceRef = useRef<HTMLInputElement>(null);
+  const panelRef = useRef<HTMLElement>(null);
   const initialActionHandledRef = useRef(false);
   const publicationKeyRef = useRef(`studio-revision:${wardrobeItemId}:${crypto.randomUUID()}`);
 
@@ -85,6 +93,8 @@ export function GarmentLifecyclePanel({
     setWorkspace(undefined);
     setError("");
     setMilestone(null);
+    setDecision(null);
+    setDecisionReturnFocus(null);
     publicationKeyRef.current = `studio-revision:${wardrobeItemId}:${crypto.randomUUID()}`;
     void fetch(`/api/studio/wardrobe/${encodeURIComponent(wardrobeItemId)}/lifecycle`, {
       cache: "no-store",
@@ -114,8 +124,8 @@ export function GarmentLifecyclePanel({
     requestAnimationFrame(() => priceRef.current?.focus({ preventScroll: true }));
   }, [initialAction, wardrobeItemId, workspace]);
 
-  async function command(value: GarmentLifecycleCommand, action: string) {
-    if (busy) return;
+  async function command(value: GarmentLifecycleCommand, action: string): Promise<StudioDecisionResult> {
+    if (busy) return { error: "Another Studio change is still finishing.", ok: false };
     setBusy(action);
     setError("");
     setMilestone(null);
@@ -134,11 +144,61 @@ export function GarmentLifecyclePanel({
         setMilestone("published");
       }
       if (value.command === "REPUBLISH") setMilestone("returned");
+      return { ok: true };
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "That action did not finish.");
+      const message = caught instanceof Error ? caught.message : "That action did not finish.";
+      setError(message);
+      return { error: message, ok: false };
     } finally {
       setBusy("");
     }
+  }
+
+  function requestDecision(nextDecision: GarmentDecision, trigger: HTMLElement) {
+    setDecision(nextDecision);
+    setDecisionReturnFocus(trigger);
+    setError("");
+  }
+
+  async function executeDecision(nextDecision: GarmentDecision): Promise<StudioDecisionResult> {
+    if (nextDecision === "PUBLISH_REVISION") {
+      if (!workspace?.draft) return { error: "This private revision is no longer available.", ok: false };
+      return command({
+        command: "PUBLISH_REVISION",
+        confirmation: "PUBLISH_REVISION",
+        expectedRevision: workspace.draft.expectedRevision,
+        idempotencyKey: publicationKeyRef.current,
+        publicMediaConfirmed: true,
+      }, nextDecision);
+    }
+    if (nextDecision === "DISCARD_REVISION") {
+      if (!workspace?.draft) return { error: "This private revision is no longer available.", ok: false };
+      return command({
+        command: "DISCARD_REVISION",
+        expectedRevision: workspace.draft.expectedRevision,
+      }, nextDecision);
+    }
+    if (nextDecision === "ARCHIVE") {
+      if (!workspace) return { error: "Piece controls are no longer available.", ok: false };
+      return command({
+        command: "ARCHIVE",
+        confirmation: "ARCHIVE",
+        expectedVersion: workspace.itemVersion,
+      }, nextDecision);
+    }
+    if (!workspace?.live) return { error: "The Shop revision changed. Review the piece again.", ok: false };
+    if (nextDecision === "UNPUBLISH") {
+      return command({
+        command: "UNPUBLISH",
+        confirmation: "UNPUBLISH",
+        expectedRevision: workspace.live.sourceRevision,
+      }, nextDecision);
+    }
+    return command({
+      command: "REPUBLISH",
+      confirmation: "REPUBLISH",
+      expectedRevision: workspace.live.sourceRevision,
+    }, nextDecision);
   }
 
   async function replaceMedia(role: GarmentRevisionMediaRole, file?: File) {
@@ -196,9 +256,61 @@ export function GarmentLifecyclePanel({
     label: media.label,
     src: media.src,
   })) ?? [];
+  const decisionCopy = decision ? {
+    ARCHIVE: {
+      busyLabel: "Archiving this piece",
+      confirmLabel: "Archive piece",
+      consequence: "It leaves Shop, becomes read-only here, and remains in history.",
+      destructive: true,
+      receiptDetail: "The piece is off Shop and preserved in Studio history.",
+      receiptTitle: "Piece archived",
+      summary: `Archive ${workspace.facts.title}?`,
+      title: "Archive this piece?",
+    },
+    DISCARD_REVISION: {
+      busyLabel: "Discarding this revision",
+      confirmLabel: "Discard revision",
+      consequence: "Private edits in this revision are removed. The current Shop listing stays unchanged.",
+      destructive: true,
+      receiptDetail: "The private revision was removed; Shop was not changed.",
+      receiptTitle: "Revision discarded",
+      summary: `Discard private revision ${workspace.draft?.revisionNumber ?? ""}?`,
+      title: "Discard this revision?",
+    },
+    PUBLISH_REVISION: {
+      busyLabel: "Publishing this revision",
+      confirmLabel: "Publish changes",
+      consequence: "These exact facts and approved photos replace the current customer-facing listing.",
+      destructive: false,
+      receiptDetail: "Customers can now see this exact revision.",
+      receiptTitle: "Published to Shop",
+      summary: `${workspace.draft?.diff.length ?? 0} customer-visible change${workspace.draft?.diff.length === 1 ? "" : "s"} will go live.`,
+      title: "Publish this revision?",
+    },
+    REPUBLISH: {
+      busyLabel: "Returning this piece to Shop",
+      confirmLabel: "Return to Shop",
+      consequence: "The last approved listing becomes visible to customers again.",
+      destructive: false,
+      receiptDetail: "The approved listing is visible to customers again.",
+      receiptTitle: "Returned to Shop",
+      summary: `Return ${workspace.facts.title} to Shop?`,
+      title: "Return to Shop?",
+    },
+    UNPUBLISH: {
+      busyLabel: "Removing this piece from Shop",
+      confirmLabel: "Remove from Shop",
+      consequence: "Customers can no longer see it. The garment and approved listing stay private in Studio.",
+      destructive: true,
+      receiptDetail: "The piece is private and can be returned to Shop later.",
+      receiptTitle: "Removed from Shop",
+      summary: `Remove ${workspace.facts.title} from Shop?`,
+      title: "Remove from Shop?",
+    },
+  }[decision] : null;
 
   return (
-    <section className="studio-piece-shop studio-listing-editor" id="garment-lifecycle" aria-labelledby="garment-lifecycle-title">
+    <section className="studio-piece-shop studio-listing-editor" id="garment-lifecycle" aria-labelledby="garment-lifecycle-title" ref={panelRef} tabIndex={-1}>
       <div className="studio-card-heading">
         <div><small>Listing</small><h3 id="garment-lifecycle-title">{stateLabel(workspace.state)}</h3></div>
         {busy ? <LoaderCircle aria-label="Working" className="studio-spin" size={18} /> : null}
@@ -270,8 +382,8 @@ export function GarmentLifecyclePanel({
           {workspace.draft.media.length ? <div className="studio-publication-media">{workspace.draft.media.map((media) => <StudioMediaButton items={[{ alt: `${workspace.draft!.facts.title} · ${media.label.toLowerCase()}`, label: media.label, src: media.assetUrl }]} key={`${media.slot}:${media.id}`} label={`Preview ${media.label.toLowerCase()}`}><img alt={`${workspace.draft!.facts.title} · ${media.label.toLowerCase()}`} height={media.height} src={media.assetUrl} width={media.width} /></StudioMediaButton>)}</div> : null}
           {workspace.draft.diff.length ? <div className="studio-readiness-list">{workspace.draft.diff.map((change) => <p key={change.field}><strong>{change.label}</strong><span>{change.before} → {change.after}</span></p>)}</div> : <p className="studio-inline-state">No customer-visible change yet.</p>}
           <div className="studio-card-actions">
-            <button className="button button-secondary" disabled={Boolean(busy)} onClick={() => void command({ command: "DISCARD_REVISION", expectedRevision: workspace.draft!.expectedRevision }, "DISCARD_REVISION")} type="button"><Trash2 aria-hidden="true" size={15} />Discard</button>
-            <button className="button button-primary" disabled={Boolean(busy) || !workspace.draft.diff.length} onClick={() => void command({ command: "PUBLISH_REVISION", expectedRevision: workspace.draft!.expectedRevision, idempotencyKey: publicationKeyRef.current, confirmation: "PUBLISH_REVISION", publicMediaConfirmed: true }, "PUBLISH_REVISION")} type="button"><Send aria-hidden="true" size={15} />{busy === "PUBLISH_REVISION" ? "Publishing…" : "Publish changes"}</button>
+            <button className="button button-secondary" disabled={Boolean(busy)} onClick={(event) => requestDecision("DISCARD_REVISION", event.currentTarget)} type="button"><Trash2 aria-hidden="true" size={15} />Discard</button>
+            <button className="button button-primary" disabled={Boolean(busy) || !workspace.draft.diff.length} onClick={(event) => requestDecision("PUBLISH_REVISION", event.currentTarget)} type="button"><Send aria-hidden="true" size={15} />Publish changes</button>
           </div>
         </section>
       ) : null}
@@ -283,9 +395,9 @@ export function GarmentLifecyclePanel({
       ) : null}
 
       <div className="studio-card-actions">
-        {workspace.state === "PUBLISHED" && workspace.live ? <><a className="button button-secondary" href={workspace.live.receipt.shopUrl}><Eye aria-hidden="true" size={15} />View in Shop</a><button className="button button-secondary" disabled={Boolean(busy)} onClick={() => window.confirm("Remove this piece from Shop? The garment stays private and can be returned later.") && void command({ command: "UNPUBLISH", expectedRevision: workspace.live!.sourceRevision, confirmation: "UNPUBLISH" }, "UNPUBLISH")} type="button"><EyeOff aria-hidden="true" size={15} />Remove from Shop</button></> : null}
-        {workspace.state === "UNPUBLISHED" && workspace.live ? <button className="button button-primary" disabled={Boolean(busy)} onClick={() => void command({ command: "REPUBLISH", expectedRevision: workspace.live!.sourceRevision, confirmation: "REPUBLISH" }, "REPUBLISH")} type="button"><RotateCcw aria-hidden="true" size={15} />Return to Shop</button> : null}
-        {workspace.allowedActions.includes("ARCHIVE") ? <button className="button button-secondary" disabled={Boolean(busy)} onClick={() => window.confirm("Archive this piece? It will leave Shop and cannot be edited here.") && void command({ command: "ARCHIVE", expectedVersion: workspace.itemVersion, confirmation: "ARCHIVE" }, "ARCHIVE")} type="button"><Archive aria-hidden="true" size={15} />Archive</button> : null}
+        {workspace.state === "PUBLISHED" && workspace.live ? <><a className="button button-secondary" href={workspace.live.receipt.shopUrl}><Eye aria-hidden="true" size={15} />View in Shop</a><button className="button button-secondary" disabled={Boolean(busy)} onClick={(event) => requestDecision("UNPUBLISH", event.currentTarget)} type="button"><EyeOff aria-hidden="true" size={15} />Remove from Shop</button></> : null}
+        {workspace.state === "UNPUBLISHED" && workspace.live ? <button className="button button-primary" disabled={Boolean(busy)} onClick={(event) => requestDecision("REPUBLISH", event.currentTarget)} type="button"><RotateCcw aria-hidden="true" size={15} />Return to Shop</button> : null}
+        {workspace.allowedActions.includes("ARCHIVE") ? <button className="button button-secondary" disabled={Boolean(busy)} onClick={(event) => requestDecision("ARCHIVE", event.currentTarget)} type="button"><Archive aria-hidden="true" size={15} />Archive</button> : null}
       </div>
 
       {error ? <p className="studio-engine-error" role="alert">{error}</p> : null}
@@ -295,6 +407,36 @@ export function GarmentLifecyclePanel({
         <button aria-expanded={historyOpen} onClick={() => setHistoryOpen((value) => !value)} type="button"><History aria-hidden="true" size={16} /><span>History</span>{historyOpen ? <ChevronUp aria-hidden="true" size={16} /> : <ChevronDown aria-hidden="true" size={16} />}</button>
         {historyOpen ? <div>{workspace.history.length ? workspace.history.map((event) => <p key={event.id}><span>{event.summary}</span><small>{new Intl.DateTimeFormat("en-NG", { dateStyle: "medium", timeStyle: "short" }).format(new Date(event.occurredAt))}</small></p>) : <p><span>No changes yet</span><small>New actions appear here.</small></p>}</div> : null}
       </section>
+
+      {decision && decisionCopy ? (
+        <StudioDecisionSheet
+          busyLabel={decisionCopy.busyLabel}
+          confirmLabel={decisionCopy.confirmLabel}
+          consequence={decisionCopy.consequence}
+          destructive={decisionCopy.destructive}
+          eyebrow="Listing review"
+          fallbackFocus={panelRef.current}
+          onConfirm={() => executeDecision(decision)}
+          onDismiss={() => {
+            setDecision(null);
+            setDecisionReturnFocus(null);
+          }}
+          open
+          receiptDetail={decisionCopy.receiptDetail}
+          receiptTitle={decisionCopy.receiptTitle}
+          returnFocus={decisionReturnFocus}
+          summary={decisionCopy.summary}
+          title={decisionCopy.title}
+        >
+          {decision === "PUBLISH_REVISION" && workspace.draft?.diff.length ? (
+            <div className="studio-decision-diff" aria-label="Changes to publish">
+              {workspace.draft.diff.map((change) => (
+                <p key={change.field}><strong>{change.label}</strong><span>{change.before}</span><i aria-hidden="true">→</i><span>{change.after}</span></p>
+              ))}
+            </div>
+          ) : null}
+        </StudioDecisionSheet>
+      ) : null}
     </section>
   );
 }

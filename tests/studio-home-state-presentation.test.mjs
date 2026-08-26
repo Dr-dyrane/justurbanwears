@@ -45,6 +45,9 @@ test("Studio stack lists share one near-black, metadata-first row grammar", asyn
   assert.match(operations, /studio-operation-card studio-compact-row/);
   assert.match(orders, /studio-connected-order-card studio-compact-row/);
   assert.match(wardrobe, /studio-publishing-row studio-compact-row/);
+  assert.match(wardrobe, /const cover = studioGarmentCover\(garment, listing\)/);
+  assert.match(wardrobe, /className=\{`studio-publishing-media\$\{cover \? " is-photo" : ""\}`\}/);
+  assert.match(wardrobe, /className="studio-publishing-copy"/);
   assert.match(models, /studio-model-option[\s\S]*?<LifecycleMeta state="READY"/);
 
   assert.match(styles, /html\[data-theme="dark"\] \.studio-stack-shell \{/);
@@ -52,6 +55,7 @@ test("Studio stack lists share one near-black, metadata-first row grammar", asyn
   assert.match(styles, /\.studio-compact-row\[data-state-tone="critical"\]/);
   assert.match(styles, /\.studio-inventory-row-trigger[\s\S]*?grid-template-columns: 74px minmax\(0, 1fr\) minmax\(116px, \.55fr\) 20px/);
   assert.match(styles, /grid-template-columns: 78px minmax\(0, 1fr\) 18px/);
+  assert.match(styles, /\.studio-publishing-media[\s\S]*?object-position: center top/);
   assert.match(styles, /\.studio-connected-order-card[\s\S]*?grid-template-columns: minmax\(0, 1fr\) 20px/);
   assert.match(styles, /prefers-reduced-motion: reduce[\s\S]*?\.studio-compact-row/);
 

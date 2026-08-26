@@ -65,21 +65,25 @@ export function StudioSettingsCenter({ operator }: { operator: StudioOperator | 
 
         <section className="studio-settings-section" aria-labelledby="studio-appearance-title">
           <div className="studio-settings-heading"><span><Sparkles aria-hidden="true" size={18} /></span><h3 id="studio-appearance-title">Appearance</h3></div>
-          <ThemeSettings />
+          <div className="studio-settings-group"><ThemeSettings /></div>
         </section>
 
         <section className="studio-settings-section" aria-labelledby="studio-workspace-title">
           <div className="studio-settings-heading"><span><Database aria-hidden="true" size={18} /></span><h3 id="studio-workspace-title">Workspace</h3></div>
-          <div className="studio-settings-status-list">
-            <div><span><Cloud aria-hidden="true" size={17} /><span><strong>AI intake</strong><small>Private server drafts</small></span></span><Check aria-label="Available" size={17} /></div>
-            <div><span><Database aria-hidden="true" size={17} /><span><strong>Workspace</strong><small>{studio.scenario ? "Read-only scenario" : workspaceAvailable ? "Connected Studio record" : "Live state unavailable"}</small></span></span><b data-tone={workspaceAvailable ? "positive" : "critical"}>{workspaceAvailable ? "Ready" : "Check"}</b></div>
+          <div className="studio-settings-group">
+            <div className="studio-settings-status-list">
+              <div><span><Cloud aria-hidden="true" size={17} /><span><strong>AI intake</strong><small>Private server drafts</small></span></span><Check aria-label="Available" size={17} /></div>
+              <div><span><Database aria-hidden="true" size={17} /><span><strong>Workspace</strong><small>{studio.scenario ? "Read-only scenario" : workspaceAvailable ? "Connected Studio record" : "Live state unavailable"}</small></span></span><b data-tone={workspaceAvailable ? "positive" : "critical"}>{workspaceAvailable ? "Ready" : "Check"}</b></div>
+            </div>
           </div>
         </section>
 
         <section className="studio-settings-section" aria-labelledby="studio-help-title">
           <div className="studio-settings-heading"><span><BookOpen aria-hidden="true" size={18} /></span><h3 id="studio-help-title">Help</h3></div>
-          <Link className="studio-settings-link" href="/studio/wardrobe?guide=1"><span><BookOpen aria-hidden="true" size={18} /><span><strong>Garment intake guide</strong><small>Five visual steps</small></span></span><ChevronRight aria-hidden="true" size={17} /></Link>
-          <PwaInstallControl />
+          <div className="studio-settings-group studio-settings-help-group">
+            <Link className="studio-settings-link" href="/studio/wardrobe?guide=1"><span><BookOpen aria-hidden="true" size={18} /><span><strong>Garment intake guide</strong><small>Five visual steps</small></span></span><ChevronRight aria-hidden="true" size={17} /></Link>
+            <PwaInstallControl />
+          </div>
         </section>
 
         {operator ? <button

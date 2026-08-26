@@ -51,6 +51,6 @@ test("one flat sheet renders browse, preview, recovery and receipt states", () =
   assert.match(sheet, /Open \{receipt\.collection\.label\}/);
   assert.match(css, /Native Studio surface contract/);
   assert.match(css, /\.studio-drop-row:not\(:last-child\)::after/);
-  assert.match(css, /\.studio-settings-section:not\(:last-of-type\)::after/);
+  assert.match(css, /\.studio-settings-group \{[\s\S]*?background: var\(--studio-panel-muted\)/);
   assert.match(css, /\.studio-native-canvas \{[\s\S]*?padding-inline: 0;/);
 });
