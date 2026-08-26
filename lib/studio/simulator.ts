@@ -1,4 +1,5 @@
 import {
+  studioDecisionNoteSha256,
   StudioEngineError,
   type GarmentIntakeClient,
   type IntakeFacts,
@@ -421,9 +422,40 @@ export function createStudioScenarioIntakeClient(scenario: StudioScenario): Garm
         reused: false,
       };
     },
-    async decideIntake(intake, decision) {
+    async decideIntake(intake, decision, note) {
       assertAvailable();
-      return { intake: nextIntake(intake, { state: decision }) };
+      const candidate = intake.candidate;
+      if (!candidate) {
+        throw new StudioEngineError(
+          409,
+          "INVALID_TRANSITION",
+          "The simulated garment candidate is unavailable.",
+          "Build the garment before choosing what happens next.",
+        );
+      }
+      const generationId = candidate.generationId;
+      const noteSha256 = await studioDecisionNoteSha256(note);
+      const receiptId = await studioDecisionNoteSha256(
+        ["studio-decision-receipt.v1", generationId, decision, noteSha256].join("\n"),
+      );
+      const state = decision === "KEEP"
+        ? "DECISION"
+        : decision === "REJECT" ? "ARCHIVED" : "REVIEW";
+      return {
+        intake: nextIntake(intake, {
+          state,
+          candidate: decision === "KEEP"
+            ? { ...candidate, status: "APPROVED" }
+            : undefined,
+          decisionReceipt: {
+            receiptId,
+            generationId,
+            decision,
+            noteSha256,
+            decidedAt: SCENARIO_TIME,
+          },
+        }),
+      };
     },
     async commitIntake(intake, facts) {
       assertAvailable();

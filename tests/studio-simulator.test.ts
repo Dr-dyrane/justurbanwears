@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
+  studioDecisionNoteSha256,
   StudioEngineError,
   type IntakeFacts,
 } from "../components/studio/garment-intake/engine-client";
@@ -119,7 +120,34 @@ test("scenario intake never calls fetch and exposes success and recovery states"
       lifecycle.candidateUrl(generated.intake),
       "/studio/wardrobe/blush-scoop-mini-dress/01-garment-front.webp",
     );
+    const retryNoteSha256 = await studioDecisionNoteSha256("Keep the hem clean");
+    const retried = await lifecycle.decideIntake(generated.intake, "RETRY", "  Keep the hem clean  ");
+    assert.deepEqual(retried.intake.decisionReceipt, {
+      receiptId: await studioDecisionNoteSha256(
+        ["studio-decision-receipt.v1", "scenario-generation-001", "RETRY", retryNoteSha256].join("\n"),
+      ),
+      generationId: "scenario-generation-001",
+      decision: "RETRY",
+      noteSha256: retryNoteSha256,
+      decidedAt: "2026-08-16T12:00:00.000Z",
+    });
+    assert.equal(retried.intake.state, "REVIEW");
+    assert.equal(retried.intake.candidate, undefined);
+
+    const edited = await lifecycle.decideIntake(generated.intake, "EDIT", "Shorten the hem");
+    assert.equal(edited.intake.state, "REVIEW");
+    assert.equal(edited.intake.candidate, undefined);
+    assert.equal(edited.intake.decisionReceipt?.decision, "EDIT");
+
+    const rejected = await lifecycle.decideIntake(generated.intake, "REJECT");
+    assert.equal(rejected.intake.state, "ARCHIVED");
+    assert.equal(rejected.intake.candidate, undefined);
+    assert.equal(rejected.intake.decisionReceipt?.decision, "REJECT");
+
     const decided = await lifecycle.decideIntake(generated.intake, "KEEP");
+    assert.equal(decided.intake.state, "DECISION");
+    assert.equal(decided.intake.candidate?.status, "APPROVED");
+    assert.equal(decided.intake.decisionReceipt?.decision, "KEEP");
     const committed = await lifecycle.commitIntake(decided.intake, generated.intake.facts as IntakeFacts);
     assert.deepEqual(committed.wardrobeItem, { id: "scenario-garment-draft", state: "DRAFT" });
 

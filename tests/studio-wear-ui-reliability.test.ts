@@ -19,10 +19,14 @@ const helperJavaScript = ts.transpileModule(sheet.slice(helperStart, helperEnd),
 }).outputText;
 const helpers = await import(`data:text/javascript;base64,${Buffer.from(helperJavaScript).toString("base64")}`) as {
   createWearRequestId(): string;
+  resolveWearCommandGeneration<T extends { id: string; requestId: string; state: string }>(
+    generations: T[],
+    response: { generationId: string; requestId: string; reused: boolean },
+  ): { adoptsExistingRequest: boolean; generation: T } | undefined;
   runWearSingleFlight<T>(guard: { current: boolean }, command: () => Promise<T>): Promise<T | undefined>;
   wearPollDelay(failureCount: number): number;
 };
-const { createWearRequestId, runWearSingleFlight, wearPollDelay } = helpers;
+const { createWearRequestId, resolveWearCommandGeneration, runWearSingleFlight, wearPollDelay } = helpers;
 
 test("Wear command gate rejects overlapping commands and releases after settlement", async () => {
   const guard = { current: false };
@@ -66,7 +70,47 @@ test("Wear creates a UUID command identity before dispatch", () => {
   assert.match(client, /generationId: string/u);
   assert.match(sheet, /writeWearRequestId\(wardrobeItemId, requestId\)/u);
   assert.match(sheet, /requestId,\s*operation: nextOperation/u);
-  assert.match(sheet, /item\.id === result\.generationId && item\.requestId === requestId/u);
+  assert.match(sheet, /resolveWearCommandGeneration\(result\.workspace\.generations/u);
+});
+
+test("Wear accepts an authoritative terminal reuse without weakening new-command identity", () => {
+  const exactStates = ["PENDING", "RUNNING", "COMPLETE", "APPROVED", "FAILED", "REJECTED", "INDETERMINATE"];
+  for (const state of exactStates) {
+    const generation = { id: `generation-${state}`, requestId: "request-current", state };
+    assert.deepEqual(resolveWearCommandGeneration([generation], {
+      generationId: generation.id,
+      requestId: generation.requestId,
+      reused: false,
+    }), { adoptsExistingRequest: false, generation });
+  }
+
+  for (const state of ["PENDING", "RUNNING", "COMPLETE", "APPROVED"]) {
+    const generation = { id: `generation-${state}`, requestId: "request-prior", state };
+    assert.deepEqual(resolveWearCommandGeneration([generation], {
+      generationId: generation.id,
+      requestId: "request-new",
+      reused: true,
+    }), { adoptsExistingRequest: true, generation });
+  }
+
+  for (const state of ["FAILED", "REJECTED", "INDETERMINATE"]) {
+    const generation = { id: `generation-${state}`, requestId: "request-prior", state };
+    assert.equal(resolveWearCommandGeneration([generation], {
+      generationId: generation.id,
+      requestId: "request-new",
+      reused: true,
+    }), undefined);
+  }
+
+  const reusable = { id: "generation-reusable", requestId: "request-prior", state: "COMPLETE" };
+  assert.equal(resolveWearCommandGeneration([reusable], {
+    generationId: reusable.id,
+    requestId: "request-new",
+    reused: false,
+  }), undefined);
+  const adoption = sheet.indexOf("if (resolved.adoptsExistingRequest) clearRememberedWearRequest(requestId)");
+  const application = sheet.indexOf("applyTrackedGeneration(resolved.generation", adoption);
+  assert.ok(adoption >= 0 && application > adoption);
 });
 
 test("Wear mutations share the gate and expose pending feedback", () => {

@@ -80,6 +80,22 @@ export async function runWearSingleFlight<T>(
   }
 }
 
+export function resolveWearCommandGeneration(
+  generations: WearGeneration[],
+  response: { generationId: string; requestId: string; reused: boolean },
+) {
+  const generation = generations.find((item) => item.id === response.generationId);
+  if (!generation) return undefined;
+  if (generation.requestId === response.requestId) {
+    return { adoptsExistingRequest: false, generation };
+  }
+  if (
+    !response.reused
+    || !["PENDING", "RUNNING", "COMPLETE", "APPROVED"].includes(generation.state)
+  ) return undefined;
+  return { adoptsExistingRequest: true, generation };
+}
+
 function wearGenerationError(generation: Pick<WearGeneration, "retryAvailable">) {
   return new StudioEngineError(
     502,
@@ -343,11 +359,14 @@ export function WearSheet({ onDismiss, open, returnFocus, wardrobeItemId }: {
         decisionReceiptId: correctionAuthority?.decisionReceiptId,
       });
       setWorkspace(result.workspace);
-      const candidate = result.workspace.generations.find((item) => (
-        item.id === result.generationId && item.requestId === requestId
-      ));
-      if (!candidate) throw new StudioEngineError(500, "ENGINE_ERROR", "The Wear view was not saved.", "Try once more.");
-      applyTrackedGeneration(candidate, { reusedApproval: result.reused });
+      const resolved = resolveWearCommandGeneration(result.workspace.generations, {
+        generationId: result.generationId,
+        requestId,
+        reused: result.reused,
+      });
+      if (!resolved) throw new StudioEngineError(500, "ENGINE_ERROR", "The Wear view was not saved.", "Try once more.");
+      if (resolved.adoptsExistingRequest) clearRememberedWearRequest(requestId);
+      applyTrackedGeneration(resolved.generation, { reusedApproval: result.reused });
     } catch (caught) {
       const commandError = caught instanceof StudioEngineError ? caught : new StudioEngineError(500, "ENGINE_ERROR", "Studio could not make that view.");
       setError(commandError);
