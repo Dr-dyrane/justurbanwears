@@ -1,4 +1,8 @@
 import type { StudioMachineState } from "./domain/state";
+import {
+  actionableStudioDraftCount,
+  historicalDrop01Kind,
+} from "./projections/piece-workspace";
 
 export type StudioNotificationKind = "PERSISTENCE" | "MODEL" | "WARDROBE" | "PUBLISHING" | "ORDER" | "RETURN";
 export type StudioNotificationTone = "critical" | "attention" | "neutral";
@@ -22,7 +26,11 @@ export function deriveStudioNotifications(
 ): StudioNotification[] {
   const notifications: StudioNotification[] = [];
   const modelDrafts = state.models.filter((model) => model.state === "DRAFT");
-  const garmentDrafts = state.garments.filter((garment) => garment.state === "DRAFT");
+  const garmentDrafts = state.garments.filter((garment) => (
+    garment.state === "DRAFT"
+    && historicalDrop01Kind(garment) === null
+  ));
+  const garmentDraftCount = actionableStudioDraftCount(state.garments);
   const listingWork = state.listings.filter((listing) => listing.state === "DRAFT" || listing.state === "READY");
   const reservedOrders = state.orders.filter((order) => order.state === "RESERVED");
   const openReturns = state.returns.filter((returnCase) => returnCase.state === "DRAFT");
@@ -60,12 +68,12 @@ export function deriveStudioNotifications(
       actionLabel: "Open returns",
     });
   }
-  if (garmentDrafts.length) {
+  if (garmentDraftCount) {
     notifications.push({
       id: `wardrobe:${signature(garmentDrafts.map((garment) => garment.id))}`,
       kind: "WARDROBE",
       tone: "neutral",
-      title: `${garmentDrafts.length} garment${garmentDrafts.length === 1 ? "" : "s"} need finishing`,
+      title: `${garmentDraftCount} garment${garmentDraftCount === 1 ? " needs" : "s need"} finishing`,
       detail: "Add the missing views or facts shown on each card.",
       href: `/studio/wardrobe/${encodeURIComponent(garmentDrafts[0].id)}`,
       actionLabel: "Open garment",

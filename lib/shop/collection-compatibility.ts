@@ -3,10 +3,21 @@
  * authoritative runtime source. Membership is explicit: never infer a drop
  * from a SKU range, display label, lifecycle state, or availability.
  */
-export const DROP_01_COMPATIBILITY_SKUS = Object.freeze([
+/** Drop 01 members with a completed historical Shop catalogue projection. */
+export const DROP_01_COMPLETED_SKUS = Object.freeze([
   "JUW-001", "JUW-002", "JUW-003", "JUW-004", "JUW-005", "JUW-006",
   "JUW-007", "JUW-008", "JUW-009", "JUW-010", "JUW-011", "JUW-012",
   "JUW-013", "JUW-014", "JUW-015", "JUW-016", "JUW-020", "JUW-021",
+] as const);
+
+/** Drop 01 members retained as historical archived drafts, never completed listings. */
+export const DROP_01_INCOMPLETE_ARCHIVED_DRAFT_SKUS = Object.freeze([
+  "JUW-017", "JUW-018", "JUW-019", "JUW-022", "JUW-023", "JUW-024",
+] as const);
+
+export const DROP_01_COMPATIBILITY_SKUS = Object.freeze([
+  ...DROP_01_COMPLETED_SKUS,
+  ...DROP_01_INCOMPLETE_ARCHIVED_DRAFT_SKUS,
 ] as const);
 
 export const DROP_02_COMPATIBILITY_SKUS = Object.freeze([

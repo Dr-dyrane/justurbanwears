@@ -102,6 +102,7 @@ test("responsive posture is capacity-derived and keeps a measured safe canvas", 
   assert.match(css, /@media \(max-height: 599px\) and \(orientation: landscape\)[\s\S]*?\[data-detent="full"\][\s\S]*?height: calc\(100% - 8px\)/);
   assert.match(css, /@media \(max-height: 680px\) and \(orientation: portrait\)[\s\S]*?--studio-workspace-surface-fallback: 248px/);
   assert.match(css, /@media \(max-height: 680px\) and \(orientation: portrait\)[\s\S]*?\.juw-order-v2-heading > p[\s\S]*?display: none/);
+  assert.match(css, /@media \(max-width: 680px\)[\s\S]*?\.juw-piece-v2-summary > \.studio-card-heading > \.studio-piece-stage \{[\s\S]*?flex: 0 0 auto;[\s\S]*?max-width: none;[\s\S]*?overflow: visible/);
   assert.match(css, /html:has\(\[data-studio-adaptive-workspace="true"\]\)[\s\S]*?overflow: hidden/);
   assert.match(css, /\.juw-piece-v2-summary > p \{[\s\S]*?order: 3/);
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);

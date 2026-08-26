@@ -32,6 +32,10 @@ import {
 } from "../../../lib/studio/assistant/experience";
 import type { StudioSearchDocument } from "../../../lib/studio/application/contracts";
 import { STUDIO_SERVICES } from "../../../lib/studio/service-registry";
+import {
+  actionableStudioDraftCount,
+  historicalDrop01Kind,
+} from "../../../lib/studio/projections/piece-workspace";
 import { StudioDecisionSheet } from "../atoms/studio-decision-sheet";
 import { StudioLoadingStage } from "../atoms/studio-loading-stage";
 import { StudioLink as Link } from "../atoms/studio-link";
@@ -229,6 +233,12 @@ function pieceDetail(input: { availability?: string; category: string; colour?: 
     .join(" · ");
 }
 
+function assistantHistoryState(
+  garment: Parameters<typeof historicalDrop01Kind>[0],
+): "SOLD_OUT" | "ARCHIVED_DRAFT" | null {
+  return historicalDrop01Kind(garment);
+}
+
 function assistantDocumentKind(kind: StudioSearchDocument["kind"]): StudioAssistantDocument["kind"] {
   if (kind === "SERVICE") return "Service";
   if (kind === "COLLECTION") return "Collection";
@@ -252,6 +262,10 @@ function projectedAssistantDocument(
         || Boolean(candidate.sku && document.aliases.includes(candidate.sku))
       ))
     : undefined;
+  const historicalState = piece?.sku
+    ? assistantHistoryState({ id: piece.wardrobeItemId ?? piece.pieceKey, sku: piece.sku })
+    : null;
+  const projectedState = historicalState ?? document.lifecycleState;
   return {
     detail: document.secondaryLabel,
     entityId,
@@ -260,13 +274,13 @@ function projectedAssistantDocument(
     identifiers: [document.id, entityId, ...document.aliases],
     kind,
     label: document.primaryLabel,
-    mediaTargetId: piece?.wardrobeItemId ?? undefined,
-    state: document.lifecycleState,
+    mediaTargetId: historicalState ? undefined : piece?.wardrobeItemId ?? undefined,
+    state: projectedState,
     tokens: assistantTokens([
       document.id,
       document.primaryLabel,
       document.secondaryLabel,
-      document.lifecycleState,
+      projectedState,
       ...document.aliases,
     ]),
   };
@@ -275,6 +289,8 @@ function projectedAssistantDocument(
 function buildContext(studio: ReturnType<typeof useStudio>): StudioAssistantContext {
   const connected = studio.authority.snapshot;
   const projected = studio.scenario ? null : studio.application.snapshot;
+  const localGarmentsById = new Map(studio.garments.map((garment) => [garment.id, garment]));
+  const localGarmentsBySku = new Map(studio.garments.map((garment) => [garment.sku, garment]));
   const documents: StudioAssistantDocument[] = projected
     ? projected.searchDocuments.map((document) => projectedAssistantDocument(document, connected))
     : STUDIO_SERVICES.map((service) => ({
@@ -296,6 +312,8 @@ function buildContext(studio: ReturnType<typeof useStudio>): StudioAssistantCont
   if (!projected) {
   const knownPieceKeys = new Set<string>();
   for (const garment of studio.garments) {
+    const historicalState = assistantHistoryState(garment);
+    const projectedState = historicalState ?? garment.state;
     knownPieceKeys.add(garment.sku.toLocaleLowerCase("en-NG"));
     knownPieceKeys.add(garment.id.toLocaleLowerCase("en-NG"));
     if (garment.privateWardrobeItemId) knownPieceKeys.add(garment.privateWardrobeItemId.toLocaleLowerCase("en-NG"));
@@ -307,8 +325,8 @@ function buildContext(studio: ReturnType<typeof useStudio>): StudioAssistantCont
       identifiers: [garment.id, garment.sku, garment.privateWardrobeItemId ?? ""],
       kind: "Piece",
       label: garment.title,
-      mediaTargetId: garment.privateWardrobeItemId ?? (studio.scenario ? garment.id : undefined),
-      state: garment.state,
+      mediaTargetId: historicalState ? undefined : garment.privateWardrobeItemId ?? (studio.scenario ? garment.id : undefined),
+      state: projectedState,
       tokens: assistantTokens([
         garment.id,
         garment.sku,
@@ -316,7 +334,7 @@ function buildContext(studio: ReturnType<typeof useStudio>): StudioAssistantCont
         garment.category,
         garment.color,
         garment.condition,
-        garment.state,
+        projectedState,
         garment.availability,
         garment.dynamicPublication?.drop,
       ]),
@@ -327,6 +345,8 @@ function buildContext(studio: ReturnType<typeof useStudio>): StudioAssistantCont
     const keys = [piece.sku, piece.wardrobeItemId, piece.pieceKey].filter(Boolean) as string[];
     if (keys.some((key) => knownPieceKeys.has(key.toLocaleLowerCase("en-NG")))) continue;
     const entityId = piece.wardrobeItemId ?? piece.pieceKey;
+    const historicalState = piece.sku ? assistantHistoryState({ id: entityId, sku: piece.sku }) : null;
+    const projectedState = historicalState ?? piece.availability;
     documents.push({
       detail: pieceDetail({ availability: piece.availability, category: piece.category, colour: piece.colour }),
       entityId,
@@ -337,8 +357,8 @@ function buildContext(studio: ReturnType<typeof useStudio>): StudioAssistantCont
       identifiers: keys,
       kind: "Piece",
       label: piece.title,
-      mediaTargetId: piece.wardrobeItemId ?? undefined,
-      state: piece.availability,
+      mediaTargetId: historicalState ? undefined : piece.wardrobeItemId ?? undefined,
+      state: projectedState,
       tokens: assistantTokens([
         ...keys,
         piece.title,
@@ -346,7 +366,7 @@ function buildContext(studio: ReturnType<typeof useStudio>): StudioAssistantCont
         piece.colour,
         piece.condition,
         piece.sizeLabel,
-        piece.availability,
+        projectedState,
         piece.expectedLocationLabel,
         piece.observedLocationLabel,
       ]),
@@ -422,17 +442,30 @@ function buildContext(studio: ReturnType<typeof useStudio>): StudioAssistantCont
   }
   }
 
-  const projectedAttention = connected
+  const projectedAttention = studio.scenario
     ? Math.max(
+        connected?.notifications.length ?? 0,
+        actionableStudioDraftCount(studio.garments)
+          + studio.garments.filter((garment) => (
+            garment.state === "ERROR" && historicalDrop01Kind(garment) === null
+          )).length
+          + (connected?.orders.filter(studioOrderHasDueWork).length ?? 0),
+      )
+    : connected
+      ? Math.max(
         connected.notifications.length,
         connected.pieces.filter((piece) => piece.availability === "PRIVATE" || piece.hasLocationMismatch).length
           + connected.orders.filter(studioOrderHasDueWork).length,
       )
-    : studio.scenario
-      ? studio.garments.filter((garment) => garment.state === "DRAFT" || garment.state === "ERROR").length
       : null;
-  const localLive = studio.garments.filter((garment) => garment.dynamicPublication?.state === "PUBLISHED").length
-    || studio.listings.filter((listing) => listing.state === "PUBLISHED").length;
+  const localLive = studio.garments.filter((garment) => (
+    garment.dynamicPublication?.state === "PUBLISHED"
+    && historicalDrop01Kind(garment) === null
+  )).length || studio.listings.filter((listing) => {
+    if (listing.state !== "PUBLISHED") return false;
+    const garment = localGarmentsById.get(listing.garmentId);
+    return !garment || historicalDrop01Kind(garment) === null;
+  }).length;
 
   return {
     continueAction: studio.application.snapshot?.continueAction
@@ -475,12 +508,22 @@ function buildContext(studio: ReturnType<typeof useStudio>): StudioAssistantCont
       attention: projected ? projected.summary.attention.value : projectedAttention,
       available: projected
         ? projected.summary.available.value
-        : connected?.pieces.filter((piece) => piece.availability === "AVAILABLE").length
-          ?? (studio.scenario ? studio.garments.filter((garment) => garment.availability === "AVAILABLE").length : null),
+        : connected?.pieces.filter((piece) => {
+            if (piece.availability !== "AVAILABLE") return false;
+            const garment = piece.sku ? localGarmentsBySku.get(piece.sku) : undefined;
+            return !garment || historicalDrop01Kind(garment) === null;
+          }).length
+          ?? (studio.scenario
+            ? studio.garments.filter((garment) => (
+                garment.availability === "AVAILABLE"
+                && historicalDrop01Kind(garment) === null
+              )).length
+            : null),
       drafts: projected
         ? null
-        : connected?.pieces.filter((piece) => piece.availability === "PRIVATE").length
-          ?? (studio.scenario ? studio.garments.filter((garment) => garment.state === "DRAFT").length : null),
+        : studio.scenario
+          ? actionableStudioDraftCount(studio.garments)
+          : connected?.pieces.filter((piece) => piece.availability === "PRIVATE").length ?? null,
       live: projected ? projected.summary.live.value : studio.scenario ? localLive : null,
       orders: projected
         ? projected.summary.orders.value

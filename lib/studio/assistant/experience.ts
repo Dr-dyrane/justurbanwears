@@ -310,6 +310,9 @@ function targetedPieceHandoff(
       title: "Which piece?",
     }]);
   }
+  if (target.state === "SOLD_OUT" || target.state === "ARCHIVED_DRAFT") {
+    return historicalPieceResponse(context, target);
+  }
   return response(context, "CHANGE", input.risk, [{
     action: { href: input.actionHref(target), label: input.actionLabel },
     body: input.body(target),
@@ -318,6 +321,23 @@ function targetedPieceHandoff(
     risk: input.risk,
     title: input.title,
   }]);
+}
+
+function historicalPieceResponse(
+  context: StudioAssistantContext,
+  target: StudioAssistantDocument,
+) {
+  const soldOut = target.state === "SOLD_OUT";
+  return response(context, "RESOLVE", "R0", [
+    {
+      body: soldOut
+        ? `${target.label} is closed with Drop 01 and is not active Shop work.`
+        : `${target.label} is an unfinished Drop 01 test piece kept only as an archived draft.`,
+      kind: "answer",
+      title: soldOut ? "Sold out history" : "Archived draft",
+    },
+    resultBlock("Drop 01 history", [target]),
+  ]);
 }
 
 function capabilityResponse(context: StudioAssistantContext) {
@@ -474,6 +494,9 @@ export function resolveStudioAssistant(
 
   if (PUBLISH_PATTERN.test(query)) {
     const target = exactTarget(context, query, "Piece");
+    if (target?.state === "SOLD_OUT" || target?.state === "ARCHIVED_DRAFT") {
+      return historicalPieceResponse(context, target);
+    }
     return response(context, "CHANGE", "R3", [{
       action: {
         href: target ? target.href : "/studio/wardrobe?view=publishing",
@@ -491,6 +514,9 @@ export function resolveStudioAssistant(
 
   if (REVERSE_PATTERN.test(query)) {
     const target = exactTarget(context, query);
+    if (target?.kind === "Piece" && (target.state === "SOLD_OUT" || target.state === "ARCHIVED_DRAFT")) {
+      return historicalPieceResponse(context, target);
+    }
     return response(context, "REVERSE", "R3", [{
       action: { href: target?.href ?? "/studio/operations", label: target ? "Review record" : "Review impact" },
       body: target
@@ -505,6 +531,9 @@ export function resolveStudioAssistant(
 
   if (MEDIA_PATTERN.test(query)) {
     const target = exactTarget(context, query, "Piece");
+    if (target?.state === "SOLD_OUT" || target?.state === "ARCHIVED_DRAFT") {
+      return historicalPieceResponse(context, target);
+    }
     if (target && !target.mediaTargetId) {
       return response(context, "CREATE", "R2", [{
         action: { href: target.href, label: "Connect piece" },

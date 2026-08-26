@@ -23,6 +23,10 @@ import {
   studioOrderHasDueWork,
 } from "../../lib/shop/order-presentation";
 import { projectStudioDropScopes } from "../../lib/studio/projections/drop-context";
+import {
+  actionableStudioDraftCount,
+  historicalDrop01Kind,
+} from "../../lib/studio/projections/piece-workspace";
 import { selectStudioHomeGate } from "../../lib/studio/application/home-gate";
 import { useStudio } from "./studio-provider";
 
@@ -52,9 +56,9 @@ export function StudioHome() {
     sheetScrollTopRef.current = 0;
   }, []);
 
-  const garmentDrafts = connected
-    ? connected.pieces.filter((piece) => piece.availability === "PRIVATE").length
-    : garments.filter((garment) => garment.state === "DRAFT").length;
+  const garmentDrafts = scenario
+    ? actionableStudioDraftCount(garments)
+    : connected?.pieces.filter((piece) => piece.availability === "PRIVATE").length ?? 0;
   const activeOrders = scenario
     ? connected?.orders.filter((order) => order.lifecycleStatus === "ACTIVE").length ?? 0
     : projected?.summary.orders.value ?? null;
@@ -74,11 +78,24 @@ export function StudioHome() {
   const needsAttention = scenario
     ? Math.max(workCount, connected?.notifications.length ?? 0)
     : projected?.summary.attention.value ?? null;
-  const localLiveListings = listings.filter((listing) => ["PUBLISHED", "RESERVED"].includes(listing.state)).length;
+  const garmentsById = new Map(garments.map((garment) => [garment.id, garment]));
+  const garmentsBySku = new Map(garments.map((garment) => [garment.sku, garment]));
+  const localLiveListings = listings.filter((listing) => {
+    if (listing.state !== "PUBLISHED" && listing.state !== "RESERVED") return false;
+    const garment = garmentsById.get(listing.garmentId);
+    return !garment || historicalDrop01Kind(garment) === null;
+  }).length;
   const liveListings = scenario ? localLiveListings : projected?.summary.live.value ?? null;
   const availableUnits = scenario
-    ? connected?.pieces.filter((piece) => piece.availability === "AVAILABLE").length
-      ?? garments.filter((garment) => garment.availability === "AVAILABLE").length
+    ? connected?.pieces.filter((piece) => {
+        if (piece.availability !== "AVAILABLE") return false;
+        const garment = piece.sku ? garmentsBySku.get(piece.sku) : undefined;
+        return !garment || historicalDrop01Kind(garment) === null;
+      }).length
+      ?? garments.filter((garment) => (
+        garment.availability === "AVAILABLE"
+        && historicalDrop01Kind(garment) === null
+      )).length
     : projected?.summary.available.value ?? null;
 
   const homeGate = selectStudioHomeGate({
@@ -149,6 +166,7 @@ export function StudioHome() {
   const currentDropIds = new Set(dropContext.scopes.find((scope) => scope.key === "current")?.garmentIds ?? []);
   const canEditPrice = (garment: (typeof garments)[number]) => (
     Boolean(garment.privateWardrobeItemId)
+    && historicalDrop01Kind(garment) === null
     && garment.state !== "CANCELLED"
     && garment.availability !== "ARCHIVED"
     && garment.dynamicPublication?.state !== "ARCHIVED"

@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import { createStudioAssistantAgent } from "../lib/ai/studio-assistant-agent";
+import { projectScenarioStudioApplication } from "../lib/server/studio-application-projection";
+import { resolveStudioAssistant } from "../lib/studio/assistant/experience";
 import { studioAssistantContextFromProjection } from "../lib/studio/assistant/projection";
 import type { StudioApplicationProjection } from "../lib/studio/application/contracts";
 
@@ -63,6 +65,33 @@ test("the per-request agent exposes only the read-only Studio resolver", () => {
   const agent = createStudioAssistantAgent({ context, query: "What needs attention?" });
   const settings = agent as unknown as { tools: Record<string, unknown> };
   assert.deepEqual(Object.keys(settings.tools), ["resolveStudioRequest"]);
+});
+
+test("the server Ask projection keeps Drop 01 history read-only", () => {
+  const scenarioProjection = projectScenarioStudioApplication({
+    now: "2026-08-26T12:00:00.000Z",
+    operator: {
+      displayName: "Lulu",
+      email: "lulu@example.com",
+      role: "admin",
+      subject: "studio-operator",
+    },
+    scenario: "lifecycle",
+  });
+  const context = studioAssistantContextFromProjection(scenarioProjection);
+  const soldOut = context.documents.find((document) => document.identifiers.includes("JUW-015"));
+  const archivedDraft = context.documents.find((document) => document.identifiers.includes("JUW-024"));
+  assert.equal(soldOut?.state, "SOLD_OUT");
+  assert.equal(soldOut?.mediaTargetId, undefined);
+  assert.equal(archivedDraft?.state, "ARCHIVED_DRAFT");
+  assert.equal(archivedDraft?.mediaTargetId, undefined);
+
+  for (const query of ["Change JUW-015 price", "Publish JUW-024", "Prepare media for JUW-024"]) {
+    const response = resolveStudioAssistant(query, context);
+    assert.equal(response.intent, "RESOLVE");
+    assert.equal(response.risk, "R0");
+    assert.equal(response.blocks.some((block) => block.kind === "handoff"), false);
+  }
 });
 
 test("the Ask route owns auth, projection, sanitization and stream bounds", () => {

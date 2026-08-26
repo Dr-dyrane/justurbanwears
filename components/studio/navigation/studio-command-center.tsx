@@ -7,6 +7,7 @@ import {
   Search,
 } from "lucide-react";
 import { STUDIO_SERVICES } from "../../../lib/studio/service-registry";
+import { historicalDrop01Kind } from "../../../lib/studio/projections/piece-workspace";
 import { StudioLink as Link } from "../atoms/studio-link";
 import { StudioTaskSheet } from "../atoms/studio-task-sheet";
 import { useStudio } from "../studio-provider";
@@ -88,14 +89,17 @@ export function StudioCommandCenter({
         href: service.href,
         tokens: normalize([service.key, service.label, service.description, ...service.aliases].join(" ")),
       })),
-      ...studio.garments.map((garment) => ({
-        id: `garment:${garment.id}`,
-        kind: "Piece",
-        label: garment.title,
-        detail: `${garment.sku} · ${garment.category} · ${garment.state.toLocaleLowerCase("en-NG")}`,
-        href: `/studio/wardrobe/${encodeURIComponent(garment.id)}`,
-        tokens: normalize(`${garment.sku} ${garment.title} ${garment.category} ${garment.color} ${garment.state}`),
-      })),
+      ...studio.garments.map((garment) => {
+        const state = historicalDrop01Kind(garment) ?? garment.state;
+        return {
+          id: `garment:${garment.id}`,
+          kind: "Piece",
+          label: garment.title,
+          detail: `${garment.sku} · ${garment.category} · ${state.toLocaleLowerCase("en-NG").replaceAll("_", " ")}`,
+          href: `/studio/wardrobe/${encodeURIComponent(garment.id)}`,
+          tokens: normalize(`${garment.sku} ${garment.title} ${garment.category} ${garment.color} ${state}`),
+        };
+      }),
     ];
   }, [studio.application.snapshot, studio.garments, studio.scenario]);
 

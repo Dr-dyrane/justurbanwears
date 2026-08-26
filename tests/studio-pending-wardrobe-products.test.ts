@@ -47,10 +47,10 @@ test("seeds approved business facts while media remains the only readiness gap",
     assert.equal(garment.estimatedFit, "Measurements confirmed before payment");
     assert.equal(garment.condition, "Excellent · real-worn wardrobe piece");
     assert.equal(garment.quantity, 1);
-    assert.equal(garment.saleEligible, true);
+    assert.equal(garment.saleEligible, policy.missing.length === 0);
     assert.deepEqual(garment.measurements, []);
     assert.equal(garment.classificationState, "READY");
-    assert.equal(garment.availability, "AVAILABLE");
+    assert.equal(garment.availability, policy.missing.length === 0 ? "AVAILABLE" : "ARCHIVED");
     assert.deepEqual(contract.missingViews, policy.missing);
 
     const gates = garmentReadiness(garment);
@@ -68,7 +68,7 @@ test("seeds approved business facts while media remains the only readiness gap",
     assert.equal(garment.state, "DRAFT");
     assert.deepEqual(
       gates.filter((gate) => !gate.ready).map((gate) => gate.id),
-      ["media"],
+      ["media", "eligibility"],
     );
     assert.deepEqual(
       seeded.inventory.find((record) => record.garmentId === garment.id),
@@ -211,7 +211,8 @@ test("hydrates JUW-023 as a private capture-required garment without Shop state"
   assert.equal(garment.state, "DRAFT");
   assert.equal(garment.mediaState, "DRAFT");
   assert.equal(garment.quantity, 1);
-  assert.equal(garment.saleEligible, true);
+  assert.equal(garment.saleEligible, false);
+  assert.equal(garment.availability, "ARCHIVED");
   assert.equal(seeded.inventory.some(({ garmentId }) => garmentId === garment.id), true);
   assert.equal(seeded.listings.some(({ garmentId }) => garmentId === garment.id), false);
   assert.equal(selectWardrobePublicView(seeded).some(({ sku }) => sku === "JUW-023"), false);

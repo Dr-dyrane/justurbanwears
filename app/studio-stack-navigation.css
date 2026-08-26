@@ -1469,6 +1469,14 @@ html body .studio-stack-shell .workspace > main.page-canvas:has(> .studio-home-c
   grid-template-columns: minmax(0, 1fr) auto auto;
 }
 
+.studio-stack-current[data-history-only="true"] {
+  cursor: default;
+}
+
+.studio-stack-current[data-history-only="true"]:hover {
+  color: var(--studio-ink);
+}
+
 .studio-stack-shell .studio-piece-next {
   align-items: center;
   background: transparent;
@@ -3135,6 +3143,10 @@ html:not([data-theme="dark"]) .studio-task-sheet.studio-task-sheet .studio-task-
 .studio-drop-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 44px;
+}
+
+.studio-drop-row[data-read-only="true"] {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .studio-drop-row-main {

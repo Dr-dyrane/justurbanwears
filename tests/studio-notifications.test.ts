@@ -12,13 +12,17 @@ test("Studio updates prioritize failures and actionable commerce work", () => {
   state.persistence = "unavailable";
   state.orders.push({ id: "order-1", state: "RESERVED" } as unknown as StudioOrder);
   state.returns.push({ id: "return-1", state: "DRAFT" } as unknown as StudioReturn);
-  state.garments.push({ id: "garment-1", state: "DRAFT" } as unknown as Garment);
+  state.garments.push(
+    { id: "garment-1", sku: "INTAKE-001", state: "DRAFT" } as unknown as Garment,
+    { id: "wardrobe-private-product-juw-017", sku: "JUW-017", state: "DRAFT" } as unknown as Garment,
+  );
 
   const notifications = deriveStudioNotifications(state);
   assert.deepEqual(notifications.slice(0, 4).map((item) => item.kind), ["PERSISTENCE", "ORDER", "RETURN", "WARDROBE"]);
   assert.equal(notifications[1].href, "/studio/orders");
   assert.equal(notifications[2].href, "/studio/orders?filter=RETURNS");
   assert.equal(notifications[3].href, "/studio/wardrobe/garment-1");
+  assert.equal(notifications[3].title, "1 garment needs finishing");
 });
 
 test("a listing lifecycle change creates a new signature and completion clears it", () => {
@@ -46,6 +50,7 @@ test("Home attention is state-derived and documented without delivery overclaim"
   assert.match(home, /const needsAttention = scenario[\s\S]*?Math\.max/);
   assert.match(home, /aria-label=\{needsAttention === null \? "Attention unavailable" : `Attention \$\{needsAttention\}`\}/);
   assert.match(services, /connected\?\.notifications\.length/);
+  assert.match(services, /historicalDrop01Kind\(garment\) === null/);
   assert.match(adr, /does not claim background Web Push, email, SMS, WhatsApp, or cross-device inbox delivery/);
   assert.match(adr, /Arbitrary catalogue create\/update\/delete from Studio \| Not ready/);
   assert.match(adr, /Connected customer orders and inventory \| Not ready/);

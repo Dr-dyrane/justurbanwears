@@ -837,6 +837,16 @@ html[data-theme="dark"] .studio-garment-task-sheet.is-adaptive-host {
     margin-top: 4px;
   }
 
+  .juw-piece-v2-summary > .studio-card-heading > div {
+    min-width: 0;
+  }
+
+  .juw-piece-v2-summary > .studio-card-heading > .studio-piece-stage {
+    flex: 0 0 auto;
+    max-width: none;
+    overflow: visible;
+  }
+
   .studio-adaptive-workspace-stage {
     padding-left: 8px;
     padding-right: 8px;

@@ -5,6 +5,7 @@ import {
 } from "../shop/order-presentation";
 import { CURRENT_SHOP_DROP } from "../shop/current-drop";
 import {
+  DROP_01_INCOMPLETE_ARCHIVED_DRAFT_SKUS,
   SHOP_COLLECTION_COMPATIBILITY,
   compatibilityCollectionForSku,
 } from "../shop/collection-compatibility";
@@ -15,6 +16,10 @@ import {
   type StudioScenario,
 } from "../studio/simulator";
 import { STUDIO_SERVICES } from "../studio/service-registry";
+import {
+  actionableStudioDraftCount,
+  historicalDrop01Kind,
+} from "../studio/projections/piece-workspace";
 import {
   STUDIO_APPLICATION_PROJECTION_VERSION,
   type StudioApplicationMode,
@@ -40,6 +45,10 @@ const CURRENT_COMPATIBILITY_SKUS: ReadonlySet<string> = new Set(
   SHOP_COLLECTION_COMPATIBILITY
     .find((collection) => collection.label === CURRENT_SHOP_DROP)
     ?.skus ?? [],
+);
+
+const PRIVATE_HISTORICAL_COMPATIBILITY_SKUS: ReadonlySet<string> = new Set(
+  DROP_01_INCOMPLETE_ARCHIVED_DRAFT_SKUS,
 );
 
 const SEARCH_KIND_ORDER: Record<StudioSearchDocument["kind"], number> = {
@@ -110,14 +119,20 @@ function compatibilityCollections(now: string): {
 } {
   const catalogueSkus = new Set(shopProducts.map((product) => product.sku));
   const expectedSkus = SHOP_COLLECTION_COMPATIBILITY.flatMap((collection) => [...collection.skus]);
+  const expectedCatalogueSkus = expectedSkus.filter((sku) => !PRIVATE_HISTORICAL_COMPATIBILITY_SKUS.has(sku));
   const unmappedSkus = shopProducts
     .filter((product) => !compatibilityCollectionForSku(product.sku))
     .map((product) => product.sku)
     .sort(compareText);
-  const missingSkus = expectedSkus.filter((sku) => !catalogueSkus.has(sku));
+  const missingSkus = expectedCatalogueSkus.filter((sku) => !catalogueSkus.has(sku));
+  const exposedPrivateSkus = shopProducts
+    .filter((product) => PRIVATE_HISTORICAL_COMPATIBILITY_SKUS.has(product.sku))
+    .map((product) => product.sku)
+    .sort(compareText);
   const compatible = unmappedSkus.length === 0
     && missingSkus.length === 0
-    && catalogueSkus.size === expectedSkus.length;
+    && exposedPrivateSkus.length === 0
+    && catalogueSkus.size === expectedCatalogueSkus.length;
   const degraded: StudioDegradedSource[] = compatible ? [] : [{
     source: "COLLECTIONS",
     message: "The transitional drop map does not match the approved catalogue.",
@@ -137,9 +152,13 @@ function compatibilityCollections(now: string): {
       authority: "COMPATIBILITY",
       counts: {
         pieces: countsAvailable ? definition.skus.length : null,
-        private: null,
+        private: countsAvailable
+          ? definition.skus.filter((sku) => PRIVATE_HISTORICAL_COMPATIBILITY_SKUS.has(sku)).length
+          : null,
         ready: null,
-        published: countsAvailable ? definition.skus.length : null,
+        published: countsAvailable
+          ? definition.skus.filter((sku) => catalogueSkus.has(sku)).length
+          : null,
         // Compatibility rows prove membership, not current connected stock.
         available: null,
       },
@@ -165,6 +184,10 @@ function collectionDocuments(scopes: readonly StudioCollectionScope[]): StudioSe
 function authorityDocuments(authority: StudioAuthoritySnapshot): StudioSearchDocument[] {
   const documents: StudioSearchDocument[] = [];
   for (const piece of authority.pieces) {
+    const historicalState = piece.sku
+      ? historicalDrop01Kind({ id: piece.wardrobeItemId ?? piece.pieceKey, sku: piece.sku })
+      : null;
+    const lifecycleState = historicalState ?? piece.availability;
     const route = piece.wardrobeItemId
       ? `/studio/wardrobe/${encodeURIComponent(piece.wardrobeItemId)}`
       : `/studio/operations?view=inventory&piece=${encodeURIComponent(piece.pieceKey)}`;
@@ -173,7 +196,7 @@ function authorityDocuments(authority: StudioAuthoritySnapshot): StudioSearchDoc
       kind: "PIECE",
       primaryLabel: piece.title,
       secondaryLabel: [piece.category, piece.colour, piece.sizeLabel].filter(Boolean).join(" · "),
-      lifecycleState: piece.availability,
+      lifecycleState,
       route,
       aliases: [piece.pieceKey, ...(piece.sku ? [piece.sku] : [])],
     });
@@ -182,7 +205,7 @@ function authorityDocuments(authority: StudioAuthoritySnapshot): StudioSearchDoc
       kind: "SKU",
       primaryLabel: piece.sku,
       secondaryLabel: piece.title,
-      lifecycleState: piece.availability,
+      lifecycleState,
       route,
       aliases: [piece.title],
     });
@@ -434,12 +457,13 @@ export function projectScenarioStudioApplication(input: {
   };
   const documents: StudioSearchDocument[] = snapshot.garments.flatMap((garment) => {
     const route = `/studio/wardrobe/${encodeURIComponent(garment.id)}?scenario=${encodeURIComponent(input.scenario)}`;
+    const lifecycleState = historicalDrop01Kind(garment) ?? garment.state;
     return [{
       id: `piece:${garment.id}`,
       kind: "PIECE" as const,
       primaryLabel: garment.title,
       secondaryLabel: [garment.category, garment.color, garment.sizeLabel].join(" · "),
-      lifecycleState: garment.state,
+      lifecycleState,
       route,
       aliases: [garment.sku],
     }, {
@@ -447,12 +471,22 @@ export function projectScenarioStudioApplication(input: {
       kind: "SKU" as const,
       primaryLabel: garment.sku,
       secondaryLabel: garment.title,
-      lifecycleState: garment.state,
+      lifecycleState,
       route,
       aliases: [garment.title],
     }];
   });
-  const scenarioDrafts = snapshot.garments.filter((garment) => garment.state === "DRAFT").length;
+  const scenarioDrafts = actionableStudioDraftCount(snapshot.garments);
+  const scenarioGarmentsById = new Map(snapshot.garments.map((garment) => [garment.id, garment]));
+  const scenarioAvailable = snapshot.garments.filter((garment) => (
+    garment.availability === "AVAILABLE"
+    && historicalDrop01Kind(garment) === null
+  )).length;
+  const scenarioLive = snapshot.listings.filter((listing) => {
+    if (listing.state !== "PUBLISHED" && listing.state !== "RESERVED") return false;
+    const garment = scenarioGarmentsById.get(listing.garmentId);
+    return !garment || historicalDrop01Kind(garment) === null;
+  }).length;
   const continueAction: StudioContinueAction = snapshot.returns.length ? {
     id: "returns",
     label: `Review ${snapshot.returns.length} return${snapshot.returns.length === 1 ? "" : "s"}`,
@@ -485,8 +519,8 @@ export function projectScenarioStudioApplication(input: {
     }],
     summary: {
       attention: metric(snapshot.returns.length, input.now, "SCENARIO"),
-      available: metric(snapshot.garments.filter((garment) => garment.availability === "AVAILABLE").length, input.now, "SCENARIO"),
-      live: metric(snapshot.listings.filter((listing) => listing.state !== "DRAFT").length, input.now, "SCENARIO"),
+      available: metric(scenarioAvailable, input.now, "SCENARIO"),
+      live: metric(scenarioLive, input.now, "SCENARIO"),
       orders: metric(snapshot.orders.length, input.now, "SCENARIO"),
     },
     continueAction,

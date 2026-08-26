@@ -58,6 +58,7 @@ interface PendingWardrobeProductSpec {
 
 function pendingProduct(spec: PendingWardrobeProductSpec): PendingWardrobeProductContract {
   const garmentId = `wardrobe-private-product-${spec.sku.toLowerCase()}`;
+  const archivedDraft = spec.missingViews.length > 0;
   const readinessViews = [
     ...(spec.approvedViews.includes("GARMENT_FRONT") ? ["FRONT" as const] : []),
     ...(spec.approvedViews.includes("GARMENT_BACK") ? ["BACK" as const] : []),
@@ -88,12 +89,12 @@ function pendingProduct(spec: PendingWardrobeProductSpec): PendingWardrobeProduc
       privateNote: "",
       publicDescription: spec.description,
       quantity: 1,
-      saleEligible: true,
+      saleEligible: !archivedDraft,
       measurements: [],
       classificationState: "READY",
       mediaState: spec.missingViews.length ? "DRAFT" : "READY",
       state: "DRAFT",
-      availability: "AVAILABLE",
+      availability: archivedDraft ? "ARCHIVED" : "AVAILABLE",
       canonState: "REVIEW",
       visual: spec.visual,
       references: readinessViews.map((view) => ({

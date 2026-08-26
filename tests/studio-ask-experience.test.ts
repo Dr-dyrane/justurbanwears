@@ -226,6 +226,45 @@ test("publication is always a high-impact review handoff", () => {
   assert.match(handoff?.consequence ?? "", /nothing goes live/i);
 });
 
+test("sold-out and archived-draft history never produce active piece handoffs", () => {
+  const historicalContext: StudioAssistantContext = {
+    ...context,
+    documents: [
+      ...context.documents,
+      document({
+        href: "/studio/wardrobe/history-015",
+        id: "piece:history-015",
+        identifiers: ["history-015", "JUW-015"],
+        kind: "Piece",
+        label: "Cocoa Cowl Gathered Midi Dress",
+        state: "SOLD_OUT",
+      }),
+      document({
+        href: "/studio/wardrobe/history-024",
+        id: "piece:history-024",
+        identifiers: ["history-024", "JUW-024"],
+        kind: "Piece",
+        label: "Pale Gathered Bandeau Top",
+        state: "ARCHIVED_DRAFT",
+      }),
+    ],
+  };
+
+  const price = resolveStudioAssistant("Change JUW-015 price", historicalContext);
+  assert.equal(price.intent, "RESOLVE");
+  assert.equal(price.risk, "R0");
+  assert.equal(block(price, "handoff"), undefined);
+  assert.equal(block(price, "answer")?.title, "Sold out history");
+
+  for (const query of ["Publish JUW-024", "Prepare media for JUW-024", "Archive JUW-024"]) {
+    const archived = resolveStudioAssistant(query, historicalContext);
+    assert.equal(archived.intent, "RESOLVE");
+    assert.equal(archived.risk, "R0");
+    assert.equal(block(archived, "handoff"), undefined);
+    assert.equal(block(archived, "answer")?.title, "Archived draft");
+  }
+});
+
 test("media work carries the resolved garment into Atelier", () => {
   const response = resolveStudioAssistant("Prepare a try-on for JUW-002", context);
   const handoff = block(response, "handoff");
@@ -312,10 +351,12 @@ test("the durable route replaces the fake modal modes and preserves keyboard and
   assert.match(styles, /\.studio-native-canvas \.studio-ask-form textarea:focus-visible[\s\S]*?box-shadow: none;/);
   assert.match(styles, /@media \(max-width: 620px\)[\s\S]*?studio-stack-shell\[data-studio-page="stack"\]:has\(\.studio-ask-page\) \.studio-command-header \{[\s\S]*?background: var\(--studio-stack-field\);/);
   assert.match(surface, /projected\.searchDocuments\.map/);
+  assert.match(surface, /historicalDrop01Kind\(garment\) === null/);
   assert.match(commandCenter, /Find in Studio/);
   assert.match(commandCenter, /"Scenario find"/);
   assert.match(commandCenter, /"Studio index"/);
   assert.match(commandCenter, /application\.snapshot\.searchDocuments/);
+  assert.match(commandCenter, /historicalDrop01Kind\(garment\) \?\? garment\.state/);
   assert.match(commandCenter, /READ_ONLY_COMPATIBILITY/);
   assert.match(surface, /Ask Studio is unavailable/);
   assert.match(stack, /pathname\.startsWith\("\/studio\/ask"\)/);

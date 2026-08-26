@@ -2,8 +2,11 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { CURRENT_SHOP_DROP } from "../lib/shop/current-drop";
 import {
+  DROP_01_COMPLETED_SKUS,
   DROP_01_COMPATIBILITY_SKUS,
+  DROP_01_INCOMPLETE_ARCHIVED_DRAFT_SKUS,
   DROP_02_COMPATIBILITY_SKUS,
+  SHOP_COLLECTION_COMPATIBILITY,
   compatibilityCollectionForSku,
 } from "../lib/shop/collection-compatibility";
 import { WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS } from "../lib/wardrobe-public-view/seeds";
@@ -227,24 +230,45 @@ test("keeps the canonical Drop 02 boundary at the released twenty-eight pieces",
 });
 
 test("keeps collection membership explicit and independent from sold or archive lifecycle labels", () => {
-  assert.equal(DROP_01_COMPATIBILITY_SKUS.length, 18);
-  assert.equal(DROP_02_COMPATIBILITY_SKUS.length, 28);
-  assert.equal(new Set([...DROP_01_COMPATIBILITY_SKUS, ...DROP_02_COMPATIBILITY_SKUS]).size, 46);
+  assert.deepEqual(DROP_01_COMPLETED_SKUS, [
+    "JUW-001", "JUW-002", "JUW-003", "JUW-004", "JUW-005", "JUW-006",
+    "JUW-007", "JUW-008", "JUW-009", "JUW-010", "JUW-011", "JUW-012",
+    "JUW-013", "JUW-014", "JUW-015", "JUW-016", "JUW-020", "JUW-021",
+  ]);
+  assert.deepEqual(DROP_01_INCOMPLETE_ARCHIVED_DRAFT_SKUS, [
+    "JUW-017", "JUW-018", "JUW-019", "JUW-022", "JUW-023", "JUW-024",
+  ]);
+  assert.deepEqual(DROP_01_COMPATIBILITY_SKUS, [
+    ...DROP_01_COMPLETED_SKUS,
+    ...DROP_01_INCOMPLETE_ARCHIVED_DRAFT_SKUS,
+  ]);
+  const completedDrop01Skus = new Set<string>(DROP_01_COMPLETED_SKUS);
+  const drop02Skus = new Set<string>(DROP_02_COMPATIBILITY_SKUS);
+  assert.equal(
+    DROP_01_INCOMPLETE_ARCHIVED_DRAFT_SKUS.some((sku) => completedDrop01Skus.has(sku)),
+    false,
+  );
+  assert.equal(
+    DROP_01_COMPATIBILITY_SKUS.some((sku) => drop02Skus.has(sku)),
+    false,
+  );
+  assert.equal(new Set([...DROP_01_COMPATIBILITY_SKUS, ...DROP_02_COMPATIBILITY_SKUS]).size, 52);
   assert.equal(compatibilityCollectionForSku("JUW-004")?.label, "Drop 01");
-  assert.equal(compatibilityCollectionForSku("JUW-040")?.label, "Drop 02");
-  assert.equal(compatibilityCollectionForSku("JUW-041")?.label, "Drop 02");
-  assert.equal(compatibilityCollectionForSku("JUW-042")?.label, "Drop 02");
-  assert.equal(compatibilityCollectionForSku("JUW-043")?.label, "Drop 02");
-  assert.equal(compatibilityCollectionForSku("JUW-044")?.label, "Drop 02");
-  assert.equal(compatibilityCollectionForSku("JUW-045")?.label, "Drop 02");
-  assert.equal(compatibilityCollectionForSku("JUW-046")?.label, "Drop 02");
-  assert.equal(compatibilityCollectionForSku("JUW-047")?.label, "Drop 02");
-  assert.equal(compatibilityCollectionForSku("JUW-048")?.label, "Drop 02");
-  assert.equal(compatibilityCollectionForSku("JUW-049")?.label, "Drop 02");
-  assert.equal(compatibilityCollectionForSku("JUW-050")?.label, "Drop 02");
-  assert.equal(compatibilityCollectionForSku("JUW-051")?.label, "Drop 02");
-  assert.equal(compatibilityCollectionForSku("JUW-052")?.label, "Drop 02");
-  assert.equal(compatibilityCollectionForSku("JUW-017"), null);
+  for (const sku of DROP_01_INCOMPLETE_ARCHIVED_DRAFT_SKUS) {
+    assert.equal(compatibilityCollectionForSku(sku)?.label, "Drop 01");
+  }
+
+  assert.deepEqual(DROP_02_COMPATIBILITY_SKUS, [
+    "JUW-025", "JUW-026", "JUW-027", "JUW-028", "JUW-029", "JUW-030",
+    "JUW-031", "JUW-032", "JUW-033", "JUW-034", "JUW-035", "JUW-036",
+    "JUW-037", "JUW-038", "JUW-039", "JUW-040", "JUW-041", "JUW-042", "JUW-043", "JUW-044", "JUW-045", "JUW-046", "JUW-047", "JUW-048", "JUW-049", "JUW-050", "JUW-051", "JUW-052",
+  ]);
+  const drop02 = SHOP_COLLECTION_COMPATIBILITY.find((collection) => collection.key === "drop-02");
+  assert.equal(drop02?.state, "ACTIVE");
+  assert.equal(drop02?.isCurrent, true);
+  for (const sku of DROP_02_COMPATIBILITY_SKUS) {
+    assert.equal(compatibilityCollectionForSku(sku)?.label, "Drop 02");
+  }
 
   const sold = garment("sold-drop-01", {
     sku: "JUW-004",

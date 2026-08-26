@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { StudioAuthoritySnapshot } from "../lib/studio/services/studio-authority-client";
-import { SHOP_COLLECTION_COMPATIBILITY } from "../lib/shop/collection-compatibility";
+import { shopProducts } from "../lib/shop/catalog";
+import {
+  DROP_01_INCOMPLETE_ARCHIVED_DRAFT_SKUS,
+  SHOP_COLLECTION_COMPATIBILITY,
+} from "../lib/shop/collection-compatibility";
 import {
   projectConnectedStudioApplication,
   projectScenarioStudioApplication,
@@ -183,7 +187,16 @@ test("scenario projection is explicit and uses the sanitized collection compatib
   assert.equal(projection.capabilities.find((item) => item.id === "COLLECTIONS_READ")?.state, "AVAILABLE");
   assert.equal(projection.capabilities.find((item) => item.id === "COLLECTIONS_WRITE")?.state, "AVAILABLE");
   assert.equal(projection.degradedSources.some((item) => item.source === "COLLECTIONS"), false);
-  assert.equal(projection.continueAction?.source, "SCENARIO");
+  assert.deepEqual(projection.continueAction, {
+    id: "returns",
+    label: "Review 1 return",
+    href: "/studio/operations?view=orders&scenario=lifecycle",
+    openCount: 1,
+    source: "SCENARIO",
+  });
+  assert.equal(projection.summary.attention.value, 1);
+  assert.equal(projection.summary.available.value, 31);
+  assert.equal(projection.summary.live.value, 30);
   assert.ok(projection.searchDocuments.every((document) => document.route.includes("scenario=lifecycle")));
 });
 
@@ -230,6 +243,20 @@ test("collection compatibility map exposes only exact Drop 01 and Drop 02 scopes
   assert.deepEqual(
     projection.collectionScopes.map((scope) => scope.counts.pieces),
     SHOP_COLLECTION_COMPATIBILITY.map((scope) => scope.skus.length),
+  );
+  assert.deepEqual(
+    projection.collectionScopes.map((scope) => scope.counts.published),
+    [18, 28],
+  );
+  assert.deepEqual(
+    projection.collectionScopes.map((scope) => scope.counts.private),
+    [6, 0],
+  );
+  assert.equal(
+    shopProducts.some((product) => (
+      (DROP_01_INCOMPLETE_ARCHIVED_DRAFT_SKUS as readonly string[]).includes(product.sku)
+    )),
+    false,
   );
   assert.ok(projection.degradedSources.some((item) => (
     item.source === "COLLECTIONS"

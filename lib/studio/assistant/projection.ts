@@ -33,6 +33,8 @@ function assistantDocument(document: StudioSearchDocument): StudioAssistantDocum
     ? document.id.slice(document.id.indexOf(":") + 1)
     : document.id;
   const identifiers = [document.id, entityId, ...document.aliases].filter(Boolean);
+  const historical = document.lifecycleState === "SOLD_OUT"
+    || document.lifecycleState === "ARCHIVED_DRAFT";
   return {
     detail: document.secondaryLabel,
     entityId,
@@ -41,7 +43,7 @@ function assistantDocument(document: StudioSearchDocument): StudioAssistantDocum
     identifiers,
     kind: assistantDocumentKind(document.kind),
     label: document.primaryLabel,
-    mediaTargetId: wardrobeTargetId(document.route),
+    mediaTargetId: historical ? undefined : wardrobeTargetId(document.route),
     state: document.lifecycleState,
     tokens: normalizeStudioAssistantText([
       ...identifiers,

@@ -180,6 +180,7 @@ function confirmScenarioCollection(
 function stateLabel(collection: StudioCollectionScope) {
   if (collection.state === "ACTIVE") return "Live";
   if (collection.state === "DRAFT") return "Draft";
+  if (collection.key === "drop-01") return "Sold out";
   return "Archived";
 }
 
@@ -345,7 +346,7 @@ export function StudioDropSheet({
             {selectedKey === "all" ? <Check aria-label="Selected" size={17} /> : <ChevronRight aria-hidden="true" size={17} />}
           </button>
           {ordered.map((collection) => (
-            <div className="studio-drop-row" data-state={collection.state.toLowerCase()} key={collection.id}>
+            <div className="studio-drop-row" data-read-only={collection.key === "drop-01" || undefined} data-state={collection.state.toLowerCase()} key={collection.id}>
               <button className="studio-drop-row-main" onClick={() => onSelect(collection.key)} type="button">
                 <span aria-hidden="true" className="studio-drop-ordinal">{String(collection.ordinal).padStart(2, "0")}</span>
                 <span className="studio-drop-row-copy">
@@ -354,12 +355,12 @@ export function StudioDropSheet({
                 </span>
                 {selectedKey === collection.key ? <Check aria-label="Selected" size={17} /> : <ChevronRight aria-hidden="true" size={17} />}
               </button>
-              <button
+              {collection.key === "drop-01" ? null : <button
                 aria-label={`Manage ${collection.label}`}
                 className="studio-drop-row-more"
                 onClick={() => { setManagedId(collection.id); setView("manage"); }}
                 type="button"
-              ><MoreHorizontal aria-hidden="true" size={17} /></button>
+              ><MoreHorizontal aria-hidden="true" size={17} /></button>}
             </div>
           ))}
           <button className="studio-drop-context-row" onClick={() => onSelect("private")} type="button">

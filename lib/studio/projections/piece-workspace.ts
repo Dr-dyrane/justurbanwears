@@ -1,6 +1,10 @@
 import type { Garment, StudioListing } from "../domain/entities";
 import { everyGateReady, garmentReadiness } from "../domain/readiness";
 import {
+  DROP_01_COMPLETED_SKUS,
+  DROP_01_INCOMPLETE_ARCHIVED_DRAFT_SKUS,
+} from "../../shop/collection-compatibility";
+import {
   isPendingDirectCaptureRole,
   type PendingDirectCaptureRole,
 } from "../engine/pending-capture-contracts";
@@ -36,6 +40,27 @@ export type PieceWorkspace = {
   nextAction: PieceNextAction;
 };
 
+const completedDrop01Skus = new Set<string>(DROP_01_COMPLETED_SKUS);
+const incompleteDrop01ArchiveSkus = new Set<string>(DROP_01_INCOMPLETE_ARCHIVED_DRAFT_SKUS);
+
+export function historicalDrop01Kind(
+  garment: Pick<Garment, "id" | "sku">,
+): "SOLD_OUT" | "ARCHIVED_DRAFT" | null {
+  // Lifecycle fixtures deliberately reuse catalogue SKUs to exercise active
+  // states. Their explicit scenario identity must outrank historical display.
+  if (garment.id.startsWith("scenario-")) return null;
+  if (incompleteDrop01ArchiveSkus.has(garment.sku)) return "ARCHIVED_DRAFT";
+  if (completedDrop01Skus.has(garment.sku)) return "SOLD_OUT";
+  return null;
+}
+
+export function actionableStudioDraftCount(garments: readonly Garment[]) {
+  return garments.filter((garment) => (
+    garment.state === "DRAFT"
+    && historicalDrop01Kind(garment) === null
+  )).length;
+}
+
 function captureRolesFor(garment: Garment): PendingDirectCaptureRole[] {
   const pending = getPendingWardrobeProductContract(garment.sku);
   if (pending) return pending.missingViews.filter(isPendingDirectCaptureRole);
@@ -48,6 +73,35 @@ export function selectPieceWorkspace(input: {
   capturedRoles?: readonly PendingDirectCaptureRole[];
 }): PieceWorkspace {
   const { garment, listing } = input;
+  const historicalKind = historicalDrop01Kind(garment);
+  if (historicalKind === "ARCHIVED_DRAFT") {
+    return {
+      stage: "PRIVATE",
+      stageLabel: "Archived draft",
+      blockers: [],
+      captureRoles: [],
+      canPublish: false,
+      nextAction: {
+        kind: "KEEP_PRIVATE",
+        label: "Close",
+        detail: "Kept only in Drop 01 history.",
+      },
+    };
+  }
+  if (historicalKind === "SOLD_OUT") {
+    return {
+      stage: "SOLD",
+      stageLabel: "Sold out",
+      blockers: [],
+      captureRoles: [],
+      canPublish: false,
+      nextAction: {
+        kind: "KEEP_PRIVATE",
+        label: "Close",
+        detail: "Drop 01 is closed and kept as history.",
+      },
+    };
+  }
   const requiredCaptures = captureRolesFor(garment);
   const captured = new Set(input.capturedRoles ?? []);
   const missingCaptures = requiredCaptures.filter((role) => !captured.has(role));

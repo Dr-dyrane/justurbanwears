@@ -2,7 +2,10 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import type { Garment } from "../lib/studio/domain/entities";
-import { selectPieceWorkspace } from "../lib/studio/projections/piece-workspace";
+import {
+  actionableStudioDraftCount,
+  selectPieceWorkspace,
+} from "../lib/studio/projections/piece-workspace";
 import { getPendingWardrobeProductContract } from "../lib/studio/seeds/private-wardrobe-products";
 import {
   createStudioScenarioSnapshot,
@@ -77,7 +80,7 @@ test("Piece selector exposes one truthful next action and never promises arbitra
 
   const approvedContract = getPendingWardrobeProductContract("JUW-015");
   assert.ok(approvedContract);
-  const approvedSold = selectPieceWorkspace({
+  const historicalSoldOut = selectPieceWorkspace({
     garment: approvedContract.garment,
     listing: {
       ...stalePublicListing,
@@ -85,7 +88,15 @@ test("Piece selector exposes one truthful next action and never promises arbitra
       slug: approvedContract.slug,
     },
   });
-  assert.equal(approvedSold.nextAction.kind, "VIEW_OPERATIONS");
+  assert.deepEqual(
+    [
+      historicalSoldOut.stage,
+      historicalSoldOut.stageLabel,
+      historicalSoldOut.nextAction.kind,
+      historicalSoldOut.canPublish,
+    ],
+    ["SOLD", "Sold out", "KEEP_PRIVATE", false],
+  );
 
   const corruptPublished = selectPieceWorkspace({
     garment: serverDraft(),
@@ -121,7 +132,7 @@ test("lifecycle dossiers keep one truthful action across the complete scenario",
   }
 });
 
-test("G024 provides the safe non-paid Product photos dossier fixture", () => {
+test("G024 stays available as quiet Drop 01 history without becoming active work", () => {
   const snapshot = createStudioScenarioSnapshot("lifecycle");
   const garment = snapshot.garments.find((candidate) => candidate.id === "wardrobe-private-product-juw-024");
   assert.ok(garment);
@@ -129,9 +140,16 @@ test("G024 provides the safe non-paid Product photos dossier fixture", () => {
   assert.equal(snapshot.listings.some((listing) => listing.garmentId === garment.id), false);
 
   const workspace = selectPieceWorkspace({ garment });
-  assert.equal(workspace.nextAction.kind, "CAPTURE");
-  assert.deepEqual(workspace.captureRoles, ["GARMENT_FRONT", "GARMENT_BACK", "FABRIC_DETAIL"]);
+  assert.equal(workspace.stage, "PRIVATE");
+  assert.equal(workspace.stageLabel, "Archived draft");
+  assert.equal(workspace.nextAction.kind, "KEEP_PRIVATE");
+  assert.deepEqual(workspace.captureRoles, []);
   assert.equal(studioScenarioRouteSupported(`/studio/wardrobe/${garment.id}`), true);
+});
+
+test("lifecycle attention counts only the one active draft", () => {
+  const snapshot = createStudioScenarioSnapshot("lifecycle");
+  assert.equal(actionableStudioDraftCount(snapshot.garments), 1);
 });
 
 test("Piece projection stays independent of viewport and presentation state", () => {

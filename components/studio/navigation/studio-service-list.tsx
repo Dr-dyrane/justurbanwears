@@ -19,6 +19,10 @@ import {
   studioOrderHasDueWork,
 } from "../../../lib/shop/order-presentation";
 import { projectStudioDropScopes } from "../../../lib/studio/projections/drop-context";
+import {
+  actionableStudioDraftCount,
+  historicalDrop01Kind,
+} from "../../../lib/studio/projections/piece-workspace";
 import type { StudioPrimaryServiceKey } from "../../../lib/studio/service-registry";
 import { StudioLink as Link } from "../atoms/studio-link";
 import { StudioFeedback } from "../atoms/studio-feedback";
@@ -36,14 +40,17 @@ function useServiceStatuses(): Record<StudioPrimaryServiceKey, string> {
   const studio = useStudio();
   const connected = studio.authority.snapshot;
   const projected = studio.scenario ? null : studio.application.snapshot;
-  const privatePieces = connected
-    ? connected.pieces.filter((piece) => piece.availability === "PRIVATE").length
-    : studio.garments.filter((garment) => garment.state === "DRAFT").length;
+  const privatePieces = studio.scenario
+    ? actionableStudioDraftCount(studio.garments)
+    : connected?.pieces.filter((piece) => piece.availability === "PRIVATE").length ?? 0;
   const activeOrders = studio.scenario
     ? connected?.orders.filter((order) => order.lifecycleStatus === "ACTIVE").length ?? 0
     : projected?.summary.orders.value ?? null;
   const available = studio.scenario
-    ? connected?.pieces.filter((piece) => piece.availability === "AVAILABLE").length ?? 0
+    ? studio.garments.filter((garment) => (
+        garment.availability === "AVAILABLE"
+        && historicalDrop01Kind(garment) === null
+      )).length
     : projected?.summary.available.value ?? null;
   const readyModels = connected?.models.filter((model) => model.state === "READY").length ?? 0;
   const actionableOrders = connected?.orders.filter((order) => (
@@ -57,7 +64,7 @@ function useServiceStatuses(): Record<StudioPrimaryServiceKey, string> {
   const currentDropCount = dropContext.scopes.find((scope) => scope.key === "current")?.count ?? 0;
   const currentCollection = projected?.collectionScopes.find((scope) => scope.isCurrent);
   const wardrobeStatus = studio.scenario
-    ? `Scenario · ${dropContext.totalCount} piece${dropContext.totalCount === 1 ? "" : "s"}`
+    ? `Scenario · ${dropContext.currentDrop} · ${currentDropCount} active`
     : currentCollection
       ? `${currentCollection.label} · ${currentCollection.counts.pieces ?? "—"} pieces`
       : `${dropContext.currentDrop} · ${currentDropCount} local`;

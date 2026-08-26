@@ -56,7 +56,10 @@ import {
   pendingCaptureView,
   type OperatorSafePendingCapture,
 } from "../../lib/studio/engine/pending-capture-contracts";
-import { selectPieceWorkspace } from "../../lib/studio/projections/piece-workspace";
+import {
+  historicalDrop01Kind,
+  selectPieceWorkspace,
+} from "../../lib/studio/projections/piece-workspace";
 import type {
   StudioPublicationReceipt,
   StudioPublicationReview,
@@ -249,6 +252,10 @@ function GarmentCard({ garment }: { garment: Garment }) {
 
 export function PieceWorkspaceView({ garment, initialAction, layout = "embedded", onDismiss, onContinueMedia }: { garment: Garment; initialAction?: "price"; layout?: "adaptive" | "embedded"; onDismiss(): void; onContinueMedia(garment: Garment): void }) {
   const studio = useStudio();
+  const historicalKind = historicalDrop01Kind(garment);
+  const completedDrop01Product = historicalKind === "SOLD_OUT";
+  const incompleteDrop01Archive = historicalKind === "ARCHIVED_DRAFT";
+  const historicalDrop01 = historicalKind !== null;
   const [captures, setCaptures] = useState<OperatorSafePendingCapture[]>([]);
   const [publicationReview, setPublicationReview] = useState<StudioPublicationReview | null>(
     garment.dynamicPublication?.state === "PUBLISHED"
@@ -256,7 +263,7 @@ export function PieceWorkspaceView({ garment, initialAction, layout = "embedded"
       : null,
   );
   const [publicationLoading, setPublicationLoading] = useState(Boolean(
-    garment.privateWardrobeItemId && garment.dynamicPublication?.state !== "PUBLISHED"
+    garment.privateWardrobeItemId && !historicalDrop01 && garment.dynamicPublication?.state !== "PUBLISHED"
   ));
   const [publicationLoadError, setPublicationLoadError] = useState("");
   const [publicationReload, setPublicationReload] = useState(0);
@@ -288,7 +295,7 @@ export function PieceWorkspaceView({ garment, initialAction, layout = "embedded"
     )
   );
   const workspace = selectPieceWorkspace({ garment, listing, capturedRoles });
-  const captureTarget: DirectCaptureTarget | null = pendingContract ? {
+  const captureTarget: DirectCaptureTarget | null = historicalDrop01 ? null : pendingContract ? {
     completionEndpoint: `/api/studio/pending-products/${encodeURIComponent(pendingContract.sku)}/completions`,
     endpoint: `/api/studio/pending-products/${encodeURIComponent(pendingContract.sku)}/captures`,
     key: pendingContract.sku,
@@ -307,7 +314,9 @@ export function PieceWorkspaceView({ garment, initialAction, layout = "embedded"
   const authoritativePublicationState = lifecycleWorkspace?.state ?? garment.dynamicPublication?.state;
   const lifecycleOwnsMedia = authoritativePublicationState === "PUBLISHED"
     || authoritativePublicationState === "UNPUBLISHED";
-  const nextAction = authoritativePublicationState === "ARCHIVED"
+  const nextAction = historicalDrop01
+    ? workspace.nextAction
+    : authoritativePublicationState === "ARCHIVED"
     ? { kind: "DYNAMIC_MANAGE", label: "View history", detail: "This piece is archived." }
     : authoritativePublicationState === "UNPUBLISHED"
       ? { kind: "DYNAMIC_MANAGE", label: "Manage listing", detail: "Edit it or return it to Shop." }
@@ -322,7 +331,11 @@ export function PieceWorkspaceView({ garment, initialAction, layout = "embedded"
               : dynamicReview?.state === "BLOCKED" && workspace.nextAction.kind !== "CAPTURE"
                 ? { kind: "DYNAMIC_REVIEW", label: "Finish Shop setup", detail: `${dynamicReview.blockers.length} step${dynamicReview.blockers.length === 1 ? "" : "s"} left.` }
                 : workspace.nextAction;
-  const dynamicStage = authoritativePublicationState === "ARCHIVED"
+  const dynamicStage = incompleteDrop01Archive
+    ? { stage: "PRIVATE", label: "Archived draft" }
+    : completedDrop01Product
+      ? { stage: "SOLD", label: "Sold out" }
+      : authoritativePublicationState === "ARCHIVED"
     ? { stage: "ARCHIVED", label: "Archived" }
     : authoritativePublicationState === "UNPUBLISHED"
       ? { stage: "PRIVATE", label: "Off Shop" }
@@ -343,8 +356,12 @@ export function PieceWorkspaceView({ garment, initialAction, layout = "embedded"
   const detailsState = garment.price > 0
     ? `${formatNaira(garment.price)} · ${garment.sizeLabel}`
     : `Price pending · ${garment.sizeLabel}`;
-  const hasFactsTask = Boolean(garment.privateWardrobeItemId || listing);
-  const shopState = authoritativePublicationState === "ARCHIVED"
+  const hasFactsTask = historicalDrop01 || Boolean(garment.privateWardrobeItemId || listing);
+  const shopState = incompleteDrop01Archive
+    ? "Archived draft"
+    : completedDrop01Product
+      ? "Sold out · archived"
+      : authoritativePublicationState === "ARCHIVED"
     ? "Archived"
     : authoritativePublicationState === "UNPUBLISHED"
       ? "Off Shop"
@@ -375,7 +392,7 @@ export function PieceWorkspaceView({ garment, initialAction, layout = "embedded"
   }, [garment.privateWardrobeItemId]);
 
   useEffect(() => {
-    if (!garment.privateWardrobeItemId) return;
+    if (!garment.privateWardrobeItemId || historicalDrop01) return;
     if (garment.dynamicPublication?.state === "PUBLISHED") {
       setPublicationReview({ state: "PUBLISHED", receipt: garment.dynamicPublication });
       setPublicationLoading(false);
@@ -397,7 +414,7 @@ export function PieceWorkspaceView({ garment, initialAction, layout = "embedded"
       if (!controller.signal.aborted) setPublicationLoading(false);
     });
     return () => controller.abort();
-  }, [garment.dynamicPublication, garment.privateWardrobeItemId, captureRevision, publicationReload, readPublicationReview]);
+  }, [garment.dynamicPublication, garment.privateWardrobeItemId, historicalDrop01, captureRevision, publicationReload, readPublicationReview]);
 
   async function publishDynamicPiece() {
     if (!garment.privateWardrobeItemId || dynamicReview?.state !== "READY" || !publicationConfirmed || publicationCommandRef.current) return;
@@ -582,11 +599,11 @@ export function PieceWorkspaceView({ garment, initialAction, layout = "embedded"
               type="button"
             >
               <span aria-hidden="true"><SlidersHorizontal size={19} strokeWidth={1.75} /></span>
-              <span className="studio-service-copy"><strong>Facts & price</strong><small>{detailsState}</small></span>
+              <span className="studio-service-copy"><strong>{historicalDrop01 ? "History" : "Facts & price"}</strong><small>{historicalDrop01 ? "Read only" : detailsState}</small></span>
               <ArrowRight aria-hidden="true" size={17} />
             </button>
           ) : null}
-          {garment.privateWardrobeItemId ? (
+          {garment.privateWardrobeItemId && !historicalDrop01 ? (
             <button
               aria-haspopup="dialog"
               className="studio-service-row studio-piece-task-row"
@@ -614,7 +631,7 @@ export function PieceWorkspaceView({ garment, initialAction, layout = "embedded"
           </StudioTaskSheet>
         ) : null}
 
-        {garment.privateWardrobeItemId ? (
+        {garment.privateWardrobeItemId && !historicalDrop01 ? (
           <StudioTaskSheet
             className="studio-piece-shop-sheet"
             onDismiss={dismissShop}
@@ -665,11 +682,28 @@ export function PieceWorkspaceView({ garment, initialAction, layout = "embedded"
             onDismiss={() => setSecondaryOpen(false)}
             open={secondaryOpen}
             returnFocus={detailsReturnFocus}
-            title="Facts & price"
+            title={historicalDrop01 ? "History" : "Facts & price"}
           >
             <div className="studio-piece-secondary-body">
-              {garment.privateWardrobeItemId ? <GarmentLifecyclePanel initialAction={initialAction} onWorkspaceChange={setLifecycleWorkspace} wardrobeItemId={garment.privateWardrobeItemId} /> : null}
-              {listing ? <section className="studio-piece-shop"><ListingEditor listing={listing} /></section> : null}
+              {historicalDrop01 ? (
+                <section aria-label={`${garment.title} history`} className="studio-piece-shop studio-piece-history-summary">
+                  <div className="studio-card-heading">
+                    <div><small>Drop 01 history</small><h3>{dynamicStage.label}</h3></div>
+                    <LockKeyhole aria-hidden="true" size={18} />
+                  </div>
+                  <p>{completedDrop01Product
+                    ? "This completed Drop 01 piece is closed and cannot return to active Shop work."
+                    : "This unfinished test piece is kept as an archived draft and is not active work."}</p>
+                  <div className="studio-garment-facts">
+                    <span>{garment.sku}</span>
+                    <span>{garment.sizeLabel}</span>
+                    <span>{garment.price > 0 ? formatNaira(garment.price) : "Price not set"}</span>
+                  </div>
+                </section>
+              ) : <>
+                {garment.privateWardrobeItemId ? <GarmentLifecyclePanel initialAction={initialAction} onWorkspaceChange={setLifecycleWorkspace} wardrobeItemId={garment.privateWardrobeItemId} /> : null}
+                {listing ? <section className="studio-piece-shop"><ListingEditor listing={listing} /></section> : null}
+              </>}
             </div>
           </StudioTaskSheet>
         </> : null}
@@ -806,10 +840,13 @@ export function WardrobeWorkbench() {
       : BASELINE_COLLECTIONS;
   const collectionsForSheet = useMemo(
     () => availableCollections.map((collection) => {
-      if (collection.counts.pieces !== null) return collection;
-      const pieces = studio.garments.filter((garment) => (
+      if (collection.counts.pieces !== null && collection.key !== "drop-01") return collection;
+      const localPieces = new Set(studio.garments.filter((garment) => (
         studioDropScopeForGarment(garment, studio.listings, dropContext.currentDrop).label === collection.label
-      )).length;
+      )).map((garment) => garment.sku)).size;
+      const pieces = collection.key === "drop-01"
+        ? Math.max(collection.counts.pieces ?? 0, localPieces)
+        : localPieces;
       return { ...collection, counts: { ...collection.counts, pieces } };
     }),
     [availableCollections, dropContext.currentDrop, studio.garments, studio.listings],
@@ -857,13 +894,19 @@ export function WardrobeWorkbench() {
     () => studio.garments.filter((garment) => collectionIds.has(garment.id)),
     [collectionIds, studio.garments],
   );
+  const activeScopedGarments = useMemo(
+    () => scopedGarments.filter((garment) => historicalDrop01Kind(garment) === null),
+    [scopedGarments],
+  );
+  const historyOnly = scopedGarments.length > 0 && activeScopedGarments.length === 0;
   const scopedListings = useMemo(
     () => studio.listings.filter((listing) => collectionIds.has(listing.garmentId)),
     [collectionIds, studio.listings],
   );
   const publishingGarments = useMemo(
     () => studio.garments.filter((garment) => (
-      collectionIds.has(garment.id) || garment.nativeShopReadiness?.state === "READY"
+      historicalDrop01Kind(garment) === null
+      && (collectionIds.has(garment.id) || garment.nativeShopReadiness?.state === "READY")
     )),
     [collectionIds, studio.garments],
   );
@@ -871,10 +914,12 @@ export function WardrobeWorkbench() {
     () => selectStudioPublishingQueue(publishingGarments, scopedListings),
     [publishingGarments, scopedListings],
   );
-  const segments = useMemo(() => [
+  const segments = useMemo(() => historyOnly ? [
+    { key: "garments", label: "Garments", count: scopedGarments.length },
+  ] : [
     { key: "garments", label: "Garments", count: scopedGarments.length },
     { key: "publishing", label: "Publishing", count: publishingQueue.length },
-  ], [publishingQueue.length, scopedGarments.length]);
+  ], [historyOnly, publishingQueue.length, scopedGarments.length]);
   const { active: activeView, isPending: viewPending, select: selectView } = useStudioSegment(segments, "garments");
 
   useEffect(() => {
@@ -993,7 +1038,7 @@ export function WardrobeWorkbench() {
   const safePublishingPage = Math.min(publishingPage, Math.max(0, Math.ceil(publishingQueue.length / publishingPageSize) - 1));
   const pagedPublishingQueue = publishingQueue.slice(safePublishingPage * publishingPageSize, (safePublishingPage + 1) * publishingPageSize);
   const openPiece = studio.garments.find((garment) => garment.id === openPieceId);
-  const nextGarment = scopedGarments.find((garment) => garment.state === "DRAFT") ?? scopedGarments[0];
+  const nextGarment = activeScopedGarments.find((garment) => garment.state === "DRAFT") ?? activeScopedGarments[0];
   const nextPublishingEntry = publishingQueue.find((entry) => ["DRAFT", "READY"].includes(entry.state)) ?? publishingQueue[0];
 
   if (studio.hydration === "idle" || studio.hydration === "restoring") {
@@ -1003,7 +1048,7 @@ export function WardrobeWorkbench() {
   const privateCount = dropContext.scopes
     .filter((scope) => scope.key === "studio" || scope.key === "private")
     .reduce((count, scope) => count + scope.count, 0);
-  const dropChoices = [...availableCollections]
+  const dropChoices = [...collectionsForSheet]
     .sort((left, right) => Number(right.isCurrent) - Number(left.isCurrent) || right.ordinal - left.ordinal)
     .map((scope) => {
       const localCount = studio.garments.filter((garment) => (
@@ -1012,7 +1057,7 @@ export function WardrobeWorkbench() {
       return {
         key: scope.key as WardrobeCollectionScope,
         label: scope.label,
-        count: studio.scenario ? localCount : scope.counts.pieces,
+        count: scope.counts.pieces ?? localCount,
       };
     });
   const collectionChoices: Array<{ key: WardrobeCollectionScope; label: string; count: number | null }> = [
@@ -1093,6 +1138,11 @@ export function WardrobeWorkbench() {
             <span><small>Continue</small><strong>{nextGarment.title}</strong><LifecycleMeta state={nextGarment.state} /></span>
             <ArrowRight aria-hidden="true" size={18} />
           </StudioLink>
+        ) : historyOnly ? (
+          <div className="studio-stack-current" data-history-only="true">
+            <span><small>History</small><strong>Drop 01 is closed</strong></span>
+            <LockKeyhole aria-hidden="true" size={18} />
+          </div>
         ) : (
           <button className="studio-stack-current" onClick={(event) => openIntake(event.currentTarget)} type="button">
             <span><small>Next</small><strong>Add garment</strong></span>
@@ -1115,12 +1165,12 @@ export function WardrobeWorkbench() {
 
       {activeView === "garments" ? (
         <StudioStackSection aria-labelledby="studio-tab-garments" id="studio-view-garments" role="tabpanel">
-          <details className="studio-stack-filter">
+          {historyOnly ? null : <details className="studio-stack-filter">
             <summary>Filter · {filter.toLowerCase()} <span>{visibleGarments.length}</span></summary>
             <div className="studio-filter-bar" role="group" aria-label="Filter wardrobe">
               {filters.map((item) => <button aria-pressed={filter === item} className={filter === item ? "is-active" : undefined} onClick={() => { setFilter(item); setGarmentPage(0); }} key={item} type="button">{item.toLowerCase()}</button>)}
             </div>
-          </details>
+          </details>}
           <h2 className="sr-only" id="garments-view-title">Garments</h2>
           {visibleGarments.length ? <><div className="studio-garment-grid">{pagedGarments.map((garment) => <GarmentCard garment={garment} key={garment.id} />)}</div><StudioPager label="Garment pages" onPageChange={setGarmentPage} page={safeGarmentPage} pageSize={garmentPageSize} total={visibleGarments.length} /></> : (
             <div className="studio-quiet-empty studio-wardrobe-empty"><PackageOpen aria-hidden="true" size={26} strokeWidth={1.5} /><div><strong>{studio.garments.length

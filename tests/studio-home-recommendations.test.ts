@@ -11,6 +11,8 @@ test("Home keeps one primary recommendation and exposes concise direct paths", (
   assert.match(home, /label: "Change price"/);
   assert.match(home, /garment\.state !== "CANCELLED"/);
   assert.match(home, /garment\.availability !== "ARCHIVED"/);
+  assert.match(home, /historicalDrop01Kind\(garment\) === null/);
+  assert.match(home, /Boolean\(garment\.privateWardrobeItemId\)[\s\S]*?historicalDrop01Kind\(garment\) === null[\s\S]*?garment\.state !== "CANCELLED"/);
   assert.match(home, /\?action=price#garment-lifecycle/);
   assert.match(home, /label: "Browse drops"/);
   assert.match(home, /\/studio\/wardrobe\?collection=choose/);
