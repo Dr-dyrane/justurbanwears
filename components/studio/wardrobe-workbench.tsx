@@ -71,6 +71,7 @@ import { studioScenarioHref } from "../../lib/studio/simulator";
 import { GarmentLifecyclePanel } from "./garment-lifecycle-panel";
 import type { GarmentLifecycleWorkspace } from "../../lib/studio/engine/garment-lifecycle-contracts";
 import { GarmentSetBuilder } from "./garment-set-builder";
+import { StudioAdaptiveWorkspace } from "./workspace/studio-adaptive-workspace";
 import {
   projectStudioDropScopes,
   studioDropScopeForGarment,
@@ -242,7 +243,7 @@ function GarmentCard({ garment }: { garment: Garment }) {
   );
 }
 
-export function PieceWorkspaceView({ garment, initialAction, onBuildSet, onDismiss, onContinueMedia }: { garment: Garment; initialAction?: "price"; onBuildSet(garment: Garment): void; onDismiss(): void; onContinueMedia(garment: Garment): void }) {
+export function PieceWorkspaceView({ garment, initialAction, layout = "embedded", onBuildSet, onDismiss, onContinueMedia }: { garment: Garment; initialAction?: "price"; layout?: "adaptive" | "embedded"; onBuildSet(garment: Garment): void; onDismiss(): void; onContinueMedia(garment: Garment): void }) {
   const studio = useStudio();
   const [captures, setCaptures] = useState<OperatorSafePendingCapture[]>([]);
   const [publicationReview, setPublicationReview] = useState<StudioPublicationReview | null>(
@@ -466,14 +467,20 @@ export function PieceWorkspaceView({ garment, initialAction, onBuildSet, onDismi
     }
   }
 
-  return (
-    <section className="studio-draft-manager studio-piece-workspace">
-      <div className={`studio-draft-visual${cover ? " is-photo" : ""}`} data-variant={garment.visual}>
+  const adaptive = layout === "adaptive";
+  const visual = (
+      <div
+        className={adaptive ? "juw-piece-v2-media" : `studio-draft-visual${cover ? " is-photo" : ""}`}
+        data-piece-region="canvas"
+        data-variant={garment.visual}
+      >
         {cover ? <StudioMediaButton items={coverItems} label={`Preview ${garment.title}`}><img alt={cover.alt} height={cover.height} src={cover.src} width={cover.width} /></StudioMediaButton> : <Shirt aria-hidden="true" size={64} strokeWidth={1.05} />}
       </div>
-      <div className="studio-draft-content">
-        <div className="studio-draft-summary">
-          <div className="studio-card-heading"><div><small>{garment.sku} · {garment.sizeLabel}</small><h3>{garment.title}</h3></div><span className="studio-piece-stage" data-stage={dynamicStage.stage}>{dynamicStage.label}</span></div>
+  );
+  const controls = (
+      <div className={adaptive ? "juw-piece-v2-content" : "studio-draft-content"} data-piece-region="workspace">
+        <div className={adaptive ? "juw-piece-v2-summary" : "studio-draft-summary"}>
+          <div className="studio-card-heading"><div><small>{garment.sku} · {garment.sizeLabel}</small>{adaptive ? <h1 className="juw-piece-v2-title">{garment.title}</h1> : <h3>{garment.title}</h3>}</div><span className="studio-piece-stage" data-stage={dynamicStage.stage}>{dynamicStage.label}</span></div>
           <p>{garment.color} · {garment.condition}</p>
           <div className="studio-garment-facts">
             <span>{garment.price > 0 ? formatNaira(garment.price) : "Price pending"}</span>
@@ -484,6 +491,7 @@ export function PieceWorkspaceView({ garment, initialAction, onBuildSet, onDismi
         <button
           aria-label={`${nextAction.label} for ${garment.title}`}
           className="studio-piece-next"
+          data-studio-workspace-primary="true"
           disabled={nextAction.kind === "DYNAMIC_LOADING"}
           id="piece-primary-action"
           onClick={runNextAction}
@@ -608,8 +616,19 @@ export function PieceWorkspaceView({ garment, initialAction, onBuildSet, onDismi
           </StudioTaskSheet>
         </> : null}
       </div>
-    </section>
   );
+  if (adaptive) {
+    return (
+      <StudioAdaptiveWorkspace
+        className="juw-piece-v2"
+        stage={visual}
+        surfaceLabel={`${garment.title} controls`}
+      >
+        {controls}
+      </StudioAdaptiveWorkspace>
+    );
+  }
+  return <section className="studio-draft-manager studio-piece-workspace">{visual}{controls}</section>;
 }
 
 function ApprovedPublicMedia({ sku, slug, title }: {

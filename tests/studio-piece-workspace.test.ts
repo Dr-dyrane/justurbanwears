@@ -4,6 +4,10 @@ import test from "node:test";
 import type { Garment } from "../lib/studio/domain/entities";
 import { selectPieceWorkspace } from "../lib/studio/projections/piece-workspace";
 import { getPendingWardrobeProductContract } from "../lib/studio/seeds/private-wardrobe-products";
+import {
+  createStudioScenarioSnapshot,
+  studioScenarioRouteSupported,
+} from "../lib/studio/simulator";
 
 const root = process.cwd();
 
@@ -92,6 +96,47 @@ test("Piece selector exposes one truthful next action and never promises arbitra
   });
   assert.equal(corruptPublished.nextAction.kind, "KEEP_PRIVATE");
   assert.equal(corruptPublished.stageLabel, "Private");
+});
+
+test("lifecycle dossiers keep one truthful action across the complete scenario", () => {
+  const snapshot = createStudioScenarioSnapshot("lifecycle");
+  const expected = [
+    ["scenario-garment-draft", "NEEDS_WORK", "Needs review", "KEEP_PRIVATE", false],
+    ["scenario-garment-ready", "READY", "Ready to publish", "PUBLISH", true],
+    ["scenario-garment-live", "LIVE", "Live", "VIEW_SHOP", true],
+    ["scenario-garment-order", "LIVE", "Reserved", "VIEW_SHOP", true],
+    ["scenario-garment-return", "SOLD", "Sold", "VIEW_OPERATIONS", true],
+  ] as const;
+
+  for (const [garmentId, stage, stageLabel, action, canPublish] of expected) {
+    const garment = snapshot.garments.find((candidate) => candidate.id === garmentId);
+    assert.ok(garment, `${garmentId} must exist`);
+    const listing = snapshot.listings.find((candidate) => candidate.garmentId === garmentId);
+    const workspace = selectPieceWorkspace({ garment, listing });
+    assert.deepEqual(
+      [workspace.stage, workspace.stageLabel, workspace.nextAction.kind, workspace.canPublish],
+      [stage, stageLabel, action, canPublish],
+    );
+    assert.ok(workspace.nextAction.label.trim());
+  }
+});
+
+test("G024 provides the safe non-paid Product photos dossier fixture", () => {
+  const snapshot = createStudioScenarioSnapshot("lifecycle");
+  const garment = snapshot.garments.find((candidate) => candidate.id === "wardrobe-private-product-juw-024");
+  assert.ok(garment);
+  assert.equal(garment.privateWardrobeItemId, undefined);
+  assert.equal(snapshot.listings.some((listing) => listing.garmentId === garment.id), false);
+
+  const workspace = selectPieceWorkspace({ garment });
+  assert.equal(workspace.nextAction.kind, "CAPTURE");
+  assert.deepEqual(workspace.captureRoles, ["GARMENT_FRONT", "GARMENT_BACK", "FABRIC_DETAIL"]);
+  assert.equal(studioScenarioRouteSupported(`/studio/wardrobe/${garment.id}`), true);
+});
+
+test("Piece projection stays independent of viewport and presentation state", () => {
+  const projection = readFileSync(`${root}/lib/studio/projections/piece-workspace.ts`, "utf8");
+  assert.doesNotMatch(projection, /window|document|matchMedia|innerWidth|fetch\(|useState/);
 });
 
 test("dynamic intake captures reuse the private capture store after ownership validation", () => {
