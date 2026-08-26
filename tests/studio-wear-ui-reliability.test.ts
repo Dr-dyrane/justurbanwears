@@ -3,10 +3,10 @@ import { readFile } from "node:fs/promises";
 import test from "node:test";
 import ts from "typescript";
 
-const sheet = await readFile(
+const sheet = (await readFile(
   new URL("../components/studio/garment-intake/wear-sheet.tsx", import.meta.url),
   "utf8",
-);
+)).replaceAll("\r\n", "\n");
 const client = await readFile(
   new URL("../components/studio/garment-intake/wear-client.ts", import.meta.url),
   "utf8",
