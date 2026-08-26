@@ -2,6 +2,8 @@
 
 import { useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 
+import { moveFocusFromWorkspaceGrip } from "./studio-workspace-focus";
+
 export type StudioWorkspaceDetent = "peek" | "half" | "full";
 
 interface StudioAdaptiveWorkspaceProps {
@@ -51,8 +53,8 @@ export function StudioAdaptiveWorkspace({
       const nextUsesSideSurface = root.clientWidth >= 960 && window.innerHeight >= 600;
       if (nextUsesSideSurface !== usesSideSurface) {
         if (nextUsesSideSurface && document.activeElement === gripButtonRef.current) {
-          const content = surfaceContentRef.current;
-          (content?.querySelector<HTMLElement>("[data-studio-workspace-primary='true']") ?? content)?.focus({ preventScroll: true });
+          const focusMoved = moveFocusFromWorkspaceGrip(surfaceContentRef.current, gripButtonRef.current);
+          if (!focusMoved) return;
         }
         usesSideSurface = nextUsesSideSurface;
         setSideSurface(nextUsesSideSurface);
