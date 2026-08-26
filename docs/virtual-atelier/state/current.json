@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "workflowRevision": "2026-08-25.86",
-  "updatedAt": "2026-08-26T01:47:00Z",
+  "workflowRevision": "2026-08-25.87",
+  "updatedAt": "2026-08-26T01:56:56Z",
   "model": "LULU_V4",
   "activeGarment": "023",
-  "activeView": "CORRECTED_RELEASE",
-  "status": "GARMENT_023_CORRECTED_PRIVATE_LOCKED_PUBLIC_BLOB_SYNCED_CATALOGUE_34_RELEASE_PENDING",
+  "activeView": "COMPLETE",
+  "status": "GARMENT_023_CORRECTED_01_07_PRIVATE_LOCKED_LIVE_VERIFIED_CATALOGUE_34",
   "identityReview": {
     "candidateId": "lulu.face.v4.front.candidate.v1",
     "acceptedAssetId": "lulu.face.v4.front.lock.v1",
@@ -1732,7 +1732,7 @@
       "rejectedCandidatesMayParent": false
     },
     "023": {
-      "status": "CORRECTED_01_07_USER_DIRECTED_PRIVATE_LOCKED_PUBLIC_BLOB_SYNCED_RELEASE_PENDING",
+      "status": "CORRECTED_01_07_USER_DIRECTED_PRIVATE_LOCKED_LIVE_VERIFIED",
       "sku": "JUW-047",
       "name": "Scarlet Asymmetric Cascade Ruched Mini Dress",
       "slug": "scarlet-asymmetric-cascade-ruched-mini-dress",
@@ -1754,11 +1754,11 @@
       "lockedManifestSha256": "8e4302e6e55089acf99de26e9dea560ea48e7f089402a36eb79f293816b64399",
       "operationRecords": ["storage/garments/drop-02/023/operations/g023-v01-r001.json","storage/garments/drop-02/023/operations/g023-v02-r001.json","storage/garments/drop-02/023/operations/g023-v03-r001.json","storage/garments/drop-02/023/operations/g023-v04-r001.json","storage/garments/drop-02/023/operations/g023-holistic-subject-r001.json","storage/garments/drop-02/023/operations/g023-room-and-05-r001.json","storage/garments/drop-02/023/operations/g023-v06-r001.json","storage/garments/drop-02/023/operations/g023-v07-r001.json","storage/garments/drop-02/023/operations/g023-v07-r002.json","storage/garments/drop-02/023/operations/g023-shop-media-export-v001.json","storage/garments/drop-02/023/operations/g023-v03-r002.json","storage/garments/drop-02/023/operations/g023-body-rebase-v05-r002.json","storage/garments/drop-02/023/operations/g023-v06-r002.json","storage/garments/drop-02/023/operations/g023-v07-r003.json","storage/garments/drop-02/023/operations/g023-v07-r004.json","storage/garments/drop-02/023/operations/g023-v07-r005.json","storage/garments/drop-02/023/operations/g023-shop-media-export-v002.json"],
       "previousShopRelease": {"catalogueRevision":"2026-08-25-catalogue-33","catalogueManifestChecksum":"3be78321051c0cfa33eefd97fed820656d1cffcbc2345d8d5bc76d94ccd5e631","sourceCommit":"6a49292ed032000130baef40c6ff9162b5f33c41","deploymentId":"dpl_FaNvGvRHALiiQuAUP6MvpdHSZYiS","status":"SUPERSEDED_MEDIA_DEFECT"},
-      "shopRelease": {"catalogueRevision":"2026-08-25-catalogue-34","catalogueManifestChecksum":"56db5b2b7e934123a791daff0693d01aef8058db4ca7cd56bf2df224d52629d6","cataloguePresentationChecksum":"252557e5349c0c90faaf36819a91d81806d310388f7728a0095c577ab1c24833","publicRoot":"public/shop/products/scarlet-asymmetric-cascade-ruched-mini-dress","mediaCount":7,"publicBlobActiveAssetCount":261,"publicBlobLegacyAssetCount":11,"sourceCommit":null,"deployedCommit":null,"deploymentId":null,"deployment":null,"databaseSkuPresent":true,"availability":"AVAILABLE","catalogueRowCount":41,"state":"PUBLIC_BLOB_SYNCED_RELEASE_PENDING","status":"RELEASE_PENDING"},
+      "shopRelease": {"catalogueRevision":"2026-08-25-catalogue-34","catalogueManifestChecksum":"56db5b2b7e934123a791daff0693d01aef8058db4ca7cd56bf2df224d52629d6","cataloguePresentationChecksum":"252557e5349c0c90faaf36819a91d81806d310388f7728a0095c577ab1c24833","publicRoot":"public/shop/products/scarlet-asymmetric-cascade-ruched-mini-dress","mediaCount":7,"publicBlobActiveAssetCount":261,"publicBlobLegacyAssetCount":11,"sourceCommit":"f0c84a72c398d27ec2c7ea9964f2301e3a798136","deployedCommit":"f0c84a72c398d27ec2c7ea9964f2301e3a798136","deploymentId":"dpl_Ey1pf39wtYTY4wZrC5YUCsSw9amt","deployment":"https://justurbanwears-3rdtfpa2i-drdyranes-projects.vercel.app","databaseSkuPresent":true,"availability":"AVAILABLE","availabilityApi":"CONFIRMED","studioPublicationCount":1,"catalogueRowCount":41,"productionSmoke":"24_OF_24_PASS","experienceSmoke":"18_OF_18_PASS","browserProductGallery":"7_OF_7_1120X1400_ISOTROPIC_CORRECTED_03_05_06_07_VISUALLY_VERIFIED","browserCollectionPieceCount":23,"browserConsole":"CLEAN","state":"LIVE_VERIFIED","verifiedAt":"2026-08-26T01:56:56Z","status":"LIVE_VERIFIED"},
       "consentAndPermission": {"realGarmentReferencesRemainPrivate":true,"realIdentityAndBodyReferencesRemainPrivate":true,"publicDerivativesApproved":true},
       "rejectedCandidatesMayParent": false
     }
   },
-  "nextOperation": "Run integration verification, guarded catalogue 34 release, deploy, and production smoke for corrected G023 media.",
-  "requiredNext": "Publish and live-verify corrected G023 catalogue revision 34."
+  "nextOperation": null,
+  "requiredNext": "None. Corrected Garment 023 catalogue revision 34 is live verified."
 }
