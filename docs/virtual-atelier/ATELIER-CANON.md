@@ -145,3 +145,22 @@ An output fails the atelier gate if it looks like a new interpretation of a warm
 An output fails the brand gate if the wall mark is anything other than the exact small standalone canonical icon.
 
 When an accepted parent exists, do not regenerate the room to fix another layer.
+
+## 8. Cross-garment drift guardrails
+
+The current candidate must be compared with direct authority and a small multi-era baseline, not only with the immediately preceding garment. Use G001/G004 for founding room and view grammar, G005 for holistic subject translation, G009 for the dedicated angle-canon lesson, and corrected G023/G024 for recent source-safe and body-continuity checks. These generated precedents remain secondary to real Lulu identity/body evidence and direct garment evidence.
+
+Review the following independently:
+
+- identity continuity at the requested angle;
+- the connected full-body silhouette, normalized for pose, heel height, garment stiffness, camera distance and perspective;
+- exact room structure, icon, light and subject integration;
+- garment construction and explicit unknowns;
+- semantic role correctness for 01–07; and
+- independent 05 → 06/07 lineage.
+
+View 03 must be an anonymous neutral mannequin presentation. Source walls, curtains, tile, room light or distinctive mannequin geometry have no authority. View 04 must be a genuinely close visible-detail presentation, not a second full-front hero and never fibre proof. Views 02 and 07 remain quarantined as inferred garment-rear presentation whenever direct rear evidence is absent.
+
+Do not correct profile or rear drift by optimizing one isolated body region. Preserve the evidence-supported relationship from torso through waist, pelvis, hip, rear contour and upper thigh as one balanced adult silhouette.
+
+The detailed evidence and portable procedure are recorded in `docs/virtual-atelier/audits/G001-G024-WORKFLOW-AND-SEMBLANCE-AUDIT.md` and `docs/virtual-atelier/MODUS-OPERANDI.md`.

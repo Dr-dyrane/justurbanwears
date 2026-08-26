@@ -340,6 +340,8 @@ Immediately reads as Lulu. No generic editorial substitution, facial narrowing, 
 
 Matches the canon as a balanced whole. No elongated torso, reduced thighs, caricatured waist, isolated glute exaggeration, inflated arms, or runway-model reinterpretation.
 
+Evaluate profile and rear continuity as the connected relationship from torso through waist, pelvis, hip, rear contour and upper thigh. Normalize for pose, heel height, garment stiffness, camera distance and perspective. Passing the immediately preceding garment is insufficient: compare with direct real body evidence and the approved multi-era drift baseline defined in `docs/virtual-atelier/MODUS-OPERANDI.md`.
+
 ### Atelier gate
 
 Same locked JUW room, not a newly generated interpretation of a warm boutique.
@@ -365,6 +367,10 @@ One clean full image with no unrequested text, labels, panels, or crops.
 Skin, garment, footwear and room read as one photograph. Natural skin detail remains visible; garment wash, folds, tension, fraying, stitching, drape and sheen follow the garment evidence and pose; lighting and contact shadows agree across the frame; perspective preserves Lulu's stature. Reject poreless or waxy skin, invented material texture, pasted detail, halos, synthetic HDR, CGI sheen, excessive smoothing or sharpening, and any cutout-like room integration.
 
 A model-view operation may not claim `GATE_PASS`, `ACCEPTED` or `LOCKED` until every named `renderQualityReview` result is recorded as `PASS`. A failure in any gate rejects the candidate.
+
+### Semantic-role drift gate
+
+View 03 fails if it reconstructs the private source environment rather than presenting an anonymous neutral mannequin. View 04 fails if it becomes a duplicate full-front hero rather than a close visible-detail presentation. Views 02 and 07 may not be promoted from inferred presentation to construction evidence without direct rear authority.
 
 ## 6. State transitions
 

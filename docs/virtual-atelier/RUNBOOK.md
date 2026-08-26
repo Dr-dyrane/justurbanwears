@@ -241,7 +241,26 @@ After 05, 06, and 07 pass:
 
 For every generation—not only the final packet—write a private operation record before moving on. It must contain the exact prompt verbatim, ordered reference stack and per-slot roles, exclusions, tool/mode, generated source path when available, durable workspace path, dimensions, bytes and SHA-256. Add independent review and the user's exact acceptance/rejection statement. Summaries are useful indexes but never replace the verbatim prompt. Each correction keeps its own prompt and output history; never overwrite the recipe for a strong generation.
 
-## H. Operation template
+## H. Portable replay checkpoint
+
+Before operating on another machine or through another provider:
+
+1. Restore the private authority revision named in `lib/server/private-asset-manifests/lulu-v4.json`.
+2. Verify every private object's SHA-256, byte size, decoded dimensions and MIME type.
+3. Confirm an unauthenticated request cannot read the private objects.
+4. Run `node scripts/virtual-atelier/verify-assets.mjs` and resolve every required failure before generation.
+5. Resolve the active garment brief, source manifest, accepted garment 01 and any accepted parent locks.
+6. Bind every reference by semantic authority role, not provider slot number.
+7. Confirm the provider can carry the complete mandatory stack without dropping, merging or weakening authority.
+8. Qualify a new provider/model/adapter revision against the calibration cases in `docs/virtual-atelier/MODUS-OPERANDI.md` before new-garment production.
+9. Record provider execution separately from the provider-neutral semantic operation.
+10. Keep exact user acceptance as the final lock authority.
+
+`storage/` alone is not a portable archive. A replay environment is invalid if it has unverified loose media, an unresolved manifest mismatch, no exact accepted parent bytes or no durable operation/decision record.
+
+The G001–G024 evidence and known restore defects are recorded in `docs/virtual-atelier/audits/G001-G024-WORKFLOW-AND-SEMBLANCE-AUDIT.md`.
+
+## I. Operation template
 
 ```yaml
 operation_id: g004-v07-r001
