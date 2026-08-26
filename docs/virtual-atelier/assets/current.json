@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "updatedAt": "2026-08-26T01:56:56Z",
+  "updatedAt": "2026-08-26T15:11:00Z",
   "assets": [
     {
       "id": "packet.canon.v1",
@@ -3793,6 +3793,15 @@
     },
     {
       "id":"garment.024.view.07.accepted","filename":"07-on-lulu-right-rear-3q.png","aliases":["../garments/drop-02/024/locked/07-on-lulu-right-rear-3q.png"],"kind":"generated-output","role":"Accepted body-canon-corrected Garment 024 independent right rear-three-quarter sibling","provenance":"MODEL_REFERENCE","privacy":"private","storage":"repo-storage-ignored","status":"user-authorized-autonomous-accepted-locked-body-canon-corrected-independent-sibling-inferred-rear-presentation","required":true,"sha256":"7e40da69dfd6cfdfac2f5971eab8d7adbf3906962c1347db0a79364fc7611cc2","bytes":2118547,"authority":["identity","body","garment","styling","atelier","presentation"],"garmentId":"024","view":"07","notes":"Accepted 1024x1535 independent right rear-three-quarter sibling using accepted 05, JUW orientation and the complete rear-operation board; garment rear remains inferred and this view may not parent 06."
+    },
+    {
+      "id":"garment.025.full-front-continuity","filename":"01-source-full-front-continuity.jpeg","aliases":["../garments/drop-02/025/source/01-source-full-front-continuity.jpeg"],"kind":"source-photo","role":"Garment 025 full-front length and silhouette continuity","provenance":"DIRECT_CAPTURE","privacy":"private","storage":"repo-storage-ignored","status":"available","required":true,"sha256":"bc2bb41afe13507f6ed778deb5a8d074ad20d393570c348cd7cba445e1b1bb68","bytes":45857,"authority":["garment"],"garmentId":"025","view":"SOURCE","notes":"Direct 360x646 front-family capture controlling the long column silhouette, cowl neckline, shoulder inserts and wearer-left side cascade continuity."
+    },
+    {
+      "id":"garment.025.front-primary","filename":"02-source-front-primary.jpeg","aliases":["../garments/drop-02/025/source/02-source-front-primary.jpeg"],"kind":"source-photo","role":"Primary direct Garment 025 front construction authority","provenance":"DIRECT_CAPTURE","privacy":"private","storage":"repo-storage-ignored","status":"available","required":true,"sha256":"eb92e724018781d0fc7c5f5b5b8d742355c492f4cb38763b3cb46f289f5b9e7d","bytes":46849,"authority":["garment"],"garmentId":"025","view":"SOURCE","notes":"Direct 360x480 front capture controlling the dark navy-to-near-black cowl neckline, semi-sheer shoulder inserts, diagonal drape and wearer-left side cascade."
+    },
+    {
+      "id":"garment.025.front-confirmation","filename":"03-source-front-confirmation.jpeg","aliases":["../garments/drop-02/025/source/03-source-front-confirmation.jpeg"],"kind":"source-photo","role":"Garment 025 front construction confirmation","provenance":"DIRECT_CAPTURE","privacy":"private","storage":"repo-storage-ignored","status":"available","required":true,"sha256":"6bff59fb435e41b43f8747cbe192fe694dff94414ab1e5f06cb78b86fe825387","bytes":47854,"authority":["garment"],"garmentId":"025","view":"SOURCE","notes":"Direct 360x480 confirmation of the same visible cowl, shoulder-panel, fitted waist, diagonal drape and side-cascade construction."
     }
   ]
 }

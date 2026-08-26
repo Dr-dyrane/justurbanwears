@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "workflowRevision": "2026-08-26.92",
-  "updatedAt": "2026-08-26T14:45:54Z",
+  "workflowRevision": "2026-08-26.98",
+  "updatedAt": "2026-08-26T15:11:00Z",
   "model": "LULU_V4",
   "activeGarment": "025",
-  "activeView": "INTAKE",
-  "status": "GARMENT_025_PRIVATE_SOURCE_INTAKE_HASHED_01_07_RESERVED_NO_GENERATION_STARTED",
+  "activeView": "01-04",
+  "status": "GARMENT_025_VIEWS_01_04_CANDIDATES_REVIEW_PASS_AWAITING_USER_APPROVAL_05_07_NOT_STARTED",
   "identityReview": {
     "candidateId": "lulu.face.v4.front.candidate.v1",
     "acceptedAssetId": "lulu.face.v4.front.lock.v1",
@@ -1811,6 +1811,11 @@
     ],
     "completedAt": "2026-08-26T14:15:05Z"
   },
-  "nextOperation": null,
-  "requiredNext": "Prepare and validate independent G025 views 01-04 from the hashed private source manifest. Do not begin Lulu model views until 01-04 are reviewed and accepted. Continue using MODUS-OPERANDI.md and the G001-G024 drift guardrails."
+  "nextOperation": {
+    "operationId": "g025-garment-set-approval-v001",
+    "garmentId": "025",
+    "view": "01-04",
+    "status": "AWAITING_USER_APPROVAL"
+  },
+  "requiredNext": "Obtain user approval or precise corrections for G025 candidates 01-04. On approval, lock only the approved bytes, write the private locked manifest and accepted asset entries, and update state before starting Lulu model view 05."
 }
