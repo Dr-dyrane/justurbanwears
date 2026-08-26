@@ -2,7 +2,10 @@
 /drizzle/
 /scripts/shop-db/
 /tests/
-/docs/
+/docs/**
+!/docs/virtual-atelier/
+!/docs/virtual-atelier/g004-positive-target-calibration.v1.json
+!/docs/virtual-atelier/g004-provider-visual-denial.v1.json
 /storage/
 /.codex/
 /design/identity-2026/**

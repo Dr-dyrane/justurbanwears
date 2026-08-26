@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
   STUDIO_GPT_IMAGE_2_ADAPTER,
@@ -396,4 +397,25 @@ test("stage scoping is semantic and never garment-number based", () => {
   assert.equal(studioAtelierProductionScopeForStage("SUBJECT_B"), "ROOT_SUBJECT");
   assert.equal(studioAtelierProductionScopeForStage("ROOM_FINAL_05"), "FINAL_SCENE");
   assert.equal(studioAtelierProductionScopeForStage("SIBLING_07_RECOVERY"), "FINAL_SCENE");
+});
+
+test("Vercel packages only the two runtime G004 authority manifests from docs", () => {
+  const lines = readFileSync(new URL("../.vercelignore", import.meta.url), "utf8")
+    .replaceAll("\r\n", "\n")
+    .split("\n");
+  const requiredRules = [
+    "/docs/**",
+    "!/docs/virtual-atelier/",
+    "!/docs/virtual-atelier/g004-positive-target-calibration.v1.json",
+    "!/docs/virtual-atelier/g004-provider-visual-denial.v1.json",
+  ];
+  const positions = requiredRules.map((rule) => lines.indexOf(rule));
+
+  assert.ok(positions.every((position) => position >= 0));
+  assert.deepEqual(positions, [...positions].sort((left, right) => left - right));
+  assert.equal(lines.includes("/docs/"), false);
+  assert.deepEqual(
+    lines.filter((line) => line.startsWith("!/docs/")),
+    requiredRules.slice(1),
+  );
 });
