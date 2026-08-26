@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
   "workflowRevision": "2026-08-26.126",
-  "updatedAt": "2026-08-26T22:24:00Z",
+  "updatedAt": "2026-08-26T22:28:01Z",
   "model": "LULU_V4",
   "activeGarment": "028",
-  "activeView": "PUBLIC_RELEASE_IN_PROGRESS",
-  "status": "GARMENTS_025_AND_026_LIVE_VERIFIED_GARMENT_027_PRIVATE_COMPLETE_GARMENT_028_CATALOGUE_37_INTEGRATED_BLOB_VERIFIED_RELEASE_IN_PROGRESS",
+  "activeView": null,
+  "status": "GARMENTS_025_026_AND_028_LIVE_VERIFIED_GARMENT_027_PRIVATE_COMPLETE",
   "identityReview": {
     "candidateId": "lulu.face.v4.front.candidate.v1",
     "acceptedAssetId": "lulu.face.v4.front.lock.v1",
@@ -1880,7 +1880,7 @@
       "releaseGate":"PRIVATE_GENERATION_ONLY_NO_EXPORT_OR_PUBLICATION_AUTHORITY"
     },
     "028": {
-      "status":"VIEWS_01_07_FACE_BODY_PRE_ROOM_ACCEPTED_LOCKED_PRIVATE_NO_RELEASE_AUTHORITY",
+      "status":"LIVE_VERIFIED_PRIVATE_LOCKS_PRESERVED",
       "name":"Camel Ribbed Deep-Plunge Short-Sleeve Mini Dress",
       "sourceManifest":"storage/garments/drop-02/028/source/manifest.json",
       "sourceManifestSha256":"f16ff900c11e2c5283335b8f7fd1c2ba91229d4890857a144e7bd3e57407768c",
@@ -1911,8 +1911,8 @@
       "imageGenerationReservation":"RELEASED_AFTER_G028_VIEW_07_ACCEPTED_LOCK",
       "source":{"count":3,"uniqueByteCount":3,"allFrontFamily":true,"directRearAvailable":false,"verifiedExactCommercialMatchRearAvailable":false},
       "releaseIdentity":{"sku":"JUW-051","slug":"camel-ribbed-deep-plunge-short-sleeve-mini-dress","simulatedPriceNgn":27500,"pricingComparators":[{"garmentId":"021","priceNgn":27500,"basis":"fitted cutout mini construction"},{"garmentId":"024","priceNgn":27500,"basis":"fitted statement-neckline mini construction"}],"pricingMethod":"closest-live-comparable midpoint mapped to existing live tier"},
-      "shopRelease":{"catalogueRevision":"2026-08-26-catalogue-37","catalogueManifestChecksum":"6f6028ebf009c04cdd141b1870e7a589ed4aca7840b8e3ee69efe95adfa5f93f","cataloguePresentationChecksum":"e1dd963905d07bc223129ef2edccd77388fe580370d67fb5abeddeee92afed36","publicRoot":"public/shop/products/camel-ribbed-deep-plunge-short-sleeve-mini-dress","mediaCount":7,"publicBlobActiveAssetCount":289,"publicBlobLegacyAssetCount":11,"state":"BLOB_VERIFIED_AWAITING_COMMIT_DEPLOYMENT_DATABASE_AND_LIVE_VERIFICATION"},
-      "releaseGate":"USER_AUTHORIZED_PUBLICATION_IN_PROGRESS"
+      "shopRelease":{"catalogueRevision":"2026-08-26-catalogue-37","catalogueManifestChecksum":"6f6028ebf009c04cdd141b1870e7a589ed4aca7840b8e3ee69efe95adfa5f93f","cataloguePresentationChecksum":"e1dd963905d07bc223129ef2edccd77388fe580370d67fb5abeddeee92afed36","publicRoot":"public/shop/products/camel-ribbed-deep-plunge-short-sleeve-mini-dress","mediaCount":7,"publicBlobActiveAssetCount":289,"publicBlobLegacyAssetCount":11,"sourceCommit":"d24c9d0e879b0d5d71e9f65097843927952937d4","deployedCommit":"d24c9d0e879b0d5d71e9f65097843927952937d4","deploymentId":"dpl_8tUKHGhxYitoaUpsSAS2YLFG7hvE","deployment":"https://justurbanwears-hx42f2s6f-drdyranes-projects.vercel.app","databaseMutation":"APPLIED_GUARDED_ATOMIC_CATALOGUE_RELEASE","databaseReleaseGitSha":"d24c9d0e879b0d5d71e9f65097843927952937d4","databaseMigrationCount":0,"databaseRowCount":45,"availabilityApi":"CONFIRMED","productPageAvailability":"AVAILABLE_ADD_TO_BAG","productionSmoke":"28_OF_28_PASS_POST_DATABASE_RELEASE","experienceSmoke":"22_OF_22_PASS","browserProductGallery":"7_OF_7_1120X1400_SEMANTICALLY_LABELLED_RENDERED","browserControls":"BUY_NOW_AND_ADD_TO_BAG_ENABLED","state":"LIVE_VERIFIED","verifiedAt":"2026-08-26T22:28:01Z"},
+      "releaseGate":"LIVE_VERIFIED"
     }
   },
   "qualityAudit": {
@@ -1954,9 +1954,9 @@
   },
   "nextOperation": {
     "operationId": null,
-    "garmentId": "028",
+    "garmentId": null,
     "view": null,
-    "status": "CATALOGUE_37_INTEGRATED_AWAIT_COMMIT_DEPLOYMENT_DATABASE_AND_LIVE_VERIFICATION"
+    "status": "IDLE_NO_ACTIVE_RESERVATION"
   },
-  "requiredNext": "Complete G028 catalogue-37 release from the exact integrated assets: focused tests and build, commit and push main, source-built production deployment, guarded canonical justurbanwears-db apply, availability/product/gallery/console verification and production smoke. Preserve G027 as private-only. G028 rear presentations remain conservative inference only."
+  "requiredNext": "No further G028 release action is required. Preserve G027 as private-only. G028 rear presentations remain conservative inference only. Begin another garment or public release only with explicit user authority."
 }
