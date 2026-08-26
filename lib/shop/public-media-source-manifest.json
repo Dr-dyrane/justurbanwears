@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "catalogueRevision": "2026-08-26-catalogue-36",
-  "catalogueChecksum": "5bd76e6cfb84f839afff10b077d70cc31b1dfca998014798932f74c832c4bb5f",
-  "cataloguePresentationChecksum": "97e6d5add123a406e697a6002dd2a99574c4c084a0b102869691c9fcd32ede1c",
+  "catalogueRevision": "2026-08-26-catalogue-37",
+  "catalogueChecksum": "6f6028ebf009c04cdd141b1870e7a589ed4aca7840b8e3ee69efe95adfa5f93f",
+  "cataloguePresentationChecksum": "e1dd963905d07bc223129ef2edccd77388fe580370d67fb5abeddeee92afed36",
   "assets": [
     {
       "sourcePath": "/shop/model/lulu-v2-approved.png",
@@ -939,6 +939,69 @@
       "contentType": "image/webp",
       "width": 1122,
       "height": 1402
+    },
+    {
+      "sourcePath": "/shop/products/camel-ribbed-deep-plunge-short-sleeve-mini-dress/01-garment-front.webp",
+      "pathname": "shop/catalogue/e4dac58949a1ab4e54c2e8102330ec24d728e51d27274cbd2253d06600a77e49/products/camel-ribbed-deep-plunge-short-sleeve-mini-dress/01-garment-front.webp",
+      "sha256": "e4dac58949a1ab4e54c2e8102330ec24d728e51d27274cbd2253d06600a77e49",
+      "size": 124776,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/camel-ribbed-deep-plunge-short-sleeve-mini-dress/02-garment-back.webp",
+      "pathname": "shop/catalogue/1f17503ff62e1ba5ac072f70345a56431e77ec6bee01a0ab75d05496db07899e/products/camel-ribbed-deep-plunge-short-sleeve-mini-dress/02-garment-back.webp",
+      "sha256": "1f17503ff62e1ba5ac072f70345a56431e77ec6bee01a0ab75d05496db07899e",
+      "size": 129954,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/camel-ribbed-deep-plunge-short-sleeve-mini-dress/03-mannequin-front.webp",
+      "pathname": "shop/catalogue/e891bfe8d203d5703cf123349984ea87c8488855faa9f02bdffa3dc29b5a3adb/products/camel-ribbed-deep-plunge-short-sleeve-mini-dress/03-mannequin-front.webp",
+      "sha256": "e891bfe8d203d5703cf123349984ea87c8488855faa9f02bdffa3dc29b5a3adb",
+      "size": 59452,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/camel-ribbed-deep-plunge-short-sleeve-mini-dress/04-model-front.webp",
+      "pathname": "shop/catalogue/fe7b18f135cdcb4d567de350516d89270f78f287e7f94be423318f8306b25a3f/products/camel-ribbed-deep-plunge-short-sleeve-mini-dress/04-model-front.webp",
+      "sha256": "fe7b18f135cdcb4d567de350516d89270f78f287e7f94be423318f8306b25a3f",
+      "size": 178912,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/camel-ribbed-deep-plunge-short-sleeve-mini-dress/05-model-rear-three-quarter.webp",
+      "pathname": "shop/catalogue/ab19be50ada9e940744653b9dbdf90c8b3817d3a482884d281993afd7b69bea4/products/camel-ribbed-deep-plunge-short-sleeve-mini-dress/05-model-rear-three-quarter.webp",
+      "sha256": "ab19be50ada9e940744653b9dbdf90c8b3817d3a482884d281993afd7b69bea4",
+      "size": 170872,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/camel-ribbed-deep-plunge-short-sleeve-mini-dress/06-fabric-detail.webp",
+      "pathname": "shop/catalogue/6f3851c94222a166a6073b5b53aa7bdcef744faad308ec3986bbea2e93f7849a/products/camel-ribbed-deep-plunge-short-sleeve-mini-dress/06-fabric-detail.webp",
+      "sha256": "6f3851c94222a166a6073b5b53aa7bdcef744faad308ec3986bbea2e93f7849a",
+      "size": 297464,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/camel-ribbed-deep-plunge-short-sleeve-mini-dress/07-model-left-profile.webp",
+      "pathname": "shop/catalogue/8a8b8ee30e5670b6d55f4eaaf44d895418405ca6f7f6b2dff6d9ac2210549c37/products/camel-ribbed-deep-plunge-short-sleeve-mini-dress/07-model-left-profile.webp",
+      "sha256": "8a8b8ee30e5670b6d55f4eaaf44d895418405ca6f7f6b2dff6d9ac2210549c37",
+      "size": 169008,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
     },
     {
       "sourcePath": "/shop/products/charcoal-wrap-front-ruched-slit-midi-dress/01-garment-front.webp",

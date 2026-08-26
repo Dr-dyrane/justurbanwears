@@ -72,7 +72,7 @@ An accepted sibling view may be used after generation for collection-level QA, b
 
 1. Read `AGENTS.md`, `OPERATING-CONTRACT.md`, `state/current.json`, the garment brief, and `assets/current.json`.
 2. Run the preflight and confirm every required logical asset is present, hash-valid, and visible to the actual operation.
-3. Resolve the garment intake first.
+3. Resolve the garment intake first. When a required side or rear construction fact is absent, run a bounded reverse-image or exact-product search before declaring the view inferred. Prefer official maker or retailer evidence, archive exact matched bytes privately with URL/access time/hash/dimensions/match basis, and transfer only the missing construction facts. If no exact match is verified, record the unsuccessful search and retain conservative inferred-presentation status; brand, fibre, size, care, condition, price and seller provenance never transfer.
 4. Run `GARMENT_01_FRONT`, `GARMENT_02_BACK`,
    `GARMENT_03_MANNEQUIN` and `GARMENT_04_DETAIL` as four independent root
    operations through the same durable four-command facade. They use direct
@@ -296,7 +296,7 @@ accepted current-garment 05
 
 Do not use `06` as a parent.
 
-This authority core is mandatory, while reference ordering and truth-preserving packaging remain adaptive. Do not replace the BACK crop or direct real-body evidence with a generic translation image. If no direct garment-back capture exists, rear construction remains conservative inferred presentation and can never become direct evidence.
+This authority core is mandatory, while reference ordering and truth-preserving packaging remain adaptive. Do not replace the BACK crop or direct real-body evidence with a generic translation image. If no direct garment-back capture exists, first apply the exact-product search gate in section A. A verified exact commercial match may supply narrowly bounded rear construction authority; otherwise rear construction remains conservative inferred presentation and can never become direct evidence.
 
 Before invocation, complete `renderQualityContract` and run `npm run atelier:verify:operation -- <operation-json>`. Judge likeness, head-to-toe body realism, attitude, presence, pose, garment truth, skin and material texture, natural optics and scene integration together.
 

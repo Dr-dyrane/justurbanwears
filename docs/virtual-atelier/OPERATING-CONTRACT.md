@@ -137,6 +137,8 @@ For example, `004` always means the same long black gown with the white folded n
 
 Garment evidence has zero authority over Lulu, her body, the room, the plaque, camera, pose, styling, or lighting unless the operation declaration explicitly grants it.
 
+When the private intake omits a required side or rear construction angle, a bounded reverse-image or exact-product search is required before any inferred render. An official maker or retailer page is preferred. Online evidence may become angle-specific construction authority only when distinctive visible front details establish an exact commercial match and the exact evidence is archived with its URL, access time, hash, dimensions and match basis. That authority does not transfer brand, fibre, size, care, condition, price or seller provenance, and the private source remains colour and physical-item authority. If no exact match is verified, record the search and retain conservative inferred-presentation classification. A generated inference may never substitute for this search or become direct evidence.
+
 ### Identity
 
 Primary authority: real Lulu face material.

@@ -59,6 +59,7 @@ export const WARDROBE_APPROVED_V4_MODEL_SLUGS = Object.freeze([
   "black-asymmetric-sculpted-shoulder-mini-dress",
   "dark-navy-draped-cowl-neck-side-cascade-maxi-dress",
   "neon-chartreuse-asymmetric-ruched-knot-maxi-dress",
+  "camel-ribbed-deep-plunge-short-sleeve-mini-dress",
 ] as const);
 
 export const WARDROBE_APPROVED_MODEL_FRONT_SLUGS = Object.freeze([
@@ -103,6 +104,7 @@ export const WARDROBE_APPROVED_MODEL_SUPPLEMENTAL_SLOTS = Object.freeze({
   "black-asymmetric-sculpted-shoulder-mini-dress": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "dark-navy-draped-cowl-neck-side-cascade-maxi-dress": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "neon-chartreuse-asymmetric-ruched-knot-maxi-dress": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
+  "camel-ribbed-deep-plunge-short-sleeve-mini-dress": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "coral-drift-dress": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "moss-square-knit": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "cocoa-pleat-trouser": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
@@ -865,6 +867,25 @@ export const WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS: readonly WardrobePublicProduc
     note: "A saturated chartreuse long-sleeve maxi defined by an asymmetric neckline, gathered waist and compact hip knot.",
     story: "A wide diagonal neckline opens above a fitted long-sleeve bodice, with radiating waist gathers resolving into a wearer-left knot and a long close column with a lower side opening.",
     details: ["Wide asymmetric neckline", "Two fitted long sleeves", "Radiating waist gathers with hip knot", "Ankle-length column with lower side opening"],
+    measurements: [],
+  }),
+  migrationSeed({
+    slug: "camel-ribbed-deep-plunge-short-sleeve-mini-dress",
+    sku: "JUW-051",
+    name: "Camel Ribbed Deep-Plunge Short-Sleeve Mini Dress",
+    category: "Dresses",
+    price: 27500,
+    taggedSize: "Size on request",
+    fit: "Measurements confirmed before payment",
+    condition: "Condition confirmed before payment",
+    colour: "Camel tan-brown",
+    availability: "AVAILABLE",
+    drop: "Drop 02",
+    tone: "cocoa",
+    silhouette: "dress",
+    note: "A camel ribbed mini defined by a deep plunge neckline, fitted short sleeves and a close clean silhouette.",
+    story: "Fine vertical ribbing runs continuously through the short sleeves, shaped plunge bodice and fitted mini skirt, with a diagonal under-bust join defining the front.",
+    details: ["Deep plunge V neckline", "Fitted short sleeves", "Diagonal under-bust join", "Fine vertical rib texture"],
     measurements: [],
   }),
 ]);

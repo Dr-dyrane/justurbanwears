@@ -12,7 +12,7 @@ export const DROP_01_COMPATIBILITY_SKUS = Object.freeze([
 export const DROP_02_COMPATIBILITY_SKUS = Object.freeze([
   "JUW-025", "JUW-026", "JUW-027", "JUW-028", "JUW-029", "JUW-030",
   "JUW-031", "JUW-032", "JUW-033", "JUW-034", "JUW-035", "JUW-036",
-  "JUW-037", "JUW-038", "JUW-039", "JUW-040", "JUW-041", "JUW-042", "JUW-043", "JUW-044", "JUW-045", "JUW-046", "JUW-047", "JUW-048", "JUW-049", "JUW-050",
+  "JUW-037", "JUW-038", "JUW-039", "JUW-040", "JUW-041", "JUW-042", "JUW-043", "JUW-044", "JUW-045", "JUW-046", "JUW-047", "JUW-048", "JUW-049", "JUW-050", "JUW-051",
 ] as const);
 
 export const SHOP_COLLECTION_COMPATIBILITY = Object.freeze([

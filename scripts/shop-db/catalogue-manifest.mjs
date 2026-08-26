@@ -33,6 +33,7 @@ const V4_MODEL_SLUGS = new Set([
   "black-asymmetric-sculpted-shoulder-mini-dress",
   "dark-navy-draped-cowl-neck-side-cascade-maxi-dress",
   "neon-chartreuse-asymmetric-ruched-knot-maxi-dress",
+  "camel-ribbed-deep-plunge-short-sleeve-mini-dress",
 ]);
 
 const V3_MODEL_FRONT_SLUGS = new Set([
@@ -122,7 +123,7 @@ function presentation(product) {
  */
 export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
   schemaVersion: 2,
-  revision: "2026-08-26-catalogue-36",
+  revision: "2026-08-26-catalogue-37",
   products: Object.freeze([
     presentation({
       slug: "coral-drift-dress",
@@ -1025,6 +1026,26 @@ export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
       note: "A saturated chartreuse long-sleeve maxi defined by an asymmetric neckline, gathered waist and compact hip knot.",
       story: "A wide diagonal neckline opens above a fitted long-sleeve bodice, with radiating waist gathers resolving into a wearer-left knot and a long close column with a lower side opening.",
       details: ["Wide asymmetric neckline", "Two fitted long sleeves", "Radiating waist gathers with hip knot", "Ankle-length column with lower side opening"],
+      measurements: [],
+      mediaSlots: ["MODEL_FRONT", "MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
+    }),
+    presentation({
+      slug: "camel-ribbed-deep-plunge-short-sleeve-mini-dress",
+      sku: "JUW-051",
+      name: "Camel Ribbed Deep-Plunge Short-Sleeve Mini Dress",
+      category: "Dresses",
+      price: 27500,
+      taggedSize: "Size on request",
+      fit: "Measurements confirmed before payment",
+      condition: "Condition confirmed before payment",
+      colour: "Camel tan-brown",
+      availability: "AVAILABLE",
+      drop: "Drop 02",
+      tone: "cocoa",
+      silhouette: "dress",
+      note: "A camel ribbed mini defined by a deep plunge neckline, fitted short sleeves and a close clean silhouette.",
+      story: "Fine vertical ribbing runs continuously through the short sleeves, shaped plunge bodice and fitted mini skirt, with a diagonal under-bust join defining the front.",
+      details: ["Deep plunge V neckline", "Fitted short sleeves", "Diagonal under-bust join", "Fine vertical rib texture"],
       measurements: [],
       mediaSlots: ["MODEL_FRONT", "MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
     }),

@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "workflowRevision": "2026-08-26.113",
-  "updatedAt": "2026-08-26T19:32:30Z",
+  "workflowRevision": "2026-08-26.126",
+  "updatedAt": "2026-08-26T22:24:00Z",
   "model": "LULU_V4",
-  "activeGarment": "027",
-  "activeView": "PRIVATE_INTAKE_FRONT_ONLY",
-  "status": "GARMENTS_025_AND_026_LIVE_VERIFIED_GARMENT_027_PRIVATE_INTAKE_RECORDED",
+  "activeGarment": "028",
+  "activeView": "PUBLIC_RELEASE_IN_PROGRESS",
+  "status": "GARMENTS_025_AND_026_LIVE_VERIFIED_GARMENT_027_PRIVATE_COMPLETE_GARMENT_028_CATALOGUE_37_INTEGRATED_BLOB_VERIFIED_RELEASE_IN_PROGRESS",
   "identityReview": {
     "candidateId": "lulu.face.v4.front.candidate.v1",
     "acceptedAssetId": "lulu.face.v4.front.lock.v1",
@@ -1850,16 +1850,69 @@
       "releaseGate":"LIVE_VERIFIED"
     },
     "027": {
-      "status":"PRIVATE_INTAKE_RECORDED_FRONT_ONLY_NO_GENERATION_OR_RELEASE_AUTHORITY",
+      "status":"VIEWS_01_07_FACE_BODY_PRE_ROOM_USER_ACCEPTED_LOCKED_SHOP_MEDIA_EXPORTED_BLOB_VERIFIED_CATALOGUE_37_INTEGRATED_RELEASE_IN_PROGRESS",
       "name":"Scarlet Long-Sleeve Layered-Cutout Ruched Mini Dress",
       "sourceManifest":"storage/garments/drop-02/027/source/manifest.json",
-      "sourceManifestSha256":"4e799e8d84fb089f560e9d62055eba165456e5aefd6c3270cdce8789a288f9b0",
-      "classification":"DIRECT_CAPTURE_FRONT_ONLY_SINGLE_UNIQUE_SOURCE",
+      "sourceManifestSha256":"5017f3777ea08ab0bbab80e7cd9f8675a3b587c549e9ddcbea4b557c8d3a4064",
+      "authorityManifest":"storage/garments/drop-02/027/authority/manifest.json",
+      "authorityManifestSha256":"9c22f45fc43c4e146211c7330c0e86b7f895b17735164a92b6f7976725566719",
+      "classification":"DIRECT_CAPTURE_FRONT_PLUS_VERIFIED_EXACT_COMMERCIAL_MATCH_REAR",
       "reservedViews":["01","02","03","04","05","06","07"],
-      "views":{},
+      "views":{
+        "01":{"role":"GARMENT_FRONT","operationId":"g027-v01-r002","path":"storage/garments/drop-02/027/locked/01-garment-front.png","sha256":"21e86a73c8990274d6b740aa415d6785147976a931484476d58b0783a4123466","bytes":1888560,"dimensions":"1122x1402","status":"INTEGRATION_OWNER_ACCEPTED_LOCKED"},
+        "02":{"role":"GARMENT_BACK","operationId":"g027-v02-r002","path":"storage/garments/drop-02/027/locked/02-garment-back.png","sha256":"9e67b601fe72a91707f48ac4e94c3012c525c7e80cacef72c49b32353e00dcc0","bytes":1741447,"dimensions":"1122x1402","status":"INTEGRATION_OWNER_ACCEPTED_LOCKED_VERIFIED_COMMERCIAL_MATCH_REAR_SUPPORTED_PRESENTATION","mayServeAsDirectPrivateCapture":false},
+        "03":{"role":"MANNEQUIN_FRONT","operationId":"g027-v03-r002","path":"storage/garments/drop-02/027/locked/03-mannequin-front.png","sha256":"1f9faf3b426fb1f4927dcf4874422fffc5127556b197db1019d5948e8fb5da56","bytes":1851614,"dimensions":"1122x1402","status":"INTEGRATION_OWNER_ACCEPTED_LOCKED_SOURCE_SAFE_NEUTRAL","mayServeAsLuluAuthority":false},
+        "04":{"role":"FABRIC_DETAIL","operationId":"g027-v04-r001","path":"storage/garments/drop-02/027/locked/04-fabric-detail.png","sha256":"1c2d4f3a44e105d4d5ee81234912c4ca1717d94f00cc87bee7a8c3629d897228","bytes":1889821,"dimensions":"1122x1402","status":"INTEGRATION_OWNER_ACCEPTED_LOCKED_MODEL_COMPLETED_PRESENTATION_ONLY","mayServeAsFibreEvidence":false},
+        "05":{"role":"MODEL_FRONT","operationId":"g027-v05-r001","path":"storage/garments/drop-02/027/locked/05-on-lulu-front.png","sha256":"3ed4b53b7d0da8054671254e90b023d5cf88f27322bac4c95dad7260d78821ed","bytes":2100174,"dimensions":"1122x1402","status":"INTEGRATION_OWNER_ACCEPTED_LOCKED_FRONT_MASTER"},
+        "06":{"role":"MODEL_LEFT_PROFILE","operationId":"g027-v06-r001","path":"storage/garments/drop-02/027/locked/06-on-lulu-left-profile.png","sha256":"25e53ce93d5a6cf93b85992c09ee78e43052a2187fab8c646ff4d31ae0982117","bytes":2067945,"dimensions":"1122x1402","status":"INTEGRATION_OWNER_ACCEPTED_LOCKED_INDEPENDENT_SIBLING","parentOperationId":"g027-v05-r001","mayParent07":false},
+        "07":{"role":"MODEL_REAR_THREE_QUARTER","operationId":"g027-v07-r001","path":"storage/garments/drop-02/027/locked/07-on-lulu-right-rear-three-quarter.png","sha256":"72b38dd03a2dfadbbc05c48e37aaaf40ae45b5bae9232ded52c6087dfe0be757","bytes":2118267,"dimensions":"1122x1402","status":"INTEGRATION_OWNER_ACCEPTED_LOCKED_INDEPENDENT_SIBLING_VERIFIED_REAR_SUPPORTED","parentOperationId":"g027-v05-r001","mayParent06":false,"mayServeAsDirectPrivateCapture":false}
+      },
+      "reviewCandidates":{},
+      "lockedManifest":"storage/garments/drop-02/027/locked/manifest.json",
+      "lockedManifestSha256":"f7160e8b0cd5156f622cdcec53dfba63cd07de92375b562012827441cb6f1ed8",
+      "operationRecords":["storage/garments/drop-02/027/operations/g027-v01-r001.json","storage/garments/drop-02/027/operations/g027-v01-r002.json","storage/garments/drop-02/027/operations/g027-v02-r001.json","storage/garments/drop-02/027/operations/g027-v02-r002.json","storage/garments/drop-02/027/operations/g027-v03-r001.json","storage/garments/drop-02/027/operations/g027-v03-r002.json","storage/garments/drop-02/027/operations/g027-v04-r001.json","storage/garments/drop-02/027/operations/g027-face-r001.json","storage/garments/drop-02/027/operations/g027-body-r001.json","storage/garments/drop-02/027/operations/g027-body-r002.json","storage/garments/drop-02/027/operations/g027-body-r003.json","storage/garments/drop-02/027/operations/g027-pre-room-r001.json","storage/garments/drop-02/027/operations/g027-v05-r001.json","storage/garments/drop-02/027/operations/g027-v06-r001.json","storage/garments/drop-02/027/operations/g027-v07-r001.json"],
+      "fashionNovaStylingCheck":{"operationId":"g027-fashion-nova-styling-check-v001","officialUrl":"https://www.fashionnova.com/products/cynthia-cut-out-long-sleeve-mini-dress-fncolorname-red","pageTitle":"Cynthia Cut Out Long Sleeve Mini Dress - Red | Fashion Nova","accessedOn":"2026-08-26","matchedGarmentFacts":["red","long sleeve","cutout","ruched","mini","back zipper"],"decision":"REFINE","selectedStylingDirection":"slim metallic-gold strappy heels, small gold hoops and one slender gold bracelet; no necklace or bag","authority":"ADVISORY_STYLING_ONLY","passedAsImageReference":false},
+      "stageLocks":{"FACE":{"path":"storage/garments/drop-02/027/stage-locks/face-identity.png","sha256":"067253585433134c14359ddb850e5f08dbf711855a1781fb664878e0d2153e0e","bytes":1815415,"dimensions":"1122x1402","status":"INTEGRATION_OWNER_ACCEPTED_STAGE_LOCK","mayParent":"BODY_ONLY"},"BODY":{"path":"storage/garments/drop-02/027/stage-locks/body-identity.png","sha256":"75af11bbf2822b5817be4e6b582885b0e129f16841fdb083a7e1024525dc03f7","bytes":1640527,"dimensions":"1122x1402","status":"INTEGRATION_OWNER_ACCEPTED_STAGE_LOCK_G004_FULL_FRAME_STRUCTURE","mayParent":"PRE_ROOM_ONLY"},"PRE_ROOM":{"path":"storage/garments/drop-02/027/stage-locks/pre-room-subject.png","sha256":"37c4ce7616b0dfe0a4b997e97004ca4dec0f7e157440b08eeffeeadf67fd07b6","bytes":1676891,"dimensions":"1122x1402","status":"INTEGRATION_OWNER_ACCEPTED_STAGE_LOCK_G004_FULL_HEIGHT_STRUCTURE","mayParent":"ROOM_05_ONLY"}},
+      "auditCandidates":{"02-r001":{"operationId":"g027-v02-r001","sha256":"cef93a1815b008304f040b94a8d89543c41c3fed3a663dea0dfce049ca70dc47","status":"RETRACTED_NON_PARENTABLE_SMOOTH_BACK_CONFLICTS_WITH_VERIFIED_REAR"},"03-r001":{"operationId":"g027-v03-r001","sha256":"81650db99b09ba7575aa61bb2fa4ec4020e4c1669686e62a3193637d223fa70b","status":"INTERRUPTED_PRESERVED_AUDIT_ONLY_PENDING_RESTART"},"BODY-r001":{"operationId":"g027-body-r001","sha256":"dbc55755486b42ed68540aecb4e337418e7087e4b658681faedcb9c997301603","status":"USER_REJECTED_UNDER_STATURE_AUDIT_ONLY_NON_PARENTABLE"},"BODY-r002":{"operationId":"g027-body-r002","sha256":"08f4f0de99f66798960efad3134e5aba0af1b25c70ec065213c126d13a61a21d","status":"USER_REJECTED_STILL_UNDER_STATURE_AUDIT_ONLY_NON_PARENTABLE"}},
+      "imageGenerationReservation":"RELEASED_AFTER_G027_VIEW_07_ACCEPTED_LOCK",
       "source":{"path":"storage/garments/drop-02/027/source/01-source-front-primary.jpeg","sha256":"18ad2c9e3430e684673546cdf3273602873fe06ef176434bf956b7aa284d564d","bytes":50468,"dimensions":"360x480"},
       "duplicateInputs":{"count":2,"uniqueByteCount":1},
-      "releaseGate":"PRIVATE_INTAKE_ONLY_NO_GENERATION_EXPORT_OR_PUBLICATION_AUTHORITY"
+      "releaseGate":"PRIVATE_GENERATION_ONLY_NO_EXPORT_OR_PUBLICATION_AUTHORITY"
+    },
+    "028": {
+      "status":"VIEWS_01_07_FACE_BODY_PRE_ROOM_ACCEPTED_LOCKED_PRIVATE_NO_RELEASE_AUTHORITY",
+      "name":"Camel Ribbed Deep-Plunge Short-Sleeve Mini Dress",
+      "sourceManifest":"storage/garments/drop-02/028/source/manifest.json",
+      "sourceManifestSha256":"f16ff900c11e2c5283335b8f7fd1c2ba91229d4890857a144e7bd3e57407768c",
+      "authorityManifest":"storage/garments/drop-02/028/authority/manifest.json",
+      "authorityManifestSha256":"1be3db8314493ea6188d8651d5e5196ba5b73e864234014c90db901b6f644924",
+      "classification":"DIRECT_CAPTURE_FRONT_FAMILY_ONLY_NO_REAR",
+      "reservedViews":["01","02","03","04","05","06","07"],
+      "views":{
+        "01":{"role":"GARMENT_FRONT","operationId":"g028-v01-r001","path":"storage/garments/drop-02/028/locked/01-garment-front.png","sha256":"2387c678261c50ac76967da74e3b0504b17f7044a929a67db66c48119b8c4200","bytes":1891167,"dimensions":"1122x1402","status":"INTEGRATION_OWNER_ACCEPTED_LOCKED"},
+        "02":{"role":"GARMENT_BACK","operationId":"g028-v02-r001","path":"storage/garments/drop-02/028/locked/02-garment-back.png","sha256":"95e2ffc01afa89af71aad3c1a1638f476979fd481a49d264ce50a63c493a7b62","bytes":1809504,"dimensions":"1122x1402","status":"INTEGRATION_OWNER_ACCEPTED_LOCKED_INFERRED_REAR_PRESENTATION_ONLY","mayServeAsDirectRearEvidence":false},
+        "03":{"role":"MANNEQUIN_FRONT","operationId":"g028-v03-r001","path":"storage/garments/drop-02/028/locked/03-mannequin-front.png","sha256":"d720fb6a61ff0078b5fff275a97ba33a32f201b21183c027ca03b59bb9c46a73","bytes":1831322,"dimensions":"1024x1536","status":"INTEGRATION_OWNER_ACCEPTED_LOCKED_SOURCE_SAFE_NEUTRAL","mayServeAsLuluAuthority":false},
+        "04":{"role":"FABRIC_DETAIL","operationId":"g028-v04-r001","path":"storage/garments/drop-02/028/locked/04-fabric-detail.png","sha256":"c36b160f564733e20dab3bd570757459f736c8e229caa10ffb1e4ff143d90bb3","bytes":2504827,"dimensions":"1122x1402","status":"INTEGRATION_OWNER_ACCEPTED_LOCKED_MODEL_COMPLETED_PRESENTATION_ONLY","mayServeAsFibreEvidence":false},
+        "05":{"role":"MODEL_FRONT","operationId":"g028-v05-r001","path":"storage/garments/drop-02/028/locked/05-on-lulu-front.png","sha256":"95639285873737c64ca1c75a980df7cf32409d750a7b132e200bfe6468498ff7","bytes":2088413,"dimensions":"1122x1402","status":"INTEGRATION_OWNER_ACCEPTED_LOCKED_FRONT_MASTER","mayParentIndependent06And07":true},
+        "06":{"role":"MODEL_LEFT_PROFILE","operationId":"g028-v06-r001","path":"storage/garments/drop-02/028/locked/06-on-lulu-left-profile.png","sha256":"26090519b35bc933e7181b0c46924e43ac105ea911204abe6d6f7cac0b6ab095","bytes":2019045,"dimensions":"1122x1402","status":"INTEGRATION_OWNER_ACCEPTED_LOCKED_INDEPENDENT_SIBLING","parentOperationId":"g028-v05-r001","mayParent07":false},
+        "07":{"role":"MODEL_REAR_THREE_QUARTER","operationId":"g028-v07-r001","path":"storage/garments/drop-02/028/locked/07-on-lulu-right-rear-three-quarter.png","sha256":"7e89f5dfbaa6fcb2856752678801153f01b4b8c3fe624cdc70a5325c6f7dd0a9","bytes":2025325,"dimensions":"1122x1402","status":"INTEGRATION_OWNER_ACCEPTED_LOCKED_INDEPENDENT_SIBLING_INFERRED_REAR_PRESENTATION_ONLY","parentOperationId":"g028-v05-r001","mayParent06":false,"mayServeAsDirectRearEvidence":false}
+      },
+      "lockedManifest":"storage/garments/drop-02/028/locked/manifest.json",
+      "lockedManifestSha256":"45946d7a02b4d0e86f5bb68f53b916c9ef16a657285bff0e55375ba3f4c0b0b5",
+      "operationRecords":["storage/garments/drop-02/028/operations/g028-v01-r001.json","storage/garments/drop-02/028/operations/g028-v02-r001.json","storage/garments/drop-02/028/operations/g028-v03-r001.json","storage/garments/drop-02/028/operations/g028-v04-r001.json","storage/garments/drop-02/028/operations/g028-face-r001.json","storage/garments/drop-02/028/operations/g028-body-r001.json","storage/garments/drop-02/028/operations/g028-pre-room-r001.json","storage/garments/drop-02/028/operations/g028-pre-room-r002.json","storage/garments/drop-02/028/operations/g028-v05-r001.json","storage/garments/drop-02/028/operations/g028-v06-r001.json","storage/garments/drop-02/028/operations/g028-v07-r001.json"],
+      "fashionNovaStylingCheck":{"operationId":"g028-fashion-nova-styling-check-v001","officialUrl":"https://www.fashionnova.com/products/midnight-ride-plunge-neck-mini-dress?color=beige","pageTitle":"Midnight Ride Plunge Neck Mini Dress - Beige | Fashion Nova","accessedOn":"2026-08-26","matchedGarmentFacts":[],"decision":"NO_CLOSE_MATCH","noCloseMatchReason":"Broad family only; conflicting front hardware and construction provide no G028 authority.","selectedStylingDirection":"slim metallic-gold strappy heels, small gold hoops and one slender gold bracelet; no necklace or bag","authority":"ADVISORY_STYLING_ONLY","passedAsImageReference":false},
+      "stageLocks":{
+        "FACE":{"path":"storage/garments/drop-02/028/stage-locks/face-identity.png","sha256":"067253585433134c14359ddb850e5f08dbf711855a1781fb664878e0d2153e0e","bytes":1815415,"dimensions":"1122x1402","status":"INTEGRATION_OWNER_ACCEPTED_STAGE_LOCK_EXACT_G027_BYTES","mayParent":"BODY_ONLY"},
+        "BODY":{"path":"storage/garments/drop-02/028/stage-locks/body-identity.png","sha256":"75af11bbf2822b5817be4e6b582885b0e129f16841fdb083a7e1024525dc03f7","bytes":1640527,"dimensions":"1122x1402","status":"INTEGRATION_OWNER_ACCEPTED_STAGE_LOCK_G004_FULL_FRAME_STRUCTURE_EXACT_G027_BYTES","mayParent":"PRE_ROOM_ONLY"},
+        "PRE_ROOM":{"path":"storage/garments/drop-02/028/stage-locks/pre-room-subject.png","sha256":"112e54ef5ae8e6d657f20dcbfe77012bdd60f623ddbd04402705870cc1813447","bytes":1715052,"dimensions":"1122x1402","status":"INTEGRATION_OWNER_ACCEPTED_STAGE_LOCK_G004_FULL_HEIGHT_STRUCTURE_SINGLE_CORRECTION","mayParent":"ROOM_05_ONLY"}
+      },
+      "auditCandidates":{"PRE_ROOM-r001":{"operationId":"g028-pre-room-r001","sha256":"b9c6def5305f09c0c64783c15cea8b583ea0ffbb15d6a2074c93e4d631da9517","status":"REJECTED_UNDER_STATURE_AUDIT_ONLY_NON_PARENTABLE_EXCEPT_AS_EXACT_LOCAL_CORRECTION_INPUT"}},
+      "referencePackaging":{"rearOperationBoard":{"path":"storage/garments/drop-02/028/authority/01-body-and-inferred-garment-rear-operation-board.png","sha256":"86b64184361d4b78aaaa77fc9b5f36ba0a27dc4c52c2cc004faf1cd35857f971","status":"PACKAGING_ONLY_ADDS_NO_AUTHORITY"}},
+      "imageGenerationReservation":"RELEASED_AFTER_G028_VIEW_07_ACCEPTED_LOCK",
+      "source":{"count":3,"uniqueByteCount":3,"allFrontFamily":true,"directRearAvailable":false,"verifiedExactCommercialMatchRearAvailable":false},
+      "releaseIdentity":{"sku":"JUW-051","slug":"camel-ribbed-deep-plunge-short-sleeve-mini-dress","simulatedPriceNgn":27500,"pricingComparators":[{"garmentId":"021","priceNgn":27500,"basis":"fitted cutout mini construction"},{"garmentId":"024","priceNgn":27500,"basis":"fitted statement-neckline mini construction"}],"pricingMethod":"closest-live-comparable midpoint mapped to existing live tier"},
+      "shopRelease":{"catalogueRevision":"2026-08-26-catalogue-37","catalogueManifestChecksum":"6f6028ebf009c04cdd141b1870e7a589ed4aca7840b8e3ee69efe95adfa5f93f","cataloguePresentationChecksum":"e1dd963905d07bc223129ef2edccd77388fe580370d67fb5abeddeee92afed36","publicRoot":"public/shop/products/camel-ribbed-deep-plunge-short-sleeve-mini-dress","mediaCount":7,"publicBlobActiveAssetCount":289,"publicBlobLegacyAssetCount":11,"state":"BLOB_VERIFIED_AWAITING_COMMIT_DEPLOYMENT_DATABASE_AND_LIVE_VERIFICATION"},
+      "releaseGate":"USER_AUTHORIZED_PUBLICATION_IN_PROGRESS"
     }
   },
   "qualityAudit": {
@@ -1900,10 +1953,10 @@
     }
   },
   "nextOperation": {
-    "operationId": "g027-private-intake-awaiting-generation-authority",
-    "garmentId": "027",
-    "view": "PRIVATE_INTAKE_FRONT_ONLY",
-    "status": "READY_AWAITING_SEPARATE_GENERATION_AUTHORITY"
+    "operationId": null,
+    "garmentId": "028",
+    "view": null,
+    "status": "CATALOGUE_37_INTEGRATED_AWAIT_COMMIT_DEPLOYMENT_DATABASE_AND_LIVE_VERIFICATION"
   },
-  "requiredNext": "Preserve G025 and G026 as live-verified catalogue-36 releases. Preserve G027 as a private front-only intake until separate generation authority."
+  "requiredNext": "Complete G028 catalogue-37 release from the exact integrated assets: focused tests and build, commit and push main, source-built production deployment, guarded canonical justurbanwears-db apply, availability/product/gallery/console verification and production smoke. Preserve G027 as private-only. G028 rear presentations remain conservative inference only."
 }

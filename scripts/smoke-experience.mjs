@@ -41,6 +41,7 @@ const routes = [
         "black-asymmetric-sculpted-shoulder-mini-dress",
         "dark-navy-draped-cowl-neck-side-cascade-maxi-dress",
         "neon-chartreuse-asymmetric-ruched-knot-maxi-dress",
+        "camel-ribbed-deep-plunge-short-sleeve-mini-dress",
       ].every((slug) => html.includes(`/shop/products/${slug}`))],
       ["customer-facing AI copy leaked", (html) => hasNoCustomerAiCopy(html)],
     ],
@@ -366,6 +367,22 @@ const routes = [
     assertions: [
       ["garment focus marker missing", (html) => html.includes('data-experience-focus="garment"')],
       ["product transition anchor missing", (html) => html.includes('data-product-transition="neon-chartreuse-asymmetric-ruched-knot-maxi-dress"')],
+      ["focus priority exceeded", (html) => highPriorityImages(html) <= 1],
+      ["seven-view dossier incomplete", (html) => [
+        "01-garment-front.webp", "02-garment-back.webp", "03-mannequin-front.webp",
+        "04-model-front.webp", "05-model-rear-three-quarter.webp",
+        "06-fabric-detail.webp", "07-model-left-profile.webp",
+      ].every((file) => html.includes(file))],
+      ["customer-facing AI copy leaked", (html) => hasNoCustomerAiCopy(html)],
+    ],
+  },
+  {
+    name: "Garment 028 focus",
+    pathname: "/shop/products/camel-ribbed-deep-plunge-short-sleeve-mini-dress",
+    maxBytes: 900 * KiB,
+    assertions: [
+      ["garment focus marker missing", (html) => html.includes('data-experience-focus="garment"')],
+      ["product transition anchor missing", (html) => html.includes('data-product-transition="camel-ribbed-deep-plunge-short-sleeve-mini-dress"')],
       ["focus priority exceeded", (html) => highPriorityImages(html) <= 1],
       ["seven-view dossier incomplete", (html) => [
         "01-garment-front.webp", "02-garment-back.webp", "03-mannequin-front.webp",
