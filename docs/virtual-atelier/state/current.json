@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "workflowRevision": "2026-08-26.91",
-  "updatedAt": "2026-08-26T14:15:05Z",
+  "workflowRevision": "2026-08-26.92",
+  "updatedAt": "2026-08-26T14:45:54Z",
   "model": "LULU_V4",
-  "activeGarment": "024",
-  "activeView": "COMPLETE",
-  "status": "GARMENT_024_01_07_PRIVATE_LOCKED_LIVE_VERIFIED_CATALOGUE_35_LULU_V4_PRIVATE_AUTHORITY_READY",
+  "activeGarment": "025",
+  "activeView": "INTAKE",
+  "status": "GARMENT_025_PRIVATE_SOURCE_INTAKE_HASHED_01_07_RESERVED_NO_GENERATION_STARTED",
   "identityReview": {
     "candidateId": "lulu.face.v4.front.candidate.v1",
     "acceptedAssetId": "lulu.face.v4.front.lock.v1",
@@ -1812,5 +1812,5 @@
     "completedAt": "2026-08-26T14:15:05Z"
   },
   "nextOperation": null,
-  "requiredNext": "Use MODUS-OPERANDI.md and the G001-G024 audit guardrails for the next garment. Before claiming a fully portable restore, recover exact G005/01 bytes, correct the two G022 asset-index hashes, revise the private authority manifest schema, and implement/qualify the ADR 0046 provider-neutral replay layer."
+  "requiredNext": "Prepare and validate independent G025 views 01-04 from the hashed private source manifest. Do not begin Lulu model views until 01-04 are reviewed and accepted. Continue using MODUS-OPERANDI.md and the G001-G024 drift guardrails."
 }
