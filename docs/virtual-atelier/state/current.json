@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "workflowRevision": "2026-08-26.107",
-  "updatedAt": "2026-08-26T16:09:00Z",
+  "workflowRevision": "2026-08-26.111",
+  "updatedAt": "2026-08-26T18:46:54Z",
   "model": "LULU_V4",
-  "activeGarment": "025",
-  "activeView": "01-07",
-  "status": "GARMENT_025_01_07_USER_AUTHORIZED_PRIVATE_LOCK_RECORDED_BYTES_UNAVAILABLE_AWAITING_RELEASE_METADATA",
+  "activeGarment": "027",
+  "activeView": "PRIVATE_INTAKE_FRONT_ONLY",
+  "status": "GARMENTS_025_AND_026_PUBLIC_RELEASE_AUTHORIZED_IN_PROGRESS_GARMENT_027_PRIVATE_INTAKE_RECORDED",
   "identityReview": {
     "candidateId": "lulu.face.v4.front.candidate.v1",
     "acceptedAssetId": "lulu.face.v4.front.lock.v1",
@@ -16,16 +16,18 @@
   },
   "canonicalFlow": {
     "order": [
-      "GARMENT_01_04",
-      "REAL_FACE_AUTHORITY",
-      "BODY_CANON",
+      "GARMENT_PHOTO_INTAKE",
+      "GARMENT_TRUTH_AND_ACCEPTED_01_04",
+      "FACE_IDENTITY_PASS",
+      "BODY_IDENTITY_PASS_PRESERVING_FACE",
+      "PRE_ROOM_SUBJECT_RENDER_AND_LOCK",
       "FASHION_NOVA_ACCESSORY_STYLING_CHECK",
-      "LOCKED_ROOM",
+      "ATTACH_LOCKED_ROOM_WITHOUT_REGENERATING_SUBJECT",
       "05_FRONT_MASTER",
       "06_OR_07_SIBLING_VIEW"
     ],
-    "diagram": "GARMENT 01-04 -> FACE -> BODY -> FASHION NOVA STYLING CHECK + ROOM -> 05 -> (06 || 07)",
-      "rule": "The garment set is established before model work. FACE draws from the complete real-photo authority stack plus the generated V4 translation control. A deliberately declared holistic subject synthesis may re-render the full frame; if the user approves that entire frame, it is rebased as the garment-specific subject lock. A user-approved SUBJECT_CORE_LOCK may explicitly defer footwear to the styling/ROOM/05 operation while identity, body, garment, hair, pose and framing remain immutable. Before every 005, a current official Fashion Nova page must be checked and recorded privately as advisory footwear/accessory direction only; it never controls garment provenance, identity, body or room. Hair stays unchanged unless explicitly restyled. 006 and 007 inherit accepted 005 styling, are independent siblings from accepted 005 and never parent one another. Every 006 operation must include the dedicated side canon and every 007 operation the dedicated back canon, together with direct real-Lulu angle evidence. Ordering and truth-preserving packaging remain adaptive. Every 005/006/007 requires a pre-invocation render-quality contract and separate post-generation realism/texture review. The final gate is realistic full-body Lulu likeness, body balance, attitude, presence, pose, garment truth, natural skin/material texture and believable scene integration."
+    "diagram": "GARMENT PHOTOS -> GARMENT/01-04 -> FACE PASS -> BODY PASS -> PRE-ROOM SUBJECT LOCK -> STYLING -> ROOM ATTACH -> 05 -> (06 || 07)",
+      "rule": "The garment set is established and 01-04 accepted before model work. View 03 is garment-presentation-only and may never control Lulu identity or body; if generic mannequin geometry harms transfer, an anonymous Lulu-proportioned garment-transfer form must be controlled by the body canon. FACE is a dedicated operation drawing from the complete real-photo authority stack plus approved translation guidance. BODY is a separate operation that must use the accepted FACE candidate as identity parent and preserve it. A complete neutral-staged pre-room subject render must then be accepted and rebased as the garment-specific SUBJECT_LOCK or bounded SUBJECT_CORE_LOCK. ROOM/05 attaches the exact locked atelier to that subject without regenerating identity, body, garment, hair or pose; only an explicitly deferred accessory may change. Before every 005, a current official Fashion Nova page must be checked and recorded privately as advisory footwear/accessory direction only; it never controls garment provenance, identity, body or room. Hair stays unchanged unless explicitly restyled. 006 and 007 inherit accepted 005 styling, are independent siblings from accepted 005 and never parent one another. Every 006 operation must include the dedicated side canon and every 007 operation the dedicated back canon, together with direct real-Lulu angle evidence. Every 005/006/007 requires a pre-invocation render-quality contract and separate post-generation realism/texture review. The final gate is realistic full-body Lulu likeness, body balance, attitude, presence, pose, garment truth, natural skin/material texture and believable scene integration."
   },
   "globalLocks": {
     "garment": {
@@ -69,7 +71,12 @@
         "lulu.body.canon.v4.side",
         "lulu.body.canon.v4.back"
       ],
-      "rule": "Real Lulu photos remain body evidence truth. The V4 source and three-view plate are user-approved modeled silhouette and garment-transfer controls, not verified measurements. Use the direct angle contacts, including the gym rear-profile evidence where relevant, and the combined plate to preserve Lulu's believable bust-waist-hip balance, rear projection, waist-to-upper-thigh continuity, thighs, legs and heel-aware stature as one complete body rather than optimizing isolated measurements. Do not compress or exaggerate the evidence-supported rear silhouette."
+      "secondaryTranslation": [
+        "garment.004.view.05.accepted",
+        "garment.004.view.06.accepted",
+        "garment.004.view.07.accepted"
+      ],
+      "rule": "Real Lulu photos remain body evidence truth. The V4 source and three-view plate are user-approved modeled silhouette and garment-transfer controls, not verified measurements. Use the direct angle contacts, including the gym rear-profile evidence where relevant, and the combined plate to preserve Lulu's believable bust-waist-hip balance, rear projection, waist-to-upper-thigh continuity, thighs, legs and heel-aware stature as one complete body rather than optimizing isolated measurements. Accepted G004/05-07 are secondary JUW body-translation continuity only: use 05 for full-height stature and front waist-to-hip balance, 06 for soft-left-profile waist and side/rear projection, and 07 for right-rear-three-quarter waist-to-hip continuity and rear projection. They never control face or another garment and must be normalized for fabric stiffness, heels, pose, camera and perspective. Do not compress or exaggerate the evidence-supported rear silhouette."
     },
     "renderQuality": {
       "status": "LOCKED_MANDATORY_PREFLIGHT_AND_SEPARATE_REVIEW",
@@ -95,15 +102,13 @@
       "rule": "Before every 05, inspect and record one current official Fashion Nova product or styling page for the same or closest proven garment family. Fashion Nova is advisory footwear/accessory styling evidence only and is never passed as a generation image reference by default. It has no authority over garment provenance or construction, Lulu identity/body, hair, pose, room, brand, camera or lighting. If no close match exists, record NO_CLOSE_MATCH and keep garment-faithful JUW styling. The user-accepted G009/05 whole-frame review closed its REPLACE decision; those accepted boots persist through its independent 06 and 07 siblings."
     },
     "atelier": {
-      "status": "LOCKED_SOURCE_AUTHORITY_ENGINE_FINAL_SCENES_BLOCKED_AUTHORITY_CANVAS",
+      "status": "LOCKED",
       "primary": [
         "juw.atelier.empty-plate.v1"
       ],
       "filename": "juw_room.png",
       "sha256": "0b591197d2de1b490c4305ac0aed4d1089564562c7b1005411a8340168aabb72",
-      "dimensions": "1024x1280",
-      "requiredEngineCanvas": "1024x1536",
-      "rule": "The room is the permanent JUW setting and its accepted pixels are immutable. The current 1024x1280 plate cannot be resized, cropped, padded, extended, regenerated or granted texture/lighting variance for the 1024x1536 Studio final profile. ROOM_FINAL_05 and sibling final stages remain BLOCKED_AUTHORITY_CANVAS before claim or spend until a separately approved exact 1024x1536 room is hashed, privately read back and selected by a new authority revision."
+      "rule": "The room is the permanent JUW setting. Preserve its icon, layout, vase, rail, garments, ottoman, rug and warm-neutral identity. Minor generative texture or lighting variance is acceptable when total realism improves; redesign or structural drift is not."
     },
     "brand": {
       "status": "LOCKED",
@@ -1786,44 +1791,73 @@
       "rejectedCandidatesMayParent":false
     },
     "025": {
-      "status": "01_07_USER_AUTHORIZED_ACCEPTED_PRIVATE_LOCKED_AWAITING_RELEASE_METADATA",
+      "status": "01_07_USER_REACCEPTED_AS_IS_PRIVATE_LOCKED_PUBLIC_RELEASE_AUTHORIZED",
       "name": "Dark Navy Draped Cowl-Neck Side-Cascade Maxi Dress",
       "sourceManifest": "storage/garments/drop-02/025/source/manifest.json",
       "sourceManifestSha256": "5d59a5da7bfa62e0904ee0664b64850692d0516d8785712161432c02aefad445",
       "classification": "DIRECT_CAPTURE_FRONT_FAMILY_ONLY",
-      "reservedViews": ["01", "02", "03", "04", "05", "06", "07"],
+      "reservedViews": ["01","02","03","04","05","06","07"],
       "views": {
-        "01": {"role":"GARMENT_FRONT","path":"storage/garments/drop-02/025/locked/01-garment-front.png","sha256":"34d59ad5ef4e4ea6371533514723a0f745a555b49f4c31424283d4b358f4b8a4","dimensions":"968x1625","status":"ACCEPTED_LOCKED"},
-        "02": {"role":"GARMENT_BACK","path":"storage/garments/drop-02/025/locked/02-garment-back.png","sha256":"9206423e0506d5e50b07c2d27eeac540544a3aa9af12e5502ea854fe545cfc06","dimensions":"1086x1448","status":"ACCEPTED_LOCKED_INFERRED_REAR_PRESENTATION"},
-        "03": {"role":"MANNEQUIN_FRONT","path":"storage/garments/drop-02/025/locked/03-mannequin-front.png","sha256":"422fde9bb76c121faecba38f4dd06a1574fa5b265ba09a134624f626a49beef1","dimensions":"1024x1536","status":"ACCEPTED_LOCKED_SOURCE_SAFE_NEUTRAL"},
-        "04": {"role":"FABRIC_DETAIL","path":"storage/garments/drop-02/025/locked/04-fabric-detail.png","sha256":"3c8c31ed7d36bd49dcda960bdbb98948749f02aad63cdb96a35bef065143b025","dimensions":"1023x1537","status":"ACCEPTED_LOCKED_MODEL_COMPLETED_PRESENTATION_ONLY"},
-        "05": {"role":"MODEL_FRONT","path":"storage/garments/drop-02/025/locked/05-on-lulu-front.png","sha256":"27c210203b804a1a14190a7f8463f2b6fd714135568dfab7a1a1f404af961568","dimensions":"1024x1536","status":"ACCEPTED_LOCKED_FRONT_MASTER"},
-        "06": {"role":"MODEL_LEFT_PROFILE","path":"storage/garments/drop-02/025/locked/06-on-lulu-left-profile.png","sha256":"ba82782012f09c3f536826422c58dc0f5be46517feb8f67f689b2c37b4b6ec98","dimensions":"1024x1536","status":"ACCEPTED_LOCKED_INDEPENDENT_SIBLING"},
-        "07": {"role":"MODEL_REAR_THREE_QUARTER","path":"storage/garments/drop-02/025/locked/07-on-lulu-right-rear-three-quarter.png","sha256":"c523d1c61c43208db739c7645e6847402daaf73ff3d040251c8f0374199fb721","dimensions":"1024x1536","status":"ACCEPTED_LOCKED_INDEPENDENT_SIBLING_INFERRED_GARMENT_REAR_PRESENTATION"}
+        "01":{"role":"GARMENT_FRONT","path":"storage/garments/drop-02/025/locked/01-garment-front.png","sha256":"34d59ad5ef4e4ea6371533514723a0f745a555b49f4c31424283d4b358f4b8a4","dimensions":"968x1625","status":"ACCEPTED_LOCKED"},
+        "02":{"role":"GARMENT_BACK","path":"storage/garments/drop-02/025/locked/02-garment-back.png","sha256":"9206423e0506d5e50b07c2d27eeac540544a3aa9af12e5502ea854fe545cfc06","dimensions":"1086x1448","status":"ACCEPTED_LOCKED_INFERRED_REAR_PRESENTATION"},
+        "03":{"role":"MANNEQUIN_FRONT","path":"storage/garments/drop-02/025/locked/03-mannequin-front.png","sha256":"422fde9bb76c121faecba38f4dd06a1574fa5b265ba09a134624f626a49beef1","dimensions":"1024x1536","status":"ACCEPTED_LOCKED_SOURCE_SAFE_NEUTRAL"},
+        "04":{"role":"FABRIC_DETAIL","path":"storage/garments/drop-02/025/locked/04-fabric-detail.png","sha256":"3c8c31ed7d36bd49dcda960bdbb98948749f02aad63cdb96a35bef065143b025","dimensions":"1023x1537","status":"ACCEPTED_LOCKED_MODEL_COMPLETED_PRESENTATION_ONLY"},
+        "05":{"role":"MODEL_FRONT","path":"storage/garments/drop-02/025/locked/05-on-lulu-front.png","sha256":"27c210203b804a1a14190a7f8463f2b6fd714135568dfab7a1a1f404af961568","dimensions":"1024x1536","status":"USER_REACCEPTED_AS_IS_LOCKED_PUBLIC_DERIVATIVE_AUTHORIZED"},
+        "06":{"role":"MODEL_LEFT_PROFILE","path":"storage/garments/drop-02/025/locked/06-on-lulu-left-profile.png","sha256":"ba82782012f09c3f536826422c58dc0f5be46517feb8f67f689b2c37b4b6ec98","dimensions":"1024x1536","status":"USER_REACCEPTED_AS_IS_LOCKED_PUBLIC_DERIVATIVE_AUTHORIZED"},
+        "07":{"role":"MODEL_REAR_THREE_QUARTER","path":"storage/garments/drop-02/025/locked/07-on-lulu-right-rear-three-quarter.png","sha256":"c523d1c61c43208db739c7645e6847402daaf73ff3d040251c8f0374199fb721","dimensions":"1024x1536","status":"USER_REACCEPTED_AS_IS_LOCKED_PUBLIC_DERIVATIVE_AUTHORIZED_INFERRED_GARMENT_REAR_PRESENTATION"}
       },
-      "lockedManifestSha256": "28a036e78d04837660ce465672aa6faf03476a5acd0501de1cbedda9f1013637",
-      "operationRecords": ["storage/garments/drop-02/025/operations/g025-v01-r001.json","storage/garments/drop-02/025/operations/g025-v02-r001.json","storage/garments/drop-02/025/operations/g025-v03-r001.json","storage/garments/drop-02/025/operations/g025-v04-r001.json","storage/garments/drop-02/025/operations/g025-v04-r002.json","storage/garments/drop-02/025/operations/g025-v05-r001.json","storage/garments/drop-02/025/operations/g025-v05-r002.json","storage/garments/drop-02/025/operations/g025-v06-r001.json","storage/garments/drop-02/025/operations/g025-v07-r001.json"],
-      "consentAndPermission": {"realGarmentReferencesRemainPrivate":true,"realIdentityAndBodyReferencesRemainPrivate":true,"publicDerivativesApproved":true},
+      "lockedManifestSha256": "7a6a9a0bab33d14828bc275afe5736ab46bd6ad445060d5a9b357d9f14c7a6fb",
+      "postLockReview": {"status":"SUPERSEDED_BY_EXPLICIT_USER_REACCEPTANCE_AS_IS","note":"The prior identity-drift review remains immutable audit history. On 2026-08-26 the user explicitly instructed publication of G025 'like that', reaccepting the exact 05-07 bytes as-is for public derivatives without regeneration."},
+      "operationRecords": ["storage/garments/drop-02/025/operations/g025-v01-r001.json","storage/garments/drop-02/025/operations/g025-v02-r001.json","storage/garments/drop-02/025/operations/g025-v03-r001.json","storage/garments/drop-02/025/operations/g025-v04-r001.json","storage/garments/drop-02/025/operations/g025-v04-r002.json","storage/garments/drop-02/025/operations/g025-v05-r001.json","storage/garments/drop-02/025/operations/g025-v05-r002.json","storage/garments/drop-02/025/operations/g025-v06-r001.json","storage/garments/drop-02/025/operations/g025-v07-r001.json","storage/garments/drop-02/025/operations/g025-v05-face-r003.json","storage/garments/drop-02/025/operations/g025-shop-media-export-v001.json"],
+      "consentAndPermission": {"realGarmentReferencesRemainPrivate":true,"realIdentityAndBodyReferencesRemainPrivate":true,"publicDerivativesApproved":true,"approvedPrivateViews":["01","02","03","04","05","06","07"]},
       "rejectedCandidatesMayParent": false,
-      "localAvailability": {
-        "status": "UNVERIFIED_MISSING_FROM_SHARED_CHECKOUT_AND_CONFIGURED_PRIVATE_BLOB_STORE",
-        "checkedAt": "2026-08-26T16:09:00Z",
-        "expectedPrivateRoot": "storage/garments/drop-02/025",
-        "sharedCheckoutFileCount": 0,
-        "configuredPrivateBlobObjectsScanned": 71,
-        "matchingPathOrHashCount": 0,
-        "requiredSourceManifestCount": 1,
-        "availableSourceManifestCount": 0,
-        "requiredOperationDecisionRecordCount": 9,
-        "availableOperationDecisionRecordCount": 0,
-        "requiredLockedViewCount": 7,
-        "approvalReceiptVerifiedFromPrivateRecords": false,
-        "mayParent": false,
-        "mayExport": false,
-        "mayPublish": false,
-        "releaseCondition": "Rehydrate and read back the exact source manifest, locked manifest, all seven accepted view bytes and all nine operation/decision records; verify every recorded SHA-256 and the exact approval evidence before any parenting, export or publication."
+      "localAvailability":{"status":"VERIFIED_IN_AUTHORITATIVE_RELEASE_CHECKOUT","checkedAt":"2026-08-26T18:46:54Z","sourceManifestVerified":true,"lockedManifestVerified":true,"lockedViewCount":7,"operationDecisionRecordsVerified":true,"publicDerivativeExportVerified":true},
+      "releaseIdentity":{"sku":"JUW-049","slug":"dark-navy-draped-cowl-neck-side-cascade-maxi-dress","simulatedPriceNgn":32500},
+      "releaseGate": "AUTHORIZED_IN_PROGRESS"
+    },
+    "026": {
+      "status": "01_07_AND_IDENTITY_STAGES_USER_ACCEPTED_PRIVATE_LOCKED_PUBLIC_RELEASE_AUTHORIZED",
+      "name": "Neon Chartreuse Asymmetric Ruched-Knot Maxi Dress",
+      "sourceManifest": "storage/garments/drop-02/026/source/manifest.json",
+      "sourceManifestSha256": "407a32268d8ab1f1b65b9625f96cabb29c54e8f1942b3f87ef430bd28bf8719d",
+      "authorityManifest": "storage/garments/drop-02/026/authority/manifest.json",
+      "authorityManifestSha256": "c1136d17b87131e86d09191a160cd3c2281710065bdd3a4c4015aa4ea0bdf3fa",
+      "classification": "DIRECT_CAPTURE_FRONT_FAMILY_ONLY",
+      "reservedViews": ["01","02","03","04","05","06","07"],
+      "views": {
+        "01":{"role":"GARMENT_FRONT","path":"storage/garments/drop-02/026/locked/01-garment-front.png","sha256":"7ea123d2c1a0b5d8bbe9cc77fc5d345b9652b352afc48cec4814ad00da7dc2ce","dimensions":"1023x1537","status":"INTEGRATION_OWNER_ACCEPTED_LOCKED"},
+        "02":{"role":"GARMENT_BACK","path":"storage/garments/drop-02/026/locked/02-garment-back.png","sha256":"a7ac4265acae31a85557ed7973bfb0266441fd304f5142ecb74689b5ead3868a","dimensions":"1086x1448","status":"INTEGRATION_OWNER_ACCEPTED_LOCKED_INFERRED_PRESENTATION_ONLY"},
+        "03":{"role":"MANNEQUIN_FRONT","path":"storage/garments/drop-02/026/locked/03-mannequin-front.png","sha256":"bc2529ffaab5b837e051ca1206c0e740c69770704c13f9da5dd89e1a7e2f08af","dimensions":"1024x1536","status":"INTEGRATION_OWNER_ACCEPTED_LOCKED_WARM_COCOA_GARMENT_PRESENTATION_ONLY","mayServeAsLuluAuthority":false},
+        "04":{"role":"FABRIC_DETAIL","path":"storage/garments/drop-02/026/locked/04-fabric-detail.png","sha256":"9a7b404f6e3b880899313231ac2b4b707972aaa9375bdcd81df09c6107229dbe","dimensions":"1024x1536","status":"INTEGRATION_OWNER_ACCEPTED_LOCKED_MODEL_COMPLETED_PRESENTATION_ONLY"},
+        "05":{"role":"MODEL_FRONT","path":"storage/garments/drop-02/026/locked/05-on-lulu-front.png","sha256":"b9d0db39915f45090dabec1cfaf1de09ac269c25f32821c4793bbaba6c9f051d","dimensions":"1122x1402","status":"INTEGRATION_OWNER_ACCEPTED_LOCKED_FRONT_MASTER","mayParentIndependent06And07":true},
+        "06":{"role":"MODEL_LEFT_PROFILE","path":"storage/garments/drop-02/026/locked/06-on-lulu-left-profile.png","sha256":"043ce6669992b4c3003abc9d096869220e37ab6a131e64e653402f8b4445f16b","bytes":2159790,"dimensions":"1122x1402","status":"USER_ACCEPTED_LOCKED_EXACT_SUPPLIED_BYTES_INDEPENDENT_SIBLING","parentAssetId":"garment.026.view.05.accepted","mayParent07":false,"priorAttempts":[{"operationId":"g026-v06-r001","sha256":"9dee20788b3337212694ef27478e529d33fb9c4d03c67d2a88fb63b20c368b53","status":"REJECTED_VIEW_GARMENT_BODY_DRIFT_NON_PARENTABLE"},{"operationId":"g026-v06-r002","sha256":"6917d1cbdc5a63d609c2326202df85a41efbc4442faef96642df19d6497a92a8","status":"REJECTED_NECKLINE_DRIFT_NON_PARENTABLE"}]},
+        "07":{"role":"MODEL_REAR_THREE_QUARTER","path":"storage/garments/drop-02/026/locked/07-on-lulu-right-rear-three-quarter.png","sha256":"e0396eb589317a552326a4e4854b8871b0a2613e60ddf6665c71cf4619e6cafb","bytes":2188460,"dimensions":"1122x1402","status":"USER_ACCEPTED_LOCKED_EXACT_SUPPLIED_BYTES_INDEPENDENT_SIBLING_INFERRED_GARMENT_REAR_PRESENTATION","parentAssetId":"garment.026.view.05.accepted","mayParent06":false,"mayServeAsDirectBackEvidence":false,"supersededGeneratedR002Sha256":"b55982c5fbdaff4bd9331147a4558d14d870dd732b213b123905fa7817d0cf8c"}
       },
-      "releaseGate": "PRIVATE_SOURCE_AND_LOCKED_MANIFESTS_01_07_BYTES_AND_NINE_OPERATION_DECISION_RECORDS_MUST_BE_REHYDRATED_READ_BACK_AND_VERIFIED_BEFORE_PARENTING_EXPORT_OR_PUBLICATION"
+      "stageLocks": {
+        "FACE":{"path":"storage/garments/drop-02/026/stage-locks/face-identity.png","sha256":"90d60e176c43741b5ffcfcff4e8885d18a1d07bae87b6adb3a8ced6eb5614873","dimensions":"1122x1402","status":"INTEGRATION_OWNER_ACCEPTED_STAGE_LOCK","mayParent":"BODY_ONLY"},
+        "BODY":{"path":"storage/garments/drop-02/026/stage-locks/body-identity.png","sha256":"dd8da545b4856287788eae4d5333ba6e0a8a0905a80fc4f1234e1777e70c7e23","dimensions":"1122x1402","status":"INTEGRATION_OWNER_ACCEPTED_STAGE_LOCK","mayParent":"PRE_ROOM_ONLY"},
+        "PRE_ROOM":{"path":"storage/garments/drop-02/026/stage-locks/pre-room-subject.png","sha256":"ba227042227e600aedc7e0f6288c2b133e762db3a1871743baf1923d69f59f54","dimensions":"1122x1402","status":"INTEGRATION_OWNER_ACCEPTED_STAGE_LOCK","mayParent":"ROOM_05_ONLY"}
+      },
+      "lockedManifestSha256": "1445c55ca9fae27f404df1ef6ed609865eededd588e804ab4782e9253ba1184a",
+      "operationRecords": ["storage/garments/drop-02/026/operations/g026-v01-r001.json","storage/garments/drop-02/026/operations/g026-v02-r001.json","storage/garments/drop-02/026/operations/g026-v03-r001.json","storage/garments/drop-02/026/operations/g026-v03-r002.json","storage/garments/drop-02/026/operations/g026-v04-r001.json","storage/garments/drop-02/026/operations/g026-face-r001.json","storage/garments/drop-02/026/operations/g026-body-r001.json","storage/garments/drop-02/026/operations/g026-pre-room-r001.json","storage/garments/drop-02/026/operations/g026-v05-r001.json","storage/garments/drop-02/026/operations/g026-v05-r002.json","storage/garments/drop-02/026/operations/g026-v06-r001.json","storage/garments/drop-02/026/operations/g026-v06-r002.json","storage/garments/drop-02/026/operations/g026-v07-r001.json","storage/garments/drop-02/026/operations/g026-v07-r002.json","storage/garments/drop-02/026/operations/g026-shop-media-export-v001.json"],
+      "consentAndPermission":{"realGarmentReferencesRemainPrivate":true,"realIdentityAndBodyReferencesRemainPrivate":true,"publicDerivativesApproved":true},
+      "rejectedCandidatesMayParent":false,
+      "imageGenerationReservation":"RELEASED_NO_NEW_GENERATION_FOR_USER_SUPPLIED_LOCKS",
+      "userDecision":{"statement":"use these","recordedAt":"2026-08-26T18:33:50Z","approvedViews":["06","07"]},
+      "releaseIdentity":{"sku":"JUW-050","slug":"neon-chartreuse-asymmetric-ruched-knot-maxi-dress","simulatedPriceNgn":32500},
+      "releaseGate":"AUTHORIZED_IN_PROGRESS"
+    },
+    "027": {
+      "status":"PRIVATE_INTAKE_RECORDED_FRONT_ONLY_NO_GENERATION_OR_RELEASE_AUTHORITY",
+      "name":"Scarlet Long-Sleeve Layered-Cutout Ruched Mini Dress",
+      "sourceManifest":"storage/garments/drop-02/027/source/manifest.json",
+      "sourceManifestSha256":"4e799e8d84fb089f560e9d62055eba165456e5aefd6c3270cdce8789a288f9b0",
+      "classification":"DIRECT_CAPTURE_FRONT_ONLY_SINGLE_UNIQUE_SOURCE",
+      "reservedViews":["01","02","03","04","05","06","07"],
+      "views":{},
+      "source":{"path":"storage/garments/drop-02/027/source/01-source-front-primary.jpeg","sha256":"18ad2c9e3430e684673546cdf3273602873fe06ef176434bf956b7aa284d564d","bytes":50468,"dimensions":"360x480"},
+      "duplicateInputs":{"count":2,"uniqueByteCount":1},
+      "releaseGate":"PRIVATE_INTAKE_ONLY_NO_GENERATION_EXPORT_OR_PUBLICATION_AUTHORITY"
     }
   },
   "qualityAudit": {
@@ -1864,10 +1898,10 @@
     }
   },
   "nextOperation": {
-    "operationId": "g025-shop-media-export-v001",
-    "garmentId": "025",
-    "view": "01-07",
-    "status": "BLOCKED_PENDING_PRIVATE_MANIFEST_BYTE_OPERATION_DECISION_REHYDRATION_VERIFICATION_AND_AUTHORITATIVE_RELEASE_METADATA"
+    "operationId": "g025-g026-shop-release-catalogue-36",
+    "garmentId": "025_026",
+    "view": "SHOP_RELEASE",
+    "status": "AUTHORIZED_IN_PROGRESS"
   },
-  "requiredNext": "Historical user acceptance for G025 views 01-07 is recorded in committed production state, brief and asset-index records, but this shared checkout contains none of the referenced storage/garments/drop-02/025 private evidence and the configured private Blob store contains no matching pathname or hash. Before any further parenting, export or publication, rehydrate and read back the exact source manifest, locked manifest, all seven accepted bytes and all nine operation/decision records; verify every recorded SHA-256 and the exact private approval evidence, then resolve the authoritative SKU, product name, slug and price without invention. Separately, Studio-engine production readiness remains blocked until an exact approved 1024x1536 room is privately verified under a new authority revision, exact G005/01 bytes are recovered, the two G022 asset-index hashes are corrected without changing source pixels, intake and independent 01-04 are unified behind the durable facade, migrations are applied in a controlled environment, and the versioned G005/G009/G017/G023/G024 semantic qualification suite passes before deployment."
+  "requiredNext": "Complete the authorized G025 and G026 catalogue-36 release, database mutation, deployment and production verification. Preserve G027 as a private front-only intake until separate generation authority."
 }

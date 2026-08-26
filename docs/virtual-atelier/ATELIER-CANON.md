@@ -159,7 +159,7 @@ Review the following independently:
 - semantic role correctness for 01–07; and
 - independent 05 → 06/07 lineage.
 
-View 03 must be an anonymous neutral mannequin presentation. Source walls, curtains, tile, room light or distinctive mannequin geometry have no authority. View 04 must be a genuinely close visible-detail presentation, not a second full-front hero and never fibre proof. Views 02 and 07 remain quarantined as inferred garment-rear presentation whenever direct rear evidence is absent.
+View 03 must be an anonymous neutral mannequin presentation on the established warm cocoa catalogue backdrop, never a white or pale seamless sweep. Source walls, curtains, tile, room light or distinctive source-mannequin geometry have no authority. View 03 is garment-presentation-only and must not enter Lulu FACE, BODY, pre-room SUBJECT or final 05 authority stacks. If a generic mannequin silhouette degrades garment transfer, create a separate anonymous garment-transfer form calibrated to Lulu's accepted body geometry; the body canon controls the form, never the reverse. View 04 must be a genuinely close visible-detail presentation, not a second full-front hero and never fibre proof. Views 02 and 07 remain quarantined as inferred garment-rear presentation whenever direct rear evidence is absent.
 
 Do not correct profile or rear drift by optimizing one isolated body region. Preserve the evidence-supported relationship from torso through waist, pelvis, hip, rear contour and upper thigh as one balanced adult silhouette.
 

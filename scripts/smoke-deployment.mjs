@@ -98,6 +98,8 @@ await htmlCheck("shop shell", "/shop", [
     "fuchsia-strapless-ruched-cascade-ruffle-mini-dress",
     "scarlet-asymmetric-cascade-ruched-mini-dress",
     "black-asymmetric-sculpted-shoulder-mini-dress",
+    "dark-navy-draped-cowl-neck-side-cascade-maxi-dress",
+    "neon-chartreuse-asymmetric-ruched-knot-maxi-dress",
   ].every((slug) => body.includes(`/shop/products/${slug}`))],
   ["Drop 01 leaked into discovery", (body) => !visibleMarkup(body).includes("coral-drift-dress")],
   ["shop navigation missing", (body) => body.includes("Search the wardrobe")],
@@ -283,6 +285,26 @@ await htmlCheck("Garment 023 product passport", "/shop/products/scarlet-asymmetr
 ]);
 await htmlCheck("Garment 024 product passport", "/shop/products/black-asymmetric-sculpted-shoulder-mini-dress", [
   ["product name missing", (body) => body.includes("Black Asymmetric Sculpted-Shoulder Mini Dress")],
+  ["seven-view dossier incomplete", (body) => [
+    "01-garment-front.webp", "02-garment-back.webp", "03-mannequin-front.webp",
+    "04-model-front.webp", "05-model-rear-three-quarter.webp",
+    "06-fabric-detail.webp", "07-model-left-profile.webp",
+  ].every((file) => body.includes(file))],
+  ["customer-facing AI copy leaked", hasNoCustomerAiCopy],
+  ["Product JSON-LD missing", (body) => body.includes("application/ld+json") && body.includes('"@type":"Product"')],
+]);
+await htmlCheck("Garment 025 product passport", "/shop/products/dark-navy-draped-cowl-neck-side-cascade-maxi-dress", [
+  ["product name missing", (body) => body.includes("Dark Navy Draped Cowl-Neck Side-Cascade Maxi Dress")],
+  ["seven-view dossier incomplete", (body) => [
+    "01-garment-front.webp", "02-garment-back.webp", "03-mannequin-front.webp",
+    "04-model-front.webp", "05-model-rear-three-quarter.webp",
+    "06-fabric-detail.webp", "07-model-left-profile.webp",
+  ].every((file) => body.includes(file))],
+  ["customer-facing AI copy leaked", hasNoCustomerAiCopy],
+  ["Product JSON-LD missing", (body) => body.includes("application/ld+json") && body.includes('"@type":"Product"')],
+]);
+await htmlCheck("Garment 026 product passport", "/shop/products/neon-chartreuse-asymmetric-ruched-knot-maxi-dress", [
+  ["product name missing", (body) => body.includes("Neon Chartreuse Asymmetric Ruched-Knot Maxi Dress")],
   ["seven-view dossier incomplete", (body) => [
     "01-garment-front.webp", "02-garment-back.webp", "03-mannequin-front.webp",
     "04-model-front.webp", "05-model-rear-three-quarter.webp",

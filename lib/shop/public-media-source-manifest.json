@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "catalogueRevision": "2026-08-26-catalogue-35",
-  "catalogueChecksum": "9ba2922a4fb56051ad722b73c93991e6bed88ba46b2f81bc4c06e7492b8adbc1",
-  "cataloguePresentationChecksum": "4fdb12d9c6c89b393249647717dd531cee1510a6516d9605bb27bd8305f19b5b",
+  "catalogueRevision": "2026-08-26-catalogue-36",
+  "catalogueChecksum": "5bd76e6cfb84f839afff10b077d70cc31b1dfca998014798932f74c832c4bb5f",
+  "cataloguePresentationChecksum": "97e6d5add123a406e697a6002dd2a99574c4c084a0b102869691c9fcd32ede1c",
   "assets": [
     {
       "sourcePath": "/shop/model/lulu-v2-approved.png",
@@ -1337,6 +1337,69 @@
       "height": 1402
     },
     {
+      "sourcePath": "/shop/products/dark-navy-draped-cowl-neck-side-cascade-maxi-dress/01-garment-front.webp",
+      "pathname": "shop/catalogue/cc03f165655959f78e96f1d3589b7da0c5ca674a5183598cfdb16f1deb2b51b0/products/dark-navy-draped-cowl-neck-side-cascade-maxi-dress/01-garment-front.webp",
+      "sha256": "cc03f165655959f78e96f1d3589b7da0c5ca674a5183598cfdb16f1deb2b51b0",
+      "size": 25876,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/dark-navy-draped-cowl-neck-side-cascade-maxi-dress/02-garment-back.webp",
+      "pathname": "shop/catalogue/1d7e4f95a9ad28d7b1af08bb5d4194ceac5eab8d23428bf4e81fd539372eab2c/products/dark-navy-draped-cowl-neck-side-cascade-maxi-dress/02-garment-back.webp",
+      "sha256": "1d7e4f95a9ad28d7b1af08bb5d4194ceac5eab8d23428bf4e81fd539372eab2c",
+      "size": 18908,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/dark-navy-draped-cowl-neck-side-cascade-maxi-dress/03-mannequin-front.webp",
+      "pathname": "shop/catalogue/d22a0d3b770500ab6622e2fd08c4187a32a0a2e694a4295b60cd6bcd1bb14ac6/products/dark-navy-draped-cowl-neck-side-cascade-maxi-dress/03-mannequin-front.webp",
+      "sha256": "d22a0d3b770500ab6622e2fd08c4187a32a0a2e694a4295b60cd6bcd1bb14ac6",
+      "size": 31628,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/dark-navy-draped-cowl-neck-side-cascade-maxi-dress/04-model-front.webp",
+      "pathname": "shop/catalogue/9c5fedb6005964dbdce1f9b517eb8abd8c9d8ebf119f241c8bfb4b2b101da69a/products/dark-navy-draped-cowl-neck-side-cascade-maxi-dress/04-model-front.webp",
+      "sha256": "9c5fedb6005964dbdce1f9b517eb8abd8c9d8ebf119f241c8bfb4b2b101da69a",
+      "size": 174036,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/dark-navy-draped-cowl-neck-side-cascade-maxi-dress/05-model-rear-three-quarter.webp",
+      "pathname": "shop/catalogue/051bf4c65c1f8bce8b189544274ef6412afa7c3e50774e2bd065e57d29ae7149/products/dark-navy-draped-cowl-neck-side-cascade-maxi-dress/05-model-rear-three-quarter.webp",
+      "sha256": "051bf4c65c1f8bce8b189544274ef6412afa7c3e50774e2bd065e57d29ae7149",
+      "size": 160360,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/dark-navy-draped-cowl-neck-side-cascade-maxi-dress/06-fabric-detail.webp",
+      "pathname": "shop/catalogue/4f22bf7639769c9784c41e61d35aff2609a8eddc130cbd378fa9857b556a7051/products/dark-navy-draped-cowl-neck-side-cascade-maxi-dress/06-fabric-detail.webp",
+      "sha256": "4f22bf7639769c9784c41e61d35aff2609a8eddc130cbd378fa9857b556a7051",
+      "size": 45466,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/dark-navy-draped-cowl-neck-side-cascade-maxi-dress/07-model-left-profile.webp",
+      "pathname": "shop/catalogue/27f0e18695f2e6cb6c308565ec4969bef0c0873fca0acbd4e46bab52bf4b810f/products/dark-navy-draped-cowl-neck-side-cascade-maxi-dress/07-model-left-profile.webp",
+      "sha256": "27f0e18695f2e6cb6c308565ec4969bef0c0873fca0acbd4e46bab52bf4b810f",
+      "size": 179862,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
       "sourcePath": "/shop/products/fuchsia-strapless-ruched-cascade-ruffle-mini-dress/01-garment-front.webp",
       "pathname": "shop/catalogue/f3ffaf929d4e1ee572a7e8bd027699f5fe40584c6212b044ede6e819a7db5884/products/fuchsia-strapless-ruched-cascade-ruffle-mini-dress/01-garment-front.webp",
       "sha256": "f3ffaf929d4e1ee572a7e8bd027699f5fe40584c6212b044ede6e819a7db5884",
@@ -1866,6 +1929,69 @@
       "contentType": "image/webp",
       "width": 1122,
       "height": 1402
+    },
+    {
+      "sourcePath": "/shop/products/neon-chartreuse-asymmetric-ruched-knot-maxi-dress/01-garment-front.webp",
+      "pathname": "shop/catalogue/5d890716c774fb8d6cdae5d5d17830de16603990eb964ef9ba73af9c1cf3f746/products/neon-chartreuse-asymmetric-ruched-knot-maxi-dress/01-garment-front.webp",
+      "sha256": "5d890716c774fb8d6cdae5d5d17830de16603990eb964ef9ba73af9c1cf3f746",
+      "size": 54346,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/neon-chartreuse-asymmetric-ruched-knot-maxi-dress/02-garment-back.webp",
+      "pathname": "shop/catalogue/c4a0c86fe1a1d733dd29f595a28c12f4221d9e9e91693ab273dfb31255d0fe89/products/neon-chartreuse-asymmetric-ruched-knot-maxi-dress/02-garment-back.webp",
+      "sha256": "c4a0c86fe1a1d733dd29f595a28c12f4221d9e9e91693ab273dfb31255d0fe89",
+      "size": 36578,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/neon-chartreuse-asymmetric-ruched-knot-maxi-dress/03-mannequin-front.webp",
+      "pathname": "shop/catalogue/75f62fc72302e244dfd702238296bd25b7657383a85b44be652adb7584963bd7/products/neon-chartreuse-asymmetric-ruched-knot-maxi-dress/03-mannequin-front.webp",
+      "sha256": "75f62fc72302e244dfd702238296bd25b7657383a85b44be652adb7584963bd7",
+      "size": 65104,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/neon-chartreuse-asymmetric-ruched-knot-maxi-dress/04-model-front.webp",
+      "pathname": "shop/catalogue/0faa26314163222b25c7d4faaef5724666d4ebde86216159ed1707815028d634/products/neon-chartreuse-asymmetric-ruched-knot-maxi-dress/04-model-front.webp",
+      "sha256": "0faa26314163222b25c7d4faaef5724666d4ebde86216159ed1707815028d634",
+      "size": 193674,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/neon-chartreuse-asymmetric-ruched-knot-maxi-dress/05-model-rear-three-quarter.webp",
+      "pathname": "shop/catalogue/69f07d29ed9a3c3c40afd4ee2cc41755f5170a1b67aca7e1660b38c7c4a68484/products/neon-chartreuse-asymmetric-ruched-knot-maxi-dress/05-model-rear-three-quarter.webp",
+      "sha256": "69f07d29ed9a3c3c40afd4ee2cc41755f5170a1b67aca7e1660b38c7c4a68484",
+      "size": 184020,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/neon-chartreuse-asymmetric-ruched-knot-maxi-dress/06-fabric-detail.webp",
+      "pathname": "shop/catalogue/049f3dc4ae578c6b0fe4c7a912b1a6d167718039abad9481787566a21cff02a5/products/neon-chartreuse-asymmetric-ruched-knot-maxi-dress/06-fabric-detail.webp",
+      "sha256": "049f3dc4ae578c6b0fe4c7a912b1a6d167718039abad9481787566a21cff02a5",
+      "size": 105316,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/neon-chartreuse-asymmetric-ruched-knot-maxi-dress/07-model-left-profile.webp",
+      "pathname": "shop/catalogue/b96fb08196041046babc3f863c2601afbe7ad6c6997f4b32cbcb83b738eebede/products/neon-chartreuse-asymmetric-ruched-knot-maxi-dress/07-model-left-profile.webp",
+      "sha256": "b96fb08196041046babc3f863c2601afbe7ad6c6997f4b32cbcb83b738eebede",
+      "size": 173224,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
     },
     {
       "sourcePath": "/shop/products/orchid-beaded-column-gown/01-garment-front.webp",

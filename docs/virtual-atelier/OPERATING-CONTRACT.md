@@ -7,11 +7,13 @@ This is the normative contract for JUW model-reference generation. When another 
 Every garment follows this exact order:
 
 ```text
-GARMENT INTAKE
-→ REAL FACE AUTHORITY
-→ BODY CANON
+GARMENT PHOTO INTAKE
+→ GARMENT TRUTH + ACCEPTED 01–04
+→ FACE IDENTITY PASS
+→ BODY IDENTITY PASS WHILE PRESERVING FACE
+→ COMPLETE PRE-ROOM SUBJECT RENDER + SUBJECT LOCK
 → FASHION NOVA ACCESSORY STYLING CHECK
-→ LOCKED ROOM
+→ ATTACH LOCKED ROOM WITHOUT REGENERATING THE SUBJECT
 → 05 FRONT MASTER
 → 06 OR 07 AS INDEPENDENT SIBLING VIEWS
 ```
@@ -23,10 +25,14 @@ The garment ID is the first input to the main flow. It resolves the garment cons
 `06` and `07` are sibling branches from the accepted `05`:
 
 ```text
-                    ┌→ 06
-GARMENT→FACE→BODY→ROOM→05
-                    └→ 07
+GARMENT PHOTOS → GARMENT/01–04 → FACE PASS → BODY PASS → PRE-ROOM SUBJECT LOCK
+                                                              ↓
+                                              STYLING → ROOM ATTACH → 05
+                                                                        ├→ 06
+                                                                        └→ 07
 ```
+
+Face, body, pre-room subject synthesis and room attachment are separate gated operations. A provider call that combines them into one new full-frame `05` has skipped the canonical flow and must be rejected even when the final frame appears plausible.
 
 Neither sibling may parent the other. `06 → 07` and `07 → 06` are forbidden production lineages. An accepted sibling may be inspected later for collection coherence, but it has no generation authority over the other sibling.
 
@@ -120,6 +126,8 @@ Controls torso-to-leg ratio, shoulder and arm volume, bust, waist position, wais
 
 Real Lulu photographs remain body evidence truth. `LULU_V4_BODY_CANON_SOURCE.png` and `LULU_V4_BODY_THREE_VIEW_CANON.png` are user-approved modeled silhouette and garment-transfer controls, not verified measurements or direct photographic identity evidence. The front/side/back crop files are operational slices of the three-view plate, not independent authorities. Printed height or weight on any source card must not enter canon metadata.
 
+The accepted Garment 004 `05–07` set is the approved secondary JUW body-translation reference: `05` for full-height stature and front waist-to-hip balance, `06` for soft-left-profile waist and side/rear projection, and `07` for right-rear-three-quarter waist-to-hip continuity and rear projection. It never outranks real Lulu body evidence or the V4 body canon, never supplies face identity or another garment's construction, and must be normalized for Garment 004 fabric stiffness, heels, pose, camera and perspective.
+
 Do not convert the canon into prose such as “make her curvier.” Use the approved plate as a balanced geometric control. Do not enlarge one characteristic at the expense of proportional balance.
 
 ### Atelier
@@ -206,7 +214,7 @@ Each candidate receives at most one bounded correction with one changed variable
 
 The pixel-preservation rule above applies to a declared local correction. It does not forbid a deliberately declared **holistic subject synthesis** whose purpose is to resolve face, body, garment fit, hair, pose, hands, footwear, and neutral staging into one new full-frame subject master.
 
-Use this mode only when all of the following are true:
+Use this staged mode for every new garment-specific Lulu subject. It is not optional when the intended output is a new full-frame person. All of the following must be true:
 
 1. the garment front and body target have already been explicitly accepted;
 2. the complete independent real-face authority stack is present;
@@ -214,31 +222,42 @@ Use this mode only when all of the following are true:
 4. the user reviews the entire frame, not only the face; and
 5. the accepted output is rebased as a new garment-specific subject lock.
 
-For a five-image generation boundary, the established two-pass recipe is:
+For a five-image generation boundary, resolve the stages in this order:
 
 ```text
-PASS A
-accepted body target
+FACE IDENTITY PASS
+accepted garment 01 or garment-transfer control
 + F01–F10 real-face contact
 + raw frontal morphology
 + raw open-eye three-quarter geometry
 + approved V4 translation lock
-→ face-translated full-frame candidate
+→ face-resolved neutral subject candidate
 
-PASS B — one bounded correction
-accepted body target
-+ PASS A candidate as translation donor
-+ F01–F10 real-face contact
-+ raw frontal morphology
-+ raw open-eye three-quarter geometry
-→ review candidate
+BODY IDENTITY PASS
+accepted FACE candidate as the identity parent
++ approved whole-body canon
++ direct real-body angle evidence
++ accepted garment 01
+→ body-resolved candidate that preserves the accepted face
+
+PRE-ROOM SUBJECT RENDER
+accepted BODY candidate as the sole person parent
++ accepted garment safeguards
++ resolved styling except any explicitly deferred accessory
+→ complete neutral-staged subject candidate
+
+ROOM / 05
+accepted PRE-ROOM SUBJECT LOCK as the sole person parent
++ exact locked room
++ only an explicitly deferred accessory, if any
+→ final 05 without regenerating face, body, garment or pose
 ```
 
-The contact sheet includes the real polished frontal lock, so its separate crop is represented without displacing an independent authority input. Hair remains unchanged unless the user explicitly unlocks it.
+The contact sheet includes the real polished frontal lock, so its separate crop is represented without displacing an independent authority input. The current recent direct face still may occupy its own auxiliary slot when it materially strengthens an angle, but it never replaces the complete real authority. Hair remains unchanged unless the user explicitly unlocks it.
 
 Human approval of PASS B supersedes automated pixel-difference objections for that holistic operation because the user is accepting the entire newly synthesized frame. The accepted frame then becomes immutable. Downstream ROOM/`05` work must parent that exact subject lock and may not return to PASS A, the earlier body target, or a rejected correction as the visual parent.
 
-The subject lock does not waive the garment-set gate. Complete and approve `01–04` before composing the subject into the locked room. The subject lock may parent only the current garment's ROOM/final-`05` operation; it does not directly parent `06` or `07`. Only the accepted room-composited `05` may parent those sibling views.
+The subject lock does not waive the garment-set gate. Complete and approve `01–04` before FACE begins. View `03` is garment-presentation-only and may never control Lulu identity or body. If mannequin geometry degrades garment transfer, create an anonymous Lulu-proportioned garment-transfer form controlled by the body canon; do not let the source mannequin override the body. The pre-room subject lock may parent only the current garment's ROOM/final-`05` operation; it does not directly parent `06` or `07`. Only the accepted room-composited `05` may parent those sibling views.
 
 If the user explicitly accepts every subject layer except footwear or another named accessory, record a `SUBJECT_CORE_LOCK` rather than claiming whole-frame acceptance. The exact subject pixels may parent ROOM/`05`, but the deferred accessory is excluded from its authority and must be the only person-layer change declared for the styling/ROOM/`05` operation. The final `05` requires whole-frame approval and closes the deferred styling decision. Identity, body, garment, hair, pose, hands, and framing remain immutable throughout that operation.
 
@@ -371,6 +390,20 @@ A model-view operation may not claim `GATE_PASS`, `ACCEPTED` or `LOCKED` until e
 ### Semantic-role drift gate
 
 View 03 fails if it reconstructs the private source environment rather than presenting an anonymous neutral mannequin. View 04 fails if it becomes a duplicate full-front hero rather than a close visible-detail presentation. Views 02 and 07 may not be promoted from inferred presentation to construction evidence without direct rear authority.
+
+### Catalogue release identity and pricing
+
+An explicit user instruction to publish authorizes deterministic Shop release work for the exact accepted private packet named by the user. It does not authorize substituting another garment, fabric, condition, size or construction fact.
+
+Release identity must first reuse the next immutable `JUW-NNN` SKU, the garment brief's evidence-backed product name and a normalized slug. When the seller has not supplied a price and publication is explicitly authorized, do not stop merely to ask for a simulated catalogue price. Resolve it from Git history:
+
+1. identify the two closest live-verified Drop 02 products by category, length, visible construction and visible complexity;
+2. exclude inferred fibre, brand, condition, size and measurements from the comparison;
+3. take the midpoint of their checked-in prices and map it to the nearest price tier already used by a live-verified Drop 02 product, breaking an exact tie downward;
+4. label the result `Simulated price`; and
+5. record both comparator garments, their prices and the calculation in the active garment brief and durable state.
+
+A supplied seller price always overrides this fallback. A later explicit price correction requires a new catalogue revision and must preserve operational inventory truth.
 
 ## 6. State transitions
 

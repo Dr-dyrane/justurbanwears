@@ -32,11 +32,13 @@ The verifier checks the committed private Blob manifest against the explicit app
 Every garment follows this exact authority order:
 
 ```text
-GARMENT INTAKE
-→ REAL FACE AUTHORITY
-→ BODY CANON
+GARMENT PHOTO INTAKE
+→ GARMENT TRUTH + ACCEPTED 01–04
+→ FACE IDENTITY PASS
+→ BODY IDENTITY PASS WHILE PRESERVING FACE
+→ COMPLETE PRE-ROOM SUBJECT RENDER + SUBJECT LOCK
 → FASHION NOVA ACCESSORY STYLING CHECK
-→ LOCKED ROOM
+→ ATTACH LOCKED ROOM WITHOUT REGENERATING THE SUBJECT
 → 05 FRONT MASTER
 → 06 OR 07 AS INDEPENDENT SIBLING VIEWS
 ```
@@ -46,9 +48,11 @@ The garment ID is the first input to the flow. For example, `004` always resolve
 `06` and `07` are sibling outputs. They both branch from the accepted `05`; select face, body, room and garment references adaptively for the strongest realistic view.
 
 ```text
-                    ┌→ 06
-GARMENT→FACE→BODY→ROOM→05
-                    └→ 07
+GARMENT PHOTOS → GARMENT/01–04 → FACE PASS → BODY PASS → PRE-ROOM SUBJECT LOCK
+                                                              ↓
+                                              STYLING → ROOM ATTACH → 05
+                                                                        ├→ 06
+                                                                        └→ 07
 ```
 
 Forbidden lineage:
@@ -64,32 +68,46 @@ An accepted sibling view may be used after generation for collection-level QA, b
 
 1. Read `AGENTS.md`, `OPERATING-CONTRACT.md`, `state/current.json`, the garment brief, and `assets/current.json`.
 2. Run the preflight and confirm every required logical asset is present, hash-valid, and visible to the actual operation.
-3. Resolve the garment intake first.
-4. Resolve face authority from the raw photographs, real-photo front lock and F01–F10 multi-angle contact; use accepted 001/05 and 004/05 only as translation guidance.
-5. Run the face gate. If identity fails, stop before body.
+3. Resolve garment photo intake and garment truth first; complete and accept 01–04 before any Lulu operation.
+4. Resolve face authority from the raw photographs, real-photo front lock, F01–F10 multi-angle contact and any approved recent auxiliary still; use generated precedents only as translation guidance.
+5. Run a dedicated FACE identity operation and gate. If identity fails, stop before body.
 6. Resolve body evidence and the V4 modeled geometry controls.
-7. Run the body gate while preserving the accepted face.
-8. Resolve the locked room and run the room/scale/icon gate without regenerating Lulu.
-9. Create one clean `05 FRONT MASTER` only.
-10. Do not generate `06` or `07` until `05` is accepted.
-11. After `05` passes, either `06` or `07` may be produced next; they do not depend on one another.
-12. Review each candidate against every acceptance gate and record `ACCEPTED` or `REJECTED` before proceeding.
+7. Run a dedicated BODY identity operation using the accepted FACE candidate as identity parent; preserve the accepted face exactly in concept and reject any identity regression.
+8. Create and accept one complete pre-room subject render in neutral staging. This becomes the garment-specific `SUBJECT_LOCK` or explicitly bounded `SUBJECT_CORE_LOCK`.
+9. Resolve the locked room and run a ROOM/scale/icon attachment operation from that exact subject lock without regenerating Lulu.
+10. Create and accept one clean room-composited `05 FRONT MASTER` only.
+11. Do not generate `06` or `07` until final `05` is accepted.
+12. After `05` passes, either `06` or `07` may be produced next; they do not depend on one another.
+13. Review each candidate against every acceptance gate and record `ACCEPTED` or `REJECTED` before proceeding.
 
 ### A1. Holistic subject synthesis
 
-Use this only when the intended output is a new garment-specific full-frame subject master, not a pixel-local edit.
+Use this for every new garment-specific full-frame Lulu subject. Do not collapse FACE, BODY, pre-room subject render and ROOM attachment into one provider call.
 
-1. Lock `01 GARMENT_FRONT` and the body target first.
-2. Declare `HOLISTIC_SUBJECT_SYNTHESIS`.
-3. Run PASS A with the accepted body target, F01–F10 contact, raw frontal face, raw open-eye three-quarter face, and approved V4 translation lock.
-4. If needed, use the single correction for PASS B with the accepted body target, PASS A as the translation donor, F01–F10 contact, raw frontal face, and raw open-eye three-quarter face.
-5. Keep the centre-parted low bun unchanged unless the user explicitly unlocks hair.
-6. Ask the user to judge the complete person and frame: identity, body balance, garment fit, pose, hands, legs, footwear, and styling.
-7. If the user accepts all subject layers, copy the exact bytes into the garment's private `locked/` directory and record the hash as a garment-specific subject lock. If the user accepts everything except one named accessory, record a `SUBJECT_CORE_LOCK`, exclude that accessory from its authority, and defer only that accessory to the next styling/ROOM/`05` operation.
-8. Rebase downstream authority on that exact lock. Do not demand pixel identity with the pre-synthesis body target after the user has approved the new holistic frame.
-9. Complete the garment's `01–04` set before ROOM/final-`05` composition.
-10. ROOM and `05` may change only the explicitly declared environment/accessory layers; the accepted subject lock remains the parent.
-11. The pre-atelier subject lock cannot directly parent `06` or `07`; only an accepted final `05` can.
+1. Lock views `01–04`; keep `03` garment-presentation-only and exclude it from identity/body authority.
+2. Declare a dedicated `FACE_IDENTITY_PASS` using accepted garment truth plus complete real-face authority.
+3. Accept or reject FACE before body begins.
+4. Declare a dedicated `BODY_IDENTITY_PASS` using the accepted FACE candidate as identity parent plus body canon and direct real-body evidence.
+5. Accept or reject BODY while explicitly checking that the FACE lock survived.
+6. Declare `PRE_ROOM_SUBJECT_RENDER` and resolve the complete person, garment fit, hair, pose, hands, footwear and neutral staging.
+7. If needed, use one bounded correction for that stage only; never return to a rejected FACE or BODY candidate.
+8. Keep the centre-parted low bun unchanged unless the user explicitly unlocks hair.
+9. Ask the user to judge the complete person and frame: identity, body balance, garment fit, pose, hands, legs, footwear and styling.
+10. If the user accepts all subject layers, copy the exact bytes into the garment's private `locked/` directory and record the hash as a garment-specific subject lock. If the user accepts everything except one named accessory, record a `SUBJECT_CORE_LOCK`, exclude that accessory from its authority and defer only that accessory to ROOM/`05`.
+11. Rebase downstream authority on that exact lock. ROOM and `05` may change only the environment and any explicitly deferred accessory.
+12. The pre-atelier subject lock cannot directly parent `06` or `07`; only an accepted final `05` can.
+
+View `03` never supplies Lulu identity or body geometry. If its generic mannequin shape causes garment-transfer underperformance, create a separate anonymous garment-transfer form fitted to Lulu's accepted body canon; the form remains a garment utility and never becomes identity or body evidence.
+
+### A2. Garment 004 body-translation reference
+
+Use the accepted Garment 004 model set for secondary body-translation continuity when a provider needs an already-resolved JUW person reference. The product lookup is [Black and Ivory Folded-Neck Column Dress](https://www.justurbanwears.com/shop/products/black-ivory-folded-neck-column-dress); the page identifies the set, but the private locked `004/05–07` bytes are the actual visual references.
+
+- `004/05` controls full-height catalogue stature and the front waist-to-hip balance.
+- `004/06` controls soft-left-profile stature, defined waist and evidence-supported side/rear projection.
+- `004/07` controls right-rear-three-quarter stature, waist-to-hip continuity and evidence-supported rear projection.
+
+This set is generated translation guidance, not direct body truth, garment authority for another garment, or face authority. Real Lulu body evidence and the approved V4 body canon always outrank it. Normalize apparent shape for the column dress's fabric stiffness, heel height, pose, camera and perspective; never copy its dress construction or use its face to resolve identity.
 
 Garment 005 established this pattern with `g005-face-r002`: PASS A supplied a useful face translation, and PASS B was explicitly accepted by the user as the complete Lulu/Garment 005 subject master. Its failed local-edit review remains audit history; the user-approved result is classified separately as a full-frame subject master.
 
@@ -219,6 +237,14 @@ Use semantic roles as the source of truth:
 ```
 
 Historical Shop filenames differ: model front was `04`, model rear three-quarter was `05`, fabric detail was `06`, and model left profile was `07`. Before database sync or public export, map by semantic role rather than copying numeric slots.
+
+### F1. Resolve release identity without repeating old questions
+
+Before export, inspect the latest live-verified garment briefs and the Git commits that introduced their catalogue rows. Reserve the next immutable SKU, use the evidence-backed garment name and normalized slug, and reuse a seller-supplied price when present.
+
+If publication is explicitly authorized but no seller price exists, apply the binding closest-live-comparable rule in `OPERATING-CONTRACT.md`: select the two closest live-verified Drop 02 garments by category, length, visible construction and complexity; midpoint their checked-in prices; map to the nearest existing live price tier with ties downward; and record the comparators and calculation. Never infer a price premium from unverified fibre, brand, size or condition. Do not interrupt the established release solely to ask for a simulated price once this evidence is available.
+
+The garment brief is the durable release-identity record. The work ledger may summarize it but must not contradict the accepted packet, current publication authority or the pricing calculation.
 
 After all seven private views are user-accepted and locked, use the deterministic exporter:
 

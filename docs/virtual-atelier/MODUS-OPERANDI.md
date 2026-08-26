@@ -81,7 +81,7 @@ Always name the semantic role before mapping it to a filename or provider slot.
 | --- | --- | --- |
 | 01 | `GARMENT_FRONT` | Direct visible front construction only |
 | 02 | `GARMENT_BACK` | Direct rear when available; otherwise conservative inferred presentation |
-| 03 | `MANNEQUIN_FRONT` | Anonymous neutral mannequin; source room has no authority |
+| 03 | `MANNEQUIN_FRONT` | Anonymous neutral mannequin on the warm cocoa catalogue backdrop; garment-presentation-only, never Lulu identity/body authority |
 | 04 | `FABRIC_DETAIL` | Close visible construction/material response; never fibre proof |
 | 05 | `MODEL_FRONT` / `FRONT_MASTER` | Accepted Lulu front master in the locked atelier |
 | 06 | `MODEL_LEFT_PROFILE` | Independent sibling from accepted 05 with side canon |
@@ -105,22 +105,24 @@ Generate or isolate each view independently. No candidate may parent another can
 
 - 01 is the working construction authority after acceptance.
 - 02 is quarantined as inferred unless direct rear evidence supports it.
-- 03 must remove the source environment and use an anonymous neutral presentation.
+- 03 must remove the source environment and use an anonymous neutral mannequin on the warm cocoa catalogue backdrop, never a white/pale sweep.
+- 03 must not enter FACE, BODY, pre-room SUBJECT or final 05 authority. If a mannequin shape harms transfer, use a separate anonymous Lulu-proportioned garment-transfer form controlled by the body canon.
 - 04 must be a genuine close visible-detail view, not a duplicate full-front hero.
 
 Review garment construction before model work. Reject invented seams, closures, pockets, motifs, weave, fibre claims or source-room reconstruction.
 
 ### 5.3 Build one garment-specific subject
 
-Use accepted 01, the complete real-face operation board, approved V4 face translation lock, whole-body canon and direct real-body evidence. Declare this as a holistic subject synthesis rather than disguising it as a local face edit.
+The subject chain is mandatory and staged: FACE identity first; BODY identity second while preserving FACE; then one complete pre-room subject render and lock. Do not collapse these stages into one final 05 invocation.
 
 The successful G005 method is the precedent:
 
-1. create a full subject from the complete authorities;
-2. if needed, run one bounded second pass using the first candidate as translation context while retaining all real authorities;
-3. review the whole frame, not only the face;
-4. obtain explicit user approval; and
-5. lock the exact accepted bytes as the garment-specific subject parent.
+1. create and gate FACE from complete real-face authority plus accepted garment truth;
+2. create and gate BODY from the accepted FACE parent plus body canon and direct real-body evidence;
+3. create the complete neutral-staged pre-room subject from the accepted BODY parent;
+4. review the whole frame, not only the face;
+5. obtain explicit user approval; and
+6. lock the exact accepted bytes as the garment-specific subject parent.
 
 Automated pixel-difference rejection does not override an explicit, informed whole-frame user approval. Conversely, apparent likeness does not override construction or authority failure.
 
