@@ -42,6 +42,8 @@ test("every Shop overlay keeps a non-gesture close path and restores document co
 test("contextual Shop sheets close on browser Back", () => {
   assert.match(historyHook, /history\.pushState/);
   assert.match(historyHook, /history\.back/);
+  assert.match(historyHook, /justUrbanDialogStack/);
+  assert.match(historyHook, /history\.forward/);
   assert.match(historyHook, /popstate/);
   assert.match(historyHook, /window\.location\.href/);
   assert.doesNotMatch(historyHook, /pathname|searchParams/);

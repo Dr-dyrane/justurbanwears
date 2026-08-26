@@ -9,9 +9,10 @@ const read = (path: string) => readFileSync(`${root}/${path}`, "utf8");
 const component = read("components/studio/workspace/studio-adaptive-workspace.tsx");
 const css = read("app/studio-adaptive-workspace.css");
 const dossier = read("components/studio/garment-dossier.tsx");
-const dossierLayout = read("app/(studio)/studio/wardrobe/[id]/layout.tsx");
 const focusHelper = read("components/studio/workspace/studio-workspace-focus.ts");
 const layout = read("app/(studio)/layout.tsx");
+const orderDetail = read("components/studio/connected-order-detail.tsx");
+const orderWorkspace = read("components/studio/orders/studio-order-adaptive-workspace.tsx");
 const workbench = read("components/studio/wardrobe-workbench.tsx");
 
 test("adaptive workspace is one persistent, non-modal stage and surface", () => {
@@ -22,6 +23,8 @@ test("adaptive workspace is one persistent, non-modal stage and surface", () => 
   assert.match(component, /aria-expanded=\{expanded\}/);
   assert.match(component, /data-side-surface=\{sideSurface \? "true" : "false"\}/);
   assert.match(component, /hidden=\{sideSurface\}/);
+  assert.match(component, /active = true/);
+  assert.match(component, /data-studio-adaptive-workspace=\{active \? "true" : undefined\}/);
   assert.match(component, /moveFocusFromWorkspaceGrip\(surfaceContentRef\.current, gripButtonRef\.current\)/);
   assert.match(focusHelper, /\[data-studio-workspace-primary='true'\]:not\(:disabled\)/);
   assert.match(component, /ResizeObserver/);
@@ -75,6 +78,17 @@ test("Piece route opts in once while the embedded Piece sheet stays compatible",
   assert.match(workbench, /data-studio-workspace-primary="true"/);
 });
 
+test("Order detail keeps one versioned controller inside one adaptive workspace", () => {
+  assert.match(orderDetail, /<StudioOrderAdaptiveWorkspace order=\{order\}>/);
+  assert.equal(orderDetail.match(/action\(primaryTransition\)/g)?.length, 1);
+  assert.match(orderDetail, /key=\{`\$\{transitionKey\(transition\)\}:\$\{order\.version\}`\}/);
+  assert.match(orderDetail, /data-studio-workspace-primary=\{isNextAction \? "true" : undefined\}/);
+  assert.match(orderWorkspace, /<StudioAdaptiveWorkspace/);
+  assert.match(orderWorkspace, /stage=\{stage\}/);
+  assert.match(orderWorkspace, /orderStateSummary\(order\)/);
+  assert.doesNotMatch(orderWorkspace, /window|matchMedia|innerWidth|fetch\(/);
+});
+
 test("responsive posture is capacity-derived and keeps a measured safe canvas", () => {
   assert.match(css, /container-name: studio-adaptive-workspace/);
   assert.match(css, /grid-template-areas: "stage"/);
@@ -86,15 +100,19 @@ test("responsive posture is capacity-derived and keeps a measured safe canvas", 
   assert.match(css, /touch-action: pan-y pinch-zoom/);
   assert.match(css, /@media \(max-height: 599px\) and \(orientation: landscape\)[\s\S]*?\.juw-piece-v2-summary \{[\s\S]*?display: contents/);
   assert.match(css, /@media \(max-height: 599px\) and \(orientation: landscape\)[\s\S]*?\[data-detent="full"\][\s\S]*?height: calc\(100% - 8px\)/);
+  assert.match(css, /@media \(max-height: 680px\) and \(orientation: portrait\)[\s\S]*?--studio-workspace-surface-fallback: 248px/);
+  assert.match(css, /@media \(max-height: 680px\) and \(orientation: portrait\)[\s\S]*?\.juw-order-v2-heading > p[\s\S]*?display: none/);
+  assert.match(css, /html:has\(\[data-studio-adaptive-workspace="true"\]\)[\s\S]*?overflow: hidden/);
   assert.match(css, /\.juw-piece-v2-summary > p \{[\s\S]*?order: 3/);
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
   assert.match(css, /@media \(forced-colors: active\)/);
+  assert.match(css, /\.juw-order-v2-overview/);
+  assert.match(css, /\.juw-order-v2-content \.studio-connected-detail-grid,[\s\S]*?grid-template-columns: 1fr/);
+  assert.match(css, /\.juw-order-v2-content \.studio-connected-order-summary \{[\s\S]*?position: static/);
 });
 
-test("the isolated workspace stylesheet is emitted only at the dossier route boundary", () => {
+test("the shared workspace stylesheet is emitted once at the Studio boundary", () => {
   assert.match(layout, /<style data-studio-atelier>/);
-  assert.doesNotMatch(layout, /studioAdaptiveWorkspaceCss|data-studio-adaptive-workspace-css/);
-  assert.match(dossierLayout, /studioAdaptiveWorkspaceCss from "\.\.\/\.\.\/\.\.\/\.\.\/studio-adaptive-workspace\.css\?raw"/);
-  assert.match(dossierLayout, /<style data-studio-adaptive-workspace-css>/);
-  assert.doesNotMatch(layout, /<style data-studio-adaptive-workspace>/);
+  assert.match(layout, /studioAdaptiveWorkspaceCss from "\.\.\/studio-adaptive-workspace\.css\?raw"/);
+  assert.equal(layout.match(/<style data-studio-adaptive-workspace-css>/g)?.length, 1);
 });

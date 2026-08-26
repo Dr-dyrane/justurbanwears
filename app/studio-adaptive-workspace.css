@@ -3,6 +3,10 @@
    the persistent canvas + contextual surface composition; workflow state and
    guarded task dialogs remain in their existing components. */
 
+html:has([data-studio-adaptive-workspace="true"]) {
+  overflow: hidden;
+}
+
 body:has([data-studio-adaptive-workspace="true"]) {
   overflow: hidden;
   padding-bottom: 0;
@@ -23,7 +27,7 @@ body .studio-shell.studio-stack-shell:has([data-studio-adaptive-workspace="true"
   flex: 0 0 auto;
 }
 
-body .studio-shell.studio-stack-shell[data-studio-page="stack"] main.page-canvas.studio-native-canvas:has(> .studio-dossier-page > [data-studio-adaptive-workspace="true"]) {
+body .studio-shell.studio-stack-shell[data-studio-page="stack"] main.page-canvas.studio-native-canvas:has([data-studio-adaptive-workspace="true"]) {
   flex: 1 1 auto;
   height: auto;
   margin-top: 8px;
@@ -32,7 +36,8 @@ body .studio-shell.studio-stack-shell[data-studio-page="stack"] main.page-canvas
   padding: 0 !important;
 }
 
-body .studio-shell.studio-stack-shell .studio-native-canvas > .studio-dossier-page:has(> [data-studio-adaptive-workspace="true"]) {
+body .studio-shell.studio-stack-shell .studio-native-canvas > :is(.studio-dossier-page, .studio-connected-order-detail):has(> [data-studio-adaptive-workspace="true"]),
+body .studio-shell.studio-stack-shell .studio-native-canvas > [data-studio-adaptive-workspace="true"] {
   display: block;
   height: 100%;
   max-width: none;
@@ -306,6 +311,453 @@ body .studio-shell.studio-stack-shell .studio-native-canvas > .studio-dossier-pa
   min-height: 58px;
 }
 
+/* Intake v2 gives the guarded TaskSheet a single adaptive stage and a single
+   scrolling control surface. The existing intake controller remains the only
+   owner of workflow state, retries, receipts, and dismissal. */
+.studio-garment-task-sheet.is-adaptive-host {
+  background: var(--studio-canvas);
+  height: calc(100dvh - 16px);
+  max-height: calc(100dvh - 16px);
+  max-width: calc(100vw - 16px);
+  min-height: 0;
+  width: calc(100vw - 16px);
+}
+
+html[data-theme="dark"] .studio-garment-task-sheet.is-adaptive-host {
+  background: var(--studio-canvas);
+}
+
+.studio-garment-task-sheet.is-adaptive-host .studio-task-sheet-frame {
+  min-height: 0;
+}
+
+.studio-garment-task-sheet.is-adaptive-host .studio-task-sheet-header {
+  background: var(--studio-canvas);
+  position: relative;
+  z-index: 5;
+}
+
+.studio-garment-task-sheet.is-adaptive-host .studio-task-sheet-body {
+  display: block;
+  min-height: 0;
+  overflow: hidden;
+  padding: 0;
+  position: relative;
+}
+
+.studio-garment-task-sheet.is-adaptive-host .studio-task-sheet-body > .juw-intake-v2 {
+  height: 100%;
+}
+
+.juw-intake-v2-stage {
+  box-sizing: border-box;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+}
+
+.juw-intake-v2-media {
+  align-items: center;
+  background:
+    radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--studio-accent) 14%, transparent), transparent 44%),
+    var(--studio-panel-muted);
+  border-radius: 26px;
+  display: flex;
+  height: 100%;
+  justify-content: center;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+  width: 100%;
+}
+
+.juw-intake-v2-media > img {
+  height: 100%;
+  object-fit: contain;
+  width: 100%;
+}
+
+.juw-intake-v2-media > span:not(.juw-intake-v2-building) {
+  align-items: center;
+  color: color-mix(in srgb, var(--studio-muted) 54%, transparent);
+  display: flex;
+  justify-content: center;
+}
+
+.juw-intake-v2-building {
+  align-items: center;
+  background: color-mix(in srgb, var(--studio-panel-strong) 78%, transparent);
+  border-radius: 50%;
+  color: var(--studio-accent-display, var(--studio-accent));
+  display: flex;
+  height: 56px;
+  justify-content: center;
+  left: 50%;
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 56px;
+}
+
+.juw-intake-v2-stage-copy {
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  background: color-mix(in srgb, var(--studio-panel-strong) 82%, transparent);
+  border-radius: 17px;
+  bottom: 18px;
+  display: grid;
+  gap: 3px;
+  left: 18px;
+  max-width: min(70%, 360px);
+  padding: 12px 14px;
+  position: absolute;
+  z-index: 2;
+}
+
+.juw-intake-v2-stage-copy small {
+  color: var(--studio-muted);
+  font-size: 8px;
+  letter-spacing: .04em;
+}
+
+.juw-intake-v2-stage-copy strong {
+  font-family: var(--font-display);
+  font-size: clamp(22px, 3vw, 36px);
+  font-weight: 500;
+  letter-spacing: -.045em;
+  line-height: 1;
+  overflow-wrap: anywhere;
+}
+
+.juw-intake-v2-stage > .studio-lens-action {
+  bottom: 18px;
+  right: 18px;
+  z-index: 2;
+}
+
+.juw-intake-v2-content {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-height: 100%;
+  min-width: 0;
+  padding-top: 4px;
+}
+
+.juw-intake-v2-content :is(.studio-task-question, .studio-build-state, .studio-confirm-state, .studio-task-receipt) {
+  margin: 0;
+  width: 100%;
+}
+
+.juw-intake-v2-content :is(.studio-build-state, .studio-confirm-state, .studio-task-receipt) {
+  display: block;
+  grid-template-columns: 1fr;
+}
+
+.juw-intake-v2-content :is(.studio-task-question > h3, .studio-build-state h3, .studio-confirm-copy h3, .studio-receipt-copy h3) {
+  font-size: clamp(30px, 4vw, 42px);
+  line-height: 1;
+}
+
+.juw-intake-v2-content .studio-intake-start-options {
+  margin-top: 20px;
+}
+
+.juw-intake-v2-content .studio-garment-description {
+  margin-top: 22px;
+}
+
+.juw-intake-v2-content .studio-garment-description textarea {
+  min-height: 180px;
+}
+
+.juw-intake-v2-source-status {
+  align-items: center;
+  background: color-mix(in srgb, var(--studio-positive) 10%, var(--studio-panel-muted));
+  border-radius: 17px;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  margin-top: 22px;
+  min-height: 58px;
+  padding: 8px 13px;
+}
+
+.juw-intake-v2-source-status > span {
+  align-items: center;
+  color: var(--studio-positive);
+  display: flex;
+  font-size: 10px;
+  gap: 8px;
+}
+
+.juw-intake-v2-content .studio-build-stages {
+  margin-top: 20px;
+}
+
+.juw-intake-v2-content .studio-confirm-facts {
+  margin-top: 20px;
+}
+
+.juw-intake-v2-content .studio-fact-fields {
+  grid-template-columns: 1fr;
+}
+
+.juw-intake-v2-content .studio-choice-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.juw-intake-v2-content .studio-task-receipt {
+  align-content: start;
+}
+
+.juw-intake-v2-content .studio-receipt-copy > p:not(.eyebrow) {
+  color: var(--studio-muted);
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.juw-intake-v2-actions {
+  align-items: stretch;
+  background: color-mix(in srgb, var(--studio-panel-strong) 94%, transparent);
+  bottom: 0;
+  display: flex;
+  gap: 8px;
+  margin-top: auto;
+  padding: 14px 0 2px;
+  position: sticky;
+  z-index: 4;
+}
+
+.juw-intake-v2-actions > .button {
+  flex: 1 1 0;
+  min-height: 48px;
+  min-width: 0;
+}
+
+/* Order v2 keeps the journey visible on the canvas while the existing,
+   versioned command controller remains the only interactive surface. */
+.juw-order-v2-overview {
+  align-content: center;
+  display: grid;
+  gap: clamp(18px, 3dvh, 30px);
+  height: 100%;
+  margin: 0 auto;
+  max-width: 760px;
+  min-height: 0;
+  padding: clamp(12px, 2vw, 28px);
+  width: 100%;
+}
+
+.juw-order-v2-overview > header {
+  align-items: center;
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+}
+
+.juw-order-v2-overview > header > p {
+  margin: 0;
+}
+
+.juw-order-v2-overview > header > span {
+  background: var(--studio-panel-strong);
+  border-radius: 999px;
+  color: var(--studio-muted);
+  font-size: 9px;
+  font-weight: 780;
+  padding: 9px 12px;
+}
+
+.juw-order-v2-overview > header > span[data-state-tone="positive"] {
+  color: var(--studio-positive);
+}
+
+.juw-order-v2-overview > header > span[data-state-tone="caution"] {
+  color: var(--studio-accent-display, var(--studio-accent));
+}
+
+.juw-order-v2-overview > header > span[data-state-tone="critical"] {
+  color: var(--studio-critical);
+}
+
+.juw-order-v2-heading {
+  display: grid;
+  gap: 7px;
+}
+
+.juw-order-v2-heading h1 {
+  font-family: var(--font-display);
+  font-size: clamp(34px, 6.4vw, 64px);
+  font-weight: 500;
+  letter-spacing: -.05em;
+  line-height: .96;
+  margin: 0;
+}
+
+.juw-order-v2-heading p {
+  color: var(--studio-muted);
+  font-size: 11px;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.juw-order-v2-heading > strong {
+  color: var(--studio-accent-display, var(--studio-accent));
+  font-size: 12px;
+}
+
+.juw-order-v2-journey {
+  display: grid;
+  gap: 0;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.juw-order-v2-journey > li {
+  align-items: center;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 34px minmax(0, 1fr);
+  min-height: 48px;
+  position: relative;
+}
+
+.juw-order-v2-journey > li:not(:last-child)::after {
+  background: var(--studio-line);
+  bottom: -7px;
+  content: "";
+  left: 16px;
+  position: absolute;
+  top: 31px;
+  width: 1px;
+}
+
+.juw-order-v2-journey > li > span {
+  align-items: center;
+  background: var(--studio-panel-strong);
+  border-radius: 50%;
+  color: var(--studio-faint);
+  display: flex;
+  font-size: 8px;
+  height: 34px;
+  justify-content: center;
+  width: 34px;
+  z-index: 1;
+}
+
+.juw-order-v2-journey > li > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.juw-order-v2-journey small {
+  color: var(--studio-faint);
+  font-size: 8px;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.juw-order-v2-journey strong {
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+
+.juw-order-v2-content {
+  align-content: start;
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+  padding: 4px 0 24px;
+}
+
+.juw-order-v2-next {
+  display: grid;
+  gap: 12px;
+}
+
+.juw-order-v2-next > header {
+  display: grid;
+  gap: 5px;
+}
+
+.juw-order-v2-next > header > :is(p, h2) {
+  margin: 0;
+}
+
+.juw-order-v2-next > header > h2 {
+  font-family: var(--font-display);
+  font-size: clamp(28px, 5vw, 40px);
+  font-weight: 500;
+  letter-spacing: -.045em;
+  line-height: 1;
+}
+
+.juw-order-v2-content .studio-order-update-notice {
+  margin: 0;
+}
+
+.juw-order-v2-content .studio-transition-action {
+  box-shadow: none;
+}
+
+.juw-order-v2-next > .studio-transition-action {
+  background: color-mix(in srgb, var(--studio-accent) 8%, var(--studio-panel-muted));
+}
+
+.juw-order-v2-content .studio-order-secondary-details {
+  background: transparent;
+  border-radius: 0;
+  border-top: 1px solid var(--studio-line);
+  margin-top: 4px;
+}
+
+.juw-order-v2-content .studio-order-secondary-details > summary {
+  padding-inline: 2px;
+}
+
+.juw-order-v2-content .studio-order-secondary-details > .studio-transition-action-body {
+  border-top: 0;
+  padding: 10px 0 0;
+}
+
+.juw-order-v2-content .studio-connected-detail-grid,
+.juw-order-v2-content :is(.studio-transition-fields-two, .studio-order-facts) {
+  grid-template-columns: 1fr;
+}
+
+.juw-order-v2-content .studio-connected-detail-grid {
+  gap: 16px;
+}
+
+.juw-order-v2-content .studio-connected-order-main {
+  display: grid;
+  gap: 24px;
+}
+
+.juw-order-v2-content .studio-connected-order-summary {
+  position: static;
+}
+
+.juw-order-v2-content :is(.studio-order-action-section, .studio-order-timeline, .studio-connected-order-summary) {
+  border-radius: 18px;
+  box-shadow: none;
+  padding: 16px;
+}
+
+.juw-order-v2-content .studio-order-action-heading h2 {
+  font-size: 28px;
+}
+
+.juw-order-v2-content .studio-transition-action-body > .button {
+  min-height: 48px;
+  width: 100%;
+}
+
 @media (min-height: 600px) {
   @container studio-adaptive-workspace (min-width: 60rem) {
     .studio-adaptive-workspace-frame {
@@ -344,7 +796,7 @@ body .studio-shell.studio-stack-shell .studio-native-canvas > .studio-dossier-pa
 }
 
 @media (max-width: 680px) {
-  body .studio-shell.studio-stack-shell[data-studio-page="stack"] main.page-canvas.studio-native-canvas:has(> .studio-dossier-page > [data-studio-adaptive-workspace="true"]) {
+  body .studio-shell.studio-stack-shell[data-studio-page="stack"] main.page-canvas.studio-native-canvas:has([data-studio-adaptive-workspace="true"]) {
     border-radius: 26px 26px 0 0;
     margin-top: 4px;
   }
@@ -357,6 +809,89 @@ body .studio-shell.studio-stack-shell .studio-native-canvas > .studio-dossier-pa
 
   .juw-piece-v2-media > .studio-media-button {
     border-radius: 20px;
+  }
+
+  .juw-order-v2-overview {
+    gap: 12px;
+    padding: 8px 6px;
+  }
+
+  .juw-order-v2-heading h1 {
+    font-size: clamp(32px, 9vw, 44px);
+  }
+
+  .juw-order-v2-journey > li {
+    min-height: 42px;
+  }
+
+  .juw-order-v2-journey {
+    gap: 4px 10px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .juw-order-v2-journey > li::after {
+    content: none !important;
+  }
+}
+
+@media (max-height: 680px) and (orientation: portrait) {
+  [data-studio-adaptive-workspace="true"] {
+    --studio-workspace-surface-fallback: 248px;
+  }
+
+  .studio-adaptive-workspace-surface {
+    height: min(calc(100% - 8px), 248px);
+  }
+
+  [data-studio-adaptive-workspace="true"][data-detent="peek"] .studio-adaptive-workspace-surface {
+    height: min(calc(100% - 48px), 128px);
+  }
+
+  [data-studio-adaptive-workspace="true"][data-detent="full"] .studio-adaptive-workspace-surface {
+    height: calc(100% - 8px);
+  }
+
+  .studio-adaptive-workspace-grip,
+  .studio-adaptive-workspace-grip > button {
+    min-height: 34px;
+  }
+
+  .studio-adaptive-workspace-grip > button {
+    padding-block: 2px;
+  }
+
+  .studio-adaptive-workspace-grip > button > small,
+  .juw-order-v2-heading > p {
+    display: none;
+  }
+
+  .studio-adaptive-workspace-scroll {
+    padding-top: 4px;
+  }
+
+  .juw-order-v2-overview {
+    align-content: start;
+    gap: 6px;
+    padding-block: 0;
+  }
+
+  .juw-order-v2-heading {
+    gap: 2px;
+  }
+
+  .juw-order-v2-heading h1 {
+    font-size: clamp(25px, 8vw, 34px);
+  }
+
+  .juw-order-v2-journey > li {
+    gap: 8px;
+    grid-template-columns: 28px minmax(0, 1fr);
+    min-height: 34px;
+  }
+
+  .juw-order-v2-journey > li > span {
+    height: 28px;
+    width: 28px;
   }
 }
 
@@ -429,6 +964,32 @@ body .studio-shell.studio-stack-shell .studio-native-canvas > .studio-dossier-pa
   [data-studio-adaptive-workspace="true"] .juw-piece-v2-content .studio-piece-task-list {
     order: 5;
   }
+
+  .juw-order-v2-overview {
+    align-content: start;
+    gap: 8px;
+    padding-block: 2px;
+  }
+
+  .juw-order-v2-heading {
+    gap: 3px;
+  }
+
+  .juw-order-v2-heading h1 {
+    font-size: clamp(25px, 5vw, 34px);
+  }
+
+  .juw-order-v2-journey {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .juw-order-v2-journey > li {
+    min-height: 38px;
+  }
+
+  .juw-order-v2-journey > li::after {
+    content: none !important;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -441,7 +1002,12 @@ body .studio-shell.studio-stack-shell .studio-native-canvas > .studio-dossier-pa
 }
 
 @media (prefers-reduced-transparency: reduce) {
-  .studio-adaptive-workspace-surface {
+  .studio-adaptive-workspace-surface,
+  .juw-intake-v2-stage-copy,
+  .juw-intake-v2-actions,
+  .juw-intake-v2-building {
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
     background: var(--studio-panel-strong);
   }
 }
@@ -449,7 +1015,11 @@ body .studio-shell.studio-stack-shell .studio-native-canvas > .studio-dossier-pa
 @media (forced-colors: active) {
   .studio-adaptive-workspace-surface,
   .juw-piece-v2-media > .studio-media-button,
-  [data-studio-adaptive-workspace="true"] .juw-piece-v2-content .studio-piece-next {
+  [data-studio-adaptive-workspace="true"] .juw-piece-v2-content .studio-piece-next,
+  .juw-intake-v2-media,
+  .juw-intake-v2-stage-copy,
+  .juw-intake-v2-source-status,
+  .juw-intake-v2-actions {
     border: 1px solid CanvasText;
   }
 }

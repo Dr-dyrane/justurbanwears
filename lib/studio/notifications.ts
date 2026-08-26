@@ -67,7 +67,7 @@ export function deriveStudioNotifications(
       tone: "neutral",
       title: `${garmentDrafts.length} garment${garmentDrafts.length === 1 ? "" : "s"} need finishing`,
       detail: "Add the missing views or facts shown on each card.",
-      href: `/studio/wardrobe?garment=${encodeURIComponent(garmentDrafts[0].id)}`,
+      href: `/studio/wardrobe/${encodeURIComponent(garmentDrafts[0].id)}`,
       actionLabel: "Open garment",
     });
   }
@@ -78,7 +78,7 @@ export function deriveStudioNotifications(
       tone: "neutral",
       title: `${listingWork.length} listing${listingWork.length === 1 ? "" : "s"} in review`,
       detail: "Review the remaining facts and views before publishing.",
-      href: `/studio/wardrobe?view=publishing&garment=${encodeURIComponent(listingWork[0].garmentId)}`,
+      href: `/studio/wardrobe/${encodeURIComponent(listingWork[0].garmentId)}`,
       actionLabel: "Open listing",
     });
   }

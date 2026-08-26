@@ -151,6 +151,17 @@ test("Studio posts structured facts, role-gates finance UX, and covers return re
   assert.match(detail, /RETURN_RESOLUTION/);
   assert.match(detail, /onVersionConflict/);
   assert.match(detail, /Prepare for collection/);
+  assert.match(detail, /<StudioOrderAdaptiveWorkspace order=\{order\}>/);
+  assert.equal(detail.match(/action\(primaryTransition\)/g)?.length, 1);
+  assert.match(detail, /key=\{`\$\{transitionKey\(transition\)\}:\$\{order\.version\}`\}/);
+  assert.match(detail, /data-studio-workspace-primary=\{isNextAction \? "true" : undefined\}/);
+  assert.match(detail, /className="studio-connected-order-main"/);
+  assert.doesNotMatch(detail, /<main>/);
+  assert.match(detail, /Could not refresh order/);
+  assert.match(detail, /if \(quiet\) setError\(""\)/);
+  assert.match(detail, /const commandPendingRef = useRef\(false\)/);
+  assert.match(detail, /if \(commandPendingRef\.current \|\| pending/);
+  assert.match(detail, /commandPendingRef\.current = true;[\s\S]*?finally \{[\s\S]*?commandPendingRef\.current = false/);
   assert.match(route, /requireOperatorActor/);
   assert.match(route, /getShopBlob\("private", evidence\.blobPathname/);
   assert.doesNotMatch(route, /blobUrl|downloadUrl/);

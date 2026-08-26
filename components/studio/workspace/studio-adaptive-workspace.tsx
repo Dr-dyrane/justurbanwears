@@ -7,6 +7,7 @@ import { moveFocusFromWorkspaceGrip } from "./studio-workspace-focus";
 export type StudioWorkspaceDetent = "peek" | "half" | "full";
 
 interface StudioAdaptiveWorkspaceProps {
+  active?: boolean;
   children: ReactNode;
   className?: string;
   initialDetent?: StudioWorkspaceDetent;
@@ -15,6 +16,7 @@ interface StudioAdaptiveWorkspaceProps {
 }
 
 export function StudioAdaptiveWorkspace({
+  active = true,
   children,
   className = "",
   initialDetent = "half",
@@ -72,7 +74,7 @@ export function StudioAdaptiveWorkspace({
       className={["studio-adaptive-workspace", className].filter(Boolean).join(" ")}
       data-detent={detent}
       data-side-surface={sideSurface ? "true" : "false"}
-      data-studio-adaptive-workspace="true"
+      data-studio-adaptive-workspace={active ? "true" : undefined}
       ref={rootRef}
     >
       <div className="studio-adaptive-workspace-frame">

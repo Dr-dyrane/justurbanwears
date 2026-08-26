@@ -16,7 +16,6 @@ import {
   nextStudioOrderTransition,
   orderEventLabel,
   orderStateLabel,
-  orderStateSummary,
   studioOrderActionLabel,
   studioOrderNextActionLabel,
 } from "../../lib/shop/order-presentation";
@@ -28,8 +27,9 @@ import type {
 } from "../../lib/shop/server-order/types";
 import { StudioFeedback } from "./atoms/studio-feedback";
 import { StudioLoadingStage } from "./atoms/studio-loading-stage";
-import { StudioStackPage, StudioStackSection } from "./atoms/studio-stack-page";
+import { StudioStackPage } from "./atoms/studio-stack-page";
 import { useStudioStackRegistration } from "./navigation/studio-stack-context";
+import { StudioOrderAdaptiveWorkspace } from "./orders/studio-order-adaptive-workspace";
 
 type OperatorRole = "operator" | "admin";
 type StudioTransition = ShopOperatorTransition | ShopOperatorReturnTransition;
@@ -122,6 +122,7 @@ function MutationAction({
   onVersionConflict(): void;
 }) {
   const [pending, setPending] = useState(false);
+  const commandPendingRef = useRef(false);
   const [confirmed, setConfirmed] = useState(false);
   const [note, setNote] = useState("");
   const [error, setError] = useState("");
@@ -255,7 +256,8 @@ function MutationAction({
   }
 
   async function applyTransition() {
-    if (pending || !confirmed || !fieldsValid || adminLocked) return;
+    if (commandPendingRef.current || pending || !confirmed || !fieldsValid || adminLocked) return;
+    commandPendingRef.current = true;
     setPending(true);
     setError("");
     const returnMutation = isReturnTransition(transition);
@@ -313,13 +315,14 @@ function MutationAction({
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "The order could not be updated.");
     } finally {
+      commandPendingRef.current = false;
       setPending(false);
     }
   }
 
   return (
     <details className="studio-transition-action" id={isNextAction ? "studio-order-next-action" : undefined} open={isNextAction || undefined}>
-      <summary>{label}<span>Review and confirm</span></summary>
+      <summary data-studio-workspace-primary={isNextAction ? "true" : undefined}>{label}<span>Review and confirm</span></summary>
       <div className="studio-transition-action-body">
         {adminLocked ? (
           <p className="studio-order-finance-lock" role="note">
@@ -435,6 +438,7 @@ export function ConnectedOrderDetail() {
 
   const loadOrder = useCallback(async (signal?: AbortSignal, quiet = false) => {
     if (!quiet) setState("loading");
+    if (quiet) setError("");
     setRefreshing(quiet);
     try {
       const response = await fetch(`/api/studio/orders/${encodeURIComponent(reference)}`, {
@@ -521,35 +525,31 @@ export function ConnectedOrderDetail() {
 
   return (
     <StudioStackPage className="studio-connected-order-detail" kind="record">
-      <header className="studio-connected-detail-heading">
-        <div>
-          <h1>{order.lines[0]?.name ?? "Wardrobe order"}</h1>
-          <p>{order.contact.name} · {order.deliveryLabel} · {formatNaira(order.total)}</p>
-        </div>
-        <span>{orderStateLabel(order.lifecycleStatus)}</span>
-      </header>
+      <StudioOrderAdaptiveWorkspace order={order}>
+        <div className="juw-order-v2-content">
+          {updateNotice ? (
+            <div ref={updateNoticeRef} tabIndex={-1}>
+              <StudioFeedback className="studio-order-update-notice" detail={updateNotice} state="success" title="Order updated" />
+            </div>
+          ) : null}
 
-      <section className="studio-connected-state-grid" aria-label="Order status">
-        {orderStateSummary(order).map((item) => <div key={item.label}><small>{item.label}</small><strong>{item.value}</strong></div>)}
-      </section>
-      {updateNotice ? (
-        <div ref={updateNoticeRef} tabIndex={-1}>
-          <StudioFeedback className="studio-order-update-notice" detail={updateNotice} state="success" title="Order updated" />
-        </div>
-      ) : null}
+          <section aria-labelledby="studio-order-next-title" className="juw-order-v2-next">
+            <header>
+              <p className="eyebrow">Next action</p>
+              <h2 id="studio-order-next-title">
+                {primaryTransition ? studioOrderNextActionLabel(order) : "Order is up to date"}
+              </h2>
+            </header>
+            {primaryTransition
+              ? action(primaryTransition)
+              : <StudioFeedback detail="No customer or fulfilment action is currently due." state="success" title="Nothing waiting" />}
+          </section>
 
-      <StudioStackSection
-        meta="Next action"
-        title={primaryTransition ? studioOrderNextActionLabel(order) : "Order is up to date"}
-      >
-        {primaryTransition ? action(primaryTransition) : <StudioFeedback detail="No customer or fulfilment action is currently due." state="success" title="Nothing waiting" />}
-      </StudioStackSection>
-
-      <details className="studio-transition-action studio-order-secondary-details">
+          <details className="studio-transition-action studio-order-secondary-details">
         <summary>Order details<span>Evidence, fulfilment, and history</span></summary>
         <div className="studio-transition-action-body">
           <div className="studio-connected-detail-grid">
-            <main>
+            <div className="studio-connected-order-main">
           <section className="studio-order-action-section" aria-labelledby="receipt-review-title">
             <div className="studio-order-action-heading"><span><FileSearch aria-hidden="true" size={19} /></span><div><p className="eyebrow">Transfer receipt</p><h2 id="receipt-review-title">Check the receipt.</h2></div></div>
             <p>Check the receipt first. Confirm payment only after the money reaches the account.</p>
@@ -641,6 +641,7 @@ export function ConnectedOrderDetail() {
             <summary>Order timeline<span>{timeline.length} update{timeline.length === 1 ? "" : "s"}</span></summary>
             <div className="studio-transition-action-body">
               <button aria-busy={refreshing} className="button button-secondary" disabled={refreshing} onClick={() => void loadOrder(undefined, true)} type="button">{refreshing ? "Checking…" : "Check for updates"}</button>
+              {error ? <StudioFeedback detail={error} state="error" title="Could not refresh order" /> : null}
               <ol>
                 {timeline.map((event, index) => (
                   <li aria-current={index === timeline.length - 1 ? "step" : undefined} key={event.id}>
@@ -651,7 +652,7 @@ export function ConnectedOrderDetail() {
               </ol>
             </div>
           </details>
-            </main>
+            </div>
 
             <aside className="studio-connected-order-summary">
           <dl>
@@ -674,7 +675,9 @@ export function ConnectedOrderDetail() {
             </aside>
           </div>
         </div>
-      </details>
+          </details>
+        </div>
+      </StudioOrderAdaptiveWorkspace>
     </StudioStackPage>
   );
 }

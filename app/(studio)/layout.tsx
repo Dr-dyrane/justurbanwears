@@ -1,4 +1,5 @@
 import studioAtelierCss from "../studio-atelier.css?raw";
+import studioAdaptiveWorkspaceCss from "../studio-adaptive-workspace.css?raw";
 import "../studio-mobile-wardrobe.css";
 import "../studio-stack-navigation.css";
 import { AppShell } from "../../components/studio/app-shell";
@@ -44,6 +45,7 @@ export default async function StudioLayout({ children }: { children: React.React
   return (
     <>
       <style data-studio-atelier>{studioAtelierCss}</style>
+      <style data-studio-adaptive-workspace-css>{studioAdaptiveWorkspaceCss}</style>
       <AppShell operator={operator} scenariosEnabled={scenariosEnabled}>{children}</AppShell>
     </>
   );

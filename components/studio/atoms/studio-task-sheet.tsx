@@ -16,10 +16,15 @@ const subscribeToClientReady = () => () => {};
 const getClientReady = () => true;
 const getServerReady = () => false;
 
+export interface StudioTaskSheetControls {
+  requestClose(): void;
+  requestCloseAndThen(afterClose: () => void): void;
+}
+
 interface StudioTaskSheetProps {
   busy?: boolean;
   busyLabel?: string;
-  children: React.ReactNode;
+  children: React.ReactNode | ((controls: StudioTaskSheetControls) => React.ReactNode);
   className?: string;
   eyebrow?: string;
   footer?: React.ReactNode | ((requestClose: () => void) => React.ReactNode);
@@ -67,12 +72,11 @@ export function StudioTaskSheet({
     return true;
   }, [busy, onDismiss]);
 
-  const { openWithHistory, requestClose } = useHistoryBackedDialog({
+  const { openWithHistory, requestClose, requestCloseAndThen } = useHistoryBackedDialog({
     isOpen: open,
     marker: `studio-task:${titleId}`,
     onDismiss: acceptDismiss,
   });
-
   useEffect(() => {
     const dialog = dialogRef.current;
     if (!dialog) return;
@@ -123,6 +127,9 @@ export function StudioTaskSheet({
   }, [fallbackFocus, returnFocus]);
 
   if (!mounted) return null;
+  const content = typeof children === "function"
+    ? children({ requestClose, requestCloseAndThen })
+    : children;
 
   return createPortal(
     <dialog
@@ -178,9 +185,9 @@ export function StudioTaskSheet({
         ) : null}
 
         {onSubmit ? (
-          <form className="studio-task-sheet-body" onSubmit={onSubmit}>{children}</form>
+          <form className="studio-task-sheet-body" onSubmit={onSubmit}>{content}</form>
         ) : (
-          <div className="studio-task-sheet-body">{children}</div>
+          <div className="studio-task-sheet-body">{content}</div>
         )}
         {footer ? (
           <footer className="studio-task-sheet-footer">

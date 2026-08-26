@@ -14,6 +14,24 @@ function currentHistoryState() {
     : {};
 }
 
+export function studioDialogStack(state: unknown): string[] {
+  if (!state || typeof state !== "object") return [];
+  const record = state as Record<string, unknown>;
+  if (
+    Array.isArray(record.justUrbanDialogStack)
+    && record.justUrbanDialogStack.every((value) => typeof value === "string")
+  ) {
+    return [...record.justUrbanDialogStack];
+  }
+  return typeof record.justUrbanDialog === "string"
+    ? [record.justUrbanDialog]
+    : [];
+}
+
+function currentDialogStack() {
+  return studioDialogStack(window.history.state);
+}
+
 export function useHistoryBackedDialog({
   isOpen,
   marker,
@@ -23,6 +41,8 @@ export function useHistoryBackedDialog({
   const isOpenRef = useRef(isOpen);
   const markerRef = useRef(marker);
   const openedHereRef = useRef(false);
+  const traversalPendingRef = useRef(false);
+  const afterCloseRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     dismissRef.current = onDismiss;
@@ -37,19 +57,34 @@ export function useHistoryBackedDialog({
   }, [marker]);
 
   useEffect(() => {
-    function closeFromHistory() {
-      if (!isOpenRef.current) return;
+    function closeFromHistory(event: PopStateEvent) {
+      traversalPendingRef.current = false;
+      const nextStack = studioDialogStack(event.state);
+      if (nextStack.includes(markerRef.current)) {
+        if (isOpenRef.current) {
+          openedHereRef.current = true;
+          return;
+        }
+        openedHereRef.current = false;
+        afterCloseRef.current = null;
+        if (nextStack.at(-1) === markerRef.current) {
+          traversalPendingRef.current = true;
+          window.history.back();
+        }
+        return;
+      }
+      if (!isOpenRef.current || !openedHereRef.current) return;
       const accepted = dismissRef.current();
       if (accepted === false) {
-        window.history.pushState(
-          { ...currentHistoryState(), justUrbanDialog: markerRef.current },
-          "",
-          window.location.href,
-        );
-        openedHereRef.current = true;
+        afterCloseRef.current = null;
+        traversalPendingRef.current = true;
+        window.history.forward();
         return;
       }
       openedHereRef.current = false;
+      const afterClose = afterCloseRef.current;
+      afterCloseRef.current = null;
+      afterClose?.();
     }
 
     window.addEventListener("popstate", closeFromHistory);
@@ -60,36 +95,64 @@ export function useHistoryBackedDialog({
     if (isOpen) return;
     if (
       !openedHereRef.current
-      || window.history.state?.justUrbanDialog !== marker
+      || traversalPendingRef.current
     ) return;
+    const stack = currentDialogStack();
+    if (stack.at(-1) !== marker) return;
     openedHereRef.current = false;
+    traversalPendingRef.current = true;
     window.history.back();
   }, [isOpen, marker]);
 
   const openWithHistory = useCallback(() => {
-    if (window.history.state?.justUrbanDialog === marker) {
+    const stack = currentDialogStack();
+    if (stack.includes(marker)) {
       openedHereRef.current = true;
       return;
     }
+    const nextStack = [...stack, marker];
     window.history.pushState(
-      { ...currentHistoryState(), justUrbanDialog: marker },
+      {
+        ...currentHistoryState(),
+        justUrbanDialog: marker,
+        justUrbanDialogStack: nextStack,
+      },
       "",
       window.location.href,
     );
     openedHereRef.current = true;
   }, [marker]);
 
-  const requestClose = useCallback(() => {
+  const beginClose = useCallback((afterClose?: () => void) => {
+    if (traversalPendingRef.current) return;
+    afterCloseRef.current = afterClose ?? null;
+    const stack = currentDialogStack();
     if (
       openedHereRef.current
-      && window.history.state?.justUrbanDialog === marker
+      && stack.includes(marker)
     ) {
-      openedHereRef.current = false;
+      if (stack.at(-1) !== marker) {
+        afterCloseRef.current = null;
+        return;
+      }
+      traversalPendingRef.current = true;
       window.history.back();
       return;
     }
-    dismissRef.current();
+    const accepted = dismissRef.current();
+    if (accepted === false) {
+      afterCloseRef.current = null;
+      return;
+    }
+    openedHereRef.current = false;
+    afterCloseRef.current = null;
+    afterClose?.();
   }, [marker]);
 
-  return { openWithHistory, requestClose };
+  const requestClose = useCallback(() => beginClose(), [beginClose]);
+  const requestCloseAndThen = useCallback((afterClose: () => void) => {
+    beginClose(afterClose);
+  }, [beginClose]);
+
+  return { openWithHistory, requestClose, requestCloseAndThen };
 }

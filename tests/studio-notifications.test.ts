@@ -18,13 +18,15 @@ test("Studio updates prioritize failures and actionable commerce work", () => {
   assert.deepEqual(notifications.slice(0, 4).map((item) => item.kind), ["PERSISTENCE", "ORDER", "RETURN", "WARDROBE"]);
   assert.equal(notifications[1].href, "/studio/orders");
   assert.equal(notifications[2].href, "/studio/orders?filter=RETURNS");
-  assert.equal(notifications[3].href, "/studio/wardrobe?garment=garment-1");
+  assert.equal(notifications[3].href, "/studio/wardrobe/garment-1");
 });
 
 test("a listing lifecycle change creates a new signature and completion clears it", () => {
   const state = createInitialStudioState();
-  state.listings.push({ id: "listing-1", state: "DRAFT" } as unknown as StudioListing);
-  const draftId = deriveStudioNotifications(state).find((item) => item.kind === "PUBLISHING")?.id;
+  state.listings.push({ garmentId: "garment-2", id: "listing-1", state: "DRAFT" } as unknown as StudioListing);
+  const draft = deriveStudioNotifications(state).find((item) => item.kind === "PUBLISHING");
+  const draftId = draft?.id;
+  assert.equal(draft?.href, "/studio/wardrobe/garment-2");
 
   state.listings[0].state = "READY";
   const readyId = deriveStudioNotifications(state).find((item) => item.kind === "PUBLISHING")?.id;
