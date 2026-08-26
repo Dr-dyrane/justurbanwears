@@ -39,10 +39,7 @@ html[data-theme="dark"] .studio-stack-shell .studio-premium-surface {
 .studio-stack-shell:has(.studio-home-control-plane) {
   --studio-home-field: color-mix(in srgb, var(--studio-accent) 30%, #f2c0b2);
   --studio-home-sheet: var(--studio-canvas-deep);
-  --studio-home-sheet-edge: color-mix(in srgb, var(--studio-ink) 12%, transparent);
-  --studio-home-sheet-raised-shadow:
-    0 -24px 62px color-mix(in srgb, var(--studio-ink) 19%, transparent),
-    inset 0 1px 0 color-mix(in srgb, white 66%, transparent);
+  --studio-home-sheet-shadow: 0 -14px 36px rgba(79, 34, 24, 0.13);
   background: var(--studio-home-field);
   height: 100dvh;
   overflow: hidden;
@@ -51,10 +48,7 @@ html[data-theme="dark"] .studio-stack-shell .studio-premium-surface {
 html[data-theme="dark"] .studio-stack-shell:has(.studio-home-control-plane) {
   --studio-home-field: color-mix(in srgb, var(--studio-accent) 64%, #230a06);
   --studio-home-sheet: var(--dyrane-dark-canvas-deep);
-  --studio-home-sheet-edge: rgba(255, 255, 255, 0.09);
-  --studio-home-sheet-raised-shadow:
-    0 -26px 68px rgba(0, 0, 0, 0.5),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  --studio-home-sheet-shadow: 0 -16px 40px rgba(0, 0, 0, 0.38);
   background: var(--studio-home-field);
 }
 
@@ -1586,8 +1580,8 @@ html body .studio-stack-shell .workspace > main.page-canvas:has(> .studio-home-c
   --studio-home-sheet-inline: clamp(18px, 4vw, 48px);
   background: transparent;
   border: 0;
-  border-radius: 0;
-  box-shadow: none;
+  border-radius: 40px 40px 0 0;
+  box-shadow: var(--studio-home-sheet-shadow);
   bottom: 0;
   left: 0;
   overflow-x: hidden;
@@ -1613,27 +1607,27 @@ html body .studio-stack-shell .workspace > main.page-canvas:has(> .studio-home-c
 
 .studio-home-sheet {
   background: var(--studio-home-sheet);
-  border: 1px solid var(--studio-home-sheet-edge);
-  border-radius: 40px;
-  box-shadow: 0 -12px 38px rgba(14, 8, 6, 0.24), 0 18px 44px rgba(14, 8, 6, 0.12);
+  border: 0;
+  border-radius: 0 0 40px 40px;
+  box-shadow: none;
   margin: 0;
   min-height: calc(100% - 64px);
-  padding: 8px var(--studio-home-sheet-inline) 38px;
+  padding: 0 var(--studio-home-sheet-inline) 38px;
   position: relative;
 }
 
 .studio-home-sheet[data-raised="true"] {
-  box-shadow: var(--studio-home-sheet-raised-shadow);
+  box-shadow: none;
 }
 
 .studio-home-sheet-handle {
   align-items: center;
   background: var(--studio-home-sheet);
   border: 0;
-  border-radius: 40px 40px 0 0;
+  border-radius: 0;
   cursor: ns-resize;
   display: flex;
-  height: 44px;
+  height: 52px;
   justify-content: center;
   margin: 0 calc(var(--studio-home-sheet-inline) * -1) 2px;
   position: sticky;
@@ -1644,7 +1638,7 @@ html body .studio-stack-shell .workspace > main.page-canvas:has(> .studio-home-c
 }
 
 .studio-home-sheet[data-raised="true"] .studio-home-sheet-handle {
-  box-shadow: 0 14px 24px color-mix(in srgb, var(--studio-ink) 10%, transparent);
+  box-shadow: none;
 }
 
 .studio-home-sheet-handle > span {
@@ -1964,12 +1958,13 @@ html body .studio-stack-shell .workspace > main.page-canvas:has(> .studio-home-c
 
   .studio-home-sheet {
     --studio-home-sheet-inline: 18px;
-    border-radius: 36px;
+    border-radius: 0 0 36px 36px;
     margin-inline: 0;
     padding-inline: var(--studio-home-sheet-inline);
   }
 
   .studio-home-sheet-stage {
+    border-radius: 36px 36px 0 0;
     top: clamp(300px, 36dvh, 470px);
   }
 
@@ -1978,7 +1973,7 @@ html body .studio-stack-shell .workspace > main.page-canvas:has(> .studio-home-c
   }
 
   .studio-home-sheet-handle {
-    border-radius: 36px 36px 0 0;
+    border-radius: 0;
   }
 
   .studio-stack-shell .studio-home-sheet .studio-recent-row {
@@ -4107,7 +4102,7 @@ body .studio-shell.studio-stack-shell[data-studio-page="stack"] .workspace {
 body .studio-shell.studio-stack-shell[data-studio-page="stack"] main.page-canvas.studio-native-canvas {
   background: var(--studio-canvas);
   border-radius: 38px 38px 0 0;
-  box-shadow: var(--studio-stack-sheet-shadow), inset 0 1px 0 color-mix(in srgb, var(--studio-ink) 8%, transparent);
+  box-shadow: var(--studio-stack-sheet-shadow);
   isolation: isolate;
   margin-top: 8px;
   max-width: none;
@@ -4124,5 +4119,36 @@ body .studio-shell.studio-stack-shell[data-studio-page="stack"] main.page-canvas
 
   .studio-decision-diff > p {
     grid-template-columns: minmax(66px, .65fr) minmax(0, 1fr) auto minmax(0, 1fr);
+  }
+
+  /* Piece media is the sheet's leading surface. Preserve every approved
+     frame's intrinsic ratio instead of cropping it into a fixed-height hero. */
+  body .studio-shell.studio-stack-shell[data-studio-page="stack"] main.page-canvas.studio-native-canvas:has(> .studio-dossier-page) {
+    padding-top: 0;
+  }
+
+  .studio-native-canvas .studio-dossier-page .studio-draft-visual.is-photo {
+    aspect-ratio: auto;
+    border-radius: 32px 32px 0 0;
+    box-shadow: none;
+    height: auto;
+    position: relative;
+    top: auto;
+    width: 100%;
+  }
+
+  .studio-native-canvas .studio-dossier-page .studio-draft-visual.is-photo::after {
+    content: none;
+  }
+
+  .studio-native-canvas .studio-dossier-page .studio-draft-visual.is-photo > .studio-media-button,
+  .studio-native-canvas .studio-dossier-page .studio-draft-visual.is-photo > .studio-media-button img {
+    height: auto;
+  }
+
+  .studio-native-canvas .studio-dossier-page .studio-draft-visual.is-photo > .studio-media-button img {
+    object-fit: contain;
+    object-position: center top;
+    width: 100%;
   }
 }
