@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "workflowRevision": "2026-08-26.89",
-  "updatedAt": "2026-08-26T02:51:00Z",
+  "workflowRevision": "2026-08-26.90",
+  "updatedAt": "2026-08-26T05:40:25Z",
   "model": "LULU_V4",
   "activeGarment": "024",
-  "activeView": "SHOP_RELEASE",
-  "status": "GARMENT_024_01_07_PRIVATE_LOCKED_SHOP_RELEASE_NEXT_GARMENT_023_REMAINS_LIVE_VERIFIED",
+  "activeView": "COMPLETE",
+  "status": "GARMENT_024_01_07_PRIVATE_LOCKED_LIVE_VERIFIED_CATALOGUE_35_LULU_V4_PRIVATE_AUTHORITY_READY",
   "identityReview": {
     "candidateId": "lulu.face.v4.front.candidate.v1",
     "acceptedAssetId": "lulu.face.v4.front.lock.v1",
@@ -1759,7 +1759,7 @@
       "rejectedCandidatesMayParent": false
     },
     "024": {
-      "status": "01_07_USER_AUTHORIZED_AUTONOMOUSLY_ACCEPTED_PRIVATE_LOCKED_RELEASE_PENDING",
+      "status": "01_07_USER_AUTHORIZED_AUTONOMOUSLY_ACCEPTED_PRIVATE_LOCKED_LIVE_VERIFIED",
       "sku": "JUW-048",
       "name": "Black Asymmetric Sculpted-Shoulder Mini Dress",
       "slug": "black-asymmetric-sculpted-shoulder-mini-dress",
@@ -1777,17 +1777,13 @@
         "06":{"role":"MODEL_LEFT_PROFILE","path":"storage/garments/drop-02/024/locked/06-on-lulu-left-profile.png","sha256":"45d5afaa61c601c019bce3d584ada27a97680ad509f160894655eabd38287117","dimensions":"1024x1535","status":"ACCEPTED_LOCKED_BODY_CANON_CORRECTED_INDEPENDENT_SIBLING"},
         "07":{"role":"MODEL_REAR_THREE_QUARTER","path":"storage/garments/drop-02/024/locked/07-on-lulu-right-rear-3q.png","sha256":"7e40da69dfd6cfdfac2f5971eab8d7adbf3906962c1347db0a79364fc7611cc2","dimensions":"1024x1535","status":"ACCEPTED_LOCKED_BODY_CANON_CORRECTED_INDEPENDENT_SIBLING_INFERRED_REAR_PRESENTATION"}
       },
-      "lockedManifestSha256":"334169865876054239d6cb6cdc54565de46c55acd03d6f39b72ea3c32fe2291d",
-      "operationRecords":["storage/garments/drop-02/024/operations/g024-v01-r001.json","storage/garments/drop-02/024/operations/g024-v02-r001.json","storage/garments/drop-02/024/operations/g024-v03-r001.json","storage/garments/drop-02/024/operations/g024-v04-r001.json","storage/garments/drop-02/024/operations/g024-v05-r001.json","storage/garments/drop-02/024/operations/g024-v06-r001.json","storage/garments/drop-02/024/operations/g024-v07-r001.json","storage/garments/drop-02/024/operations/g024-v07-r002.json"],
+      "lockedManifestSha256":"8a7f9b9dbb9a1d1db1dbd585d8d1c5ad4ba86ed8f68d4ca806a02f8c2949d627",
+      "operationRecords":["storage/garments/drop-02/024/operations/g024-v01-r001.json","storage/garments/drop-02/024/operations/g024-v02-r001.json","storage/garments/drop-02/024/operations/g024-v03-r001.json","storage/garments/drop-02/024/operations/g024-v04-r001.json","storage/garments/drop-02/024/operations/g024-v05-r001.json","storage/garments/drop-02/024/operations/g024-v06-r001.json","storage/garments/drop-02/024/operations/g024-v07-r001.json","storage/garments/drop-02/024/operations/g024-v07-r002.json","storage/garments/drop-02/024/operations/g024-shop-media-export-v001.json"],
+      "shopRelease":{"catalogueRevision":"2026-08-26-catalogue-35","catalogueManifestChecksum":"9ba2922a4fb56051ad722b73c93991e6bed88ba46b2f81bc4c06e7492b8adbc1","cataloguePresentationChecksum":"4fdb12d9c6c89b393249647717dd531cee1510a6516d9605bb27bd8305f19b5b","publicRoot":"public/shop/products/black-asymmetric-sculpted-shoulder-mini-dress","mediaCount":7,"publicBlobActiveAssetCount":268,"publicBlobLegacyAssetCount":11,"sourceCommit":"502df1f996a82addf3e19c771b30ef60f3526087","deployedCommit":"502df1f996a82addf3e19c771b30ef60f3526087","deploymentId":"dpl_Ek1ymMrNqUYHwrteCJVw9dTmn59y","deployment":"https://justurbanwears-nuagir9pi-drdyranes-projects.vercel.app","databaseSkuPresent":true,"availability":"AVAILABLE","availabilityApi":"CONFIRMED","studioPublicationCount":1,"catalogueRowCount":42,"productionSmoke":"25_OF_25_PASS","experienceSmoke":"19_OF_19_PASS","browserProductGallery":"7_OF_7_1120X1400_ISOTROPIC_VISUALLY_VERIFIED_01_AND_07","browserCollectionPieceCount":24,"browserConsole":"CLEAN","state":"LIVE_VERIFIED","verifiedAt":"2026-08-26T05:40:25Z","status":"LIVE_VERIFIED"},
       "consentAndPermission":{"realGarmentReferencesRemainPrivate":true,"realIdentityAndBodyReferencesRemainPrivate":true,"publicDerivativesApproved":true},
       "rejectedCandidatesMayParent":false
     }
   },
-  "nextOperation": {
-    "operationId": "g024-shop-media-export-v001",
-    "garmentId": "024",
-    "view": "SHOP_01_07",
-    "status": "READY_FOR_EXPORT_AND_CATALOGUE_INTEGRATION"
-  },
-  "requiredNext": "Export G024 01–07 into Shop-safe public derivatives, integrate JUW-048 into catalogue revision 35, deploy and production-smoke the canonical product route."
+  "nextOperation": null,
+  "requiredNext": "None. Garment 024 catalogue revision 35 and the private Lulu V4 05/06/07 authority resolver are live verified."
 }
