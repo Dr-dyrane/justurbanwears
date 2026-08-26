@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "workflowRevision": "2026-08-26.106",
-  "updatedAt": "2026-08-26T16:08:00Z",
+  "workflowRevision": "2026-08-26.107",
+  "updatedAt": "2026-08-26T16:09:00Z",
   "model": "LULU_V4",
   "activeGarment": "025",
   "activeView": "01-07",
-  "status": "GARMENT_025_01_07_USER_AUTHORIZED_PRIVATE_LOCKED_AWAITING_RELEASE_METADATA",
+  "status": "GARMENT_025_01_07_USER_AUTHORIZED_PRIVATE_LOCK_RECORDED_BYTES_UNAVAILABLE_AWAITING_RELEASE_METADATA",
   "identityReview": {
     "candidateId": "lulu.face.v4.front.candidate.v1",
     "acceptedAssetId": "lulu.face.v4.front.lock.v1",
@@ -95,13 +95,15 @@
       "rule": "Before every 05, inspect and record one current official Fashion Nova product or styling page for the same or closest proven garment family. Fashion Nova is advisory footwear/accessory styling evidence only and is never passed as a generation image reference by default. It has no authority over garment provenance or construction, Lulu identity/body, hair, pose, room, brand, camera or lighting. If no close match exists, record NO_CLOSE_MATCH and keep garment-faithful JUW styling. The user-accepted G009/05 whole-frame review closed its REPLACE decision; those accepted boots persist through its independent 06 and 07 siblings."
     },
     "atelier": {
-      "status": "LOCKED",
+      "status": "LOCKED_SOURCE_AUTHORITY_ENGINE_FINAL_SCENES_BLOCKED_AUTHORITY_CANVAS",
       "primary": [
         "juw.atelier.empty-plate.v1"
       ],
       "filename": "juw_room.png",
       "sha256": "0b591197d2de1b490c4305ac0aed4d1089564562c7b1005411a8340168aabb72",
-      "rule": "The room is the permanent JUW setting. Preserve its icon, layout, vase, rail, garments, ottoman, rug and warm-neutral identity. Minor generative texture or lighting variance is acceptable when total realism improves; redesign or structural drift is not."
+      "dimensions": "1024x1280",
+      "requiredEngineCanvas": "1024x1536",
+      "rule": "The room is the permanent JUW setting and its accepted pixels are immutable. The current 1024x1280 plate cannot be resized, cropped, padded, extended, regenerated or granted texture/lighting variance for the 1024x1536 Studio final profile. ROOM_FINAL_05 and sibling final stages remain BLOCKED_AUTHORITY_CANVAS before claim or spend until a separately approved exact 1024x1536 room is hashed, privately read back and selected by a new authority revision."
     },
     "brand": {
       "status": "LOCKED",
@@ -1789,21 +1791,39 @@
       "sourceManifest": "storage/garments/drop-02/025/source/manifest.json",
       "sourceManifestSha256": "5d59a5da7bfa62e0904ee0664b64850692d0516d8785712161432c02aefad445",
       "classification": "DIRECT_CAPTURE_FRONT_FAMILY_ONLY",
-      "reservedViews": ["01","02","03","04","05","06","07"],
+      "reservedViews": ["01", "02", "03", "04", "05", "06", "07"],
       "views": {
-        "01":{"role":"GARMENT_FRONT","path":"storage/garments/drop-02/025/locked/01-garment-front.png","sha256":"34d59ad5ef4e4ea6371533514723a0f745a555b49f4c31424283d4b358f4b8a4","dimensions":"968x1625","status":"ACCEPTED_LOCKED"},
-        "02":{"role":"GARMENT_BACK","path":"storage/garments/drop-02/025/locked/02-garment-back.png","sha256":"9206423e0506d5e50b07c2d27eeac540544a3aa9af12e5502ea854fe545cfc06","dimensions":"1086x1448","status":"ACCEPTED_LOCKED_INFERRED_REAR_PRESENTATION"},
-        "03":{"role":"MANNEQUIN_FRONT","path":"storage/garments/drop-02/025/locked/03-mannequin-front.png","sha256":"422fde9bb76c121faecba38f4dd06a1574fa5b265ba09a134624f626a49beef1","dimensions":"1024x1536","status":"ACCEPTED_LOCKED_SOURCE_SAFE_NEUTRAL"},
-        "04":{"role":"FABRIC_DETAIL","path":"storage/garments/drop-02/025/locked/04-fabric-detail.png","sha256":"3c8c31ed7d36bd49dcda960bdbb98948749f02aad63cdb96a35bef065143b025","dimensions":"1023x1537","status":"ACCEPTED_LOCKED_MODEL_COMPLETED_PRESENTATION_ONLY"},
-        "05":{"role":"MODEL_FRONT","path":"storage/garments/drop-02/025/locked/05-on-lulu-front.png","sha256":"27c210203b804a1a14190a7f8463f2b6fd714135568dfab7a1a1f404af961568","dimensions":"1024x1536","status":"ACCEPTED_LOCKED_FRONT_MASTER"},
-        "06":{"role":"MODEL_LEFT_PROFILE","path":"storage/garments/drop-02/025/locked/06-on-lulu-left-profile.png","sha256":"ba82782012f09c3f536826422c58dc0f5be46517feb8f67f689b2c37b4b6ec98","dimensions":"1024x1536","status":"ACCEPTED_LOCKED_INDEPENDENT_SIBLING"},
-        "07":{"role":"MODEL_REAR_THREE_QUARTER","path":"storage/garments/drop-02/025/locked/07-on-lulu-right-rear-three-quarter.png","sha256":"c523d1c61c43208db739c7645e6847402daaf73ff3d040251c8f0374199fb721","dimensions":"1024x1536","status":"ACCEPTED_LOCKED_INDEPENDENT_SIBLING_INFERRED_GARMENT_REAR_PRESENTATION"}
+        "01": {"role":"GARMENT_FRONT","path":"storage/garments/drop-02/025/locked/01-garment-front.png","sha256":"34d59ad5ef4e4ea6371533514723a0f745a555b49f4c31424283d4b358f4b8a4","dimensions":"968x1625","status":"ACCEPTED_LOCKED"},
+        "02": {"role":"GARMENT_BACK","path":"storage/garments/drop-02/025/locked/02-garment-back.png","sha256":"9206423e0506d5e50b07c2d27eeac540544a3aa9af12e5502ea854fe545cfc06","dimensions":"1086x1448","status":"ACCEPTED_LOCKED_INFERRED_REAR_PRESENTATION"},
+        "03": {"role":"MANNEQUIN_FRONT","path":"storage/garments/drop-02/025/locked/03-mannequin-front.png","sha256":"422fde9bb76c121faecba38f4dd06a1574fa5b265ba09a134624f626a49beef1","dimensions":"1024x1536","status":"ACCEPTED_LOCKED_SOURCE_SAFE_NEUTRAL"},
+        "04": {"role":"FABRIC_DETAIL","path":"storage/garments/drop-02/025/locked/04-fabric-detail.png","sha256":"3c8c31ed7d36bd49dcda960bdbb98948749f02aad63cdb96a35bef065143b025","dimensions":"1023x1537","status":"ACCEPTED_LOCKED_MODEL_COMPLETED_PRESENTATION_ONLY"},
+        "05": {"role":"MODEL_FRONT","path":"storage/garments/drop-02/025/locked/05-on-lulu-front.png","sha256":"27c210203b804a1a14190a7f8463f2b6fd714135568dfab7a1a1f404af961568","dimensions":"1024x1536","status":"ACCEPTED_LOCKED_FRONT_MASTER"},
+        "06": {"role":"MODEL_LEFT_PROFILE","path":"storage/garments/drop-02/025/locked/06-on-lulu-left-profile.png","sha256":"ba82782012f09c3f536826422c58dc0f5be46517feb8f67f689b2c37b4b6ec98","dimensions":"1024x1536","status":"ACCEPTED_LOCKED_INDEPENDENT_SIBLING"},
+        "07": {"role":"MODEL_REAR_THREE_QUARTER","path":"storage/garments/drop-02/025/locked/07-on-lulu-right-rear-three-quarter.png","sha256":"c523d1c61c43208db739c7645e6847402daaf73ff3d040251c8f0374199fb721","dimensions":"1024x1536","status":"ACCEPTED_LOCKED_INDEPENDENT_SIBLING_INFERRED_GARMENT_REAR_PRESENTATION"}
       },
       "lockedManifestSha256": "28a036e78d04837660ce465672aa6faf03476a5acd0501de1cbedda9f1013637",
       "operationRecords": ["storage/garments/drop-02/025/operations/g025-v01-r001.json","storage/garments/drop-02/025/operations/g025-v02-r001.json","storage/garments/drop-02/025/operations/g025-v03-r001.json","storage/garments/drop-02/025/operations/g025-v04-r001.json","storage/garments/drop-02/025/operations/g025-v04-r002.json","storage/garments/drop-02/025/operations/g025-v05-r001.json","storage/garments/drop-02/025/operations/g025-v05-r002.json","storage/garments/drop-02/025/operations/g025-v06-r001.json","storage/garments/drop-02/025/operations/g025-v07-r001.json"],
       "consentAndPermission": {"realGarmentReferencesRemainPrivate":true,"realIdentityAndBodyReferencesRemainPrivate":true,"publicDerivativesApproved":true},
       "rejectedCandidatesMayParent": false,
-      "releaseGate": "SKU_PRODUCT_NAME_SLUG_AND_PRICE_REQUIRED_BEFORE_EXPORT_OR_PUBLICATION"
+      "localAvailability": {
+        "status": "UNVERIFIED_MISSING_FROM_SHARED_CHECKOUT_AND_CONFIGURED_PRIVATE_BLOB_STORE",
+        "checkedAt": "2026-08-26T16:09:00Z",
+        "expectedPrivateRoot": "storage/garments/drop-02/025",
+        "sharedCheckoutFileCount": 0,
+        "configuredPrivateBlobObjectsScanned": 71,
+        "matchingPathOrHashCount": 0,
+        "requiredSourceManifestCount": 1,
+        "availableSourceManifestCount": 0,
+        "requiredOperationDecisionRecordCount": 9,
+        "availableOperationDecisionRecordCount": 0,
+        "requiredLockedViewCount": 7,
+        "approvalReceiptVerifiedFromPrivateRecords": false,
+        "mayParent": false,
+        "mayExport": false,
+        "mayPublish": false,
+        "releaseCondition": "Rehydrate and read back the exact source manifest, locked manifest, all seven accepted view bytes and all nine operation/decision records; verify every recorded SHA-256 and the exact approval evidence before any parenting, export or publication."
+      },
+      "releaseGate": "PRIVATE_SOURCE_AND_LOCKED_MANIFESTS_01_07_BYTES_AND_NINE_OPERATION_DECISION_RECORDS_MUST_BE_REHYDRATED_READ_BACK_AND_VERIFIED_BEFORE_PARENTING_EXPORT_OR_PUBLICATION"
     }
   },
   "qualityAudit": {
@@ -1823,21 +1843,31 @@
     "knownRestoreDefects": [
       "G005/01 is recorded as accepted but its exact locked private byte asset is absent locally.",
       "The tracked asset index contains two incorrect G022 source hashes; private source pixels must not change.",
-      "The current private Lulu V4 manifest implies approval through revision/roles but lacks explicit per-asset acceptance and lockedStatus fields.",
-      "ADR 0046 provider-neutral ledger and qualification system remains proposed."
+      "The ADR 0046 ledger/adapter implementation is local and tested but its database migration is not applied, it is not deployed, and semantic provider qualification remains incomplete.",
+      "The four-command durable engine currently begins from an accepted 01 lock; intake and independent 01-04 generation are not yet unified behind that facade."
     ],
     "historicalBoundaries": [
       "G001-G004 are founding 05-07 model-view anchors and predate the complete seven-view protocol.",
       "G017 is intentionally live with accepted 01-04 only and no accepted or placeholder 05-07.",
       "G013's texture waiver is garment-specific and may not become precedent."
     ],
-    "completedAt": "2026-08-26T14:15:05Z"
+    "completedAt": "2026-08-26T14:15:05Z",
+    "postAuditRemediation": {
+      "luluAuthorityRevision": "LULU_V4_2026-08-25.7",
+      "luluAuthorityManifestSha256": "d245096f4582e6638bbc9ab1c9abe41df9aa447736372824cdc6803d651824bb",
+      "luluAuthorityManifestBytes": 9338,
+      "verifiedPrivateAssetCount": 11,
+      "perAssetAcceptanceAndLockFields": "VERIFIED_PRIVATE_READBACK",
+      "roomCanvasGate": "BLOCKED_AUTHORITY_CANVAS",
+      "engineImplementation": "LOCAL_TESTED_NOT_MIGRATED_NOT_DEPLOYED_NOT_SEMANTICALLY_QUALIFIED",
+      "engineScope": "MODEL_VIEW_SLICE_FROM_ACCEPTED_01_THROUGH_SUBJECT_AND_05_06_07"
+    }
   },
   "nextOperation": {
     "operationId": "g025-shop-media-export-v001",
     "garmentId": "025",
     "view": "01-07",
-    "status": "BLOCKED_PENDING_AUTHORITATIVE_RELEASE_METADATA"
+    "status": "BLOCKED_PENDING_PRIVATE_MANIFEST_BYTE_OPERATION_DECISION_REHYDRATION_VERIFICATION_AND_AUTHORITATIVE_RELEASE_METADATA"
   },
-  "requiredNext": "Resolve the authoritative SKU, product name, slug and price before preparing G025 shop-media export and catalogue integration. Do not invent release metadata."
+  "requiredNext": "Historical user acceptance for G025 views 01-07 is recorded in committed production state, brief and asset-index records, but this shared checkout contains none of the referenced storage/garments/drop-02/025 private evidence and the configured private Blob store contains no matching pathname or hash. Before any further parenting, export or publication, rehydrate and read back the exact source manifest, locked manifest, all seven accepted bytes and all nine operation/decision records; verify every recorded SHA-256 and the exact private approval evidence, then resolve the authoritative SKU, product name, slug and price without invention. Separately, Studio-engine production readiness remains blocked until an exact approved 1024x1536 room is privately verified under a new authority revision, exact G005/01 bytes are recovered, the two G022 asset-index hashes are corrected without changing source pixels, intake and independent 01-04 are unified behind the durable facade, migrations are applied in a controlled environment, and the versioned G005/G009/G017/G023/G024 semantic qualification suite passes before deployment."
 }
