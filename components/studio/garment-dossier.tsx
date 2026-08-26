@@ -45,6 +45,7 @@ export function GarmentDossier() {
         <PieceWorkspaceView
           garment={garment}
           initialAction={searchParams.get("action") === "price" ? "price" : undefined}
+          layout="adaptive"
           onBuildSet={(piece) => setSetWardrobeItemId(piece.privateWardrobeItemId ?? null)}
           onDismiss={() => window.location.assign(studioScenarioHref("/studio/wardrobe", studio.scenario))}
           onContinueMedia={(piece) => setWearWardrobeItemId(piece.privateWardrobeItemId ?? null)}
