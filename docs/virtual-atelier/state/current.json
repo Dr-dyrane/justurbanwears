@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
   "workflowRevision": "2026-08-26.127",
-  "updatedAt": "2026-08-26T22:32:47Z",
+  "updatedAt": "2026-08-26T22:55:45Z",
   "model": "LULU_V4",
   "activeGarment": "028",
   "activeView": null,
-  "status": "GARMENTS_025_026_AND_028_LIVE_VERIFIED_GARMENT_027_PRIVATE_COMPLETE_LOCKED_NO_RELEASE_AUTHORITY",
+  "status": "GARMENTS_025_026_027_AND_028_LIVE_VERIFIED",
   "identityReview": {
     "candidateId": "lulu.face.v4.front.candidate.v1",
     "acceptedAssetId": "lulu.face.v4.front.lock.v1",
@@ -1850,7 +1850,7 @@
       "releaseGate":"LIVE_VERIFIED"
     },
     "027": {
-      "status":"VIEWS_01_07_USER_ACCEPTED_LOCKED_SHOP_MEDIA_EXPORTED_BLOB_VERIFIED_CATALOGUE_38_INTEGRATED_RELEASE_IN_PROGRESS",
+      "status":"LIVE_VERIFIED_PRIVATE_LOCKS_PRESERVED_CURRENT_CHECKOUT_READBACK_VERIFIED",
       "name":"Scarlet Long-Sleeve Layered-Cutout Ruched Mini Dress",
       "sourceManifest":"storage/garments/drop-02/027/source/manifest.json",
       "sourceManifestSha256":"5017f3777ea08ab0bbab80e7cd9f8675a3b587c549e9ddcbea4b557c8d3a4064",
@@ -1879,8 +1879,8 @@
       "duplicateInputs":{"count":2,"uniqueByteCount":1},
       "operationalAvailability":{"checkoutStatus":"EXACT_PRIVATE_G027_PACKET_PRESENT_AND_READBACK_VERIFIED","sourceManifestVerifiedInCurrentCheckout":true,"authorityManifestVerifiedInCurrentCheckout":true,"lockedManifestVerifiedInCurrentCheckout":true,"stageLocksVerifiedInCurrentCheckout":true,"operationRecordsVerifiedInCurrentCheckout":true,"historicalAcceptancePreserved":true,"mayParent":true,"mayReExport":true,"verifiedAt":"2026-08-26T22:42:45Z"},
       "releaseIdentity":{"sku":"JUW-052","slug":"scarlet-long-sleeve-layered-cutout-ruched-mini-dress","simulatedPriceNgn":28500,"pricingComparators":[{"garmentId":"021","priceNgn":27500,"basis":"fitted cutout and ruched mini construction"},{"garmentId":"023","priceNgn":29500,"basis":"long-sleeve densely ruched mini construction complexity"}],"pricingMethod":"exact midpoint of closest live comparators at an existing live tier"},
-      "shopRelease":{"catalogueRevision":"2026-08-26-catalogue-38","catalogueManifestChecksum":"3bb29dfb72f9ca3b3953f20f915ce74f62d9655c5340ece5b53cf2aedabea442","cataloguePresentationChecksum":"5801ae9a745a39d722d20b60807f824486bd21e9dc84d4394ab56911d4ba3b40","publicRoot":"public/shop/products/scarlet-long-sleeve-layered-cutout-ruched-mini-dress","mediaCount":7,"publicBlobActiveAssetCount":296,"publicBlobLegacyAssetCount":11,"state":"RELEASE_IN_PROGRESS"},
-      "releaseGate":"USER_AUTHORIZED_RELEASE_IN_PROGRESS"
+      "shopRelease":{"catalogueRevision":"2026-08-26-catalogue-38","catalogueManifestChecksum":"3bb29dfb72f9ca3b3953f20f915ce74f62d9655c5340ece5b53cf2aedabea442","cataloguePresentationChecksum":"5801ae9a745a39d722d20b60807f824486bd21e9dc84d4394ab56911d4ba3b40","publicRoot":"public/shop/products/scarlet-long-sleeve-layered-cutout-ruched-mini-dress","mediaCount":7,"publicBlobActiveAssetCount":296,"publicBlobLegacyAssetCount":11,"packetCommit":"505395d7b4c086a4a9657de629a7f59057219702","sourceCommit":"505395d7b4c086a4a9657de629a7f59057219702","deployedCommit":"505395d7b4c086a4a9657de629a7f59057219702","deploymentId":"dpl_722hXFhyU89A6j4iMLrKyBqLbKx3","deployment":"https://justurbanwears-amwkeolkc-drdyranes-projects.vercel.app","productionAlias":"https://www.justurbanwears.com","databaseMutation":"APPLIED_GUARDED_ATOMIC_CATALOGUE_RELEASE","databaseReleaseGitSha":"505395d7b4c086a4a9657de629a7f59057219702","databaseMigrationCount":0,"databaseRowCount":46,"availabilityApi":"CONFIRMED","productPageAvailability":"AVAILABLE_ADD_TO_BAG","productionSmoke":"29_OF_29_PASS_POST_DATABASE_RELEASE","experienceSmoke":"23_OF_23_PASS","browserProductGallery":"7_OF_7_1120X1400_SEMANTICALLY_LABELLED_RENDERED_AND_TRAVERSED","browserControls":"BUY_NOW_AND_ADD_TO_BAG_ENABLED","browserConsole":"CLEAN","state":"LIVE_VERIFIED","verifiedAt":"2026-08-26T22:55:45Z"},
+      "releaseGate":"LIVE_VERIFIED_PUBLIC_RELEASE_PRIVATE_PACKET_READBACK_VERIFIED"
     },
     "028": {
       "status":"LIVE_VERIFIED_PRIVATE_LOCKS_PRESERVED_CURRENT_CHECKOUT_PRIVATE_BYTES_UNAVAILABLE_NON_PARENTABLE_UNTIL_EXACT_READBACK",
@@ -1937,7 +1937,7 @@
     },
     "knownRestoreDefects": [
       "G005/01 is recorded as accepted but its exact locked private byte asset is absent locally. This remains historical full-archive restore debt, not a dependency of the minimal active-garment authority kit, and it must not be synthesized or substituted.",
-      "G027 and G028 acceptance, lineage and public-release evidence remain recorded, but this checkout contains none of their private source, authority, operation, stage-lock or locked bytes. Those private records may not parent or be re-exported until exact manifest and byte readback succeeds.",
+      "G028 acceptance, lineage and public-release evidence remain recorded, but this checkout contains none of its private source, authority, operation, stage-lock or locked bytes. Those G028 private records may not parent or be re-exported until exact manifest and byte readback succeeds. G027 is excluded from this defect because its complete private packet passed current-checkout readback before release.",
       "G028 has two conflicting recorded locked-manifest hashes and the private manifest is unavailable in this checkout. Neither candidate is canonical until exact readback resolves the conflict.",
       "ADR 0046 engine code and authenticated route handlers were introduced at a6ef79b and production migrations 0015 and 0016 are applied. Operational Atelier cutover remains fail-closed because the deployed route runtime is ENGINE_DISABLED and the canonical qualification bundle is absent.",
       "The durable facade covers independent 01-04 roots, subject synthesis and 05/06/07 through one lifecycle. Production dispatch remains disabled until operational runtime composition and closed qualification pass.",
@@ -1966,5 +1966,5 @@
     "view": null,
     "status": "IDLE_NO_ACTIVE_RESERVATION"
   },
-  "requiredNext": "Complete the authorized G027 catalogue-38 release through commit, fetch/reconcile, push, source-built production deployment, guarded database apply, independent verification and live smoke. Preserve the concurrent G029 intake lane without including its untracked brief in G027 commits. Preserve G028 rear presentations as conservative inference only and retain its separately recorded private-portability restrictions. Separately, paid Atelier dispatch remains fail-closed while the route runtime is ENGINE_DISABLED, the canonical qualification bundle is absent and no separately approved exact 1024x1536 room authority exists."
+  "requiredNext": "No further G027 release action is required; catalogue-38 is live-verified and its exact private packet passed current-checkout readback. Preserve the concurrent G029 private intake lane as separate unfinished work. Preserve G028 rear presentations as conservative inference only and retain its separately recorded private-portability restrictions. Separately, paid Atelier dispatch remains fail-closed while the route runtime is ENGINE_DISABLED, the canonical qualification bundle is absent and no separately approved exact 1024x1536 room authority exists."
 }
