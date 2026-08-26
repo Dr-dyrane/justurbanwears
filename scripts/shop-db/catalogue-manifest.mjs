@@ -34,6 +34,7 @@ const V4_MODEL_SLUGS = new Set([
   "dark-navy-draped-cowl-neck-side-cascade-maxi-dress",
   "neon-chartreuse-asymmetric-ruched-knot-maxi-dress",
   "camel-ribbed-deep-plunge-short-sleeve-mini-dress",
+  "scarlet-long-sleeve-layered-cutout-ruched-mini-dress",
 ]);
 
 const V3_MODEL_FRONT_SLUGS = new Set([
@@ -123,7 +124,7 @@ function presentation(product) {
  */
 export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
   schemaVersion: 2,
-  revision: "2026-08-26-catalogue-37",
+  revision: "2026-08-26-catalogue-38",
   products: Object.freeze([
     presentation({
       slug: "coral-drift-dress",
@@ -1046,6 +1047,26 @@ export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
       note: "A camel ribbed mini defined by a deep plunge neckline, fitted short sleeves and a close clean silhouette.",
       story: "Fine vertical ribbing runs continuously through the short sleeves, shaped plunge bodice and fitted mini skirt, with a diagonal under-bust join defining the front.",
       details: ["Deep plunge V neckline", "Fitted short sleeves", "Diagonal under-bust join", "Fine vertical rib texture"],
+      measurements: [],
+      mediaSlots: ["MODEL_FRONT", "MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
+    }),
+    presentation({
+      slug: "scarlet-long-sleeve-layered-cutout-ruched-mini-dress",
+      sku: "JUW-052",
+      name: "Scarlet Long-Sleeve Layered-Cutout Ruched Mini Dress",
+      category: "Dresses",
+      price: 28500,
+      taggedSize: "Size on request",
+      fit: "Measurements confirmed before payment",
+      condition: "Condition confirmed before payment",
+      colour: "Scarlet red",
+      availability: "AVAILABLE",
+      drop: "Drop 02",
+      tone: "coral",
+      silhouette: "dress",
+      note: "A scarlet long-sleeve mini defined by a centre-ruched bust, layered midriff cutouts and dense figure-skimming ruching.",
+      story: "A broad rounded-square neckline frames the gathered bust, while layered waist bands form two cutouts above the densely ruched fitted mini skirt; the verified exact-match rear continues into a long keyhole and centre zip.",
+      details: ["Centre-ruched bust", "Layered midriff cutouts", "Dense front-and-back ruching", "Long rear keyhole with centre zip"],
       measurements: [],
       mediaSlots: ["MODEL_FRONT", "MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
     }),

@@ -377,6 +377,8 @@ If publication is explicitly authorized but no seller price exists, apply the bi
 
 The garment brief is the durable release-identity record. The work ledger may summarize it but must not contradict the accepted packet, current publication authority or the pricing calculation.
 
+Before every release push, assume another Codex task may have advanced the shared checkout or remote. Run `git fetch origin`, inspect `git status --short`, and compare `main...origin/main` with `git rev-list --left-right --count`. Identify every unrelated tracked or untracked path and exclude it from the release commit. If origin advanced, reconcile the committed release work onto the fetched main without overwriting another task, then rerun the affected gate before pushing. Never wait for a rejected push to discover concurrent work.
+
 ### F2. Complete the database release without guessing
 
 After deterministic media export, Blob sync, catalogue integration, commit and deployment, use `docs/data/SHOP_DATABASE.md` as the executable database authority. Do not search old tasks first and do not treat a Vercel-exported `[SENSITIVE]` value as a usable URL or a Neon outage.

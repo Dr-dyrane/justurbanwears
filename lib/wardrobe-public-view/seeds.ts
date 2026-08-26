@@ -60,6 +60,7 @@ export const WARDROBE_APPROVED_V4_MODEL_SLUGS = Object.freeze([
   "dark-navy-draped-cowl-neck-side-cascade-maxi-dress",
   "neon-chartreuse-asymmetric-ruched-knot-maxi-dress",
   "camel-ribbed-deep-plunge-short-sleeve-mini-dress",
+  "scarlet-long-sleeve-layered-cutout-ruched-mini-dress",
 ] as const);
 
 export const WARDROBE_APPROVED_MODEL_FRONT_SLUGS = Object.freeze([
@@ -105,6 +106,7 @@ export const WARDROBE_APPROVED_MODEL_SUPPLEMENTAL_SLOTS = Object.freeze({
   "dark-navy-draped-cowl-neck-side-cascade-maxi-dress": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "neon-chartreuse-asymmetric-ruched-knot-maxi-dress": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "camel-ribbed-deep-plunge-short-sleeve-mini-dress": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
+  "scarlet-long-sleeve-layered-cutout-ruched-mini-dress": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "coral-drift-dress": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "moss-square-knit": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "cocoa-pleat-trouser": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
@@ -886,6 +888,25 @@ export const WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS: readonly WardrobePublicProduc
     note: "A camel ribbed mini defined by a deep plunge neckline, fitted short sleeves and a close clean silhouette.",
     story: "Fine vertical ribbing runs continuously through the short sleeves, shaped plunge bodice and fitted mini skirt, with a diagonal under-bust join defining the front.",
     details: ["Deep plunge V neckline", "Fitted short sleeves", "Diagonal under-bust join", "Fine vertical rib texture"],
+    measurements: [],
+  }),
+  migrationSeed({
+    slug: "scarlet-long-sleeve-layered-cutout-ruched-mini-dress",
+    sku: "JUW-052",
+    name: "Scarlet Long-Sleeve Layered-Cutout Ruched Mini Dress",
+    category: "Dresses",
+    price: 28500,
+    taggedSize: "Size on request",
+    fit: "Measurements confirmed before payment",
+    condition: "Condition confirmed before payment",
+    colour: "Scarlet red",
+    availability: "AVAILABLE",
+    drop: "Drop 02",
+    tone: "coral",
+    silhouette: "dress",
+    note: "A scarlet long-sleeve mini defined by a centre-ruched bust, layered midriff cutouts and dense figure-skimming ruching.",
+    story: "A broad rounded-square neckline frames the gathered bust, while layered waist bands form two cutouts above the densely ruched fitted mini skirt; the verified exact-match rear continues into a long keyhole and centre zip.",
+    details: ["Centre-ruched bust", "Layered midriff cutouts", "Dense front-and-back ruching", "Long rear keyhole with centre zip"],
     measurements: [],
   }),
 ]);

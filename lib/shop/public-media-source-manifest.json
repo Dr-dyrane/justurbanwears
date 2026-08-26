@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "catalogueRevision": "2026-08-26-catalogue-37",
-  "catalogueChecksum": "6f6028ebf009c04cdd141b1870e7a589ed4aca7840b8e3ee69efe95adfa5f93f",
-  "cataloguePresentationChecksum": "e1dd963905d07bc223129ef2edccd77388fe580370d67fb5abeddeee92afed36",
+  "catalogueRevision": "2026-08-26-catalogue-38",
+  "catalogueChecksum": "3bb29dfb72f9ca3b3953f20f915ce74f62d9655c5340ece5b53cf2aedabea442",
+  "cataloguePresentationChecksum": "5801ae9a745a39d722d20b60807f824486bd21e9dc84d4394ab56911d4ba3b40",
   "assets": [
     {
       "sourcePath": "/shop/model/lulu-v2-approved.png",
@@ -2376,6 +2376,69 @@
       "pathname": "shop/catalogue/af19eaed664cadc2406bcd5956e8c3e4a89c3f884168a0c1289965b6ae6da78d/products/scarlet-asymmetric-cascade-ruched-mini-dress/07-model-left-profile.webp",
       "sha256": "af19eaed664cadc2406bcd5956e8c3e4a89c3f884168a0c1289965b6ae6da78d",
       "size": 191910,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/scarlet-long-sleeve-layered-cutout-ruched-mini-dress/01-garment-front.webp",
+      "pathname": "shop/catalogue/9a0e6adecc306afd37e11eb33a856a2dceb2efb85c54f755e601973b036e05c7/products/scarlet-long-sleeve-layered-cutout-ruched-mini-dress/01-garment-front.webp",
+      "sha256": "9a0e6adecc306afd37e11eb33a856a2dceb2efb85c54f755e601973b036e05c7",
+      "size": 98288,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/scarlet-long-sleeve-layered-cutout-ruched-mini-dress/02-garment-back.webp",
+      "pathname": "shop/catalogue/580a4da2b3fae61fb39cd6ee26985906900f7c60f2559a0abc3e78770eaf7182/products/scarlet-long-sleeve-layered-cutout-ruched-mini-dress/02-garment-back.webp",
+      "sha256": "580a4da2b3fae61fb39cd6ee26985906900f7c60f2559a0abc3e78770eaf7182",
+      "size": 90020,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/scarlet-long-sleeve-layered-cutout-ruched-mini-dress/03-mannequin-front.webp",
+      "pathname": "shop/catalogue/327964023de4e4bb9cd3f9dc7149468eddc21e24ebbdc7cb112935695521b1bd/products/scarlet-long-sleeve-layered-cutout-ruched-mini-dress/03-mannequin-front.webp",
+      "sha256": "327964023de4e4bb9cd3f9dc7149468eddc21e24ebbdc7cb112935695521b1bd",
+      "size": 101448,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/scarlet-long-sleeve-layered-cutout-ruched-mini-dress/04-model-front.webp",
+      "pathname": "shop/catalogue/06f3294ebd763f2dc60fb61e1b8aaf48f6f03b3f45bf31adaf11b1cb2133a246/products/scarlet-long-sleeve-layered-cutout-ruched-mini-dress/04-model-front.webp",
+      "sha256": "06f3294ebd763f2dc60fb61e1b8aaf48f6f03b3f45bf31adaf11b1cb2133a246",
+      "size": 181388,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/scarlet-long-sleeve-layered-cutout-ruched-mini-dress/05-model-rear-three-quarter.webp",
+      "pathname": "shop/catalogue/f7caff688ea403d79510f790118440a317d8f7750fc61cc1c484e22c21aa269f/products/scarlet-long-sleeve-layered-cutout-ruched-mini-dress/05-model-rear-three-quarter.webp",
+      "sha256": "f7caff688ea403d79510f790118440a317d8f7750fc61cc1c484e22c21aa269f",
+      "size": 192956,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/scarlet-long-sleeve-layered-cutout-ruched-mini-dress/06-fabric-detail.webp",
+      "pathname": "shop/catalogue/d9ab3a2a1aee0aee0aa41b5556c4cbd42592a267e651273b6e6e36866a4acecc/products/scarlet-long-sleeve-layered-cutout-ruched-mini-dress/06-fabric-detail.webp",
+      "sha256": "d9ab3a2a1aee0aee0aa41b5556c4cbd42592a267e651273b6e6e36866a4acecc",
+      "size": 126392,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/scarlet-long-sleeve-layered-cutout-ruched-mini-dress/07-model-left-profile.webp",
+      "pathname": "shop/catalogue/c8913d7ec91e58c216168b84ff1a64bf483f6046d62f70b26321214848afaaa0/products/scarlet-long-sleeve-layered-cutout-ruched-mini-dress/07-model-left-profile.webp",
+      "sha256": "c8913d7ec91e58c216168b84ff1a64bf483f6046d62f70b26321214848afaaa0",
+      "size": 177224,
       "contentType": "image/webp",
       "width": 1120,
       "height": 1400

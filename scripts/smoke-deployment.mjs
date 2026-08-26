@@ -101,6 +101,7 @@ await htmlCheck("shop shell", "/shop", [
     "dark-navy-draped-cowl-neck-side-cascade-maxi-dress",
     "neon-chartreuse-asymmetric-ruched-knot-maxi-dress",
     "camel-ribbed-deep-plunge-short-sleeve-mini-dress",
+    "scarlet-long-sleeve-layered-cutout-ruched-mini-dress",
   ].every((slug) => body.includes(`/shop/products/${slug}`))],
   ["Drop 01 leaked into discovery", (body) => !visibleMarkup(body).includes("coral-drift-dress")],
   ["shop navigation missing", (body) => body.includes("Search the wardrobe")],
@@ -316,6 +317,16 @@ await htmlCheck("Garment 026 product passport", "/shop/products/neon-chartreuse-
 ]);
 await htmlCheck("Garment 028 product passport", "/shop/products/camel-ribbed-deep-plunge-short-sleeve-mini-dress", [
   ["product name missing", (body) => body.includes("Camel Ribbed Deep-Plunge Short-Sleeve Mini Dress")],
+  ["seven-view dossier incomplete", (body) => [
+    "01-garment-front.webp", "02-garment-back.webp", "03-mannequin-front.webp",
+    "04-model-front.webp", "05-model-rear-three-quarter.webp",
+    "06-fabric-detail.webp", "07-model-left-profile.webp",
+  ].every((file) => body.includes(file))],
+  ["customer-facing AI copy leaked", hasNoCustomerAiCopy],
+  ["Product JSON-LD missing", (body) => body.includes("application/ld+json") && body.includes('"@type":"Product"')],
+]);
+await htmlCheck("Garment 027 product passport", "/shop/products/scarlet-long-sleeve-layered-cutout-ruched-mini-dress", [
+  ["product name missing", (body) => body.includes("Scarlet Long-Sleeve Layered-Cutout Ruched Mini Dress")],
   ["seven-view dossier incomplete", (body) => [
     "01-garment-front.webp", "02-garment-back.webp", "03-mannequin-front.webp",
     "04-model-front.webp", "05-model-rear-three-quarter.webp",
