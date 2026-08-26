@@ -163,6 +163,8 @@ const INVENTORY_PATTERN = /\b(available|hold|inventory|location|reserve|scan|sto
 const REVERSE_PATTERN = /\b(archive|cancel|delete|hide|remove|unpublish|withdraw)\b/i;
 const NAVIGATE_PATTERN = /\b(find|go to|open|resume|show|take me|view|where)\b/i;
 const UNDERSTAND_PATTERN = /\b(explain|how|why|what does|what is)\b/i;
+const ASK_MEDIA_MUTATION_BOUNDARY = "Ask only opens Media. The current flow keeps new model generation unavailable until private-identity provider-retention consent is verified; no generation starts from this handoff.";
+const ASK_ORDER_MUTATION_BOUNDARY = "Ask only opens Orders. It cannot create a payment reservation; checkout must first show configured payment details, and no stock is reserved from this handoff.";
 
 export function normalizeStudioAssistantText(value: string) {
   return value.trim().toLocaleLowerCase("en-NG").replace(/\s+/g, " ");
@@ -321,15 +323,15 @@ function targetedPieceHandoff(
 function capabilityResponse(context: StudioAssistantContext) {
   return response(context, "UNDERSTAND", "R0", [
     {
-      body: "Ask for the Studio summary, a known SKU or order, or an available service. Changes open the owning stack with its preview and confirmation intact.",
+      body: "Ask provides connected guidance and navigation. It does not execute a mutation or prove that an owning workflow is ready.",
       kind: "answer",
       title: "Studio guide",
     },
     {
       items: [
         { detail: "Pieces, drafts, prices, drops", href: "/studio/wardrobe", id: "capability:wardrobe", kind: "Service", label: "Wardrobe" },
-        { detail: "Product media and approved Wear", href: "/studio/media", id: "capability:atelier", kind: "Service", label: "Atelier" },
-        { detail: "Payments, fulfilment, returns", href: "/studio/orders", id: "capability:orders", kind: "Service", label: "Orders" },
+        { detail: "Review media · Ask cannot start model generation", href: "/studio/media", id: "capability:atelier", kind: "Service", label: "Atelier" },
+        { detail: "Review existing orders · Ask cannot reserve payment or stock", href: "/studio/orders", id: "capability:orders", kind: "Service", label: "Orders" },
         { detail: "Attention, stock, holds, recovery", href: "/studio/operations", id: "capability:operations", kind: "Service", label: "Operations" },
       ],
       kind: "results",
@@ -516,15 +518,15 @@ export function resolveStudioAssistant(
     return response(context, "CREATE", "R2", [{
       action: {
         href: target ? `/studio/media/new?garment=${encodeURIComponent(target.mediaTargetId!)}` : "/studio/media",
-        label: target ? "Prepare media" : "Open Atelier",
+        label: target ? "Open garment media" : "Open Media",
       },
       body: target
-        ? `Atelier will load ${target.label} and preserve its garment, identity, and view authorities.`
-        : "Open Atelier to resume a run, review media, or choose a garment for a new operation.",
-      consequence: "Generation begins only after the Atelier operation preview is complete.",
+        ? `Media will load ${target.label} so its connected garment authority can be reviewed without selecting another piece.`
+        : "Open Media to review existing work or choose a garment. The owning flow shows what is actually available.",
+      consequence: ASK_MEDIA_MUTATION_BOUNDARY,
       kind: "handoff",
       risk: "R2",
-      title: target ? `Create for ${target.label}` : "Atelier",
+      title: target ? `Media for ${target.label}` : "Media",
     }]);
   }
 
@@ -548,8 +550,10 @@ export function resolveStudioAssistant(
     const isReturn = /\b(refund|return)\b/i.test(query);
     return response(context, "GO", "R0", [{
       action: { href: isReturn ? "/studio/orders?filter=RETURNS" : "/studio/orders", label: isReturn ? "Review returns" : "Open orders" },
-      body: isReturn ? "See requested returns, evidence, and the next allowed transition." : "See payment, fulfilment, delivery, and active next actions.",
-      consequence: "Order changes still require the order workspace receipt flow.",
+      body: isReturn ? "Review requested returns, evidence, and the next allowed transition." : "Review existing payment evidence, fulfilment, delivery, and active next actions.",
+      consequence: isReturn
+        ? "Ask only opens Returns. Any change still requires the order workspace receipt flow."
+        : ASK_ORDER_MUTATION_BOUNDARY,
       kind: "handoff",
       risk: "R0",
       title: isReturn ? "Returns" : "Orders",

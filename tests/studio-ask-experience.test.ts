@@ -130,6 +130,21 @@ test("piece intake is a private draft handoff", () => {
   assert.match(handoff?.consequence ?? "", /until intake is saved/i);
 });
 
+test("capability guidance distinguishes navigation from unavailable mutations", () => {
+  const response = resolveStudioAssistant("What can you do?", context);
+  const answer = block(response, "answer");
+  const services = block(response, "results")?.items ?? [];
+  const media = services.find((item) => item.id === "capability:atelier");
+  const orders = services.find((item) => item.id === "capability:orders");
+
+  assert.match(answer?.body ?? "", /guidance and navigation/i);
+  assert.match(answer?.body ?? "", /does not execute a mutation or prove/i);
+  assert.equal(media?.href, "/studio/media");
+  assert.match(media?.detail ?? "", /cannot start model generation/i);
+  assert.equal(orders?.href, "/studio/orders");
+  assert.match(orders?.detail ?? "", /cannot reserve payment or stock/i);
+});
+
 test("workflow responses add bounded suggestions and stable device-private task drafts", () => {
   const dress = resolveStudioAssistantWorkflow("Add a new dress", context);
   const shirt = resolveStudioAssistantWorkflow("Create a new shirt", context);
@@ -216,7 +231,9 @@ test("media work carries the resolved garment into Atelier", () => {
   const handoff = block(response, "handoff");
   assert.equal(response.intent, "CREATE");
   assert.equal(handoff?.action.href, "/studio/media/new?garment=wardrobe-002");
-  assert.match(handoff?.consequence ?? "", /operation preview/i);
+  assert.match(handoff?.body ?? "", /connected garment authority/i);
+  assert.match(handoff?.consequence ?? "", /model generation unavailable/i);
+  assert.match(handoff?.consequence ?? "", /no generation starts/i);
 });
 
 test("media work never falls through to a different garment without connected authority", () => {
@@ -238,6 +255,20 @@ test("model and order requests resolve their canonical records", () => {
 
   const order = resolveStudioAssistant("Open order ORD-001", context);
   assert.equal(block(order, "results")?.items[0].href, "/studio/orders/ORD-001");
+});
+
+test("generic payment guidance opens Orders without claiming reservation readiness", () => {
+  const response = resolveStudioAssistant("Open payment work", {
+    ...context,
+    documents: context.documents.filter((candidate) => candidate.kind !== "Order"),
+  });
+  const handoff = block(response, "handoff");
+
+  assert.equal(handoff?.action.href, "/studio/orders");
+  assert.match(handoff?.body ?? "", /review existing payment evidence/i);
+  assert.match(handoff?.consequence ?? "", /cannot create a payment reservation/i);
+  assert.match(handoff?.consequence ?? "", /checkout must first show configured payment details/i);
+  assert.match(handoff?.consequence ?? "", /no stock is reserved/i);
 });
 
 test("destructive language never executes from chat", () => {
@@ -279,6 +310,7 @@ test("the durable route replaces the fake modal modes and preserves keyboard and
   assert.match(surface, /placeholder="Ask about Studio or find a record"/);
   assert.match(styles, /\.studio-native-canvas \.studio-ask-form:focus-within/);
   assert.match(styles, /\.studio-native-canvas \.studio-ask-form textarea:focus-visible[\s\S]*?box-shadow: none;/);
+  assert.match(styles, /@media \(max-width: 620px\)[\s\S]*?studio-stack-shell\[data-studio-page="stack"\]:has\(\.studio-ask-page\) \.studio-command-header \{[\s\S]*?background: var\(--studio-stack-field\);/);
   assert.match(surface, /projected\.searchDocuments\.map/);
   assert.match(commandCenter, /Find in Studio/);
   assert.match(commandCenter, /"Scenario find"/);
@@ -305,6 +337,11 @@ test("the Ask surface keeps prompts, fallbacks and private tasks consistent", ()
   assert.match(surface, /operator\?\.storageScope/);
   assert.doesNotMatch(surface, /operator\?\.role \?\? "unknown"|operator\?\.displayName \?\? "unknown"/);
   assert.match(surface, /function deleteTask/);
+  const fallbackStart = surface.indexOf("function AssistantFallbackMessage");
+  const fallbackEnd = surface.indexOf("export function StudioAskSurface", fallbackStart);
+  const fallbackSurface = surface.slice(fallbackStart, fallbackEnd);
+  assert.match(fallbackSurface, /AssistantWorkflowCard/);
+  assert.doesNotMatch(fallbackSurface, /studioAssistantFallbackText|<MessageResponse/);
   assert.doesNotMatch(styles, /\.studio-ai-send:disabled svg/);
   assert.match(styles, /\.studio-ai-send\[data-busy="true"\] svg/);
   assert.doesNotMatch(decisionSheet, /useEffect/);

@@ -23,6 +23,7 @@ import {
 
 const CREATE_MEDIA_RECOVERY_MESSAGE = "Studio could not confirm whether this saved request started. It will only check existing Wear state; no new generation will be sent.";
 const CREATE_MEDIA_MISSING_MESSAGE = "Studio confirmed that this exact request has no saved Wear generation. Resume the same request key to start it at most once.";
+const MODEL_TRY_ON_ZERO_SPEND_BLOCKER = "Model try-on is unavailable because consent for this image provider to retain private identity photos has not been verified. No paid call will start.";
 const CREATE_MEDIA_RECOVERY_ATTEMPTS = 3;
 
 export function ShootComposer() {
@@ -96,7 +97,9 @@ export function ShootComposer() {
           await navigateToGeneration(result.generation, intent);
         } else if (result.kind === "missing") {
           setRecoveryResolution("MISSING");
-          setRecoveryMessage(CREATE_MEDIA_MISSING_MESSAGE);
+          setRecoveryMessage(intent.operation === "MODEL_TRY_ON"
+            ? MODEL_TRY_ON_ZERO_SPEND_BLOCKER
+            : CREATE_MEDIA_MISSING_MESSAGE);
         } else {
           setRecoveryResolution("UNKNOWN");
           setRecoveryMessage(CREATE_MEDIA_RECOVERY_MESSAGE);
@@ -167,6 +170,11 @@ export function ShootComposer() {
   }, [busy, checkExistingIntent, pendingIntent, recoveryAttempt, recoveryMessage, recoveryResolution]);
 
   const resumeSavedIntent = useCallback(async (intent: CreateMediaIntent) => {
+    if (intent.operation === "MODEL_TRY_ON") {
+      setRecoveryResolution("MISSING");
+      setRecoveryMessage(MODEL_TRY_ON_ZERO_SPEND_BLOCKER);
+      return;
+    }
     await runCreateMediaSingleFlight(commandInFlightRef, async () => {
       setBusy(true);
       setBusyLabel("Resuming saved request…");
@@ -205,7 +213,7 @@ export function ShootComposer() {
         || pendingIntent
         || invalidRequestedModel
         || !wardrobeItemId
-        || (operation === "MODEL_TRY_ON" && !selectedModel)
+        || operation !== "MANNEQUIN_FRONT"
       ) return;
 
       setBusy(true);
@@ -216,8 +224,7 @@ export function ShootComposer() {
       try {
         intent = createMediaIntent({
           wardrobeItemId,
-          operation,
-          ...(operation === "MODEL_TRY_ON" ? { modelProfileId: selectedModel!.id } : {}),
+          operation: "MANNEQUIN_FRONT",
         });
         persistCreateMediaIntent(intent, operatorScope);
       } catch (cause) {
@@ -265,9 +272,11 @@ export function ShootComposer() {
   }
   if (!scopeInitialized) return <StudioLoadingStage label="Opening Atelier…" />;
 
+  const modelIntentCannotResume = pendingIntent?.operation === "MODEL_TRY_ON"
+    && recoveryResolution === "MISSING";
   const recoveryFeedback = pendingIntent ? (
     <StudioFeedback
-      action={busy ? undefined : (
+      action={busy || modelIntentCannotResume ? undefined : (
         <button
           className="button button-secondary"
           onClick={() => void (recoveryResolution === "MISSING"
@@ -279,8 +288,8 @@ export function ShootComposer() {
         </button>
       )}
       detail={recoveryMessage || "Studio is checking the saved request against the current Wear state. No new generation will be sent."}
-      state={busy ? "loading" : "empty"}
-      title={busy ? busyLabel : "Request outcome unconfirmed"}
+      state={busy ? "loading" : modelIntentCannotResume ? "error" : "empty"}
+      title={busy ? busyLabel : modelIntentCannotResume ? "Model try-on unavailable" : "Request outcome unconfirmed"}
     />
   ) : null;
 
@@ -325,19 +334,17 @@ export function ShootComposer() {
                 </button>
                 <button
                   aria-pressed={operation === "MODEL_TRY_ON"}
+                  aria-describedby="model-try-on-zero-spend-blocker"
                   className={operation === "MODEL_TRY_ON" ? "preset-card active" : "preset-card"}
-                  disabled={controlsLocked}
-                  onClick={() => {
-                    setOperation("MODEL_TRY_ON");
-                    if (!modelProfileId) {
-                      setModelProfileId(models.find((model) => model.kind === "LULU_V3")?.id ?? models[0]?.id ?? "");
-                    }
-                  }}
+                  disabled
                   type="button"
                 >
-                  <strong>On model</strong><small>Approved identity</small>
+                  <strong>On model</strong><small>Unavailable · consent required</small>
                 </button>
               </div>
+              <p className="studio-inline-state" id="model-try-on-zero-spend-blocker">
+                {MODEL_TRY_ON_ZERO_SPEND_BLOCKER}
+              </p>
             </StudioStackSection>
             {operation === "MODEL_TRY_ON" ? (
               <StudioStackSection className="composer-section" meta="3" title="Model">
@@ -371,13 +378,21 @@ export function ShootComposer() {
                 {operation === "MODEL_TRY_ON" ? <><span>Model</span><strong>{selectedModel?.name ?? "Unavailable"}</strong></> : null}
                 <span>Visibility</span><strong>Private</strong>
               </div>
-              <button
-                className="button button-primary button-full"
-                disabled={controlsLocked || !wardrobeItemId || (operation === "MODEL_TRY_ON" && !selectedModel)}
-                type="submit"
-              >
-                {busy ? <><span className="spinner" />{busyLabel}</> : pendingIntent ? "Request saved" : <><Camera aria-hidden="true" size={17} />Build view</>}
-              </button>
+              {operation === "MANNEQUIN_FRONT" ? (
+                <button
+                  className="button button-primary button-full"
+                  disabled={controlsLocked || !wardrobeItemId}
+                  type="submit"
+                >
+                  {busy ? <><span className="spinner" />{busyLabel}</> : pendingIntent ? "Request saved" : <><Camera aria-hidden="true" size={17} />Build view</>}
+                </button>
+              ) : pendingIntent ? null : (
+                <StudioFeedback
+                  detail={MODEL_TRY_ON_ZERO_SPEND_BLOCKER}
+                  state="error"
+                  title="Model try-on unavailable"
+                />
+              )}
               {invalidRequestedModel ? (
                 <StudioFeedback
                   action={<button className="button button-secondary" onClick={() => router.push("/studio/models")} type="button">Choose a model</button>}

@@ -918,6 +918,10 @@ html[data-theme] .studio-stack-shell:has(.studio-home-control-plane) .demo-ribbo
 }
 
 @media (max-width: 620px) {
+  body .studio-shell.studio-stack-shell[data-studio-page="stack"]:has(.studio-ask-page) .studio-command-header {
+    background: var(--studio-stack-field);
+  }
+
   .studio-ask-page {
     min-height: calc(100dvh - 104px);
   }

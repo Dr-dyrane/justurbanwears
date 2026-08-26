@@ -69,7 +69,7 @@ function memoryStorage() {
   };
 }
 
-test("a Create with model deep link selects and propagates the exact eligible model", () => {
+test("a Create with model deep link preserves the exact authority but exposes no paid model action", () => {
   const models = [
     { id: MODEL_ID, name: "Exact model", kind: "AUTHORIZED_STOCK" as const, state: "READY" as const },
     { id: ARCHIVED_MODEL_ID, name: "Archived", kind: "LULU_V3" as const, state: "ARCHIVED" as const },
@@ -94,6 +94,20 @@ test("a Create with model deep link selects and propagates the exact eligible mo
   assert.match(composer, /searchParams\.get\("model"\)/);
   assert.match(composer, /setOperation\("MODEL_TRY_ON"\)[\s\S]*setModelProfileId\(requestedModel\.model\.id\)/);
   assert.match(composer, /Model<\/span><strong>\{selectedModel\?\.name/);
+  assert.match(composer, /consent for this image provider to retain private identity photos has not been verified\. No paid call will start\./);
+  assert.match(composer, /operation !== "MANNEQUIN_FRONT"/);
+  assert.match(composer, /operation: "MANNEQUIN_FRONT"/);
+  assert.match(composer, /operation === "MANNEQUIN_FRONT" \? \(/);
+  assert.match(composer, /<strong>On model<\/strong><small>Unavailable · consent required<\/small>/);
+  assert.doesNotMatch(composer, /onClick=\{\(\) => \{\s*setOperation\("MODEL_TRY_ON"\)/);
+});
+
+test("a missing saved model intent can only be checked, never resumed into a new paid call", () => {
+  const composer = readFileSync(`${process.cwd()}/components/shoot/shoot-composer.tsx`, "utf8");
+  assert.match(composer, /modelIntentCannotResume = pendingIntent\?\.operation === "MODEL_TRY_ON"/);
+  assert.match(composer, /busy \|\| modelIntentCannotResume \? undefined/);
+  assert.match(composer, /if \(intent\.operation === "MODEL_TRY_ON"\) \{[\s\S]*MODEL_TRY_ON_ZERO_SPEND_BLOCKER[\s\S]*return;/);
+  assert.match(composer, /modelIntentCannotResume \? "Model try-on unavailable"/);
 });
 
 test("unknown, malformed, and archived model links fail closed without substitution", () => {

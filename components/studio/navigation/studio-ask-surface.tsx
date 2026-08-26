@@ -23,7 +23,6 @@ import { studioOrderHasDueWork } from "../../../lib/shop/order-presentation";
 import {
   normalizeStudioAssistantText,
   resolveStudioAssistantWorkflow,
-  studioAssistantFallbackText,
   type StudioAssistantBlock,
   type StudioAssistantContext,
   type StudioAssistantDocument,
@@ -659,7 +658,6 @@ function AssistantFallbackMessage({
     <Message className="studio-ask-message" from="assistant">
       <MessageContent className="studio-ask-message-content">
         <small className="studio-ask-fallback-label">Safe local guidance · agent connection unavailable</small>
-        <MessageResponse className="studio-ask-model-response">{studioAssistantFallbackText(turn.workflow)}</MessageResponse>
         <AssistantWorkflowCard
           busy={busy}
           onPrompt={onPrompt}
