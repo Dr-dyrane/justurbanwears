@@ -154,7 +154,7 @@ test("gives draft management an image-led mobile sheet with unsqueezed capture a
   );
   const styles = readFileSync(join(process.cwd(), "app/foundation.css"), "utf8");
 
-  assert.match(workbench, /className="studio-draft-summary"/u);
+  assert.match(workbench, /adaptive \? "juw-piece-v2-summary" : "studio-draft-summary"/u);
   assert.match(captures, />Camera<\/span>/u);
   assert.match(captures, /saved \? "Replace" : "Photos"/u);
   assert.match(captures, /WandSparkles/u);
