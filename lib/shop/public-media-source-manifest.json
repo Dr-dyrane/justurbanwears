@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "catalogueRevision": "2026-08-25-catalogue-33",
-  "catalogueChecksum": "3be78321051c0cfa33eefd97fed820656d1cffcbc2345d8d5bc76d94ccd5e631",
-  "cataloguePresentationChecksum": "61b3dad7fc66d4b8a146646ffa8d59cfc3354abe99040b19f1b010d7231a7129",
+  "catalogueRevision": "2026-08-25-catalogue-34",
+  "catalogueChecksum": "56db5b2b7e934123a791daff0693d01aef8058db4ca7cd56bf2df224d52629d6",
+  "cataloguePresentationChecksum": "252557e5349c0c90faaf36819a91d81806d310388f7728a0095c577ab1c24833",
   "assets": [
     {
       "sourcePath": "/shop/model/lulu-v2-approved.png",
@@ -2085,27 +2085,27 @@
     },
     {
       "sourcePath": "/shop/products/scarlet-asymmetric-cascade-ruched-mini-dress/03-mannequin-front.webp",
-      "pathname": "shop/catalogue/369d0fb36cf0c20c3535c4e47ba5d551276a3a4e84dfe56ffff46c23798bee79/products/scarlet-asymmetric-cascade-ruched-mini-dress/03-mannequin-front.webp",
-      "sha256": "369d0fb36cf0c20c3535c4e47ba5d551276a3a4e84dfe56ffff46c23798bee79",
-      "size": 126260,
+      "pathname": "shop/catalogue/f3b5e3ed03690c8264a3464f2a56c7fc0ba7a2a48a4943d07a559225eb652170/products/scarlet-asymmetric-cascade-ruched-mini-dress/03-mannequin-front.webp",
+      "sha256": "f3b5e3ed03690c8264a3464f2a56c7fc0ba7a2a48a4943d07a559225eb652170",
+      "size": 68986,
       "contentType": "image/webp",
       "width": 1120,
       "height": 1400
     },
     {
       "sourcePath": "/shop/products/scarlet-asymmetric-cascade-ruched-mini-dress/04-model-front.webp",
-      "pathname": "shop/catalogue/51ba67be9c5fdc15d51c774c3845ee2ada8f292d532d2561d5d4d8453462f503/products/scarlet-asymmetric-cascade-ruched-mini-dress/04-model-front.webp",
-      "sha256": "51ba67be9c5fdc15d51c774c3845ee2ada8f292d532d2561d5d4d8453462f503",
-      "size": 206522,
+      "pathname": "shop/catalogue/4007bade40d951f836ca9e5c65764cba76b0845805c48cf4a1f7a0567acc414f/products/scarlet-asymmetric-cascade-ruched-mini-dress/04-model-front.webp",
+      "sha256": "4007bade40d951f836ca9e5c65764cba76b0845805c48cf4a1f7a0567acc414f",
+      "size": 201798,
       "contentType": "image/webp",
       "width": 1120,
       "height": 1400
     },
     {
       "sourcePath": "/shop/products/scarlet-asymmetric-cascade-ruched-mini-dress/05-model-rear-three-quarter.webp",
-      "pathname": "shop/catalogue/2a30d17f15d733a1048eb97e1732182ae7920ae4444774643cbc253ee7086e83/products/scarlet-asymmetric-cascade-ruched-mini-dress/05-model-rear-three-quarter.webp",
-      "sha256": "2a30d17f15d733a1048eb97e1732182ae7920ae4444774643cbc253ee7086e83",
-      "size": 187486,
+      "pathname": "shop/catalogue/9a3fc7fcf219e693221004d9e90bba5e613e8d1ff01da7d8019914bbf6cafd11/products/scarlet-asymmetric-cascade-ruched-mini-dress/05-model-rear-three-quarter.webp",
+      "sha256": "9a3fc7fcf219e693221004d9e90bba5e613e8d1ff01da7d8019914bbf6cafd11",
+      "size": 187852,
       "contentType": "image/webp",
       "width": 1120,
       "height": 1400
@@ -2121,9 +2121,9 @@
     },
     {
       "sourcePath": "/shop/products/scarlet-asymmetric-cascade-ruched-mini-dress/07-model-left-profile.webp",
-      "pathname": "shop/catalogue/f948baf09c40dad8904ab43b585be35372c889a94cf3fa3b1957843e654761c8/products/scarlet-asymmetric-cascade-ruched-mini-dress/07-model-left-profile.webp",
-      "sha256": "f948baf09c40dad8904ab43b585be35372c889a94cf3fa3b1957843e654761c8",
-      "size": 205832,
+      "pathname": "shop/catalogue/af19eaed664cadc2406bcd5956e8c3e4a89c3f884168a0c1289965b6ae6da78d/products/scarlet-asymmetric-cascade-ruched-mini-dress/07-model-left-profile.webp",
+      "sha256": "af19eaed664cadc2406bcd5956e8c3e4a89c3f884168a0c1289965b6ae6da78d",
+      "size": 191910,
       "contentType": "image/webp",
       "width": 1120,
       "height": 1400
