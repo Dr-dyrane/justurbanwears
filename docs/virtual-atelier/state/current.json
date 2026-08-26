@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "workflowRevision": "2026-08-26.126",
-  "updatedAt": "2026-08-26T22:28:01Z",
+  "workflowRevision": "2026-08-26.127",
+  "updatedAt": "2026-08-26T22:32:47Z",
   "model": "LULU_V4",
   "activeGarment": "028",
   "activeView": null,
-  "status": "GARMENTS_025_026_AND_028_LIVE_VERIFIED_GARMENT_027_PRIVATE_COMPLETE",
+  "status": "GARMENTS_025_026_AND_028_LIVE_VERIFIED_GARMENT_027_PRIVATE_COMPLETE_LOCKED_NO_RELEASE_AUTHORITY",
   "identityReview": {
     "candidateId": "lulu.face.v4.front.candidate.v1",
     "acceptedAssetId": "lulu.face.v4.front.lock.v1",
@@ -1850,7 +1850,7 @@
       "releaseGate":"LIVE_VERIFIED"
     },
     "027": {
-      "status":"VIEWS_01_07_FACE_BODY_PRE_ROOM_USER_ACCEPTED_LOCKED_SHOP_MEDIA_EXPORTED_BLOB_VERIFIED_CATALOGUE_37_INTEGRATED_RELEASE_IN_PROGRESS",
+      "status":"VIEWS_01_07_FACE_BODY_PRE_ROOM_USER_ACCEPTED_LOCKED_PRIVATE_ONLY_NO_EXPORT_OR_PUBLICATION_AUTHORITY",
       "name":"Scarlet Long-Sleeve Layered-Cutout Ruched Mini Dress",
       "sourceManifest":"storage/garments/drop-02/027/source/manifest.json",
       "sourceManifestSha256":"5017f3777ea08ab0bbab80e7cd9f8675a3b587c549e9ddcbea4b557c8d3a4064",
@@ -1877,10 +1877,11 @@
       "imageGenerationReservation":"RELEASED_AFTER_G027_VIEW_07_ACCEPTED_LOCK",
       "source":{"path":"storage/garments/drop-02/027/source/01-source-front-primary.jpeg","sha256":"18ad2c9e3430e684673546cdf3273602873fe06ef176434bf956b7aa284d564d","bytes":50468,"dimensions":"360x480"},
       "duplicateInputs":{"count":2,"uniqueByteCount":1},
-      "releaseGate":"PRIVATE_GENERATION_ONLY_NO_EXPORT_OR_PUBLICATION_AUTHORITY"
+      "operationalAvailability":{"checkoutStatus":"ALL_RECORDED_PRIVATE_G027_BYTES_UNAVAILABLE_UNVERIFIED","sourceManifestVerifiedInCurrentCheckout":false,"authorityManifestVerifiedInCurrentCheckout":false,"lockedManifestVerifiedInCurrentCheckout":false,"stageLocksVerifiedInCurrentCheckout":false,"operationRecordsVerifiedInCurrentCheckout":false,"historicalAcceptancePreserved":true,"mayParent":false,"mayReExport":false,"requiredBeforeUse":"REHYDRATE_EXACT_SOURCE_AUTHORITY_AND_LOCKED_MANIFESTS_PLUS_ALL_REQUIRED_PRIVATE_BYTES_THEN_READBACK_VERIFY_HASH_SIZE_AND_DIMENSIONS"},
+      "releaseGate":"PRIVATE_COMPLETE_NO_EXPORT_OR_PUBLICATION_AUTHORITY_CURRENT_CHECKOUT_REUSE_BLOCKED_UNTIL_EXACT_READBACK"
     },
     "028": {
-      "status":"LIVE_VERIFIED_PRIVATE_LOCKS_PRESERVED",
+      "status":"LIVE_VERIFIED_PRIVATE_LOCKS_PRESERVED_CURRENT_CHECKOUT_PRIVATE_BYTES_UNAVAILABLE_NON_PARENTABLE_UNTIL_EXACT_READBACK",
       "name":"Camel Ribbed Deep-Plunge Short-Sleeve Mini Dress",
       "sourceManifest":"storage/garments/drop-02/028/source/manifest.json",
       "sourceManifestSha256":"f16ff900c11e2c5283335b8f7fd1c2ba91229d4890857a144e7bd3e57407768c",
@@ -1898,7 +1899,9 @@
         "07":{"role":"MODEL_REAR_THREE_QUARTER","operationId":"g028-v07-r001","path":"storage/garments/drop-02/028/locked/07-on-lulu-right-rear-three-quarter.png","sha256":"7e89f5dfbaa6fcb2856752678801153f01b4b8c3fe624cdc70a5325c6f7dd0a9","bytes":2025325,"dimensions":"1122x1402","status":"INTEGRATION_OWNER_ACCEPTED_LOCKED_INDEPENDENT_SIBLING_INFERRED_REAR_PRESENTATION_ONLY","parentOperationId":"g028-v05-r001","mayParent06":false,"mayServeAsDirectRearEvidence":false}
       },
       "lockedManifest":"storage/garments/drop-02/028/locked/manifest.json",
-      "lockedManifestSha256":"45946d7a02b4d0e86f5bb68f53b916c9ef16a657285bff0e55375ba3f4c0b0b5",
+      "lockedManifestSha256":null,
+      "lockedManifestSha256Candidates":["45946d7a02b4d0e86f5bb68f53b916c9ef16a657285bff0e55375ba3f4c0b0b5","89448a469dde376fc9daa0d21254f8293b2d1f2efdc0db632842dc6b5b6b409c"],
+      "lockedManifestVerificationStatus":"HASH_CONFLICT_UNRESOLVED_PRIVATE_MANIFEST_UNAVAILABLE_IN_CURRENT_CHECKOUT",
       "operationRecords":["storage/garments/drop-02/028/operations/g028-v01-r001.json","storage/garments/drop-02/028/operations/g028-v02-r001.json","storage/garments/drop-02/028/operations/g028-v03-r001.json","storage/garments/drop-02/028/operations/g028-v04-r001.json","storage/garments/drop-02/028/operations/g028-face-r001.json","storage/garments/drop-02/028/operations/g028-body-r001.json","storage/garments/drop-02/028/operations/g028-pre-room-r001.json","storage/garments/drop-02/028/operations/g028-pre-room-r002.json","storage/garments/drop-02/028/operations/g028-v05-r001.json","storage/garments/drop-02/028/operations/g028-v06-r001.json","storage/garments/drop-02/028/operations/g028-v07-r001.json"],
       "fashionNovaStylingCheck":{"operationId":"g028-fashion-nova-styling-check-v001","officialUrl":"https://www.fashionnova.com/products/midnight-ride-plunge-neck-mini-dress?color=beige","pageTitle":"Midnight Ride Plunge Neck Mini Dress - Beige | Fashion Nova","accessedOn":"2026-08-26","matchedGarmentFacts":[],"decision":"NO_CLOSE_MATCH","noCloseMatchReason":"Broad family only; conflicting front hardware and construction provide no G028 authority.","selectedStylingDirection":"slim metallic-gold strappy heels, small gold hoops and one slender gold bracelet; no necklace or bag","authority":"ADVISORY_STYLING_ONLY","passedAsImageReference":false},
       "stageLocks":{
@@ -1911,8 +1914,9 @@
       "imageGenerationReservation":"RELEASED_AFTER_G028_VIEW_07_ACCEPTED_LOCK",
       "source":{"count":3,"uniqueByteCount":3,"allFrontFamily":true,"directRearAvailable":false,"verifiedExactCommercialMatchRearAvailable":false},
       "releaseIdentity":{"sku":"JUW-051","slug":"camel-ribbed-deep-plunge-short-sleeve-mini-dress","simulatedPriceNgn":27500,"pricingComparators":[{"garmentId":"021","priceNgn":27500,"basis":"fitted cutout mini construction"},{"garmentId":"024","priceNgn":27500,"basis":"fitted statement-neckline mini construction"}],"pricingMethod":"closest-live-comparable midpoint mapped to existing live tier"},
-      "shopRelease":{"catalogueRevision":"2026-08-26-catalogue-37","catalogueManifestChecksum":"6f6028ebf009c04cdd141b1870e7a589ed4aca7840b8e3ee69efe95adfa5f93f","cataloguePresentationChecksum":"e1dd963905d07bc223129ef2edccd77388fe580370d67fb5abeddeee92afed36","publicRoot":"public/shop/products/camel-ribbed-deep-plunge-short-sleeve-mini-dress","mediaCount":7,"publicBlobActiveAssetCount":289,"publicBlobLegacyAssetCount":11,"sourceCommit":"d24c9d0e879b0d5d71e9f65097843927952937d4","deployedCommit":"d24c9d0e879b0d5d71e9f65097843927952937d4","deploymentId":"dpl_8tUKHGhxYitoaUpsSAS2YLFG7hvE","deployment":"https://justurbanwears-hx42f2s6f-drdyranes-projects.vercel.app","databaseMutation":"APPLIED_GUARDED_ATOMIC_CATALOGUE_RELEASE","databaseReleaseGitSha":"d24c9d0e879b0d5d71e9f65097843927952937d4","databaseMigrationCount":0,"databaseRowCount":45,"availabilityApi":"CONFIRMED","productPageAvailability":"AVAILABLE_ADD_TO_BAG","productionSmoke":"28_OF_28_PASS_POST_DATABASE_RELEASE","experienceSmoke":"22_OF_22_PASS","browserProductGallery":"7_OF_7_1120X1400_SEMANTICALLY_LABELLED_RENDERED","browserControls":"BUY_NOW_AND_ADD_TO_BAG_ENABLED","state":"LIVE_VERIFIED","verifiedAt":"2026-08-26T22:28:01Z"},
-      "releaseGate":"LIVE_VERIFIED"
+      "operationalAvailability":{"checkoutStatus":"ALL_RECORDED_PRIVATE_G028_BYTES_UNAVAILABLE_UNVERIFIED","sourceManifestVerifiedInCurrentCheckout":false,"authorityManifestVerifiedInCurrentCheckout":false,"lockedManifestVerifiedInCurrentCheckout":false,"stageLocksVerifiedInCurrentCheckout":false,"operationRecordsVerifiedInCurrentCheckout":false,"historicalAcceptancePreserved":true,"publicDerivativesTrackedAndBlobVerified":true,"mayParent":false,"mayReExport":false,"requiredBeforePrivateUse":"REHYDRATE_EXACT_SOURCE_AUTHORITY_AND_LOCKED_MANIFESTS_PLUS_ALL_REQUIRED_PRIVATE_BYTES_RESOLVE_LOCKED_MANIFEST_HASH_CONFLICT_THEN_READBACK_VERIFY_HASH_SIZE_AND_DIMENSIONS"},
+      "shopRelease":{"catalogueRevision":"2026-08-26-catalogue-37","catalogueManifestChecksum":"6f6028ebf009c04cdd141b1870e7a589ed4aca7840b8e3ee69efe95adfa5f93f","cataloguePresentationChecksum":"e1dd963905d07bc223129ef2edccd77388fe580370d67fb5abeddeee92afed36","publicRoot":"public/shop/products/camel-ribbed-deep-plunge-short-sleeve-mini-dress","mediaCount":7,"publicBlobActiveAssetCount":289,"publicBlobLegacyAssetCount":11,"packetCommit":"dae30e9571bc74130be9eb0c65b753fcf43dd978","sourceCommit":"d24c9d0e879b0d5d71e9f65097843927952937d4","deployedCommit":"d24c9d0e879b0d5d71e9f65097843927952937d4","deploymentId":"dpl_8tUKHGhxYitoaUpsSAS2YLFG7hvE","deployment":"https://justurbanwears-hx42f2s6f-drdyranes-projects.vercel.app","databaseMutation":"APPLIED_GUARDED_ATOMIC_CATALOGUE_RELEASE","databaseReleaseGitSha":"d24c9d0e879b0d5d71e9f65097843927952937d4","databaseMigrationCount":0,"databaseRowCount":45,"availabilityApi":"CONFIRMED","productPageAvailability":"AVAILABLE_ADD_TO_BAG","productionSmoke":"28_OF_28_PASS_POST_DATABASE_RELEASE","experienceSmoke":"22_OF_22_PASS","browserProductGallery":"7_OF_7_1120X1400_SEMANTICALLY_LABELLED_RENDERED","browserControls":"BUY_NOW_AND_ADD_TO_BAG_ENABLED","state":"LIVE_VERIFIED","verifiedAt":"2026-08-26T22:28:01Z"},
+      "releaseGate":"LIVE_VERIFIED_PUBLIC_RELEASE_PRIVATE_REUSE_BLOCKED_UNTIL_EXACT_READBACK"
     }
   },
   "qualityAudit": {
@@ -1930,10 +1934,12 @@
       "matureProtocolPossible": 133
     },
     "knownRestoreDefects": [
-      "G005/01 is recorded as accepted but its exact locked private byte asset is absent locally.",
-      "The tracked asset index contains two incorrect G022 source hashes; private source pixels must not change.",
-      "The ADR 0046 ledger/adapter implementation is local and tested but its database migration is not applied, it is not deployed, and semantic provider qualification remains incomplete.",
-      "The four-command durable engine currently begins from an accepted 01 lock; intake and independent 01-04 generation are not yet unified behind that facade."
+      "G005/01 is recorded as accepted but its exact locked private byte asset is absent locally. This remains historical full-archive restore debt, not a dependency of the minimal active-garment authority kit, and it must not be synthesized or substituted.",
+      "G027 and G028 acceptance, lineage and public-release evidence remain recorded, but this checkout contains none of their private source, authority, operation, stage-lock or locked bytes. Those private records may not parent or be re-exported until exact manifest and byte readback succeeds.",
+      "G028 has two conflicting recorded locked-manifest hashes and the private manifest is unavailable in this checkout. Neither candidate is canonical until exact readback resolves the conflict.",
+      "ADR 0046 engine code and authenticated route handlers were introduced at a6ef79b and production migrations 0015 and 0016 are applied. Operational Atelier cutover remains fail-closed because the deployed route runtime is ENGINE_DISABLED and the canonical qualification bundle is absent.",
+      "The durable facade covers independent 01-04 roots, subject synthesis and 05/06/07 through one lifecycle. Production dispatch remains disabled until operational runtime composition and closed qualification pass.",
+      "Final-scene generation remains blocked because the approved room authority is 1024x1280 while the locked output contract requires a separately approved exact 1024x1536 room."
     ],
     "historicalBoundaries": [
       "G001-G004 are founding 05-07 model-view anchors and predate the complete seven-view protocol.",
@@ -1948,8 +1954,8 @@
       "verifiedPrivateAssetCount": 11,
       "perAssetAcceptanceAndLockFields": "VERIFIED_PRIVATE_READBACK",
       "roomCanvasGate": "BLOCKED_AUTHORITY_CANVAS",
-      "engineImplementation": "LOCAL_TESTED_NOT_MIGRATED_NOT_DEPLOYED_NOT_SEMANTICALLY_QUALIFIED",
-      "engineScope": "MODEL_VIEW_SLICE_FROM_ACCEPTED_01_THROUGH_SUBJECT_AND_05_06_07"
+      "engineImplementation": "CODE_AND_AUTHENTICATED_ROUTES_INTRODUCED_AT_A6EF79B_PRODUCTION_MIGRATIONS_0015_0016_APPLIED_ROUTE_RUNTIME_ENGINE_DISABLED_NOT_SEMANTICALLY_QUALIFIED",
+      "engineScope": "ONE_DURABLE_FACADE_INDEPENDENT_01_04_SUBJECT_05_06_07"
     }
   },
   "nextOperation": {
@@ -1958,5 +1964,5 @@
     "view": null,
     "status": "IDLE_NO_ACTIVE_RESERVATION"
   },
-  "requiredNext": "No further G028 release action is required. Preserve G027 as private-only. G028 rear presentations remain conservative inference only. Begin another garment or public release only with explicit user authority."
+  "requiredNext": "No further public G028 release action is required. Preserve G027 as private-only with no export or publication authority and preserve G028 rear presentations as conservative inference only. Do not use or re-export any private G027/G028 record from this checkout until exact manifests and bytes are rehydrated and read back; exact G028 locked-manifest readback must also resolve its two recorded hash candidates. Begin another garment or public release only with explicit user authority. Separately, paid Atelier dispatch remains fail-closed while the route runtime is ENGINE_DISABLED, the canonical qualification bundle is absent and no separately approved exact 1024x1536 room authority exists."
 }
