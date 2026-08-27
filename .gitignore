@@ -38,6 +38,10 @@ yarn-error.log*
 # vercel
 .vercel
 
+# Optional local Neon CLI/context state. Never commit provider credentials.
+/.neon
+/.neon/
+
 /dist/
 /.wrangler/
 /outputs/

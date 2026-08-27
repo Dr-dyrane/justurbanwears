@@ -589,14 +589,14 @@ After deterministic media export, Blob sync, catalogue integration, commit and d
 
 1. Confirm a clean committed release checkout and compute the current manifest revision, row count and checksum locally.
 2. Resolve the authenticated Neon project named `justurbanwears-db`; verify its canonical project ID, primary branch and `neondb` database against `docs/data/SHOP_DATABASE.md`.
-3. Obtain a fresh direct non-pooler connection through the Neon connector. Keep it only in a mode-`0600` temporary environment file outside the repository; never echo it, place it on a command line, save it in conversation, or write it to `.env.production.local`.
+3. Obtain a fresh direct non-pooler connection through the Neon connector. If connector search confirms the exact project but a connector parameter-schema or transport fault blocks describe/connection retrieval, use the already authenticated `neonctl` fallback in `docs/operations/LOCAL-ACCESS.md`; do not replay an old environment value. Keep the fresh connection only in a mode-`0600` temporary environment file outside the repository; never echo it, place it on a command line, save it in conversation, or write it to `.env.production.local`.
 4. Run the read-only schema check with exact target host/database guards. Pending checked-in migrations are expected input to the atomic release, not a reason to run a standalone migration command.
 5. Run the single guarded atomic release with the exact manifest checksum, production confirmation and committed release Git SHA. Do not retry a successful apply; the ledger makes an identical revision a no-op, but repeated writes add no value.
 6. Run the read-only catalogue verification, wait for the server catalogue cache to expire, then require `CONFIRMED` from `/api/shop/catalogue/availability` for every newly released SKU using its exact checked-in tagged size.
 7. Require the affected product pages to show the expected price, `data-state="available"` and the purchase action, then run `npm run smoke:production` once.
 8. Delete the temporary credential file, update the garment briefs and `state/current.json`, and report one exact state: `live-verified` only if every gate above passed; otherwise `deployed-unverified` with the precise failed gate.
 
-If the Neon connector cannot see the canonical project, use the authenticated Vercel Marketplace SSO link for the existing `justurbanwears-db` integration as the fallback. Stop if the resolved project identity differs; never substitute another visible Neon project. The concrete secure staging and command templates are in `docs/data/SHOP_DATABASE.md`.
+If neither the Neon connector nor the authenticated Neon CLI session can see the canonical project, use the authenticated Vercel Marketplace SSO link for the existing `justurbanwears-db` integration as the fallback. Stop if the resolved project identity differs; never substitute another visible Neon project. Vercel login/link/environment pulls, Blob-token routing, secure Neon CLI capture, local credential staging, cleanup and token-minting rules are in `docs/operations/LOCAL-ACCESS.md`; exact database guards and release commands are in `docs/data/SHOP_DATABASE.md`.
 
 After all seven private views are user-accepted and locked, use the deterministic exporter:
 

@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "workflowRevision": "2026-08-27.159",
-  "updatedAt": "2026-08-27T20:55:05Z",
+  "workflowRevision": "2026-08-27.160",
+  "updatedAt": "2026-08-27T21:30:31Z",
   "model": "LULU_V4",
   "activeGarment": "030",
-  "activeView": "RELEASE",
-  "status": "G030_PUBLIC_RELEASE_PACKET_BLOB_VERIFIED_CATALOGUE_40_PENDING_DATABASE_AND_DEPLOYMENT",
+  "activeView": null,
+  "status": "G030_RELEASED_LIVE_VERIFIED",
   "identityReview": {
     "candidateId": "lulu.face.v4.front.candidate.v1",
     "acceptedAssetId": "lulu.face.v4.front.lock.v1",
@@ -1955,7 +1955,7 @@
       "releaseGate":"LIVE_VERIFIED_PUBLIC_RELEASE"
     },
     "030": {
-      "status":"PUBLIC_RELEASE_PACKET_BLOB_VERIFIED_CATALOGUE_40_PENDING_DATABASE_AND_DEPLOYMENT",
+      "status":"RELEASED_LIVE_VERIFIED",
       "name":"Orange Halter Tie-Front Gathered Wrap Mini Dress",
       "sourceManifest":"storage/garments/drop-02/030/source/manifest.json",
       "sourceManifestSha256":"a82a3dcfd33ee00319622f48bf45b771e9b731d48cb5fb9fbe8b8c58ac3fe292",
@@ -1989,11 +1989,11 @@
       "roomCanvasOverride":{"authorizedAt":"2026-08-27T19:07:17Z","userStatement":"Override the same-canvas gate for G030; use the existing room and manual ImageGen for 05–07.","scope":"G030_MANUAL_IMAGEGEN_05_06_07_ONLY","roomAssetId":"juw.atelier.empty-plate.v1","roomSha256":"0b591197d2de1b490c4305ac0aed4d1089564562c7b1005411a8340168aabb72","globalContractChanged":false,"engineContractChanged":false},
       "view05WallmarkRepair":{"authorizedAt":"2026-08-27T19:31:00Z","acceptedAt":"2026-08-27T19:42:09Z","userStatement":"yes rest is super accepted a good turn around of events once we perfect teh wallmark we move to 06 and 07","baseAssetId":"garment.030.user-supplied.roomed-subject.r009","baseSha256":"89885e738f52a27acf0cdfceb7c399f0419774e3e1887354bb0d744a96350ae4","acceptedImmutableScope":"EVERY_PIXEL_EXCEPT_WALLMARK_PATCH_REGION","mutableScope":"WALLMARK_PATCH_REGION_ONLY_USING_CANONICAL_ROOM_PIXELS","roomAssetId":"juw.atelier.empty-plate.v1","roomSha256":"0b591197d2de1b490c4305ac0aed4d1089564562c7b1005411a8340168aabb72","operationId":"g030-v05-r002-canonical-wallmark-local-patch","operationSha256":"9c805ae99fa7b0484b2cd04d06615e0048cb4f9fa1623b281010c4d421654dce","receiptSha256":"8998c9250ed1625f7ba6d11c0f96b6d77ccd32c9386505878e8b6b1f319696f6","lockedSha256":"88ffaf6452bab09fd2f648e418bd9289f362be1d8037112316533ad6e7a3c873","mutableRegionXyxy":[190,40,390,280],"changedPixelCount":43529,"changedBoundingBoxXyxy":[193,43,387,276],"outsideMutableRegionChangedPixelCount":0,"independentReview":"PASS"},
       "imageGenerationReservation":"RELEASED_AFTER_G030_VIEW_07_ACCEPTED_LOCK_PRIVATE_SET_COMPLETE",
-      "nextPermittedOperation":"GUARDED_CATALOGUE_40_DATABASE_RELEASE_THEN_SOURCE_DEPLOYMENT_AND_LIVE_VERIFICATION",
+      "nextPermittedOperation":"NONE_G030_RELEASE_LIVE_VERIFIED",
       "publicationAuthority":true,
       "releaseIdentity":{"sku":"JUW-054","slug":"orange-halter-tie-front-gathered-wrap-mini-dress","simulatedPriceNgn":28500,"pricingComparators":[{"garmentId":"021","priceNgn":27500,"basis":"closest live halter cutout gathered mini"},{"garmentId":"023","priceNgn":29500,"basis":"closest live gathered cascade mini at the next construction-complexity tier"}],"pricingMethod":"closest-live-comparable midpoint equals an existing live tier"},
-      "shopRelease":{"catalogueRevision":"2026-08-27-catalogue-40","catalogueManifestChecksum":"e45ec2cd5a9be7d06eeaf2803b119e5212b9a01cecfa71ce1a44d36095ac38bc","cataloguePresentationChecksum":"c42b73d3041f4f30df9b3507235c8134a201b73155dfd7e2ca47a2b39c09f1cb","publicRoot":"public/shop/products/orange-halter-tie-front-gathered-wrap-mini-dress","mediaCount":7,"publicBlobActiveAssetCount":310,"publicBlobLegacyAssetCount":11,"state":"BLOB_VERIFIED_PENDING_COMMIT_DATABASE_DEPLOYMENT_AND_LIVE_VERIFICATION"},
-      "releaseGate":"PUBLIC_RELEASE_PACKET_BLOB_VERIFIED_PENDING_DATABASE_AND_DEPLOYMENT"
+      "shopRelease":{"catalogueRevision":"2026-08-27-catalogue-40","catalogueManifestChecksum":"e45ec2cd5a9be7d06eeaf2803b119e5212b9a01cecfa71ce1a44d36095ac38bc","cataloguePresentationChecksum":"c42b73d3041f4f30df9b3507235c8134a201b73155dfd7e2ca47a2b39c09f1cb","publicRoot":"public/shop/products/orange-halter-tie-front-gathered-wrap-mini-dress","mediaCount":7,"publicBlobActiveAssetCount":310,"publicBlobLegacyAssetCount":11,"packetCommit":"58550cf2283f17a1d510de05779d87e4441bc6b5","sourceCommit":"58550cf2283f17a1d510de05779d87e4441bc6b5","deployedCommit":"58550cf2283f17a1d510de05779d87e4441bc6b5","deploymentId":"dpl_HKTNL3ETHesz2NRfNZYZmUMjYxhg","deployment":"https://justurbanwears-p3hh4860d-drdyranes-projects.vercel.app","productionUrl":"https://www.justurbanwears.com/shop/products/orange-halter-tie-front-gathered-wrap-mini-dress","databaseMutation":"APPLIED_GUARDED_ATOMIC_CATALOGUE_RELEASE","databaseProjectId":"calm-glade-28091571","databaseBranchId":"br-mute-paper-awfdn96n","databaseReleaseGitSha":"58550cf2283f17a1d510de05779d87e4441bc6b5","databaseAppliedMigrationCount":17,"databasePendingMigrationCount":0,"databaseReleaseMigrationCount":0,"databaseRowCount":48,"availabilityApi":"CONFIRMED","productPageAvailability":"AVAILABLE_BUY_NOW_ADD_TO_BAG","productionSmoke":"31_OF_31_PASS","experienceSmoke":"25_OF_25_PASS","browserProductGallery":"7_OF_7_1120X1400_SEMANTICALLY_ORDERED_LOADED_AND_TRAVERSED","browserControls":"LIGHTBOX_05_TO_06_TO_07_AND_BUY_NOW_ADD_TO_BAG_PASS","browserConsole":"CLEAN","state":"LIVE_VERIFIED","verifiedAt":"2026-08-27T21:21:08Z"},
+      "releaseGate":"LIVE_VERIFIED_PUBLIC_RELEASE"
     }
   },
   "qualityAudit": {
@@ -2038,8 +2038,8 @@
   "nextOperation": {
     "operationId": "none",
     "garmentId": "030",
-    "view": "RELEASE",
-    "status": "CATALOGUE_40_PACKET_READY_NO_GENERATION_RESERVED"
+    "view": null,
+    "status": "RELEASE_LIVE_VERIFIED_NO_OPERATION_RESERVED"
   },
-  "requiredNext": "Commit and push the exact G030 catalogue-40 packet, run the single guarded production database release, deploy the exact source revision, and live-verify availability, product price, purchase controls and all seven gallery views. No further G030 generation is permitted or required."
+  "requiredNext": "G030 is live-verified. Preserve exact private and public bytes; no further G030 operation is required."
 }

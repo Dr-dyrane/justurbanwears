@@ -57,9 +57,16 @@ See [`docs/experience/EXPERIENCE-SYSTEM.md`](docs/experience/EXPERIENCE-SYSTEM.m
 
 Requirements: Node.js `>=22.13.0` and npm.
 
+`.env.example` is the variable-name schema, not a credential source. For an
+authenticated local or release environment, follow
+[`docs/operations/LOCAL-ACCESS.md`](docs/operations/LOCAL-ACCESS.md) to verify
+the exact Vercel/Neon resources, fetch only the needed values, keep local files
+mode `0600`, and preserve the public/private Blob boundary.
+
 ```bash
 npm install
-cp .env.example .env.local
+cp -n .env.example .env.local
+chmod 600 .env.local
 npm run env:check
 npm run dev
 ```
