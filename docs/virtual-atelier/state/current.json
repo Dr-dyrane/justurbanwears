@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "workflowRevision": "2026-08-26.136",
-  "updatedAt": "2026-08-27T02:33:55Z",
+  "workflowRevision": "2026-08-26.137",
+  "updatedAt": "2026-08-27T02:54:24Z",
   "model": "LULU_V4",
   "activeGarment": "029",
   "activeView": null,
-  "status": "G029_PUBLICATION_AUTHORIZED_SEVEN_VIEW_EXPORT_BLOB_VERIFIED_CATALOGUE_39_RELEASE_IN_PROGRESS",
+  "status": "G029_RELEASED_LIVE_VERIFIED",
   "identityReview": {
     "candidateId": "lulu.face.v4.front.candidate.v1",
     "acceptedAssetId": "lulu.face.v4.front.lock.v1",
@@ -1921,7 +1921,7 @@
       "releaseGate":"LIVE_VERIFIED_PUBLIC_RELEASE_PRIVATE_REUSE_BLOCKED_UNTIL_EXACT_READBACK"
     },
     "029": {
-      "status":"COMPLETE_01_07_ACCEPTED_PRIVATE_LOCKED_FACE_BODY_EXACT_CARRY_FORWARD_PRE_ROOM_R012_EXACT_USER_SUPPLIED_ACCEPTED_ALL_CLAIMS_RELEASED",
+      "status":"RELEASED_LIVE_VERIFIED",
       "name":"Red Lace-Cup Long-Sleeve Satin-Look Mini Dress",
       "sourceManifest":"storage/garments/drop-02/029/source/manifest.json",
       "sourceManifestSha256":"1a2a8b8de67f237d70e4aa342efa641f2deb46947dad1fcdcf03d4072f925b8c",
@@ -1942,7 +1942,7 @@
       "intakeClaim":{"path":"storage/garments/drop-02/029/claim.json","initialOperationId":"g029-intake-r001","status":"SUPERSEDED_BY_SERIALIZED_GENERATION_CLAIMS_IN_SAME_CLAIM_LEDGER","initialReservationReleased":true,"initialReleasedAt":"2026-08-26T23:11:14Z"},
       "preparedOperation":{"path":"storage/garments/drop-02/029/operations/g029-v01-r001.json","operationId":"atelier:029:garment-front:219804c6e7737e88c05bd2d3","semanticOperationHash":"219804c6e7737e88c05bd2d3c7d5664454edbc95d29e552d9b78c85842567ae9","stage":"GARMENT_01_FRONT","view":"01","parentAssets":[],"status":"PASS_SEMANTIC_PREFLIGHT_ONLY_DISPATCH_BLOCKED_ENGINE_DISABLED_QUALIFICATION_NOT_PASSED","paidInvocationAllowed":false,"dispatchBoundary":"DURABLE_ENGINE_CLAIM_REQUIRED","candidateCreated":false,"providerInvoked":false,"verifiedAt":"2026-08-26T23:15:27Z"},
       "lockedManifest":"storage/garments/drop-02/029/locked/manifest.json",
-      "lockedManifestSha256":"1a45f009058e1e15177aba3f9a797a9b38c2cf17d5b33f3252a1191f238b3d4d",
+      "lockedManifestSha256":"61edb1cfcc2e9e898a6d1bca74b78677c24af58986efe6680d52def7785c45e6",
       "operationRecords":["storage/garments/drop-02/029/operations/g029-v01-r001.json","storage/garments/drop-02/029/operations/g029-v01-r001-manual-chat.json","storage/garments/drop-02/029/operations/g029-v01-r002-manual-chat.json","storage/garments/drop-02/029/operations/g029-v02-r001-manual-chat.json","storage/garments/drop-02/029/operations/g029-v03-r001-manual-chat.json","storage/garments/drop-02/029/operations/g029-v04-r001-manual-chat.json","storage/garments/drop-02/029/operations/g029-face-reuse-r001.json","storage/garments/drop-02/029/operations/g029-body-reuse-r001.json","storage/garments/drop-02/029/operations/g029-pre-room-r001-manual-chat.json","storage/garments/drop-02/029/operations/g029-pre-room-r002-manual-chat.json","storage/garments/drop-02/029/operations/g029-pre-room-r003-manual-chat.json","storage/garments/drop-02/029/operations/g029-pre-room-r004-consent-context-manual-chat.json","storage/garments/drop-02/029/operations/g029-v05-r001-consent-context-manual-chat.json","storage/garments/drop-02/029/operations/g029-v05-r002-consent-context-manual-chat.json","storage/garments/drop-02/029/operations/g029-pre-room-r005-connected-body-correction-manual-chat.json","storage/garments/drop-02/029/operations/g029-pre-room-r006-accepted-body-stage-correction-manual-chat.json","storage/garments/drop-02/029/operations/g029-pre-room-r007-accepted-lock-rebuild-manual-chat.json","storage/garments/drop-02/029/operations/g029-pre-room-r008-body-parent-garment-transfer-manual-chat.json","storage/garments/drop-02/029/operations/g029-pre-room-r009-g023-body-rebase-precedent-manual-chat.json","storage/garments/drop-02/029/operations/g029-pre-room-r010-g018-accepted-pixel-parent-manual-chat.json","storage/garments/drop-02/029/operations/g029-pre-room-r011-minimal-two-reference-pixel-edit-manual-chat.json","storage/garments/drop-02/029/operations/g029-pre-room-r012-user-supplied-acceptance.json","storage/garments/drop-02/029/operations/g029-v05-r003-user-approved-subject-room-edit-manual-chat.json","storage/garments/drop-02/029/operations/g029-v06-r001.json","storage/garments/drop-02/029/operations/g029-v07-r001.json"],
       "stageLocks":{"FACE":{"path":"storage/garments/drop-02/029/stage-locks/face-identity.png","sha256":"067253585433134c14359ddb850e5f08dbf711855a1781fb664878e0d2153e0e","bytes":1815415,"dimensions":"1122x1402","status":"INTEGRATION_OWNER_ACCEPTED_STAGE_LOCK_EXACT_G027_BYTES","mayParent":"BODY_ONLY"},"BODY":{"path":"storage/garments/drop-02/029/stage-locks/body-identity.png","sha256":"75af11bbf2822b5817be4e6b582885b0e129f16841fdb083a7e1024525dc03f7","bytes":1640527,"dimensions":"1122x1402","status":"INTEGRATION_OWNER_ACCEPTED_STAGE_LOCK_G004_FULL_FRAME_STRUCTURE_EXACT_G027_BYTES","mayParent":"PRE_ROOM_ONLY"},"PRE_ROOM":{"path":"storage/garments/drop-02/029/stage-locks/pre-room-subject.png","sha256":"e23e30da3da4fc4933080e13adee07664bc92084e74dd85d8bacf565fbdd9d1b","bytes":1978587,"dimensions":"1122x1402","status":"USER_ACCEPTED_EXACT_SUPPLIED_STAGE_LOCK_PIXEL_IDENTICAL_TO_R004_VISUAL","mayParent":"ROOM_05_ONLY"}},
       "auditCandidates":{"01-r001":{"operationId":"g029-v01-r001-manual-chat","sha256":"ac838e4ca3e4b817ab7ce32e61e10af509e22305cffc205eb133dff19c72d351","status":"REJECTED_UPPER_CHEST_INFILL_AUDIT_ONLY_NON_PARENTABLE_EXCEPT_EXACT_LOCAL_CORRECTION_INPUT"},"PRE_ROOM-r004":{"operationId":"g029-pre-room-r004-consent-context-manual-chat","sha256":"31015a15ca78310b1097f4af8eab84ddb35cf4f505c91c5ad04fb95e1517e9ab","status":"USER_REJECTED_WAIST_HIP_REAR_GEOMETRY_TOO_SMALL_AUDIT_ONLY_NON_PARENTABLE_EXCEPT_EXACT_LOCAL_CORRECTION_INPUT"}},
@@ -1951,8 +1951,8 @@
       "imageGenerationReservation":"RELEASED_AFTER_VIEW_07_ACCEPTED_LOCK_G029_PRIVATE_SET_COMPLETE",
       "publicationAuthority":true,
       "releaseIdentity":{"sku":"JUW-053","slug":"red-lace-cup-long-sleeve-satin-look-mini-dress","simulatedPriceNgn":28500,"pricingComparators":[{"garmentId":"027","priceNgn":28500,"basis":"closest live long-sleeve red statement mini with verified rear complexity"},{"garmentId":"023","priceNgn":29500,"basis":"closest live scarlet statement mini at the next construction-complexity tier"}],"pricingMethod":"closest-live-comparable midpoint tied between existing tiers and resolved by the binding tie-down rule"},
-      "shopRelease":{"catalogueRevision":"2026-08-26-catalogue-39","catalogueManifestChecksum":"ed2580d260d9339325c997258b2c2cfa212645924f2f39db3d19360dcc1c90b1","cataloguePresentationChecksum":"c4aef11f90256a315daa0336c4f9584d8b4e9f173927343d974da610519aaca9","publicRoot":"public/shop/products/red-lace-cup-long-sleeve-satin-look-mini-dress","mediaCount":7,"publicBlobActiveAssetCount":303,"publicBlobLegacyAssetCount":11,"state":"BLOB_VERIFIED_CATALOGUE_INTEGRATED_PENDING_RELEASE_COMMIT_DEPLOYMENT_DATABASE_AND_LIVE_VERIFY"},
-      "releaseGate":"PUBLICATION_AUTHORIZED_EXPORT_AND_BLOB_SYNC_COMPLETE_CATALOGUE_39_PENDING_RELEASE"
+      "shopRelease":{"catalogueRevision":"2026-08-26-catalogue-39","catalogueManifestChecksum":"ed2580d260d9339325c997258b2c2cfa212645924f2f39db3d19360dcc1c90b1","cataloguePresentationChecksum":"c4aef11f90256a315daa0336c4f9584d8b4e9f173927343d974da610519aaca9","publicRoot":"public/shop/products/red-lace-cup-long-sleeve-satin-look-mini-dress","mediaCount":7,"publicBlobActiveAssetCount":303,"publicBlobLegacyAssetCount":11,"packetCommit":"718a0c324cdaba8dad871a6178fe93ed51b45e8f","sourceCommit":"718a0c324cdaba8dad871a6178fe93ed51b45e8f","deployedCommit":"718a0c324cdaba8dad871a6178fe93ed51b45e8f","deploymentId":"dpl_5rsfxCsH76qCfg5waY3FEmQP6LMn","deployment":"https://justurbanwears-fbdrlj77e-drdyranes-projects.vercel.app","productionUrl":"https://www.justurbanwears.com/shop/products/red-lace-cup-long-sleeve-satin-look-mini-dress","databaseMutation":"APPLIED_GUARDED_ATOMIC_CATALOGUE_RELEASE","databaseProjectId":"calm-glade-28091571","databaseBranchId":"br-mute-paper-awfdn96n","databaseReleaseGitSha":"718a0c324cdaba8dad871a6178fe93ed51b45e8f","databaseMigrationCount":0,"databaseRowCount":47,"availabilityApi":"CONFIRMED","productPageAvailability":"AVAILABLE_ADD_TO_BAG","productionSmoke":"30_OF_30_PASS","experienceSmoke":"24_OF_24_PASS","browserProductGallery":"7_OF_7_1120X1400_SEMANTICALLY_ORDERED_AND_LOADED","browserControls":"BUY_NOW_AND_ADD_TO_BAG_ENABLED","state":"LIVE_VERIFIED","verifiedAt":"2026-08-27T02:54:24Z"},
+      "releaseGate":"LIVE_VERIFIED_PUBLIC_RELEASE"
     }
   },
   "qualityAudit": {
@@ -1996,9 +1996,9 @@
   },
   "nextOperation": {
     "operationId": null,
-    "garmentId": "029",
+    "garmentId": null,
     "view": null,
-    "status": "PUBLICATION_AUTHORIZED_EXPORT_BLOB_SYNC_AND_CATALOGUE_INTEGRATION_COMPLETE_PENDING_RELEASE_COMMIT"
+    "status": "NO_OPERATION_RESERVED_G029_LIVE_VERIFIED"
   },
-  "requiredNext": "Publish only the exact accepted G029 packet as JUW-053 through catalogue-39: commit the hash-verified seven-view export, fetch-reconcile before push, deploy the exact revision, apply the guarded production database release, and live-verify availability, product gallery and release smokes. Preserve all private locks and released reservations."
+  "requiredNext": "Await the next user-authorized garment intake. Preserve G029 private locks, immutable accepted views, public derivative hashes, live release evidence and released reservations."
 }
