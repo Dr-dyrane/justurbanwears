@@ -353,6 +353,69 @@ Example:
 The locked room and brand icon are never correction targets for
 `ROOM_FINAL_05`; a room-authority failure blocks instead of spending again.
 
+### E1. Built-in manual-chat moderation context and no-output recovery
+
+For an identity-preserving built-in manual-chat operation, do not declare the
+workflow terminally blocked until the invocation has received the complete
+production context in both the private operation record and the prompt. State
+all of the following together and truthfully:
+
+- the subject is an adult and the user has authorized the private virtual
+  fitting;
+- the purpose is a conventional, fully clothed professional ecommerce
+  catalogue candidate for private review and approval;
+- generation is not publication, endorsement or public release, which remain
+  separately gated;
+- real identity/body references and generated masters remain private and
+  gitignored;
+- each supplied image has one precise authority role, with explicit
+  zero-authority exclusions; and
+- the complete applicable stack is present: real-face operation board, body
+  canon, accepted full-frame structure, garment/on-form authority and exact
+  room or accepted-pixel parent for the requested stage.
+
+A no-output moderation response creates no candidate and does not consume the
+one bounded correction allowance. Record its category and request ID, release
+the reservation, and retain no invented output metadata. A later attempt is
+permitted only when it uses a materially different capability or context stack;
+rewriting the same request with euphemisms is not a new operation.
+
+The full context does not override provider policy or guarantee an output. If
+the fully contextualized stack also produces no candidate, preserve the audit
+record and change capability or use an exact accepted-pixel parent rather than
+repeating prompt-only retries.
+
+G029 is the durable recovery example: PRE_ROOM r001-r003 produced no candidate
+at output moderation; r004 succeeded only after the adult-subject,
+user-authorized private fitting, fully clothed ecommerce purpose, private
+retention, approval boundary and per-reference authority separation were
+supplied together with the full accepted visual stack. That successful output
+still required ordinary identity, connected-body, garment, realism and user
+review; context recovery is not visual acceptance.
+
+### E2. Reuse the committed recovery pattern, not a generic approximation
+
+When the failure matches a prior garment, inspect the exact committed operation
+before retrying. Two distinct successful patterns are durable:
+
+- **Too-slim front-body rebase — G023, commit `f0c84a7`, operation
+  `g023-body-rebase-v05-r002`:** pass exactly the rejected front target, complete
+  real-face board, dedicated `lulu.body.canon.v4.front` crop, direct
+  `lulu.body.real.angle-contact.v4` evidence and accepted current-garment `01`.
+  The front crop and direct real evidence must be present together; a generic
+  BODY render or whole-body board is not an equivalent substitution.
+- **Moderation recovery through an accepted same-view pixel parent — G018,
+  commit `0ef5d0a`, operation `g018-v07-r004-edit-parent`:** use a fully clothed
+  accepted same-view person/body/pose/camera/scene pixel parent, the current
+  garment-and-styling reference, complete real-face authority and the dedicated
+  body canon plus direct real-body evidence. Change only clothing/footwear.
+
+These are capability patterns, not guarantees. Record the provider request ID
+when an exact replay still creates no bytes; provider moderation state can
+change even when authority, prompt structure and references match a committed
+success. Do not misreport an exact historical replay as a missing-consent or
+missing-context problem.
+
 ## F. Semantic export mapping
 
 Use semantic roles as the source of truth:

@@ -61,6 +61,7 @@ export const WARDROBE_APPROVED_V4_MODEL_SLUGS = Object.freeze([
   "neon-chartreuse-asymmetric-ruched-knot-maxi-dress",
   "camel-ribbed-deep-plunge-short-sleeve-mini-dress",
   "scarlet-long-sleeve-layered-cutout-ruched-mini-dress",
+  "red-lace-cup-long-sleeve-satin-look-mini-dress",
 ] as const);
 
 export const WARDROBE_APPROVED_MODEL_FRONT_SLUGS = Object.freeze([
@@ -107,6 +108,7 @@ export const WARDROBE_APPROVED_MODEL_SUPPLEMENTAL_SLOTS = Object.freeze({
   "neon-chartreuse-asymmetric-ruched-knot-maxi-dress": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "camel-ribbed-deep-plunge-short-sleeve-mini-dress": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "scarlet-long-sleeve-layered-cutout-ruched-mini-dress": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
+  "red-lace-cup-long-sleeve-satin-look-mini-dress": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "coral-drift-dress": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "moss-square-knit": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "cocoa-pleat-trouser": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
@@ -907,6 +909,25 @@ export const WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS: readonly WardrobePublicProduc
     note: "A scarlet long-sleeve mini defined by a centre-ruched bust, layered midriff cutouts and dense figure-skimming ruching.",
     story: "A broad rounded-square neckline frames the gathered bust, while layered waist bands form two cutouts above the densely ruched fitted mini skirt; the verified exact-match rear continues into a long keyhole and centre zip.",
     details: ["Centre-ruched bust", "Layered midriff cutouts", "Dense front-and-back ruching", "Long rear keyhole with centre zip"],
+    measurements: [],
+  }),
+  migrationSeed({
+    slug: "red-lace-cup-long-sleeve-satin-look-mini-dress",
+    sku: "JUW-053",
+    name: "Red Lace-Cup Long-Sleeve Satin-Look Mini Dress",
+    category: "Dresses",
+    price: 28500,
+    taggedSize: "Size on request",
+    fit: "Measurements confirmed before payment",
+    condition: "Condition confirmed before payment",
+    colour: "Vivid red",
+    availability: "AVAILABLE",
+    drop: "Drop 02",
+    tone: "coral",
+    silhouette: "dress",
+    note: "A vivid red long-sleeve mini defined by shaped floral-lace cups, a centre bow and a softly flared satin-look body.",
+    story: "Wide satin-look shoulder panels frame a low sweetheart neckline and shaped lace-covered cups, while fitted floral-lace sleeves, long centre ties and a smooth softly flared mini body complete the silhouette; the verified exact-match rear adds a high smooth back and centre invisible zip.",
+    details: ["Shaped floral-lace sweetheart cups", "Centre bow with long ties", "Full fitted floral-lace sleeves", "High smooth back with centre invisible zip"],
     measurements: [],
   }),
 ]);

@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "catalogueRevision": "2026-08-26-catalogue-38",
-  "catalogueChecksum": "3bb29dfb72f9ca3b3953f20f915ce74f62d9655c5340ece5b53cf2aedabea442",
-  "cataloguePresentationChecksum": "5801ae9a745a39d722d20b60807f824486bd21e9dc84d4394ab56911d4ba3b40",
+  "catalogueRevision": "2026-08-26-catalogue-39",
+  "catalogueChecksum": "ed2580d260d9339325c997258b2c2cfa212645924f2f39db3d19360dcc1c90b1",
+  "cataloguePresentationChecksum": "c4aef11f90256a315daa0336c4f9584d8b4e9f173927343d974da610519aaca9",
   "legacyAssets": [
     {
       "sourcePath": "/shop/products/black-cropped-tee-pink-distressed-shorts-set/04-model-front.webp",
@@ -2020,6 +2020,62 @@
       "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/ceaeff05e02d7c2ee0e2ce24e44bb6918b44eefa784f226d7dc54737026a7f94/products/plum-sparkle-cowl-neck-jumpsuit/07-model-left-profile.webp",
       "sha256": "ceaeff05e02d7c2ee0e2ce24e44bb6918b44eefa784f226d7dc54737026a7f94",
       "size": 222872,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/red-lace-cup-long-sleeve-satin-look-mini-dress/01-garment-front.webp",
+      "pathname": "shop/catalogue/eea111866e8921d58f053f9afb8533871390f3e78c310f9da190be65a00cda8a/products/red-lace-cup-long-sleeve-satin-look-mini-dress/01-garment-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/eea111866e8921d58f053f9afb8533871390f3e78c310f9da190be65a00cda8a/products/red-lace-cup-long-sleeve-satin-look-mini-dress/01-garment-front.webp",
+      "sha256": "eea111866e8921d58f053f9afb8533871390f3e78c310f9da190be65a00cda8a",
+      "size": 166218,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/red-lace-cup-long-sleeve-satin-look-mini-dress/02-garment-back.webp",
+      "pathname": "shop/catalogue/3c161af7d802a16d8c3494326dd13a2c4726d6775de692a5ac0f15c87f77eba7/products/red-lace-cup-long-sleeve-satin-look-mini-dress/02-garment-back.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/3c161af7d802a16d8c3494326dd13a2c4726d6775de692a5ac0f15c87f77eba7/products/red-lace-cup-long-sleeve-satin-look-mini-dress/02-garment-back.webp",
+      "sha256": "3c161af7d802a16d8c3494326dd13a2c4726d6775de692a5ac0f15c87f77eba7",
+      "size": 130724,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/red-lace-cup-long-sleeve-satin-look-mini-dress/03-mannequin-front.webp",
+      "pathname": "shop/catalogue/805ff552efde0a961d769134bd8d05973a43b98fd617c645b51b7eca31640322/products/red-lace-cup-long-sleeve-satin-look-mini-dress/03-mannequin-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/805ff552efde0a961d769134bd8d05973a43b98fd617c645b51b7eca31640322/products/red-lace-cup-long-sleeve-satin-look-mini-dress/03-mannequin-front.webp",
+      "sha256": "805ff552efde0a961d769134bd8d05973a43b98fd617c645b51b7eca31640322",
+      "size": 83774,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/red-lace-cup-long-sleeve-satin-look-mini-dress/04-model-front.webp",
+      "pathname": "shop/catalogue/b34ae8248244895c0c11393eb72f521a84a85fa47101f81465288e74a38b2551/products/red-lace-cup-long-sleeve-satin-look-mini-dress/04-model-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/b34ae8248244895c0c11393eb72f521a84a85fa47101f81465288e74a38b2551/products/red-lace-cup-long-sleeve-satin-look-mini-dress/04-model-front.webp",
+      "sha256": "b34ae8248244895c0c11393eb72f521a84a85fa47101f81465288e74a38b2551",
+      "size": 208714,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/red-lace-cup-long-sleeve-satin-look-mini-dress/05-model-rear-three-quarter.webp",
+      "pathname": "shop/catalogue/912b4fea20bb543b0282bf7bc0c20efd8d8412b6033fc191138ff2de424b0cdb/products/red-lace-cup-long-sleeve-satin-look-mini-dress/05-model-rear-three-quarter.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/912b4fea20bb543b0282bf7bc0c20efd8d8412b6033fc191138ff2de424b0cdb/products/red-lace-cup-long-sleeve-satin-look-mini-dress/05-model-rear-three-quarter.webp",
+      "sha256": "912b4fea20bb543b0282bf7bc0c20efd8d8412b6033fc191138ff2de424b0cdb",
+      "size": 219516,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/red-lace-cup-long-sleeve-satin-look-mini-dress/06-fabric-detail.webp",
+      "pathname": "shop/catalogue/9c9589b6885699d5e684599fc672074d409b14a7e8b3556dac920e46e8cec543/products/red-lace-cup-long-sleeve-satin-look-mini-dress/06-fabric-detail.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/9c9589b6885699d5e684599fc672074d409b14a7e8b3556dac920e46e8cec543/products/red-lace-cup-long-sleeve-satin-look-mini-dress/06-fabric-detail.webp",
+      "sha256": "9c9589b6885699d5e684599fc672074d409b14a7e8b3556dac920e46e8cec543",
+      "size": 338854,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/red-lace-cup-long-sleeve-satin-look-mini-dress/07-model-left-profile.webp",
+      "pathname": "shop/catalogue/5110c46d84ebf78c228d4e6d4dc02e6c9c155faf281465fc040675f97e79f281/products/red-lace-cup-long-sleeve-satin-look-mini-dress/07-model-left-profile.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/5110c46d84ebf78c228d4e6d4dc02e6c9c155faf281465fc040675f97e79f281/products/red-lace-cup-long-sleeve-satin-look-mini-dress/07-model-left-profile.webp",
+      "sha256": "5110c46d84ebf78c228d4e6d4dc02e6c9c155faf281465fc040675f97e79f281",
+      "size": 217902,
       "contentType": "image/webp"
     },
     {

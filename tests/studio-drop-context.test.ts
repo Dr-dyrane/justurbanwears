@@ -216,7 +216,7 @@ test("keeps all four UI scopes present when the wardrobe is empty", () => {
   ]);
 });
 
-test("keeps the canonical Drop 02 boundary at the released twenty-eight pieces", () => {
+test("keeps the canonical Drop 02 boundary at the released twenty-nine pieces", () => {
   const currentSkus = WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS
     .filter((product) => product.drop === CURRENT_SHOP_DROP)
     .map((product) => product.sku);
@@ -225,7 +225,7 @@ test("keeps the canonical Drop 02 boundary at the released twenty-eight pieces",
     "JUW-025", "JUW-026", "JUW-027", "JUW-028",
     "JUW-029", "JUW-030", "JUW-031", "JUW-032",
     "JUW-033", "JUW-034", "JUW-035", "JUW-036",
-    "JUW-037", "JUW-038", "JUW-039", "JUW-040", "JUW-041", "JUW-042", "JUW-043", "JUW-044", "JUW-045", "JUW-046", "JUW-047", "JUW-048", "JUW-049", "JUW-050", "JUW-051", "JUW-052",
+    "JUW-037", "JUW-038", "JUW-039", "JUW-040", "JUW-041", "JUW-042", "JUW-043", "JUW-044", "JUW-045", "JUW-046", "JUW-047", "JUW-048", "JUW-049", "JUW-050", "JUW-051", "JUW-052", "JUW-053",
   ]);
 });
 
@@ -252,7 +252,7 @@ test("keeps collection membership explicit and independent from sold or archive 
     DROP_01_COMPATIBILITY_SKUS.some((sku) => drop02Skus.has(sku)),
     false,
   );
-  assert.equal(new Set([...DROP_01_COMPATIBILITY_SKUS, ...DROP_02_COMPATIBILITY_SKUS]).size, 52);
+  assert.equal(new Set([...DROP_01_COMPATIBILITY_SKUS, ...DROP_02_COMPATIBILITY_SKUS]).size, 53);
   assert.equal(compatibilityCollectionForSku("JUW-004")?.label, "Drop 01");
   for (const sku of DROP_01_INCOMPLETE_ARCHIVED_DRAFT_SKUS) {
     assert.equal(compatibilityCollectionForSku(sku)?.label, "Drop 01");
@@ -261,7 +261,7 @@ test("keeps collection membership explicit and independent from sold or archive 
   assert.deepEqual(DROP_02_COMPATIBILITY_SKUS, [
     "JUW-025", "JUW-026", "JUW-027", "JUW-028", "JUW-029", "JUW-030",
     "JUW-031", "JUW-032", "JUW-033", "JUW-034", "JUW-035", "JUW-036",
-    "JUW-037", "JUW-038", "JUW-039", "JUW-040", "JUW-041", "JUW-042", "JUW-043", "JUW-044", "JUW-045", "JUW-046", "JUW-047", "JUW-048", "JUW-049", "JUW-050", "JUW-051", "JUW-052",
+    "JUW-037", "JUW-038", "JUW-039", "JUW-040", "JUW-041", "JUW-042", "JUW-043", "JUW-044", "JUW-045", "JUW-046", "JUW-047", "JUW-048", "JUW-049", "JUW-050", "JUW-051", "JUW-052", "JUW-053",
   ]);
   const drop02 = SHOP_COLLECTION_COMPATIBILITY.find((collection) => collection.key === "drop-02");
   assert.equal(drop02?.state, "ACTIVE");
