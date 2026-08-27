@@ -378,7 +378,7 @@ A no-output moderation response creates no candidate and does not consume the
 one bounded correction allowance. Record its category and request ID, release
 the reservation, and retain no invented output metadata. A later attempt is
 permitted only when it uses a materially different capability or context stack;
-rewriting the same request with euphemisms is not a new operation.
+rewriting or replaying the same request is not a new operation.
 
 The full context does not override provider policy or guarantee an output. If
 the fully contextualized stack also produces no candidate, preserve the audit
@@ -415,6 +415,147 @@ when an exact replay still creates no bytes; provider moderation state can
 change even when authority, prompt structure and references match a committed
 success. Do not misreport an exact historical replay as a missing-consent or
 missing-context problem.
+
+### E3. Garment-output isolation without implicit replay
+
+G027 and G028 show that provider output moderation has sometimes varied across
+identical invocations. That historical observation is not authority to replay a
+terminal no-output operation. The operating contract remains binding: record
+the no-byte result, release the claim, stop at `BLOCKED_USER_DIRECTION`, and do
+not make another provider call implicitly. An identical repeat is audit-only
+and adds no capability evidence.
+
+After explicit user direction, a materially different current-authority-
+eligible capability may be prepared as a new canonical semantic operation. For
+a garment that repeatedly triggers output moderation, use this diagnostic
+ladder rather than asking for consent again or guessing at anatomy:
+
+1. Verify the adult-subject, authorized private-review and authority-separation
+   context from E1.
+2. Verify the exact accepted BODY parent, complete face authority, dedicated
+   body canon and direct real-body evidence. Never use a historical parent whose
+   current state says `mayParent:false`.
+3. Search for and privately archive an exact official model-worn product image
+   when one exists. It may control garment construction/arrangement only; the
+   commercial model has zero Lulu identity, body, pose, styling, camera or room
+   authority.
+4. With explicit user direction, test one BODY-parent garment transfer and, if
+   materially justified, one reverse exact-garment pixel-parent Lulu rebase.
+   Each direction requires its own canonical semantic identity.
+5. With explicit user direction, use one strict two-image accepted-person plus
+   exact-garment edit as the final reference-density isolation test. Keep the
+   complete private face/body stack as the acceptance gate even when it is not
+   transported to the provider.
+6. If an accepted mannequin presentation exists, explicit user direction may
+   authorize one accepted-mannequin garment pixel-parent test. Preserve its
+   garment pixels and replace the mannequin, crop and backdrop with the
+   accepted person authorities. This isolates commercial-model input from the
+   finished-output boundary and requires its own canonical semantic identity.
+
+If the current-authority full stack, exact model-worn transfer, reverse
+pixel-parent rebase and strict two-image isolation each produce one no-byte
+result, record a provider output-classifier block on the proposed finished
+garment image. This is evidence against missing consent, source, body evidence,
+model-worn evidence or prompt/reference density; it is not proof that every
+future provider capability is exhausted. Prefer a user-supplied candidate.
+Otherwise resume only after explicit user direction and a materially different
+capability or demonstrable provider-state change. Do not switch to a paid
+provider, API key or external generation route without separate user authority.
+
+Preserve evidence boundaries exactly. A response without an exact prompt hash
+or ordered-reference receipt must not be described as an exact replay. A trial
+that used a currently forbidden parent remains audit-only. Multiple provider
+reference arrangements under one semantic identity are also audit-only until
+each arrangement has its own valid operation record.
+
+G030 is the durable isolation example. Its official Fashion Nova model-worn
+front and rear images proved the orange halter mini dress is conventional
+retail apparel and resolved its on-body construction. Eight current-authority-
+eligible single-invocation operations still produced no PRE_ROOM candidate;
+the strict two-image result isolates provider reference density, the direct
+real-Lulu source pixel-parent result rules out the generated BODY parent itself
+as the trigger, the accepted-mannequin garment pixel-parent result rules out
+commercial-model input as a necessary cause, and r009 shows that a one-image
+transparent-background extraction can hit the same output boundary. Eight
+other responses are retained audit-only: two used an unavailable G028 parent,
+and six were identical repeats. Exact prompt hashes exist for G030 r003-r009;
+r001-r002 preserve semantic records and request IDs without exact prompt
+receipts.
+
+G030/05 adds a final-scene no-byte precedent. On 2026-08-27 the user explicitly
+authorized a G030-only exception to use the existing 1024x1280 room as manual
+ImageGen visual authority for 05-07; this did not change the global deterministic
+engine contract. The 05 root used exact accepted PRE_ROOM, accepted 01 as a
+garment safeguard and the existing room. The materially different bounded
+follow-up used the same accepted subject's fully rendered direct source as the
+edit target plus only the existing room. Both were rejected at output
+moderation before bytes existed (`fe0f0d09-58be-4a30-a423-fde5c472a489`, then
+`86aabc51-cc19-49bd-9a99-eddf9c73ea74`). Preserve both prompt/stack receipts,
+release the serialized claim and stop. With no accepted 05, independent 06 and
+07 remain unavailable. A user-supplied acceptable 05 can be handled later as a
+new hash-and-review intake decision; do not call the provider again implicitly.
+
+That later intake occurred for G030. The user accepted every pixel of the
+supplied fully clothed front frame except its malformed wallmark. Treat this as
+a local-correction contract, not a new generation: declare one wallmark-only
+ROI, use the exact canonical room as the sole patch source, preserve the base
+canvas and encoding dimensions, and prove that decoded-pixel differences
+outside the ROI equal zero. Feathering and a bounded tonal adjustment are
+permitted only inside the declared ROI. Review the canonical central silhouette,
+both mirrored lower-L cutouts, double-logo/source residue, patch seams and tonal
+coherence. Only after that review passes may the corrected bytes be locked as
+05 and parent independent 06 and 07. G030's accepted example changed 43,529
+pixels inside `[190,40,390,280]`, changed zero outside, and locked SHA-256
+`88ffaf6452bab09fd2f648e418bd9289f362be1d8037112316533ad6e7a3c873`.
+
+### E4. Same-provider success and offline alpha fallback
+
+A user may supply a successful image and clarify that it came from the same
+built-in Imagegen capability that rejected a later operation. Record that
+accurately. If the original request/job receipt is unavailable, classify the
+provenance as `USER_ATTESTED_BUILT_IN_IMAGEGEN_OUTPUT_REQUEST_RECEIPT_UNAVAILABLE`,
+not as provider-verified execution and not as Nano Banana. A successful source
+frame beside a rejected edit means the output boundary is request/candidate
+dependent; it does not make either result fictitious and does not authorize
+unlimited replay.
+
+When the supplied successful frame has the wrong room but an otherwise usable
+complete subject, use this bounded recovery only after explicit user direction:
+
+1. Hash and archive the exact source privately. Grant its person, garment,
+   styling, pose and framing only the authority the user actually approved;
+   grant every supplied room pixel zero atelier authority.
+2. Declare and validate one provider-neutral local alpha-only operation before
+   execution. Keep the exact canvas and decoded subject RGB immutable. No
+   network, provider call, generated pixels, repaint, resize, crop or relight is
+   permitted.
+3. Materialize a separate PNG with genuine alpha and preserve the mask and an
+   execution receipt. Verify dimensions, alpha presence, transparent corners,
+   foreground bounds and zero opaque RGB differences.
+4. Review the result on a checkerboard at original resolution. Hair, hands,
+   fingers, garment edges and ties, legs, straps, toes and heels must all remain
+   complete. Any room island, coloured fringe, hard cut, erosion or soft halo
+   fails.
+5. Preserve a failed root audit-only. At most one bounded alpha-mask correction
+   may follow; record it under the same serialized claim and consume the single
+   correction budget. If it also fails, release the claim and stop. Neither
+   candidate may parent ROOM/05 unless the user explicitly accepts the exact
+   reviewed bytes despite the recorded failure.
+6. Keep room attachment as a separate gate. A clean transparent subject does
+   not waive the exact approved-room hash or canvas contract.
+
+G030 r010 is the negative edge-quality precedent: the coarse person mask
+preserved opaque RGB but retained warm room fringe and eroded a lower tie-tail
+edge; its single foreground-instance correction preserved the complete subject
+but introduced a broader halo. Both exact outputs and the independent review
+remain audit history. The user later explicitly accepted the exact root bytes,
+so those bytes—not the correction—were promoted unchanged to PRE_ROOM and may
+parent ROOM/05 only. That acceptance supersedes the root visual failure for the
+named stage; it does not erase the review, authorize another correction, waive
+the room-canvas gate or grant publication authority. The lesson is to
+distinguish successful provider synthesis, provider edit moderation, local
+extraction quality and final user acceptance instead of labelling the issue as
+a different model or repeatedly asking for consent.
 
 ## F. Semantic export mapping
 

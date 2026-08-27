@@ -62,6 +62,7 @@ export const WARDROBE_APPROVED_V4_MODEL_SLUGS = Object.freeze([
   "camel-ribbed-deep-plunge-short-sleeve-mini-dress",
   "scarlet-long-sleeve-layered-cutout-ruched-mini-dress",
   "red-lace-cup-long-sleeve-satin-look-mini-dress",
+  "orange-halter-tie-front-gathered-wrap-mini-dress",
 ] as const);
 
 export const WARDROBE_APPROVED_MODEL_FRONT_SLUGS = Object.freeze([
@@ -109,6 +110,7 @@ export const WARDROBE_APPROVED_MODEL_SUPPLEMENTAL_SLOTS = Object.freeze({
   "camel-ribbed-deep-plunge-short-sleeve-mini-dress": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "scarlet-long-sleeve-layered-cutout-ruched-mini-dress": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "red-lace-cup-long-sleeve-satin-look-mini-dress": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
+  "orange-halter-tie-front-gathered-wrap-mini-dress": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "coral-drift-dress": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "moss-square-knit": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
   "cocoa-pleat-trouser": ["MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
@@ -928,6 +930,25 @@ export const WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS: readonly WardrobePublicProduc
     note: "A vivid red long-sleeve mini defined by shaped floral-lace cups, a centre bow and a softly flared satin-look body.",
     story: "Wide satin-look shoulder panels frame a low sweetheart neckline and shaped lace-covered cups, while fitted floral-lace sleeves, long centre ties and a smooth softly flared mini body complete the silhouette; the verified exact-match rear adds a high smooth back and centre invisible zip.",
     details: ["Shaped floral-lace sweetheart cups", "Centre bow with long ties", "Full fitted floral-lace sleeves", "High smooth back with centre invisible zip"],
+    measurements: [],
+  }),
+  migrationSeed({
+    slug: "orange-halter-tie-front-gathered-wrap-mini-dress",
+    sku: "JUW-054",
+    name: "Orange Halter Tie-Front Gathered Wrap Mini Dress",
+    category: "Dresses",
+    price: 28500,
+    taggedSize: "Size on request",
+    fit: "Measurements confirmed before payment",
+    condition: "Condition confirmed before payment",
+    colour: "Bright saturated orange",
+    availability: "AVAILABLE",
+    drop: "Drop 02",
+    tone: "coral",
+    silhouette: "dress",
+    note: "A bright-orange halter mini defined by a deep open front, centre knot with long tails, gathered wrap shaping and an overlapping tulip hem.",
+    story: "Broad halter panels frame the deep open front and meet at a centre waist knot with long tails, while radiating gathers shape the fitted wrap-effect mini and overlapping tulip hem; the verified exact-match rear adds a self-tie neck, fully open upper back and clean fitted rear.",
+    details: ["Deep broad-panel halter front", "Centre waist knot with long tails", "Radiating gathered wrap shaping", "Self-tie halter with low open back"],
     measurements: [],
   }),
 ]);

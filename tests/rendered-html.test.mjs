@@ -47,8 +47,8 @@ test("server-renders the public shop foundation", async () => {
   const copy = visibleCopy(html);
   assert.match(html, /justurban wears/);
   assert.match(visibleBody, /Drop 02/);
-  assert.match(visibleBody, /29 pieces\. No restocks\./);
-  assert.match(copy, /29 one-off pieces/);
+  assert.match(visibleBody, /30 pieces\. No restocks\./);
+  assert.match(copy, /30 one-off pieces/);
   assert.match(visibleBody, /violet-beaded-ruffle-romper/);
   assert.match(html, /Search the wardrobe/);
   assert.match(html, /Live availability is temporarily unavailable/);
@@ -59,7 +59,7 @@ test("server-renders the public shop foundation", async () => {
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/i);
 });
 
-test("publishes the Violet romper hero and the exact twenty-nine-piece Drop 02", async () => {
+test("publishes the Violet romper hero and the exact thirty-piece Drop 02", async () => {
   const response = await render("/shop");
   assert.equal(response.status, 200);
 
@@ -104,6 +104,7 @@ test("publishes the Violet romper hero and the exact twenty-nine-piece Drop 02",
     ["Camel Ribbed Deep-Plunge Short-Sleeve Mini Dress", "camel-ribbed-deep-plunge-short-sleeve-mini-dress"],
     ["Scarlet Long-Sleeve Layered-Cutout Ruched Mini Dress", "scarlet-long-sleeve-layered-cutout-ruched-mini-dress"],
     ["Red Lace-Cup Long-Sleeve Satin-Look Mini Dress", "red-lace-cup-long-sleeve-satin-look-mini-dress"],
+    ["Orange Halter Tie-Front Gathered Wrap Mini Dress", "orange-halter-tie-front-gathered-wrap-mini-dress"],
   ];
 
   for (const [name, slug] of releasedProducts) {
@@ -112,8 +113,8 @@ test("publishes the Violet romper hero and the exact twenty-nine-piece Drop 02",
   }
 
   // The lead product is rendered once as the editorial hero; the remaining
-  // twenty-eight products retain the standard catalogue-card contract.
-  assert.equal((visibleBody.match(/class="shop-product-card"/g) ?? []).length, 28);
+  // twenty-nine products retain the standard catalogue-card contract.
+  assert.equal((visibleBody.match(/class="shop-product-card"/g) ?? []).length, 29);
   assert.doesNotMatch(visibleBody, /shop-release-index|shop-wardrobe-preview|shop-editorial-rail|shop-values/);
   assert.doesNotMatch(visibleBody, /GARMENT STUDY|(?:DYN-0(?:8[1-9]|9[0-2])|JUW-0(?:0[1-9]|1[0-2]))|Six dresses from Lulu’s wardrobe|Warm colour\. Clean movement/);
   assert.doesNotMatch(visibleBody, /Coral Drift Dress|Indigo Workshirt|Ivory Tie Skirt/);

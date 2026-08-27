@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "catalogueRevision": "2026-08-26-catalogue-39",
-  "catalogueChecksum": "ed2580d260d9339325c997258b2c2cfa212645924f2f39db3d19360dcc1c90b1",
-  "cataloguePresentationChecksum": "c4aef11f90256a315daa0336c4f9584d8b4e9f173927343d974da610519aaca9",
+  "catalogueRevision": "2026-08-27-catalogue-40",
+  "catalogueChecksum": "e45ec2cd5a9be7d06eeaf2803b119e5212b9a01cecfa71ce1a44d36095ac38bc",
+  "cataloguePresentationChecksum": "c42b73d3041f4f30df9b3507235c8134a201b73155dfd7e2ca47a2b39c09f1cb",
   "legacyAssets": [
     {
       "sourcePath": "/shop/products/black-cropped-tee-pink-distressed-shorts-set/04-model-front.webp",
@@ -1916,6 +1916,62 @@
       "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/b96fb08196041046babc3f863c2601afbe7ad6c6997f4b32cbcb83b738eebede/products/neon-chartreuse-asymmetric-ruched-knot-maxi-dress/07-model-left-profile.webp",
       "sha256": "b96fb08196041046babc3f863c2601afbe7ad6c6997f4b32cbcb83b738eebede",
       "size": 173224,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/orange-halter-tie-front-gathered-wrap-mini-dress/01-garment-front.webp",
+      "pathname": "shop/catalogue/24170bf82edd9c1bdba27394ad8d04f808924747100b940a729f0d71357315ab/products/orange-halter-tie-front-gathered-wrap-mini-dress/01-garment-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/24170bf82edd9c1bdba27394ad8d04f808924747100b940a729f0d71357315ab/products/orange-halter-tie-front-gathered-wrap-mini-dress/01-garment-front.webp",
+      "sha256": "24170bf82edd9c1bdba27394ad8d04f808924747100b940a729f0d71357315ab",
+      "size": 84582,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/orange-halter-tie-front-gathered-wrap-mini-dress/02-garment-back.webp",
+      "pathname": "shop/catalogue/88f69fea03717f693d5a3afc47483dd0662fba611f1a887650d6bbc08eb284ef/products/orange-halter-tie-front-gathered-wrap-mini-dress/02-garment-back.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/88f69fea03717f693d5a3afc47483dd0662fba611f1a887650d6bbc08eb284ef/products/orange-halter-tie-front-gathered-wrap-mini-dress/02-garment-back.webp",
+      "sha256": "88f69fea03717f693d5a3afc47483dd0662fba611f1a887650d6bbc08eb284ef",
+      "size": 51230,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/orange-halter-tie-front-gathered-wrap-mini-dress/03-mannequin-front.webp",
+      "pathname": "shop/catalogue/5fe74ce3de3a1802f3a15e11b9e5c969d08852450a22aab4d5e70017ba2c8b40/products/orange-halter-tie-front-gathered-wrap-mini-dress/03-mannequin-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/5fe74ce3de3a1802f3a15e11b9e5c969d08852450a22aab4d5e70017ba2c8b40/products/orange-halter-tie-front-gathered-wrap-mini-dress/03-mannequin-front.webp",
+      "sha256": "5fe74ce3de3a1802f3a15e11b9e5c969d08852450a22aab4d5e70017ba2c8b40",
+      "size": 87988,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/orange-halter-tie-front-gathered-wrap-mini-dress/04-model-front.webp",
+      "pathname": "shop/catalogue/acb85fbe5092ca58ec8f7111fc4e3063ac635c3510f4fd70d70938abd9a8da14/products/orange-halter-tie-front-gathered-wrap-mini-dress/04-model-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/acb85fbe5092ca58ec8f7111fc4e3063ac635c3510f4fd70d70938abd9a8da14/products/orange-halter-tie-front-gathered-wrap-mini-dress/04-model-front.webp",
+      "sha256": "acb85fbe5092ca58ec8f7111fc4e3063ac635c3510f4fd70d70938abd9a8da14",
+      "size": 208374,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/orange-halter-tie-front-gathered-wrap-mini-dress/05-model-rear-three-quarter.webp",
+      "pathname": "shop/catalogue/488292d12794faa63ef1163113c3922bcdd242869186a3ef0d61022db9796e7c/products/orange-halter-tie-front-gathered-wrap-mini-dress/05-model-rear-three-quarter.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/488292d12794faa63ef1163113c3922bcdd242869186a3ef0d61022db9796e7c/products/orange-halter-tie-front-gathered-wrap-mini-dress/05-model-rear-three-quarter.webp",
+      "sha256": "488292d12794faa63ef1163113c3922bcdd242869186a3ef0d61022db9796e7c",
+      "size": 178882,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/orange-halter-tie-front-gathered-wrap-mini-dress/06-fabric-detail.webp",
+      "pathname": "shop/catalogue/254135df2e702af3f94cab46d32a45448ce2d2c5fb7b130f53b17008003a9e92/products/orange-halter-tie-front-gathered-wrap-mini-dress/06-fabric-detail.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/254135df2e702af3f94cab46d32a45448ce2d2c5fb7b130f53b17008003a9e92/products/orange-halter-tie-front-gathered-wrap-mini-dress/06-fabric-detail.webp",
+      "sha256": "254135df2e702af3f94cab46d32a45448ce2d2c5fb7b130f53b17008003a9e92",
+      "size": 129600,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/orange-halter-tie-front-gathered-wrap-mini-dress/07-model-left-profile.webp",
+      "pathname": "shop/catalogue/e4ef14322f09af514de2a3be756067febd3ec3833d0db5e9994cae0a83e5e06e/products/orange-halter-tie-front-gathered-wrap-mini-dress/07-model-left-profile.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/e4ef14322f09af514de2a3be756067febd3ec3833d0db5e9994cae0a83e5e06e/products/orange-halter-tie-front-gathered-wrap-mini-dress/07-model-left-profile.webp",
+      "sha256": "e4ef14322f09af514de2a3be756067febd3ec3833d0db5e9994cae0a83e5e06e",
+      "size": 178666,
       "contentType": "image/webp"
     },
     {
