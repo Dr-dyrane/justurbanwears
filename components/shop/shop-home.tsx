@@ -70,6 +70,7 @@ export function ShopHome() {
     ? filtered.filter((product) => product.slug !== heroProduct.slug)
     : filtered;
   const totalDisplayCount = displayedProducts.length;
+  const discoveryPieceLabel = `${totalDisplayCount}${!isRefining && heroProduct ? " more" : ""} one-off ${totalDisplayCount === 1 ? "piece" : "pieces"}`;
 
   return (
     <div className="shop-home">
@@ -156,7 +157,7 @@ export function ShopHome() {
       <section className="shop-discovery" id="discover" aria-labelledby="discover-title">
         <div className="shop-section-title">
           <div>
-            <p className="shop-kicker">{CURRENT_SHOP_DROP} · {dropSize} one-off pieces</p>
+            <p className="shop-kicker">{CURRENT_SHOP_DROP} · {discoveryPieceLabel}</p>
             <h2 id="discover-title">Choose yours.</h2>
           </div>
           {!liveAvailabilityConfirmed ? (

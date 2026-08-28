@@ -48,7 +48,7 @@ test("server-renders the public shop foundation", async () => {
   assert.match(html, /justurban wears/);
   assert.match(visibleBody, /Drop 02/);
   assert.match(visibleBody, /30 pieces\. No restocks\./);
-  assert.match(copy, /30 one-off pieces/);
+  assert.match(copy, /29 more one-off pieces/);
   assert.match(visibleBody, /violet-beaded-ruffle-romper/);
   assert.match(html, /Search the wardrobe/);
   assert.match(html, /Live availability is temporarily unavailable/);

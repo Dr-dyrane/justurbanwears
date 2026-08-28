@@ -8,6 +8,7 @@
 :root {
   /* justurban wears Studio — pastel orange / nude semantic theme */
   --font-ui: "Manrope Variable", "Avenir Next", Avenir, Helvetica, Arial, sans-serif;
+  --font-body: var(--font-ui);
   --font-display: "Bodoni Moda Variable", "Bodoni 72", Didot, Georgia, serif;
   --font-code: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   --canvas: #fff8f4;

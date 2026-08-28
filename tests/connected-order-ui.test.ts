@@ -265,7 +265,7 @@ test("scenario order links open an exact read-only Operations preview", () => {
 
   assert.match(operations, /const scenarioOrderReference = scenario \? searchParams\.get\("order"\) : null/);
   assert.match(operations, /orders\.find\(\(order\) => order\.reference === scenarioOrderReference\)/);
-  assert.match(operations, /aria-label=\{`Open scenario order \$\{scenarioOrder\.reference\}`\}/);
+  assert.match(operations, /aria-label=\{`Open preview order for \$\{scenarioOrder\.lines\[0\]\?\.name \?\? "wardrobe piece"\}`\}/);
   assert.match(operations, /aria-haspopup="dialog"/);
   assert.match(operations, /open=\{scenarioOrderOpen && Boolean\(scenarioOrder\)\}/);
   assert.match(operations, /title=\{scenarioOrder\?\.lines\[0\]\?\.name\.split\(" · "\)\[0\] \?\? "Scenario order"\}/);
@@ -275,6 +275,9 @@ test("scenario order links open an exact read-only Operations preview", () => {
   assert.match(operations, /params\.get\("view"\) === "orders"/);
   assert.match(operations, /router\.replace\(`\/studio\/operations\$\{query \? `\?\$\{query\}` : ""\}`/);
   assert.match(operations, /Studio will not substitute another order/);
+  assert.match(operations, /scenario \? "Preview order" : order\.reference/);
+  assert.match(operations, /nextActionOrderLabel} needs review/);
+  assert.doesNotMatch(operations, /<strong>\{scenarioOrder\.reference\}<\/strong>/);
   assert.doesNotMatch(
     operations.slice(operations.indexOf('className="studio-scenario-order-sheet"'), operations.indexOf('className="studio-inventory-detail-sheet"')),
     /createHold|releaseHold|recordLocation|fetch\(|allowedTransitions|MutationAction/,

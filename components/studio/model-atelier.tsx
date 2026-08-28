@@ -253,7 +253,7 @@ export function ModelAtelier() {
       <h1 className="sr-only" id="models">Models</h1>
       {selected ? (
         <StudioLink className="studio-stack-current" href={`/studio/media/new?model=${encodeURIComponent(selected.id)}`}>
-          <span><small>Continue</small><strong>Create with {selected.name}</strong><LifecycleMeta state={selected.state === "READY" ? "READY" : "DRAFT"} /></span>
+          <span><small>Media options</small><strong>Review media readiness</strong><LifecycleMeta state={selected.state === "READY" ? "READY" : "DRAFT"} /></span>
           <ArrowRight aria-hidden="true" size={18} />
         </StudioLink>
       ) : (
@@ -273,7 +273,7 @@ export function ModelAtelier() {
         </aside>
 
         {selected ? <div className={`studio-model-stage${activeView === "profile" ? "" : " is-panel-only"}`}>
-          {activeView === "profile" ? <div className={`studio-model-portrait${selected.kind === "LULU_V3" ? " is-approved" : ""}`}><img alt={`${selected.name}, private approved model authority`} className="studio-model-approved-image" height={1619} src={selected.kind === "LULU_V3" ? APPROVED_PUBLIC_MODEL_PREVIEW.src : selected.sourceAssetUrl} width={972} /><div className="studio-model-master-caption"><small>{selected.kind === "LULU_V3" ? "Approved default" : "Usage confirmed"}</small><strong>{selected.name}</strong><span>Ready for try-ons</span></div></div> : null}
+          {activeView === "profile" ? <div className={`studio-model-portrait${selected.kind === "LULU_V3" ? " is-approved" : ""}`}><img alt={`${selected.name}, private approved model authority`} className="studio-model-approved-image" height={1619} src={selected.kind === "LULU_V3" ? APPROVED_PUBLIC_MODEL_PREVIEW.src : selected.sourceAssetUrl} width={972} /><div className="studio-model-master-caption"><small>{selected.kind === "LULU_V3" ? "Approved default" : "Usage confirmed"}</small><strong>{selected.name}</strong><span>Approved for Studio reference</span></div></div> : null}
           <StudioStackSection
             aria-labelledby={`studio-tab-${activeView}`}
             className="studio-model-profile studio-stack-panel"

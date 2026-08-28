@@ -69,7 +69,7 @@ function memoryStorage() {
   };
 }
 
-test("a Create with model deep link preserves the exact authority but exposes no paid model action", () => {
+test("a model deep link preserves the exact authority without promising an unavailable paid action", () => {
   const models = [
     { id: MODEL_ID, name: "Exact model", kind: "AUTHORIZED_STOCK" as const, state: "READY" as const },
     { id: ARCHIVED_MODEL_ID, name: "Archived", kind: "LULU_V3" as const, state: "ARCHIVED" as const },
@@ -91,15 +91,19 @@ test("a Create with model deep link preserves the exact authority but exposes no
   });
 
   const composer = readFileSync(`${process.cwd()}/components/shoot/shoot-composer.tsx`, "utf8");
+  const modelAtelier = readFileSync(`${process.cwd()}/components/studio/model-atelier.tsx`, "utf8");
   assert.match(composer, /searchParams\.get\("model"\)/);
   assert.match(composer, /setOperation\("MODEL_TRY_ON"\)[\s\S]*setModelProfileId\(requestedModel\.model\.id\)/);
   assert.match(composer, /Model<\/span><strong>\{selectedModel\?\.name/);
-  assert.match(composer, /consent for this image provider to retain private identity photos has not been verified\. No paid call will start\./);
+  assert.match(composer, /On-model photos are not available yet\. Choose On mannequin to create a garment-only view without using a private identity photo\./);
   assert.match(composer, /operation !== "MANNEQUIN_FRONT"/);
   assert.match(composer, /operation: "MANNEQUIN_FRONT"/);
   assert.match(composer, /operation === "MANNEQUIN_FRONT" \? \(/);
-  assert.match(composer, /<strong>On model<\/strong><small>Unavailable · consent required<\/small>/);
+  assert.match(composer, /<strong>On model<\/strong><small>Not available yet<\/small>/);
   assert.doesNotMatch(composer, /onClick=\{\(\) => \{\s*setOperation\("MODEL_TRY_ON"\)/);
+  assert.match(modelAtelier, /<strong>Review media readiness<\/strong>/);
+  assert.match(modelAtelier, /Approved for Studio reference/);
+  assert.doesNotMatch(modelAtelier, /Create with \{selected\.name\}|Ready for try-ons/);
 });
 
 test("a missing saved model intent can only be checked, never resumed into a new paid call", () => {

@@ -23,7 +23,7 @@ import {
 
 const CREATE_MEDIA_RECOVERY_MESSAGE = "Studio could not confirm whether this saved request started. It will only check existing Wear state; no new generation will be sent.";
 const CREATE_MEDIA_MISSING_MESSAGE = "Studio confirmed that this exact request has no saved Wear generation. Resume the same request key to start it at most once.";
-const MODEL_TRY_ON_ZERO_SPEND_BLOCKER = "Model try-on is unavailable because consent for this image provider to retain private identity photos has not been verified. No paid call will start.";
+const MODEL_TRY_ON_ZERO_SPEND_BLOCKER = "On-model photos are not available yet. Choose On mannequin to create a garment-only view without using a private identity photo.";
 const CREATE_MEDIA_RECOVERY_ATTEMPTS = 3;
 
 export function ShootComposer() {
@@ -339,7 +339,7 @@ export function ShootComposer() {
                   disabled
                   type="button"
                 >
-                  <strong>On model</strong><small>Unavailable · consent required</small>
+                  <strong>On model</strong><small>Not available yet</small>
                 </button>
               </div>
               <p className="studio-inline-state" id="model-try-on-zero-spend-blocker">
