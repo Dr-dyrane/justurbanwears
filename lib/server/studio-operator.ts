@@ -13,11 +13,16 @@ export type StudioOperator = {
 export async function requireStudioOperator(): Promise<StudioOperator> {
   const mode = process.env.STUDIO_AI_ENGINE_AUTH_MODE;
   if (mode !== "openai-sites" && mode !== "neon-auth") {
+    const localDevelopment = process.env.NODE_ENV === "development";
     throw new StudioEngineError(
       "ENGINE_DISABLED",
       503,
-      "Studio AI is not enabled for this host.",
-      "Use the approved Studio workspace.",
+      localDevelopment
+        ? "This local Studio host is not configured."
+        : "Studio is not configured on this deployment.",
+      localDevelopment
+        ? "Follow docs/operations/LOCAL-ACCESS.md to restore the linked project's development environment, then restart Studio."
+        : "Restore this deployment's Studio server configuration.",
     );
   }
   const user = mode === "neon-auth"

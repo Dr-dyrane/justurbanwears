@@ -89,10 +89,10 @@ test("operation recovery canonicalizes one encoded dynamic-route segment", async
 test("sanitized read blockers survive a development module refresh boundary", () => {
   const retainedError = {
     name: "StudioAtelierUiReadError",
-    message: "Studio AI is not enabled for this host.",
+    message: "This local Studio host is not configured.",
     status: 503,
     code: "ENGINE_DISABLED",
-    recovery: "Use the approved Studio workspace.",
+    recovery: "Follow docs/operations/LOCAL-ACCESS.md to restore the linked project's development environment, then restart Studio.",
   };
 
   assert.equal(isStudioAtelierUiReadError(retainedError), true);

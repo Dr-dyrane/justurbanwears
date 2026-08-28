@@ -10,6 +10,9 @@ const wearServiceSource = await readFile(new URL("../lib/studio/engine/wear-serv
 
 test("Studio operator auth is disabled by default and allowlisted server-side", () => {
   assert.match(operatorSource, /mode !== "openai-sites" && mode !== "neon-auth"/);
+  assert.match(operatorSource, /process\.env\.NODE_ENV === "development"/);
+  assert.match(operatorSource, /docs\/operations\/LOCAL-ACCESS\.md/);
+  assert.doesNotMatch(operatorSource, /approved Studio workspace/i);
   assert.match(operatorSource, /getChatGPTUser\(\)/);
   assert.match(operatorSource, /getNeonAuth\(\)\.getSession\(\)/);
   assert.match(operatorSource, /STUDIO_OPERATOR_EMAILS/);
