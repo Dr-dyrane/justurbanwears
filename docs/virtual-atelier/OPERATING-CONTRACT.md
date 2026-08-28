@@ -41,6 +41,15 @@ Within the five-reference image-generation boundary, the identity/body/room core
 
 These authority roles are mandatory; their ordering and any truth-preserving packaged reference are adaptive. The validator checks membership and lineage, closed semantic QA runs first, and subsequent human review decides whether a passing frame should be kept.
 
+Final-scene canvas compatibility is profile-bound, not a loose percentage
+tolerance. The provider still returns one exact 1024x1536 transparent subject.
+The locked room may be exact 1024x1536, or the approved 1024x1280 native 4:5
+profile may copy the central `x=0,y=128,w=1024,h=1280` subject window one-to-one
+over unchanged room bytes. Under the 4:5 profile, all nonzero alpha must remain
+inside the additional 16-pixel inner guard (`x=16..1007`, `y=144..1391`). Any
+visible spill fails before disclosure; the engine never resizes the room,
+interpolates the retained subject, or silently crops Lulu.
+
 Do not drop an angle-specific body crop to make room for a weaker translation convenience. Current-garment construction remains controlled by accepted `05`; unknown side or rear construction stays unknown. If a new garment exposes a direct angle-specific construction fact that cannot fit this boundary, stop and resolve a truthful packaged authority or a declared garment-only pass before model generation.
 
 The final governing gate is holistic: real Lulu head to toe, convincing facial semblance, believable body balance, attitude, presence, pose, garment truth, and natural integration into the scene.
@@ -109,6 +118,24 @@ operation identity and must repeat the complete gate chain. It consumes the
 single correction budget for the semantic root. A second failure, an
 unclassified failure or an uncertain provider outcome stops at
 `BLOCKED_USER_DIRECTION` or its equivalent without another provider call.
+
+Provider moderation is outside the semantic correction budget. Immediately
+before prompt compilation and paid intent, the engine must verify a hash-bound,
+server-owned safety-context receipt for the exact operation. Garment-only
+stages declare no real-person output; subject and final-scene stages require a
+verified adult, authorized and consented likeness, fully clothed non-sexual
+retail-fashion purpose. The compiler states that factual context plainly. It
+does not claim that wording can override provider policy.
+
+An exact provider `moderation_blocked` response is not an indeterminate
+dispatch. Record it as a determinate terminal no-output failure with the stable
+provider code, input/output/unknown stage, allowlisted coarse categories,
+request identifiers and a content-hashed private failure manifest. Produce no
+artifact, QA candidate, parent or correction authorization; repeated Generate
+must reuse the terminal execution without a provider call. The operator-safe
+projection remains generic. Never lower moderation strictness, churn
+euphemistic prompts or switch provider/model automatically; any such policy
+change is a new qualified adapter revision.
 
 Only `SEMANTIC_PASS` makes the exact private artifact reviewable;
 `USER_APPROVED` and `LOCKED` retain access to that same artifact. The user's
@@ -289,8 +316,10 @@ Production evaluator authority is internal and receipt-bound. A route or
 composition caller may provide infrastructure implementations, but never a
 technical/semantic evaluator function, evaluator descriptor or qualification
 PASS declaration. The internal bundle must bind the exact six calibration-case
-evidence hashes, independent-review receipt and evaluator descriptors to one
-canonical qualification receipt. No passing bundle is currently installed;
+evidence hashes, independent-review receipt, evaluator descriptors, transparent
+subject profile, native-room canvas policy, compositor revision and every
+supported room-profile/stage evidence hash to one canonical qualification
+receipt. No passing bundle is currently installed;
 production therefore fails `QUALIFICATION_NOT_PASSED` before any evaluator,
 execution intent or provider call.
 
@@ -299,10 +328,12 @@ Public derivatives must preserve the locked master's aspect ratio. Never force a
 ### Durable independent garment stages 01–04
 
 This is the mandatory production architecture, not a deployed-cutover claim.
-The current legacy Studio routes must remain held until authenticated route,
-repository, evaluator, review-media and migration composition are qualified as
-one release atom. In that composed engine, views 01–04 are not handed to a
-separate legacy generator. They use the same strict declaration compiler,
+The durable Atelier routes and production cutover must remain held until their
+authenticated repository, evaluator, review-media and migration composition
+are qualified as one release atom. The existing manual Intake routes remain an
+independent supported recovery lane during that transition; their availability
+does not enable or disable Atelier. In the composed durable engine, views 01–04
+are not handed to a separate generator. They use the same strict declaration compiler,
 four-command facade, paid
 claim/fence, immutable artifact ledger, private ordered QA, review decision and
 lock lifecycle as subject and model stages:

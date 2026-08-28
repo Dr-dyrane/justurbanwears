@@ -39,6 +39,15 @@ import {
   AtelierPromptCompilationError,
   compileAtelierPrompt,
 } from "../lib/studio/atelier/prompt-compiler";
+import {
+  PROVIDER_SAFETY_CONTEXT_VERSION,
+  PROVIDER_SAFETY_RECEIPT_VERSION,
+  ProviderSafetyContextError,
+  createProviderSafetyContextReceipt,
+  expectedProviderSafetyModeForStage,
+  validateProviderSafetyContextReceipt,
+  type ProviderSafetyContextReceipt,
+} from "../lib/studio/atelier/provider-safety-context";
 
 function digest(value: string): string {
   return createHash("sha256").update(value).digest("hex");
@@ -331,6 +340,16 @@ function operation(stage: AtelierStage): AtelierOperation {
       : undefined,
     correctionBudget: 1,
     ...(directReceipt ? { directGarmentEvidence: directReceipt } : {}),
+  });
+}
+
+function providerSafetyContext(
+  candidate: AtelierOperation,
+): ProviderSafetyContextReceipt {
+  return createProviderSafetyContextReceipt({
+    semanticOperationHash: semanticOperationHash(candidate),
+    stage: candidate.stage,
+    mode: expectedProviderSafetyModeForStage(candidate.stage),
   });
 }
 
@@ -902,6 +921,113 @@ test("execution identity includes adapter, provider, model, prompt, and exact bi
   );
 });
 
+test("provider safety context is strict, hash-bound, stage-compatible, and prompt-bound", () => {
+  const garment = operation("GARMENT_03_MANNEQUIN");
+  const garmentPlan = planAtelierOperation({
+    operation: garment,
+    adapter: garmentAdapter,
+    packs: approvedPacks(garment),
+  });
+  const garmentReceipt = providerSafetyContext(garmentPlan.operation);
+  assert.equal(garmentReceipt.schemaVersion, PROVIDER_SAFETY_RECEIPT_VERSION);
+  assert.equal(garmentReceipt.context.schemaVersion, PROVIDER_SAFETY_CONTEXT_VERSION);
+  assert.equal(garmentReceipt.context.mode, "NO_REAL_PERSON_OUTPUT");
+  assert.equal(garmentReceipt.context.claims.purpose, "NON_SEXUAL_RETAIL_FASHION_CATALOGUE");
+  assert.equal(garmentReceipt.context.claims.presentation, "FULLY_CLOTHED");
+  assert.equal(garmentReceipt.context.claims.nudity, "FORBIDDEN");
+  assert.equal(garmentReceipt.context.claims.sexualPresentation, "FORBIDDEN");
+  assert.equal(garmentReceipt.context.claims.eroticPresentation, "FORBIDDEN");
+  assert.equal(garmentReceipt.context.claims.fetishPresentation, "FORBIDDEN");
+  assert.equal(garmentReceipt.context.claims.realPersonOutput, "FORBIDDEN");
+
+  const garmentPrompt = compileAtelierPrompt({
+    operation: garmentPlan.operation,
+    orderedReferences: garmentPlan.orderedReferences,
+    providerSafetyContext: garmentReceipt,
+  });
+  assert.match(garmentPrompt.text, /This operation creates no real-person output/);
+  assert.match(garmentPrompt.text, /non-sexual retail-fashion catalogue presentation/);
+  assert.match(garmentPrompt.text, /every permitted presentation is fully clothed/);
+  assert.match(garmentPrompt.text, /Nudity and sexual, erotic, or fetish presentation are forbidden/);
+  assert.match(garmentPrompt.text, new RegExp(garmentReceipt.receiptSha256));
+
+  const subject = operation("SUBJECT_A");
+  const subjectPlan = planAtelierOperation({
+    operation: subject,
+    adapter: opaqueAdapter,
+    packs: approvedPacks(subject),
+  });
+  const subjectReceipt = providerSafetyContext(subjectPlan.operation);
+  assert.equal(subjectReceipt.context.mode, "VERIFIED_ADULT_AUTHORIZED_LIKENESS");
+  assert.equal(subjectReceipt.context.claims.subjectAge, "VERIFIED_ADULT_18_PLUS");
+  assert.equal(subjectReceipt.context.claims.subjectConsent, "VERIFIED_FOR_THIS_OPERATION");
+  assert.equal(subjectReceipt.context.claims.likenessUse, "AUTHORIZED_FOR_THIS_OPERATION");
+  assert.equal(
+    subjectReceipt.context.claims.realPersonOutput,
+    "VERIFIED_AUTHORIZED_LIKENESS_ONLY",
+  );
+  const subjectPrompt = compileAtelierPrompt({
+    operation: subjectPlan.operation,
+    orderedReferences: subjectPlan.orderedReferences,
+    providerSafetyContext: subjectReceipt,
+  });
+  assert.match(subjectPrompt.text, /subject is a verified adult/);
+  assert.match(subjectPrompt.text, /likeness use is consented and authorized for this operation/);
+  assert.match(subjectPrompt.text, /subject must be fully clothed/);
+  assert.match(subjectPrompt.text, /Nudity and sexual, erotic, or fetish presentation are forbidden/);
+
+  assert.throws(
+    () => compileAtelierPrompt({
+      operation: garmentPlan.operation,
+      orderedReferences: garmentPlan.orderedReferences,
+    } as unknown as Parameters<typeof compileAtelierPrompt>[0]),
+    (error: unknown) => error instanceof ProviderSafetyContextError
+      && error.code === "INVALID_RECEIPT",
+  );
+
+  const wrongStageReceipt = createProviderSafetyContextReceipt({
+    semanticOperationHash: garmentPlan.semanticOperationHash,
+    stage: "SUBJECT_A",
+    mode: "VERIFIED_ADULT_AUTHORIZED_LIKENESS",
+  });
+  assert.throws(
+    () => compileAtelierPrompt({
+      operation: garmentPlan.operation,
+      orderedReferences: garmentPlan.orderedReferences,
+      providerSafetyContext: wrongStageReceipt,
+    }),
+    (error: unknown) => error instanceof ProviderSafetyContextError
+      && error.code === "STAGE_MISMATCH",
+  );
+  assert.throws(
+    () => createProviderSafetyContextReceipt({
+      semanticOperationHash: garmentPlan.semanticOperationHash,
+      stage: garmentPlan.operation.stage,
+      mode: "VERIFIED_ADULT_AUTHORIZED_LIKENESS",
+    }),
+    (error: unknown) => error instanceof ProviderSafetyContextError
+      && error.code === "MODE_MISMATCH",
+  );
+
+  const forged = clone(garmentReceipt);
+  forged.context.semanticOperationHash = digest("forged-provider-safety-context");
+  assert.throws(
+    () => validateProviderSafetyContextReceipt(forged, {
+      semanticOperationHash: garmentPlan.semanticOperationHash,
+      stage: garmentPlan.operation.stage,
+    }),
+    (error: unknown) => error instanceof ProviderSafetyContextError
+      && error.code === "HASH_MISMATCH",
+  );
+
+  assert.equal(ATELIER_PROMPT_VERSION, "juw-atelier-canonical-prompt-v4");
+  const priorVersionText = subjectPrompt.text.replace(
+    ATELIER_PROMPT_VERSION,
+    "juw-atelier-canonical-prompt-v3",
+  );
+  assert.notEqual(subjectPrompt.sha256, digest(priorVersionText));
+});
+
 test("canonical prompt is deterministic, complete, versioned, and exact-binding only", () => {
   const candidate = operation("SIBLING_07_RECOVERY");
   const plan = planAtelierOperation({
@@ -912,6 +1038,7 @@ test("canonical prompt is deterministic, complete, versioned, and exact-binding 
   const compiled = compileAtelierPrompt({
     operation: plan.operation,
     orderedReferences: plan.orderedReferences,
+    providerSafetyContext: providerSafetyContext(plan.operation),
   });
   assert.equal(compiled.version, ATELIER_PROMPT_VERSION);
   assert.match(compiled.sha256, /^[a-f0-9]{64}$/);
@@ -935,7 +1062,7 @@ test("canonical prompt is deterministic, complete, versioned, and exact-binding 
   assert.match(compiled.text, /lockedRoomRole=LOCKED_ATELIER_ROOM/);
   assert.match(compiled.text, /preserveLockedRoomPixels=true/);
   assert.match(compiled.text, /RENDER QUALITY CONTRACT/);
-  assert.match(compiled.text, /Return only the same-canvas full-body subject pixels as a transparent PNG layer/);
+  assert.match(compiled.text, /Return only the full-body subject pixels on the declared transparent PNG provider canvas/);
   assert.match(compiled.text, /it is not provider-rendered output/);
   assert.match(compiled.text, /Render no wall, JUW icon, rail, props, floor, room pixels/);
   assert.match(compiled.text, /Do not render or repaint the room/);
@@ -953,6 +1080,7 @@ test("canonical prompt is deterministic, complete, versioned, and exact-binding 
     compileAtelierPrompt({
       operation: reorderedPlan.operation,
       orderedReferences: reorderedPlan.orderedReferences,
+      providerSafetyContext: providerSafetyContext(reorderedPlan.operation),
     }),
     compiled,
   );
@@ -961,6 +1089,7 @@ test("canonical prompt is deterministic, complete, versioned, and exact-binding 
     () => compileAtelierPrompt({
       operation: plan.operation,
       orderedReferences: plan.orderedReferences.slice(1),
+      providerSafetyContext: providerSafetyContext(plan.operation),
     }),
     (error: unknown) => error instanceof AtelierPromptCompilationError,
   );

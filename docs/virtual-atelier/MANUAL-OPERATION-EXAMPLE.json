@@ -1,5 +1,5 @@
 {
-  "operationId": "atelier:009:model-front:469e56e03873c32863da6698",
+  "operationId": "atelier:009:model-front:71be161e40bae5b268303dcc",
   "workflowRevision": "2026-08-26.107",
   "garmentId": "009",
   "stage": "ROOM_FINAL_05",
@@ -27,7 +27,7 @@
     {
       "slot": 3,
       "assetId": "juw.atelier.empty-plate.v1",
-      "path": "../../storage/virtual-atelier/room/approved-1024x1536.png",
+      "path": "../../storage/virtual-atelier/room/approved-1024x1280.png",
       "sha256": "3333333333333333333333333333333333333333333333333333333333333333"
     }
   ],
@@ -59,7 +59,8 @@
     "output geometry"
   ],
   "outputContract": [
-    "one clean full-body 1024x1536 image",
+    "one clean full-body 1024x1280 final image from the guarded x=0,y=128,w=1024,h=1280 window of a 1024x1536 transparent subject",
+    "copy retained subject pixels one-to-one over the exact room; never resize, crop, pad, extend, resample, or regenerate room pixels",
     "no text, labels, cards, crops, or triptych"
   ],
   "renderQualityContract": {
@@ -97,7 +98,7 @@
   ],
   "semanticIdentity": {
     "contractVersion": "juw.atelier-manual-semantic-identity.v1",
-    "operationId": "atelier:009:model-front:469e56e03873c32863da6698",
-    "semanticOperationHash": "469e56e03873c32863da669824d3c740044386a7960d477bf5fcbe8505acd672"
+    "operationId": "atelier:009:model-front:71be161e40bae5b268303dcc",
+    "semanticOperationHash": "71be161e40bae5b268303dccbcdd535a80a4a03eec389dca8efc96825b749ef7"
   }
 }

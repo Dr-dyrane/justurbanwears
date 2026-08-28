@@ -8,6 +8,7 @@ const settings = readFileSync(`${root}/components/studio/settings/studio-setting
 const wardrobe = readFileSync(`${root}/components/studio/wardrobe-workbench.tsx`, "utf8");
 const operator = readFileSync(`${root}/lib/server/studio-operator.ts`, "utf8");
 const taskSheet = readFileSync(`${root}/components/studio/atoms/studio-task-sheet.tsx`, "utf8");
+const avatarRoute = readFileSync(`${root}/app/api/studio/profile/avatar/route.ts`, "utf8");
 
 test("Studio exposes one global profile and settings centre", () => {
   assert.match(shell, /StudioSettingsCenter operator=\{operator\}/);
@@ -15,6 +16,7 @@ test("Studio exposes one global profile and settings centre", () => {
   assert.match(settings, /ThemeSettings/);
   assert.match(settings, /PwaInstallControl/);
   assert.match(settings, /authClient\.signOut\(\)/);
+  assert.match(settings, /assignDocumentNavigation\("\/auth\/sign-in\?returnTo=\/studio"\)/);
   assert.match(settings, /AI intake/);
   assert.match(settings, /Preferences stay on this device/);
   assert.match(settings, />Appearance<\/h3>/);
@@ -25,12 +27,19 @@ test("Studio exposes one global profile and settings centre", () => {
 });
 
 test("Studio uses the one approved Lulu face for both profile surfaces", () => {
-  assert.match(settings, /const LULU_PROFILE_AVATAR_SRC = "\/lulu\.png"/);
-  assert.equal(settings.match(/<LuluProfileAvatar initial=\{avatarInitial\}/g)?.length, 2);
+  assert.match(settings, /const LULU_PROFILE_AVATAR_SRC = "\/api\/studio\/profile\/avatar"/);
+  assert.equal(settings.match(/<LuluProfileAvatar/g)?.length, 2);
+  assert.doesNotMatch(settings, /avatarInitial|<b>\{initial\}<\/b>|>L<\/b>/);
   assert.match(settings, /fetchPriority=\{online \? "high" : "auto"\}/);
   assert.match(settings, /loading=\{online \? "eager" : "lazy"\}/);
   assert.match(settings, /onError=\{\(event\) => \{ event\.currentTarget\.hidden = true; \}\}/);
-  assert.doesNotMatch(settings, /blob\.vercel-storage\.com|studio\/model-authorities|<UserRound/);
+  assert.doesNotMatch(settings, /blob\.vercel-storage\.com|studio\/model-authorities|\/lulu\.png|<UserRound/);
+  assert.match(avatarRoute, /await requireStudioOperator\(\)/);
+  assert.match(avatarRoute, /resolveLuluV4AuthorityAssets\(\[LULU_PROFILE_AVATAR_ASSET_ID\]\)/);
+  assert.match(avatarRoute, /"lulu\.face\.v4\.front\.lock\.v1"/);
+  assert.match(avatarRoute, /"cache-control": "private, no-store, max-age=0"/);
+  assert.match(avatarRoute, /"cross-origin-resource-policy": "same-origin"/);
+  assert.doesNotMatch(avatarRoute, /pathname|blobUrl|downloadUrl/);
 });
 
 test("settings stays focused after Home absorbs attention state", () => {

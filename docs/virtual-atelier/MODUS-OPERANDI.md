@@ -110,12 +110,18 @@ Historical Shop filenames map differently. Export only through `scripts/virtual-
 
 Generate or isolate each view independently. No candidate may parent another candidate.
 
-For Studio, these are not a separate legacy lane. The same
+After the durable Atelier cutover, these are not a separate generation lane.
+The same
 `prepare -> generate once -> review -> lock/reuse` facade and durable lifecycle
 run `GARMENT_01_FRONT`, `GARMENT_02_BACK`, `GARMENT_03_MANNEQUIN` and
 `GARMENT_04_DETAIL`. Each is a parentless root over server-resolved
 `DIRECT_GARMENT_EVIDENCE` and the same garment-truth receipt. The operation is
 identified by its semantic facts and hashes, never by a garment-number branch.
+
+Until that cutover is qualified and explicitly enabled, manual Intake remains
+available as a separate recovery workflow. It does not clear Atelier readiness,
+and a future period of dual availability must add a cross-engine ownership
+fence before both lanes may claim the same garment stage.
 
 - 01 is the working construction authority after acceptance.
 - 02 is quarantined as inferred unless direct rear evidence supports it.
@@ -168,7 +174,13 @@ Run the required official Fashion Nova advisory check and record `KEEP`, `REFINE
 
 Place the intact accepted subject into the exact approved room authority. Preserve identity, body, garment, hair and accepted subject geometry. Create one clean, head-to-toe 05 front master. Review and lock it before either sibling begins.
 
-The current `juw.atelier.empty-plate.v1` is 1024×1280 while the Studio transparent-subject/final-composite profile is 1024×1536. Studio `ROOM_FINAL_05`, `SIBLING_06` and `SIBLING_07_*` operations are therefore `BLOCKED_AUTHORITY_CANVAS` before claim or spend. Do not resize, crop, pad, extend or regenerate the plate. Resume only after a separately approved exact 1024×1536 room is hashed, privately read back and selected by a new authority revision.
+The current `juw.atelier.empty-plate.v1` is exact 1024×1280 and is accepted by
+the versioned native-room profile. GPT Image 2 still returns 1024×1536; all
+visible alpha must fit the guarded central window (`x=16..1007`,
+`y=144..1391`), then `x=0,y=128,w=1024,h=1280` is copied one-to-one over the
+unchanged room. Do not resize, crop, pad, extend or regenerate the plate, and do
+not silently discard visible subject pixels. The profile requires closed
+qualification before paid cutover.
 
 ### 5.5 Create 06 and 07 as siblings
 
@@ -231,9 +243,10 @@ operations. The code, five authenticated route handlers and persistence
 migrations were introduced at `a6ef79b`, remain present in current `main`, and
 production migrations `0015` and `0016` are applied. This does not assert
 operational readiness: the deployed
-route runtime remains `ENGINE_DISABLED`, the canonical qualification bundle is
-absent, and final-scene authority/canvas preflight remains blocked without an
-exact approved 1024x1536 room. Until paid cutover is complete, the private JSON
+route runtime remains `ENGINE_DISABLED` and the canonical qualification bundle
+is absent. The former room-dimension mismatch is resolved by the exact native
+1024x1280 profile, but that new profile is not a substitute for route
+composition or closed qualification. Until paid cutover is complete, the private JSON
 operation record plus
 `state/current.json` remain the production recovery authorities.
 

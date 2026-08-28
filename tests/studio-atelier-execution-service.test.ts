@@ -15,6 +15,10 @@ import {
   type StudioAtelierExecutionContext,
 } from "../lib/server/studio-atelier-execution-service";
 import {
+  assertAtelierProviderFailureManifest,
+  ATELIER_PROVIDER_MODERATION_ERROR_MESSAGE,
+} from "../lib/server/studio-atelier-repository";
+import {
   STUDIO_ATELIER_G004_VISUAL_DENIAL_MANIFEST_SHA256,
   STUDIO_ATELIER_G004_VISUAL_DENIAL_REVISION,
 } from "../lib/server/studio-atelier-g004-provider-visual-denial";
@@ -26,6 +30,11 @@ import {
   deriveOperationId,
   semanticOperationHash,
 } from "../lib/studio/atelier/canonical";
+import { STUDIO_ATELIER_NATIVE_ROOM_COMPOSITE_POLICY } from "../lib/studio/atelier/canvas-policy";
+import {
+  createProviderSafetyContextReceipt,
+  expectedProviderSafetyModeForStage,
+} from "../lib/studio/atelier/provider-safety-context";
 import {
   atelierOperationSchema,
   type AtelierOperation,
@@ -428,7 +437,13 @@ function roomFinalOperation(roomBytes: Uint8Array = ROOM_BYTES): AtelierOperatio
       canvas: { width: 1024, height: 1536 },
       mode: "TRANSPARENT_SUBJECT_THEN_DETERMINISTIC_COMPOSITE",
       generatedArtifact: { kind: "SUBJECT_LAYER", format: "PNG", alpha: "REQUIRED", background: "TRANSPARENT" },
-      deterministicComposite: { method: "APP_OWNED_EXACT_PIXEL_COMPOSITE", lockedRoomRole: "LOCKED_ATELIER_ROOM", preserveLockedRoomPixels: true, outputFormat: "PNG" },
+      deterministicComposite: {
+        method: "APP_OWNED_EXACT_PIXEL_COMPOSITE",
+        lockedRoomRole: "LOCKED_ATELIER_ROOM",
+        preserveLockedRoomPixels: true,
+        outputFormat: "PNG",
+        ...STUDIO_ATELIER_NATIVE_ROOM_COMPOSITE_POLICY,
+      },
       finalFormat: "PNG",
     },
     fashionNovaCheck: {
@@ -585,6 +600,14 @@ function consentReceipt(overrides: Record<string, unknown> = {}) {
   };
 }
 
+function providerSafetyReceipt(operation: AtelierOperation) {
+  return createProviderSafetyContextReceipt({
+    semanticOperationHash: semanticOperationHash(operation),
+    stage: operation.stage,
+    mode: expectedProviderSafetyModeForStage(operation.stage),
+  });
+}
+
 async function validProviderJpeg(): Promise<Uint8Array> {
   return new Uint8Array(await sharp({
     create: {
@@ -624,20 +647,20 @@ function providerResult(
   });
 }
 
-async function validTransparentSubjectPng(): Promise<Uint8Array> {
+async function validTransparentSubjectPng(top = 250): Promise<Uint8Array> {
   const subject = await sharp({
     create: { width: 320, height: 1100, channels: 4, background: "#6b3549ff" },
   }).png().toBuffer();
   return new Uint8Array(await sharp({
     create: { width: 1024, height: 1536, channels: 4, background: "#00000000" },
-  }).composite([{ input: subject, left: 352, top: 250 }]).png().toBuffer());
+  }).composite([{ input: subject, left: 352, top }]).png().toBuffer());
 }
 
-async function validLockedRoomPng(): Promise<Uint8Array> {
+async function validLockedRoomPng(height = 1536): Promise<Uint8Array> {
   return new Uint8Array(await sharp({
     create: {
       width: 1024,
-      height: 1536,
+      height,
       channels: 3,
       background: "#ded5ca",
     },
@@ -653,8 +676,13 @@ type HarnessOptions = Readonly<{
   dynamicReferences?: readonly Record<string, unknown>[];
   directGarmentEvidence?: StudioAtelierExecutionContext["directGarmentEvidence"] | null;
   consent?: Record<string, unknown>;
+  providerSafetyContext?: unknown;
   providerError?: StudioGatewayError;
   resumeFromRaw?: boolean;
+  durableArtifacts?: readonly Readonly<{
+    row: Record<string, unknown>;
+    bytes: Uint8Array;
+  }>[];
   claimDenied?: boolean;
   invocationCheckpointFails?: boolean;
   resultCheckpointFails?: boolean;
@@ -674,7 +702,10 @@ function createHarness(options: HarnessOptions) {
   const intentInputs: Array<Record<string, unknown>> = [];
   const invokeInputs: Array<Record<string, unknown>> = [];
   const contextInputs: Array<Record<string, unknown>> = [];
-  const artifacts: Array<Record<string, unknown>> = [];
+  const artifacts: Array<Record<string, unknown>> = (options.durableArtifacts ?? [])
+    .map(({ row }) => ({ ...row }));
+  const durableArtifactBytes = new Map((options.durableArtifacts ?? [])
+    .map(({ row, bytes }) => [String(row.id), bytes] as const));
   let executionState = "INTENT";
   let invokeCount = 0;
   let providerInvocationStartedAt: Date | null = null;
@@ -836,6 +867,9 @@ function createHarness(options: HarnessOptions) {
         })),
         parentLocks: preparedOperation.parentLocks,
         consentReceipt: options.consent ?? consentReceipt(),
+        providerSafetyContext: Object.hasOwn(options, "providerSafetyContext")
+          ? options.providerSafetyContext
+          : providerSafetyReceipt(preparedOperation),
         ...(directGarmentEvidence ? { directGarmentEvidence } : {}),
       };
     },
@@ -911,6 +945,22 @@ function createHarness(options: HarnessOptions) {
       const state = String(input.state);
       events.push(`finalize:${state}`);
       finalizeInputs.push(input);
+      if (input.providerFailureManifest) {
+        providerResultReceivedAt = new Date("2026-08-26T06:00:01.000Z");
+        providerResultManifest = input.providerFailureManifest as Record<string, unknown>;
+      }
+      if (input.usage !== undefined) {
+        executionUsage = input.usage as Record<string, unknown> | null;
+      }
+      if (input.costUsd !== undefined && input.costUsd !== null) {
+        executionCostUsd = String(input.costUsd);
+      }
+      if (Array.isArray(input.requestIds)) {
+        executionRequestIds = input.requestIds as string[];
+      }
+      if (input.durationMs !== undefined && input.durationMs !== null) {
+        executionDurationMs = Number(input.durationMs);
+      }
       executionState = state;
       return { ...executionRow(), ...input };
     },
@@ -918,6 +968,8 @@ function createHarness(options: HarnessOptions) {
     listArtifacts: async () => artifacts,
     readArtifact: async (artifact: Record<string, unknown>) => {
       events.push(`read:${String(artifact.kind)}`);
+      const durableBytes = durableArtifactBytes.get(String(artifact.id));
+      if (durableBytes) return durableBytes;
       const recorded = recordInputs.find((input) =>
         String(input.kind) === String(artifact.kind)
         && Number(input.ordinal) === Number(artifact.ordinal)
@@ -1005,6 +1057,12 @@ test("paid raw bytes and their artifact row are durable before cost quarantine",
   assert.equal(harness.finalizeInputs[0]?.errorCode, "COST_CAP_EXCEEDED");
   assert.equal(harness.intentInputs[0]?.compiledPrompt, harness.invokeInputs[0]?.prompt);
   assert.match(String(harness.invokeInputs[0]?.prompt), /JUW VIRTUAL ATELIER — CANONICAL EXECUTION INSTRUCTION/);
+  const safetyReceipt = providerSafetyReceipt(subjectAOperation());
+  const parameters = harness.intentInputs[0]?.parameters as Record<string, unknown>;
+  assert.equal(parameters.providerSafetyReceiptId, safetyReceipt.receiptId);
+  assert.equal(parameters.providerSafetyReceiptSha256, safetyReceipt.receiptSha256);
+  assert.match(String(harness.invokeInputs[0]?.prompt), new RegExp(safetyReceipt.receiptSha256));
+  assert.match(String(harness.invokeInputs[0]?.prompt), /VERIFIED_ADULT_AUTHORIZED_LIKENESS/);
   assert.match(String(harness.invokeInputs[0]?.prompt), /ONLY DECLARED MUTATIONS/);
   assert.match(String(harness.invokeInputs[0]?.prompt), /IMMUTABLE TRUTH/);
   assert.doesNotMatch(
@@ -1389,6 +1447,113 @@ test("an indeterminate provider error is finalized once and never automatically 
   assert.equal(harness.finalizeInputs.length, 1);
 });
 
+test("an output sexual moderation block persists a hash-bound FAILED no-output terminal and is reused", async () => {
+  const upstream = new StudioGatewayError(
+    "Provider raw response text must not persist.",
+    "Do not expose provider response details.",
+    {
+      stage: "generation",
+      classification: "provider",
+      model: STUDIO_GPT_IMAGE_2_MODEL,
+      errorNames: ["APICallError"],
+      statusCode: 400,
+      gatewayType: null,
+      generationId: "gen-moderated-output",
+      requestId: "req-moderated-output",
+      retryable: false,
+      providerCode: "moderation_blocked",
+      moderation: {
+        stage: "output",
+        categories: ["sexual"],
+        noOutput: true,
+      },
+    },
+    { usage: { inputTokens: 14 }, costUsd: 0.021 },
+    875,
+  );
+  const harness = createHarness({ providerError: upstream });
+
+  await assert.rejects(harness.execute, (error: unknown) => error === upstream);
+
+  assert.equal(harness.invokeCount(), 1);
+  assert.equal(harness.finalizeInputs.length, 1);
+  const finalized = harness.finalizeInputs[0] as Record<string, unknown>;
+  assert.equal(finalized.state, "FAILED");
+  assert.equal(finalized.errorCode, "PROVIDER_MODERATION_BLOCKED_OUTPUT");
+  assert.equal(finalized.errorMessage, ATELIER_PROVIDER_MODERATION_ERROR_MESSAGE);
+  assert.deepEqual(finalized.usage, { inputTokens: 14 });
+  assert.equal(finalized.costUsd, 0.021);
+  assert.equal(finalized.durationMs, 875);
+  assert.deepEqual(finalized.requestIds, [
+    "gen-moderated-output",
+    "req-moderated-output",
+  ]);
+  const manifest = finalized.providerFailureManifest as Parameters<
+    typeof assertAtelierProviderFailureManifest
+  >[0];
+  assert.doesNotThrow(() => assertAtelierProviderFailureManifest(manifest));
+  assert.equal(manifest.outcome, "NO_OUTPUT");
+  assert.deepEqual(manifest.moderation, {
+    stage: "output",
+    categories: ["sexual"],
+    noOutput: true,
+  });
+  assert.doesNotMatch(JSON.stringify(manifest), /raw response|Do not expose/i);
+  assert.equal(harness.putInputs.length, 0);
+  assert.equal(harness.recordInputs.length, 0);
+  assertPrecedes(harness.events, "invoke", "finalize:FAILED");
+
+  const second = await harness.execute();
+  assert.equal(second.reused, true);
+  assert.equal(second.execution.state, "FAILED");
+  assert.ok(second.execution.providerResultReceivedAt instanceof Date);
+  assert.deepEqual(second.execution.providerResultManifest, manifest);
+  assert.equal(harness.invokeCount(), 1);
+  assert.equal(harness.finalizeInputs.length, 1);
+  assert.equal(harness.putInputs.length, 0);
+  assert.equal(harness.recordInputs.length, 0);
+  assert.equal(harness.events.some((event) => /CORRECTION/i.test(event)), false);
+});
+
+test("a moderation block with missing details persists the UNKNOWN no-output terminal", async () => {
+  const upstream = new StudioGatewayError(
+    "Provider block without details.",
+    "Await user direction.",
+    {
+      stage: "generation",
+      classification: "provider",
+      model: STUDIO_GPT_IMAGE_2_MODEL,
+      errorNames: ["APICallError"],
+      statusCode: 400,
+      gatewayType: null,
+      generationId: null,
+      requestId: "req-moderated-unknown",
+      retryable: false,
+      providerCode: "moderation_blocked",
+    },
+    { usage: null, costUsd: null },
+    112,
+  );
+  const harness = createHarness({ providerError: upstream });
+
+  await assert.rejects(harness.execute, (error: unknown) => error === upstream);
+
+  const finalized = harness.finalizeInputs[0] as Record<string, unknown>;
+  assert.equal(finalized.state, "FAILED");
+  assert.equal(finalized.errorCode, "PROVIDER_MODERATION_BLOCKED_UNKNOWN");
+  const manifest = finalized.providerFailureManifest as Parameters<
+    typeof assertAtelierProviderFailureManifest
+  >[0];
+  assert.doesNotThrow(() => assertAtelierProviderFailureManifest(manifest));
+  assert.deepEqual(manifest.moderation, {
+    stage: "unknown",
+    categories: [],
+    noOutput: true,
+  });
+  assert.equal(harness.putInputs.length, 0);
+  assert.equal(harness.recordInputs.length, 0);
+});
+
 test("a crash after raw persistence resumes materialization without another paid invocation", async () => {
   const paidBytes = await validProviderJpeg();
   const harness = createHarness({
@@ -1472,11 +1637,11 @@ test("a failed dispatch checkpoint prevents provider invocation", async () => {
 
 test("transparent catalogue execution materializes SUBJECT_LAYER plus the exact review COMPOSITE", async () => {
   const paidBytes = await validTransparentSubjectPng();
-  const roomBytes = await validLockedRoomPng();
+  const roomBytes = await validLockedRoomPng(1280);
   const operation = roomFinalOperation(roomBytes);
   const harness = createHarness({
     operation,
-    pack: resolvedRoomPack(1536, roomBytes),
+    pack: resolvedRoomPack(1280, roomBytes),
     dynamicReferences: [{ slot: "ACCEPTED_SUBJECT_LOCK", bytes: SUBJECT_LOCK_BYTES, mimeType: "image/png" }, { slot: "GARMENT_FRONT_LOCK", bytes: GARMENT_BYTES, mimeType: "image/png" }],
     result: providerResult(paidBytes, 0.062155, Object.freeze({ inputTokens: 20, outputTokens: 30 }), "image/png"),
   });
@@ -1496,12 +1661,22 @@ test("transparent catalogue execution materializes SUBJECT_LAYER plus the exact 
     (harness.recordInputs[2]?.metadata as Record<string, unknown>).sourceArtifactIds,
     ["artifact-1"],
   );
+  assert.equal(harness.recordInputs[2]?.width, 1024);
+  assert.equal(harness.recordInputs[2]?.height, 1280);
+  assert.equal(
+    (harness.recordInputs[2]?.metadata as Record<string, unknown>).canvasPolicyRevision,
+    "juw.atelier-native-room-canvas.v1",
+  );
+  const canvasProfile = (harness.recordInputs[2]?.metadata as Record<string, unknown>)
+    .canvasProfile as Record<string, unknown>;
+  assert.equal(canvasProfile.profileId, "atelier-room-native-4x5-center-window-v1");
   const parameters = harness.intentInputs[0]?.parameters as Record<string, unknown>;
   assert.equal(parameters.outputFormat, "png");
   assert.equal(parameters.background, "transparent");
-  assert.equal(parameters.transparentSubjectProfileRevision, "2026-08-26.1");
+  assert.equal(parameters.transparentSubjectProfileRevision, "2026-08-27.1");
   assert.equal(parameters.subjectNormalizationRevision, "transparent-rgb-zero-png-v1");
-  assert.equal(parameters.deterministicCompositeRevision, "sharp-alpha-over-room-v1");
+  assert.equal(parameters.deterministicCompositeRevision, "sharp-native-room-window-v2");
+  assert.equal(parameters.nativeRoomCanvasPolicyRevision, "juw.atelier-native-room-canvas.v1");
   assertPrecedes(harness.events, "record:PROVIDER_RAW", "record:SUBJECT_LAYER");
   assertPrecedes(harness.events, "record:SUBJECT_LAYER", "record:COMPOSITE");
   assertPrecedes(harness.events, "record:COMPOSITE", "finalize:COMPLETE");
@@ -1509,10 +1684,10 @@ test("transparent catalogue execution materializes SUBJECT_LAYER plus the exact 
 
 test("a transparent raw checkpoint resumes exact COMPOSITE materialization without re-spend", async () => {
   const paidBytes = await validTransparentSubjectPng();
-  const roomBytes = await validLockedRoomPng();
+  const roomBytes = await validLockedRoomPng(1280);
   const harness = createHarness({
     operation: roomFinalOperation(roomBytes),
-    pack: resolvedRoomPack(1536, roomBytes),
+    pack: resolvedRoomPack(1280, roomBytes),
     dynamicReferences: [{ slot: "ACCEPTED_SUBJECT_LOCK", bytes: SUBJECT_LOCK_BYTES, mimeType: "image/png" }, { slot: "GARMENT_FRONT_LOCK", bytes: GARMENT_BYTES, mimeType: "image/png" }],
     result: providerResult(paidBytes, 0.062155, Object.freeze({ inputTokens: 20, outputTokens: 30 }), "image/png"),
     resumeFromRaw: true,
@@ -1527,8 +1702,94 @@ test("a transparent raw checkpoint resumes exact COMPOSITE materialization witho
     "SUBJECT_LAYER",
     "COMPOSITE",
   ]);
+  assert.equal(harness.recordInputs[2]?.width, 1024);
+  assert.equal(harness.recordInputs[2]?.height, 1280);
   assert.equal(harness.events.includes("checkpointInvocationStarted"), false);
   assertPrecedes(harness.events, "record:SUBJECT_LAYER", "record:COMPOSITE");
+});
+
+test("a transparent resume rejects tampered durable composite policy evidence", async () => {
+  const paidBytes = await validTransparentSubjectPng();
+  const roomBytes = await validLockedRoomPng(1280);
+  const shared = {
+    operation: roomFinalOperation(roomBytes),
+    pack: resolvedRoomPack(1280, roomBytes),
+    dynamicReferences: [
+      { slot: "ACCEPTED_SUBJECT_LOCK", bytes: SUBJECT_LOCK_BYTES, mimeType: "image/png" },
+      { slot: "GARMENT_FRONT_LOCK", bytes: GARMENT_BYTES, mimeType: "image/png" },
+    ],
+    result: providerResult(
+      paidBytes,
+      0.062155,
+      Object.freeze({ inputTokens: 20, outputTokens: 30 }),
+      "image/png",
+    ),
+  } as const;
+  const first = createHarness(shared);
+  await first.execute();
+  const subjectInput = first.recordInputs.find((input) => input.kind === "SUBJECT_LAYER");
+  const compositeInput = first.recordInputs.find((input) => input.kind === "COMPOSITE");
+  assert.ok(subjectInput?.blob && compositeInput?.blob);
+  const subjectBlob = subjectInput.blob as Record<string, unknown>;
+  const compositeBlob = compositeInput.blob as Record<string, unknown>;
+  const subjectId = "durable-subject";
+  const durableArtifacts = [
+    {
+      row: {
+        id: subjectId,
+        executionId: EXECUTION_ID,
+        ordinal: 0,
+        kind: "SUBJECT_LAYER",
+        role: "ATELIER_SUBJECT_CANDIDATE",
+        state: "STORED",
+        blobPathname: subjectBlob.pathname,
+        blobUrl: subjectBlob.blobUrl,
+        mimeType: subjectBlob.mimeType,
+        byteSize: subjectBlob.byteSize,
+        sha256: subjectBlob.sha256,
+        width: subjectInput.width,
+        height: subjectInput.height,
+        metadata: subjectInput.metadata,
+      },
+      bytes: subjectBlob.bytes as Uint8Array,
+    },
+    {
+      row: {
+        id: "durable-composite",
+        executionId: EXECUTION_ID,
+        ordinal: 0,
+        kind: "COMPOSITE",
+        role: "ATELIER_REVIEW_COMPOSITE",
+        state: "STORED",
+        blobPathname: compositeBlob.pathname,
+        blobUrl: compositeBlob.blobUrl,
+        mimeType: compositeBlob.mimeType,
+        byteSize: compositeBlob.byteSize,
+        sha256: compositeBlob.sha256,
+        width: compositeInput.width,
+        height: compositeInput.height,
+        metadata: {
+          ...(compositeInput.metadata as Record<string, unknown>),
+          sourceArtifactIds: [subjectId],
+          canvasPolicyRevision: "tampered-native-room-policy",
+        },
+      },
+      bytes: compositeBlob.bytes as Uint8Array,
+    },
+  ] as const;
+  const resumed = createHarness({
+    ...shared,
+    resumeFromRaw: true,
+    durableArtifacts,
+  });
+
+  await assert.rejects(
+    () => resumed.execute(),
+    /durable composite evidence does not match deterministic recomposition/u,
+  );
+  assert.equal(resumed.invokeCount(), 0);
+  assert.equal(resumed.finalizeInputs.some((input) => input.state === "COMPLETE"), false);
+  assert.deepEqual(resumed.recordInputs.map((input) => input.kind), ["PROVIDER_RAW"]);
 });
 
 test("an opaque PNG returned for transparent mode is retained then quarantined", async () => {
@@ -1551,14 +1812,37 @@ test("an opaque PNG returned for transparent mode is retained then quarantined",
   assertPrecedes(harness.events, "record:PROVIDER_RAW", "finalize:QUARANTINED");
 });
 
+test("a native-room safe-window violation is retained and deterministically quarantined", async () => {
+  const unsafeSubject = await validTransparentSubjectPng(130);
+  const roomBytes = await validLockedRoomPng(1280);
+  const harness = createHarness({
+    operation: roomFinalOperation(roomBytes),
+    pack: resolvedRoomPack(1280, roomBytes),
+    dynamicReferences: [{ slot: "ACCEPTED_SUBJECT_LOCK", bytes: SUBJECT_LOCK_BYTES, mimeType: "image/png" }, { slot: "GARMENT_FRONT_LOCK", bytes: GARMENT_BYTES, mimeType: "image/png" }],
+    result: providerResult(unsafeSubject, 0.062155, Object.freeze({ inputTokens: 20, outputTokens: 30 }), "image/png"),
+  });
+
+  const output = await harness.execute();
+
+  assert.equal(output.execution.state, "QUARANTINED");
+  assert.equal(harness.invokeCount(), 1);
+  assert.deepEqual(harness.recordInputs.map((input) => input.kind), [
+    "PROVIDER_RAW",
+    "SUBJECT_LAYER",
+  ]);
+  assert.equal(harness.finalizeInputs[0]?.errorCode, "SUBJECT_LAYER_TECHNICAL_GATE_FAILED");
+  assertPrecedes(harness.events, "record:PROVIDER_RAW", "record:SUBJECT_LAYER");
+  assertPrecedes(harness.events, "record:SUBJECT_LAYER", "finalize:QUARANTINED");
+});
+
 test("an incompatible locked room fails preflight before intent, claim or paid invocation", async () => {
   const harness = createHarness({
     operation: roomFinalOperation(),
-    pack: resolvedRoomPack(1280),
+    pack: resolvedRoomPack(1200),
     dynamicReferences: [{ slot: "ACCEPTED_SUBJECT_LOCK", bytes: SUBJECT_LOCK_BYTES, mimeType: "image/png" }, { slot: "GARMENT_FRONT_LOCK", bytes: GARMENT_BYTES, mimeType: "image/png" }],
   });
 
-  await assert.rejects(harness.execute, /not an exact 1024x1536 compositing authority/i);
+  await assert.rejects(harness.execute, /qualified native-room canvas profile/i);
   assert.equal(harness.invokeCount(), 0);
   assert.equal(harness.intentInputs.length, 0);
   assert.equal(harness.events.includes("claimExecution"), false);
@@ -1575,6 +1859,35 @@ test("malformed or forged durable non-ZDR consent is rejected without spend", as
   await assert.rejects(forged.execute, /failed its content hash/i);
   assert.equal(forged.invokeCount(), 0);
   assert.equal(forged.intentInputs.length, 0);
+});
+
+test("missing, forged or wrong-operation provider safety receipts fail before intent or spend", async () => {
+  const missing = createHarness({ providerSafetyContext: undefined });
+  await assert.rejects(missing.execute, /safety context receipt is missing/i);
+  assert.equal(missing.invokeCount(), 0);
+  assert.equal(missing.intentInputs.length, 0);
+  assert.equal(missing.events.includes("checkpointInvocationStarted"), false);
+
+  const valid = providerSafetyReceipt(subjectAOperation());
+  const forged = createHarness({
+    providerSafetyContext: { ...valid, receiptSha256: "0".repeat(64) },
+  });
+  await assert.rejects(forged.execute, /failed its canonical content hash/i);
+  assert.equal(forged.invokeCount(), 0);
+  assert.equal(forged.intentInputs.length, 0);
+  assert.equal(forged.events.includes("checkpointInvocationStarted"), false);
+
+  const wrongOperation = createHarness({
+    providerSafetyContext: createProviderSafetyContextReceipt({
+      semanticOperationHash: "f".repeat(64),
+      stage: subjectAOperation().stage,
+      mode: expectedProviderSafetyModeForStage(subjectAOperation().stage),
+    }),
+  });
+  await assert.rejects(wrongOperation.execute, /does not bind the canonical operation/i);
+  assert.equal(wrongOperation.invokeCount(), 0);
+  assert.equal(wrongOperation.intentInputs.length, 0);
+  assert.equal(wrongOperation.events.includes("checkpointInvocationStarted"), false);
 });
 
 test("repeating a complete execution returns the durable result without another invocation", async () => {

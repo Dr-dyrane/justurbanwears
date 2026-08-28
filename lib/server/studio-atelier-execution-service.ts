@@ -42,6 +42,11 @@ import {
   ATELIER_PROMPT_VERSION,
   compileAtelierPrompt,
 } from "../studio/atelier/prompt-compiler";
+import { STUDIO_ATELIER_ROOM_CANVAS_POLICY_REVISION } from "../studio/atelier/canvas-policy";
+import {
+  validateProviderSafetyContextReceipt,
+  type ProviderSafetyContextReceipt,
+} from "../studio/atelier/provider-safety-context";
 import {
   isStudioAtelierG004ProviderPixelDenied,
   studioAtelierG004ProviderDenial,
@@ -66,6 +71,7 @@ import {
   checkpointAtelierProviderResult,
   claimAtelierExecution,
   createAtelierExecutionIntent,
+  createAtelierProviderFailureManifest,
   finalizeAtelierExecution,
   getAtelierOperation,
   getAtelierExecution,
@@ -76,7 +82,9 @@ import {
   type AtelierExecutionRow,
   type AtelierExecutionLease,
   type AtelierParentLockRequest,
+  type AtelierProviderModerationCategory,
   type AtelierProviderResultManifest,
+  ATELIER_PROVIDER_MODERATION_ERROR_MESSAGE,
 } from "./studio-atelier-repository";
 import {
   putVerifiedPrivateContentAddressedBlob,
@@ -101,6 +109,7 @@ import {
   type LuluV4StaticPhysicalReference,
 } from "./studio-lulu-v4-operation-packs";
 import {
+  STUDIO_ATELIER_LEGACY_SUBJECT_COMPOSITE_REVISION,
   STUDIO_ATELIER_SUBJECT_COMPOSITE_REVISION,
   STUDIO_ATELIER_SUBJECT_NORMALIZATION_REVISION,
   compositeStudioAtelierSubject,
@@ -245,6 +254,7 @@ export type StudioAtelierExecutionContext = Readonly<{
   dynamicReferences: readonly AtelierDynamicReferenceInput[];
   parentLocks: readonly ParentLock[];
   consentReceipt: StudioAtelierNonZdrConsentReceipt;
+  providerSafetyContext: ProviderSafetyContextReceipt;
   directGarmentEvidence?: Readonly<{
     sourceManifest: StudioAtelierDirectGarmentEvidenceManifestAttestation;
     sources: readonly StudioAtelierDirectGarmentEvidenceSource[];
@@ -759,12 +769,21 @@ function preflightLockedRoomAuthority(
     );
   }
   const [room] = matchingReferences;
+  const compositePolicy = operation.outputContract.mode
+    === "TRANSPARENT_SUBJECT_THEN_DETERMINISTIC_COMPOSITE"
+    ? operation.outputContract.deterministicComposite
+    : null;
+  const canvasPolicyRevision = compositePolicy
+    && "canvasPolicyRevision" in compositePolicy
+    && typeof compositePolicy.canvasPolicyRevision === "string"
+    ? compositePolicy.canvasPolicyRevision
+    : null;
   preflightStudioAtelierSubjectComposite({
     mimeType: room.mimeType,
     sha256: room.sha256,
     width: room.width,
     height: room.height,
-  });
+  }, canvasPolicyRevision);
   return room;
 }
 
@@ -773,6 +792,8 @@ function executionParameters(input: {
   authorityRevision: string;
   outputMode: AtelierOperation["outputContract"]["mode"];
   consentReceipt: StudioAtelierNonZdrConsentReceipt;
+  providerSafetyContext: ProviderSafetyContextReceipt;
+  canvasPolicyRevision: string | null;
   semanticOperationHash: string;
 }) {
   const transparent = input.outputMode
@@ -806,6 +827,8 @@ function executionParameters(input: {
     consentReceiptId: input.consentReceipt.receiptId,
     consentReceiptSha256: input.consentReceipt.receiptSha256,
     consentRecordedAt: input.consentReceipt.recordedAt,
+    providerSafetyReceiptId: input.providerSafetyContext.receiptId,
+    providerSafetyReceiptSha256: input.providerSafetyContext.receiptSha256,
     transparentSubjectProfileId: transparent
       ? STUDIO_GPT_IMAGE_2_TRANSPARENT_SUBJECT_PROFILE.profileId
       : null,
@@ -817,6 +840,9 @@ function executionParameters(input: {
       : null,
     deterministicCompositeRevision: transparent
       ? STUDIO_ATELIER_SUBJECT_COMPOSITE_REVISION
+      : null,
+    nativeRoomCanvasPolicyRevision: transparent
+      ? input.canvasPolicyRevision
       : null,
     g004ProviderVisualDenialRevision:
       STUDIO_ATELIER_G004_VISUAL_DENIAL_REVISION,
@@ -1106,6 +1132,41 @@ async function finalizeInvocationFailure(input: {
   error: unknown;
 }) {
   const gatewayError = input.error instanceof StudioGatewayError ? input.error : null;
+  if (gatewayError?.upstream.providerCode === "moderation_blocked") {
+    const moderation = gatewayError.upstream.moderation;
+    const moderationStage = moderation?.stage === "input" || moderation?.stage === "output"
+      ? moderation.stage
+      : "unknown";
+    const categoryOrder = [
+      "sexual",
+      "violence",
+      "self_harm",
+      "hate",
+      "harassment",
+      "illicit",
+    ] as const satisfies readonly AtelierProviderModerationCategory[];
+    const reportedCategories = new Set(moderation?.categories ?? []);
+    const categories = categoryOrder.filter((category) => reportedCategories.has(category));
+    const providerFailureManifest = createAtelierProviderFailureManifest({
+      requestedModel: gatewayError.upstream.model,
+      moderationStage,
+      categories,
+      gatewayGenerationId: gatewayError.upstream.generationId,
+      requestId: gatewayError.upstream.requestId,
+    });
+    return input.dependencies.finalizeExecution({
+      lease: input.lease,
+      state: "FAILED",
+      providerFailureManifest,
+      usage: gatewayError.accounting.usage,
+      costUsd: gatewayError.accounting.costUsd,
+      requestIds: [gatewayError.upstream.generationId, gatewayError.upstream.requestId]
+        .filter((value): value is string => Boolean(value)),
+      durationMs: gatewayError.durationMs,
+      errorCode: `PROVIDER_MODERATION_BLOCKED_${moderationStage.toUpperCase()}`,
+      errorMessage: ATELIER_PROVIDER_MODERATION_ERROR_MESSAGE,
+    });
+  }
   return input.dependencies.finalizeExecution({
     lease: input.lease,
     state: "INDETERMINATE",
@@ -1461,6 +1522,13 @@ export function createStudioAtelierExecutionService(
       operatorSubject: input.operatorSubject,
       operationId: input.operationId,
     });
+    const providerSafetyContext = validateProviderSafetyContextReceipt(
+      executionContext.providerSafetyContext,
+      {
+        semanticOperationHash: operationRow.semanticHash,
+        stage: declaredOperation.stage,
+      },
+    );
     const operation = parseCanonicalOperation(operationWithTrustedParents(
       operationRow.canonicalOperation,
       trustedParents,
@@ -1506,6 +1574,7 @@ export function createStudioAtelierExecutionService(
     const compiledPrompt = compileAtelierPrompt({
       operation: plan.operation,
       orderedReferences: plan.orderedReferences,
+      providerSafetyContext,
     });
     const runtime = runtimeReferences({
       operation: plan.operation,
@@ -1525,6 +1594,12 @@ export function createStudioAtelierExecutionService(
       authorityRevision: resolved.revision,
       outputMode: operation.outputContract.mode,
       consentReceipt,
+      providerSafetyContext,
+      canvasPolicyRevision: operation.outputContract.mode
+        === "TRANSPARENT_SUBJECT_THEN_DETERMINISTIC_COMPOSITE"
+        && "canvasPolicyRevision" in operation.outputContract.deterministicComposite
+        ? STUDIO_ATELIER_ROOM_CANVAS_POLICY_REVISION
+        : null,
       semanticOperationHash: plan.semanticOperationHash,
     });
     const executionIdentity = {
@@ -1839,21 +1914,87 @@ export function createStudioAtelierExecutionService(
             },
           });
         })();
-        const composite = await compositeStudioAtelierSubject({
-          room: {
-            bytes: lockedRoom.bytes,
-            mimeType: lockedRoom.mimeType,
-            sha256: lockedRoom.sha256,
-          },
-          subject: {
-            bytes: normalizedSubject.bytes,
-            mimeType: "image/png",
-            sha256: normalizedSubject.sha256,
-          },
-        });
+        let composite: Awaited<ReturnType<typeof compositeStudioAtelierSubject>>;
+        try {
+          composite = await compositeStudioAtelierSubject({
+            room: {
+              bytes: lockedRoom.bytes,
+              mimeType: lockedRoom.mimeType,
+              sha256: lockedRoom.sha256,
+            },
+            subject: {
+              bytes: normalizedSubject.bytes,
+              mimeType: "image/png",
+              sha256: normalizedSubject.sha256,
+            },
+          });
+        } catch (error) {
+          if (error instanceof StudioEngineError && error.code === "INVALID_ASSET") {
+            const terminal = await dependencies.finalizeExecution({
+              lease,
+              state: "QUARANTINED",
+              usage: result.usage,
+              costUsd: result.costUsd,
+              warnings: [...result.warnings],
+              responses: [...result.responses],
+              requestIds: [result.gatewayGenerationId, result.requestId]
+                .filter((value): value is string => Boolean(value)),
+              durationMs: result.durationMs,
+              errorCode: "SUBJECT_LAYER_TECHNICAL_GATE_FAILED",
+              errorMessage:
+                "The paid PNG was retained privately but failed the native-room subject-window gate.",
+            });
+            return {
+              operation: operationRow,
+              execution: terminal,
+              artifacts: [...rawArtifacts, subjectArtifact],
+              reused: false,
+            };
+          }
+          throw error;
+        }
+        const compositePolicy = operation.outputContract.mode
+          === "TRANSPARENT_SUBJECT_THEN_DETERMINISTIC_COMPOSITE"
+          ? operation.outputContract.deterministicComposite
+          : null;
+        if (!compositePolicy) {
+          throw new Error("A deterministic composite policy is required for transparent-subject output.");
+        }
+        const legacySameCanvas = !("canvasPolicyRevision" in compositePolicy);
+        const artifactCompositeRevision = legacySameCanvas
+          ? STUDIO_ATELIER_LEGACY_SUBJECT_COMPOSITE_REVISION
+          : composite.compositeRevision;
         if (existingComposite) {
-          if (existingComposite.mimeType !== "image/png") {
-            throw new Error("The durable composite MIME type is invalid.");
+          const expectedCompositeRevision = legacySameCanvas
+            ? STUDIO_ATELIER_LEGACY_SUBJECT_COMPOSITE_REVISION
+            : composite.compositeRevision;
+          const metadata = existingComposite.metadata;
+          const recorded = metadata && typeof metadata === "object" && !Array.isArray(metadata)
+            ? metadata as Record<string, unknown>
+            : null;
+          if (
+            existingComposite.mimeType !== "image/png"
+            || existingComposite.width !== composite.width
+            || existingComposite.height !== composite.height
+            || !recorded
+            || canonicalStringify(recorded.sourceArtifactIds)
+              !== canonicalStringify([subjectArtifact.id])
+            || recorded.compositionVersion !== expectedCompositeRevision
+            || recorded.roomAssetId !== lockedRoom.id
+            || recorded.roomSha256 !== lockedRoom.sha256
+            || recorded.authorityRevision !== resolved.revision
+            || recorded.subjectSha256 !== subjectArtifact.sha256
+            || canonicalStringify(recorded.preservation)
+              !== canonicalStringify(composite.preservation)
+            || canonicalStringify(recorded.alpha)
+              !== canonicalStringify(composite.alpha)
+            || (!legacySameCanvas
+              && recorded.canvasPolicyRevision !== composite.canvasPolicyRevision)
+            || (!legacySameCanvas
+              && canonicalStringify(recorded.canvasProfile)
+                !== canonicalStringify(composite.canvasProfile))
+          ) {
+            throw new Error("The durable composite evidence does not match deterministic recomposition.");
           }
           const existingBytes = await dependencies.readArtifact(existingComposite);
           if (
@@ -1880,13 +2021,19 @@ export function createStudioAtelierExecutionService(
             height: composite.height,
             metadata: {
               sourceArtifactIds: [subjectArtifact.id],
-              compositionVersion: composite.compositeRevision,
+              compositionVersion: artifactCompositeRevision,
               roomAssetId: lockedRoom.id,
               roomSha256: lockedRoom.sha256,
               authorityRevision: resolved.revision,
               subjectSha256: subjectArtifact.sha256,
               preservation: composite.preservation,
               alpha: composite.alpha,
+              ...(legacySameCanvas
+                ? {}
+                : {
+                    canvasPolicyRevision: composite.canvasPolicyRevision,
+                    canvasProfile: composite.canvasProfile,
+                  }),
             },
           });
         }

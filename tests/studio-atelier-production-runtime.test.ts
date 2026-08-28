@@ -9,14 +9,29 @@ import {
   STUDIO_GPT_IMAGE_2_POLICY_REVISION,
 } from "../lib/ai/studio-image-policy";
 import {
+  STUDIO_GPT_IMAGE_2_TRANSPARENT_SUBJECT_PROFILE,
+  STUDIO_GPT_IMAGE_2_TRANSPARENT_SUBJECT_PROFILE_REVISION,
+} from "../lib/ai/studio-gpt-image-2-subject-layer";
+import {
   createStudioAtelierProductionRuntime,
   inspectStudioAtelierProductionReadiness,
   isStudioAtelierStageDispatchReady,
+  STUDIO_ATELIER_EXTERNAL_AUTHORITY_MIGRATION_CREATED_AT,
+  STUDIO_ATELIER_EXTERNAL_AUTHORITY_MIGRATION_INDEX,
+  STUDIO_ATELIER_EXTERNAL_AUTHORITY_MIGRATION_SHA256,
+  STUDIO_ATELIER_EXTERNAL_AUTHORITY_MIGRATION_TAG,
+  STUDIO_ATELIER_LEDGER_MIGRATION_CREATED_AT,
   STUDIO_ATELIER_LEDGER_MIGRATION_INDEX,
+  STUDIO_ATELIER_LEDGER_MIGRATION_SHA256,
+  STUDIO_ATELIER_LEDGER_MIGRATION_TAG,
   STUDIO_ATELIER_LEDGER_SCHEMA_VERSION,
   STUDIO_ATELIER_PRIVATE_AUTHORITY_ASSET_COUNT,
   STUDIO_ATELIER_PRIVATE_MANIFEST_SHA256,
   STUDIO_ATELIER_QUALIFICATION_SUITE_VERSION,
+  STUDIO_TRANSACTIONAL_AUTHORITY_MIGRATION_CREATED_AT,
+  STUDIO_TRANSACTIONAL_AUTHORITY_MIGRATION_INDEX,
+  STUDIO_TRANSACTIONAL_AUTHORITY_MIGRATION_SHA256,
+  STUDIO_TRANSACTIONAL_AUTHORITY_MIGRATION_TAG,
   studioAtelierProductionScopeForStage,
   type StudioAtelierApprovedRoomReadiness,
   type StudioAtelierProductionPorts,
@@ -25,6 +40,10 @@ import {
 } from "../lib/server/studio-atelier-production-runtime";
 import { LULU_V4_AUTHORITY_REVISION } from "../lib/server/studio-lulu-v4-authority";
 import type { AtelierStage } from "../lib/studio/atelier/contracts";
+import {
+  STUDIO_ATELIER_ROOM_CANVAS_POLICY_REVISION,
+  STUDIO_ATELIER_SUPPORTED_ROOM_CANVAS_PROFILES,
+} from "../lib/studio/atelier/canvas-policy";
 import {
   STUDIO_ATELIER_G004_CALIBRATION_ASSET_COUNT,
   STUDIO_ATELIER_G004_CALIBRATION_MANIFEST_SHA256,
@@ -42,10 +61,12 @@ import {
 } from "../lib/studio/atelier/quality-contracts";
 import {
   STUDIO_ATELIER_QUALIFICATION_CASE_IDS,
+  STUDIO_ATELIER_NATIVE_ROOM_QUALIFICATION_STAGES,
   STUDIO_ATELIER_QUALIFICATION_RECEIPT_SCHEMA_VERSION,
   deriveStudioAtelierQualificationReceiptSha256,
   isStudioAtelierQualificationReadiness,
 } from "../lib/server/studio-atelier-qualified-evaluator";
+import { STUDIO_ATELIER_SUBJECT_COMPOSITE_REVISION } from "../lib/server/studio-atelier-subject-compositor";
 
 const VERIFIED_AT = "2026-08-26T20:00:00.000Z";
 const BLOCKED_ROOM = Object.freeze({
@@ -79,6 +100,32 @@ function fabricatedQualification(): StudioAtelierQualificationReadiness {
       manifestSha256: STUDIO_ATELIER_G004_CALIBRATION_MANIFEST_SHA256,
       readbackReceiptSha256:
         STUDIO_ATELIER_G004_EXPECTED_READBACK_RECEIPT.receiptSha256,
+    }),
+    transparentCompositeQualification: Object.freeze({
+      transparentSubjectProfileId:
+        STUDIO_GPT_IMAGE_2_TRANSPARENT_SUBJECT_PROFILE.profileId,
+      transparentSubjectProfileRevision:
+        STUDIO_GPT_IMAGE_2_TRANSPARENT_SUBJECT_PROFILE_REVISION,
+      providerCanvas: Object.freeze({
+        width: STUDIO_GPT_IMAGE_2_TRANSPARENT_SUBJECT_PROFILE.width,
+        height: STUDIO_GPT_IMAGE_2_TRANSPARENT_SUBJECT_PROFILE.height,
+      }),
+      canvasPolicyRevision: STUDIO_ATELIER_ROOM_CANVAS_POLICY_REVISION,
+      compositorRevision: STUDIO_ATELIER_SUBJECT_COMPOSITE_REVISION,
+      roomProfileCases: Object.freeze(STUDIO_ATELIER_SUPPORTED_ROOM_CANVAS_PROFILES.map(
+        (profile, profileIndex) => Object.freeze({
+          profileId: profile.profileId,
+          roomCanvas: profile.roomCanvas,
+          subjectWindow: profile.subjectWindow,
+          transparentGuardPixels: profile.transparentGuardPixels,
+          stageEvidence: Object.freeze(STUDIO_ATELIER_NATIVE_ROOM_QUALIFICATION_STAGES.map(
+            (stage, stageIndex) => Object.freeze({
+              stage,
+              evidenceSha256: String(profileIndex * 4 + stageIndex + 1).repeat(64),
+            }),
+          )),
+        }),
+      )),
     }),
     qualificationReceiptSha256: placeholder,
     independentReviewReceiptSha256: "d".repeat(64),
@@ -133,6 +180,20 @@ function validRoom(): StudioAtelierApprovedRoomReadiness {
   });
 }
 
+function currentNativeRoom(): StudioAtelierApprovedRoomReadiness {
+  return Object.freeze({
+    status: "VERIFIED_PRIVATE_READBACK",
+    assetId: "juw.atelier.empty-plate.v1",
+    sha256: "c".repeat(64),
+    mimeType: "image/png",
+    width: 1024,
+    height: 1280,
+    authorityRevision: LULU_V4_AUTHORITY_REVISION,
+    manifestSha256: STUDIO_ATELIER_PRIVATE_MANIFEST_SHA256,
+    verifiedAt: VERIFIED_AT,
+  });
+}
+
 function readiness(
   approvedRoom: StudioAtelierApprovedRoomReadiness = BLOCKED_ROOM,
 ): StudioAtelierProductionReadinessEvidence {
@@ -141,12 +202,37 @@ function readiness(
       status: "VERIFIED",
       ledgerSchemaVersion: STUDIO_ATELIER_LEDGER_SCHEMA_VERSION,
       migrationIndex: STUDIO_ATELIER_LEDGER_MIGRATION_INDEX,
+      migrationTag: STUDIO_ATELIER_LEDGER_MIGRATION_TAG,
+      migrationCreatedAt: STUDIO_ATELIER_LEDGER_MIGRATION_CREATED_AT,
+      migrationSha256: STUDIO_ATELIER_LEDGER_MIGRATION_SHA256,
+      transactionalAuthorityMigrationIndex:
+        STUDIO_TRANSACTIONAL_AUTHORITY_MIGRATION_INDEX,
+      transactionalAuthorityMigrationTag:
+        STUDIO_TRANSACTIONAL_AUTHORITY_MIGRATION_TAG,
+      transactionalAuthorityMigrationCreatedAt:
+        STUDIO_TRANSACTIONAL_AUTHORITY_MIGRATION_CREATED_AT,
+      transactionalAuthorityMigrationSha256:
+        STUDIO_TRANSACTIONAL_AUTHORITY_MIGRATION_SHA256,
+      externalAuthorityMigrationIndex:
+        STUDIO_ATELIER_EXTERNAL_AUTHORITY_MIGRATION_INDEX,
+      externalAuthorityMigrationTag:
+        STUDIO_ATELIER_EXTERNAL_AUTHORITY_MIGRATION_TAG,
+      externalAuthorityMigrationCreatedAt:
+        STUDIO_ATELIER_EXTERNAL_AUTHORITY_MIGRATION_CREATED_AT,
+      externalAuthorityMigrationSha256:
+        STUDIO_ATELIER_EXTERNAL_AUTHORITY_MIGRATION_SHA256,
       tables: Object.freeze([
+        "studio_atelier_adult_verification_receipts",
         "studio_atelier_operations",
         "studio_atelier_executions",
         "studio_atelier_artifacts",
+        "studio_atelier_consent_events",
+        "studio_atelier_consent_grants",
+        "studio_atelier_consent_projections",
         "studio_atelier_operation_projections",
         "studio_atelier_events",
+        "studio_atelier_styling_advisories",
+        "studio_engine_work_ownership",
       ]),
       verifiedAt: VERIFIED_AT,
     }),
@@ -227,6 +313,63 @@ test("readiness reports every missing server dependency without echoing secrets"
   assert.doesNotMatch(JSON.stringify(report), /secret-provider-key|credential/i);
 });
 
+test("pre-ownership database evidence cannot certify production readiness", () => {
+  const current = readiness();
+  const report = inspectStudioAtelierProductionReadiness({
+    ports: ports(),
+    readiness: {
+      ...current,
+      database: {
+        ...current.database,
+        migrationIndex: 16,
+        migrationTag: "0016_studio_atelier_ledger",
+        migrationCreatedAt: 1_787_770_588_520,
+        migrationSha256:
+          "259430e33aedd9aabe7b74599e9b45b0ef16953599cfc95efb317f5077902b51",
+        tables: current.database.tables.filter(
+          (table) => table !== "studio_engine_work_ownership",
+        ),
+      },
+    } as never,
+  });
+
+  assert.equal(report.rootSubject, "BLOCKED");
+  assert.equal(report.finalScene, "BLOCKED");
+  assert.ok(report.blockers.some((blocker) => blocker.code === "DATABASE_NOT_VERIFIED"));
+});
+
+test("pre-external-authority database evidence cannot certify production readiness", () => {
+  const current = readiness();
+  const report = inspectStudioAtelierProductionReadiness({
+    ports: ports(),
+    readiness: {
+      ...current,
+      database: {
+        ...current.database,
+        externalAuthorityMigrationIndex: 18,
+        externalAuthorityMigrationTag: "0018_studio_transactional_authority",
+        externalAuthorityMigrationCreatedAt:
+          STUDIO_TRANSACTIONAL_AUTHORITY_MIGRATION_CREATED_AT,
+        externalAuthorityMigrationSha256:
+          STUDIO_TRANSACTIONAL_AUTHORITY_MIGRATION_SHA256,
+        tables: current.database.tables.filter(
+          (table) => ![
+            "studio_atelier_adult_verification_receipts",
+            "studio_atelier_consent_events",
+            "studio_atelier_consent_grants",
+            "studio_atelier_consent_projections",
+            "studio_atelier_styling_advisories",
+          ].includes(table),
+        ),
+      },
+    } as never,
+  });
+
+  assert.equal(report.rootSubject, "BLOCKED");
+  assert.equal(report.finalScene, "BLOCKED");
+  assert.ok(report.blockers.some((blocker) => blocker.code === "DATABASE_NOT_VERIFIED"));
+});
+
 test("a declared room mismatch leaves 01-04 and subject ready but final scenes blocked", () => {
   const report = inspectStudioAtelierProductionReadiness({
     ports: ports(),
@@ -259,7 +402,7 @@ test("a declared room mismatch leaves 01-04 and subject ready but final scenes b
   }
 });
 
-test("a claimed room cannot clear final readiness outside the exact authority revision", () => {
+test("room readiness requires the exact authority revision and a qualified native profile", () => {
   const mismatchedRevision = inspectStudioAtelierProductionReadiness({
     ports: ports(),
     readiness: readiness(validRoom()),
@@ -270,18 +413,21 @@ test("a claimed room cannot clear final readiness outside the exact authority re
     "APPROVED_ROOM_INVALID",
   ]);
 
-  const oldAuthority = {
-    ...validRoom(),
-    authorityRevision: LULU_V4_AUTHORITY_REVISION,
-    manifestSha256: STUDIO_ATELIER_PRIVATE_MANIFEST_SHA256,
-  } as StudioAtelierApprovedRoomReadiness;
-  const rejected = inspectStudioAtelierProductionReadiness({
+  const accepted = inspectStudioAtelierProductionReadiness({
     ports: ports(),
-    readiness: readiness(oldAuthority),
+    readiness: readiness(currentNativeRoom()),
   });
-  assert.equal(rejected.rootSubject, "READY");
-  assert.equal(rejected.finalScene, "BLOCKED");
-  assert.deepEqual(rejected.blockers.map((blocker) => blocker.code), [
+  assert.equal(accepted.rootSubject, "READY");
+  assert.equal(accepted.finalScene, "READY");
+  assert.deepEqual(accepted.blockers, []);
+
+  const unsupported = inspectStudioAtelierProductionReadiness({
+    ports: ports(),
+    readiness: readiness({ ...currentNativeRoom(), height: 1279 } as never),
+  });
+  assert.equal(unsupported.rootSubject, "READY");
+  assert.equal(unsupported.finalScene, "BLOCKED");
+  assert.deepEqual(unsupported.blockers.map((blocker) => blocker.code), [
     "APPROVED_ROOM_INVALID",
   ]);
 });
@@ -336,6 +482,31 @@ test("the qualification receipt hash binds every case and evaluator descriptor",
     semanticEvaluator: {
       ...receipt.semanticEvaluator,
       policyRevision: "juw.semantic.policy.v2",
+    },
+  }), false);
+  assert.equal(isStudioAtelierQualificationReadiness({
+    ...receipt,
+    transparentCompositeQualification: {
+      ...receipt.transparentCompositeQualification,
+      canvasPolicyRevision: "juw.atelier-native-room-canvas.v0",
+    },
+  }), false);
+  assert.equal(isStudioAtelierQualificationReadiness({
+    ...receipt,
+    transparentCompositeQualification: {
+      ...receipt.transparentCompositeQualification,
+      roomProfileCases: receipt.transparentCompositeQualification.roomProfileCases.map(
+        (profile, profileIndex) => profileIndex === 1
+          ? {
+              ...profile,
+              stageEvidence: profile.stageEvidence.map((evidence, stageIndex) =>
+                stageIndex === 2
+                  ? { ...evidence, evidenceSha256: "f".repeat(64) }
+                  : evidence
+              ),
+            }
+          : profile,
+      ),
     },
   }), false);
 });

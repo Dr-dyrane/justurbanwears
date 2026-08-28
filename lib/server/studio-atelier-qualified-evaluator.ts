@@ -5,6 +5,14 @@ import {
   STUDIO_GPT_IMAGE_2_POLICY_REVISION,
 } from "../ai/studio-image-policy";
 import {
+  STUDIO_GPT_IMAGE_2_TRANSPARENT_SUBJECT_PROFILE,
+  STUDIO_GPT_IMAGE_2_TRANSPARENT_SUBJECT_PROFILE_REVISION,
+} from "../ai/studio-gpt-image-2-subject-layer";
+import {
+  STUDIO_ATELIER_ROOM_CANVAS_POLICY_REVISION,
+  STUDIO_ATELIER_SUPPORTED_ROOM_CANVAS_PROFILES,
+} from "../studio/atelier/canvas-policy";
+import {
   STUDIO_ATELIER_SEMANTIC_QA_SCHEMA_VERSION,
   STUDIO_ATELIER_SEMANTIC_RUBRIC_VERSION,
   STUDIO_ATELIER_SEMANTIC_THRESHOLD_VERSION,
@@ -24,11 +32,12 @@ import type {
   StudioAtelierSemanticQualityEvaluator,
   StudioAtelierTechnicalQualityEvaluator,
 } from "./studio-atelier-durable-engine";
+import { STUDIO_ATELIER_SUBJECT_COMPOSITE_REVISION } from "./studio-atelier-subject-compositor";
 
 export const STUDIO_ATELIER_QUALIFICATION_SUITE_VERSION =
-  "juw.atelier-qualification.g004-g005-g009-g017-g023-g024.v2" as const;
+  "juw.atelier-qualification.g004-g005-g009-g017-g023-g024.v3" as const;
 export const STUDIO_ATELIER_QUALIFICATION_RECEIPT_SCHEMA_VERSION =
-  "juw.atelier-qualified-evaluator-receipt.v1" as const;
+  "juw.atelier-qualified-evaluator-receipt.v2" as const;
 
 export const STUDIO_ATELIER_QUALIFICATION_CASE_IDS = Object.freeze([
   "G004_FOUNDING_POSITIVE_TARGET",
@@ -37,6 +46,13 @@ export const STUDIO_ATELIER_QUALIFICATION_CASE_IDS = Object.freeze([
   "G017_PROVIDER_OUTPUT_IS_NOT_ACCEPTANCE",
   "G023_SOURCE_ROOM_AND_BODY_REBASE",
   "G024_CURRENT_GOLDEN_SEQUENCE",
+] as const);
+
+export const STUDIO_ATELIER_NATIVE_ROOM_QUALIFICATION_STAGES = Object.freeze([
+  "ROOM_FINAL_05",
+  "SIBLING_06",
+  "SIBLING_07_CORE",
+  "SIBLING_07_RECOVERY",
 ] as const);
 
 const SHA256_PATTERN = /^[a-f0-9]{64}$/;
@@ -64,6 +80,33 @@ export type StudioAtelierQualificationReadiness = Readonly<{
     revision: typeof STUDIO_ATELIER_G004_CALIBRATION_REVISION;
     manifestSha256: typeof STUDIO_ATELIER_G004_CALIBRATION_MANIFEST_SHA256;
     readbackReceiptSha256: string;
+  }>;
+  transparentCompositeQualification: Readonly<{
+    transparentSubjectProfileId:
+      typeof STUDIO_GPT_IMAGE_2_TRANSPARENT_SUBJECT_PROFILE.profileId;
+    transparentSubjectProfileRevision:
+      typeof STUDIO_GPT_IMAGE_2_TRANSPARENT_SUBJECT_PROFILE_REVISION;
+    providerCanvas: Readonly<{
+      width: typeof STUDIO_GPT_IMAGE_2_TRANSPARENT_SUBJECT_PROFILE.width;
+      height: typeof STUDIO_GPT_IMAGE_2_TRANSPARENT_SUBJECT_PROFILE.height;
+    }>;
+    canvasPolicyRevision: typeof STUDIO_ATELIER_ROOM_CANVAS_POLICY_REVISION;
+    compositorRevision: typeof STUDIO_ATELIER_SUBJECT_COMPOSITE_REVISION;
+    roomProfileCases: readonly Readonly<{
+      profileId: typeof STUDIO_ATELIER_SUPPORTED_ROOM_CANVAS_PROFILES[number]["profileId"];
+      roomCanvas: Readonly<{ width: number; height: number }>;
+      subjectWindow: Readonly<{
+        left: number;
+        top: number;
+        width: number;
+        height: number;
+      }>;
+      transparentGuardPixels: number;
+      stageEvidence: readonly Readonly<{
+        stage: typeof STUDIO_ATELIER_NATIVE_ROOM_QUALIFICATION_STAGES[number];
+        evidenceSha256: string;
+      }>[];
+    }>[];
   }>;
   qualificationReceiptSha256: string;
   independentReviewReceiptSha256: string;
@@ -115,6 +158,7 @@ function receiptHashBody(value: StudioAtelierQualificationReadiness) {
     technicalContract: value.technicalContract,
     semanticContract: value.semanticContract,
     g004Calibration: value.g004Calibration,
+    transparentCompositeQualification: value.transparentCompositeQualification,
     independentReviewReceiptSha256: value.independentReviewReceiptSha256,
     caseEvidence: value.caseEvidence,
     technicalEvaluator,
@@ -171,6 +215,21 @@ export function isStudioAtelierQualificationReadiness(
       readbackReceiptSha256:
         STUDIO_ATELIER_G004_EXPECTED_READBACK_RECEIPT.receiptSha256,
     })
+    || !candidate.transparentCompositeQualification
+    || typeof candidate.transparentCompositeQualification !== "object"
+    || candidate.transparentCompositeQualification.transparentSubjectProfileId
+      !== STUDIO_GPT_IMAGE_2_TRANSPARENT_SUBJECT_PROFILE.profileId
+    || candidate.transparentCompositeQualification.transparentSubjectProfileRevision
+      !== STUDIO_GPT_IMAGE_2_TRANSPARENT_SUBJECT_PROFILE_REVISION
+    || canonicalStringify(candidate.transparentCompositeQualification.providerCanvas)
+      !== canonicalStringify({
+        width: STUDIO_GPT_IMAGE_2_TRANSPARENT_SUBJECT_PROFILE.width,
+        height: STUDIO_GPT_IMAGE_2_TRANSPARENT_SUBJECT_PROFILE.height,
+      })
+    || candidate.transparentCompositeQualification.canvasPolicyRevision
+      !== STUDIO_ATELIER_ROOM_CANVAS_POLICY_REVISION
+    || candidate.transparentCompositeQualification.compositorRevision
+      !== STUDIO_ATELIER_SUBJECT_COMPOSITE_REVISION
     || typeof candidate.qualificationReceiptSha256 !== "string"
     || !SHA256_PATTERN.test(candidate.qualificationReceiptSha256)
     || typeof candidate.independentReviewReceiptSha256 !== "string"
@@ -201,7 +260,26 @@ export function isStudioAtelierQualificationReadiness(
       && typeof evidence.evidenceSha256 === "string"
       && SHA256_PATTERN.test(evidence.evidenceSha256);
   });
+  const roomProfileCases = candidate.transparentCompositeQualification?.roomProfileCases;
+  const nativeProfilesValid = Array.isArray(roomProfileCases)
+    && roomProfileCases.length === STUDIO_ATELIER_SUPPORTED_ROOM_CANVAS_PROFILES.length
+    && STUDIO_ATELIER_SUPPORTED_ROOM_CANVAS_PROFILES.every((profile, profileIndex) => {
+      const evidence = roomProfileCases[profileIndex];
+      return evidence?.profileId === profile.profileId
+        && canonicalStringify(evidence.roomCanvas) === canonicalStringify(profile.roomCanvas)
+        && canonicalStringify(evidence.subjectWindow) === canonicalStringify(profile.subjectWindow)
+        && evidence.transparentGuardPixels === profile.transparentGuardPixels
+        && Array.isArray(evidence.stageEvidence)
+        && evidence.stageEvidence.length === STUDIO_ATELIER_NATIVE_ROOM_QUALIFICATION_STAGES.length
+        && STUDIO_ATELIER_NATIVE_ROOM_QUALIFICATION_STAGES.every((stage, stageIndex) => {
+          const stageEvidence = evidence.stageEvidence[stageIndex];
+          return stageEvidence?.stage === stage
+            && typeof stageEvidence.evidenceSha256 === "string"
+            && SHA256_PATTERN.test(stageEvidence.evidenceSha256);
+        });
+    });
   return casesValid
+    && nativeProfilesValid
     && deriveStudioAtelierQualificationReceiptSha256(
       candidate as StudioAtelierQualificationReadiness,
     ) === candidate.qualificationReceiptSha256;

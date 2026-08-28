@@ -7,25 +7,28 @@
   never owns provider, prompt, authority, QA or lifecycle truth
 - Provider policy: exact `openai/gpt-image-2` through Vercel AI Gateway,
   OpenAI-only
-- Final-scene production status: preflight-blocked by the approved room canvas
-  mismatch described below
+- Final-scene canvas status: the approved 1024x1280 room is supported by the
+  versioned guarded native-room profile described below
 - Deployment status: engine code, persistence migrations `0015` and `0016`,
   and five authenticated Atelier route handlers were introduced at exact
-  commit `a6ef79b` and remain present in current `main`; both production
-  migrations are applied
-- Operational cutover status: fail-closed. The deployed route runtime returns
+  commit `a6ef79b`; those two production migrations are applied. This release
+  adds concrete production ports and route composition plus migrations
+  `0017`-`0020`; they remain unapplied until guarded database qualification and
+  release complete
+- Operational cutover status: fail-closed. The route runtime returns
   `ENGINE_DISABLED`, the canonical qualification-bundle resolver returns
-  `null`, and no separately approved exact 1024x1536 room authority exists
-- Updated: 2026-08-26
+  `null`, and the native-room profile has no closed qualification receipt
+- Updated: 2026-08-27
 
 This guide turns the manual evidence accumulated from Garments 001 through 024
 into one reusable **01–07 semantic-view engine contract**. The durable facade
 scope includes independent 01–04 garment production, subject synthesis, 05 and
 the independent 06/07 siblings. It does not plan or encode the next garment.
 This is deployed fail-closed architecture, not an enabled paid-cutover claim.
-Production dispatch remains blocked until the concrete server ports and route
-runtime are composed, authority/canvas preflight passes and the canonical
-closed qualification bundle is installed. The applied migrations do not, by
+Concrete server ports and route composition are implemented in this release.
+Production dispatch remains blocked until their migrations are qualified and
+applied, the private authority/profile preflight passes and the canonical
+closed qualification bundle is installed. Applied migrations do not, by
 themselves, authorize provider work.
 `OPERATING-CONTRACT.md`, `ATELIER-CANON.md`, current state, garment truth,
 the exact asset manifest and the Runbook remain the sources of production
@@ -63,7 +66,7 @@ untrusted request-body field.
 | Command | Caller supplies | Server owns | Idempotent result |
 | --- | --- | --- | --- |
 | `prepare` | one strict typed declaration | file verification, current state, manifest, garment truth, eligible lock projection, compiler and both receipts | equivalent truth produces the same operation and reuses its projection |
-| `generate` | the `operationId` returned by `prepare` | adapter, provider/model, canonical prompt, ordered references and packs, consent evidence, attempt, execution hash, claim/fence, paid call, artifacts, accounting and QA | concurrent calls join; a materialized or locked operation is returned without another paid call |
+| `generate` | the `operationId` returned by `prepare` | adapter, provider/model, canonical prompt, ordered references and packs, retention consent, hash-bound stage-compatible safety context, attempt, execution hash, claim/fence, paid call, artifacts, accounting and QA | concurrent calls join; a materialized, moderation-terminal or locked operation is returned without another paid call |
 | `review` | `operationId` plus `Keep`, `Fix one thing`, or `Reject` | candidate and QA evidence, event version, correction lineage and remaining correction budget | the same decision reuses the recorded transition; a conflicting second decision is rejected |
 | `lockOrReuse` | `operationId` | approved artifact, exact room bytes, deterministic composite when required, immutable lock and parent descriptor | an existing lock is returned immediately |
 
@@ -98,9 +101,11 @@ readiness nor replace the resolver. Production callers provide only five typed
 infrastructure ports: file verification, trusted truth, execution context,
 correction preparation and locked-room resolution. They cannot supply either
 evaluator function, evaluator descriptor or a qualification PASS declaration.
-The server-owned qualification resolver must return the exact six-case receipt,
-independent-review receipt and receipt-bound technical and semantic evaluator
-bundle. No such all-case PASS bundle is checked in yet, so production
+The server-owned qualification resolver must return the exact v2 qualification
+receipt: six-case evidence, independent-review receipt, receipt-bound technical
+and semantic evaluators, and the exact transparent-subject profile, native-room
+canvas policy, compositor revision and room-profile/stage evidence matrix. No
+such all-case and all-profile PASS bundle is checked in yet, so production
 construction intentionally stops with `QUALIFICATION_NOT_PASSED` before any
 port or provider call. It also requires verified ledger, private-store,
 OpenAI-only policy and private authority evidence. An explicitly blocked room
@@ -202,10 +207,40 @@ reconciliation checkpoint.
 
 It is calibration and semantic evidence, not a second form a worker authors
 for an engine run and not a free-form paid execution request. Provider prompt
-prose is compiled only by `juw-atelier-canonical-prompt-v2` from the canonical
-operation and exact ordered physical bindings. Manual correction records are
+prose is compiled only by `juw-atelier-canonical-prompt-v4` from the canonical
+operation, exact ordered physical bindings and verified server-owned safety
+context. Manual correction records are
 also non-dispatching; the durable engine derives a correction from the exact
 failed receipt and enforces the one-ordinal root fence.
+
+### Provider safety context and moderation terminal
+
+The execution-context port resolves two independent receipts: non-ZDR
+retention acknowledgement and provider safety context. The safety receipt is
+content-hashed and binds the exact semantic operation hash and stage. The
+execution record then binds that receipt to the authenticated operator, exact
+operation, provider/model, retention acknowledgement and recorded time. The
+receipt selects one of two stage-checked claims:
+
+- garment-only output: non-sexual retail catalogue evidence with no real
+  person as an output target; or
+- subject/final output: verified adult, consented and authorized likeness use,
+  fully clothed non-sexual retail-fashion presentation.
+
+The server execution-context resolver derives this evidence from trusted
+current-state consent and permission; it never mints it from a browser field.
+The canonical prompt renders only the fixed factual claim. No caller prose or
+browser field can weaken or replace it. Missing, malformed, forged or
+stage-incompatible evidence fails before execution intent, claim or spend.
+
+OpenAI `moderation_blocked` is parsed by its stable error code; optional details
+are restricted to `input`, `output` or `unknown` plus safe coarse categories.
+The engine atomically records a hash-bound no-output provider-failure manifest
+and terminal `FAILED` execution. It records no artifact, never enters technical
+or semantic QA, preserves the root correction budget and reuses that terminal
+row on repeat. Unrecognized or genuinely uncertain post-dispatch errors remain
+`INDETERMINATE_PROVIDER_RESULT`. Provider response bodies, prompts and private
+media never enter the moderation evidence or public projection.
 
 ## Semantic stages, never garment branches
 
@@ -269,7 +304,7 @@ again. Do not put the paid invocation inside an auto-retrying workflow step.
 Garment 01–04 and subject stages use the base `atelier-gpt-image-2-v2`
 full-frame profile and produce one opaque JPEG. Final-scene stages use the distinct
 `atelier-gpt-image-2-transparent-subject-v1` profile and request one transparent
-PNG subject on the exact `1024x1536` final canvas. Adapter capability preflight
+PNG subject on the exact `1024x1536` provider canvas. Adapter capability preflight
 must match stage, output mode, format and required alpha before a claim.
 
 GPT Image 1.5, GPT Image 1 mini, Flux and Seedream are not automatic fallbacks.
@@ -283,16 +318,18 @@ calibration envelope.
 `TRANSPARENT_SUBJECT_THEN_DETERMINISTIC_COMPOSITE`:
 
 1. Resolve and verify the exact locked room descriptor before any paid call.
-2. Require the room and subject output profile to be the same canvas.
+2. Resolve one exact versioned native-room canvas profile: 1024x1536
+   same-canvas, or 1024x1280 with the guarded central subject window.
 3. Ask the model for subject pixels only; the room is alignment authority and
    must not appear in the generated layer.
 4. Persist the raw PNG before policy.
 5. Normalize hidden RGB under alpha zero with
    `transparent-rgb-zero-png-v1` and store a separate `SUBJECT_LAYER` artifact.
-6. Gate PNG format, exact dimensions, alpha structure and connected subject
-   occupancy, then composite the normalized subject over the already
-   preflighted exact room with `sharp-alpha-over-room-v1` under the same paid
-   execution lease.
+6. Gate PNG format, provider dimensions, alpha structure and connected subject
+   occupancy. For native 4:5, require all visible alpha inside
+   `x=16..1007,y=144..1391`, copy `x=0,y=128,w=1024,h=1280` one-to-one, then
+   composite over the already preflighted exact room with
+   `sharp-native-room-window-v2` under the same paid execution lease.
 7. Store the separate `COMPOSITE` and make that exact artifact—not the
    `SUBJECT_LAYER`—the `MATERIALIZED` candidate for technical QA, semantic QA
    and human review.
@@ -344,23 +381,24 @@ The command must report all assets as verified private predecessors or verified
 uploads. A local file, list response or successful upload alone is not enough;
 readback verification is the gate.
 
-## Binding production blocker: room canvas
+## Qualified native-room canvas profile
 
 The currently approved room plate is
 `juw.atelier.empty-plate.v1`, SHA-256
 `0b591197d2de1b490c4305ac0aed4d1089564562c7b1005411a8340168aabb72`,
-at **1024x1280**. The locked transparent-subject/final-composite profile is
-**1024x1536**. These canvases are incompatible.
+at **1024x1280**. `juw.atelier-native-room-canvas.v1` accepts that exact native
+canvas while keeping the provider subject at **1024x1536**. The compositor
+requires every nonzero alpha pixel inside a 16-pixel guard around the retained
+central 1024x1280 window, then performs an integer 1:1 row copy and composites
+over the unchanged room. It performs no room resize, stretch, crop, pad,
+extension or generation and no subject interpolation. Any visible alpha in a
+discarded band or guard fails instead of being silently cropped.
 
-Therefore every production final-scene stage must preflight-block **before the
-claim, dispatch or spend** until a separately approved, exact 1024x1536 room
-plate is uploaded to private Blob, hashed, read back, added to a new authority
-manifest revision and resolved by trusted state. Never resize, stretch, crop,
-pad, extend or generatively reconstruct the 1024x1280 plate to bypass this
-gate. Subject-only stages remain governed by their own complete preflight.
-
-This is a binding authority failure, not an image-quality preference and not a
-reason to weaken the locked 1024x1536 output contract.
+This removes the former dimension mismatch only. Paid cutover remains blocked
+by `ENGINE_DISABLED`, unapplied release migrations, missing target-environment
+authority readback and the absent closed qualified-evaluator bundle. The new
+profile must also be included in that qualification evidence before final-scene
+dispatch is enabled.
 
 ## Durable execution and crash checkpoints
 
@@ -554,7 +592,8 @@ Every worker changing the engine must:
    resolution.
 6. Add a failing generic regression test for every discovered authority,
    lineage, idempotency, persistence, alpha/composite or QA defect.
-7. Never bypass the 1024x1280-versus-1024x1536 room preflight.
+7. Never bypass the native-room profile: exact supported dimensions, guarded
+   alpha window, 1:1 copy, unchanged room pixels and profile-bound identity.
 8. Never reduce G004 calibration to an anchor label. Preserve the exact
    manifest/readback receipt, decoded-pixel hashes, stage mapping and
    evaluator-only scope; a new byte requires a new calibration revision.
@@ -623,6 +662,13 @@ npx eslint \
   tests/studio-gpt-image-2-gateway.test.ts
 ```
 
+Run the zero-spend qualification report before release:
+
+```bash
+npm run atelier:check:qualification -- --compact
+```
+
 Do not enable a production final-scene claim merely because tests pass. The
-separately approved and readback-verified 1024x1536 room authority must resolve
-first.
+exact readback-verified room must resolve to a supported native profile, the
+subject alpha window must pass, and the composed route runtime plus closed
+qualification bundle must pass the target-environment readiness atom first.

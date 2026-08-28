@@ -6,7 +6,10 @@ import {
   createStudioAtelierLockService,
   type StudioAtelierLockedRoomAuthority,
 } from "../lib/server/studio-atelier-lock-service";
-import { compositeStudioAtelierSubject } from "../lib/server/studio-atelier-subject-compositor";
+import {
+  STUDIO_ATELIER_LEGACY_SUBJECT_COMPOSITE_REVISION,
+  compositeStudioAtelierSubject,
+} from "../lib/server/studio-atelier-subject-compositor";
 import type {
   AtelierArtifactRow,
   AtelierExecutionRow,
@@ -21,6 +24,7 @@ import {
   type AtelierLayer,
   type AtelierOperation,
 } from "../lib/studio/atelier/contracts";
+import { STUDIO_ATELIER_NATIVE_ROOM_COMPOSITE_POLICY } from "../lib/studio/atelier/canvas-policy";
 import { StudioEngineError } from "../lib/studio/engine/errors";
 
 const WIDTH = 1024;
@@ -35,7 +39,7 @@ function digest(value: string | Uint8Array): string {
   return createHash("sha256").update(value).digest("hex");
 }
 
-function roomFinalOperation(roomSha256: string): AtelierOperation {
+function roomFinalOperation(roomSha256: string, legacySameCanvas = false): AtelierOperation {
   const parent = {
     role: "ACCEPTED_SUBJECT_LOCK" as const,
     assetId: "garment/900/subject-lock",
@@ -132,6 +136,7 @@ function roomFinalOperation(roomSha256: string): AtelierOperation {
         lockedRoomRole: "LOCKED_ATELIER_ROOM",
         preserveLockedRoomPixels: true,
         outputFormat: "PNG",
+        ...(legacySameCanvas ? {} : STUDIO_ATELIER_NATIVE_ROOM_COMPOSITE_POLICY),
       },
       finalFormat: "PNG",
     },
@@ -379,11 +384,11 @@ function garmentFrontOperation(): AtelierOperation {
   });
 }
 
-async function exactRoomBytes(): Promise<Uint8Array> {
+async function exactRoomBytes(height = HEIGHT): Promise<Uint8Array> {
   return new Uint8Array(await sharp({
     create: {
       width: WIDTH,
-      height: HEIGHT,
+      height,
       channels: 3,
       background: { r: 225, g: 214, b: 198 },
     },
@@ -468,6 +473,11 @@ function compositeArtifact(input: {
   blobUrl: string;
   roomSha256: string;
   subjectSha256: string;
+  width: number;
+  height: number;
+  compositionVersion: string;
+  canvasPolicyRevision?: string;
+  canvasProfile?: unknown;
 }): AtelierArtifactRow {
   return {
     id: COMPOSITE_ARTIFACT_ID,
@@ -480,16 +490,22 @@ function compositeArtifact(input: {
     blobUrl: input.blobUrl,
     mimeType: "image/png",
     byteSize: input.byteSize,
-    width: WIDTH,
-    height: HEIGHT,
+    width: input.width,
+    height: input.height,
     sha256: input.sha256,
     metadata: {
       sourceArtifactIds: [SUBJECT_ARTIFACT_ID],
-      compositionVersion: "sharp-alpha-over-room-v1",
+      compositionVersion: input.compositionVersion,
       roomAssetId: "authority/atelier-room-1024x1536",
       roomSha256: input.roomSha256,
       authorityRevision: "authority-test-v1",
       subjectSha256: input.subjectSha256,
+      ...(input.canvasPolicyRevision
+        ? {
+            canvasPolicyRevision: input.canvasPolicyRevision,
+            canvasProfile: input.canvasProfile,
+          }
+        : {}),
     },
   } as unknown as AtelierArtifactRow;
 }
@@ -497,6 +513,7 @@ function compositeArtifact(input: {
 async function reviewedCompositeFixture(
   roomBytes: Uint8Array,
   subjectBytes: Uint8Array,
+  legacySameCanvas = false,
 ): Promise<{ subject: AtelierArtifactRow; composite: AtelierArtifactRow; compositeBytes: Uint8Array }> {
   const subject = subjectArtifact(subjectBytes);
   const composed = await compositeStudioAtelierSubject({
@@ -510,6 +527,17 @@ async function reviewedCompositeFixture(
     blobUrl: `https://private.example/composite/${composed.sha256}.png`,
     roomSha256: digest(roomBytes),
     subjectSha256: subject.sha256,
+    width: composed.width,
+    height: composed.height,
+    compositionVersion: legacySameCanvas
+      ? STUDIO_ATELIER_LEGACY_SUBJECT_COMPOSITE_REVISION
+      : composed.compositeRevision,
+    ...(legacySameCanvas
+      ? {}
+      : {
+          canvasPolicyRevision: composed.canvasPolicyRevision,
+          canvasProfile: composed.canvasProfile,
+        }),
   });
   return { subject, composite, compositeBytes: composed.bytes };
 }
@@ -617,7 +645,7 @@ test("transparent lock enforces the operation's exact room ID, hash, bytes and c
 });
 
 test("transparent lock promotes the exact reviewed COMPOSITE without writing new bytes", async () => {
-  const roomBytes = await exactRoomBytes();
+  const roomBytes = await exactRoomBytes(1280);
   const subjectBytes = await subjectLayerBytes();
   const { subject, composite, compositeBytes } = await reviewedCompositeFixture(
     roomBytes,
@@ -642,7 +670,7 @@ test("transparent lock promotes the exact reviewed COMPOSITE without writing new
         bytes: roomBytes,
         mimeType: "image/png",
         width: WIDTH,
-        height: HEIGHT,
+        height: 1280,
         manifestRevision: "authority-test-v1",
         manifestHash: digest("authority-manifest"),
       } satisfies StudioAtelierLockedRoomAuthority;
@@ -663,6 +691,10 @@ test("transparent lock promotes the exact reviewed COMPOSITE without writing new
         assert.equal(input.executionId, EXECUTION_ID);
         assert.equal(input.artifactId, COMPOSITE_ARTIFACT_ID);
         assert.equal(input.evidence?.roomPixelsGenerated, 0);
+        assert.equal(
+          (input.evidence?.canvasProfile as Record<string, unknown>).profileId,
+          "atelier-room-native-4x5-center-window-v1",
+        );
         lifecycleArtifactId = input.artifactId;
         const compositeSha = input.evidence?.compositeArtifactSha256;
         assert.equal(typeof compositeSha, "string");
@@ -687,6 +719,64 @@ test("transparent lock promotes the exact reviewed COMPOSITE without writing new
     "read-reviewed-composite",
     "record-locked",
   ]);
+});
+
+test("legacy exact-canvas composites remain lockable only through their recorded v1 revision", async () => {
+  const roomBytes = await exactRoomBytes();
+  const subjectBytes = await subjectLayerBytes();
+  const { subject, composite, compositeBytes } = await reviewedCompositeFixture(
+    roomBytes,
+    subjectBytes,
+    true,
+  );
+  const roomHash = digest(roomBytes);
+  const operation = roomFinalOperation(roomHash, true);
+  const initial = projection(composite);
+  let recordedEvidence: Record<string, unknown> | null = null;
+  const service = createStudioAtelierLockService({
+    resolveLockedRoom: async ({ expected }) => ({
+      assetId: expected.assetId,
+      sha256: expected.sha256,
+      bytes: roomBytes,
+      mimeType: "image/png",
+      width: WIDTH,
+      height: HEIGHT,
+      manifestRevision: "authority-test-v1",
+      manifestHash: digest("authority-manifest"),
+    }),
+    overrides: {
+      getOperation: async () => operationRow(operation),
+      getProjection: async () => initial,
+      getExecution: async () => executionRow(),
+      listArtifacts: async () => [subject, composite],
+      readArtifact: async (artifact) => artifact.id === subject.id
+        ? subjectBytes
+        : compositeBytes,
+      recordLifecycleEvent: async (input) => {
+        recordedEvidence = input.evidence ?? null;
+        return {
+          projection: {
+            ...initial,
+            state: "LOCKED",
+            version: initial.version + 1,
+            lockedArtifactId: composite.id,
+            lockedArtifactSha256: composite.sha256,
+          } as AtelierOperationProjectionRow,
+          event: lifecycleEvent(),
+        };
+      },
+    },
+  });
+
+  const result = await service({ operatorSubject: OPERATOR, operationId: OPERATION_ID });
+
+  assert.equal(result.state, "LOCKED");
+  assert.equal(
+    recordedEvidence?.compositeRevision,
+    STUDIO_ATELIER_LEGACY_SUBJECT_COMPOSITE_REVISION,
+  );
+  assert.equal(recordedEvidence?.canvasPolicyRevision, null);
+  assert.equal(recordedEvidence?.canvasProfile, null);
 });
 
 test("transparent lock rejects a reviewed composite that differs from exact recomposition", async () => {

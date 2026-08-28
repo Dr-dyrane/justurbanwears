@@ -1,5 +1,6 @@
 import {
   createStudioAtelierEngineFacade,
+  createStudioAtelierProjectionReader,
   studioAtelierReviewDecisionSchema,
   type StudioAtelierEngineFacade,
   type StudioAtelierEnginePorts,
@@ -45,6 +46,10 @@ import {
   type StudioAtelierG004CalibrationResolver,
   type StudioAtelierVerifiedG004EvaluationTarget,
 } from "./studio-atelier-g004-calibration";
+import {
+  atelierStageFamily,
+  claimAtelierStudioEngineWork,
+} from "./studio-engine-work-ownership-service";
 
 export type {
   StudioAtelierSemanticQualityEvidence,
@@ -93,9 +98,15 @@ type DurableEngineDependencies = Readonly<{
   listArtifacts: typeof listAtelierArtifacts;
   listEvents: typeof listAtelierOperationEvents;
   createOperation: typeof createAtelierOperation;
+  claimOwnership: typeof claimAtelierStudioEngineWork;
   recordLifecycleEvent: typeof recordAtelierLifecycleEvent;
   readArtifact: typeof readAtelierArtifactBytes;
 }>;
+
+type DurableProjectionDependencies = Pick<
+  DurableEngineDependencies,
+  "getOperation" | "getCorrectionOperation" | "getProjection" | "listEvents"
+>;
 
 const defaultDependencies: DurableEngineDependencies = Object.freeze({
   getOperation: getAtelierOperation,
@@ -107,6 +118,7 @@ const defaultDependencies: DurableEngineDependencies = Object.freeze({
   listArtifacts: listAtelierArtifacts,
   listEvents: listAtelierOperationEvents,
   createOperation: createAtelierOperation,
+  claimOwnership: claimAtelierStudioEngineWork,
   recordLifecycleEvent: recordAtelierLifecycleEvent,
   readArtifact: readAtelierArtifactBytes,
 });
@@ -157,7 +169,7 @@ function reviewDecisionFromEvents(
 }
 
 async function durableSnapshot(
-  dependencies: DurableEngineDependencies,
+  dependencies: DurableProjectionDependencies,
   input: Readonly<{ operatorSubject: string; operationId: string }>,
 ): Promise<StudioAtelierServerSnapshot | null> {
   const [operation, projection, correction, events] = await Promise.all([
@@ -178,6 +190,29 @@ async function durableSnapshot(
     reviewDecision: reviewDecisionFromEvents(events),
   };
 }
+
+/**
+ * Repository-backed projection recovery with no mutation, evaluator or
+ * provider port in its public shape. Every lookup remains scoped by the
+ * authenticated operator subject supplied by the route layer.
+ */
+export function createDurableStudioAtelierProjectionReader(
+  overrides: Partial<DurableProjectionDependencies> = {},
+): StudioAtelierEngineFacade["readProjection"] {
+  const dependencies: DurableProjectionDependencies = Object.freeze({
+    getOperation: defaultDependencies.getOperation,
+    getCorrectionOperation: defaultDependencies.getCorrectionOperation,
+    getProjection: defaultDependencies.getProjection,
+    listEvents: defaultDependencies.listEvents,
+    ...overrides,
+  });
+  return createStudioAtelierProjectionReader({
+    readProjection: (command) => durableSnapshot(dependencies, command),
+  });
+}
+
+export const readDurableStudioAtelierProjection =
+  createDurableStudioAtelierProjectionReader();
 
 async function qualityContext(
   dependencies: DurableEngineDependencies,
@@ -406,12 +441,21 @@ export function createDurableStudioAtelierEnginePorts(
     resolveTrustedTruth: input.resolveTrustedTruth,
     async prepareCompiledOperation(command: PrepareCommand) {
       const operation = command.compiled.operation;
+      if (!operation.wardrobeItemId) {
+        throw invalidState("The Atelier declaration is not bound to an exact Wardrobe garment.");
+      }
+      await dependencies.claimOwnership({
+        operatorSubject: command.operatorSubject,
+        wardrobeItemId: operation.wardrobeItemId,
+        stageFamily: atelierStageFamily(operation.stage),
+      });
       const existing = await dependencies.getOperationByKey({
         operatorSubject: command.operatorSubject,
         operationKey: command.operationKey,
       });
       const created = await dependencies.createOperation({
         operatorSubject: command.operatorSubject,
+        wardrobeItemId: operation.wardrobeItemId,
         operationKey: command.operationKey,
         garmentId: operation.garmentId,
         view: operation.view,
@@ -445,9 +489,19 @@ export function createDurableStudioAtelierEnginePorts(
       const canonicalOperation = atelierOperationSchema.safeParse(
         operationRow?.canonicalOperation,
       );
-      if (!operationRow || !canonicalOperation.success) {
+      if (
+        !operationRow
+        || !canonicalOperation.success
+        || !operationRow.wardrobeItemId
+        || canonicalOperation.data.wardrobeItemId !== operationRow.wardrobeItemId
+      ) {
         throw unavailable("The stored Atelier operation is not canonical for calibration preflight.");
       }
+      await dependencies.claimOwnership({
+        operatorSubject: command.operatorSubject,
+        wardrobeItemId: operationRow.wardrobeItemId,
+        stageFamily: atelierStageFamily(canonicalOperation.data.stage),
+      });
       if (studioAtelierG004CalibrationTargetForStage(canonicalOperation.data.stage)) {
         try {
           await verifyStudioAtelierG004Calibration(

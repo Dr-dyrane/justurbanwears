@@ -27,6 +27,9 @@ test("the dossier reuses the canonical Piece workspace and handles cold links", 
   assert.match(dossier, /Piece not found\./);
   assert.match(dossier, /Opening piece…/);
   assert.match(dossier, /<StudioMediaViewerProvider>/);
+  assert.match(dossier, /<StudioAtelierEligibilityPanel/);
+  assert.match(dossier, /wardrobeItemId=\{garment\.privateWardrobeItemId\}/);
+  assert.match(dossier, /onUseLegacy=\{\(\) => setWearWardrobeItemId/);
   assert.match(dossier, /<WearSheet/);
 });
 
@@ -43,12 +46,12 @@ test("Piece work is split into concise task launchers and bounded sheets", () =>
   assert.match(wardrobe, /aria-haspopup="dialog"/);
   assert.match(wardrobe, /className="studio-service-list studio-piece-task-list"/);
   assert.match(wardrobe, /<strong>Product photos<\/strong>/);
-  assert.match(wardrobe, /<strong>Facts & price<\/strong>/);
+  assert.match(wardrobe, /<strong>\{historicalDrop01 \? "History" : "Facts & price"\}<\/strong>/);
   assert.match(wardrobe, /<strong>Shop<\/strong>/);
-  assert.match(wardrobe, /const hasFactsTask = Boolean\(garment\.privateWardrobeItemId \|\| listing\)/);
+  assert.match(wardrobe, /const hasFactsTask = historicalDrop01 \|\| Boolean\(garment\.privateWardrobeItemId \|\| listing\)/);
   assert.match(wardrobe, /<StudioTaskSheet[\s\S]*?className="studio-piece-photos-sheet"[\s\S]*?title="Product photos"/);
   assert.match(wardrobe, /<StudioTaskSheet[\s\S]*?className="studio-piece-shop-sheet"[\s\S]*?title="Shop"/);
-  assert.match(wardrobe, /<StudioTaskSheet[\s\S]*?className="studio-piece-details-sheet"[\s\S]*?title="Facts & price"/);
+  assert.match(wardrobe, /<StudioTaskSheet[\s\S]*?className="studio-piece-details-sheet"[\s\S]*?title=\{historicalDrop01 \? "History" : "Facts & price"\}/);
   assert.doesNotMatch(wardrobe, /captureSectionRef/);
   assert.doesNotMatch(wardrobe, /<details[\s\S]*?studio-piece-secondary/);
 });

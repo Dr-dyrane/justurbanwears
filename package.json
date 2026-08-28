@@ -47,6 +47,7 @@
     "shop:db:verify": "node scripts/shop-db/catalogue.mjs verify",
     "blob:sync:shop": "node scripts/shop-media/blob-sync.mjs --summary",
     "blob:sync:lulu-v4-authority": "node scripts/studio-models/sync-lulu-v4-authority.mjs",
+    "atelier:check:qualification": "tsx scripts/virtual-atelier/check-qualification-readiness.mts",
     "atelier:monitor:room": "node scripts/virtual-atelier/monitor-room-plate.mjs",
     "atelier:verify:operation": "node scripts/virtual-atelier/validate-operation.mjs",
     "atelier:verify:portable": "node scripts/virtual-atelier/verify-portable-bundle.mjs",

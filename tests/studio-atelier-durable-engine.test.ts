@@ -44,6 +44,7 @@ import {
 } from "../lib/studio/atelier/quality-contracts";
 
 const OPERATOR = "operator-durable-engine-test";
+const WARDROBE_ITEM_ID = "00000000-0000-4000-8000-000000000400";
 const OPERATION_ID = "00000000-0000-4000-8000-000000000401";
 const CORRECTION_ID = "00000000-0000-4000-8000-000000000402";
 const EXECUTION_ID = "00000000-0000-4000-8000-000000000403";
@@ -79,6 +80,15 @@ function createDurableStudioAtelierEnginePorts(input: DurableEngineTestInput) {
     ...input,
     technicalEvaluator: TECHNICAL_EVALUATOR,
     semanticEvaluator: SEMANTIC_EVALUATOR,
+    overrides: {
+      claimOwnership: async ({ stageFamily }) => ({
+        owner: "ATELIER",
+        stageFamily,
+        semanticHash: digest(`ownership:${stageFamily}`),
+        reused: false,
+      }),
+      ...input.overrides,
+    },
   });
 }
 
@@ -176,6 +186,7 @@ function subjectOperation(correctionOf?: string): AtelierOperation {
   return atelierOperationSchema.parse({
     contractVersion: "juw.atelier-operation.v1",
     workflowRevision: "durable-engine-test-v1",
+    wardrobeItemId: WARDROBE_ITEM_ID,
     garmentId: "engine-test",
     stage: "SUBJECT_A",
     view: "SUBJECT",
@@ -273,6 +284,7 @@ function garmentFrontOperation(): AtelierOperation {
   return atelierOperationSchema.parse({
     contractVersion: "juw.atelier-operation.v1",
     workflowRevision: "durable-engine-test-v1",
+    wardrobeItemId: WARDROBE_ITEM_ID,
     garmentId: "engine-test",
     stage: "GARMENT_01_FRONT",
     view: "01",
@@ -367,6 +379,7 @@ function operationRow(input: {
   return {
     id: input.id ?? OPERATION_ID,
     operatorSubject: OPERATOR,
+    wardrobeItemId: operation.wardrobeItemId ?? null,
     operationKey: "durable-engine-operation-key",
     garmentId: operation.garmentId,
     view: operation.view,
@@ -720,6 +733,97 @@ test("durable prepare returns one stable operation and marks repeat preparation 
   assert.equal(first.created, true);
   assert.equal(repeated.created, false);
   assert.equal(creates, 2, "the repository idempotency path may be re-entered without duplicating the row");
+});
+
+test("an ownership conflict blocks Atelier prepare before an operation intent is created", async () => {
+  const operation = subjectOperation();
+  let lookupCalls = 0;
+  let createCalls = 0;
+  const ports = createDurableStudioAtelierEnginePorts({
+    resolveFileVerification: unusedServerPort,
+    resolveTrustedTruth: unusedTruthPort,
+    resolveG004Calibration: unusedG004CalibrationResolver,
+    materializeOnce: unusedMaterializer,
+    evaluateTechnicalQuality: unusedTechnicalQualityEvaluator,
+    evaluateSemanticQuality: unusedSemanticQualityEvaluator,
+    prepareCorrection: unusedCorrectionPreparer,
+    resolveLockedRoom: unusedRoomResolver,
+    overrides: {
+      claimOwnership: async () => {
+        throw new StudioEngineError(
+          "INVALID_TRANSITION",
+          409,
+          "This garment stage is already owned by another Studio workflow.",
+          "Continue from the saved workflow.",
+        );
+      },
+      getOperationByKey: async () => {
+        lookupCalls += 1;
+        return null;
+      },
+      createOperation: async () => {
+        createCalls += 1;
+        return operationRow({ operation });
+      },
+      lockApprovedOnce: unusedLock,
+    },
+  });
+
+  await assert.rejects(
+    ports.prepareCompiledOperation({
+      operatorSubject: OPERATOR,
+      operationKey: "durable-engine-operation-key",
+      semanticHash: digest("semantic-operation"),
+      compiled: compiled(operation),
+    }),
+    (error: unknown) => error instanceof StudioEngineError
+      && error.code === "INVALID_TRANSITION"
+      && error.status === 409,
+  );
+  assert.equal(lookupCalls, 0);
+  assert.equal(createCalls, 0);
+});
+
+test("Atelier reasserts durable ownership before calibration or paid materialization", async () => {
+  let calibrationCalls = 0;
+  let materializerCalls = 0;
+  const ports = createDurableStudioAtelierEnginePorts({
+    resolveFileVerification: unusedServerPort,
+    resolveTrustedTruth: unusedTruthPort,
+    resolveG004Calibration: async () => {
+      calibrationCalls += 1;
+      return verifiedG004Calibration;
+    },
+    materializeOnce: async () => {
+      materializerCalls += 1;
+      return { reused: false };
+    },
+    evaluateTechnicalQuality: unusedTechnicalQualityEvaluator,
+    evaluateSemanticQuality: unusedSemanticQualityEvaluator,
+    prepareCorrection: unusedCorrectionPreparer,
+    resolveLockedRoom: unusedRoomResolver,
+    overrides: {
+      getOperation: async () => operationRow(),
+      claimOwnership: async () => {
+        throw new StudioEngineError(
+          "INVALID_TRANSITION",
+          409,
+          "This garment stage is already owned by another Studio workflow.",
+          "Continue from the saved workflow.",
+        );
+      },
+      lockApprovedOnce: unusedLock,
+    },
+  });
+
+  await assert.rejects(
+    ports.materializeOnce({ operatorSubject: OPERATOR, operationId: OPERATION_ID }),
+    (error: unknown) => error instanceof StudioEngineError
+      && error.code === "INVALID_TRANSITION"
+      && error.status === 409,
+  );
+  assert.equal(calibrationCalls, 0);
+  assert.equal(materializerCalls, 0);
 });
 
 test("quality-event evidence cannot masquerade as a human review decision", async () => {

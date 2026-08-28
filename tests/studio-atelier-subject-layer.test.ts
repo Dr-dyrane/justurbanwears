@@ -23,6 +23,7 @@ import {
   type StudioAtelierHashedImage,
   type StudioAtelierSubjectLayer,
 } from "../lib/server/studio-atelier-subject-compositor";
+import { STUDIO_ATELIER_ROOM_CANVAS_POLICY_REVISION } from "../lib/studio/atelier/canvas-policy";
 import { StudioGatewayError } from "../lib/ai/studio-gateway";
 import { StudioEngineError } from "../lib/studio/engine/errors";
 
@@ -58,9 +59,9 @@ function invocation() {
   };
 }
 
-async function patternedRoom(): Promise<Uint8Array> {
-  const pixels = new Uint8Array(WIDTH * HEIGHT * 3);
-  for (let y = 0; y < HEIGHT; y += 1) {
+async function patternedRoom(height = HEIGHT): Promise<Uint8Array> {
+  const pixels = new Uint8Array(WIDTH * height * 3);
+  for (let y = 0; y < height; y += 1) {
     for (let x = 0; x < WIDTH; x += 1) {
       const offset = (y * WIDTH + x) * 3;
       pixels[offset] = (x * 5 + y) % 256;
@@ -69,7 +70,7 @@ async function patternedRoom(): Promise<Uint8Array> {
     }
   }
   return new Uint8Array(await sharp(pixels, {
-    raw: { width: WIDTH, height: HEIGHT, channels: 3 },
+    raw: { width: WIDTH, height, channels: 3 },
   }).png({ compressionLevel: 6 }).toBuffer());
 }
 
@@ -108,6 +109,7 @@ async function rectangleLayer(rectangles: Array<{
   top: number;
   width: number;
   height: number;
+  alpha?: number;
 }>): Promise<Uint8Array> {
   const overlays = await Promise.all(rectangles.map(async (rectangle) => ({
     input: await sharp({
@@ -115,7 +117,7 @@ async function rectangleLayer(rectangles: Array<{
         width: rectangle.width,
         height: rectangle.height,
         channels: 4,
-        background: { r: 220, g: 30, b: 40, alpha: 1 },
+        background: { r: 220, g: 30, b: 40, alpha: rectangle.alpha ?? 1 },
       },
     }).png().toBuffer(),
     left: rectangle.left,
@@ -378,13 +380,19 @@ test("subject normalization zeros hidden RGB and is deterministic", async () => 
   assert.deepEqual(Array.from(raw.subarray(0, 4)), [0, 0, 0, 0]);
 });
 
-test("same-canvas room compatibility blocks before provider invocation", () => {
+test("room preflight accepts only explicit native canvas profiles", () => {
   assert.doesNotThrow(() => preflightStudioAtelierSubjectComposite({
     mimeType: "image/png",
     sha256: "a".repeat(64),
     width: WIDTH,
     height: HEIGHT,
   }));
+  assert.doesNotThrow(() => preflightStudioAtelierSubjectComposite({
+    mimeType: "image/png",
+    sha256: "b".repeat(64),
+    width: 1024,
+    height: 1280,
+  }, STUDIO_ATELIER_ROOM_CANVAS_POLICY_REVISION));
   assert.throws(
     () => preflightStudioAtelierSubjectComposite({
       mimeType: "image/png",
@@ -392,6 +400,15 @@ test("same-canvas room compatibility blocks before provider invocation", () => {
       width: 1024,
       height: 1280,
     }),
+    (error: unknown) => error instanceof StudioEngineError && error.code === "INVALID_ASSET",
+  );
+  assert.throws(
+    () => preflightStudioAtelierSubjectComposite({
+      mimeType: "image/png",
+      sha256: "c".repeat(64),
+      width: 1024,
+      height: 1200,
+    }, STUDIO_ATELIER_ROOM_CANVAS_POLICY_REVISION),
     (error: unknown) => error instanceof StudioEngineError && error.code === "INVALID_ASSET",
   );
 });
@@ -468,6 +485,94 @@ test("Sharp composite is deterministic and preserves every unoccluded room pixel
 
   const visibleCenter = (640 * WIDTH + 480) * 3;
   assert.deepEqual(Array.from(outputRaw.subarray(visibleCenter, visibleCenter + 3)), [220, 30, 40]);
+});
+
+test("native 4:5 profile copies the guarded subject window 1:1 over the exact room", async () => {
+  const room = roomPlate(await patternedRoom(1280));
+  const subject = subjectCandidate(await subjectLayer());
+  const [first, second] = await Promise.all([
+    compositeStudioAtelierSubject({ room, subject }),
+    compositeStudioAtelierSubject({ room, subject }),
+  ]);
+
+  assert.equal(first.sha256, second.sha256);
+  assert.deepEqual(first.bytes, second.bytes);
+  assert.equal(first.width, 1024);
+  assert.equal(first.height, 1280);
+  assert.equal(first.canvasPolicyRevision, STUDIO_ATELIER_ROOM_CANVAS_POLICY_REVISION);
+  assert.equal(first.canvasProfile.profileId, "atelier-room-native-4x5-center-window-v1");
+  assert.deepEqual(first.canvasProfile.subjectWindow, {
+    left: 0, top: 128, width: 1024, height: 1280,
+  });
+  assert.equal(first.canvasProfile.transparentGuardPixels, 16);
+  assert.equal(first.canvasProfile.pixelMapping, "EXACT_1_TO_1_WINDOW_COPY");
+  assert.equal(first.preservation.roomPixelsGenerated, 0);
+
+  const [roomRaw, subjectRaw, outputRaw, outputMetadata] = await Promise.all([
+    sharp(room.bytes).removeAlpha().raw().toBuffer(),
+    sharp(subject.bytes).ensureAlpha().raw().toBuffer(),
+    sharp(first.bytes).removeAlpha().raw().toBuffer(),
+    sharp(first.bytes).metadata(),
+  ]);
+  assert.equal(outputMetadata.width, 1024);
+  assert.equal(outputMetadata.height, 1280);
+  let compared = 0;
+  for (let y = 0; y < 1280; y += 1) {
+    for (let x = 0; x < WIDTH; x += 1) {
+      const outputPixel = y * WIDTH + x;
+      const subjectPixel = (y + 128) * WIDTH + x;
+      if (subjectRaw[subjectPixel * 4 + 3] !== 0) continue;
+      const offset = outputPixel * 3;
+      assert.equal(outputRaw[offset], roomRaw[offset]);
+      assert.equal(outputRaw[offset + 1], roomRaw[offset + 1]);
+      assert.equal(outputRaw[offset + 2], roomRaw[offset + 2]);
+      compared += 1;
+    }
+  }
+  assert.equal(compared, first.preservation.unoccludedPixelCount);
+});
+
+test("native 4:5 profile accepts the exact guarded window boundaries", async () => {
+  const room = roomPlate(await patternedRoom(1280));
+  const boundarySafe = subjectCandidate(await rectangleLayer([
+    { left: 392, top: 360, width: 240, height: 680 },
+    { left: 16, top: 360, width: 1, height: 1, alpha: 1 / 255 },
+    { left: 1007, top: 360, width: 1, height: 1, alpha: 1 / 255 },
+    { left: 500, top: 144, width: 1, height: 1, alpha: 1 / 255 },
+    { left: 500, top: 1391, width: 1, height: 1, alpha: 1 / 255 },
+  ]));
+
+  const composite = await compositeStudioAtelierSubject({ room, subject: boundarySafe });
+
+  assert.equal(composite.width, 1024);
+  assert.equal(composite.height, 1280);
+  assert.equal(composite.canvasProfile.profileId, "atelier-room-native-4x5-center-window-v1");
+});
+
+test("native 4:5 profile rejects even one faint-alpha pixel outside the guarded window", async () => {
+  const room = roomPlate(await patternedRoom(1280));
+  const unsafePixels = [
+    { left: 15, top: 360 },
+    { left: 1008, top: 360 },
+    { left: 500, top: 127 },
+    { left: 500, top: 143 },
+    { left: 500, top: 1392 },
+    { left: 500, top: 1408 },
+  ];
+
+  for (const pixel of unsafePixels) {
+    const unsafe = subjectCandidate(await rectangleLayer([
+      { left: 392, top: 360, width: 240, height: 680 },
+      { ...pixel, width: 1, height: 1, alpha: 1 / 255 },
+    ]));
+    await assert.rejects(
+      () => compositeStudioAtelierSubject({ room, subject: unsafe }),
+      (error: unknown) => error instanceof StudioEngineError
+        && error.code === "INVALID_ASSET"
+        && /safe window/i.test(error.message),
+      `expected (${pixel.left}, ${pixel.top}) to fail the native-room safe window`,
+    );
+  }
 });
 
 test("compositor rejects a changed room hash before any transform", async () => {

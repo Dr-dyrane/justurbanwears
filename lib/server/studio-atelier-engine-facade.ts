@@ -443,7 +443,7 @@ function operationKey(operatorSubject: string, operationId: string): string {
 }
 
 async function projectionOrThrow(
-  ports: StudioAtelierEnginePorts,
+  ports: Pick<StudioAtelierEnginePorts, "readProjection">,
   operatorSubject: string,
   operationId: string,
 ): Promise<StudioAtelierServerSnapshot> {
@@ -457,6 +457,28 @@ async function projectionOrThrow(
     );
   }
   return parseSnapshot(projection, operationId);
+}
+
+/**
+ * Builds the sanitized, read-only projection boundary without exposing any
+ * prepare, paid-dispatch, review or lock port. Recovery routes use this narrow
+ * reader so an evaluator or provider outage cannot make durable status
+ * unreadable, while no mutation capability enters the recovery composition.
+ */
+export function createStudioAtelierProjectionReader(
+  ports: Pick<StudioAtelierEnginePorts, "readProjection">,
+): StudioAtelierEngineFacade["readProjection"] {
+  return async function readProjection(
+    rawOperatorSubject: string,
+    rawOperationId: string,
+  ): Promise<StudioAtelierCommandResult> {
+    const operatorSubject = parseOperatorSubject(rawOperatorSubject);
+    const operationId = parseOperationId(rawOperationId);
+    return publicResult(
+      await projectionOrThrow(ports, operatorSubject, operationId),
+      true,
+    );
+  };
 }
 
 function reviewIsAlreadyRecorded(
@@ -532,17 +554,7 @@ export function createStudioAtelierEngineFacade(
   const lockInFlight = new Map<string, Promise<StudioAtelierCommandResult>>();
   const resumeReviewInFlight = new Map<string, Promise<StudioAtelierCommandResult>>();
 
-  async function readProjection(
-    rawOperatorSubject: string,
-    rawOperationId: string,
-  ): Promise<StudioAtelierCommandResult> {
-    const operatorSubject = parseOperatorSubject(rawOperatorSubject);
-    const operationId = parseOperationId(rawOperationId);
-    return publicResult(
-      await projectionOrThrow(ports, operatorSubject, operationId),
-      true,
-    );
-  }
+  const readProjection = createStudioAtelierProjectionReader(ports);
 
   async function prepare(
     rawOperatorSubject: string,

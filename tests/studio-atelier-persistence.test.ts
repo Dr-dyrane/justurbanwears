@@ -10,7 +10,9 @@ import {
 import {
   areAtelierDeclarationReceiptsCompatible,
   areAtelierTruthReceiptsCompatible,
+  assertAtelierProviderFailureManifest,
   assertAtelierLifecycleTransition,
+  createAtelierProviderFailureManifest,
   sanitizeAtelierProviderResponses,
 } from "../lib/server/studio-atelier-repository";
 import { ATELIER_STAGE_RECIPES } from "../lib/studio/atelier/contracts";
@@ -298,6 +300,53 @@ test("durable parent resolution preserves all four exact garment locks and their
   assert.match(resolver, /reviewState: "LOCKED"/);
   assert.match(resolver, /lockedLayer: descriptor\.lockedLayer/);
   assert.match(resolver, /return resolved/);
+});
+
+test("provider moderation failure evidence is strict, hash-bound and atomically terminalized", async () => {
+  const manifest = createAtelierProviderFailureManifest({
+    requestedModel: "openai/gpt-image-2",
+    moderationStage: "output",
+    categories: ["sexual"],
+    gatewayGenerationId: "gen-moderated",
+    requestId: "req-moderated",
+  });
+  assert.doesNotThrow(() => assertAtelierProviderFailureManifest(manifest));
+  assert.equal(manifest.outcome, "NO_OUTPUT");
+  assert.equal(manifest.manifestSha256.length, 64);
+  assert.deepEqual(manifest.moderation, {
+    stage: "output",
+    categories: ["sexual"],
+    noOutput: true,
+  });
+  assert.equal(Object.hasOwn(manifest, "images"), false);
+
+  assert.throws(
+    () => assertAtelierProviderFailureManifest({
+      ...manifest,
+      moderation: { ...manifest.moderation, stage: "input" },
+    }),
+    /hash is invalid/i,
+  );
+  assert.throws(
+    () => assertAtelierProviderFailureManifest({
+      ...manifest,
+      rawResponse: "must not persist",
+    } as never),
+    /manifest is invalid/i,
+  );
+
+  const repository = await source("lib/server/studio-atelier-repository.ts");
+  const start = repository.indexOf("export async function finalizeAtelierExecution");
+  const end = repository.indexOf("export async function recoverExpiredAtelierExecutions", start);
+  assert.ok(start >= 0 && end > start, "execution finalization must remain a named atomic boundary");
+  const finalizer = repository.slice(start, end);
+  assert.match(finalizer, /provider_result_received_at = case/);
+  assert.match(finalizer, /provider_result_manifest = case/);
+  assert.match(finalizer, /set state = \$\{input\.state\}/);
+  assert.match(finalizer, /execution\.provider_invocation_started_at is not null/);
+  assert.match(finalizer, /execution\.provider_result_received_at is null/);
+  assert.match(finalizer, /execution\.provider_result_manifest is null/);
+  assert.match(finalizer, /not exists \(\s*select 1 from studio_atelier_artifacts artifact/);
 });
 
 test("0016 adds an isolated, fenced and lossless Atelier persistence contract", async () => {

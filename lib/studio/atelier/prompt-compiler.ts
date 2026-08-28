@@ -1,6 +1,7 @@
 import {
   canonicalAtelierOperation,
   canonicalStringify,
+  semanticOperationHash,
   sha256Text,
 } from "./canonical";
 import {
@@ -10,8 +11,12 @@ import {
   type PhysicalReferenceBinding,
   type ReferencePackRole,
 } from "./contracts";
+import {
+  providerSafetyContextPromptLines,
+  validateProviderSafetyContextReceipt,
+} from "./provider-safety-context";
 
-export const ATELIER_PROMPT_VERSION = "juw-atelier-canonical-prompt-v2" as const;
+export const ATELIER_PROMPT_VERSION = "juw-atelier-canonical-prompt-v4" as const;
 
 export type CompiledAtelierPrompt = Readonly<{
   version: typeof ATELIER_PROMPT_VERSION;
@@ -156,11 +161,19 @@ function providerOutputPhaseLines(operation: AtelierOperation): string[] {
       "PROVIDER OUTPUT PHASE: Create the declared complete subject-stage frame on neutral staging.",
     ];
   }
+  const composite = operation.outputContract.deterministicComposite;
+  const nativeRoomPolicy = "canvasPolicyRevision" in composite;
   return [
-    "PROVIDER OUTPUT PHASE: Return only the same-canvas full-body subject pixels as a transparent PNG layer.",
+    "PROVIDER OUTPUT PHASE: Return only the full-body subject pixels on the declared transparent PNG provider canvas.",
     "- The locked room reference controls placement, scale, perspective, camera and lighting alignment only; it is not provider-rendered output.",
     "- Render no wall, JUW icon, rail, props, floor, room pixels, replacement background, checkerboard or transparency preview.",
     "- Keep the untouched canvas genuinely transparent. App-owned deterministic code composites the approved layer over the exact room bytes later.",
+    ...(nativeRoomPolicy
+      ? [
+          "- SAFE WINDOW: Keep every visible subject, hair, garment, heel and shadow pixel inside x=16..1007 and y=144..1391 on the 1024x1536 provider canvas.",
+          "- Every pixel outside that guarded central window must have alpha exactly zero. The app copies x=0,y=128,width=1024,height=1280 one-to-one onto the native 1024x1280 room; it never rescales or silently crops visible pixels.",
+        ]
+      : []),
   ];
 }
 
@@ -171,9 +184,17 @@ function providerOutputPhaseLines(operation: AtelierOperation): string[] {
 export function compileAtelierPrompt(input: {
   operation: unknown;
   orderedReferences: readonly unknown[];
+  providerSafetyContext: unknown;
 }): CompiledAtelierPrompt {
   const operation = canonicalAtelierOperation(input.operation);
   const bindings = parseOrderedBindings(input.orderedReferences, operation);
+  const safetyContext = validateProviderSafetyContextReceipt(
+    input.providerSafetyContext,
+    {
+      semanticOperationHash: semanticOperationHash(operation),
+      stage: operation.stage,
+    },
+  );
   const output = operation.outputContract;
   const quality = operation.renderQualityContract;
   const lines = [
@@ -182,6 +203,8 @@ export function compileAtelierPrompt(input: {
     `OPERATION: garment=${operation.garmentId}; stage=${operation.stage}; targetView=${operation.view}.`,
     `VIEW GRAMMAR: ${viewInstructions[operation.view]}`,
     "AUTHORITY RULE: parent locks and named authorities are binding truth. Higher dominance resolves conflict. A packed board carries every listed constituent; do not treat the board layout as an output layout.",
+    "",
+    ...providerSafetyContextPromptLines(safetyContext),
     "",
     "PARENT LOCKS",
     ...parentLines(operation),
@@ -224,7 +247,12 @@ export function compileAtelierPrompt(input: {
     `- imageCount=${output.imageCount}; layout=${output.layout}; fullBody=${output.fullBody}; targetView=${output.targetView}; mode=${output.mode}.`,
     `- canvas=${output.canvas.width}x${output.canvas.height}; generatedKind=${output.generatedArtifact.kind}; generatedFormat=${output.generatedArtifact.format}; generatedAlpha=${output.generatedArtifact.alpha}; generatedBackground=${output.generatedArtifact.background}; finalFormat=${output.finalFormat}.`,
     ...(output.mode === "TRANSPARENT_SUBJECT_THEN_DETERMINISTIC_COMPOSITE"
-      ? [`- deterministicComposite=${output.deterministicComposite.method}; lockedRoomRole=${output.deterministicComposite.lockedRoomRole}; preserveLockedRoomPixels=${output.deterministicComposite.preserveLockedRoomPixels}; compositeOutputFormat=${output.deterministicComposite.outputFormat}.`]
+      ? [
+          `- deterministicComposite=${output.deterministicComposite.method}; lockedRoomRole=${output.deterministicComposite.lockedRoomRole}; preserveLockedRoomPixels=${output.deterministicComposite.preserveLockedRoomPixels}; compositeOutputFormat=${output.deterministicComposite.outputFormat}.`,
+          ...("canvasPolicyRevision" in output.deterministicComposite
+            ? [`- canvasPolicy=${output.deterministicComposite.canvasPolicyRevision}; pixelMapping=${output.deterministicComposite.pixelMapping}; roomPixelsGenerated=${output.deterministicComposite.roomPixelsGenerated}; supportedNativeRoomCanvases=1024x1536,1024x1280.`]
+            : []),
+        ]
       : [`- deterministicComposite=NONE; ${output.mode === "GENERATIVE_GARMENT_MEDIA" ? "neutral source-safe garment materialization only" : "neutral full-frame subject materialization only"}.`]),
     ...(output.mode === "TRANSPARENT_SUBJECT_THEN_DETERMINISTIC_COMPOSITE"
       ? [`- renderedText=${output.renderedText}; labels=${output.labels}. Produce one transparent subject layer only, never a scene, board, crop, label, footer or contact sheet.`]

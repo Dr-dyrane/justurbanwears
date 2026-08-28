@@ -1,9 +1,13 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import { createDurableStudioAtelierProjectionReader } from "../lib/server/studio-atelier-durable-engine";
 import type { StudioAtelierProductionRuntime } from "../lib/server/studio-atelier-production-runtime";
 import {
+  createStudioAtelierRecoveryRuntimeLoader,
   createStudioAtelierRouteRuntimeLoader,
+  loadStudioAtelierRecoveryRuntime,
   loadStudioAtelierRouteRuntime,
+  type StudioAtelierRecoveryRuntime,
 } from "../lib/server/studio-atelier-route-runtime";
 import { createStudioAtelierRouteService } from "../lib/server/studio-atelier-route-service";
 import type {
@@ -12,6 +16,10 @@ import type {
   StudioAtelierReviewDecision,
 } from "../lib/server/studio-atelier-engine-facade";
 import type { StudioOperator } from "../lib/server/studio-operator";
+import type {
+  AtelierOperationProjectionRow,
+  AtelierOperationRow,
+} from "../lib/server/studio-atelier-repository";
 import { StudioEngineError } from "../lib/studio/engine/errors";
 
 const OPERATOR = Object.freeze({
@@ -90,6 +98,21 @@ function harness(initial: StudioAtelierCommandResult) {
       return current;
     },
   };
+  const readReviewArtifact = async (input: {
+    operator: StudioOperator;
+    operationId: string;
+  }) => {
+    calls.push({ name: "readReviewArtifact", arguments: [input] });
+    return Object.freeze({
+      operationId: input.operationId,
+      lifecycleState: "SEMANTIC_PASS" as const,
+      mimeType: "image/png" as const,
+      byteSize: 4,
+      width: 1,
+      height: 1,
+      bytes: new Uint8Array([1, 2, 3, 4]),
+    });
+  };
   const runtime = {
     readiness: {
       rootSubject: "READY",
@@ -108,24 +131,19 @@ function harness(initial: StudioAtelierCommandResult) {
         return current;
       },
     },
-    async readReviewArtifact(input: { operator: StudioOperator; operationId: string }) {
-      calls.push({ name: "readReviewArtifact", arguments: [input] });
-      return Object.freeze({
-        operationId: input.operationId,
-        lifecycleState: "SEMANTIC_PASS" as const,
-        mimeType: "image/png" as const,
-        byteSize: 4,
-        width: 1,
-        height: 1,
-        bytes: new Uint8Array([1, 2, 3, 4]),
-      });
-    },
+    readReviewArtifact,
   } as unknown as StudioAtelierProductionRuntime;
+  const recoveryRuntime = Object.freeze({
+    readProjection: facade.readProjection,
+    readReviewArtifact,
+  }) satisfies StudioAtelierRecoveryRuntime;
   return {
     calls,
     runtime,
+    recoveryRuntime,
     service: createStudioAtelierRouteService({
       loadRuntime: async () => runtime,
+      loadRecoveryRuntime: async () => recoveryRuntime,
     }),
   };
 }
@@ -218,6 +236,98 @@ test("review media passes the complete server-authenticated operator, never a br
   }]);
 });
 
+test("durable recovery and eligible media do not construct the disabled paid runtime", async () => {
+  const kit = harness(result("SEMANTIC_PASS"));
+  let productionLoads = 0;
+  const service = createStudioAtelierRouteService({
+    async loadRuntime() {
+      productionLoads += 1;
+      throw new StudioEngineError(
+        "ENGINE_DISABLED",
+        503,
+        "Paid Atelier dispatch is disabled.",
+        "Install the qualified production runtime.",
+      );
+    },
+    loadRecoveryRuntime: async () => kit.recoveryRuntime,
+  });
+
+  const recovered = await service.recover(OPERATOR, "op-route-001");
+  const artifact = await service.readReviewMedia(OPERATOR, "op-route-001");
+
+  assert.equal(recovered.state, "SEMANTIC_PASS");
+  assert.deepEqual([...artifact.bytes], [1, 2, 3, 4]);
+  assert.equal(productionLoads, 0);
+  assert.deepEqual(Object.keys(kit.recoveryRuntime).sort(), [
+    "readProjection",
+    "readReviewArtifact",
+  ]);
+  assert.deepEqual(kit.calls, [
+    {
+      name: "readProjection",
+      arguments: [OPERATOR.subject, "op-route-001"],
+    },
+    {
+      name: "readReviewArtifact",
+      arguments: [{ operator: OPERATOR, operationId: "op-route-001" }],
+    },
+  ]);
+
+  await assert.rejects(
+    service.prepare(OPERATOR, { declarationVersion: "test" }),
+    (error: unknown) => error instanceof StudioEngineError
+      && error.code === "ENGINE_DISABLED",
+  );
+  await assert.rejects(
+    service.run(OPERATOR, "op-route-001"),
+    (error: unknown) => error instanceof StudioEngineError
+      && error.code === "ENGINE_DISABLED",
+  );
+  await assert.rejects(
+    service.decide(OPERATOR, "op-route-001", { decision: "KEEP" }),
+    (error: unknown) => error instanceof StudioEngineError
+      && error.code === "ENGINE_DISABLED",
+  );
+  assert.equal(productionLoads, 3);
+});
+
+test("repository and private-storage recovery failures are sanitized and fail closed", async () => {
+  const disabledRuntime = async (): Promise<StudioAtelierProductionRuntime> => {
+    throw new Error("production runtime must not load");
+  };
+  const repositoryUnavailable = createStudioAtelierRouteService({
+    loadRuntime: disabledRuntime,
+    async loadRecoveryRuntime() {
+      throw new Error("postgres://private-ledger-location");
+    },
+  });
+
+  await assert.rejects(
+    repositoryUnavailable.recover(OPERATOR, "op-route-001"),
+    (error: unknown) => error instanceof StudioEngineError
+      && error.code === "ENGINE_UNAVAILABLE"
+      && error.status === 503
+      && !error.message.includes("postgres"),
+  );
+
+  const storageUnavailable = createStudioAtelierRouteService({
+    loadRuntime: disabledRuntime,
+    loadRecoveryRuntime: async () => Object.freeze({
+      readProjection: async () => result("SEMANTIC_PASS"),
+      async readReviewArtifact() {
+        throw new Error("private-blob-coordinate");
+      },
+    }),
+  });
+  await assert.rejects(
+    storageUnavailable.readReviewMedia(OPERATOR, "op-route-001"),
+    (error: unknown) => error instanceof StudioEngineError
+      && error.code === "ENGINE_UNAVAILABLE"
+      && error.status === 503
+      && !error.message.includes("blob"),
+  );
+});
+
 test("the checked-in route binding is zero-spend disabled until concrete production composition exists", async () => {
   await assert.rejects(
     loadStudioAtelierRouteRuntime(),
@@ -225,6 +335,85 @@ test("the checked-in route binding is zero-spend disabled until concrete product
       && error.code === "ENGINE_DISABLED"
       && /release atom/.test(error.recovery),
   );
+});
+
+test("the checked-in recovery binding exposes no mutation or provider capability", async () => {
+  const recovery = await loadStudioAtelierRecoveryRuntime();
+  assert.deepEqual(Object.keys(recovery).sort(), [
+    "readProjection",
+    "readReviewArtifact",
+  ]);
+});
+
+test("the durable recovery reader scopes every ledger lookup and returns only a sanitized projection", async () => {
+  const scopes: Array<Readonly<{ operatorSubject: string; operationId: string }>> = [];
+  const observe = (input: Readonly<{ operatorSubject: string; operationId: string }>) => {
+    scopes.push(Object.freeze({ ...input }));
+    return input;
+  };
+  const reader = createDurableStudioAtelierProjectionReader({
+    async getOperation(input) {
+      observe(input);
+      return {
+        id: input.operationId,
+        operatorSubject: input.operatorSubject,
+        stage: "GARMENT_01_FRONT",
+        view: "01",
+      } as AtelierOperationRow;
+    },
+    async getProjection(input) {
+      observe(input);
+      return {
+        operationId: input.operationId,
+        state: "SEMANTIC_PASS",
+        version: 7,
+        correctionAuthorized: false,
+      } as AtelierOperationProjectionRow;
+    },
+    async getCorrectionOperation(input) {
+      observe(input);
+      return null;
+    },
+    async listEvents(input) {
+      observe(input);
+      return [];
+    },
+  });
+
+  const recovered = await reader(OPERATOR.subject, "op-route-001");
+  assert.deepEqual(recovered, {
+    operationId: "op-route-001",
+    stage: "GARMENT_01_FRONT",
+    view: "01",
+    state: "SEMANTIC_PASS",
+    version: 7,
+    candidateVisibility: "REVIEWABLE",
+    nextAction: "REVIEW",
+    reused: true,
+  });
+  assert.equal(scopes.length, 4);
+  assert.equal(scopes.every((scope) =>
+    scope.operatorSubject === OPERATOR.subject
+    && scope.operationId === "op-route-001"
+  ), true);
+  assert.equal("bytes" in recovered, false);
+  assert.equal("artifactId" in recovered, false);
+  assert.equal("provider" in recovered, false);
+});
+
+test("the recovery loader caches success and retries failed composition", async () => {
+  const kit = harness(result("SEMANTIC_PASS"));
+  let attempts = 0;
+  const loader = createStudioAtelierRecoveryRuntimeLoader(async () => {
+    attempts += 1;
+    if (attempts === 1) throw new Error("repository module unavailable");
+    return kit.recoveryRuntime;
+  });
+
+  await assert.rejects(loader(), /repository module unavailable/);
+  assert.equal(await loader(), kit.recoveryRuntime);
+  assert.equal(await loader(), kit.recoveryRuntime);
+  assert.equal(attempts, 2);
 });
 
 test("a verified runtime loader caches success but retries rejected construction", async () => {

@@ -9,6 +9,7 @@ import {
   atelierOperationSchema,
   type AtelierStage,
 } from "../studio/atelier/contracts";
+import { resolveStudioAtelierRoomCanvasProfile } from "../studio/atelier/canvas-policy";
 import {
   STUDIO_ATELIER_G004_CALIBRATION_ASSET_COUNT,
   STUDIO_ATELIER_G004_CALIBRATION_MANIFEST_SHA256,
@@ -55,13 +56,29 @@ export {
 
 export const STUDIO_ATELIER_LEDGER_SCHEMA_VERSION =
   "juw.studio-atelier-ledger.v1" as const;
-export const STUDIO_ATELIER_LEDGER_MIGRATION_INDEX = 16 as const;
+export const STUDIO_ATELIER_LEDGER_MIGRATION_INDEX = 17 as const;
+export const STUDIO_ATELIER_LEDGER_MIGRATION_TAG =
+  "0017_studio_engine_work_ownership" as const;
+export const STUDIO_ATELIER_LEDGER_MIGRATION_CREATED_AT = 1_787_864_076_590 as const;
+export const STUDIO_ATELIER_LEDGER_MIGRATION_SHA256 =
+  "df62643551e8957498fc082431d003bce275dac9c0dd4402c67336002fd333ba" as const;
+export const STUDIO_TRANSACTIONAL_AUTHORITY_MIGRATION_INDEX = 18 as const;
+export const STUDIO_TRANSACTIONAL_AUTHORITY_MIGRATION_TAG =
+  "0018_studio_transactional_authority" as const;
+export const STUDIO_TRANSACTIONAL_AUTHORITY_MIGRATION_CREATED_AT =
+  1_787_893_200_000 as const;
+export const STUDIO_TRANSACTIONAL_AUTHORITY_MIGRATION_SHA256 =
+  "ba280c8782f6e700c654a968081b8f33a6cd90cca3a192771f8a896f1d2e5c7f" as const;
+export const STUDIO_ATELIER_EXTERNAL_AUTHORITY_MIGRATION_INDEX = 19 as const;
+export const STUDIO_ATELIER_EXTERNAL_AUTHORITY_MIGRATION_TAG =
+  "0019_studio_atelier_external_authority" as const;
+export const STUDIO_ATELIER_EXTERNAL_AUTHORITY_MIGRATION_CREATED_AT =
+  1_787_893_200_001 as const;
+export const STUDIO_ATELIER_EXTERNAL_AUTHORITY_MIGRATION_SHA256 =
+  "066326e3799bede35c4f0f691691ec05a4c0563507ed3aa5d42475eeec44fc0e" as const;
 export const STUDIO_ATELIER_PRIVATE_MANIFEST_SHA256 =
   "d245096f4582e6638bbc9ab1c9abe41df9aa447736372824cdc6803d651824bb" as const;
 export const STUDIO_ATELIER_PRIVATE_AUTHORITY_ASSET_COUNT = 11 as const;
-export const STUDIO_ATELIER_BLOCKED_ROOM_AUTHORITY_REVISION =
-  "LULU_V4_2026-08-25.7" as const;
-
 const SHA256_PATTERN = /^[a-f0-9]{64}$/;
 const FINAL_SCENE_STAGES = new Set<AtelierStage>([
   "ROOM_FINAL_05",
@@ -70,11 +87,17 @@ const FINAL_SCENE_STAGES = new Set<AtelierStage>([
   "SIBLING_07_RECOVERY",
 ]);
 const REQUIRED_LEDGER_TABLES = Object.freeze([
+  "studio_atelier_adult_verification_receipts",
   "studio_atelier_artifacts",
+  "studio_atelier_consent_events",
+  "studio_atelier_consent_grants",
+  "studio_atelier_consent_projections",
   "studio_atelier_events",
   "studio_atelier_executions",
   "studio_atelier_operation_projections",
   "studio_atelier_operations",
+  "studio_atelier_styling_advisories",
+  "studio_engine_work_ownership",
 ] as const);
 
 export type StudioAtelierProductionScope = "ROOT_SUBJECT" | "FINAL_SCENE";
@@ -91,6 +114,17 @@ export type StudioAtelierDatabaseReadiness = Readonly<{
   status: "VERIFIED";
   ledgerSchemaVersion: typeof STUDIO_ATELIER_LEDGER_SCHEMA_VERSION;
   migrationIndex: typeof STUDIO_ATELIER_LEDGER_MIGRATION_INDEX;
+  migrationTag: typeof STUDIO_ATELIER_LEDGER_MIGRATION_TAG;
+  migrationCreatedAt: typeof STUDIO_ATELIER_LEDGER_MIGRATION_CREATED_AT;
+  migrationSha256: typeof STUDIO_ATELIER_LEDGER_MIGRATION_SHA256;
+  transactionalAuthorityMigrationIndex: typeof STUDIO_TRANSACTIONAL_AUTHORITY_MIGRATION_INDEX;
+  transactionalAuthorityMigrationTag: typeof STUDIO_TRANSACTIONAL_AUTHORITY_MIGRATION_TAG;
+  transactionalAuthorityMigrationCreatedAt: typeof STUDIO_TRANSACTIONAL_AUTHORITY_MIGRATION_CREATED_AT;
+  transactionalAuthorityMigrationSha256: typeof STUDIO_TRANSACTIONAL_AUTHORITY_MIGRATION_SHA256;
+  externalAuthorityMigrationIndex: typeof STUDIO_ATELIER_EXTERNAL_AUTHORITY_MIGRATION_INDEX;
+  externalAuthorityMigrationTag: typeof STUDIO_ATELIER_EXTERNAL_AUTHORITY_MIGRATION_TAG;
+  externalAuthorityMigrationCreatedAt: typeof STUDIO_ATELIER_EXTERNAL_AUTHORITY_MIGRATION_CREATED_AT;
+  externalAuthorityMigrationSha256: typeof STUDIO_ATELIER_EXTERNAL_AUTHORITY_MIGRATION_SHA256;
   tables: readonly string[];
   verifiedAt: string;
 }>;
@@ -144,7 +178,7 @@ export type StudioAtelierApprovedRoomReadiness =
     sha256: string;
     mimeType: "image/png";
     width: 1024;
-    height: 1536;
+    height: 1280 | 1536;
     authorityRevision: string;
     manifestSha256: string;
     verifiedAt: string;
@@ -230,6 +264,25 @@ function databaseReady(value: unknown): boolean {
   return evidence.status === "VERIFIED"
     && evidence.ledgerSchemaVersion === STUDIO_ATELIER_LEDGER_SCHEMA_VERSION
     && evidence.migrationIndex === STUDIO_ATELIER_LEDGER_MIGRATION_INDEX
+    && evidence.migrationTag === STUDIO_ATELIER_LEDGER_MIGRATION_TAG
+    && evidence.migrationCreatedAt === STUDIO_ATELIER_LEDGER_MIGRATION_CREATED_AT
+    && evidence.migrationSha256 === STUDIO_ATELIER_LEDGER_MIGRATION_SHA256
+    && evidence.transactionalAuthorityMigrationIndex
+      === STUDIO_TRANSACTIONAL_AUTHORITY_MIGRATION_INDEX
+    && evidence.transactionalAuthorityMigrationTag
+      === STUDIO_TRANSACTIONAL_AUTHORITY_MIGRATION_TAG
+    && evidence.transactionalAuthorityMigrationCreatedAt
+      === STUDIO_TRANSACTIONAL_AUTHORITY_MIGRATION_CREATED_AT
+    && evidence.transactionalAuthorityMigrationSha256
+      === STUDIO_TRANSACTIONAL_AUTHORITY_MIGRATION_SHA256
+    && evidence.externalAuthorityMigrationIndex
+      === STUDIO_ATELIER_EXTERNAL_AUTHORITY_MIGRATION_INDEX
+    && evidence.externalAuthorityMigrationTag
+      === STUDIO_ATELIER_EXTERNAL_AUTHORITY_MIGRATION_TAG
+    && evidence.externalAuthorityMigrationCreatedAt
+      === STUDIO_ATELIER_EXTERNAL_AUTHORITY_MIGRATION_CREATED_AT
+    && evidence.externalAuthorityMigrationSha256
+      === STUDIO_ATELIER_EXTERNAL_AUTHORITY_MIGRATION_SHA256
     && Array.isArray(evidence.tables)
     && sameSet(evidence.tables, REQUIRED_LEDGER_TABLES)
     && validTimestamp(evidence.verifiedAt);
@@ -296,6 +349,7 @@ function qualificationReady(value: unknown): boolean {
 function roomReady(
   value: unknown,
   privateAuthority: unknown,
+  qualification: unknown,
 ): boolean {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
   const evidence = value as Partial<Extract<
@@ -306,6 +360,18 @@ function roomReady(
     && !Array.isArray(privateAuthority)
     ? privateAuthority as Partial<StudioAtelierPrivateAuthorityReadiness>
     : {};
+  const profile = typeof evidence.width === "number"
+    && typeof evidence.height === "number"
+    ? resolveStudioAtelierRoomCanvasProfile({
+        width: evidence.width,
+        height: evidence.height,
+      })
+    : null;
+  const qualifiedProfile = isStudioAtelierQualificationReadiness(qualification)
+    ? qualification.transparentCompositeQualification.roomProfileCases.find(
+        (candidate) => candidate.profileId === profile?.profileId,
+      )
+    : null;
   return evidence.status === "VERIFIED_PRIVATE_READBACK"
     && typeof evidence.assetId === "string"
     && evidence.assetId.length > 0
@@ -313,11 +379,11 @@ function roomReady(
     && typeof evidence.sha256 === "string"
     && SHA256_PATTERN.test(evidence.sha256)
     && evidence.mimeType === "image/png"
-    && evidence.width === 1024
-    && evidence.height === 1536
+    && profile !== null
+    && qualifiedProfile !== undefined
+    && qualifiedProfile !== null
     && typeof evidence.authorityRevision === "string"
     && evidence.authorityRevision === authority.authorityRevision
-    && evidence.authorityRevision !== STUDIO_ATELIER_BLOCKED_ROOM_AUTHORITY_REVISION
     && typeof evidence.manifestSha256 === "string"
     && SHA256_PATTERN.test(evidence.manifestSha256)
     && evidence.manifestSha256 === authority.manifestSha256
@@ -425,12 +491,16 @@ export function inspectStudioAtelierProductionReadiness(
       dependency: "approvedRoom",
       message: "Final-scene generation remains blocked by approved-room authority.",
     });
-  } else if (!roomReady(approvedRoom, readiness.privateAuthority)) {
+  } else if (!roomReady(
+    approvedRoom,
+    readiness.privateAuthority,
+    readiness.qualification,
+  )) {
     addBlocker(blockers, {
       code: "APPROVED_ROOM_INVALID",
       scope: "FINAL_SCENE",
       dependency: "approvedRoom",
-      message: "The approved room is not a new exact 1024x1536 private readback authority.",
+      message: "The approved room is not an exact private-readback authority on a qualified native canvas profile.",
     });
   }
 
@@ -482,7 +552,7 @@ function unavailableStage(stage: AtelierStage): StudioEngineError {
     503,
     "That Atelier stage is not ready for paid dispatch.",
     studioAtelierProductionScopeForStage(stage) === "FINAL_SCENE"
-      ? "Approve and privately verify a new exact 1024x1536 room, then rerun readiness."
+      ? "Approve and privately verify an exact 1024x1536 or 1024x1280 native-room profile, then rerun readiness."
       : "Restore the durable database, private authority, policy and qualification evidence.",
   );
 }

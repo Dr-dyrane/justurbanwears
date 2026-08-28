@@ -3,7 +3,9 @@ import type { StudioAtelierReviewArtifact } from "./studio-atelier-review-artifa
 import type { StudioOperator } from "./studio-operator";
 import { StudioEngineError } from "../studio/engine/errors";
 import {
+  loadStudioAtelierRecoveryRuntime,
   loadStudioAtelierRouteRuntime,
+  type StudioAtelierRecoveryRuntimeLoader,
   type StudioAtelierRouteRuntimeLoader,
 } from "./studio-atelier-route-runtime";
 
@@ -25,6 +27,24 @@ function decisionConflict(): StudioEngineError {
   );
 }
 
+function recoveryUnavailable(): StudioEngineError {
+  return new StudioEngineError(
+    "ENGINE_UNAVAILABLE",
+    503,
+    "The durable Atelier recovery store is unavailable.",
+    "Restore the Atelier ledger and private artifact store, then reload the operation.",
+  );
+}
+
+async function recoverReadOnly<T>(operation: () => Promise<T>): Promise<T> {
+  try {
+    return await operation();
+  } catch (error) {
+    if (error instanceof StudioEngineError) throw error;
+    throw recoveryUnavailable();
+  }
+}
+
 export type StudioAtelierRouteService = Readonly<{
   prepare(operator: StudioOperator, declaration: unknown): ReturnType<
     Awaited<ReturnType<StudioAtelierRouteRuntimeLoader>>["facade"]["prepare"]
@@ -33,7 +53,7 @@ export type StudioAtelierRouteService = Readonly<{
     Awaited<ReturnType<StudioAtelierRouteRuntimeLoader>>["agent"]["runPrepared"]
   >;
   recover(operator: StudioOperator, operationId: string): ReturnType<
-    Awaited<ReturnType<StudioAtelierRouteRuntimeLoader>>["facade"]["readProjection"]
+    Awaited<ReturnType<StudioAtelierRecoveryRuntimeLoader>>["readProjection"]
   >;
   readReviewMedia(
     operator: StudioOperator,
@@ -56,6 +76,7 @@ export type StudioAtelierRouteService = Readonly<{
  */
 export function createStudioAtelierRouteService(input: Readonly<{
   loadRuntime: StudioAtelierRouteRuntimeLoader;
+  loadRecoveryRuntime: StudioAtelierRecoveryRuntimeLoader;
 }>): StudioAtelierRouteService {
   return Object.freeze({
     async prepare(operator, declaration) {
@@ -71,13 +92,17 @@ export function createStudioAtelierRouteService(input: Readonly<{
     },
 
     async recover(operator, operationId) {
-      const runtime = await input.loadRuntime();
-      return runtime.facade.readProjection(operator.subject, operationId);
+      return recoverReadOnly(async () => {
+        const runtime = await input.loadRecoveryRuntime();
+        return runtime.readProjection(operator.subject, operationId);
+      });
     },
 
     async readReviewMedia(operator, operationId) {
-      const runtime = await input.loadRuntime();
-      return runtime.readReviewArtifact({ operator, operationId });
+      return recoverReadOnly(async () => {
+        const runtime = await input.loadRecoveryRuntime();
+        return runtime.readReviewArtifact({ operator, operationId });
+      });
     },
 
     async decide(operator, operationId, decision) {
@@ -122,4 +147,5 @@ export function createStudioAtelierRouteService(input: Readonly<{
 
 export const studioAtelierRouteService = createStudioAtelierRouteService({
   loadRuntime: loadStudioAtelierRouteRuntime,
+  loadRecoveryRuntime: loadStudioAtelierRecoveryRuntime,
 });

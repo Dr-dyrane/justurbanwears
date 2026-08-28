@@ -1,9 +1,17 @@
 import { createHash } from "node:crypto";
 import sharp from "sharp";
 import { STUDIO_GPT_IMAGE_2_TRANSPARENT_SUBJECT_PROFILE } from "../ai/studio-gpt-image-2-subject-layer";
+import {
+  resolveStudioAtelierRoomCanvasProfile,
+  STUDIO_ATELIER_PROVIDER_CANVAS,
+  STUDIO_ATELIER_ROOM_CANVAS_POLICY_REVISION,
+  type StudioAtelierRoomCanvasProfile,
+} from "../studio/atelier/canvas-policy";
 import { StudioEngineError } from "../studio/engine/errors";
 
 export const STUDIO_ATELIER_SUBJECT_COMPOSITE_REVISION =
+  "sharp-native-room-window-v2" as const;
+export const STUDIO_ATELIER_LEGACY_SUBJECT_COMPOSITE_REVISION =
   "sharp-alpha-over-room-v1" as const;
 export const STUDIO_ATELIER_SUBJECT_NORMALIZATION_REVISION =
   "transparent-rgb-zero-png-v1" as const;
@@ -128,18 +136,23 @@ function invalidAsset(message: string, recovery: string): never {
 /** Fail before a paid call when the locked room cannot accept this profile. */
 export function preflightStudioAtelierSubjectComposite(
   room: StudioAtelierImageDescriptor,
+  canvasPolicyRevision: string | null = null,
 ): void {
+  const profile = resolveStudioAtelierRoomCanvasProfile(room);
   if (
     !SHA256_PATTERN.test(room.sha256)
     || !["image/jpeg", "image/png", "image/webp"].includes(room.mimeType)
     || !Number.isSafeInteger(room.width)
     || !Number.isSafeInteger(room.height)
-    || room.width !== OUTPUT_WIDTH
-    || room.height !== OUTPUT_HEIGHT
+    || !profile
+    || (
+      profile.profileId === "atelier-room-native-4x5-center-window-v1"
+      && canvasPolicyRevision !== STUDIO_ATELIER_ROOM_CANVAS_POLICY_REVISION
+    )
   ) {
     invalidAsset(
-      `The locked room is not an exact ${OUTPUT_WIDTH}x${OUTPUT_HEIGHT} compositing authority.`,
-      "Approve and hash a same-canvas room authority; never resize, crop, pad or extend the locked room implicitly.",
+      "The locked room does not match a qualified native-room canvas profile.",
+      "Use an exact approved 1024x1536 or 1024x1280 room; the app never resizes, crops, pads or extends locked room pixels.",
     );
   }
 }
@@ -219,6 +232,124 @@ async function decodeExactCanvas(
       `Restore a valid ${label} before compositing.`,
     );
   }
+}
+
+async function decodeNativeRoomCanvas(
+  image: StudioAtelierHashedImage,
+): Promise<Readonly<{
+  decoded: DecodedImage;
+  profile: StudioAtelierRoomCanvasProfile;
+}>> {
+  assertHash("locked room plate", image);
+  let metadata: SharpMetadata;
+  try {
+    metadata = await createImagePipeline(image.bytes, { failOn: "error" }).metadata();
+  } catch {
+    invalidAsset(
+      "The locked room plate is not a decodable image.",
+      `Restore a valid ${image.mimeType} locked room plate.`,
+    );
+  }
+  if (metadata.format !== expectedSharpFormat(image.mimeType)) {
+    invalidAsset(
+      "The locked room plate MIME declaration does not match its bytes.",
+      "Restore the correctly declared locked room plate.",
+    );
+  }
+  const width = metadata.width;
+  const height = metadata.height;
+  const profile = typeof width === "number" && typeof height === "number"
+    ? resolveStudioAtelierRoomCanvasProfile({ width, height })
+    : null;
+  if (!profile) {
+    invalidAsset(
+      "The locked room plate is not on a qualified native-room canvas.",
+      "Use an exact approved 1024x1536 or 1024x1280 room without transforming its pixels.",
+    );
+  }
+  if (metadata.orientation !== undefined && metadata.orientation !== 1) {
+    invalidAsset(
+      "The locked room plate has unresolved orientation metadata.",
+      "Normalize and re-approve the locked room plate before compositing.",
+    );
+  }
+  try {
+    const decoded = await createImagePipeline(image.bytes, { failOn: "error" })
+      .ensureAlpha()
+      .raw()
+      .toBuffer({ resolveWithObject: true });
+    if (
+      decoded.info.width !== profile.roomCanvas.width
+      || decoded.info.height !== profile.roomCanvas.height
+      || decoded.info.channels !== 4
+    ) {
+      invalidAsset(
+        "The locked room plate decoded geometry is invalid.",
+        "Restore the exact approved native-room canvas.",
+      );
+    }
+    return Object.freeze({
+      decoded: Object.freeze({
+        data: new Uint8Array(decoded.data),
+        width: decoded.info.width,
+        height: decoded.info.height,
+        channels: 4,
+      }),
+      profile,
+    });
+  } catch (error) {
+    if (error instanceof StudioEngineError) throw error;
+    invalidAsset(
+      "The locked room plate pixels could not be decoded.",
+      "Restore a valid locked room plate before compositing.",
+    );
+  }
+}
+
+function subjectPixelsForRoom(
+  subject: DecodedImage,
+  profile: StudioAtelierRoomCanvasProfile,
+): Uint8Array {
+  const window = profile.subjectWindow;
+  const guard = profile.transparentGuardPixels;
+  const allowedLeft = window.left + guard;
+  const allowedTop = window.top + guard;
+  const allowedRight = window.left + window.width - guard;
+  const allowedBottom = window.top + window.height - guard;
+
+  for (let pixel = 0; pixel < PIXEL_COUNT; pixel += 1) {
+    if (subject.data[pixel * 4 + 3] === 0) continue;
+    const x = pixel % OUTPUT_WIDTH;
+    const y = Math.floor(pixel / OUTPUT_WIDTH);
+    if (
+      x < allowedLeft
+      || x >= allowedRight
+      || y < allowedTop
+      || y >= allowedBottom
+    ) {
+      invalidAsset(
+        "The subject layer crosses the native-room safe window.",
+        `Keep every visible subject, hair, heel and shadow pixel inside the guarded ${window.width}x${window.height} center window; do not crop it silently.`,
+      );
+    }
+  }
+
+  if (
+    window.left === 0
+    && window.top === 0
+    && window.width === subject.width
+    && window.height === subject.height
+  ) {
+    return subject.data;
+  }
+
+  const output = new Uint8Array(window.width * window.height * 4);
+  const rowBytes = window.width * 4;
+  for (let y = 0; y < window.height; y += 1) {
+    const sourceOffset = ((window.top + y) * subject.width + window.left) * 4;
+    output.set(subject.data.subarray(sourceOffset, sourceOffset + rowBytes), y * rowBytes);
+  }
+  return output;
 }
 
 function inspectAlpha(subject: DecodedImage): StudioAtelierSubjectLayerInspection["alpha"] {
@@ -486,13 +617,13 @@ function subjectInspection(decoded: DecodedImage): StudioAtelierSubjectLayerInsp
 
 function verifyUnoccludedPixels(input: {
   room: DecodedImage;
-  subject: DecodedImage;
+  subject: Uint8Array;
   output: Uint8Array;
   outputChannels: number;
 }): number {
   let verified = 0;
-  for (let pixel = 0; pixel < OUTPUT_WIDTH * OUTPUT_HEIGHT; pixel += 1) {
-    if (input.subject.data[pixel * 4 + 3] !== 0) continue;
+  for (let pixel = 0; pixel < input.room.width * input.room.height; pixel += 1) {
+    if (input.subject[pixel * 4 + 3] !== 0) continue;
     const roomOffset = pixel * 4;
     const outputOffset = pixel * input.outputChannels;
     if (
@@ -521,14 +652,16 @@ export async function compositeStudioAtelierSubject(input: {
   room: StudioAtelierHashedImage;
   subject: StudioAtelierSubjectLayer;
 }) {
-  const [room, subject] = await Promise.all([
-    decodeExactCanvas("locked room plate", input.room),
+  const [roomResult, subject] = await Promise.all([
+    decodeNativeRoomCanvas(input.room),
     decodeExactCanvas("subject layer", input.subject),
   ]);
+  const { decoded: room, profile } = roomResult;
   const inspection = subjectInspection(subject);
   assertOpaqueRoom(room);
+  const roomSubject = subjectPixelsForRoom(subject, profile);
 
-  const roomRgb = new Uint8Array(OUTPUT_WIDTH * OUTPUT_HEIGHT * 3);
+  const roomRgb = new Uint8Array(room.width * room.height * 3);
   for (let source = 0, target = 0; source < room.data.length; source += 4, target += 3) {
     roomRgb[target] = room.data[source];
     roomRgb[target + 1] = room.data[source + 1];
@@ -536,11 +669,11 @@ export async function compositeStudioAtelierSubject(input: {
   }
 
   const composited = await createImagePipeline(roomRgb, {
-    raw: { width: OUTPUT_WIDTH, height: OUTPUT_HEIGHT, channels: 3 },
+    raw: { width: room.width, height: room.height, channels: 3 },
   })
     .composite([{
-      input: subject.data,
-      raw: { width: OUTPUT_WIDTH, height: OUTPUT_HEIGHT, channels: 4 },
+      input: roomSubject,
+      raw: { width: room.width, height: room.height, channels: 4 },
       left: 0,
       top: 0,
       blend: "over",
@@ -550,8 +683,8 @@ export async function compositeStudioAtelierSubject(input: {
     .toBuffer({ resolveWithObject: true });
 
   if (
-    composited.info.width !== OUTPUT_WIDTH
-    || composited.info.height !== OUTPUT_HEIGHT
+    composited.info.width !== room.width
+    || composited.info.height !== room.height
     || composited.info.channels !== 3
   ) {
     throw new StudioEngineError(
@@ -564,12 +697,12 @@ export async function compositeStudioAtelierSubject(input: {
 
   const unoccludedPixelCount = verifyUnoccludedPixels({
     room,
-    subject,
+    subject: roomSubject,
     output: composited.data,
     outputChannels: composited.info.channels,
   });
   const bytes = new Uint8Array(await createImagePipeline(composited.data, {
-    raw: { width: OUTPUT_WIDTH, height: OUTPUT_HEIGHT, channels: 3 },
+    raw: { width: room.width, height: room.height, channels: 3 },
   })
     .png({
       compressionLevel: 9,
@@ -583,9 +716,18 @@ export async function compositeStudioAtelierSubject(input: {
     bytes,
     sha256: sha256(bytes),
     mimeType: "image/png" as const,
-    width: OUTPUT_WIDTH,
-    height: OUTPUT_HEIGHT,
+    width: room.width,
+    height: room.height,
     compositeRevision: STUDIO_ATELIER_SUBJECT_COMPOSITE_REVISION,
+    canvasPolicyRevision: STUDIO_ATELIER_ROOM_CANVAS_POLICY_REVISION,
+    canvasProfile: Object.freeze({
+      profileId: profile.profileId,
+      providerCanvas: STUDIO_ATELIER_PROVIDER_CANVAS,
+      roomCanvas: profile.roomCanvas,
+      subjectWindow: profile.subjectWindow,
+      transparentGuardPixels: profile.transparentGuardPixels,
+      pixelMapping: "EXACT_1_TO_1_WINDOW_COPY" as const,
+    }),
     sources: Object.freeze({
       roomSha256: input.room.sha256,
       subjectSha256: input.subject.sha256,

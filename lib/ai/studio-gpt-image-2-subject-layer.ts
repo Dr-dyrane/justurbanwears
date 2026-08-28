@@ -16,7 +16,7 @@ export const STUDIO_GPT_IMAGE_2_TRANSPARENT_SUBJECT_ADAPTER =
 export const STUDIO_GPT_IMAGE_2_TRANSPARENT_SUBJECT_ADAPTER_VERSION =
   "atelier-gpt-image-2-transparent-subject-v1" as const;
 export const STUDIO_GPT_IMAGE_2_TRANSPARENT_SUBJECT_PROFILE_REVISION =
-  "2026-08-26.1" as const;
+  "2026-08-27.1" as const;
 
 export const STUDIO_GPT_IMAGE_2_TRANSPARENT_SUBJECT_PROFILE = Object.freeze({
   profileId: "atelier-transparent-subject-png-v1",

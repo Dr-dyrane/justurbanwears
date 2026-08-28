@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import test from "node:test";
+import { APICallError } from "ai";
 import {
   createStudioGptImage2Adapter,
   STUDIO_GPT_IMAGE_2_MAX_REFERENCES,
@@ -323,6 +324,150 @@ test("adapter retains sanitized failure accounting, identifiers and duration", a
       assert.equal(error.upstream.generationId, "gen_failure-safe");
       assert.equal(error.upstream.requestId, "req_failure-safe");
       assert.equal(error.durationMs, 75);
+      return true;
+    },
+  );
+});
+
+test("adapter records only coarse output-moderation evidence and keeps SDK retries disabled", async () => {
+  const sensitivePrompt = "data:image/png;base64,private-model-and-garment-media";
+  const sensitiveProviderMessage = "private prompt and provider explanation must not persist";
+  let captured: Parameters<StudioImageGenerator>[0] | undefined;
+  const providerError = new APICallError({
+    message: sensitiveProviderMessage,
+    url: "https://ai-gateway.vercel.sh/v1/ai/image",
+    requestBodyValues: {
+      prompt: sensitivePrompt,
+      authorization: "Bearer private-provider-token",
+    },
+    statusCode: 400,
+    responseHeaders: {
+      "x-request-id": "req_moderation-safe-1",
+      authorization: "Bearer private-provider-token",
+    },
+    responseBody: JSON.stringify({
+      error: {
+        code: "moderation_blocked",
+        moderation: {
+          phase: "output",
+          content_filter_results: {
+            sexual: { filtered: true },
+            violence: { filtered: false },
+            private_prompt_fragment: { filtered: true },
+          },
+        },
+        message: sensitiveProviderMessage,
+        prompt: sensitivePrompt,
+      },
+    }),
+    data: {
+      error: {
+        code: "moderation_blocked",
+        details: {
+          stage: "output",
+          categories: ["sexual", "private_prompt_fragment"],
+        },
+        message: sensitiveProviderMessage,
+      },
+    },
+    isRetryable: false,
+  });
+  const adapter = createStudioGptImage2Adapter({
+    generate: async (request) => {
+      captured = request;
+      throw providerError;
+    },
+  });
+
+  await assert.rejects(
+    () => adapter.invoke(invocation()),
+    (error: unknown) => {
+      assert.ok(error instanceof StudioGatewayError);
+      assert.equal(error.upstream.classification, "provider");
+      assert.equal(error.upstream.statusCode, 400);
+      assert.equal(error.upstream.retryable, false);
+      assert.equal(error.upstream.requestId, "req_moderation-safe-1");
+      assert.equal(error.upstream.providerCode, "moderation_blocked");
+      assert.deepEqual(error.upstream.moderation, {
+        stage: "output",
+        categories: ["sexual"],
+        noOutput: true,
+      });
+      assert.doesNotMatch(
+        JSON.stringify(error.upstream),
+        /private-model|private prompt|provider explanation|provider-token|authorization|responseBody|private_prompt_fragment/i,
+      );
+      return true;
+    },
+  );
+  assert.equal(captured?.maxRetries, 0);
+});
+
+test("moderation_blocked without details remains a sanitized known no-output result", async () => {
+  const providerError = new APICallError({
+    message: "sensitive provider prose",
+    url: "https://ai-gateway.vercel.sh/v1/ai/image",
+    requestBodyValues: { prompt: "private source prompt" },
+    statusCode: 400,
+    responseBody: JSON.stringify({
+      error: {
+        code: "moderation_blocked",
+        message: "sensitive response detail",
+      },
+    }),
+    isRetryable: false,
+  });
+  const adapter = createStudioGptImage2Adapter({
+    generate: async () => { throw providerError; },
+  });
+
+  await assert.rejects(
+    () => adapter.invoke(invocation()),
+    (error: unknown) => {
+      assert.ok(error instanceof StudioGatewayError);
+      assert.equal(error.upstream.providerCode, "moderation_blocked");
+      assert.deepEqual(error.upstream.moderation, {
+        stage: "unknown",
+        categories: [],
+        noOutput: true,
+      });
+      assert.doesNotMatch(
+        JSON.stringify(error.upstream),
+        /sensitive|private source|response detail/i,
+      );
+      return true;
+    },
+  );
+});
+
+test("malformed provider bodies and error prose cannot impersonate moderation_blocked", async () => {
+  const providerError = new APICallError({
+    message: "moderation_blocked private prompt fragment",
+    url: "https://ai-gateway.vercel.sh/v1/ai/image",
+    requestBodyValues: { prompt: "private prompt fragment" },
+    statusCode: 400,
+    responseBody: '{"error":{"code":"moderation_blocked","details":',
+    data: {
+      error: {
+        code: "content_policy_violation",
+        details: { stage: "output", categories: ["sexual"] },
+      },
+    },
+    isRetryable: false,
+  });
+  const adapter = createStudioGptImage2Adapter({
+    generate: async () => { throw providerError; },
+  });
+
+  await assert.rejects(
+    () => adapter.invoke(invocation()),
+    (error: unknown) => {
+      assert.ok(error instanceof StudioGatewayError);
+      assert.equal(error.upstream.classification, "provider");
+      assert.equal(error.upstream.statusCode, 400);
+      assert.equal(error.upstream.providerCode, undefined);
+      assert.equal(error.upstream.moderation, undefined);
+      assert.doesNotMatch(JSON.stringify(error.upstream), /private prompt|responseBody/i);
       return true;
     },
   );

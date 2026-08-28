@@ -27,6 +27,9 @@ import {
   canonicalStringify,
   sha256Text,
 } from "./canonical";
+import {
+  STUDIO_ATELIER_NATIVE_ROOM_COMPOSITE_POLICY,
+} from "./canvas-policy";
 
 export const STUDIO_ATELIER_DECLARATION_VERSION =
   "juw.studio-atelier-declaration.v1" as const;
@@ -272,6 +275,7 @@ const correctionIntentSchema = z.discriminatedUnion("mode", [
 
 const studioAtelierDeclarationBaseSchema = z.object({
   declarationVersion: declarationVersionSchema,
+  wardrobeItemId: z.string().uuid().optional(),
   garmentId: garmentIdSchema,
   stage: atelierStageSchema,
   changes: z.array(studioAtelierChangeIntentSchema).min(1),
@@ -1247,7 +1251,7 @@ const changeDeltaText = Object.freeze({
   REFINE_IDENTITY_TRANSLATION:
     "Refine identity translation without reopening garment or hair truth.",
   COMPOSITE_ACCEPTED_SUBJECT_OVER_LOCKED_ROOM:
-    "Place the accepted subject over the exact locked atelier room without repainting room pixels.",
+    "Place the accepted subject over the exact native locked atelier room without repainting or transforming room pixels.",
   REORIENT_ACCEPTED_05_TO_LEFT_PROFILE:
     "Create the independent soft-left-profile sibling from accepted 05.",
   REORIENT_ACCEPTED_05_TO_RIGHT_REAR_3Q:
@@ -1600,6 +1604,7 @@ export function compileAtelierOperationV1(input: Readonly<{
   const rawOperation = {
     contractVersion: "juw.atelier-operation.v1" as const,
     workflowRevision: truth.state.workflowRevision,
+    ...(declaration.wardrobeItemId ? { wardrobeItemId: declaration.wardrobeItemId } : {}),
     garmentId: declaration.garmentId,
     stage: declaration.stage,
     view: ATELIER_STAGE_RECIPES[declaration.stage].view,
@@ -1682,6 +1687,7 @@ export function compileAtelierOperationV1(input: Readonly<{
               lockedRoomRole: "LOCKED_ATELIER_ROOM" as const,
               preserveLockedRoomPixels: true as const,
               outputFormat: "PNG" as const,
+              ...STUDIO_ATELIER_NATIVE_ROOM_COMPOSITE_POLICY,
             },
             finalFormat: "PNG" as const,
           }),

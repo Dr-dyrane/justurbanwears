@@ -91,6 +91,12 @@ Lulu, the garment, footwear and room must read as one exposure in one physical s
 
 The room plate controls layout and light family, but realism is evaluated on the integrated photograph rather than by matching background pixels alone.
 
+Canvas adaptation never changes that room authority. The approved 1024×1280
+plate remains native and byte-exact; the 1024×1536 transparent subject may use
+only the guarded central 1024×1280 window and is copied one-to-one before the
+integrated photograph is reviewed. Visible subject spill blocks instead of
+being cropped, and no room pixel is resized, padded, extended or generated.
+
 ## 4. Wall icon lock
 
 The wall contains one **standalone icon only**:

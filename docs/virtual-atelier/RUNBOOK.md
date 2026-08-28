@@ -23,9 +23,17 @@ For a portable-machine restore, verify the minimal immutable authority kit plus 
 
 ```bash
 npm run atelier:verify:portable -- --garment 024
+npm run atelier:check:qualification -- --compact
 ```
 
 The verifier checks the committed private Blob manifest against the explicit approval/lock overlay, local authority bytes, direct garment source manifest, locked views and generation operation records. A new provider/model/adapter revision must also pass `docs/virtual-atelier/provider-calibration.v1.json` before production routing.
+
+The qualification readiness command is a zero-spend release gate. A `BLOCKED`
+result and nonzero exit are expected while the canonical evidence packet or
+reviewer trust policy is absent; record its blocker categories and do not call a
+provider. Production cutover requires `PASS` from the exact installed packet,
+then the separate server-port, migration, private-store, authority and room
+preflights in the target environment.
 
 Do not accept an evaluator or qualification claim from a route, browser or
 composition caller. Confirm the internal qualified-evaluator resolver holds one
@@ -238,15 +246,20 @@ Final-05 materialization palette:
 ```text
 exact accepted SUBJECT_A or SUBJECT_B lock
 + exact current-garment front safeguard
-→ one transparent subject layer
-+ exact approved 1024×1536 atelier plate (including its locked icon pixels)
+→ one exact 1024×1536 transparent subject layer
++ exact approved 1024×1536 atelier plate, or the qualified native 1024×1280
+  plate using the guarded central 1024×1280 subject window
 → app-owned deterministic final composite
 ```
 
 Real face and body canon remain mandatory private comparison authority, but
 they are not new provider inputs for `ROOM_FINAL_05`. Reintroducing them there
-would dilute the accepted subject. The exact-room size check happens before the
-claim/fence; the current 1024×1280 room therefore blocks 05 without a spend.
+would dilute the accepted subject. The exact native-room profile check happens
+before the claim/fence. For the current 1024×1280 room, every nonzero alpha
+pixel must stay inside `x=16..1007`, `y=144..1391`; the app copies
+`x=0,y=128,w=1024,h=1280` one-to-one with no room transform or subject
+resampling. Spill outside the guard blocks before disclosure and never becomes
+a silent crop.
 
 The accepted `05` becomes the current garment’s front translation master. It records how that garment, identity, body and styling resolve together.
 

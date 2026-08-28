@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
-  "workflowRevision": "2026-08-27.160",
-  "updatedAt": "2026-08-27T21:30:31Z",
+  "workflowRevision": "2026-08-27.161",
+  "updatedAt": "2026-08-27T23:46:10Z",
   "model": "LULU_V4",
   "activeGarment": "030",
   "activeView": null,
@@ -2016,7 +2016,7 @@
       "G028 has two conflicting recorded locked-manifest hashes and the private manifest is unavailable in this checkout. Neither candidate is canonical until exact readback resolves the conflict.",
       "ADR 0046 engine code and authenticated route handlers were introduced at a6ef79b and production migrations 0015 and 0016 are applied. Operational Atelier cutover remains fail-closed because the deployed route runtime is ENGINE_DISABLED and the canonical qualification bundle is absent.",
       "The durable facade covers independent 01-04 roots, subject synthesis and 05/06/07 through one lifecycle. Production dispatch remains disabled until operational runtime composition and closed qualification pass.",
-      "Final-scene generation remains blocked because the approved room authority is 1024x1280 while the locked output contract requires a separately approved exact 1024x1536 room."
+      "The approved 1024x1280 room is geometrically eligible under juw.atelier-native-room-canvas.v1: copy only the guarded x=0,y=128,w=1024,h=1280 subject window one-to-one, with no room or subject resampling and no generated room pixels. This clears only the prior dimension mismatch; the new profile still requires closed stage-specific qualification before paid cutover."
     ],
     "historicalBoundaries": [
       "G001-G004 are founding 05-07 model-view anchors and predate the complete seven-view protocol.",
@@ -2030,7 +2030,7 @@
       "luluAuthorityManifestBytes": 9338,
       "verifiedPrivateAssetCount": 11,
       "perAssetAcceptanceAndLockFields": "VERIFIED_PRIVATE_READBACK",
-      "roomCanvasGate": "BLOCKED_AUTHORITY_CANVAS",
+      "roomCanvasGate": "NATIVE_1024X1280_PROFILE_IMPLEMENTED_QUALIFICATION_PENDING",
       "engineImplementation": "CODE_AND_AUTHENTICATED_ROUTES_INTRODUCED_AT_A6EF79B_PRODUCTION_MIGRATIONS_0015_0016_APPLIED_ROUTE_RUNTIME_ENGINE_DISABLED_NOT_SEMANTICALLY_QUALIFIED",
       "engineScope": "ONE_DURABLE_FACADE_INDEPENDENT_01_04_SUBJECT_05_06_07"
     }
@@ -2041,5 +2041,5 @@
     "view": null,
     "status": "RELEASE_LIVE_VERIFIED_NO_OPERATION_RESERVED"
   },
-  "requiredNext": "G030 is live-verified. Preserve exact private and public bytes; no further G030 operation is required."
+  "requiredNext": "G030 is live-verified. Preserve exact private and public bytes; no further G030 operation is required. Preserve G028 rear presentations as conservative inference only and retain its separately recorded private-portability restrictions. The approved 1024x1280 room now passes the explicit native-room geometry profile without altering room bytes, but paid Atelier dispatch remains fail-closed while the route runtime is ENGINE_DISABLED, the canonical qualified-evaluator bundle is absent and the new profile has not passed the closed stage-specific qualification matrix. Manual legacy Intake remains an independent supported recovery lane and is not the cause of the Atelier blocker."
 }

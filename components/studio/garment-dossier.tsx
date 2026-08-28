@@ -10,7 +10,9 @@ import { WearSheet } from "./garment-intake/wear-sheet";
 import { StudioMediaViewerProvider } from "./media-viewer";
 import { useStudio } from "./studio-provider";
 import { PieceWorkspaceView } from "./wardrobe-workbench";
+import { StudioAtelierEligibilityPanel } from "./atelier/studio-atelier-eligibility-panel";
 import { studioScenarioHref } from "../../lib/studio/simulator";
+import { assignDocumentNavigation } from "../brand/document-navigation-loading-stage";
 
 export function GarmentDossier() {
   const params = useParams<{ id: string }>();
@@ -44,9 +46,15 @@ export function GarmentDossier() {
           garment={garment}
           initialAction={searchParams.get("action") === "price" ? "price" : undefined}
           layout="adaptive"
-          onDismiss={() => window.location.assign(studioScenarioHref("/studio/wardrobe", studio.scenario))}
+          onDismiss={() => assignDocumentNavigation(studioScenarioHref("/studio/wardrobe", studio.scenario))}
           onContinueMedia={(piece) => setWearWardrobeItemId(piece.privateWardrobeItemId ?? null)}
         />
+        {garment.privateWardrobeItemId ? (
+          <StudioAtelierEligibilityPanel
+            onUseLegacy={() => setWearWardrobeItemId(garment.privateWardrobeItemId ?? null)}
+            wardrobeItemId={garment.privateWardrobeItemId}
+          />
+        ) : null}
         {wearWardrobeItemId ? (
           <WearSheet
             onDismiss={() => setWearWardrobeItemId(null)}

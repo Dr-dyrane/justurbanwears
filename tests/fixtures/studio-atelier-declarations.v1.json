@@ -138,7 +138,7 @@
     {
       "name": "room-final-05",
       "expectedSourceHash": "e4d4de9909c2a0f6c9cc0fada62a0fd3dff962095e85f54d705db0cbafd20005",
-      "expectedSemanticHash": "c4b98074be9625e2b0be821abe1755e16bb4cd6e297aa79fd565b0a07e5f14bd",
+      "expectedSemanticHash": "c362f53354c4bd8cd6965bd460a278ec580240dec8126dc334d87cc0dc1b1a1f",
       "declaration": {
         "declarationVersion": "juw.studio-atelier-declaration.v1",
         "garmentId": "900",
@@ -213,7 +213,7 @@
     {
       "name": "sibling-06",
       "expectedSourceHash": "72ff5dfb68495e4db17bf76949824ce9135c30d118bcda023603fb52f96357b9",
-      "expectedSemanticHash": "c9b1a0e6e4bc2913b717ea9b38bdc71e80e47846959450d118b2cee1002d97c7",
+      "expectedSemanticHash": "82df9c2bedbf9ade06074374c8c3dbcdd545445cdd6b0bee3c455cc129f79eb7",
       "declaration": {
         "declarationVersion": "juw.studio-atelier-declaration.v1",
         "garmentId": "900",
@@ -274,7 +274,7 @@
     {
       "name": "sibling-07-core",
       "expectedSourceHash": "8dacd4dfee5245ea5211706ee8ce98d814936b0d06242ccd18bca7bd80675208",
-      "expectedSemanticHash": "b129f0cabfdde8042c8eafd36493fc5c69382cb36435e061a00bff1ef501b677",
+      "expectedSemanticHash": "2ce0fb96d89eee26c410722c6b35b544cbc2c68ec174f8c1d3f064d808111c3c",
       "declaration": {
         "declarationVersion": "juw.studio-atelier-declaration.v1",
         "garmentId": "900",
@@ -341,7 +341,7 @@
     {
       "name": "sibling-07-recovery",
       "expectedSourceHash": "923059ae79ae7b4663b5aff84ab4568fcf44fe94531db8b5b665ba55f13edb06",
-      "expectedSemanticHash": "a30e8a6a76a411c91c31675b948cca54a31e005babca69643ced51d84721b4e3",
+      "expectedSemanticHash": "a912e6cced62fb9ea48075d4b547338ed59d92aa1cb72f60cbe52424087df4f0",
       "declaration": {
         "declarationVersion": "juw.studio-atelier-declaration.v1",
         "garmentId": "900",

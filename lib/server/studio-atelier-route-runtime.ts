@@ -1,11 +1,24 @@
-import { StudioEngineError } from "../studio/engine/errors";
+import type { StudioAtelierEngineFacade } from "./studio-atelier-engine-facade";
 import type {
   CreateStudioAtelierProductionRuntimeInput,
   StudioAtelierProductionRuntime,
 } from "./studio-atelier-production-runtime";
+import type { StudioAtelierReviewArtifact } from "./studio-atelier-review-artifact";
+import type { StudioOperator } from "./studio-operator";
 
 export type StudioAtelierRouteRuntimeLoader =
   () => Promise<StudioAtelierProductionRuntime>;
+
+export type StudioAtelierRecoveryRuntime = Readonly<{
+  readProjection: StudioAtelierEngineFacade["readProjection"];
+  readReviewArtifact(input: Readonly<{
+    operator: StudioOperator;
+    operationId: string;
+  }>): Promise<StudioAtelierReviewArtifact>;
+}>;
+
+export type StudioAtelierRecoveryRuntimeLoader =
+  () => Promise<StudioAtelierRecoveryRuntime>;
 
 /**
  * Converts one fully verified server composition into a process-local runtime
@@ -35,19 +48,77 @@ export function createStudioAtelierRouteRuntimeLoader(
 }
 
 /**
- * Production routes deliberately fail closed until the concrete, verified
- * server ports and readiness evidence are installed as one release atom.
- * This placeholder has no provider, repository or private-media dependency,
- * so exposing the route files cannot accidentally create a paid dispatch
- * path while migration/qualification/canvas readiness is incomplete.
+ * Caches one capability-minimal recovery composition. A failed construction is
+ * not cached so a transient repository or private-storage repair can recover
+ * without restarting the process.
  */
-export async function loadStudioAtelierRouteRuntime(): Promise<
+export function createStudioAtelierRecoveryRuntimeLoader(
+  createRuntime: () => Promise<StudioAtelierRecoveryRuntime>,
+): StudioAtelierRecoveryRuntimeLoader {
+  let current: Promise<StudioAtelierRecoveryRuntime> | null = null;
+
+  return async () => {
+    if (current) return current;
+    const task = createRuntime();
+    current = task;
+    try {
+      return await task;
+    } catch (error) {
+      if (current === task) current = null;
+      throw error;
+    }
+  };
+}
+
+const loadDefaultStudioAtelierRecoveryRuntime =
+  createStudioAtelierRecoveryRuntimeLoader(async () => {
+    const [durableEngine, reviewArtifact] = await Promise.all([
+      import("./studio-atelier-durable-engine"),
+      import("./studio-atelier-review-artifact"),
+    ]);
+    return Object.freeze({
+      readProjection: durableEngine.readDurableStudioAtelierProjection,
+      readReviewArtifact: reviewArtifact.readStudioAtelierReviewArtifact,
+    });
+  });
+
+/**
+ * Read-only recovery is intentionally independent from paid runtime
+ * qualification. It can read only the operator-scoped durable projection and
+ * the already-semantic-pass content-addressed review artifact; it exposes no
+ * prepare, run, evaluator, review or lock capability.
+ */
+export function loadStudioAtelierRecoveryRuntime(): Promise<
+  StudioAtelierRecoveryRuntime
+> {
+  return loadDefaultStudioAtelierRecoveryRuntime();
+}
+
+const loadDefaultStudioAtelierRouteRuntime = (() => {
+  let current: Promise<StudioAtelierProductionRuntime> | null = null;
+  return async () => {
+    if (current) return current;
+    const task = import("./studio-atelier-route-production-composition").then(
+      ({ loadStudioAtelierRouteProductionRuntime }) =>
+        loadStudioAtelierRouteProductionRuntime(),
+    );
+    current = task;
+    try {
+      return await task;
+    } catch (error) {
+      if (current === task) current = null;
+      throw error;
+    }
+  };
+})();
+
+/**
+ * The default route binding verifies qualification before loading any
+ * I/O-bearing composition module. Today the canonical resolver is absent, so
+ * this fails closed without probing Postgres/Blob or constructing a paid path.
+ */
+export function loadStudioAtelierRouteRuntime(): Promise<
   StudioAtelierProductionRuntime
 > {
-  throw new StudioEngineError(
-    "ENGINE_DISABLED",
-    503,
-    "The durable Atelier production runtime is not enabled on this host.",
-    "Install and verify the server-owned Atelier ports, ledger migration, private store, authority, policy, qualification, and room readiness as one release atom.",
-  );
+  return loadDefaultStudioAtelierRouteRuntime();
 }

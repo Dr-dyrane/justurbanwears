@@ -1,4 +1,5 @@
 import { createHash } from "node:crypto";
+import { canonicalStringify } from "../studio/atelier/canonical";
 import { atelierOperationSchema, type AtelierOperation } from "../studio/atelier/contracts";
 import { StudioEngineError } from "../studio/engine/errors";
 import {
@@ -11,6 +12,7 @@ import {
   type AtelierOperationProjectionRow,
 } from "./studio-atelier-repository";
 import {
+  STUDIO_ATELIER_LEGACY_SUBJECT_COMPOSITE_REVISION,
   STUDIO_ATELIER_SUBJECT_COMPOSITE_REVISION,
   compositeStudioAtelierSubject,
   preflightStudioAtelierSubjectComposite,
@@ -137,6 +139,7 @@ function roomAuthority(operation: AtelierOperation) {
 function assertResolvedRoom(
   expected: Readonly<{ assetId: string; sha256: string }>,
   room: StudioAtelierLockedRoomAuthority,
+  canvasPolicyRevision: string | null,
 ): void {
   if (
     room.assetId !== expected.assetId
@@ -153,7 +156,7 @@ function assertResolvedRoom(
       "Restore the exact approved room bytes and manifest before locking.",
     );
   }
-  preflightStudioAtelierSubjectComposite(room);
+  preflightStudioAtelierSubjectComposite(room, canvasPolicyRevision);
 }
 
 function lockedLayer(operation: AtelierOperation): "IDENTITY" | "GARMENT" {
@@ -181,14 +184,11 @@ function lockAssetId(semanticHash: string): string {
   return `atelier.lock/${semanticHash}`;
 }
 
-function usesTransparentComposite(operation: AtelierOperation): boolean {
-  return operation.outputContract.mode === "TRANSPARENT_SUBJECT_THEN_DETERMINISTIC_COMPOSITE";
-}
-
 function exactCompositeSource(input: {
   composite: AtelierArtifactRow;
   artifacts: readonly AtelierArtifactRow[];
   expectedRoom: Readonly<{ assetId: string; sha256: string }>;
+  canvasPolicyRevision: string | null;
 }): AtelierArtifactRow {
   const metadata = input.composite.metadata;
   if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) {
@@ -196,15 +196,21 @@ function exactCompositeSource(input: {
   }
   const sourceArtifactIds = (metadata as Record<string, unknown>).sourceArtifactIds;
   const subjectSha256 = (metadata as Record<string, unknown>).subjectSha256;
+  const expectedCompositeRevision = input.canvasPolicyRevision === null
+    ? STUDIO_ATELIER_LEGACY_SUBJECT_COMPOSITE_REVISION
+    : STUDIO_ATELIER_SUBJECT_COMPOSITE_REVISION;
   if (
     !Array.isArray(sourceArtifactIds)
     || sourceArtifactIds.length !== 1
     || typeof sourceArtifactIds[0] !== "string"
     || typeof subjectSha256 !== "string"
     || (metadata as Record<string, unknown>).compositionVersion
-      !== STUDIO_ATELIER_SUBJECT_COMPOSITE_REVISION
+      !== expectedCompositeRevision
     || (metadata as Record<string, unknown>).roomAssetId !== input.expectedRoom.assetId
     || (metadata as Record<string, unknown>).roomSha256 !== input.expectedRoom.sha256
+    || (input.canvasPolicyRevision !== null
+      && (metadata as Record<string, unknown>).canvasPolicyRevision
+        !== input.canvasPolicyRevision)
   ) {
     throw invalidTransition("The approved composite does not declare one exact room and subject source.");
   }
@@ -297,21 +303,26 @@ export function createStudioAtelierLockService(
       sourceArtifactSha256: materialized.sha256,
     };
 
-    if (usesTransparentComposite(operation)) {
+    if (operation.outputContract.mode === "TRANSPARENT_SUBJECT_THEN_DETERMINISTIC_COMPOSITE") {
       if (materialized.kind !== "COMPOSITE" || materialized.mimeType !== "image/png") {
         throw invalidTransition("A transparent-composite operation must approve its exact deterministic PNG composite.");
       }
       const expectedRoom = roomAuthority(operation);
+      const compositePolicy = operation.outputContract.deterministicComposite;
+      const canvasPolicyRevision = "canvasPolicyRevision" in compositePolicy
+        ? compositePolicy.canvasPolicyRevision
+        : null;
       const subject = exactCompositeSource({
         composite: materialized,
         artifacts,
         expectedRoom,
+        canvasPolicyRevision,
       });
       const room = await dependencies.resolveLockedRoom({
         ...command,
         expected: { assetId: expectedRoom.assetId, sha256: expectedRoom.sha256 },
       });
-      assertResolvedRoom(expectedRoom, room);
+      assertResolvedRoom(expectedRoom, room, canvasPolicyRevision);
       const [subjectBytes, reviewedCompositeBytes] = await Promise.all([
         dependencies.readArtifact(subject),
         dependencies.readArtifact(materialized),
@@ -355,10 +366,30 @@ export function createStudioAtelierLockService(
           "Restore the exact pre-review composite; never replace approved bytes after review.",
         );
       }
+      const recordedCanvasProfile = materialized.metadata
+        && typeof materialized.metadata === "object"
+        && !Array.isArray(materialized.metadata)
+        ? (materialized.metadata as Record<string, unknown>).canvasProfile
+        : null;
+      if (
+        canvasPolicyRevision !== null
+        && canonicalStringify(recordedCanvasProfile)
+          !== canonicalStringify(recomputed.canvasProfile)
+      ) {
+        throw new StudioEngineError(
+          "INVALID_ASSET",
+          503,
+          "The approved composite canvas-profile evidence does not match deterministic recomposition.",
+          "Restore the exact pre-review composite metadata and native-room mapping.",
+        );
+      }
       lockArtifact = materialized;
       lockEvidence = {
         ...lockEvidence,
-        compositeRevision: STUDIO_ATELIER_SUBJECT_COMPOSITE_REVISION,
+        compositeRevision: canvasPolicyRevision === null
+          ? STUDIO_ATELIER_LEGACY_SUBJECT_COMPOSITE_REVISION
+          : STUDIO_ATELIER_SUBJECT_COMPOSITE_REVISION,
+        lockVerificationCompositeRevision: STUDIO_ATELIER_SUBJECT_COMPOSITE_REVISION,
         roomAssetId: room.assetId,
         roomSha256: room.sha256,
         roomManifestRevision: room.manifestRevision,
@@ -366,6 +397,8 @@ export function createStudioAtelierLockService(
         subjectArtifactId: subject.id,
         subjectArtifactSha256: subject.sha256,
         compositeArtifactSha256: lockArtifact.sha256,
+        canvasPolicyRevision,
+        canvasProfile: canvasPolicyRevision === null ? null : recomputed.canvasProfile,
         roomPixelsGenerated: 0,
       };
     } else {

@@ -106,6 +106,37 @@ export interface AtelierProviderResultManifest {
   requestId?: string;
 }
 
+export type AtelierProviderModerationStage = "input" | "output" | "unknown";
+export type AtelierProviderModerationCategory =
+  | "sexual"
+  | "violence"
+  | "self_harm"
+  | "hate"
+  | "harassment"
+  | "illicit";
+
+export const ATELIER_PROVIDER_MODERATION_ERROR_MESSAGE =
+  "The provider declined the image request and returned no output." as const;
+
+/**
+ * Private, no-byte provider evidence for a deterministic moderation terminal.
+ * `manifestSha256` binds the complete structure other than the hash itself.
+ */
+export interface AtelierProviderFailureManifest {
+  schemaVersion: "juw.atelier-provider-failure.v1";
+  outcome: "NO_OUTPUT";
+  requestedModel: string;
+  providerCode: "moderation_blocked";
+  moderation: {
+    stage: AtelierProviderModerationStage;
+    categories: AtelierProviderModerationCategory[];
+    noOutput: true;
+  };
+  gatewayGenerationId?: string;
+  requestId?: string;
+  manifestSha256: string;
+}
+
 export type CreateAtelierOperationInput = Omit<
   typeof studioAtelierOperations.$inferInsert,
   | "rootSemanticHash"
@@ -259,6 +290,122 @@ function safeRequestId(value: unknown): string | null {
   const candidate = value.trim();
   if (!candidate || candidate.length > 256 || /[^\x20-\x7e]/.test(candidate)) return null;
   return candidate;
+}
+
+const MODERATION_CATEGORIES = Object.freeze([
+  "sexual",
+  "violence",
+  "self_harm",
+  "hate",
+  "harassment",
+  "illicit",
+] as const satisfies readonly AtelierProviderModerationCategory[]);
+
+function providerFailureManifestBody(input: Readonly<{
+  requestedModel: string;
+  moderationStage: AtelierProviderModerationStage;
+  categories: readonly AtelierProviderModerationCategory[];
+  gatewayGenerationId?: string | null;
+  requestId?: string | null;
+}>): Omit<AtelierProviderFailureManifest, "manifestSha256"> {
+  const gatewayGenerationId = safeRequestId(input.gatewayGenerationId);
+  const requestId = safeRequestId(input.requestId);
+  return {
+    schemaVersion: "juw.atelier-provider-failure.v1",
+    outcome: "NO_OUTPUT",
+    requestedModel: input.requestedModel,
+    providerCode: "moderation_blocked",
+    moderation: {
+      stage: input.moderationStage,
+      categories: [...input.categories],
+      noOutput: true,
+    },
+    ...(gatewayGenerationId ? { gatewayGenerationId } : {}),
+    ...(requestId ? { requestId } : {}),
+  };
+}
+
+export function createAtelierProviderFailureManifest(input: Readonly<{
+  requestedModel: string;
+  moderationStage: AtelierProviderModerationStage;
+  categories: readonly AtelierProviderModerationCategory[];
+  gatewayGenerationId?: string | null;
+  requestId?: string | null;
+}>): AtelierProviderFailureManifest {
+  const requestedModel = input.requestedModel.trim();
+  const allowedCategories = new Set<string>(MODERATION_CATEGORIES);
+  const categories = MODERATION_CATEGORIES.filter((category) =>
+    input.categories.includes(category)
+  );
+  if (
+    !requestedModel
+    || !["input", "output", "unknown"].includes(input.moderationStage)
+    || input.categories.some((category) => !allowedCategories.has(category))
+    || new Set(input.categories).size !== input.categories.length
+    || categories.length !== input.categories.length
+  ) {
+    throw new Error("The Atelier provider-failure evidence is invalid.");
+  }
+  const body = providerFailureManifestBody({
+    ...input,
+    requestedModel,
+    categories,
+  });
+  return {
+    ...body,
+    manifestSha256: sha256(stableJson(body)),
+  };
+}
+
+export function assertAtelierProviderFailureManifest(
+  value: unknown,
+): asserts value is AtelierProviderFailureManifest {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new Error("The Atelier provider-failure manifest is invalid.");
+  }
+  const manifest = value as Partial<AtelierProviderFailureManifest> & Record<string, unknown>;
+  const moderation = manifest.moderation
+    && typeof manifest.moderation === "object"
+    && !Array.isArray(manifest.moderation)
+    ? manifest.moderation as Partial<AtelierProviderFailureManifest["moderation"]>
+      & Record<string, unknown>
+    : null;
+  const keys = Object.keys(manifest).sort();
+  const expectedKeys = [
+    "manifestSha256",
+    "moderation",
+    "outcome",
+    "providerCode",
+    "requestedModel",
+    "schemaVersion",
+    ...(manifest.gatewayGenerationId === undefined ? [] : ["gatewayGenerationId"]),
+    ...(manifest.requestId === undefined ? [] : ["requestId"]),
+  ].sort();
+  const moderationKeys = moderation ? Object.keys(moderation).sort() : [];
+  if (
+    stableJson(keys) !== stableJson(expectedKeys)
+    || stableJson(moderationKeys) !== stableJson(["categories", "noOutput", "stage"])
+    || manifest.schemaVersion !== "juw.atelier-provider-failure.v1"
+    || manifest.outcome !== "NO_OUTPUT"
+    || manifest.providerCode !== "moderation_blocked"
+    || moderation?.noOutput !== true
+    || !Array.isArray(moderation.categories)
+    || typeof manifest.requestedModel !== "string"
+    || typeof manifest.manifestSha256 !== "string"
+    || !SHA256_PATTERN.test(manifest.manifestSha256)
+  ) {
+    throw new Error("The Atelier provider-failure manifest is invalid.");
+  }
+  const expected = createAtelierProviderFailureManifest({
+    requestedModel: manifest.requestedModel,
+    moderationStage: moderation.stage as AtelierProviderModerationStage,
+    categories: moderation.categories as AtelierProviderModerationCategory[],
+    gatewayGenerationId: manifest.gatewayGenerationId,
+    requestId: manifest.requestId,
+  });
+  if (stableJson(expected) !== stableJson(manifest)) {
+    throw new Error("The Atelier provider-failure manifest hash is invalid.");
+  }
 }
 
 function responseHeaderEntries(headers: AtelierProviderResponse["headers"]): Array<[string, string]> {
@@ -453,6 +600,7 @@ export async function createAtelierOperation(
     const [source] = await database.select({
       rootSemanticHash: studioAtelierOperations.rootSemanticHash,
       correctionOrdinal: studioAtelierOperations.correctionOrdinal,
+      wardrobeItemId: studioAtelierOperations.wardrobeItemId,
       correctionAuthorized: studioAtelierOperationProjections.correctionAuthorized,
     }).from(studioAtelierOperations).innerJoin(
       studioAtelierOperationProjections,
@@ -468,6 +616,9 @@ export async function createAtelierOperation(
     if (source.correctionOrdinal !== 0) {
       throw new Error("An Atelier correction cannot create another correction lineage.");
     }
+    if (!input.wardrobeItemId || source.wardrobeItemId !== input.wardrobeItemId) {
+      throw new Error("The Atelier correction must retain the exact Wardrobe item ownership.");
+    }
     rootSemanticHash = source.rootSemanticHash;
     correctionOrdinal = 1;
   }
@@ -476,13 +627,13 @@ export async function createAtelierOperation(
   const inserted = await database.execute<{ id: string }>(sql`
     with inserted_operation as (
       insert into studio_atelier_operations (
-        id, operator_subject, operation_key, garment_id, view, stage,
+        id, operator_subject, wardrobe_item_id, operation_key, garment_id, view, stage,
         contract_version, workflow_revision, semantic_hash, root_semantic_hash,
         correction_of_semantic_hash, correction_ordinal, declaration_receipt, truth_receipt,
         canonical_operation, parent_assets, authority_stack, change_set,
         immutable_set, output_contract, failure_gates, state, created_at, updated_at
       ) values (
-        ${operationId}::uuid, ${input.operatorSubject}, ${input.operationKey},
+        ${operationId}::uuid, ${input.operatorSubject}, ${input.wardrobeItemId}::uuid, ${input.operationKey},
         ${input.garmentId}, ${input.view}, ${input.stage}, ${input.contractVersion},
         ${input.workflowRevision}, ${input.semanticHash}, ${rootSemanticHash},
         ${correctionHash}, ${correctionOrdinal}, ${JSON.stringify(input.declarationReceipt)}::jsonb,
@@ -524,6 +675,7 @@ export async function createAtelierOperation(
     if (
       existing.rootSemanticHash !== rootSemanticHash
       || existing.correctionOfSemanticHash !== correctionHash
+      || existing.wardrobeItemId !== input.wardrobeItemId
       || !areAtelierDeclarationReceiptsCompatible(existing.declarationReceipt, input.declarationReceipt)
       || !areAtelierTruthReceiptsCompatible(existing.truthReceipt, input.truthReceipt)
     ) {
@@ -1225,6 +1377,7 @@ export async function resolveAtelierParentLocks(input: {
 export async function finalizeAtelierExecution(input: {
   lease: AtelierExecutionLease;
   state: AtelierExecutionTerminalState;
+  providerFailureManifest?: AtelierProviderFailureManifest | null;
   usage?: Record<string, unknown> | null;
   costUsd?: number | string | null;
   warnings?: unknown[];
@@ -1246,10 +1399,28 @@ export async function finalizeAtelierExecution(input: {
   if (["QUARANTINED", "INDETERMINATE"].includes(input.state) && !errorCode) {
     throw new Error(`${input.state} Atelier executions require a reason code.`);
   }
+  const providerFailureManifest = input.providerFailureManifest ?? null;
+  if (providerFailureManifest) {
+    assertAtelierProviderFailureManifest(providerFailureManifest);
+    const expectedErrorCode = `PROVIDER_MODERATION_BLOCKED_${providerFailureManifest.moderation.stage.toUpperCase()}`;
+    if (
+      input.state !== "FAILED"
+      || errorCode !== expectedErrorCode
+      || input.errorMessage !== ATELIER_PROVIDER_MODERATION_ERROR_MESSAGE
+      || (input.warnings?.length ?? 0) > 0
+      || (input.responses?.length ?? 0) > 0
+    ) {
+      throw new Error("Provider moderation evidence requires the exact FAILED terminal contract.");
+    }
+  }
 
   const sanitized = sanitizeAtelierProviderResponses(input.responses ?? []);
   const requestIds = Array.from(new Set([
     ...sanitized.requestIds,
+    ...(providerFailureManifest
+      ? [providerFailureManifest.gatewayGenerationId, providerFailureManifest.requestId]
+        .filter((value): value is string => Boolean(value))
+      : []),
     ...(input.requestIds ?? []).flatMap((value) => safeRequestId(value) ?? []),
   ]));
   const warnings = (input.warnings ?? []).map(jsonRecord);
@@ -1257,6 +1428,9 @@ export async function finalizeAtelierExecution(input: {
   const responses = JSON.stringify(sanitized.responses);
   const requestIdsJson = JSON.stringify(requestIds);
   const warningsJson = JSON.stringify(warnings);
+  const providerFailureManifestJson = providerFailureManifest
+    ? JSON.stringify(providerFailureManifest)
+    : null;
   const database = await getStudioDb();
 
   let materializedProjection: AtelierOperationProjectionRow | null = null;
@@ -1332,6 +1506,16 @@ export async function finalizeAtelierExecution(input: {
     ), finalized_execution as (
       update studio_atelier_executions execution
       set state = ${input.state},
+          provider_result_received_at = case
+            when ${providerFailureManifestJson}::jsonb is null
+              then execution.provider_result_received_at
+            else now()
+          end,
+          provider_result_manifest = case
+            when ${providerFailureManifestJson}::jsonb is null
+              then execution.provider_result_manifest
+            else ${providerFailureManifestJson}::jsonb
+          end,
           usage = coalesce(${usage}::jsonb, execution.usage),
           cost_usd = coalesce(${costUsd}, execution.cost_usd),
           warnings = case when ${warningsJson}::jsonb = '[]'::jsonb
@@ -1352,6 +1536,19 @@ export async function finalizeAtelierExecution(input: {
         and execution.execution_token = ${input.lease.executionToken}::uuid
         and execution.lease_fence = ${input.lease.leaseFence}
         and execution.lease_expires_at > now()
+        and (
+          ${providerFailureManifestJson}::jsonb is null
+          or (
+            ${input.state} = 'FAILED'
+            and execution.provider_invocation_started_at is not null
+            and execution.provider_result_received_at is null
+            and execution.provider_result_manifest is null
+            and not exists (
+              select 1 from studio_atelier_artifacts artifact
+              where artifact.execution_id = execution.id
+            )
+          )
+        )
         and (
           ${input.state} <> 'COMPLETE'
           or (

@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { STUDIO_ATELIER_ROOM_CANVAS_POLICY_REVISION } from "./canvas-policy";
 import { studioAtelierG004ProviderDenial } from "./g004-provider-denial";
 
 const safeIdPattern = /^[a-zA-Z0-9._:/-]+$/;
@@ -543,12 +544,49 @@ export const outputContractSchema = z.discriminatedUnion("mode", [
       alpha: z.literal("REQUIRED"),
       background: z.literal("TRANSPARENT"),
     }).strict(),
-    deterministicComposite: z.object({
-      method: z.literal("APP_OWNED_EXACT_PIXEL_COMPOSITE"),
-      lockedRoomRole: z.literal("LOCKED_ATELIER_ROOM"),
-      preserveLockedRoomPixels: z.literal(true),
-      outputFormat: z.literal("PNG"),
-    }).strict(),
+    deterministicComposite: z.union([
+      // Parse the original same-canvas contract for durable replay. It may
+      // use only a 1024x1536 room at execution time.
+      z.object({
+        method: z.literal("APP_OWNED_EXACT_PIXEL_COMPOSITE"),
+        lockedRoomRole: z.literal("LOCKED_ATELIER_ROOM"),
+        preserveLockedRoomPixels: z.literal(true),
+        outputFormat: z.literal("PNG"),
+      }).strict(),
+      z.object({
+        method: z.literal("APP_OWNED_EXACT_PIXEL_COMPOSITE"),
+        lockedRoomRole: z.literal("LOCKED_ATELIER_ROOM"),
+        preserveLockedRoomPixels: z.literal(true),
+        outputFormat: z.literal("PNG"),
+        canvasPolicyRevision: z.literal(STUDIO_ATELIER_ROOM_CANVAS_POLICY_REVISION),
+        pixelMapping: z.literal("EXACT_1_TO_1_WINDOW_COPY"),
+        roomPixelsGenerated: z.literal(0),
+        supportedRoomProfiles: z.tuple([
+          z.object({
+            profileId: z.literal("atelier-room-native-2x3-v1"),
+            roomCanvas: z.object({ width: z.literal(1024), height: z.literal(1536) }).strict(),
+            subjectWindow: z.object({
+              left: z.literal(0),
+              top: z.literal(0),
+              width: z.literal(1024),
+              height: z.literal(1536),
+            }).strict(),
+            transparentGuardPixels: z.literal(0),
+          }).strict(),
+          z.object({
+            profileId: z.literal("atelier-room-native-4x5-center-window-v1"),
+            roomCanvas: z.object({ width: z.literal(1024), height: z.literal(1280) }).strict(),
+            subjectWindow: z.object({
+              left: z.literal(0),
+              top: z.literal(128),
+              width: z.literal(1024),
+              height: z.literal(1280),
+            }).strict(),
+            transparentGuardPixels: z.literal(16),
+          }).strict(),
+        ]),
+      }).strict(),
+    ]),
     finalFormat: z.literal("PNG"),
   }).strict(),
 ]);
@@ -712,6 +750,7 @@ const parentImmutableCoverage = Object.freeze({
 export const atelierOperationSchema = z.object({
   contractVersion: atelierContractVersionSchema,
   workflowRevision: z.string().trim().min(1).max(120),
+  wardrobeItemId: z.string().uuid().optional(),
   garmentId: garmentIdSchema,
   stage: atelierStageSchema,
   view: atelierViewSchema,

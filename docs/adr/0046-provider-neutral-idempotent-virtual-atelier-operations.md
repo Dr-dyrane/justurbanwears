@@ -41,6 +41,14 @@ This ADR extends ADR 0040. The production authority order remains:
 
 Separate semantic operation identity from provider execution identity.
 
+Final-scene geometry uses explicit, versioned profiles rather than a global
+dimension tolerance. The provider subject remains exact 1024x1536. The
+1024x1280 native-room profile binds a central `x=0,y=128,w=1024,h=1280`
+one-to-one copy plus a 16-pixel inner transparent guard. Visible alpha outside
+the guard fails; neither room pixels nor retained subject pixels are resampled,
+invented or silently cropped. The complete profile is part of semantic identity
+and the compositor/profile revisions are part of execution identity.
+
 Implementation note (2026-08-26):
 `scripts/virtual-atelier/operation-identity.mjs` provides canonical semantic
 identity, execution identity, artifact/evaluation hashes, capability preflight
@@ -53,8 +61,9 @@ operations, including private ordered QA and review-media authorization.
 private authority and active-garment packet. Production migrations `0015` and
 `0016` are applied. Operational cutover remains pending because the deployed
 route runtime is `ENGINE_DISABLED`, the canonical qualification-bundle resolver
-returns `null`, and the exact 1024x1536 room authority is absent. This is not an
-enabled paid-cutover claim.
+returns `null`, and the new native-room profile is not yet covered by a closed
+qualification receipt. The exact approved 1024x1280 room now passes the
+versioned geometry policy; this is not an enabled paid-cutover claim.
 
 Studio and the orchestrator create one immutable, provider-neutral
 `AtelierOperation`. A provider adapter compiles that operation into a concrete
@@ -203,6 +212,11 @@ bytes were generated.
   provider reconciliation proves whether the remote job exists.
 - If the provider supports neither idempotency nor job lookup, an indeterminate
   remote response moves to `INDETERMINATE_PROVIDER_RESULT`; it is not
+  automatically invoked again.
+- A stable provider `moderation_blocked` response is determinate, not
+  indeterminate. It atomically records a hash-bound no-output failure manifest,
+  terminal `FAILED` execution and coarse private stage/category evidence. It
+  creates no artifact, consumes no semantic correction and is never
   automatically invoked again.
 - Changing provider or model alone does not change semantic identity.
 - Changing an authority byte, parent lock, workflow revision, view, intended
@@ -551,6 +565,14 @@ not semantic hashes, approvals or locked bytes.
   exact same-garment locks.
 - 05/06/07 lineage violations and rejected-parent attempts are rejected.
 - Correction budget and immutable sets are enforced.
+- Every paid attempt binds a server-owned, content-hashed, stage-compatible
+  provider-safety receipt. Garment-only stages attest no real-person output;
+  subject/final stages attest verified-adult, authorized, consented, fully
+  clothed non-sexual retail-fashion use. A missing or forged receipt spends
+  zero dollars.
+- A moderation-blocked output is terminally reusable with no candidate,
+  parent, correction authorization or second dispatch; raw error bodies and
+  private media never enter the public projection.
 - Semantic gates run in exact garment/face/body/room/final order, later
   applicable gates are not evaluated after a failure, and a correction repeats
   the complete chain under a distinct semantic identity.

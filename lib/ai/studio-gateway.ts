@@ -73,6 +73,12 @@ export type StudioGatewayFailureMetadata = Readonly<{
   generationId: string | null;
   requestId: string | null;
   retryable: boolean | null;
+  providerCode?: "moderation_blocked";
+  moderation?: Readonly<{
+    stage: "input" | "output" | "unknown";
+    categories: readonly string[];
+    noOutput: true;
+  }>;
 }>;
 
 export class StudioGatewayError extends StudioEngineError {
@@ -144,6 +150,250 @@ function errorChain(error: unknown): unknown[] {
   return chain;
 }
 
+const MODERATION_PROVIDER_CODE = "moderation_blocked" as const;
+const MAX_PROVIDER_ERROR_JSON_LENGTH = 64 * 1024;
+const MODERATION_CATEGORY_ORDER = Object.freeze([
+  "sexual",
+  "violence",
+  "self_harm",
+  "hate",
+  "harassment",
+  "illicit",
+] as const);
+
+type JsonRecord = Record<string, unknown>;
+type ModerationCategory = typeof MODERATION_CATEGORY_ORDER[number];
+type SanitizedModeration = NonNullable<StudioGatewayFailureMetadata["moderation"]>;
+
+function jsonRecordOrNull(value: unknown): JsonRecord | null {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+    ? value as JsonRecord
+    : null;
+}
+
+function parseProviderErrorPayload(value: unknown): JsonRecord | null {
+  try {
+    if (typeof value === "string") {
+      if (value.length === 0 || value.length > MAX_PROVIDER_ERROR_JSON_LENGTH) return null;
+      return jsonRecordOrNull(JSON.parse(value));
+    }
+    return jsonRecordOrNull(value);
+  } catch {
+    return null;
+  }
+}
+
+function recordField(record: JsonRecord | null, key: string): JsonRecord | null {
+  if (!record) return null;
+  try {
+    return jsonRecordOrNull(record[key]);
+  } catch {
+    return null;
+  }
+}
+
+function valueField(record: JsonRecord | null, key: string): unknown {
+  if (!record) return undefined;
+  try {
+    return record[key];
+  } catch {
+    return undefined;
+  }
+}
+
+function stableProviderCode(value: unknown): typeof MODERATION_PROVIDER_CODE | null {
+  return typeof value === "string" && value.trim().toLowerCase() === MODERATION_PROVIDER_CODE
+    ? MODERATION_PROVIDER_CODE
+    : null;
+}
+
+function normalizedToken(value: unknown): string | null {
+  if (typeof value !== "string" || value.length === 0 || value.length > 80) return null;
+  const normalized = value.trim().toLowerCase().replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+  return normalized.length > 0 ? normalized : null;
+}
+
+function moderationStage(value: unknown): SanitizedModeration["stage"] | null {
+  const token = normalizedToken(value);
+  if (["input", "prompt", "request", "input_moderation"].includes(token ?? "")) {
+    return "input";
+  }
+  if (
+    ["output", "response", "generation", "generated_image", "output_moderation"]
+      .includes(token ?? "")
+  ) {
+    return "output";
+  }
+  return null;
+}
+
+function moderationCategory(value: unknown): ModerationCategory | null {
+  const token = normalizedToken(value);
+  if (!token) return null;
+  if (["sexual", "sexual_content", "sexual_minors"].includes(token)) return "sexual";
+  if (["violence", "graphic_violence", "violence_graphic"].includes(token)) return "violence";
+  if (["self_harm", "selfharm"].includes(token)) return "self_harm";
+  if (["hate", "hate_threatening"].includes(token)) return "hate";
+  if (["harassment", "harassment_threatening"].includes(token)) return "harassment";
+  if (["illicit", "illicit_violent", "illegal"].includes(token)) return "illicit";
+  return null;
+}
+
+function categoryFlagIsActive(value: unknown): boolean {
+  if (value === true) return true;
+  if (["blocked", "filtered", "flagged", "detected"].includes(normalizedToken(value) ?? "")) {
+    return true;
+  }
+  const record = jsonRecordOrNull(value);
+  return record !== null && ["blocked", "filtered", "flagged", "detected"]
+    .some((key) => valueField(record, key) === true);
+}
+
+function addModerationCategories(value: unknown, categories: Set<ModerationCategory>): void {
+  if (typeof value === "string") {
+    const category = moderationCategory(value);
+    if (category) categories.add(category);
+    return;
+  }
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      if (typeof item === "string") {
+        const category = moderationCategory(item);
+        if (category) categories.add(category);
+        continue;
+      }
+      const record = jsonRecordOrNull(item);
+      const category = moderationCategory(
+        valueField(record, "category") ?? valueField(record, "name"),
+      );
+      const hasExplicitFlag = ["blocked", "filtered", "flagged", "detected"]
+        .some((key) => valueField(record, key) !== undefined);
+      if (category && (categoryFlagIsActive(record) || !hasExplicitFlag)) categories.add(category);
+    }
+    return;
+  }
+  const record = jsonRecordOrNull(value);
+  if (!record) return;
+  try {
+    for (const [key, flag] of Object.entries(record)) {
+      const category = moderationCategory(key);
+      if (category && categoryFlagIsActive(flag)) categories.add(category);
+    }
+  } catch {
+    // Provider error evidence is optional. A hostile getter/proxy cannot escape
+    // into the durable sanitized metadata shape.
+  }
+}
+
+function moderationEvidenceRecords(root: JsonRecord, envelope: JsonRecord): JsonRecord[] {
+  const records: JsonRecord[] = [envelope, root];
+  const childKeys = [
+    "details",
+    "moderation",
+    "moderation_details",
+    "moderationDetails",
+    "param",
+  ];
+  for (let depth = 0; depth < 2; depth += 1) {
+    const current = [...records];
+    for (const record of current) {
+      for (const key of childKeys) {
+        const value = valueField(record, key);
+        const childRecord = Array.isArray(value) ? null : jsonRecordOrNull(value);
+        const children: JsonRecord[] = Array.isArray(value)
+          ? value.slice(0, 16).flatMap((item): JsonRecord[] => {
+              const child = jsonRecordOrNull(item);
+              return child ? [child] : [];
+            })
+          : childRecord ? [childRecord] : [];
+        for (const child of children) {
+          if (!records.includes(child)) records.push(child);
+        }
+      }
+    }
+  }
+  return records.reverse();
+}
+
+function moderationEnvelope(root: JsonRecord): JsonRecord | null {
+  const data = recordField(root, "data");
+  const provider = recordField(root, "provider");
+  const candidates = [
+    recordField(root, "error"),
+    recordField(data, "error"),
+    recordField(provider, "error"),
+    data,
+    root,
+  ];
+  return candidates.find((candidate) =>
+    stableProviderCode(valueField(candidate, "code")) === MODERATION_PROVIDER_CODE
+  ) ?? null;
+}
+
+function sanitizeProviderModeration(apiCall: APICallError): Readonly<{
+  providerCode: typeof MODERATION_PROVIDER_CODE;
+  moderation: SanitizedModeration;
+}> | null {
+  try {
+    const payloads = [
+      parseProviderErrorPayload(apiCall.data),
+      parseProviderErrorPayload(apiCall.responseBody),
+    ].filter((payload): payload is JsonRecord => payload !== null);
+    const matching = payloads.flatMap((root) => {
+      const envelope = moderationEnvelope(root);
+      return envelope ? [{ root, envelope }] : [];
+    });
+    if (matching.length === 0) return null;
+
+    const records = matching.flatMap(({ root, envelope }) =>
+      moderationEvidenceRecords(root, envelope)
+    );
+    const stageKeys = [
+      "stage",
+      "phase",
+      "moderation_stage",
+      "moderationStage",
+      "moderation_type",
+      "moderationType",
+      "source",
+      "type",
+    ];
+    const stage = records.flatMap((record) =>
+      [...stageKeys, "param"].flatMap((key) => moderationStage(valueField(record, key)) ?? [])
+    )[0] ?? "unknown";
+    const categories = new Set<ModerationCategory>();
+    const categoryKeys = [
+      "categories",
+      "category",
+      "moderation_categories",
+      "moderationCategories",
+      "flagged_categories",
+      "flaggedCategories",
+      "blocked_categories",
+      "blockedCategories",
+      "content_filter_results",
+      "contentFilterResults",
+    ];
+    for (const record of records) {
+      for (const key of categoryKeys) addModerationCategories(valueField(record, key), categories);
+      addModerationCategories(valueField(record, "param"), categories);
+      addModerationCategories(record, categories);
+    }
+
+    return Object.freeze({
+      providerCode: MODERATION_PROVIDER_CODE,
+      moderation: Object.freeze({
+        stage,
+        categories: Object.freeze(MODERATION_CATEGORY_ORDER.filter((value) => categories.has(value))),
+        noOutput: true,
+      }),
+    });
+  } catch {
+    return null;
+  }
+}
+
 export function sanitizeStudioGatewayFailure(
   stage: StudioGatewayFailureMetadata["stage"],
   model: string,
@@ -179,6 +429,7 @@ export function sanitizeStudioGatewayFailure(
     ? SAFE_REQUEST_ID_HEADERS.map((name) => safeToken(headers[name])).find(Boolean) ?? null
     : null;
   const gatewayType = safeToken(gatewayRecord?.type, 64);
+  const providerModeration = apiCall ? sanitizeProviderModeration(apiCall) : null;
   const classification = validation
     ? "validation"
     : timeout
@@ -200,6 +451,7 @@ export function sanitizeStudioGatewayFailure(
     retryable: typeof retryableRecord?.isRetryable === "boolean"
       ? retryableRecord.isRetryable
       : null,
+    ...(providerModeration ?? {}),
   });
 }
 

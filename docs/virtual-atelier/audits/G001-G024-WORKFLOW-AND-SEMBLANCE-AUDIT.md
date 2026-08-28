@@ -355,6 +355,26 @@ migration application therefore do not imply paid cutover.
 - The current exact room remains 1024×1280 and cannot satisfy the locked 1024×1536 Studio final profile. Final-scene execution is intentionally blocked before claim or spend until a separately approved same-canvas room exists.
 - The durable facade now covers independent 01–04 roots, subject synthesis and 05/06/07 operations through one lifecycle. Production cutover remains fail-closed until the deployed route runtime is enabled with verified server composition, same-canvas room preflight and the closed qualification suite.
 
+### Native-room canvas policy update — 2026-08-27
+
+The preceding same-canvas conclusion is retained as historical audit evidence,
+but its geometry blocker is superseded by the explicit
+`juw.atelier-native-room-canvas.v1` compatibility profile. The provider still
+returns a 1024×1536 transparent subject. For the exact locked 1024×1280 room,
+the compositor accepts only the centre window `x=0, y=128, width=1024,
+height=1280`, requires every non-zero alpha pixel to remain inside an additional
+16-pixel inner guard, and copies that window one-to-one over the untouched room.
+It does not resize, resample, crop, pad, extend or generate room pixels. Alpha
+outside the guarded window blocks before review rather than silently clipping
+the subject. The policy revision, selected profile and compositor revision are
+bound into operation/execution evidence and exact lock recomposition.
+
+This makes the verified 1024×1280 room geometrically eligible; it does not make
+Atelier production-ready. The authenticated route runtime remains deliberately
+`ENGINE_DISABLED`, the canonical qualified-evaluator bundle is absent, and the
+new canvas profile must pass the closed stage-specific qualification matrix
+before any paid production cutover.
+
 ## What “portable anywhere” requires
 
 ### Already durable
