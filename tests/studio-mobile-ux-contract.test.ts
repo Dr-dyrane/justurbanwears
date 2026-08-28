@@ -63,6 +63,16 @@ test("Studio uses Home-owned navigation and one shell-owned stack header", () =>
   assert.match(rootLayout, /control-refinement\.css/);
 });
 
+test("Ask Studio keeps icon-led summaries compact and actionable on mobile", () => {
+  assert.match(
+    stackCss,
+    /@media \(max-width: 620px\)[\s\S]*?\.studio-ask-metrics \{[\s\S]*?grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);/,
+  );
+  assert.match(stackCss, /\.studio-ask-metrics a \{[\s\S]*?min-height: 66px;/);
+  assert.match(stackCss, /\.studio-ask-results a \{[\s\S]*?min-height: 62px;/);
+  assert.match(stackCss, /\.studio-ask-suggestion \{[\s\S]*?min-height: 44px;/);
+});
+
 test("Home presents four primary destinations while search retains all seven domains", () => {
   for (const key of ["wardrobe", "atelier", "shop", "orders", "inventory", "models", "operations"]) {
     assert.match(serviceRegistry, new RegExp(`key: "${key}"`));

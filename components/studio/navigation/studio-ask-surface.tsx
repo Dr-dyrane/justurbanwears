@@ -2,18 +2,38 @@
 
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import {
   ArrowRight,
+  Bell,
+  Boxes,
   Check,
+  Circle,
   CircleAlert,
+  CircleGauge,
+  Clock3,
+  Compass,
+  FilePenLine,
+  House,
+  Images,
+  Layers3,
+  LayoutGrid,
   ListTodo,
   LoaderCircle,
+  MapPin,
+  PackageCheck,
   RotateCcw,
+  Route,
   Save,
+  ShieldCheck,
+  Shirt,
   Sparkles,
   Square,
+  Store,
+  Tag,
   Trash2,
+  UserRound,
+  type LucideIcon,
 } from "lucide-react";
 import { Message, MessageContent, MessageResponse } from "../../ai-elements/message";
 import { Suggestion, Suggestions } from "../../ai-elements/suggestion";
@@ -24,10 +44,12 @@ import { studioOrderHasDueWork } from "../../../lib/shop/order-presentation";
 import {
   normalizeStudioAssistantText,
   resolveStudioAssistantWorkflow,
+  studioAssistantSuggestionFamily,
   type StudioAssistantBlock,
   type StudioAssistantContext,
   type StudioAssistantDocument,
   type StudioAssistantResponse,
+  type StudioAssistantSuggestionFamily,
   type StudioAssistantTaskDraft,
   type StudioAssistantWorkflowResponse,
 } from "../../../lib/studio/assistant/experience";
@@ -610,6 +632,96 @@ function provenanceTime(value: string | null) {
   return new Intl.DateTimeFormat("en-NG", { hour: "numeric", minute: "2-digit" }).format(date);
 }
 
+type AssistantVisual = {
+  icon: LucideIcon;
+  tone: "atelier" | "attention" | "available" | "neutral" | "operations" | "orders" | "wardrobe";
+};
+
+function studioHref(href: string) {
+  try {
+    return new URL(href, "https://studio.invalid");
+  } catch {
+    return new URL("/studio", "https://studio.invalid");
+  }
+}
+
+function destinationVisual(href: string): AssistantVisual {
+  const destination = studioHref(href);
+  const view = destination.searchParams.get("view");
+  const action = destination.searchParams.get("action");
+  if (destination.pathname.startsWith("/studio/orders") || view === "orders") {
+    return { icon: PackageCheck, tone: "orders" };
+  }
+  if (destination.pathname.startsWith("/studio/media")) {
+    return { icon: Images, tone: "atelier" };
+  }
+  if (destination.pathname.startsWith("/studio/models")) {
+    return { icon: UserRound, tone: "atelier" };
+  }
+  if (destination.pathname.startsWith("/studio/stocktake") || destination.pathname.startsWith("/studio/scan")) {
+    return { icon: CircleGauge, tone: "operations" };
+  }
+  if (destination.pathname.startsWith("/studio/wardrobe") && view === "publishing") {
+    return { icon: Store, tone: "wardrobe" };
+  }
+  if (destination.pathname.startsWith("/studio/wardrobe")
+    && (destination.searchParams.has("collection") || destination.searchParams.has("dropAction"))) {
+    return { icon: Layers3, tone: "wardrobe" };
+  }
+  if (destination.pathname.startsWith("/studio/wardrobe") && action === "price") {
+    return { icon: Tag, tone: "wardrobe" };
+  }
+  if (destination.pathname.startsWith("/studio/wardrobe")) {
+    return { icon: Shirt, tone: "wardrobe" };
+  }
+  if (destination.pathname.startsWith("/studio/operations") && view === "holds") {
+    return { icon: Clock3, tone: "operations" };
+  }
+  if (destination.pathname.startsWith("/studio/operations") && action === "location") {
+    return { icon: MapPin, tone: "operations" };
+  }
+  if (destination.pathname.startsWith("/studio/operations") && view === "inventory") {
+    return { icon: Boxes, tone: "operations" };
+  }
+  if (destination.pathname.startsWith("/studio/operations")) return { icon: CircleGauge, tone: "operations" };
+  if (destination.pathname === "/studio") return { icon: House, tone: "neutral" };
+  return { icon: Compass, tone: "neutral" };
+}
+
+function metricVisual(href: string): AssistantVisual {
+  const destination = studioHref(href);
+  const view = destination.searchParams.get("view");
+  if (destination.pathname === "/studio/operations" && !view) return { icon: Bell, tone: "attention" };
+  if (destination.pathname === "/studio/operations" && view === "inventory") return { icon: Boxes, tone: "available" };
+  if (destination.pathname === "/studio/wardrobe" && view === "publishing") return { icon: Store, tone: "wardrobe" };
+  if (destination.pathname === "/studio/orders" || view === "orders") return { icon: PackageCheck, tone: "orders" };
+  return destinationVisual(href);
+}
+
+function resultVisual(
+  item: Extract<StudioAssistantBlock, { kind: "results" }>["items"][number],
+): AssistantVisual {
+  if (item.kind === "Service") return destinationVisual(item.href);
+  if (item.kind === "Alert") return { icon: CircleAlert, tone: "attention" };
+  if (item.kind === "Collection") return { icon: Layers3, tone: "wardrobe" };
+  if (item.kind === "Media") return { icon: Images, tone: "atelier" };
+  if (item.kind === "Model") return { icon: UserRound, tone: "atelier" };
+  if (item.kind === "Order") return { icon: PackageCheck, tone: "orders" };
+  return { icon: Shirt, tone: "wardrobe" };
+}
+
+function suggestionVisual(family: StudioAssistantSuggestionFamily): AssistantVisual {
+  if (family === "PRIORITIES") return { icon: Bell, tone: "attention" };
+  if (family === "CAPABILITIES") return { icon: LayoutGrid, tone: "neutral" };
+  if (family === "PRIVATE_DRAFTS") return { icon: FilePenLine, tone: "wardrobe" };
+  if (family === "ORDERS") return { icon: PackageCheck, tone: "orders" };
+  if (family === "BLOCKERS" || family === "IMPACT" || family === "SAFE_NEXT") {
+    return { icon: ShieldCheck, tone: "operations" };
+  }
+  if (family === "WORKFLOW") return { icon: Route, tone: "neutral" };
+  return { icon: Sparkles, tone: "neutral" };
+}
+
 function AssistantBlock({
   block,
   busy,
@@ -619,27 +731,49 @@ function AssistantBlock({
   busy: boolean;
   onPrompt(prompt: string): void;
 }) {
+  const titleId = useId();
   if (block.kind === "answer") {
     return <div className="studio-ask-answer"><strong>{block.title}</strong><p>{block.body}</p></div>;
   }
   if (block.kind === "metrics") {
     return (
-      <div aria-label="Studio summary" className="studio-ask-metrics">
-        {block.items.map((item) => <Link href={item.href} key={item.label}><strong>{item.value}</strong><small>{item.label}</small></Link>)}
-      </div>
+      <ul aria-label="Studio summary" className="studio-ask-metrics">
+        {block.items.map((item) => {
+          const visual = metricVisual(item.href);
+          const Icon = visual.icon;
+          return (
+            <li key={item.label}>
+              <Link href={item.href}>
+                <span className={`studio-ask-symbol is-${visual.tone}`}><Icon aria-hidden="true" size={17} /></span>
+                <span className="studio-ask-metric-copy"><strong>{item.value}</strong><small>{item.label}</small></span>
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
     );
   }
   if (block.kind === "results") {
     return (
       <div className="studio-ask-results">
-        <small>{block.title}</small>
-        <div>{block.items.map((item) => (
-          <Link href={item.href} key={item.id}>
-            <span><strong>{item.label}</strong><small>{item.kind} · {item.detail}</small></span>
-            {item.state ? <em>{item.state.replaceAll("_", " ")}</em> : null}
-            <ArrowRight aria-hidden="true" size={17} />
-          </Link>
-        ))}</div>
+        <small id={titleId}>{block.title}</small>
+        <ul aria-labelledby={titleId}>{block.items.map((item) => {
+          const visual = resultVisual(item);
+          const Icon = visual.icon;
+          return (
+            <li key={item.id}>
+              <Link className={`studio-ask-result is-${visual.tone}`} href={item.href}>
+                <span className={`studio-ask-symbol is-${visual.tone}`}><Icon aria-hidden="true" size={17} /></span>
+                <span className="studio-ask-result-copy">
+                  <strong>{item.label}</strong>
+                  <small>{item.kind === "Service" ? item.detail : `${item.kind} · ${item.detail}`}</small>
+                </span>
+                {item.state ? <em>{item.state.replaceAll("_", " ")}</em> : null}
+                <ArrowRight aria-hidden="true" size={16} />
+              </Link>
+            </li>
+          );
+        })}</ul>
       </div>
     );
   }
@@ -658,19 +792,23 @@ function AssistantBlock({
     );
   }
   if (block.kind === "handoff") {
+    const visual = destinationVisual(block.action.href);
+    const Icon = visual.icon;
     return (
       <div className="studio-ask-handoff">
-        <small>{riskLabel(block.risk)}</small>
-        <strong>{block.title}</strong>
+        <div className="studio-ask-handoff-heading">
+          <span className={`studio-ask-symbol is-${visual.tone}`}><Icon aria-hidden="true" size={18} /></span>
+          <span><small>{riskLabel(block.risk)}</small><strong>{block.title}</strong></span>
+        </div>
         <p>{block.body}</p>
-        <span>{block.consequence}</span>
+        <span className={block.risk === "R0" ? "sr-only" : undefined}>{block.consequence}</span>
         <Link className="button button-primary" href={block.action.href}>{block.action.label}<ArrowRight aria-hidden="true" size={15} /></Link>
       </div>
     );
   }
   return (
     <div className="studio-ask-recovery">
-      <CircleAlert aria-hidden="true" size={19} />
+      <span className="studio-ask-symbol is-attention"><CircleAlert aria-hidden="true" size={18} /></span>
       <div><strong>{block.title}</strong><p>{block.body}</p></div>
       <div>{block.actions.map((action) => <Link href={action.href} key={`${action.href}:${action.label}`}>{action.label}</Link>)}</div>
     </div>
@@ -709,7 +847,7 @@ function AssistantWorkflowCard({
             <TaskContent className="studio-ask-task-content">
               {task.steps.map((step) => (
                 <TaskItem className="studio-ask-task-step" key={step.id}>
-                  <Check aria-hidden="true" size={14} />{step.label}
+                  <Circle aria-hidden="true" size={12} />{step.label}
                 </TaskItem>
               ))}
             </TaskContent>
@@ -731,28 +869,36 @@ function AssistantWorkflowCard({
 
       {workflow.suggestions.length ? (
         <Suggestions className="studio-ask-suggestions" aria-label="Suggested follow-up questions">
-          {workflow.suggestions.map((suggestion) => (
-            <Suggestion
-              className="studio-ask-suggestion"
-              disabled={busy}
-              key={suggestion.id}
-              onClick={onPrompt}
-              suggestion={suggestion.prompt}
-            >
-              {suggestion.label}
-            </Suggestion>
-          ))}
+          {workflow.suggestions.map((suggestion) => {
+            const visual = suggestionVisual(studioAssistantSuggestionFamily(suggestion.prompt));
+            const Icon = visual.icon;
+            return (
+              <Suggestion
+                className={`studio-ask-suggestion is-${visual.tone}`}
+                disabled={busy}
+                key={suggestion.id}
+                onClick={onPrompt}
+                suggestion={suggestion.prompt}
+              >
+                <Icon aria-hidden="true" size={15} />
+                <span>{suggestion.label}</span>
+              </Suggestion>
+            );
+          })}
         </Suggestions>
       ) : null}
 
       <small
         className={`studio-ask-provenance is-${workflow.response.provenance.status}`}
-        title={workflow.response.provenance.generatedAt ?? undefined}
+        title={[workflow.response.provenance.label, workflow.response.provenance.detail, workflow.response.provenance.generatedAt]
+          .filter(Boolean)
+          .join(" · ")}
       >
-        {workflow.response.provenance.label} · {workflow.response.provenance.detail}
+        {workflow.response.provenance.label}
         {provenanceTime(workflow.response.provenance.generatedAt)
           ? ` · ${provenanceTime(workflow.response.provenance.generatedAt)}`
           : ""}
+        <span className="sr-only"> · {workflow.response.provenance.detail}</span>
       </small>
     </div>
   );

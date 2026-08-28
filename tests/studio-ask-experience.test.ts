@@ -5,6 +5,7 @@ import {
   resolveStudioAssistant,
   resolveStudioAssistantWorkflow,
   studioAssistantFallbackText,
+  studioAssistantSuggestionFamily,
   type StudioAssistantBlock,
   type StudioAssistantContext,
   type StudioAssistantDocument,
@@ -199,19 +200,18 @@ test("capability guidance distinguishes navigation from unavailable mutations", 
   for (const response of responses) {
     assert.equal(response.intent, "UNDERSTAND");
     assert.equal(block(response, "answer")?.title, "Studio guide");
-    assert.equal(block(response, "results")?.title, "Try a service");
+    assert.equal(block(response, "results")?.title, "Services");
   }
   const answer = block(responses[0], "answer");
   const services = block(responses[0], "results")?.items ?? [];
   const media = services.find((item) => item.id === "capability:atelier");
   const orders = services.find((item) => item.id === "capability:orders");
 
-  assert.match(answer?.body ?? "", /guidance and navigation/i);
-  assert.match(answer?.body ?? "", /does not execute a mutation or prove/i);
+  assert.equal(answer?.body, "Find records, check current status, and open the workflow that owns each change.");
   assert.equal(media?.href, "/studio/media?scenario=lifecycle");
-  assert.match(media?.detail ?? "", /cannot start model generation/i);
+  assert.equal(media?.detail, "Review media");
   assert.equal(orders?.href, "/studio/orders?scenario=lifecycle");
-  assert.match(orders?.detail ?? "", /cannot reserve payment or stock/i);
+  assert.equal(orders?.detail, "Orders and returns");
 
   const targeted = resolveStudioAssistant("What can you help with for JUW-001?", context);
   assert.equal(block(targeted, "results")?.items[0]?.label, "Coral Drift Dress");
@@ -273,6 +273,18 @@ test("drop creation opens the shared preview and receipt flow", () => {
   assert.equal(response.risk, "R1");
   assert.equal(handoff?.action.href, "/studio/wardrobe?collection=choose&dropAction=create&scenario=lifecycle");
   assert.match(handoff?.consequence ?? "", /stays private/i);
+});
+
+test("suggestion icon families resolve from stable prompt actions rather than display copy", () => {
+  assert.equal(studioAssistantSuggestionFamily("What needs attention?"), "PRIORITIES");
+  assert.equal(studioAssistantSuggestionFamily("What can you help with?"), "CAPABILITIES");
+  assert.equal(studioAssistantSuggestionFamily("Show private Wardrobe drafts"), "PRIVATE_DRAFTS");
+  assert.equal(studioAssistantSuggestionFamily("Open orders requiring action"), "ORDERS");
+  assert.equal(studioAssistantSuggestionFamily("Check blockers for: Add a new dress"), "BLOCKERS");
+  assert.equal(studioAssistantSuggestionFamily("Check impact for: Refund ORD-001"), "IMPACT");
+  assert.equal(studioAssistantSuggestionFamily("Explain the workflow for: Publish JUW-001"), "WORKFLOW");
+  assert.equal(studioAssistantSuggestionFamily("Explain the safe next step for: Move JUW-001"), "SAFE_NEXT");
+  assert.equal(studioAssistantSuggestionFamily("A future safe prompt"), "GENERAL");
 });
 
 test("preview drop routes preserve the active scenario instead of assuming lifecycle", () => {
@@ -1150,6 +1162,20 @@ test("the Ask surface keeps prompts, fallbacks and private tasks consistent", ()
   assert.doesNotMatch(fallbackSurface, /studioAssistantFallbackText|<MessageResponse/);
   assert.match(fallbackSurface, /Scenario guidance · current simulator state/);
   assert.match(fallbackSurface, /scenario: boolean/);
+  assert.match(surface, /function metricVisual\(href: string\)/);
+  assert.match(surface, /metricVisual\(item\.href\)/);
+  assert.match(surface, /suggestionVisual\(studioAssistantSuggestionFamily\(suggestion\.prompt\)\)/);
+  assert.doesNotMatch(surface, /metricVisual\(item\.label\)|suggestionVisual\(suggestion\.label/);
+  assert.match(surface, /destination\.pathname\.startsWith\("\/studio\/orders"\)[\s\S]*?icon: PackageCheck/);
+  assert.match(surface, /destination\.pathname\.startsWith\("\/studio\/media"\)[\s\S]*?icon: Images/);
+  assert.match(surface, /destination\.pathname\.startsWith\("\/studio\/wardrobe"\)[\s\S]*?icon: Shirt/);
+  assert.match(surface, /destination\.pathname\.startsWith\("\/studio\/operations"\)[\s\S]*?icon: CircleGauge/);
+  assert.match(surface, /destination\.pathname\.startsWith\("\/studio\/stocktake"\)[\s\S]*?destination\.pathname\.startsWith\("\/studio\/scan"\)[\s\S]*?icon: CircleGauge/);
+  assert.match(surface, /<ul aria-label="Studio summary" className="studio-ask-metrics">/);
+  assert.match(surface, /<ul aria-labelledby=\{titleId\}>/);
+  assert.match(styles, /\.studio-ask-results li:not\(:last-child\) a::after \{[\s\S]*?left: 45px;/);
+  assert.match(styles, /@media \(prefers-reduced-motion: reduce\) \{[\s\S]*?\.studio-ask-result,[\s\S]*?transition: none !important;/);
+  assert.match(styles, /@media \(forced-colors: active\) \{[\s\S]*?\.studio-ask-metrics a,[\s\S]*?\.studio-ask-symbol[\s\S]*?border: 1px solid CanvasText/);
   assert.doesNotMatch(styles, /\.studio-ai-send:disabled svg/);
   assert.match(styles, /\.studio-ai-send\[data-busy="true"\] svg/);
   assert.doesNotMatch(decisionSheet, /useEffect/);

@@ -153,6 +153,29 @@ export interface StudioAssistantPromptSuggestion {
   prompt: string;
 }
 
+export type StudioAssistantSuggestionFamily =
+  | "BLOCKERS"
+  | "CAPABILITIES"
+  | "GENERAL"
+  | "IMPACT"
+  | "ORDERS"
+  | "PRIORITIES"
+  | "PRIVATE_DRAFTS"
+  | "SAFE_NEXT"
+  | "WORKFLOW";
+
+export function studioAssistantSuggestionFamily(prompt: string): StudioAssistantSuggestionFamily {
+  if (prompt === "What needs attention?") return "PRIORITIES";
+  if (prompt === "Show private Wardrobe drafts") return "PRIVATE_DRAFTS";
+  if (prompt === "Open orders requiring action") return "ORDERS";
+  if (prompt === "What can you help with?") return "CAPABILITIES";
+  if (prompt.startsWith("Check blockers for: ")) return "BLOCKERS";
+  if (prompt.startsWith("Check impact for: ")) return "IMPACT";
+  if (prompt.startsWith("Explain the workflow for: ")) return "WORKFLOW";
+  if (prompt.startsWith("Explain the safe next step for: ")) return "SAFE_NEXT";
+  return "GENERAL";
+}
+
 export interface StudioAssistantTaskStep {
   id: string;
   label: string;
@@ -623,19 +646,19 @@ function unknownPieceResponse(
 function capabilityResponse(context: StudioAssistantContext) {
   return response(context, "UNDERSTAND", "R0", [
     {
-      body: "Ask provides connected guidance and navigation. It does not execute a mutation or prove that an owning workflow is ready.",
+      body: "Find records, check current status, and open the workflow that owns each change.",
       kind: "answer",
       title: "Studio guide",
     },
     {
       items: [
-        { detail: "Pieces, drafts, prices, drops", href: "/studio/wardrobe", id: "capability:wardrobe", kind: "Service", label: "Wardrobe" },
-        { detail: "Review media · Ask cannot start model generation", href: "/studio/media", id: "capability:atelier", kind: "Service", label: "Atelier" },
-        { detail: "Review existing orders · Ask cannot reserve payment or stock", href: "/studio/orders", id: "capability:orders", kind: "Service", label: "Orders" },
-        { detail: "Attention, stock, holds, recovery", href: "/studio/operations", id: "capability:operations", kind: "Service", label: "Operations" },
+        { detail: "Pieces, drafts, prices and drops", href: "/studio/wardrobe", id: "capability:wardrobe", kind: "Service", label: "Wardrobe" },
+        { detail: "Review media", href: "/studio/media", id: "capability:atelier", kind: "Service", label: "Atelier" },
+        { detail: "Orders and returns", href: "/studio/orders", id: "capability:orders", kind: "Service", label: "Orders" },
+        { detail: "Attention, stock, holds and recovery", href: "/studio/operations", id: "capability:operations", kind: "Service", label: "Operations" },
       ],
       kind: "results",
-      title: "Try a service",
+      title: "Services",
     },
   ]);
 }
