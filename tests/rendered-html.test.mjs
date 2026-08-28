@@ -47,8 +47,8 @@ test("server-renders the public shop foundation", async () => {
   const copy = visibleCopy(html);
   assert.match(html, /justurban wears/);
   assert.match(visibleBody, /Drop 02/);
-  assert.match(visibleBody, /31 pieces\. No restocks\./);
-  assert.match(copy, /30 more one-off pieces/);
+  assert.match(visibleBody, /34 pieces\. No restocks\./);
+  assert.match(copy, /33 more one-off pieces/);
   assert.match(visibleBody, /violet-beaded-ruffle-romper/);
   assert.match(html, /Search the wardrobe/);
   assert.match(html, /Live availability is temporarily unavailable/);
@@ -59,7 +59,7 @@ test("server-renders the public shop foundation", async () => {
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/i);
 });
 
-test("publishes the Violet romper hero and the exact thirty-one-piece Drop 02", async () => {
+test("publishes the Violet romper hero and the exact thirty-four-piece Drop 02", async () => {
   const response = await render("/shop");
   assert.equal(response.status, 200);
 
@@ -106,6 +106,9 @@ test("publishes the Violet romper hero and the exact thirty-one-piece Drop 02", 
     ["Red Lace-Cup Long-Sleeve Satin-Look Mini Dress", "red-lace-cup-long-sleeve-satin-look-mini-dress"],
     ["Orange Halter Tie-Front Gathered Wrap Mini Dress", "orange-halter-tie-front-gathered-wrap-mini-dress"],
     ["Cobalt Long-Sleeve Crossover Cutout Mini Dress", "cobalt-long-sleeve-crossover-cutout-mini-dress"],
+    ["Mauve Architectural Cutout Open-Back Mini Dress", "mauve-architectural-cutout-open-back-mini-dress"],
+    ["Near-Black Open-Back Structured-Shoulder Midi Dress", "near-black-open-back-structured-shoulder-midi-dress"],
+    ["Lime One-Shoulder Rosette Ruched Mini Dress", "lime-one-shoulder-rosette-ruched-mini-dress"],
   ];
 
   for (const [name, slug] of releasedProducts) {
@@ -114,8 +117,8 @@ test("publishes the Violet romper hero and the exact thirty-one-piece Drop 02", 
   }
 
   // The lead product is rendered once as the editorial hero; the remaining
-  // thirty products retain the standard catalogue-card contract.
-  assert.equal((visibleBody.match(/class="shop-product-card"/g) ?? []).length, 30);
+  // thirty-three products retain the standard catalogue-card contract.
+  assert.equal((visibleBody.match(/class="shop-product-card"/g) ?? []).length, 33);
   assert.doesNotMatch(visibleBody, /shop-release-index|shop-wardrobe-preview|shop-editorial-rail|shop-values/);
   assert.doesNotMatch(visibleBody, /GARMENT STUDY|(?:DYN-0(?:8[1-9]|9[0-2])|JUW-0(?:0[1-9]|1[0-2]))|Six dresses from Lulu’s wardrobe|Warm colour\. Clean movement/);
   assert.doesNotMatch(visibleBody, /Coral Drift Dress|Indigo Workshirt|Ivory Tie Skirt/);

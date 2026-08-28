@@ -326,8 +326,8 @@ test("scenario projection is explicit and uses the sanitized collection compatib
     source: "SCENARIO",
   });
   assert.equal(projection.summary.attention.value, 1);
-  assert.equal(projection.summary.available.value, 34);
-  assert.equal(projection.summary.live.value, 33);
+  assert.equal(projection.summary.available.value, 37);
+  assert.equal(projection.summary.live.value, 36);
   assert.ok(projection.searchDocuments.some((document) => document.kind === "ORDER" && document.route.includes("order=scenario-order-reserved")));
   assert.equal(projection.searchDocuments.some((document) => document.kind === "MODEL"), false);
   assert.ok(projection.searchDocuments.every((document) => document.route.includes("scenario=lifecycle")));
@@ -405,7 +405,7 @@ test("collection compatibility map exposes only exact Drop 01 and Drop 02 scopes
   );
   assert.deepEqual(
     projection.collectionScopes.map((scope) => scope.counts.published),
-    [18, 31],
+    [18, 34],
   );
   assert.deepEqual(
     projection.collectionScopes.map((scope) => scope.counts.private),

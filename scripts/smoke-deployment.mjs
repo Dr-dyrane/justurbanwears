@@ -373,6 +373,36 @@ await htmlCheck("Garment 031 product passport", "/shop/products/cobalt-long-slee
   ["customer-facing AI copy leaked", hasNoCustomerAiCopy],
   ["Product JSON-LD missing", (body) => body.includes("application/ld+json") && body.includes('"@type":"Product"')],
 ]);
+await htmlCheck("Garment 032 product passport", "/shop/products/mauve-architectural-cutout-open-back-mini-dress", [
+  ["product name missing", (body) => body.includes("Mauve Architectural Cutout Open-Back Mini Dress")],
+  ["seven-view dossier incomplete", (body) => [
+    "01-garment-front.webp", "02-garment-back.webp", "03-mannequin-front.webp",
+    "04-model-front.webp", "05-model-rear-three-quarter.webp",
+    "06-fabric-detail.webp", "07-model-left-profile.webp",
+  ].every((file) => body.includes(file))],
+  ["customer-facing AI copy leaked", hasNoCustomerAiCopy],
+  ["Product JSON-LD missing", (body) => body.includes("application/ld+json") && body.includes('"@type":"Product"')],
+]);
+await htmlCheck("Garment 033 product passport", "/shop/products/near-black-open-back-structured-shoulder-midi-dress", [
+  ["product name missing", (body) => body.includes("Near-Black Open-Back Structured-Shoulder Midi Dress")],
+  ["seven-view dossier incomplete", (body) => [
+    "01-garment-front.webp", "02-garment-back.webp", "03-mannequin-front.webp",
+    "04-model-front.webp", "05-model-rear-three-quarter.webp",
+    "06-fabric-detail.webp", "07-model-left-profile.webp",
+  ].every((file) => body.includes(file))],
+  ["customer-facing AI copy leaked", hasNoCustomerAiCopy],
+  ["Product JSON-LD missing", (body) => body.includes("application/ld+json") && body.includes('"@type":"Product"')],
+]);
+await htmlCheck("Garment 034 product passport", "/shop/products/lime-one-shoulder-rosette-ruched-mini-dress", [
+  ["product name missing", (body) => body.includes("Lime One-Shoulder Rosette Ruched Mini Dress")],
+  ["seven-view dossier incomplete", (body) => [
+    "01-garment-front.webp", "02-garment-back.webp", "03-mannequin-front.webp",
+    "04-model-front.webp", "05-model-rear-three-quarter.webp",
+    "06-fabric-detail.webp", "07-model-left-profile.webp",
+  ].every((file) => body.includes(file))],
+  ["customer-facing AI copy leaked", hasNoCustomerAiCopy],
+  ["Product JSON-LD missing", (body) => body.includes("application/ld+json") && body.includes('"@type":"Product"')],
+]);
 await htmlCheck("Garment 017 partial product passport", "/shop/products/gunmetal-sparkle-open-back-long-sleeve-mini-dress", [
   ["product name missing", (body) => body.includes("Gunmetal Sparkle Open-Back Long-Sleeve Mini Dress")],
   ["approved four-view dossier incomplete", (body) => [

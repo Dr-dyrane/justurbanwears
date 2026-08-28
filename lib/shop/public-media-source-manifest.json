@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "catalogueRevision": "2026-08-27-catalogue-41",
-  "catalogueChecksum": "e5195329e5af0e370fdcb760c279e4f7a26b24094182904125af15d7383a7526",
-  "cataloguePresentationChecksum": "604ef89ad9d822cf4d6af89cf2cc71b1c3ee0d46ffefb1ad47241ec637271e1c",
+  "catalogueRevision": "2026-08-28-catalogue-42",
+  "catalogueChecksum": "a17908b43fca7e2e5f6eed155c1ef7e28b8fd5cc5d61f1094b3994b39dc304b7",
+  "cataloguePresentationChecksum": "02151a0889b01eae565e7444e86b856328df029771de414a72b7f3eace1a1f98",
   "assets": [
     {
       "sourcePath": "/shop/model/lulu-v2-approved.png",
@@ -1823,6 +1823,69 @@
       "height": 1402
     },
     {
+      "sourcePath": "/shop/products/lime-one-shoulder-rosette-ruched-mini-dress/01-garment-front.webp",
+      "pathname": "shop/catalogue/2b8369a8f9ac85cc6b89017942674e1bbd4e88b7f8bd0e43e4f29b9ae405e433/products/lime-one-shoulder-rosette-ruched-mini-dress/01-garment-front.webp",
+      "sha256": "2b8369a8f9ac85cc6b89017942674e1bbd4e88b7f8bd0e43e4f29b9ae405e433",
+      "size": 107354,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/lime-one-shoulder-rosette-ruched-mini-dress/02-garment-back.webp",
+      "pathname": "shop/catalogue/2bf9c42c8ce396e75fc1f7a459d890457d8ed0cb0566e94196e525e09744e58a/products/lime-one-shoulder-rosette-ruched-mini-dress/02-garment-back.webp",
+      "sha256": "2bf9c42c8ce396e75fc1f7a459d890457d8ed0cb0566e94196e525e09744e58a",
+      "size": 109628,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/lime-one-shoulder-rosette-ruched-mini-dress/03-mannequin-front.webp",
+      "pathname": "shop/catalogue/bec3d56bde93e3b168701af365b20cfe933d606dd43228bf34889063e5cec8ca/products/lime-one-shoulder-rosette-ruched-mini-dress/03-mannequin-front.webp",
+      "sha256": "bec3d56bde93e3b168701af365b20cfe933d606dd43228bf34889063e5cec8ca",
+      "size": 72578,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/lime-one-shoulder-rosette-ruched-mini-dress/04-model-front.webp",
+      "pathname": "shop/catalogue/84a3f655d202f5238584998180c07f87ae2f010eccce23594cf9d9821395691f/products/lime-one-shoulder-rosette-ruched-mini-dress/04-model-front.webp",
+      "sha256": "84a3f655d202f5238584998180c07f87ae2f010eccce23594cf9d9821395691f",
+      "size": 194684,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/lime-one-shoulder-rosette-ruched-mini-dress/05-model-rear-three-quarter.webp",
+      "pathname": "shop/catalogue/82945315ec69611d4ffdc90dcb2c544505e24fcf009f56999759b7467ebbab2f/products/lime-one-shoulder-rosette-ruched-mini-dress/05-model-rear-three-quarter.webp",
+      "sha256": "82945315ec69611d4ffdc90dcb2c544505e24fcf009f56999759b7467ebbab2f",
+      "size": 180484,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/lime-one-shoulder-rosette-ruched-mini-dress/06-fabric-detail.webp",
+      "pathname": "shop/catalogue/73ba7447bda384939d0fda32eaa6eeb9ad93c0693d22e052fc1aac8b92a18e84/products/lime-one-shoulder-rosette-ruched-mini-dress/06-fabric-detail.webp",
+      "sha256": "73ba7447bda384939d0fda32eaa6eeb9ad93c0693d22e052fc1aac8b92a18e84",
+      "size": 123028,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/lime-one-shoulder-rosette-ruched-mini-dress/07-model-left-profile.webp",
+      "pathname": "shop/catalogue/a21e6e09bd05da66a55b3be85eb541c6abf4cf148a80fe02a326f54ffb4a9de8/products/lime-one-shoulder-rosette-ruched-mini-dress/07-model-left-profile.webp",
+      "sha256": "a21e6e09bd05da66a55b3be85eb541c6abf4cf148a80fe02a326f54ffb4a9de8",
+      "size": 167222,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
       "sourcePath": "/shop/products/magenta-plunge-ruched-mini-dress/01-garment-front.webp",
       "pathname": "shop/catalogue/5283d3dbfdbc154b5208c821e2830e02fffd518810c33f0416a488b33a304b56/products/magenta-plunge-ruched-mini-dress/01-garment-front.webp",
       "sha256": "5283d3dbfdbc154b5208c821e2830e02fffd518810c33f0416a488b33a304b56",
@@ -1949,6 +2012,69 @@
       "height": 1400
     },
     {
+      "sourcePath": "/shop/products/mauve-architectural-cutout-open-back-mini-dress/01-garment-front.webp",
+      "pathname": "shop/catalogue/2a0abc43688ff01ffb0367340ce1f8f5e73b9ef43b11eb86692da90dc169b733/products/mauve-architectural-cutout-open-back-mini-dress/01-garment-front.webp",
+      "sha256": "2a0abc43688ff01ffb0367340ce1f8f5e73b9ef43b11eb86692da90dc169b733",
+      "size": 84740,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/mauve-architectural-cutout-open-back-mini-dress/02-garment-back.webp",
+      "pathname": "shop/catalogue/cd44cd802173f473984f2d590cece39bc5042035cb941f53dc98976a1bcc6516/products/mauve-architectural-cutout-open-back-mini-dress/02-garment-back.webp",
+      "sha256": "cd44cd802173f473984f2d590cece39bc5042035cb941f53dc98976a1bcc6516",
+      "size": 76600,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/mauve-architectural-cutout-open-back-mini-dress/03-mannequin-front.webp",
+      "pathname": "shop/catalogue/e18b4787532a3f56b8777572d65f9ee02c89d24fe2d6fa849e27dfbf4e40772f/products/mauve-architectural-cutout-open-back-mini-dress/03-mannequin-front.webp",
+      "sha256": "e18b4787532a3f56b8777572d65f9ee02c89d24fe2d6fa849e27dfbf4e40772f",
+      "size": 49278,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/mauve-architectural-cutout-open-back-mini-dress/04-model-front.webp",
+      "pathname": "shop/catalogue/a2ae8c17027f16b7cf4a3216c28cfffa78622a9cd96c744a48f5cefd9313ee05/products/mauve-architectural-cutout-open-back-mini-dress/04-model-front.webp",
+      "sha256": "a2ae8c17027f16b7cf4a3216c28cfffa78622a9cd96c744a48f5cefd9313ee05",
+      "size": 252226,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/mauve-architectural-cutout-open-back-mini-dress/05-model-rear-three-quarter.webp",
+      "pathname": "shop/catalogue/a1990eadcb151a1838fe85eccf46ddeddc1cfda99f6b16c7afd2b674b94c0a14/products/mauve-architectural-cutout-open-back-mini-dress/05-model-rear-three-quarter.webp",
+      "sha256": "a1990eadcb151a1838fe85eccf46ddeddc1cfda99f6b16c7afd2b674b94c0a14",
+      "size": 276866,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/mauve-architectural-cutout-open-back-mini-dress/06-fabric-detail.webp",
+      "pathname": "shop/catalogue/858cd66e0cfcc7f90b452fed63a385fefca24bd11148e4c491572eecdf8b6d33/products/mauve-architectural-cutout-open-back-mini-dress/06-fabric-detail.webp",
+      "sha256": "858cd66e0cfcc7f90b452fed63a385fefca24bd11148e4c491572eecdf8b6d33",
+      "size": 161096,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/mauve-architectural-cutout-open-back-mini-dress/07-model-left-profile.webp",
+      "pathname": "shop/catalogue/5bb1b86f2df589115cb2bcbb2e4119ee0a8202c31e43ca445818355bf8f56f35/products/mauve-architectural-cutout-open-back-mini-dress/07-model-left-profile.webp",
+      "sha256": "5bb1b86f2df589115cb2bcbb2e4119ee0a8202c31e43ca445818355bf8f56f35",
+      "size": 250932,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
       "sourcePath": "/shop/products/moss-square-knit/01-garment-front.webp",
       "pathname": "shop/catalogue/c8c768400850bb2551ee2cb020b909cf199093c7b70f306dd158886a7516685e/products/moss-square-knit/01-garment-front.webp",
       "sha256": "c8c768400850bb2551ee2cb020b909cf199093c7b70f306dd158886a7516685e",
@@ -2055,6 +2181,69 @@
       "contentType": "image/webp",
       "width": 1122,
       "height": 1402
+    },
+    {
+      "sourcePath": "/shop/products/near-black-open-back-structured-shoulder-midi-dress/01-garment-front.webp",
+      "pathname": "shop/catalogue/80a8036e56b96ac22a9aaa9cf8281a80f0d582ceb3f34dd287d2879f617dd81d/products/near-black-open-back-structured-shoulder-midi-dress/01-garment-front.webp",
+      "sha256": "80a8036e56b96ac22a9aaa9cf8281a80f0d582ceb3f34dd287d2879f617dd81d",
+      "size": 54564,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/near-black-open-back-structured-shoulder-midi-dress/02-garment-back.webp",
+      "pathname": "shop/catalogue/dfa607ad93b2c37e193a472588760d76fb07298496e5e03a2994e42658daf8d6/products/near-black-open-back-structured-shoulder-midi-dress/02-garment-back.webp",
+      "sha256": "dfa607ad93b2c37e193a472588760d76fb07298496e5e03a2994e42658daf8d6",
+      "size": 44612,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/near-black-open-back-structured-shoulder-midi-dress/03-mannequin-front.webp",
+      "pathname": "shop/catalogue/ef1d9ca24a8fdd4d210fceff40e2798647e0428ea9a8f6f34f86bdd04103f078/products/near-black-open-back-structured-shoulder-midi-dress/03-mannequin-front.webp",
+      "sha256": "ef1d9ca24a8fdd4d210fceff40e2798647e0428ea9a8f6f34f86bdd04103f078",
+      "size": 47306,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/near-black-open-back-structured-shoulder-midi-dress/04-model-front.webp",
+      "pathname": "shop/catalogue/f3a585c2f9c8bab1b35b84fe28ea3f4efb1c06b05c1703a8e71f146dc15b8659/products/near-black-open-back-structured-shoulder-midi-dress/04-model-front.webp",
+      "sha256": "f3a585c2f9c8bab1b35b84fe28ea3f4efb1c06b05c1703a8e71f146dc15b8659",
+      "size": 258818,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/near-black-open-back-structured-shoulder-midi-dress/05-model-rear-three-quarter.webp",
+      "pathname": "shop/catalogue/3d4e3adfec44dfcae957932e9896de9795972b42b9189b16425facf28aae1eaf/products/near-black-open-back-structured-shoulder-midi-dress/05-model-rear-three-quarter.webp",
+      "sha256": "3d4e3adfec44dfcae957932e9896de9795972b42b9189b16425facf28aae1eaf",
+      "size": 208272,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/near-black-open-back-structured-shoulder-midi-dress/06-fabric-detail.webp",
+      "pathname": "shop/catalogue/fc2fafc9582ca7956e0d9041c3f05672b8bf9f9b367e29222f265f4289de5312/products/near-black-open-back-structured-shoulder-midi-dress/06-fabric-detail.webp",
+      "sha256": "fc2fafc9582ca7956e0d9041c3f05672b8bf9f9b367e29222f265f4289de5312",
+      "size": 67824,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
+    },
+    {
+      "sourcePath": "/shop/products/near-black-open-back-structured-shoulder-midi-dress/07-model-left-profile.webp",
+      "pathname": "shop/catalogue/19e2dfad3f6898da8ca60ea2340d11d26c162ec0d15c0419ed851902285f0c17/products/near-black-open-back-structured-shoulder-midi-dress/07-model-left-profile.webp",
+      "sha256": "19e2dfad3f6898da8ca60ea2340d11d26c162ec0d15c0419ed851902285f0c17",
+      "size": 218390,
+      "contentType": "image/webp",
+      "width": 1120,
+      "height": 1400
     },
     {
       "sourcePath": "/shop/products/neon-chartreuse-asymmetric-ruched-knot-maxi-dress/01-garment-front.webp",
