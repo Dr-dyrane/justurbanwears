@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "workflowRevision": "2026-08-28.232",
-  "updatedAt": "2026-08-28T16:28:10Z",
+  "workflowRevision": "2026-08-28.233",
+  "updatedAt": "2026-08-28T16:39:55Z",
   "model": "LULU_V4",
   "activeGarment": "034",
   "activeView": null,
-  "status": "G031_RELEASED_LIVE_VERIFIED_G032_G033_G034_USER_CONFIRMED_FOR_SINGLE_CATALOGUE_42_PUBLICATION",
+  "status": "G031_G032_G033_G034_RELEASED_LIVE_VERIFIED",
   "identityReview": {
     "candidateId": "lulu.face.v4.front.candidate.v1",
     "acceptedAssetId": "lulu.face.v4.front.lock.v1",
@@ -2160,6 +2160,59 @@
       "nextPermittedOperation":"CATALOGUE_42_RELEASE_INTEGRATION"
     }
   },
+  "catalogue42Release": {
+    "revision": "2026-08-28-catalogue-42",
+    "catalogueChecksum": "a17908b43fca7e2e5f6eed155c1ef7e28b8fd5cc5d61f1094b3994b39dc304b7",
+    "presentationChecksum": "02151a0889b01eae565e7444e86b856328df029771de414a72b7f3eace1a1f98",
+    "products": [
+      {
+        "garmentId": "032",
+        "sku": "JUW-056",
+        "slug": "mauve-architectural-cutout-open-back-mini-dress"
+      },
+      {
+        "garmentId": "033",
+        "sku": "JUW-057",
+        "slug": "near-black-open-back-structured-shoulder-midi-dress"
+      },
+      {
+        "garmentId": "034",
+        "sku": "JUW-058",
+        "slug": "lime-one-shoulder-rosette-ruched-mini-dress"
+      }
+    ],
+    "sourceCommit": "dfeeb86b642b2a9fc99ec5848d85369bf51597ec",
+    "gitState": "PUSHED_MAIN",
+    "publicMedia": {
+      "newAssets": 21,
+      "dimensions": "1120x1400",
+      "format": "WEBP_OPAQUE",
+      "activeBlobAssets": 338,
+      "legacyBlobAssets": 11
+    },
+    "database": {
+      "projectId": "calm-glade-28091571",
+      "branchId": "br-mute-paper-awfdn96n",
+      "migrationsApplied": 21,
+      "migrationsPending": 0,
+      "catalogueRowsVerified": 52,
+      "status": "APPLIED_AND_EXACT_CHECKSUM_VERIFIED"
+    },
+    "deployment": {
+      "id": "dpl_BkGLyiperHDQSQwwdnadnzNqHSpi",
+      "url": "https://justurbanwears-elcazhtcq-drdyranes-projects.vercel.app",
+      "canonicalAlias": "https://www.justurbanwears.com",
+      "status": "READY"
+    },
+    "productionVerification": {
+      "catalogueSmoke": "35_OF_35_PASS",
+      "experienceSmoke": "29_OF_29_PASS",
+      "productPages": "3_OF_3_HTTP_200_EXACT_TITLE_PRICE_AVAILABLE_ADD_TO_BAG",
+      "availability": "3_OF_3_HTTP_200_CONFIRMED"
+    },
+    "verifiedAt": "2026-08-28T16:39:55Z",
+    "status": "LIVE_VERIFIED"
+  },
   "qualityAudit": {
     "auditId": "G001_G024_WORKFLOW_AND_SEMBLANCE_2026_08_26",
     "status": "COMPLETE_DOCUMENTED",
@@ -2202,7 +2255,7 @@
   "nextOperation": {
     "garmentId": null,
     "view": null,
-    "status": "CATALOGUE_42_RELEASE_INTEGRATION_IN_PROGRESS_G032_G033_G034"
+    "status": "IDLE_AFTER_CATALOGUE_42_LIVE_VERIFIED"
   },
-  "requiredNext": "Publish the exact user-confirmed G032, G033 and G034 locked sets together as catalogue-42. G034/07 R001-R004 remain private audit evidence and are not parents; the user-supplied exact G034/07 selection dd31bc3e...8cf7 is the approved publication asset. Do not regenerate any approved view."
+  "requiredNext": "Catalogue-42 is live verified for the exact approved G032, G033 and G034 lock sets. Keep those locks immutable, do not regenerate an approved view, and wait for the user's next garment direction."
 }
