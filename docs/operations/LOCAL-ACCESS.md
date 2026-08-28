@@ -106,7 +106,7 @@ call `juw_cleanup_local_access` before continuing or leaving the shell.
    umask 077
    npx vercel env pull .env.local --environment=development --yes
    chmod 600 .env.local
-   npm run env:check:runtime
+   npm run env:check:studio
    ```
 
    When Vercel Secure Backend Access is enabled, this pull also writes a newly

@@ -2,14 +2,15 @@ import { readFile } from "node:fs/promises";
 import process from "node:process";
 
 const mode = process.argv[2] ?? "--template";
-const allowedModes = new Set(["--template", "--runtime", "--release"]);
+const allowedModes = new Set(["--template", "--runtime", "--studio-runtime", "--release"]);
 if (!allowedModes.has(mode)) {
-  console.error("Usage: node scripts/validate-release-env.mjs [--template|--runtime|--release]");
+  console.error("Usage: node scripts/validate-release-env.mjs [--template|--runtime|--studio-runtime|--release]");
   process.exit(2);
 }
 
 const templateKeys = [
   "NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN", "DATABASE_URL", "DATABASE_URL_UNPOOLED",
+  "NEON_AUTH_BASE_URL", "NEON_AUTH_COOKIE_SECRET",
   "SHOP_DB_TARGET", "SHOP_DB_EXPECTED_HOST", "SHOP_DB_EXPECTED_DATABASE",
   "SHOP_DB_PRODUCTION_CONFIRM", "SHOP_DB_EXPECTED_MANIFEST_CHECKSUM", "SHOP_DB_GIT_SHA",
   "PUBLIC_BLOB_READ_WRITE_TOKEN", "PRIVATE_BLOB_READ_WRITE_TOKEN", "SHOP_RETURN_WINDOW_DAYS",
@@ -39,7 +40,8 @@ function fail(messages) {
 }
 
 function isPlaceholder(value) {
-  return /(?:replace[-_ ]?me|your[_-]|example|changeme|xxxxx)/i.test(value);
+  return value.trim().toUpperCase() === "[SENSITIVE]"
+    || /(?:replace[-_ ]?me|your[_-]|example|changeme|xxxxx)/i.test(value);
 }
 
 function requiredEnvironment(keys) {
@@ -52,11 +54,26 @@ function requiredEnvironment(keys) {
   return errors;
 }
 
-function validateStudioEnvironment() {
+function validateStudioEnvironment({ required = false } = {}) {
   const errors = [];
   const authMode = process.env.STUDIO_AI_ENGINE_AUTH_MODE?.trim() ?? "";
+  if (required) {
+    errors.push(...requiredEnvironment([
+      "STUDIO_AI_ENGINE_AUTH_MODE",
+      "STUDIO_OPERATOR_EMAILS",
+      "STUDIO_AI_TEXT_MODEL",
+      "STUDIO_AI_IMAGE_MODEL",
+      "STUDIO_AI_IMAGE_COST_CAP_USD",
+      "NEON_AUTH_BASE_URL",
+      "NEON_AUTH_COOKIE_SECRET",
+    ]));
+  }
   if (!authMode) return errors;
   if (authMode !== "openai-sites" && authMode !== "neon-auth") errors.push("STUDIO_AI_ENGINE_AUTH_MODE must be openai-sites or neon-auth");
+  if (required && authMode !== "neon-auth") errors.push("STUDIO_AI_ENGINE_AUTH_MODE must be neon-auth for local Studio runtime");
+  if (authMode === "neon-auth") {
+    errors.push(...requiredEnvironment(["NEON_AUTH_BASE_URL", "NEON_AUTH_COOKIE_SECRET"]));
+  }
   const emails = (process.env.STUDIO_OPERATOR_EMAILS ?? "").split(",").map((email) => email.trim()).filter(Boolean);
   if (!emails.length) errors.push("STUDIO_OPERATOR_EMAILS is required when Studio auth is enabled");
   if (emails.some((email) => !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))) errors.push("STUDIO_OPERATOR_EMAILS contains an invalid email address");
@@ -83,10 +100,15 @@ if (mode === "--template") {
 }
 
 const runtimeErrors = requiredEnvironment(["DATABASE_URL", "PUBLIC_BLOB_READ_WRITE_TOKEN", "PRIVATE_BLOB_READ_WRITE_TOKEN", "NEXT_PUBLIC_MAPBOX_ACCESS_TOKEN"]);
-runtimeErrors.push(...validateStudioEnvironment());
+runtimeErrors.push(...validateStudioEnvironment({ required: mode === "--studio-runtime" }));
 if (mode === "--release") {
   runtimeErrors.push(...requiredEnvironment(["DATABASE_URL_UNPOOLED", "SHOP_DB_TARGET", "SHOP_DB_EXPECTED_HOST", "SHOP_DB_EXPECTED_DATABASE", "SHOP_DB_EXPECTED_MANIFEST_CHECKSUM"]));
   if (process.env.SHOP_DB_TARGET?.trim().toLowerCase() === "production" && !process.env.SHOP_DB_PRODUCTION_CONFIRM?.trim()) runtimeErrors.push("SHOP_DB_PRODUCTION_CONFIRM is required for a production release");
 }
 if (runtimeErrors.length) fail([...new Set(runtimeErrors)]);
-console.log(`✓ ${mode === "--release" ? "release" : "runtime"} environment contract is complete`);
+const environmentLabel = mode === "--release"
+  ? "release"
+  : mode === "--studio-runtime"
+    ? "Studio runtime"
+    : "runtime";
+console.log(`✓ ${environmentLabel} environment contract is complete`);
