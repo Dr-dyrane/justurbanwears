@@ -27,6 +27,9 @@ export type StudioAuthorityPiece = {
   sizeLabel: string;
   imageSrc: string | null;
   availability: "PRIVATE" | "AVAILABLE" | "RESERVED" | "SOLD" | "ARCHIVED";
+  authorityUpdatedAt: string;
+  authorityRevision: string;
+  locationVersion: number;
   expectedLocationKey: string;
   expectedLocationLabel: string;
   expectedCustody: "STUDIO" | "COURIER" | "CUSTOMER" | "UNKNOWN";
@@ -95,13 +98,30 @@ export type StudioAuthoritySnapshot = {
   generatedAt: string;
 };
 
-type ApiFailure = { error?: { message?: string; recovery?: string } };
+type ApiFailure = { error?: { code?: string; message?: string; recovery?: string } };
+
+export class StudioAuthorityClientError extends Error {
+  constructor(
+    readonly status: number,
+    readonly code: string | null,
+    message: string,
+    readonly recovery: string | null,
+  ) {
+    super([message, recovery].filter(Boolean).join(" ") || "Studio could not complete that action.");
+    this.name = "StudioAuthorityClientError";
+  }
+}
 
 async function body<T>(response: Response): Promise<T> {
   const value = await response.json().catch(() => ({})) as T | ApiFailure;
   if (response.ok) return value as T;
   const failure = value as ApiFailure;
-  throw new Error([failure.error?.message, failure.error?.recovery].filter(Boolean).join(" ") || "Studio could not complete that action.");
+  throw new StudioAuthorityClientError(
+    response.status,
+    failure.error?.code ?? null,
+    failure.error?.message ?? "Studio could not complete that action.",
+    failure.error?.recovery ?? null,
+  );
 }
 
 export async function readStudioAuthority(signal?: AbortSignal): Promise<StudioAuthoritySnapshot> {
@@ -145,6 +165,8 @@ export function dismissStudioNotification(id: string) {
 
 export function recordStudioLocation(input: {
   command: "CONFIRM" | "MOVE";
+  expectedAuthorityRevision: string;
+  expectedVersion: number;
   pieceKey: string;
   locationKey: "WARDROBE_RAIL" | "PACKING_SHELF" | "RETURN_INSPECTION";
   note?: string;

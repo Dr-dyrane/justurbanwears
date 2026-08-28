@@ -1,16 +1,23 @@
 import { get } from "@vercel/blob";
-import { sql } from "drizzle-orm";
+import { sql, type SQL } from "drizzle-orm";
+import { PgDialect } from "drizzle-orm/pg-core";
 import { z } from "zod";
 import { getStudioDb } from "../../db/shop-postgres";
 import { getShopBlobToken, putShopBlob } from "./vercel-blob";
-import { getShopOrderService } from "../shop/server-order/runtime";
+import { getShopOrderStore } from "../shop/server-order/runtime";
+import { mapOperatorOrderRows, operatorOrdersReadQuery } from "../shop/server-order/postgres-store";
 import {
   studioOrderHasDueReturnWork,
   studioOrderHasDueWork,
 } from "../shop/order-presentation";
-import type { ShopOperatorActor, ShopServerOrder } from "../shop/server-order/types";
+import type { ShopServerOrder } from "../shop/server-order/types";
 import { createOrReuseStockModel, getOwnedModelProfile, listOwnedModelProfiles } from "./studio-intake-repository";
-import { getPhysicalPiece, listPhysicalPieces } from "./studio-stocktake-repository";
+import {
+  getPhysicalPiece,
+  mapPhysicalPieceRows,
+  physicalPiecesReadQuery,
+  type PhysicalPiece,
+} from "./studio-stocktake-repository";
 import type { StudioOperator } from "./studio-operator";
 import { verifyStudioImage } from "../studio/engine/assets";
 import { StudioEngineError } from "../studio/engine/errors";
@@ -25,6 +32,8 @@ import type {
 } from "../studio/services/studio-authority-client";
 
 type DatabaseRow = Record<string, unknown>;
+
+const studioReadDialect = new PgDialect();
 
 /**
  * Shared-schema contract for the authority consolidation. The integration
@@ -60,6 +69,7 @@ export const STUDIO_AUTHORITY_REQUIRED_SQL = [
     id uuid primary key default gen_random_uuid(),
     operator_subject text not null,
     idempotency_key varchar(160) not null,
+    request_fingerprint varchar(64),
     piece_key varchar(96) not null,
     command varchar(24) not null,
     from_location_key varchar(40) not null,
@@ -69,12 +79,32 @@ export const STUDIO_AUTHORITY_REQUIRED_SQL = [
     custody varchar(24) not null,
     availability varchar(24) not null,
     order_reference varchar(40),
+    expected_version integer,
+    resulting_version integer,
     reason text,
     created_at timestamptz not null default now(),
-    constraint studio_piece_custody_command_known check (command in ('MOVE')),
+    constraint studio_piece_custody_command_known check (command in ('MOVE', 'CONFIRM')),
     constraint studio_piece_custody_command_custody_known check (custody in ('STUDIO')),
     constraint studio_piece_custody_command_availability_known check (availability in ('PRIVATE', 'AVAILABLE', 'RESERVED', 'SOLD', 'ARCHIVED')),
     constraint studio_piece_custody_command_location_known check (to_location_key in ('WARDROBE_RAIL', 'PACKING_SHELF', 'RETURN_INSPECTION')),
+    constraint studio_piece_custody_command_fingerprint check (request_fingerprint is null or request_fingerprint ~ '^[0-9a-f]{64}$'),
+    constraint studio_piece_custody_command_expected_version_nonnegative check (expected_version is null or expected_version >= 0),
+    constraint studio_piece_custody_command_resulting_version_nonnegative check (resulting_version is null or resulting_version >= 0),
+    constraint studio_piece_custody_command_receipt_pair check (
+      (request_fingerprint is null and expected_version is null and resulting_version is null)
+      or (request_fingerprint is not null and expected_version is not null and resulting_version is not null)
+    ),
+    constraint studio_piece_custody_command_version_step check (
+      (expected_version is null and resulting_version is null)
+      or (
+        expected_version is not null
+        and resulting_version is not null
+        and (
+          (command = 'MOVE' and resulting_version = expected_version + 1)
+          or (command = 'CONFIRM' and resulting_version = expected_version)
+        )
+      )
+    ),
     constraint studio_piece_custody_command_operator_idempotency_unique unique (operator_subject, idempotency_key)
   )`,
   `create index studio_piece_custody_commands_piece_idx on studio_piece_custody_commands(operator_subject, piece_key, created_at desc)`,
@@ -104,16 +134,18 @@ export const createHoldSchema = z.object({
   idempotencyKey: z.string().trim().min(8).max(160),
   reason: z.string().trim().min(2).max(240),
   sku: z.string().trim().min(3).max(40),
-}).superRefine((value, context) => {
-  const expiry = Date.parse(value.expiresAt);
-  if (!Number.isFinite(expiry) || expiry <= Date.now()) {
-    context.addIssue({ code: "custom", message: "Choose a future expiry.", path: ["expiresAt"] });
-  }
 });
+
+const exactAuthorityRevisionSchema = z.string().regex(
+  /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$/,
+  "Expected an exact Studio authority revision.",
+);
 
 export const locationCommandSchema = z.discriminatedUnion("command", [
   z.object({
     command: z.literal("CONFIRM"),
+    expectedAuthorityRevision: exactAuthorityRevisionSchema,
+    expectedVersion: z.number().int().nonnegative(),
     idempotencyKey: z.string().trim().min(8).max(160),
     locationKey: z.enum(["WARDROBE_RAIL", "PACKING_SHELF", "RETURN_INSPECTION"]),
     note: z.string().trim().max(240).optional(),
@@ -121,6 +153,8 @@ export const locationCommandSchema = z.discriminatedUnion("command", [
   }),
   z.object({
     command: z.literal("MOVE"),
+    expectedAuthorityRevision: exactAuthorityRevisionSchema,
+    expectedVersion: z.number().int().nonnegative(),
     idempotencyKey: z.string().trim().min(8).max(160),
     locationKey: z.enum(["WARDROBE_RAIL", "PACKING_SHELF", "RETURN_INSPECTION"]),
     note: z.string().trim().max(240).optional(),
@@ -165,38 +199,49 @@ function record(value: unknown): Record<string, unknown> {
     : {};
 }
 
-function operatorActor(operator: StudioOperator): ShopOperatorActor {
-  return {
-    kind: "OPERATOR",
-    subject: operator.subject,
-    email: operator.email,
-    displayName: operator.displayName,
-    role: operator.role,
-  };
-}
-
-type AuthorityTableState = {
+export type StudioAuthorityWriteReadiness = {
   custody: boolean;
   holds: boolean;
   receipts: boolean;
 };
 
-async function authorityTablesReady(): Promise<AuthorityTableState> {
+type StudioAuthorityReadiness = StudioAuthorityWriteReadiness & {
+  custodyReads: boolean;
+  holdReads: boolean;
+};
+
+async function authorityTablesReady(): Promise<StudioAuthorityReadiness> {
   const result = await (await getStudioDb()).execute<DatabaseRow>(sql`
     select
-      to_regclass('public.studio_manual_holds') is not null as holds,
+      to_regclass('public.studio_manual_holds') is not null as hold_reads,
       to_regclass('public.studio_notification_receipts') is not null as receipts,
       to_regclass('public.studio_piece_custody') is not null
-        and to_regclass('public.studio_piece_custody_commands') is not null as custody
+        and to_regclass('public.studio_piece_custody_commands') is not null as custody_reads,
+      to_regclass('public.studio_manual_holds') is not null
+        and to_regclass('public.studio_piece_custody') is not null
+        and to_regclass('public.studio_piece_custody_commands') is not null
+        and to_regproc('public.studio_create_manual_hold_v2') is not null
+        and to_regproc('public.studio_release_manual_hold_v2') is not null
+        and to_regproc('public.studio_expire_manual_holds_v2') is not null as holds,
+      to_regclass('public.studio_piece_custody') is not null
+        and to_regclass('public.studio_piece_custody_commands') is not null
+        and to_regproc('public.studio_record_piece_move_v2') is not null
+        and to_regproc('public.studio_record_piece_confirmation_v2') is not null as custody
   `);
   return {
     custody: result.rows[0]?.custody === true,
+    custodyReads: result.rows[0]?.custody_reads === true,
+    holdReads: result.rows[0]?.hold_reads === true,
     holds: result.rows[0]?.holds === true,
     receipts: result.rows[0]?.receipts === true,
   };
 }
 
-function requireHoldTables(ready: AuthorityTableState) {
+export async function getStudioAuthorityWriteReadiness(): Promise<StudioAuthorityWriteReadiness> {
+  return authorityTablesReady();
+}
+
+function requireHoldTables(ready: StudioAuthorityWriteReadiness) {
   if (!ready.holds) {
     throw new StudioEngineError(
       "ENGINE_DISABLED",
@@ -207,7 +252,7 @@ function requireHoldTables(ready: AuthorityTableState) {
   }
 }
 
-function requireNotificationTables(ready: AuthorityTableState) {
+function requireNotificationTables(ready: StudioAuthorityWriteReadiness) {
   if (!ready.receipts) {
     throw new StudioEngineError(
       "ENGINE_DISABLED",
@@ -218,7 +263,7 @@ function requireNotificationTables(ready: AuthorityTableState) {
   }
 }
 
-function requireCustodyTables(ready: AuthorityTableState) {
+function requireCustodyTables(ready: StudioAuthorityWriteReadiness) {
   if (!ready.custody) {
     throw new StudioEngineError(
       "ENGINE_DISABLED",
@@ -254,14 +299,6 @@ type PieceCustodyProjection = {
   updatedAt: string;
 };
 
-function studioLocationLabel(locationKey: PieceCustodyProjection["locationKey"]): string {
-  switch (locationKey) {
-    case "PACKING_SHELF": return "Packing shelf";
-    case "RETURN_INSPECTION": return "Return inspection";
-    default: return "Wardrobe rail";
-  }
-}
-
 function mapPieceCustody(row: DatabaseRow): PieceCustodyProjection {
   return {
     pieceKey: String(row.piece_key),
@@ -275,147 +312,176 @@ function mapPieceCustody(row: DatabaseRow): PieceCustodyProjection {
   };
 }
 
-async function listPieceCustody(operator: StudioOperator): Promise<PieceCustodyProjection[]> {
-  if (!(await authorityTablesReady()).custody) return [];
-  const result = await (await getStudioDb()).execute<DatabaseRow>(sql`
+function manualHoldsReadQuery(operatorSubject: string): SQL {
+  return sql`
+    select * from studio_manual_holds
+    where operator_subject = ${operatorSubject}
+    order by created_at desc
+    limit 100
+  `;
+}
+
+function pieceCustodyReadQuery(operatorSubject: string): SQL {
+  return sql`
     select *
     from studio_piece_custody
-    where operator_subject = ${operator.subject}
-  `);
-  return result.rows.map(mapPieceCustody);
+    where operator_subject = ${operatorSubject}
+  `;
+}
+
+async function repeatableReadRows(queries: readonly SQL[]): Promise<DatabaseRow[][]> {
+  const database = await getStudioDb();
+  const prepared = queries.map((query) => {
+    const compiled = studioReadDialect.sqlToQuery(query);
+    return database.$client.query(compiled.sql, compiled.params);
+  });
+  const results = await database.$client.transaction(prepared, {
+    isolationLevel: "RepeatableRead",
+    readOnly: true,
+  });
+  return results.map((rows) => rows as DatabaseRow[]);
+}
+
+type CoreAuthorityRead = {
+  holds: StudioAuthorityHold[];
+  physicalPieces: PhysicalPiece[];
+  custody: PieceCustodyProjection[];
+  orders: ShopServerOrder[];
+};
+
+async function readCoreAuthority(
+  operator: StudioOperator,
+  includeOrders = false,
+): Promise<CoreAuthorityRead> {
+  const ready = await authorityTablesReady();
+  const emptyRows = sql`select null as unavailable where false`;
+  const [holdRows, physicalRows, custodyRows, orderRows] = await repeatableReadRows([
+    ready.holdReads ? manualHoldsReadQuery(operator.subject) : emptyRows,
+    physicalPiecesReadQuery(operator.subject),
+    ready.custodyReads ? pieceCustodyReadQuery(operator.subject) : emptyRows,
+    includeOrders ? operatorOrdersReadQuery(100) : emptyRows,
+  ]);
+  return {
+    holds: holdRows.map(mapHold),
+    physicalPieces: mapPhysicalPieceRows(physicalRows),
+    custody: custodyRows.map(mapPieceCustody),
+    orders: mapOperatorOrderRows(orderRows),
+  };
 }
 
 async function expireManualHolds(operatorSubject: string): Promise<void> {
-  if (!(await authorityTablesReady()).holds) return;
-  await (await getStudioDb()).execute(sql`
-    with expired as (
-      update studio_manual_holds
-      set status = 'EXPIRED', released_at = now()
-      where operator_subject = ${operatorSubject}
-        and status = 'ACTIVE'
-        and expires_at <= now()
-      returning sku
-    )
-    update shop_inventory as inventory
-    set availability = 'AVAILABLE', reserved = 0, updated_at = now()
-    where inventory.sku in (select sku from expired)
-      and inventory.availability = 'RESERVED'
-      and not exists (
-        select 1
-        from shop_order_items as items
-        inner join shop_orders as orders on orders.id = items.order_id
-        where items.sku = inventory.sku and orders.lifecycle_status = 'ACTIVE'
-      )
-  `);
+  const ready = await authorityTablesReady();
+  if (!ready.holdReads || !ready.holds) return;
+  try {
+    await (await getStudioDb()).execute(sql`
+      select studio_expire_manual_holds_v2(${operatorSubject}) as expired_count
+    `);
+  } catch (error) {
+    throw studioAuthorityPersistenceError(error);
+  }
 }
 
 export async function listManualHolds(operator: StudioOperator): Promise<StudioAuthorityHold[]> {
-  if (!(await authorityTablesReady()).holds) return [];
   await expireManualHolds(operator.subject);
-  const result = await (await getStudioDb()).execute<DatabaseRow>(sql`
-    select * from studio_manual_holds
-    where operator_subject = ${operator.subject}
-    order by created_at desc
-    limit 100
-  `);
+  return readManualHolds(operator);
+}
+
+async function readManualHolds(operator: StudioOperator): Promise<StudioAuthorityHold[]> {
+  if (!(await authorityTablesReady()).holdReads) return [];
+  const result = await (await getStudioDb()).execute<DatabaseRow>(manualHoldsReadQuery(operator.subject));
   return result.rows.map(mapHold);
 }
+
+export type ManualHoldCreateMutation = {
+  hold: StudioAuthorityHold;
+  outcome: "CREATED" | "REPLAYED";
+};
 
 export async function createManualHold(
   operator: StudioOperator,
   input: z.infer<typeof createHoldSchema>,
-): Promise<StudioAuthorityHold> {
+): Promise<ManualHoldCreateMutation> {
   requireHoldTables(await authorityTablesReady());
-  await expireManualHolds(operator.subject);
-  const result = await (await getStudioDb()).execute<DatabaseRow>(sql`
-    with existing as (
-      select * from studio_manual_holds
-      where operator_subject = ${operator.subject}
-        and idempotency_key = ${input.idempotencyKey}
-    ), locked_inventory as (
-      select * from shop_inventory
-      where sku = ${input.sku}
-      for update
-    ), inserted as (
-      insert into studio_manual_holds (
-        operator_subject, idempotency_key, sku, customer_name,
-        contact, reason, status, expires_at, created_at
+  try {
+    const result = await (await getStudioDb()).execute<DatabaseRow>(sql`
+      select *
+      from studio_create_manual_hold_v2(
+        ${operator.subject},
+        ${input.idempotencyKey},
+        ${input.sku},
+        ${input.customerName},
+        ${input.contact},
+        ${input.reason},
+        ${input.expiresAt}::timestamptz
       )
-      select
-        ${operator.subject}, ${input.idempotencyKey}, ${input.sku}, ${input.customerName},
-        ${input.contact}, ${input.reason}, 'ACTIVE', ${input.expiresAt}::timestamptz, now()
-      from locked_inventory
-      where availability = 'AVAILABLE' and reserved = 0 and on_hand = 1
-        and not exists (select 1 from existing)
-      on conflict do nothing
-      returning *
-    ), reserved as (
-      update shop_inventory as inventory
-      set availability = 'RESERVED', reserved = 1, updated_at = now()
-      where inventory.sku = ${input.sku}
-        and exists (select 1 from inserted)
-      returning inventory.sku
-    )
-    select * from inserted where exists (select 1 from reserved)
-    union all
-    select * from existing
-    limit 1
-  `);
-  const row = result.rows[0];
-  if (!row) {
-    throw new StudioEngineError(
-      "INVALID_TRANSITION",
-      409,
-      "That piece is no longer available.",
-      "Open the piece to see its current order or hold.",
-    );
+    `);
+    const row = result.rows[0];
+    if (!row) {
+      throw new StudioEngineError("ENGINE_UNAVAILABLE", 503, "The hold was not saved.", "Try again.");
+    }
+    const hold = mapHold(row);
+    const outcome = String(row.outcome);
+    if (
+      (outcome !== "CREATED" && outcome !== "REPLAYED")
+      || (outcome === "CREATED" && hold.status !== "ACTIVE")
+    ) {
+      throw new StudioEngineError(
+        "ENGINE_UNAVAILABLE",
+        503,
+        "The hold receipt was invalid.",
+        "Reload Operations before trying again.",
+      );
+    }
+    return {
+      hold,
+      outcome,
+    };
+  } catch (error) {
+    throw studioAuthorityPersistenceError(error);
   }
-  if (
-    String(row.sku) !== input.sku
-    || String(row.customer_name) !== input.customerName
-    || String(row.contact) !== input.contact
-    || String(row.reason) !== input.reason
-    || iso(row.expires_at) !== new Date(input.expiresAt).toISOString()
-  ) {
-    throw new StudioEngineError("INVALID_REQUEST", 409, "That hold request was already used.", "Start a new hold.");
-  }
-  return mapHold(row);
 }
 
-export async function releaseManualHold(operator: StudioOperator, holdId: string): Promise<StudioAuthorityHold> {
+export type ManualHoldReleaseMutation = {
+  hold: StudioAuthorityHold;
+  outcome: "RELEASED" | "ALREADY_RELEASED" | "ALREADY_EXPIRED";
+};
+
+export async function releaseManualHold(
+  operator: StudioOperator,
+  holdId: string,
+): Promise<ManualHoldReleaseMutation> {
   requireHoldTables(await authorityTablesReady());
-  const result = await (await getStudioDb()).execute<DatabaseRow>(sql`
-    with locked as (
-      select * from studio_manual_holds
-      where id = ${holdId}::uuid and operator_subject = ${operator.subject}
-      for update
-    ), released as (
-      update studio_manual_holds as hold
-      set status = 'RELEASED', released_at = now()
-      from locked
-      where hold.id = locked.id and hold.status = 'ACTIVE'
-      returning hold.*
-    ), restored as (
-      update shop_inventory as inventory
-      set availability = 'AVAILABLE', reserved = 0, updated_at = now()
-      where inventory.sku = (select sku from released)
-        and inventory.availability = 'RESERVED'
-        and not exists (
-          select 1 from shop_order_items as items
-          inner join shop_orders as orders on orders.id = items.order_id
-          where items.sku = inventory.sku and orders.lifecycle_status = 'ACTIVE'
-        )
-      returning inventory.sku
-    )
-    select * from released
-    union all
-    select * from locked where status <> 'ACTIVE'
-    limit 1
-  `);
-  if (!result.rows[0]) {
-    throw new StudioEngineError("INTAKE_NOT_FOUND", 404, "That hold was not found.", "Reload Operations.");
+  try {
+    const result = await (await getStudioDb()).execute<DatabaseRow>(sql`
+      select *
+      from studio_release_manual_hold_v2(${operator.subject}, ${holdId}::uuid)
+    `);
+    const row = result.rows[0];
+    if (!row) {
+      throw new StudioEngineError("ENGINE_UNAVAILABLE", 503, "The hold was not released.", "Try again.");
+    }
+    const hold = mapHold(row);
+    const outcome = String(row.outcome);
+    const validOutcome = outcome === "RELEASED"
+      ? hold.status === "RELEASED"
+      : outcome === "ALREADY_RELEASED"
+        ? hold.status === "RELEASED"
+        : outcome === "ALREADY_EXPIRED" && hold.status === "EXPIRED";
+    if (!validOutcome) {
+      throw new StudioEngineError(
+        "ENGINE_UNAVAILABLE",
+        503,
+        "The hold release receipt was invalid.",
+        "Reload Operations before trying again.",
+      );
+    }
+    return {
+      hold,
+      outcome: outcome as ManualHoldReleaseMutation["outcome"],
+    };
+  } catch (error) {
+    throw studioAuthorityPersistenceError(error);
   }
-  return mapHold(result.rows[0]);
 }
 
 function mapModel(row: Awaited<ReturnType<typeof listOwnedModelProfiles>>[number]): StudioAuthorityModel {
@@ -595,21 +661,39 @@ export async function listStudioMediaAuthority(operator: StudioOperator): Promis
 }
 
 function pieceWithHold(
-  piece: Awaited<ReturnType<typeof listPhysicalPieces>>[number],
+  piece: PhysicalPiece,
   activeBySku: Map<string, StudioAuthorityHold>,
   custodyByPiece: Map<string, PieceCustodyProjection>,
 ): StudioAuthorityPiece {
+  const activeHold = piece.sku ? activeBySku.get(piece.sku) ?? null : null;
+  const authorityUpdatedAt = Date.parse(piece.authorityUpdatedAt);
   const projected = custodyByPiece.get(piece.pieceKey);
   const projectionApplies = Boolean(
     projected
     && piece.expectedCustody === "STUDIO"
     && projected.availability === piece.availability
-    && projected.orderReference === piece.orderReference,
+    && projected.orderReference === piece.orderReference
+    && Date.parse(projected.updatedAt) >= authorityUpdatedAt,
   );
-  const expectedLocationKey = projectionApplies ? projected!.locationKey : piece.expectedLocationKey;
-  const expectedLocationLabel = projectionApplies ? projected!.locationLabel : piece.expectedLocationLabel;
+  const holdOwnsReservedPiece = Boolean(
+    activeHold
+    && piece.availability === "RESERVED"
+    && piece.expectedCustody === "STUDIO",
+  );
+  const expectedLocationKey = holdOwnsReservedPiece
+    ? "WARDROBE_RAIL"
+    : projectionApplies ? projected!.locationKey : piece.expectedLocationKey;
+  const expectedLocationLabel = holdOwnsReservedPiece
+    ? "Wardrobe rail"
+    : projectionApplies ? projected!.locationLabel : piece.expectedLocationLabel;
   const expectedCustody = projectionApplies ? projected!.custody : piece.expectedCustody;
   const observation = piece.latestObservation;
+  const observationApplies = Boolean(
+    observation
+    && observation.orderReference === piece.orderReference
+    && Date.parse(observation.occurredAt) >= authorityUpdatedAt,
+  );
+  const applicableObservation = observationApplies ? observation : null;
   const projectionIsNewest = Boolean(
     projectionApplies
     && projected
@@ -617,11 +701,12 @@ function pieceWithHold(
   );
   const observedLocationKey = projectionIsNewest
     ? projected!.locationKey
-    : observation?.observedLocationKey ?? null;
+    : applicableObservation?.observedLocationKey ?? null;
   const observedLocationLabel = projectionIsNewest
     ? projected!.locationLabel
-    : observation?.observedLocationLabel ?? null;
-  const observedAt = projectionIsNewest ? projected!.updatedAt : observation?.occurredAt ?? null;
+    : applicableObservation?.observedLocationLabel ?? null;
+  const observedAt = projectionIsNewest ? projected!.updatedAt : applicableObservation?.occurredAt ?? null;
+  const authorityInconsistent = Boolean(activeHold && piece.availability !== "RESERVED");
   return {
     pieceKey: piece.pieceKey,
     wardrobeItemId: piece.wardrobeItemId,
@@ -633,6 +718,9 @@ function pieceWithHold(
     sizeLabel: piece.sizeLabel,
     imageSrc: piece.imageSrc,
     availability: piece.availability,
+    authorityUpdatedAt: piece.authorityUpdatedAt,
+    authorityRevision: piece.authorityRevision,
+    locationVersion: projected?.version ?? 0,
     expectedLocationKey,
     expectedLocationLabel,
     expectedCustody,
@@ -640,12 +728,84 @@ function pieceWithHold(
     observedLocationKey,
     observedLocationLabel,
     observedAt,
-    hasLocationMismatch: Boolean(!projectionIsNewest && observation && (
+    hasLocationMismatch: authorityInconsistent || Boolean(!projectionIsNewest && applicableObservation && (
       expectedCustody !== "STUDIO"
-      || observation.observedLocationKey !== expectedLocationKey
+      || applicableObservation.observedLocationKey !== expectedLocationKey
     )),
-    activeHold: piece.sku ? activeBySku.get(piece.sku) ?? null : null,
+    activeHold,
   };
+}
+
+function studioAuthorityPersistenceError(error: unknown): StudioEngineError {
+  if (error instanceof StudioEngineError) return error;
+  const message = error instanceof Error ? error.message : "";
+  if (message.includes("STUDIO_IDEMPOTENCY_MISMATCH")) {
+    return new StudioEngineError("INVALID_REQUEST", 409, "That request key was already used.", "Start a new action.");
+  }
+  if (message.includes("STUDIO_LOCATION_VERSION_CONFLICT")) {
+    return new StudioEngineError(
+      "VERSION_CONFLICT",
+      409,
+      "This piece location changed before the action was saved.",
+      "Reload Operations and review the current location.",
+    );
+  }
+  if (message.includes("STUDIO_CUSTODY_CONFLICT")) {
+    return new StudioEngineError(
+      "INVALID_TRANSITION",
+      409,
+      "This piece is not physically reconciled for that change.",
+      "Move it to the required Studio location and confirm it in hand.",
+    );
+  }
+  if (message.includes("STUDIO_PIECE_UNAVAILABLE")) {
+    return new StudioEngineError(
+      "INVALID_TRANSITION",
+      409,
+      "That piece is no longer available.",
+      "Open the piece to see its current order or hold.",
+    );
+  }
+  if (message.includes("STUDIO_NOT_FOUND")) {
+    return new StudioEngineError("INTAKE_NOT_FOUND", 404, "That hold was not found.", "Reload Operations.");
+  }
+  if (message.includes("STUDIO_INVALID_REQUEST")) {
+    return new StudioEngineError("INVALID_REQUEST", 400, "Studio rejected that action.", "Review the fields and try again.");
+  }
+  if (message.includes("STUDIO_INVALID_TRANSITION")) {
+    return new StudioEngineError("INVALID_TRANSITION", 409, "That location is already current.", "Confirm it in hand instead.");
+  }
+  return new StudioEngineError(
+    "ENGINE_UNAVAILABLE",
+    503,
+    "Studio could not save that authority change.",
+    "Try again after refreshing Operations.",
+  );
+}
+
+export function studioPieceIsOrderable(piece: StudioAuthorityPiece): boolean {
+  return piece.availability === "AVAILABLE"
+    && Boolean(piece.sku)
+    && piece.expectedCustody === "STUDIO"
+    && piece.expectedLocationKey === "WARDROBE_RAIL"
+    && Boolean(piece.observedAt)
+    && piece.observedLocationKey === "WARDROBE_RAIL"
+    && !piece.hasLocationMismatch
+    && !piece.activeHold;
+}
+
+export async function listStudioOrderablePieceSkus(operator: StudioOperator): Promise<Set<string>> {
+  // Lazy expiry mutates both holds and commerce inventory. Finish it before
+  // reading the projection so one response cannot mix post-expiry holds with
+  // pre-expiry inventory.
+  await expireManualHolds(operator.subject);
+  const { holds, physicalPieces, custody } = await readCoreAuthority(operator);
+  const activeBySku = new Map(holds.filter((hold) => hold.status === "ACTIVE").map((hold) => [hold.sku, hold]));
+  const custodyByPiece = new Map(custody.map((entry) => [entry.pieceKey, entry]));
+  return new Set(physicalPieces
+    .map((piece) => pieceWithHold(piece, activeBySku, custodyByPiece))
+    .filter(studioPieceIsOrderable)
+    .flatMap((piece) => piece.sku ? [piece.sku] : []));
 }
 
 function notificationForOrder(order: ShopServerOrder): StudioAuthorityNotification | null {
@@ -708,16 +868,22 @@ function deriveNotifications(input: {
   }
   const now = Date.now();
   for (const hold of input.holds.filter((candidate) => candidate.status === "ACTIVE")) {
-    if (Date.parse(hold.expiresAt) - now <= 24 * 60 * 60 * 1000) notifications.push({
-      id: `hold:${hold.id}:${hold.expiresAt}`,
-      kind: "HOLD",
-      tone: "attention",
-      title: `Hold expires soon · ${hold.sku}`,
-      detail: `${hold.customerName} · ${hold.contact}`,
-      href: `/studio/operations?view=holds&hold=${hold.id}`,
-      actionLabel: "Review hold",
-      createdAt: hold.createdAt,
-    });
+    const expiresIn = Date.parse(hold.expiresAt) - now;
+    if (expiresIn <= 24 * 60 * 60 * 1000) {
+      const expiryBlocked = expiresIn <= 0;
+      notifications.push({
+        id: `hold:${hold.id}:${hold.expiresAt}`,
+        kind: "HOLD",
+        tone: expiryBlocked ? "critical" : "attention",
+        title: expiryBlocked ? `Hold needs expiry review · ${hold.sku}` : `Hold expires soon · ${hold.sku}`,
+        detail: expiryBlocked
+          ? `${hold.customerName} · Studio kept this piece reserved because the safe expiry preflight did not complete.`
+          : `${hold.customerName} · ${hold.contact}`,
+        href: `/studio/operations?view=holds&hold=${hold.id}`,
+        actionLabel: expiryBlocked ? "Review blocker" : "Review hold",
+        createdAt: hold.createdAt,
+      });
+    }
   }
   for (const media of input.media.filter((item) => item.state === "COMPLETE" || item.state === "FAILED")) {
     notifications.push({
@@ -756,198 +922,164 @@ export async function dismissNotification(operator: StudioOperator, notification
   `);
 }
 
-async function currentPieceCustody(
-  operator: StudioOperator,
-  pieceKey: string,
-): Promise<PieceCustodyProjection | null> {
-  if (!(await authorityTablesReady()).custody) return null;
-  const result = await (await getStudioDb()).execute<DatabaseRow>(sql`
-    select *
-    from studio_piece_custody
-    where operator_subject = ${operator.subject}
-      and piece_key = ${pieceKey}
-    limit 1
-  `);
-  return result.rows[0] ? mapPieceCustody(result.rows[0]) : null;
-}
-
 export async function recordPieceLocation(
   operator: StudioOperator,
   input: z.infer<typeof locationCommandSchema>,
 ) {
-  const piece = await getPhysicalPiece(operator, input.pieceKey);
-  const projected = await currentPieceCustody(operator, piece.pieceKey);
-  const projectionApplies = Boolean(
-    projected
-    && piece.expectedCustody === "STUDIO"
-    && projected.availability === piece.availability
-    && projected.orderReference === piece.orderReference,
-  );
-  const expectedLocationKey = projectionApplies ? projected!.locationKey : piece.expectedLocationKey;
-  const expectedLocationLabel = projectionApplies ? projected!.locationLabel : piece.expectedLocationLabel;
-  const targetLabel = studioLocationLabel(input.locationKey);
+  const database = await getStudioDb();
+  requireCustodyTables(await authorityTablesReady());
+  const requestFingerprint = sha256(JSON.stringify({
+    command: input.command,
+    contract: "juw.studio.location-command.v1",
+    expectedAuthorityRevision: input.expectedAuthorityRevision,
+    expectedVersion: input.expectedVersion,
+    locationKey: input.locationKey,
+    note: input.note ?? null,
+    pieceKey: input.pieceKey,
+    source: "OPERATIONS",
+  }));
+  const replay = await database.execute<DatabaseRow>(sql`
+    select
+      receipt.*,
+      observation.id as observation_id,
+      observation.expected_location_label as observation_expected_location_label,
+      observation.observed_location_label as observation_observed_location_label,
+      observation.result as observation_result,
+      observation.order_reference as observation_order_reference
+    from studio_piece_custody_commands as receipt
+    left join studio_physical_observations as observation
+      on observation.operator_subject = receipt.operator_subject
+      and observation.idempotency_key = receipt.idempotency_key
+    where receipt.operator_subject = ${operator.subject}
+      and receipt.idempotency_key = ${input.idempotencyKey}
+    limit 1
+  `);
+  const replayRow = replay.rows[0];
+  if (replayRow) {
+    if (
+      String(replayRow.request_fingerprint) !== requestFingerprint
+      || String(replayRow.command) !== input.command
+    ) {
+      throw new StudioEngineError(
+        "INVALID_REQUEST",
+        409,
+        "That location request key was already used.",
+        "Start a new location action.",
+      );
+    }
+    if (input.command === "MOVE") {
+      return {
+        command: "MOVE" as const,
+        expectedLocationLabel: String(replayRow.to_location_label),
+        locationLabel: String(replayRow.to_location_label),
+        locationVersion: Number(replayRow.resulting_version),
+        mismatch: false,
+        orderReference: nullable(replayRow.order_reference),
+        previousLocationLabel: String(replayRow.from_location_label),
+      };
+    }
+    if (!replayRow.observation_id) {
+      throw new StudioEngineError(
+        "ENGINE_UNAVAILABLE",
+        503,
+        "The location check receipt is incomplete.",
+        "Reload Operations before trying again.",
+      );
+    }
+    return {
+      command: "CONFIRM" as const,
+      expectedLocationLabel: String(replayRow.observation_expected_location_label),
+      locationLabel: String(replayRow.observation_observed_location_label),
+      locationVersion: Number(replayRow.resulting_version),
+      mismatch: String(replayRow.observation_result) === "MISMATCH",
+      orderReference: nullable(replayRow.observation_order_reference),
+      previousLocationLabel: String(replayRow.observation_expected_location_label),
+    };
+  }
 
-  if (input.command === "CONFIRM") {
-    const resultValue = piece.expectedCustody === "STUDIO" && expectedLocationKey === input.locationKey
-      ? "MATCH"
-      : "MISMATCH";
-    const result = await (await getStudioDb()).execute<DatabaseRow>(sql`
-      with existing as (
-        select *
-        from studio_physical_observations
-        where operator_subject = ${operator.subject}
-          and idempotency_key = ${input.idempotencyKey}
-      ), inserted as (
-        insert into studio_physical_observations (
-          stocktake_id, operator_subject, idempotency_key, piece_key,
-          wardrobe_item_id, sku, command,
-          expected_location_key, expected_location_label, expected_custody,
-          observed_location_key, observed_location_label, observed_custody,
-          result, order_reference, note, occurred_at
-        )
-        select
-          null, ${operator.subject}, ${input.idempotencyKey}, ${piece.pieceKey},
-          ${piece.wardrobeItemId ?? null}::uuid, ${piece.sku}, 'CONFIRM_IN_HAND',
-          ${expectedLocationKey}, ${expectedLocationLabel}, ${piece.expectedCustody},
-          ${input.locationKey}, ${targetLabel}, 'STUDIO',
-          ${resultValue}, ${piece.orderReference}, ${input.note || null}, now()
-        where not exists (select 1 from existing)
-        on conflict (operator_subject, idempotency_key) do nothing
-        returning *
-      )
-      select * from inserted
-      union all
-      select * from existing
-      limit 1
-    `);
+  const piece = await getPhysicalPiece(operator, input.pieceKey);
+  try {
+    const result = input.command === "MOVE"
+      ? await database.execute<DatabaseRow>(sql`
+          select *
+          from studio_record_piece_move_v2(
+            ${operator.subject},
+            ${input.idempotencyKey},
+            ${requestFingerprint},
+            ${piece.pieceKey},
+            ${piece.wardrobeItemId ?? null}::uuid,
+            ${piece.sku},
+            ${piece.availability},
+            ${piece.orderReference},
+            ${input.expectedVersion},
+            ${input.expectedAuthorityRevision},
+            ${input.locationKey},
+            ${input.note || null}
+          )
+        `)
+      : await database.execute<DatabaseRow>(sql`
+          select *
+          from studio_record_piece_confirmation_v2(
+            ${operator.subject},
+            ${input.idempotencyKey},
+            ${requestFingerprint},
+            'OPERATIONS',
+            ${piece.pieceKey},
+            ${piece.wardrobeItemId ?? null}::uuid,
+            ${piece.sku},
+            ${input.expectedVersion},
+            ${input.expectedAuthorityRevision},
+            ${input.locationKey},
+            ${input.note || null},
+            null::uuid,
+            null::integer
+          )
+        `);
     const row = result.rows[0];
     if (!row) {
-      throw new StudioEngineError("ENGINE_UNAVAILABLE", 503, "The check could not be saved.", "Try again.");
+      throw new StudioEngineError(
+        "ENGINE_UNAVAILABLE",
+        503,
+        input.command === "MOVE" ? "The move was not saved." : "The location check was not saved.",
+        "Try again.",
+      );
     }
-    if (String(row.piece_key) !== piece.pieceKey || String(row.observed_location_key) !== input.locationKey) {
-      throw new StudioEngineError("INVALID_REQUEST", 409, "That check request was already used.", "Check the piece again.");
+    if (input.command === "MOVE") {
+      return {
+        command: "MOVE" as const,
+        expectedLocationLabel: String(row.to_location_label),
+        locationLabel: String(row.to_location_label),
+        locationVersion: Number(row.resulting_version),
+        mismatch: false,
+        orderReference: nullable(row.order_reference),
+        previousLocationLabel: String(row.from_location_label),
+      };
     }
     return {
       command: "CONFIRM" as const,
       expectedLocationLabel: String(row.expected_location_label),
       locationLabel: String(row.observed_location_label),
+      locationVersion: Number(row.resulting_version),
       mismatch: String(row.result) === "MISMATCH",
       orderReference: nullable(row.order_reference),
       previousLocationLabel: String(row.expected_location_label),
     };
+  } catch (error) {
+    throw studioAuthorityPersistenceError(error);
   }
-
-  requireCustodyTables(await authorityTablesReady());
-  if (piece.expectedCustody !== "STUDIO") {
-    throw new StudioEngineError(
-      "INVALID_TRANSITION",
-      409,
-      `This piece is ${piece.expectedLocationLabel.toLowerCase()}.`,
-      piece.orderReference ? "Open the connected order." : "Confirm the handoff before moving it in Studio.",
-    );
-  }
-  const result = await (await getStudioDb()).execute<DatabaseRow>(sql`
-    with existing_command as (
-      select *
-      from studio_piece_custody_commands
-      where operator_subject = ${operator.subject}
-        and idempotency_key = ${input.idempotencyKey}
-    ), inserted_command as (
-      insert into studio_piece_custody_commands (
-        operator_subject, idempotency_key, piece_key, command,
-        from_location_key, from_location_label, to_location_key, to_location_label,
-        custody, availability, order_reference, reason, created_at
-      )
-      select
-        ${operator.subject}, ${input.idempotencyKey}, ${piece.pieceKey}, 'MOVE',
-        ${expectedLocationKey}, ${expectedLocationLabel}, ${input.locationKey}, ${targetLabel},
-        'STUDIO', ${piece.availability}, ${piece.orderReference}, ${input.note || null}, now()
-      where ${expectedLocationKey} <> ${input.locationKey}
-        and not exists (select 1 from existing_command)
-      on conflict (operator_subject, idempotency_key) do nothing
-      returning *
-    ), applied as (
-      insert into studio_piece_custody (
-        operator_subject, piece_key, location_key, location_label, custody,
-        availability, order_reference, last_command_id, version, updated_at
-      )
-      select
-        operator_subject, piece_key, to_location_key, to_location_label, custody,
-        availability, order_reference, id, 1, created_at
-      from inserted_command
-      on conflict (operator_subject, piece_key) do update
-      set location_key = excluded.location_key,
-          location_label = excluded.location_label,
-          custody = excluded.custody,
-          availability = excluded.availability,
-          order_reference = excluded.order_reference,
-          last_command_id = excluded.last_command_id,
-          version = studio_piece_custody.version + 1,
-          updated_at = excluded.updated_at
-      returning *
-    ), observed as (
-      insert into studio_physical_observations (
-        stocktake_id, operator_subject, idempotency_key, piece_key,
-        wardrobe_item_id, sku, command,
-        expected_location_key, expected_location_label, expected_custody,
-        observed_location_key, observed_location_label, observed_custody,
-        result, order_reference, note, occurred_at
-      )
-      select
-        null, ${operator.subject}, command.idempotency_key, command.piece_key,
-        ${piece.wardrobeItemId ?? null}::uuid, ${piece.sku}, 'CONFIRM_IN_HAND',
-        command.to_location_key, command.to_location_label, 'STUDIO',
-        command.to_location_key, command.to_location_label, 'STUDIO',
-        'MATCH', command.order_reference, command.reason, command.created_at
-      from inserted_command as command
-      on conflict (operator_subject, idempotency_key) do nothing
-      returning id
-    ), selected_command as (
-      select * from inserted_command
-      union all
-      select * from existing_command
-      limit 1
-    )
-    select selected_command.*,
-      (select count(*) from applied) as applied_count,
-      (select count(*) from observed) as observed_count
-    from selected_command
-  `);
-  const row = result.rows[0];
-  if (!row) {
-    throw new StudioEngineError(
-      "INVALID_TRANSITION",
-      409,
-      `${piece.title} is already at ${targetLabel.toLowerCase()}.`,
-      "Confirm it in hand instead.",
-    );
-  }
-  if (
-    String(row.piece_key) !== piece.pieceKey
-    || String(row.command) !== "MOVE"
-    || String(row.to_location_key) !== input.locationKey
-  ) {
-    throw new StudioEngineError("INVALID_REQUEST", 409, "That move request was already used.", "Start a new move.");
-  }
-  return {
-    command: "MOVE" as const,
-    expectedLocationLabel: String(row.to_location_label),
-    locationLabel: String(row.to_location_label),
-    mismatch: false,
-    orderReference: nullable(row.order_reference),
-    previousLocationLabel: String(row.from_location_label),
-  };
 }
 
 export async function getStudioAuthority(operator: StudioOperator): Promise<StudioAuthoritySnapshot> {
-  const [holds, models, media, orders, physicalPieces, custody] = await Promise.all([
-    listManualHolds(operator),
+  // Both expiry paths mutate commerce inventory. Complete them before opening
+  // one repeatable-read snapshot for orders, holds, inventory and custody.
+  await getShopOrderStore().expireReservations(new Date(), 100);
+  await expireManualHolds(operator.subject);
+  const [core, models, media] = await Promise.all([
+    readCoreAuthority(operator, true),
     listStudioModelAuthority(operator),
     listStudioMediaAuthority(operator),
-    getShopOrderService().listOperatorOrders(operatorActor(operator)),
-    listPhysicalPieces(operator),
-    listPieceCustody(operator),
   ]);
+  const { holds, physicalPieces, custody, orders } = core;
   const activeBySku = new Map(holds.filter((hold) => hold.status === "ACTIVE").map((hold) => [hold.sku, hold]));
   const custodyByPiece = new Map(custody.map((entry) => [entry.pieceKey, entry]));
   const pieces = physicalPieces.map((piece) => pieceWithHold(piece, activeBySku, custodyByPiece));

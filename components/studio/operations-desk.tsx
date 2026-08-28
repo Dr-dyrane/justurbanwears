@@ -3,7 +3,7 @@
 /* Protected Studio and catalogue media use stable runtime URLs. */
 /* eslint-disable @next/next/no-img-element */
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import {
   Check,
   ChevronRight,
@@ -15,13 +15,19 @@ import {
   UserRound,
 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { formatNaira } from "../../lib/shop/catalog";
 import {
+  orderStateLabel,
   studioOrderHasDueReturnWork,
   studioOrderHasDueWork,
 } from "../../lib/shop/order-presentation";
 import type { StudioLifecycleState } from "../../lib/studio/domain/entities";
-import type { StudioAuthorityPiece } from "../../lib/studio/services/studio-authority-client";
+import {
+  StudioAuthorityClientError,
+  type StudioAuthorityPiece,
+} from "../../lib/studio/services/studio-authority-client";
 import { LifecycleMeta, STUDIO_LIFECYCLE_PRESENTATION } from "./atoms/lifecycle-meta";
+import { StudioDecisionSheet, type StudioDecisionResult } from "./atoms/studio-decision-sheet";
 import { StudioFeedback } from "./atoms/studio-feedback";
 import { StudioLoadingStage } from "./atoms/studio-loading-stage";
 import { StudioLink as Link } from "./atoms/studio-link";
@@ -35,6 +41,126 @@ const locations = [
   { key: "PACKING_SHELF", label: "Packing shelf" },
   { key: "RETURN_INSPECTION", label: "Return inspection" },
 ] as const;
+const EMPTY_PIECES: StudioAuthorityPiece[] = [];
+const HOLD_INTENT_STORAGE_KEY = "juw.studio.hold-intent.v1";
+const LOCATION_INTENT_STORAGE_KEY = "juw.studio.location-intent.v1";
+const MUTATION_INTENT_TTL_MS = 60 * 60 * 1000;
+const HOLD_IDEMPOTENCY_KEY_PATTERN = /^hold:[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const LOCATION_IDEMPOTENCY_KEY_PATTERN = /^location:[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const SHA256_FINGERPRINT_PATTERN = /^[0-9a-f]{64}$/;
+const AUTHORITY_TIMESTAMP_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$/;
+
+interface MutationIntent {
+  expiresAt: number;
+  fingerprint: string;
+  idempotencyKey: string;
+}
+
+interface LocationMutationIntent extends MutationIntent {
+  command: "CONFIRM" | "MOVE";
+  expectedAuthorityRevision: string;
+  expectedVersion: number;
+  locationKey: typeof locations[number]["key"];
+  pieceKey: string;
+}
+
+function readMutationIntent(
+  storageKey: string,
+  idempotencyKeyPattern: RegExp,
+  now = Date.now(),
+): MutationIntent | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const candidate = JSON.parse(window.sessionStorage.getItem(storageKey) ?? "null") as Record<string, unknown> | null;
+    const keys = candidate && !Array.isArray(candidate) ? Object.keys(candidate) : [];
+    const valid = candidate
+      && keys.length === 3
+      && keys.every((key) => ["expiresAt", "fingerprint", "idempotencyKey"].includes(key))
+      && typeof candidate.fingerprint === "string"
+      && SHA256_FINGERPRINT_PATTERN.test(candidate.fingerprint)
+      && typeof candidate.idempotencyKey === "string"
+      && idempotencyKeyPattern.test(candidate.idempotencyKey)
+      && Number.isSafeInteger(candidate.expiresAt)
+      && (candidate.expiresAt as number) > now
+      && (candidate.expiresAt as number) <= now + MUTATION_INTENT_TTL_MS;
+    if (valid) return candidate as unknown as MutationIntent;
+    window.sessionStorage.removeItem(storageKey);
+  } catch {
+    try {
+      window.sessionStorage.removeItem(storageKey);
+    } catch {
+      // A blocked storage API must not block an operator from reviewing the form.
+    }
+  }
+  return null;
+}
+
+function persistMutationIntent(storageKey: string, intent: MutationIntent) {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.setItem(storageKey, JSON.stringify(intent));
+  } catch {
+    // The mounted in-memory intent still protects an immediate retry.
+  }
+}
+
+function readLocationMutationIntent(now = Date.now()): LocationMutationIntent | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const candidate = JSON.parse(window.sessionStorage.getItem(LOCATION_INTENT_STORAGE_KEY) ?? "null") as Record<string, unknown> | null;
+    const keys = candidate && !Array.isArray(candidate) ? Object.keys(candidate) : [];
+    const valid = candidate
+      && keys.length === 8
+      && keys.every((key) => [
+        "command",
+        "expectedAuthorityRevision",
+        "expectedVersion",
+        "expiresAt",
+        "fingerprint",
+        "idempotencyKey",
+        "locationKey",
+        "pieceKey",
+      ].includes(key))
+      && (candidate.command === "CONFIRM" || candidate.command === "MOVE")
+      && typeof candidate.expectedAuthorityRevision === "string"
+      && AUTHORITY_TIMESTAMP_PATTERN.test(candidate.expectedAuthorityRevision)
+      && Number.isSafeInteger(candidate.expectedVersion)
+      && (candidate.expectedVersion as number) >= 0
+      && locations.some((location) => location.key === candidate.locationKey)
+      && typeof candidate.pieceKey === "string"
+      && candidate.pieceKey.length > 0
+      && typeof candidate.fingerprint === "string"
+      && SHA256_FINGERPRINT_PATTERN.test(candidate.fingerprint)
+      && typeof candidate.idempotencyKey === "string"
+      && LOCATION_IDEMPOTENCY_KEY_PATTERN.test(candidate.idempotencyKey)
+      && Number.isSafeInteger(candidate.expiresAt)
+      && (candidate.expiresAt as number) > now
+      && (candidate.expiresAt as number) <= now + MUTATION_INTENT_TTL_MS;
+    if (valid) return candidate as unknown as LocationMutationIntent;
+    window.sessionStorage.removeItem(LOCATION_INTENT_STORAGE_KEY);
+  } catch {
+    try {
+      window.sessionStorage.removeItem(LOCATION_INTENT_STORAGE_KEY);
+    } catch {
+      // A blocked storage API must not block an operator from reviewing the piece.
+    }
+  }
+  return null;
+}
+
+function clearMutationIntent(storageKey: string) {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.removeItem(storageKey);
+  } catch {
+    // A successful authoritative response remains sufficient when storage is blocked.
+  }
+}
+
+async function mutationFingerprint(value: string) {
+  const digest = await globalThis.crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
+  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
 
 function shortDate(value: string) {
   const date = new Date(value);
@@ -62,7 +188,7 @@ export function OperationsDesk() {
   const searchParams = useSearchParams();
   const { authority, scenario } = useStudio();
   const snapshot = authority.snapshot;
-  const pieces = snapshot?.pieces ?? [];
+  const pieces = snapshot?.pieces ?? EMPTY_PIECES;
   const holds = snapshot?.holds ?? [];
   const orders = snapshot?.orders ?? [];
   const activeHolds = holds.filter((hold) => hold.status === "ACTIVE");
@@ -86,6 +212,18 @@ export function OperationsDesk() {
   const [pending, setPending] = useState(false);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
+  const [requestedPieceError, setRequestedPieceError] = useState("");
+  const [requestedStateNotice, setRequestedStateNotice] = useState("");
+  const [pendingAction, setPendingAction] = useState<"location" | "release" | null>(null);
+  const [releaseOpen, setReleaseOpen] = useState(false);
+  const [releaseReturnFocus, setReleaseReturnFocus] = useState<HTMLElement | null>(null);
+  const [scenarioOrderOpen, setScenarioOrderOpen] = useState(false);
+  const [scenarioOrderReturnFocus, setScenarioOrderReturnFocus] = useState<HTMLButtonElement | null>(null);
+  const holdPendingRef = useRef(false);
+  const holdIntentRef = useRef<MutationIntent | null>(null);
+  const detailMutationPendingRef = useRef(false);
+  const locationIntentRef = useRef<LocationMutationIntent | null>(null);
+  const requestedPieceHandledRef = useRef("");
   const selected = pieces.find((piece) => piece.pieceKey === selectedKey) ?? null;
   const holdPiece = pieces.find((piece) => piece.pieceKey === holdPieceKey) ?? null;
   const nextMismatch = mismatches[0] ?? null;
@@ -102,6 +240,10 @@ export function OperationsDesk() {
     : null;
 
   useEffect(() => {
+    setScenarioOrderOpen(Boolean(scenarioOrder));
+  }, [scenarioOrder]);
+
+  useEffect(() => {
     const legacyView = searchParams.get("view");
     if (legacyView === "orders" && !scenario) {
       router.replace("/studio/orders");
@@ -110,17 +252,97 @@ export function OperationsDesk() {
     }
   }, [router, scenario, searchParams]);
 
+  useEffect(() => {
+    const requestedPiece = searchParams.get("piece")?.trim().toLocaleLowerCase("en-NG") ?? "";
+    if (!requestedPiece) {
+      requestedPieceHandledRef.current = "";
+      setRequestedPieceError("");
+      return;
+    }
+    const action = searchParams.get("action");
+    const requestedAction = action === "hold"
+      ? "hold"
+      : action === "release"
+        ? "release"
+        : action === "location"
+          ? "location"
+          : "review";
+    const requestKey = `${requestedAction}:${requestedPiece}`;
+    if (authority.status !== "ready" || requestedPieceHandledRef.current === requestKey) return;
+    requestedPieceHandledRef.current = requestKey;
+    if (!pieces.length) {
+      setRequestedPieceError("The exact piece from Ask Studio is not in the current Operations projection. Studio will not substitute a similar SKU.");
+      return;
+    }
+    const piece = pieces.find((candidate) => (
+      candidate.pieceKey.toLocaleLowerCase("en-NG") === requestedPiece
+      || candidate.wardrobeItemId?.toLocaleLowerCase("en-NG") === requestedPiece
+      || candidate.sku?.toLocaleLowerCase("en-NG") === requestedPiece
+    ));
+    if (!piece) {
+      setRequestedPieceError("The exact piece from Ask Studio is not in the current Operations projection. Studio will not substitute a similar SKU.");
+      return;
+    }
+    setRequestedPieceError("");
+    setRequestedStateNotice("");
+    setNotice("");
+    setError("");
+    if (
+      requestedAction === "hold"
+      && !scenario
+      && !piece.activeHold
+      && piece.availability === "AVAILABLE"
+      && piece.expectedCustody === "STUDIO"
+      && !piece.hasLocationMismatch
+      && piece.sku
+    ) {
+      setHoldPieceKey(piece.pieceKey);
+      setSelectedKey(null);
+      setCustomerName("");
+      setContact("");
+      setReason("");
+      setExpiresAt(nextDayValue());
+      setHoldOpen(true);
+      return;
+    }
+    setSelectedKey(piece.pieceKey);
+    if (requestedAction === "release" && !piece.activeHold) {
+      setRequestedStateNotice("This piece has no active hold to release. Current Operations truth has replaced the older request.");
+    }
+  }, [authority.status, pieces, scenario, searchParams]);
+
   function openPiece(piece: StudioAuthorityPiece, trigger: HTMLButtonElement) {
     setSelectedKey(piece.pieceKey);
     setReturnFocus(trigger);
     setNotice("");
     setError("");
+    setRequestedStateNotice("");
   }
 
   function closePiece() {
     setSelectedKey(null);
     setNotice("");
     setError("");
+    setRequestedStateNotice("");
+  }
+
+  function clearScenarioOrderRoute() {
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("order");
+    if (params.get("view") === "orders") params.delete("view");
+    const query = params.toString();
+    router.replace(`/studio/operations${query ? `?${query}` : ""}`, { scroll: false });
+  }
+
+  function closeScenarioOrder() {
+    setScenarioOrderOpen(false);
+    clearScenarioOrderRoute();
+  }
+
+  function openScenarioOrder(trigger: HTMLButtonElement) {
+    if (!scenarioOrder) return;
+    setScenarioOrderReturnFocus(trigger);
+    setScenarioOrderOpen(true);
   }
 
   function openHold() {
@@ -138,38 +360,122 @@ export function OperationsDesk() {
 
   async function saveHold(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!holdPiece?.sku) return;
+    if (!holdPiece?.sku || holdPendingRef.current) return;
+    holdPendingRef.current = true;
     setPending(true);
     setError("");
+    let submittedExpiresAt: string | null = null;
+    let submittedIntent: MutationIntent | null = null;
     try {
+      const normalizedExpiresAt = new Date(expiresAt).toISOString();
+      submittedExpiresAt = normalizedExpiresAt;
+      const fingerprint = await mutationFingerprint(JSON.stringify({
+        contact: contact.trim(),
+        customerName: customerName.trim(),
+        expiresAt: normalizedExpiresAt,
+        reason: reason.trim(),
+        sku: holdPiece.sku,
+      }));
+      let intent = holdIntentRef.current ?? readMutationIntent(HOLD_INTENT_STORAGE_KEY, HOLD_IDEMPOTENCY_KEY_PATTERN);
+      if (!intent || intent.fingerprint !== fingerprint) {
+        intent = {
+          expiresAt: Date.now() + MUTATION_INTENT_TTL_MS,
+          fingerprint,
+          idempotencyKey: `hold:${crypto.randomUUID()}`,
+        };
+      }
+      submittedIntent = intent;
+      holdIntentRef.current = intent;
+      persistMutationIntent(HOLD_INTENT_STORAGE_KEY, intent);
       const consequence = await authority.createHold({
         sku: holdPiece.sku,
         customerName,
         contact,
         reason,
-        expiresAt: new Date(expiresAt).toISOString(),
-        idempotencyKey: `hold:${crypto.randomUUID()}`,
+        expiresAt: normalizedExpiresAt,
+        idempotencyKey: intent.idempotencyKey,
       });
       setNotice(consequence);
       setHoldOpen(false);
       setSelectedKey(holdPiece.pieceKey);
       setHoldPieceKey(null);
+      holdIntentRef.current = null;
+      clearMutationIntent(HOLD_INTENT_STORAGE_KEY);
     } catch (cause) {
+      const reconciled = await authority.refresh().catch(() => null);
+      const intentStartedAt = submittedIntent
+        ? submittedIntent.expiresAt - MUTATION_INTENT_TTL_MS
+        : Number.POSITIVE_INFINITY;
+      const recovered = reconciled?.holds.find((hold) => (
+        hold.status === "ACTIVE"
+        && hold.sku === holdPiece.sku
+        && hold.customerName === customerName.trim()
+        && hold.contact === contact.trim()
+        && hold.reason === reason.trim()
+        && hold.expiresAt === submittedExpiresAt
+        && Date.parse(hold.createdAt) >= intentStartedAt
+      ));
+      if (recovered) {
+        setNotice("The customer hold was saved. Studio recovered it from current authority after the response was interrupted.");
+        setHoldOpen(false);
+        setSelectedKey(holdPiece.pieceKey);
+        setHoldPieceKey(null);
+        holdIntentRef.current = null;
+        clearMutationIntent(HOLD_INTENT_STORAGE_KEY);
+        return;
+      }
       setError(cause instanceof Error ? cause.message : "The hold could not be saved.");
     } finally {
+      holdPendingRef.current = false;
       setPending(false);
     }
   }
 
-  async function releaseHold() {
-    if (!selected?.activeHold) return;
+  function cancelHold() {
+    if (holdPendingRef.current) return;
+    setHoldOpen(false);
+    setHoldPieceKey(null);
+    holdIntentRef.current = null;
+    clearMutationIntent(HOLD_INTENT_STORAGE_KEY);
+  }
+
+  function openRelease(trigger: HTMLElement) {
+    setReleaseReturnFocus(trigger);
+    setReleaseOpen(true);
+    setError("");
+  }
+
+  async function releaseHold(): Promise<StudioDecisionResult> {
+    if (!selected?.activeHold) return { error: "This piece no longer has an active hold.", ok: false };
+    if (detailMutationPendingRef.current) return { error: "Another inventory change is already in progress.", ok: false };
+    detailMutationPendingRef.current = true;
+    setPendingAction("release");
     setPending(true);
     setError("");
+    const holdId = selected.activeHold.id;
+    const releaseStartedAt = Date.now();
     try {
-      setNotice(await authority.releaseHold(selected.activeHold.id));
+      const consequence = await authority.releaseHold(holdId);
+      setNotice(consequence);
+      return { ok: true };
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "The hold could not be released.");
+      const message = cause instanceof Error ? cause.message : "The hold could not be released.";
+      const reconciled = await authority.refresh().catch(() => null);
+      const recovered = reconciled?.holds.find((hold) => hold.id === holdId);
+      if (
+        recovered
+        && recovered.status !== "ACTIVE"
+        && recovered.releasedAt
+        && Date.parse(recovered.releasedAt) >= releaseStartedAt
+      ) {
+        setNotice("The hold is no longer active. Studio recovered the current state after the response was interrupted.");
+        return { ok: true };
+      }
+      setError(message);
+      return { error: message, ok: false };
     } finally {
+      detailMutationPendingRef.current = false;
+      setPendingAction(null);
       setPending(false);
     }
   }
@@ -178,19 +484,91 @@ export function OperationsDesk() {
     locationKey: typeof locations[number]["key"],
     command: "CONFIRM" | "MOVE",
   ) {
-    if (!selected) return;
+    if (!selected || detailMutationPendingRef.current) return;
+    const expectedAuthorityRevision = selected.authorityRevision;
+    const expectedVersion = selected.locationVersion;
+    const pieceKey = selected.pieceKey;
+    detailMutationPendingRef.current = true;
+    setPendingAction("location");
     setPending(true);
     setError("");
+    let submittedIntent: LocationMutationIntent | null = null;
     try {
+      const storedIntent = locationIntentRef.current ?? readLocationMutationIntent();
+      const request = storedIntent
+        && storedIntent.command === command
+        && storedIntent.locationKey === locationKey
+        && storedIntent.pieceKey === pieceKey
+        ? {
+            command: storedIntent.command,
+            expectedAuthorityRevision: storedIntent.expectedAuthorityRevision,
+            expectedVersion: storedIntent.expectedVersion,
+            locationKey: storedIntent.locationKey,
+            pieceKey: storedIntent.pieceKey,
+          }
+        : { command, expectedAuthorityRevision, expectedVersion, locationKey, pieceKey };
+      const fingerprint = await mutationFingerprint(JSON.stringify(request));
+      let intent = storedIntent;
+      if (!intent || intent.fingerprint !== fingerprint) {
+        intent = {
+          ...request,
+          expiresAt: Date.now() + MUTATION_INTENT_TTL_MS,
+          fingerprint,
+          idempotencyKey: `location:${crypto.randomUUID()}`,
+        };
+      }
+      submittedIntent = intent;
+      locationIntentRef.current = intent;
+      persistMutationIntent(LOCATION_INTENT_STORAGE_KEY, intent);
       setNotice(await authority.recordLocation({
-        command,
-        pieceKey: selected.pieceKey,
-        locationKey,
-        idempotencyKey: `location:${crypto.randomUUID()}`,
+        command: intent.command,
+        expectedAuthorityRevision: intent.expectedAuthorityRevision,
+        expectedVersion: intent.expectedVersion,
+        pieceKey: intent.pieceKey,
+        locationKey: intent.locationKey,
+        idempotencyKey: intent.idempotencyKey,
       }));
+      locationIntentRef.current = null;
+      clearMutationIntent(LOCATION_INTENT_STORAGE_KEY);
     } catch (cause) {
+      const reconciled = await authority.refresh().catch(() => null);
+      const recovered = reconciled?.pieces.find((piece) => piece.pieceKey === pieceKey);
+      if (
+        cause instanceof StudioAuthorityClientError
+        && cause.status === 409
+        && cause.code === "VERSION_CONFLICT"
+      ) {
+        locationIntentRef.current = null;
+        clearMutationIntent(LOCATION_INTENT_STORAGE_KEY);
+        setError(recovered
+          ? `${selected.title} changed in another window. It is now expected at ${recovered.expectedLocationLabel.toLowerCase()}. Review the refreshed location before moving it again.`
+          : `${cause.message} Reload Operations and review the current location before moving it again.`);
+        return;
+      }
+      const intentStartedAt = submittedIntent
+        ? submittedIntent.expiresAt - MUTATION_INTENT_TTL_MS
+        : Number.POSITIVE_INFINITY;
+      const recoveredAfterIntent = Boolean(
+        recovered?.observedAt
+        && Date.parse(recovered.observedAt) >= intentStartedAt,
+      );
+      const recoveredChange = recoveredAfterIntent && (command === "MOVE"
+        ? recovered?.expectedCustody === "STUDIO"
+          && recovered.expectedLocationKey === locationKey
+          && !recovered.hasLocationMismatch
+        : recovered?.observedLocationKey === locationKey);
+      if (recoveredChange) {
+        setNotice(command === "MOVE"
+          ? "The piece location was moved. Studio recovered the current state after the response was interrupted."
+          : "The location check was saved. Studio recovered it from current authority after the response was interrupted.");
+        locationIntentRef.current = null;
+        clearMutationIntent(LOCATION_INTENT_STORAGE_KEY);
+        return;
+      }
       setError(cause instanceof Error ? cause.message : "The location could not be saved.");
     } finally {
+      detailMutationPendingRef.current = false;
+      setPendingAction(null);
       setPending(false);
     }
   }
@@ -212,16 +590,35 @@ export function OperationsDesk() {
     <StudioStackPage className="studio-ops-page studio-premium-surface" kind="service">
       <h1 className="sr-only">Operations</h1>
 
-      {scenarioOrderReference ? (
-        <section className="studio-piece-next" id="studio-scenario-order" aria-label={`Scenario order ${scenarioOrderReference}`}>
-          <span>{scenarioOrder ? <PackageCheck aria-hidden="true" size={20} /> : <CircleAlert aria-hidden="true" size={20} />}</span>
-          <div>
+      {requestedPieceError ? <StudioFeedback detail={requestedPieceError} state="error" title="Piece unavailable" /> : null}
+
+      {scenarioOrderReference ? scenarioOrder ? (
+        <button
+          aria-expanded={scenarioOrderOpen}
+          aria-haspopup="dialog"
+          aria-label={`Open scenario order ${scenarioOrder.reference}`}
+          className="studio-piece-next"
+          id="studio-scenario-order"
+          onClick={(event) => openScenarioOrder(event.currentTarget)}
+          type="button"
+        >
+          <span><PackageCheck aria-hidden="true" size={20} /></span>
+          <span>
             <small>Scenario order</small>
-            <strong>{scenarioOrder?.reference ?? scenarioOrderReference}</strong>
-            <p>{scenarioOrder
-              ? `${scenarioOrder.lines[0]?.name ?? "Wardrobe order"} · ${scenarioOrder.lifecycleStatus.toLowerCase()} · ${scenarioOrder.fulfillmentStatus.toLowerCase().replaceAll("_", " ")}`
-              : "This order is not part of the current scenario snapshot."}</p>
+            <strong>{scenarioOrder.reference}</strong>
+            <span>{scenarioOrder.lines[0]?.name ?? "Wardrobe order"} · {orderStateLabel(scenarioOrder.lifecycleStatus)} · {orderStateLabel(scenarioOrder.fulfillmentStatus)}</span>
+          </span>
+          <ChevronRight aria-hidden="true" size={17} />
+        </button>
+      ) : (
+        <section className="studio-piece-next" id="studio-scenario-order" aria-label={`Scenario order ${scenarioOrderReference} unavailable`}>
+          <span><CircleAlert aria-hidden="true" size={20} /></span>
+          <div>
+            <small>Scenario order unavailable</small>
+            <strong>{scenarioOrderReference}</strong>
+            <p>This exact order is not part of the current scenario snapshot. Studio will not substitute another order.</p>
           </div>
+          <button className="button button-secondary" onClick={clearScenarioOrderRoute} type="button">Return to Operations</button>
         </section>
       ) : null}
 
@@ -279,6 +676,46 @@ export function OperationsDesk() {
         </StudioStackSection>
       ) : null}
 
+      <StudioTaskSheet
+        className="studio-scenario-order-sheet"
+        eyebrow={scenarioOrder ? `Scenario order · ${scenarioOrder.reference}` : "Scenario preview"}
+        footer={(requestClose) => <button className="button button-primary" onClick={requestClose} type="button">Done</button>}
+        onDismiss={closeScenarioOrder}
+        open={scenarioOrderOpen && Boolean(scenarioOrder)}
+        returnFocus={scenarioOrderReturnFocus}
+        title={scenarioOrder?.lines[0]?.name.split(" · ")[0] ?? "Scenario order"}
+      >
+        {scenarioOrder ? <div className="studio-inventory-detail">
+          <StudioFeedback detail="This preview uses the local lifecycle scenario. It cannot charge, dispatch, refund, release, or change an order." state="empty" title="Read-only scenario" />
+          <section className="studio-inventory-detail-section">
+            <div className="studio-inventory-detail-heading"><h3>Customer</h3></div>
+            <dl className="studio-inventory-detail-facts">
+              <div><dt>Name</dt><dd>{scenarioOrder.contact.name}</dd></div>
+              <div><dt>Contact</dt><dd>{scenarioOrder.contact.phone || scenarioOrder.contact.email}</dd></div>
+              <div><dt>Created</dt><dd>{shortDate(scenarioOrder.savedAt)}</dd></div>
+            </dl>
+          </section>
+          <section className="studio-inventory-detail-section">
+            <div className="studio-inventory-detail-heading"><h3>Piece</h3></div>
+            <dl className="studio-inventory-detail-facts">
+              {scenarioOrder.lines.map((line) => <div key={line.sku}><dt>{line.sku}</dt><dd>{line.name} · {line.taggedSize}</dd></div>)}
+              <div><dt>Total</dt><dd>{formatNaira(scenarioOrder.total)}</dd></div>
+              <div><dt>Handoff</dt><dd>{scenarioOrder.deliveryLabel}</dd></div>
+            </dl>
+          </section>
+          <section className="studio-inventory-detail-section">
+            <div className="studio-inventory-detail-heading"><h3>Status</h3></div>
+            <dl className="studio-inventory-detail-facts">
+              <div><dt>Reference</dt><dd>{scenarioOrder.reference}</dd></div>
+              <div><dt>Order</dt><dd>{orderStateLabel(scenarioOrder.lifecycleStatus)}</dd></div>
+              <div><dt>Receipt</dt><dd>{orderStateLabel(scenarioOrder.paymentReviewStatus)}</dd></div>
+              <div><dt>Payment</dt><dd>{orderStateLabel(scenarioOrder.fundsConfirmationStatus)}</dd></div>
+              <div><dt>{scenarioOrder.fulfillment.kind === "PICKUP" ? "Pickup" : "Delivery"}</dt><dd>{orderStateLabel(scenarioOrder.fulfillmentStatus)}</dd></div>
+            </dl>
+          </section>
+        </div> : null}
+      </StudioTaskSheet>
+
       <StudioTaskSheet className="studio-inventory-detail-sheet" eyebrow={selected?.sku ?? "Private piece"} onDismiss={closePiece} open={Boolean(selected)} returnFocus={returnFocus} title={selected?.title ?? "Piece"}>
         {selected ? <div className="studio-inventory-detail">
           {selected.imageSrc ? <figure className="studio-inventory-detail-media is-photo"><img alt={`${selected.title} inventory view`} height={1280} src={selected.imageSrc} width={1024} /></figure> : null}
@@ -290,6 +727,7 @@ export function OperationsDesk() {
 
           {selected.hasLocationMismatch ? <StudioFeedback action={selected.orderReference ? <Link className="button button-secondary" href={`/studio/orders/${selected.orderReference}`}>Review order</Link> : undefined} detail={`Expected ${selected.expectedLocationLabel}; last seen ${selected.observedLocationLabel}.`} state="error" title="Location differs" /> : null}
 
+          {requestedStateNotice ? <StudioFeedback detail={requestedStateNotice} state="empty" title="No active hold" /> : null}
           {notice ? <StudioFeedback detail={notice} state="success" title="Saved" /> : null}
           {error ? <StudioFeedback detail={error} state="error" title="Couldn’t save" /> : null}
 
@@ -297,7 +735,8 @@ export function OperationsDesk() {
             <div className="studio-inventory-detail-heading"><h3>Confirm location</h3></div>
             {selected.expectedCustody === "STUDIO" ? <div className="studio-inventory-decision-grid">{locations.map((location) => {
               const confirmsExpected = selected.expectedLocationKey === location.key;
-              return <button className="studio-inventory-decision" disabled={pending || Boolean(scenario)} key={location.key} onClick={() => void recordLocation(location.key, confirmsExpected ? "CONFIRM" : "MOVE")} type="button"><MapPin aria-hidden="true" size={20} /><span><strong>{confirmsExpected ? `Confirm at ${location.label}` : `Move to ${location.label}`}</strong><small>{scenario ? "Read-only scenario" : confirmsExpected ? "Check the piece is here." : `Expected location becomes ${location.label.toLowerCase()}.`}</small></span><ChevronRight aria-hidden="true" size={17} /></button>;
+              const savingLocation = pendingAction === "location";
+              return <button aria-busy={savingLocation} className="studio-inventory-decision" disabled={Boolean(pendingAction) || Boolean(scenario)} key={location.key} onClick={() => void recordLocation(location.key, confirmsExpected ? "CONFIRM" : "MOVE")} type="button"><MapPin aria-hidden="true" size={20} /><span><strong>{savingLocation ? "Saving location…" : confirmsExpected ? `Confirm at ${location.label}` : `Move to ${location.label}`}</strong><small>{scenario ? "Read-only scenario" : savingLocation ? "Keeping other inventory actions paused." : confirmsExpected ? "Check the piece is here." : `Expected location becomes ${location.label.toLowerCase()}.`}</small></span><ChevronRight aria-hidden="true" size={17} /></button>;
             })}</div> : <div className="studio-quiet-empty"><MapPin aria-hidden="true" size={22} /><div><strong>{selected.expectedLocationLabel}</strong><p>{selected.orderReference ? "Continue with the connected order." : "Confirm the handoff before moving this piece."}</p></div>{selected.orderReference ? <Link className="button button-secondary" href={`/studio/orders/${selected.orderReference}`}>Open order</Link> : null}</div>}
           </section>
 
@@ -305,23 +744,41 @@ export function OperationsDesk() {
             <div className="studio-inventory-detail-heading"><h3>Actions</h3></div>
             <div className="studio-inventory-decision-grid">
               {selected.orderReference ? <Link className="studio-inventory-decision" href={`/studio/orders/${selected.orderReference}`}><PackageCheck aria-hidden="true" size={20} /><span><strong>Open order</strong><small>Continue with this order.</small></span><ChevronRight aria-hidden="true" size={17} /></Link> : null}
-              {selected.activeHold ? <button className="studio-inventory-decision" disabled={pending || Boolean(scenario)} onClick={() => void releaseHold()} type="button"><RotateCcw aria-hidden="true" size={20} /><span><strong>Release hold</strong><small>{scenario ? "Read-only scenario" : "Make this piece available again."}</small></span><ChevronRight aria-hidden="true" size={17} /></button> : null}
-              {!selected.activeHold && selected.availability === "AVAILABLE" && selected.sku ? <button className="studio-inventory-decision" disabled={pending || Boolean(scenario)} onClick={openHold} type="button"><UserRound aria-hidden="true" size={20} /><span><strong>Hold for customer</strong><small>{scenario ? "Read-only scenario" : "Name, contact and expiry required."}</small></span><ChevronRight aria-hidden="true" size={17} /></button> : null}
+              {selected.activeHold ? <button className="studio-inventory-decision" disabled={Boolean(pendingAction) || Boolean(scenario)} onClick={(event) => openRelease(event.currentTarget)} type="button"><RotateCcw aria-hidden="true" size={20} /><span><strong>Review hold release</strong><small>{scenario ? "Read-only scenario" : "Confirm before making this piece available again."}</small></span><ChevronRight aria-hidden="true" size={17} /></button> : null}
+              {!selected.activeHold && selected.availability === "AVAILABLE" && selected.expectedCustody === "STUDIO" && !selected.hasLocationMismatch && selected.sku ? <button className="studio-inventory-decision" disabled={Boolean(pendingAction) || Boolean(scenario)} onClick={openHold} type="button"><UserRound aria-hidden="true" size={20} /><span><strong>Hold for customer</strong><small>{scenario ? "Read-only scenario" : "Name, contact and expiry required."}</small></span><ChevronRight aria-hidden="true" size={17} /></button> : null}
               <Link className="studio-inventory-decision" href={`/studio/wardrobe/${encodeURIComponent(selected.wardrobeItemId ?? selected.sku ?? selected.pieceKey)}`}><Shirt aria-hidden="true" size={20} /><span><strong>Open piece</strong><small>Review garment truth and media.</small></span><ChevronRight aria-hidden="true" size={17} /></Link>
             </div>
           </section>
         </div> : null}
       </StudioTaskSheet>
 
-      <StudioTaskSheet eyebrow="Customer hold" onDismiss={() => { setHoldOpen(false); setHoldPieceKey(null); }} onSubmit={saveHold} open={holdOpen} returnFocus={holdReturnFocus} title={holdPiece ? `Hold ${holdPiece.title}` : "Hold piece"}>
+      <StudioDecisionSheet
+        busyLabel="Releasing this hold"
+        confirmLabel="Release hold"
+        consequence="The customer hold ends and the piece can become available again when no active order still reserves it."
+        destructive
+        eyebrow="Customer hold"
+        onConfirm={releaseHold}
+        onDismiss={() => setReleaseOpen(false)}
+        open={releaseOpen}
+        receiptDetail={notice || "Operations refreshed the authoritative hold and inventory state."}
+        receiptTitle="Hold released"
+        returnFocus={releaseReturnFocus}
+        summary={selected?.activeHold
+          ? `Release ${selected.title} from ${selected.activeHold.customerName}'s hold?`
+          : `Review the current hold state for ${selected?.title ?? "this piece"}.`}
+        title="Release customer hold"
+      />
+
+      <StudioTaskSheet busy={pending} busyLabel="Saving this hold" eyebrow="Customer hold" onDismiss={() => { if (holdPendingRef.current) return false; cancelHold(); }} onSubmit={saveHold} open={holdOpen} returnFocus={holdReturnFocus} title={holdPiece ? `Hold ${holdPiece.title}` : "Hold piece"}>
           <div className="studio-form-grid">
-            <label className="studio-field"><span>Customer name</span><input autoComplete="name" maxLength={120} onChange={(event) => setCustomerName(event.target.value)} required value={customerName} /></label>
-            <label className="studio-field"><span>Phone or email</span><input autoComplete="email" maxLength={160} onChange={(event) => setContact(event.target.value)} required value={contact} /></label>
-            <label className="studio-field"><span>Expires</span><input min={new Date().toISOString().slice(0, 16)} onChange={(event) => setExpiresAt(event.target.value)} required type="datetime-local" value={expiresAt} /></label>
-            <label className="studio-field"><span>Reason</span><input maxLength={240} onChange={(event) => setReason(event.target.value)} placeholder="Trying on tomorrow" required value={reason} /></label>
+            <label className="studio-field"><span>Customer name</span><input autoComplete="name" disabled={pending} maxLength={120} onChange={(event) => setCustomerName(event.target.value)} required value={customerName} /></label>
+            <label className="studio-field"><span>Phone or email</span><input autoComplete="email" disabled={pending} maxLength={160} onChange={(event) => setContact(event.target.value)} required value={contact} /></label>
+            <label className="studio-field"><span>Expires</span><input disabled={pending} min={new Date().toISOString().slice(0, 16)} onChange={(event) => setExpiresAt(event.target.value)} required type="datetime-local" value={expiresAt} /></label>
+            <label className="studio-field"><span>Reason</span><input disabled={pending} maxLength={240} onChange={(event) => setReason(event.target.value)} placeholder="Trying on tomorrow" required value={reason} /></label>
           </div>
           {error ? <StudioFeedback detail={error} state="error" title="Couldn’t save" /> : null}
-          <footer className="studio-task-sheet-footer"><button className="button button-secondary" onClick={() => setHoldOpen(false)} type="button">Cancel</button><button className="button button-primary" disabled={pending} type="submit">{pending ? "Holding…" : "Hold piece"}</button></footer>
+          <footer className="studio-task-sheet-footer"><button className="button button-secondary" disabled={pending} onClick={cancelHold} type="button">Cancel</button><button className="button button-primary" disabled={pending} type="submit">{pending ? "Holding…" : "Hold piece"}</button></footer>
       </StudioTaskSheet>
     </StudioStackPage>
   );

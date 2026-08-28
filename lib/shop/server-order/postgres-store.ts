@@ -216,6 +216,19 @@ function parseOrderDocument(value: unknown, includePrivate = false): ShopServerO
   return order;
 }
 
+export function operatorOrdersReadQuery(limit: number) {
+  return sql`
+    select shop_order_document_v3(orders.id, true) as document
+    from shop_orders as orders
+    order by orders.saved_at desc
+    limit ${Math.min(Math.max(limit, 1), 100)}
+  `;
+}
+
+export function mapOperatorOrderRows(rows: readonly Record<string, unknown>[]): ShopServerOrder[] {
+  return rows.map((row) => parseOrderDocument(row.document, true));
+}
+
 function parseAuthorization(value: unknown): PaymentEvidenceAuthorization {
   if (
     !value
@@ -301,7 +314,7 @@ export class PostgresShopOrderStore implements ShopOrderStore {
 
   createAssistedOrder(command: CreateAssistedShopOrderCommand): Promise<ShopServerOrder> {
     return executeDocument(sql`
-      select shop_create_assisted_order_v3(
+      select shop_create_assisted_order_v4(
         ${command.actor.subject},
         ${command.actor.displayName ?? command.actor.email ?? "Studio operator"},
         ${command.source},
@@ -484,13 +497,8 @@ export class PostgresShopOrderStore implements ShopOrderStore {
 
   async listOperatorOrders(limit: number): Promise<ShopServerOrder[]> {
     try {
-      const result = await getShopDb().execute<DocumentRow>(sql`
-        select shop_order_document_v3(orders.id, true) as document
-        from shop_orders as orders
-        order by orders.saved_at desc
-        limit ${limit}
-      `);
-      return result.rows.map((row) => parseOrderDocument(row.document, true));
+      const result = await getShopDb().execute<DocumentRow>(operatorOrdersReadQuery(limit));
+      return mapOperatorOrderRows(result.rows);
     } catch (error) {
       throw persistenceError(error);
     }

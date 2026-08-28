@@ -130,6 +130,7 @@ function emptyOrdersCopy(filter: OrderFilter, search: string): {
 
 interface AvailableOrderPiece {
   slug: string;
+  sku: string;
   name: string;
   taggedSize: string;
   price: number;
@@ -142,6 +143,7 @@ export function ConnectedOrderInbox() {
   const [error, setError] = useState("");
   const [refreshing, setRefreshing] = useState(false);
   const [products, setProducts] = useState<AvailableOrderPiece[]>([]);
+  const [productsReady, setProductsReady] = useState(false);
   const [search, setSearch] = useState("");
   const [activeSearch, setActiveSearch] = useState("");
   const [filter, setFilter] = useState<OrderFilter>("NEEDS_ACTION");
@@ -150,6 +152,7 @@ export function ConnectedOrderInbox() {
   const [createError, setCreateError] = useState("");
   const [createErrorTitle, setCreateErrorTitle] = useState("Order not created");
   const [createOpen, setCreateOpen] = useState(false);
+  const [requestedPieceUnavailable, setRequestedPieceUnavailable] = useState(false);
   const [createdOrder, setCreatedOrder] = useState<ShopServerOrder | null>(null);
   const [selectedSlugs, setSelectedSlugs] = useState<string[]>([]);
   const [source, setSource] = useState<"PHONE" | "DM" | "IN_PERSON">("DM");
@@ -164,11 +167,77 @@ export function ConnectedOrderInbox() {
   const createPendingRef = useRef(false);
   const createIntentRef = useRef<AssistedOrderIntent | null>(null);
   const createButtonRef = useRef<HTMLButtonElement>(null);
+  const requestedCreateHandledRef = useRef(false);
+  const requestedPieceHandledRef = useRef("");
+
+  function clearRequestedPieceHandoff() {
+    setRequestedPieceUnavailable(false);
+    setCreateError("");
+    setCreateErrorTitle("Order not created");
+    const url = new URL(window.location.href);
+    if (!url.searchParams.has("piece")) return;
+    url.searchParams.delete("piece");
+    if (url.searchParams.get("action") === "create") url.searchParams.delete("action");
+    window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
+  }
+
+  function openManualOrder() {
+    clearRequestedPieceHandoff();
+    setCreateOpen(true);
+  }
 
   useEffect(() => {
     const requestedFilter = searchParams.get("filter");
     if (isOrderFilter(requestedFilter)) setFilter(requestedFilter);
+    const requestedSearch = searchParams.get("search")?.trim().slice(0, 100) ?? "";
+    if (requestedSearch) {
+      setSearch(requestedSearch);
+      setActiveSearch(requestedSearch);
+    }
   }, [searchParams]);
+
+  useEffect(() => {
+    if (searchParams.get("action") !== "create") {
+      requestedPieceHandledRef.current = "";
+      setRequestedPieceUnavailable(false);
+      return;
+    }
+    const requestedPiece = searchParams.get("piece")?.trim().toLocaleLowerCase("en-NG") ?? "";
+    if (!requestedPiece) {
+      requestedPieceHandledRef.current = "";
+      setRequestedPieceUnavailable(false);
+      return;
+    }
+    if (state !== "ready" || !productsReady || requestedPieceHandledRef.current === requestedPiece) return;
+    requestedPieceHandledRef.current = requestedPiece;
+    const product = products.find((candidate) => (
+      candidate.slug.toLocaleLowerCase("en-NG") === requestedPiece
+      || candidate.sku.toLocaleLowerCase("en-NG") === requestedPiece
+    ));
+    if (product) {
+      setSelectedSlugs([product.slug]);
+      setRequestedPieceUnavailable(false);
+      setCreateError("");
+      setCreateErrorTitle("Order not created");
+      return;
+    }
+    setSelectedSlugs([]);
+    setRequestedPieceUnavailable(true);
+    setCreateErrorTitle("Requested piece unavailable");
+    setCreateError("The exact piece from Ask Studio is no longer available for a new order. Close this sheet and verify the piece in Wardrobe; Studio will not silently substitute another product.");
+  }, [products, productsReady, searchParams, state]);
+
+  useEffect(() => {
+    if (searchParams.get("action") !== "create") {
+      requestedCreateHandledRef.current = false;
+      return;
+    }
+    if (state !== "ready" || requestedCreateHandledRef.current) return;
+    requestedCreateHandledRef.current = true;
+    setCreateError("");
+    setCreateErrorTitle("Order not created");
+    setCreateOpen(true);
+  }, [searchParams, state]);
 
   const loadOrders = useCallback(async (
     signal?: AbortSignal,
@@ -195,6 +264,7 @@ export function ConnectedOrderInbox() {
         ok?: boolean;
         orders?: ShopServerOrder[];
         products?: AvailableOrderPiece[];
+        productsReady?: boolean;
         nextPage?: number | null;
       };
       if (!response.ok || !body.ok || !Array.isArray(body.orders)) {
@@ -202,6 +272,7 @@ export function ConnectedOrderInbox() {
       }
       setOrders((current) => append ? [...current, ...body.orders!] : body.orders!);
       if (Array.isArray(body.products)) setProducts(body.products);
+      setProductsReady(body.productsReady === true);
       setNextPage(body.nextPage ?? null);
       setState("ready");
       return body.orders;
@@ -209,6 +280,7 @@ export function ConnectedOrderInbox() {
       if (signal?.aborted) return;
       setError(cause instanceof Error ? cause.message : "Orders could not be opened.");
       if (!quiet) setState("error");
+      if (!quiet) setProductsReady(false);
       return null;
     } finally {
       if (!signal?.aborted) setRefreshing(false);
@@ -256,6 +328,7 @@ export function ConnectedOrderInbox() {
     setContactEmail("");
     setContactPhone("");
     setSourceNote("");
+    setRequestedPieceUnavailable(false);
     createIntentRef.current = null;
     clearAssistedOrderIntent();
     setCreateError("");
@@ -368,7 +441,7 @@ export function ConnectedOrderInbox() {
         <h1 className="sr-only">Orders</h1>
         <span className="studio-page-tools-count">{state === "ready" ? `${orders.length} ${orders.length === 1 ? "order" : "orders"}` : state === "error" ? "Orders —" : "Opening…"}</span>
         <div>
-          <button className="button button-primary" onClick={() => { setCreateError(""); setCreateErrorTitle("Order not created"); setCreateOpen(true); }} ref={createButtonRef} type="button">New order</button>
+          <button className="button button-primary" disabled={state !== "ready" || !productsReady} onClick={openManualOrder} ref={createButtonRef} type="button">{state === "loading" ? "Opening pieces…" : productsReady ? "New order" : "New order unavailable"}</button>
           <button aria-busy={refreshing} className="button button-secondary" disabled={refreshing} onClick={() => void loadOrders(undefined, true)} type="button">{refreshing ? "Checking…" : "Check for updates"}</button>
         </div>
       </header>
@@ -454,15 +527,20 @@ export function ConnectedOrderInbox() {
       >
         <div className="studio-transition-fields">
           <label><span>Order came from</span><select disabled={creating} onChange={(event) => setSource(event.target.value as typeof source)} value={source}><option value="DM">Direct message</option><option value="PHONE">Phone</option><option value="IN_PERSON">In person</option></select></label>
-          <fieldset><legend>Pieces</legend>{products.map((product) => <label key={product.slug}><input checked={selectedSlugs.includes(product.slug)} disabled={creating} onChange={(event) => setSelectedSlugs((current) => event.target.checked ? [...current, product.slug] : current.filter((slug) => slug !== product.slug))} type="checkbox" /><span>{product.name} · {product.taggedSize} · {formatNaira(product.price)}</span></label>)}</fieldset>
-          {!products.length ? <p>No available pieces.</p> : null}
+          <fieldset disabled={creating || state !== "ready" || !productsReady}><legend>Pieces</legend>{products.map((product) => <label key={product.slug}><input checked={selectedSlugs.includes(product.slug)} disabled={creating} onChange={(event) => {
+            if (event.target.checked && requestedPieceUnavailable) clearRequestedPieceHandoff();
+            setSelectedSlugs((current) => event.target.checked ? [...current, product.slug] : current.filter((slug) => slug !== product.slug));
+          }} type="checkbox" /><span>{product.name} · {product.taggedSize} · {formatNaira(product.price)}</span></label>)}</fieldset>
+          {state === "loading" ? <p>Checking current piece and custody truth…</p> : null}
+          {state === "error" || (state === "ready" && !productsReady) ? <StudioFeedback action={<button className="button button-secondary" onClick={() => void loadOrders()} type="button">Try again</button>} detail="Studio could not prove current availability and physical custody, so no piece can be reserved." state="error" title="Pieces unavailable" /> : null}
+          {state === "ready" && productsReady && !products.length ? <p>No physically reconciled pieces are available.</p> : null}
           <label><span>Customer name</span><input disabled={creating} maxLength={100} minLength={2} onChange={(event) => setContactName(event.target.value)} required value={contactName} /></label>
           <label><span>Email</span><input disabled={creating} maxLength={320} onChange={(event) => setContactEmail(event.target.value)} required type="email" value={contactEmail} /></label>
           <label><span>Phone</span><input disabled={creating} maxLength={30} minLength={7} onChange={(event) => setContactPhone(event.target.value)} required type="tel" value={contactPhone} /></label>
           <label><span>Handoff</span><select disabled={creating} onChange={(event) => setFulfillmentKind(event.target.value as typeof fulfillmentKind)} value={fulfillmentKind}><option value="DELIVERY">Delivery</option><option value="PICKUP">Pickup</option></select></label>
           {fulfillmentKind === "DELIVERY" ? <><label><span>Street</span><input disabled={creating} maxLength={180} onChange={(event) => setStreet(event.target.value)} required value={street} /></label><label><span>Area</span><input disabled={creating} maxLength={100} onChange={(event) => setArea(event.target.value)} required value={area} /></label><label><span>State</span><input disabled={creating} maxLength={100} onChange={(event) => setStateName(event.target.value)} required value={stateName} /></label></> : null}
           <label><span>Private source note (optional)</span><textarea disabled={creating} maxLength={500} onChange={(event) => setSourceNote(event.target.value)} value={sourceNote} /></label>
-          <button className="button button-primary" disabled={creating || !selectedSlugs.length} type="submit">{creating ? "Reserving…" : "Reserve order"}</button>
+          <button className="button button-primary" disabled={creating || state !== "ready" || !productsReady || !selectedSlugs.length || requestedPieceUnavailable} type="submit">{creating ? "Reserving…" : "Reserve order"}</button>
           {createError ? <StudioFeedback detail={createError} state="error" title={createErrorTitle} /> : null}
         </div>
       </StudioTaskSheet>

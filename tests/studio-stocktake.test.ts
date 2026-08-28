@@ -50,21 +50,25 @@ test("0009 adds frozen counts and an append-only observation ledger", async () =
 });
 
 test("stocktake commands stay server-authoritative and idempotent", async () => {
-  const [repository, route] = await Promise.all([
+  const [repository, route, transactionalMigration] = await Promise.all([
     source("lib/server/studio-stocktake-repository.ts"),
     source("app/api/studio/stocktake/route.ts"),
+    source("drizzle/shop-postgres/0018_studio_transactional_authority.sql"),
   ]);
   assert.match(route, /requireStudioOperator/);
   assert.match(route, /parseEngineJson\(request, stocktakeCommandSchema\)/);
   assert.match(route, /getStocktakeWorkspace/);
   assert.match(route, /customerVisible: false/);
-  assert.match(repository, /on conflict \(operator_subject, idempotency_key\) do nothing/);
+  assert.match(repository, /const requestFingerprint = sha256\(JSON\.stringify/);
+  assert.match(repository, /studio_record_piece_confirmation_v2/);
+  assert.match(transactionalMigration, /juw:studio:location:idempotency:/);
+  assert.match(transactionalMigration, /juw:studio:piece:/);
+  assert.match(transactionalMigration, /p_source = 'STOCKTAKE'/);
+  assert.match(transactionalMigration, /stocktake_record\.version <> p_expected_stocktake_version/);
+  assert.match(transactionalMigration, /set version = stocktake\.version \+ 1/i);
+  assert.match(transactionalMigration, /INSERT INTO studio_physical_observations/);
   assert.match(repository, /jsonb_agg\(jsonb_build_object/);
   assert.match(repository, /for update/);
-  assert.match(repository, /session_lock as/);
-  assert.match(repository, /set version = stocktake\.version \+ 1/);
-  assert.match(repository, /stocktake\.version = \$\{input\.expectedVersion \?\? -1\}/);
-  assert.match(repository, /and not exists \(select 1 from existing\)/);
   assert.doesNotMatch(repository, /if \(session && input\.expectedVersion !== session\.version\)/);
   assert.match(repository, /latest\.result <> 'MATCH'/);
   assert.doesNotMatch(repository, /where latest\.result = 'MISMATCH'\s+and not exists/);

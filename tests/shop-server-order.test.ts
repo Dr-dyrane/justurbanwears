@@ -1091,6 +1091,8 @@ test("migration and routes pin the executable Neon one-shot contract", () => {
   const root = join(import.meta.dirname, "..");
   const migration = readFileSync(join(root, "drizzle/shop-postgres/0007_material_cyclops.sql"), "utf8");
   const store = readFileSync(join(root, "lib/shop/server-order/postgres-store.ts"), "utf8");
+  const studioOrdersRoute = readFileSync(join(root, "app/api/studio/orders/route.ts"), "utf8");
+  const assistedMutation = studioOrdersRoute.slice(studioOrdersRoute.indexOf("export async function POST"));
   const blob = readFileSync(join(root, "lib/shop/server-order/payment-evidence.ts"), "utf8");
   for (const functionName of [
     "shop_create_order_v2",
@@ -1110,7 +1112,7 @@ test("migration and routes pin the executable Neon one-shot contract", () => {
     "shop_receive_payment_evidence_v2",
     "shop_claim_outbox_v2",
     "shop_complete_outbox_v2",
-    "shop_create_assisted_order_v3",
+    "shop_create_assisted_order_v4",
     "shop_mutate_customer_order_v3",
     "shop_transition_order_v3",
     "shop_schedule_pickup_v3",
@@ -1119,6 +1121,8 @@ test("migration and routes pin the executable Neon one-shot contract", () => {
     "shop_transition_return_v3",
     "shop_order_document_v3",
   ]) assert.match(store, new RegExp(functionName));
+  assert.match(assistedMutation, /getShopOrderService\(\)\.createAssistedOrder\(actor, body\)/);
+  assert.doesNotMatch(assistedMutation, /loadServerShopProducts|listStudioOrderablePieceSkus|eligibleSkus/);
   assert.match(store, /orders\.contact_email as email/);
   assert.doesNotMatch(store, /select email, display_name\s+from shop_customers/);
   assert.match(store, /'paidAmount', \$\{command\.details\.paidAmount\}::integer/);

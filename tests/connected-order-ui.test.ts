@@ -171,6 +171,25 @@ test("Studio posts structured facts, role-gates finance UX, and covers return re
   assert.doesNotMatch(route, /blobUrl|downloadUrl/);
 });
 
+test("assisted-order reads filter by physical custody while writes use the transactional service", () => {
+  const route = source("app/api/studio/orders/route.ts");
+  const getRoute = route.slice(route.indexOf("export async function GET"), route.indexOf("export async function POST"));
+  const postRoute = route.slice(route.indexOf("export async function POST"));
+  const inbox = source("components/studio/connected-order-inbox.tsx");
+  const authority = source("lib/server/studio-authority-repository.ts");
+
+  assert.match(getRoute, /listStudioOrderablePieceSkus/);
+  assert.match(getRoute, /eligibleResult\.skus\.has\(product\.sku\)/);
+  assert.match(postRoute, /getShopOrderService\(\)\.createAssistedOrder\(actor, body\)/);
+  assert.doesNotMatch(postRoute, /loadServerShopProducts|listStudioOrderablePieceSkus|eligibleSkus/);
+  assert.match(authority, /studioPieceIsOrderable/);
+  assert.match(authority, /piece\.expectedCustody === "STUDIO"/);
+  assert.match(authority, /!piece\.hasLocationMismatch/);
+  assert.match(authority, /!piece\.activeHold/);
+  assert.match(inbox, /productsReady/);
+  assert.match(inbox, /Pieces unavailable/);
+});
+
 test("route shells and account expose authoritative orders without relabelling local drafts", () => {
   const shopShell = source("components/shop/shop-shell.tsx");
   const shopMobileAction = source("components/shop/shop-mobile-action-context.tsx");
@@ -216,6 +235,10 @@ test("commerce surfaces use customer language and expose the exact next Studio a
   assert.match(inbox, /createIntentRef\.current\?\.fingerprint === fingerprint/);
   assert.match(inbox, /idempotencyKey: intent\.idempotencyKey/);
   assert.match(inbox, /safely reuse this reservation attempt/);
+  assert.match(inbox, /function clearRequestedPieceHandoff\(\)/);
+  assert.match(inbox, /url\.searchParams\.delete\("piece"\)/);
+  assert.match(inbox, /onClick=\{openManualOrder\}/);
+  assert.match(inbox, /event\.target\.checked && requestedPieceUnavailable\) clearRequestedPieceHandoff\(\)/);
   assert.match(inbox, /<details className="studio-stack-filter">[\s\S]*?<summary>Find orders/);
   assert.match(detail, /id=\{isNextAction \? "studio-order-next-action"/);
   assert.match(detail, /open=\{isNextAction \|\| undefined\}/);
@@ -235,4 +258,25 @@ test("commerce surfaces use customer language and expose the exact next Studio a
   assert.match(detail, /orderEventLabel\(event, order\.fulfillment\.kind\)/);
   assert.match(customerStatus, /orderEventLabel\(event, order\.fulfillment\.kind\)/);
   assert.doesNotMatch(visibleCommerce, /Connected orders|settled funds|Evidence review|payment evidence|Fulfilment|Neon is authoritative|server-backed|server accepts|Inspect the artifact|Immutable record/);
+});
+
+test("scenario order links open an exact read-only Operations preview", () => {
+  const operations = source("components/studio/operations-desk.tsx");
+
+  assert.match(operations, /const scenarioOrderReference = scenario \? searchParams\.get\("order"\) : null/);
+  assert.match(operations, /orders\.find\(\(order\) => order\.reference === scenarioOrderReference\)/);
+  assert.match(operations, /aria-label=\{`Open scenario order \$\{scenarioOrder\.reference\}`\}/);
+  assert.match(operations, /aria-haspopup="dialog"/);
+  assert.match(operations, /open=\{scenarioOrderOpen && Boolean\(scenarioOrder\)\}/);
+  assert.match(operations, /title=\{scenarioOrder\?\.lines\[0\]\?\.name\.split\(" · "\)\[0\] \?\? "Scenario order"\}/);
+  assert.match(operations, /title="Read-only scenario"/);
+  assert.match(operations, /cannot charge, dispatch, refund, release, or change an order/);
+  assert.match(operations, /params\.delete\("order"\)/);
+  assert.match(operations, /params\.get\("view"\) === "orders"/);
+  assert.match(operations, /router\.replace\(`\/studio\/operations\$\{query \? `\?\$\{query\}` : ""\}`/);
+  assert.match(operations, /Studio will not substitute another order/);
+  assert.doesNotMatch(
+    operations.slice(operations.indexOf('className="studio-scenario-order-sheet"'), operations.indexOf('className="studio-inventory-detail-sheet"')),
+    /createHold|releaseHold|recordLocation|fetch\(|allowedTransitions|MutationAction/,
+  );
 });

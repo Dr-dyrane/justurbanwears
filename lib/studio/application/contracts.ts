@@ -60,9 +60,18 @@ export type StudioCapability = {
     | "SEARCH"
     | "ASK_READ"
     | "WARDROBE_READ"
+    | "WARDROBE_WRITE"
     | "ORDERS_READ"
+    | "ORDERS_CREATE"
+    | "ORDERS_WRITE"
     | "MODELS_READ"
+    | "MODELS_WRITE"
     | "MEDIA_READ"
+    | "MEDIA_WRITE"
+    | "OPERATIONS_READ"
+    | "HOLDS_WRITE"
+    | "LOCATIONS_WRITE"
+    | "OPERATIONS_WRITE"
     | "COLLECTIONS_READ"
     | "COLLECTIONS_WRITE";
   state: StudioCapabilityState;
@@ -99,7 +108,17 @@ export type StudioSearchDocumentKind =
   | "MEDIA"
   | "UPDATE";
 
+export type StudioSearchAvailableAction =
+  | "CREATE_HOLD"
+  | "RELEASE_HOLD"
+  | "CREATE_ORDER"
+  | "CANCEL_ORDER"
+  | "REFUND_ORDER"
+  | "ADVANCE_ORDER"
+  | "UPDATE_LOCATION";
+
 export type StudioSearchDocument = {
+  availableActions?: readonly StudioSearchAvailableAction[];
   id: string;
   kind: StudioSearchDocumentKind;
   primaryLabel: string;

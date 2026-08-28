@@ -39,9 +39,9 @@ function fixture(): StudioAuthoritySnapshot {
       expectedLocationLabel: "Wardrobe rail",
       expectedCustody: "STUDIO",
       orderReference: null,
-      observedLocationKey: null,
-      observedLocationLabel: null,
-      observedAt: null,
+      observedLocationKey: "WARDROBE_RAIL",
+      observedLocationLabel: "Wardrobe rail",
+      observedAt: now,
       hasLocationMismatch: false,
       activeHold: null,
     }],
@@ -158,6 +158,8 @@ test("search documents are bounded, canonical and deterministic", () => {
   assert.ok(first.searchDocuments.length <= 300);
   assert.equal(first.searchDocuments[0]?.id, "service:atelier");
   assert.equal(first.searchDocuments.find((item) => item.id === "sku:JUW-025")?.route, "/studio/wardrobe/wardrobe-025");
+  assert.deepEqual(first.searchDocuments.find((item) => item.id === "piece:sku:JUW-025")?.availableActions, ["CREATE_HOLD", "CREATE_ORDER", "UPDATE_LOCATION"]);
+  assert.deepEqual(first.searchDocuments.find((item) => item.id === "sku:JUW-025")?.availableActions, ["CREATE_HOLD", "CREATE_ORDER", "UPDATE_LOCATION"]);
   assert.equal(first.summary.orders.value, null);
   assert.ok(first.degradedSources.some((item) => item.source === "ORDERS"));
   assert.equal(first.summary.live.value, null);
@@ -169,6 +171,124 @@ test("search documents are bounded, canonical and deterministic", () => {
     openCount: 1,
     source: "CONNECTED",
   });
+});
+
+test("location or custody mismatches suppress reservation actions", () => {
+  const authority = fixture();
+  authority.pieces = [{
+    ...authority.pieces[0],
+    hasLocationMismatch: true,
+    observedLocationKey: "POPUP_RAIL",
+    observedLocationLabel: "Pop-up rail",
+    observedAt: now,
+  }];
+  const projection = projectConnectedStudioApplication({
+    operator,
+    now,
+    authority,
+    holdWriteReady: true,
+    orderWriteReady: true,
+  });
+  assert.deepEqual(projection.searchDocuments.find((item) => item.id === "piece:sku:JUW-025")?.availableActions, ["UPDATE_LOCATION"]);
+  assert.deepEqual(projection.searchDocuments.find((item) => item.id === "sku:JUW-025")?.availableActions, ["UPDATE_LOCATION"]);
+});
+
+test("reservation actions require a positive exact Wardrobe observation", () => {
+  const actionsFor = (piece: StudioAuthoritySnapshot["pieces"][number]) => {
+    const authority = fixture();
+    authority.pieces = [piece];
+    return projectConnectedStudioApplication({ operator, now, authority })
+      .searchDocuments.find((item) => item.id === `piece:${piece.pieceKey}`)
+      ?.availableActions ?? [];
+  };
+  const availablePiece = fixture().pieces[0];
+
+  assert.deepEqual(actionsFor(availablePiece), ["CREATE_HOLD", "CREATE_ORDER", "UPDATE_LOCATION"]);
+  assert.deepEqual(actionsFor({
+    ...availablePiece,
+    observedAt: null,
+  }), ["UPDATE_LOCATION"]);
+  assert.deepEqual(actionsFor({
+    ...availablePiece,
+    observedLocationKey: "PACKING_SHELF",
+    observedLocationLabel: "Packing shelf",
+  }), ["UPDATE_LOCATION"]);
+  assert.deepEqual(actionsFor({
+    ...availablePiece,
+    expectedLocationKey: "PACKING_SHELF",
+    expectedLocationLabel: "Packing shelf",
+  }), ["UPDATE_LOCATION"]);
+});
+
+test("unresolved custody also suppresses active-hold release", () => {
+  const authority = fixture();
+  authority.pieces = [{
+    ...authority.pieces[0],
+    availability: "RESERVED",
+    activeHold: {
+      id: "hold-1",
+      sku: "JUW-025",
+      customerName: "Private customer",
+      contact: "private",
+      reason: "Fitting",
+      status: "ACTIVE",
+      expiresAt: "2026-08-24T12:00:00.000Z",
+      createdAt: now,
+      releasedAt: null,
+    },
+    expectedCustody: "COURIER",
+    hasLocationMismatch: true,
+  }];
+  const projection = projectConnectedStudioApplication({ operator, now, authority });
+  const actions = projection.searchDocuments.find((item) => item.id === "piece:sku:JUW-025")?.availableActions ?? [];
+  assert.equal(actions.includes("RELEASE_HOLD"), false);
+  assert.equal(actions.includes("CREATE_ORDER"), false);
+});
+
+test("an active hold must be reconciled to the wardrobe rail before release", () => {
+  const authority = fixture();
+  const activeHold = {
+    id: "hold-1",
+    sku: "JUW-025",
+    customerName: "Private customer",
+    contact: "private",
+    reason: "Fitting",
+    status: "ACTIVE" as const,
+    expiresAt: "2026-08-24T12:00:00.000Z",
+    createdAt: now,
+    releasedAt: null,
+  };
+  authority.pieces = [{
+    ...authority.pieces[0],
+    activeHold,
+    availability: "RESERVED",
+    expectedLocationKey: "PACKING_SHELF",
+    expectedLocationLabel: "Packing shelf",
+  }];
+  let projection = projectConnectedStudioApplication({ operator, now, authority });
+  let actions = projection.searchDocuments.find((item) => item.id === "piece:sku:JUW-025")?.availableActions ?? [];
+  assert.equal(actions.includes("RELEASE_HOLD"), false);
+  assert.equal(actions.includes("UPDATE_LOCATION"), true);
+
+  authority.pieces = [{
+    ...authority.pieces[0],
+    expectedLocationKey: "WARDROBE_RAIL",
+    expectedLocationLabel: "Wardrobe rail",
+    observedLocationKey: "WARDROBE_RAIL",
+    observedLocationLabel: "Wardrobe rail",
+    observedAt: now,
+  }];
+  projection = projectConnectedStudioApplication({ operator, now, authority });
+  actions = projection.searchDocuments.find((item) => item.id === "piece:sku:JUW-025")?.availableActions ?? [];
+  assert.equal(actions.includes("RELEASE_HOLD"), true);
+
+  authority.pieces = [{
+    ...authority.pieces[0],
+    activeHold: { ...activeHold, status: "RELEASED", releasedAt: now },
+  }];
+  projection = projectConnectedStudioApplication({ operator, now, authority });
+  actions = projection.searchDocuments.find((item) => item.id === "piece:sku:JUW-025")?.availableActions ?? [];
+  assert.equal(actions.includes("RELEASE_HOLD"), false);
 });
 
 test("scenario projection is explicit and uses the sanitized collection compatibility snapshot", () => {
@@ -185,7 +305,16 @@ test("scenario projection is explicit and uses the sanitized collection compatib
     SHOP_COLLECTION_COMPATIBILITY.map((scope) => ({ key: scope.key, pieces: scope.skus.length })),
   );
   assert.equal(projection.capabilities.find((item) => item.id === "COLLECTIONS_READ")?.state, "AVAILABLE");
-  assert.equal(projection.capabilities.find((item) => item.id === "COLLECTIONS_WRITE")?.state, "AVAILABLE");
+  assert.equal(projection.capabilities.find((item) => item.id === "COLLECTIONS_WRITE")?.state, "UNAVAILABLE");
+  assert.equal(projection.capabilities.find((item) => item.id === "WARDROBE_WRITE")?.state, "UNAVAILABLE");
+  assert.equal(projection.capabilities.find((item) => item.id === "ORDERS_CREATE")?.state, "UNAVAILABLE");
+  assert.equal(projection.capabilities.find((item) => item.id === "ORDERS_WRITE")?.state, "UNAVAILABLE");
+  assert.equal(projection.capabilities.find((item) => item.id === "MEDIA_WRITE")?.state, "UNAVAILABLE");
+  assert.equal(projection.capabilities.find((item) => item.id === "HOLDS_WRITE")?.state, "UNAVAILABLE");
+  assert.equal(projection.capabilities.find((item) => item.id === "LOCATIONS_WRITE")?.state, "UNAVAILABLE");
+  assert.equal(projection.capabilities.find((item) => item.id === "OPERATIONS_WRITE")?.state, "UNAVAILABLE");
+  assert.equal(projection.capabilities.find((item) => item.id === "MODELS_READ")?.state, "UNAVAILABLE");
+  assert.equal(projection.capabilities.find((item) => item.id === "MODELS_WRITE")?.state, "UNAVAILABLE");
   assert.equal(projection.degradedSources.some((item) => item.source === "COLLECTIONS"), false);
   assert.deepEqual(projection.continueAction, {
     id: "returns",
@@ -197,6 +326,8 @@ test("scenario projection is explicit and uses the sanitized collection compatib
   assert.equal(projection.summary.attention.value, 1);
   assert.equal(projection.summary.available.value, 33);
   assert.equal(projection.summary.live.value, 32);
+  assert.ok(projection.searchDocuments.some((document) => document.kind === "ORDER" && document.route.includes("order=scenario-order-reserved")));
+  assert.equal(projection.searchDocuments.some((document) => document.kind === "MODEL"), false);
   assert.ok(projection.searchDocuments.every((document) => document.route.includes("scenario=lifecycle")));
 });
 
@@ -221,9 +352,22 @@ test("connected projection prefers first-class collections and exposes write cap
         updatedAt: now,
       }],
     },
+    holdWriteReady: true,
+    locationWriteReady: true,
+    mediaWriteReady: true,
+    modelsWriteReady: true,
+    orderWriteReady: true,
   });
   assert.deepEqual(projection.collectionScopes.map((scope) => scope.key), ["drop-03"]);
   assert.equal(projection.capabilities.find((item) => item.id === "COLLECTIONS_WRITE")?.state, "AVAILABLE");
+  assert.equal(projection.capabilities.find((item) => item.id === "WARDROBE_WRITE")?.state, "AVAILABLE");
+  assert.equal(projection.capabilities.find((item) => item.id === "ORDERS_CREATE")?.state, "AVAILABLE");
+  assert.equal(projection.capabilities.find((item) => item.id === "ORDERS_WRITE")?.state, "AVAILABLE");
+  assert.equal(projection.capabilities.find((item) => item.id === "MEDIA_WRITE")?.state, "AVAILABLE");
+  assert.equal(projection.capabilities.find((item) => item.id === "HOLDS_WRITE")?.state, "AVAILABLE");
+  assert.equal(projection.capabilities.find((item) => item.id === "LOCATIONS_WRITE")?.state, "AVAILABLE");
+  assert.equal(projection.capabilities.find((item) => item.id === "MODELS_WRITE")?.state, "AVAILABLE");
+  assert.equal(projection.capabilities.find((item) => item.id === "OPERATIONS_WRITE")?.state, "AVAILABLE");
   assert.equal(projection.degradedSources.some((item) => item.source === "COLLECTIONS"), false);
   assert.equal(projection.searchDocuments.find((item) => item.id.startsWith("collection:"))?.primaryLabel, "Drop 03");
 });

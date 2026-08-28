@@ -10,6 +10,10 @@ import type { StudioMachineState } from "../../lib/studio/domain/state";
 import type { ShopServerOrder } from "../../lib/shop/server-order/types";
 import type { StudioApplicationProjection } from "../../lib/studio/application/contracts";
 import {
+  createStudioDetailHydrationGate,
+  createStudioSingleFlight,
+} from "../../lib/studio/application/home-gate";
+import {
   createStudioScenarioIntakeClient,
   createStudioScenarioService,
   parseStudioScenario,
@@ -34,7 +38,7 @@ export interface StudioAuthorityActions {
   snapshot: StudioAuthoritySnapshot | null;
   status: StudioAuthorityStatus;
   error: string;
-  refresh(): Promise<void>;
+  refresh(): Promise<StudioAuthoritySnapshot | null>;
   createHold(input: Parameters<typeof createStudioHold>[0]): Promise<string>;
   releaseHold(id: string): Promise<string>;
   dismissNotification(id: string): Promise<void>;
@@ -58,6 +62,10 @@ interface StudioContextValue extends StudioMachineState, StudioActions {
 }
 
 const StudioContext = createContext<StudioContextValue | null>(null);
+
+function simulatorAuthorityTimestamp(value: string) {
+  return new Date(value).toISOString().replace(/(\.\d{3})Z$/, "$1000Z");
+}
 
 function simulatorAuthority(state: StudioMachineState): StudioAuthoritySnapshot {
   const orders: ShopServerOrder[] = state.orders.flatMap((order) => {
@@ -152,6 +160,9 @@ function simulatorAuthority(state: StudioMachineState): StudioAuthoritySnapshot 
       sizeLabel: garment.sizeLabel,
       imageSrc: garment.reviewCover?.src ?? null,
       availability,
+      authorityUpdatedAt: garment.createdAt,
+      authorityRevision: simulatorAuthorityTimestamp(garment.createdAt),
+      locationVersion: 0,
       expectedLocationKey: location.key,
       expectedLocationLabel: location.label,
       expectedCustody: location.custody,
@@ -196,9 +207,23 @@ function StudioMachineProvider({ children, scenario }: {
   children: React.ReactNode;
   scenario: StudioScenario | null;
 }) {
-  const service = useMemo(
-    () => scenario ? createStudioScenarioService(scenario) : createBrowserStudioService(),
+  const detailHydrationGate = useMemo(
+    () => createStudioDetailHydrationGate(Boolean(scenario)),
     [scenario],
+  );
+  const service = useMemo(
+    () => {
+      const source = scenario ? createStudioScenarioService(scenario) : createBrowserStudioService();
+      if (scenario) return source;
+      return {
+        ...source,
+        async hydrate() {
+          await detailHydrationGate.wait();
+          return source.hydrate();
+        },
+      };
+    },
+    [detailHydrationGate, scenario],
   );
   const intakeClient = useMemo(
     () => scenario ? createStudioScenarioIntakeClient(scenario) : studioEngineIntakeClient,
@@ -212,107 +237,104 @@ function StudioMachineProvider({ children, scenario }: {
   const [applicationSnapshot, setApplicationSnapshot] = useState<StudioApplicationProjection | null>(null);
   const [applicationStatus, setApplicationStatus] = useState<StudioApplicationStatus>(scenario ? "idle" : "loading");
   const [applicationError, setApplicationError] = useState("");
-  const authorityRequestRef = useRef<AbortController | null>(null);
-  const applicationRequestRef = useRef<AbortController | null>(null);
+  const authorityControllerRef = useRef<AbortController | null>(null);
+  const applicationControllerRef = useRef<AbortController | null>(null);
+  const hydrationScope = scenario ?? "connected";
+  const authoritySingleFlight = useMemo(
+    () => {
+      void hydrationScope;
+      return createStudioSingleFlight<StudioAuthoritySnapshot | null>();
+    },
+    [hydrationScope],
+  );
+  const applicationSingleFlight = useMemo(
+    () => {
+      void hydrationScope;
+      return createStudioSingleFlight();
+    },
+    [hydrationScope],
+  );
   const authorityLoadedAtRef = useRef(0);
   const applicationLoadedAtRef = useRef(0);
   const scenarioAuthority = useMemo(() => scenario ? simulatorAuthority(state) : null, [scenario, state]);
 
-  const refreshApplication = useCallback(async () => {
-    if (scenario) return;
-    applicationRequestRef.current?.abort();
-    const controller = new AbortController();
-    applicationRequestRef.current = controller;
-    setApplicationStatus((current) => current === "ready" ? current : "loading");
-    setApplicationError("");
-    try {
-      const snapshot = await readStudioApplication({ signal: controller.signal });
-      if (controller.signal.aborted) return;
-      setApplicationSnapshot(snapshot);
-      setApplicationStatus("ready");
-      applicationLoadedAtRef.current = Date.now();
-    } catch (cause) {
-      if (controller.signal.aborted) return;
-      setApplicationError(cause instanceof Error ? cause.message : "Studio snapshot is unavailable.");
-      setApplicationStatus("error");
-    }
-  }, [scenario]);
-
-  const refreshAuthority = useCallback(async () => {
-    if (scenario) return;
-    authorityRequestRef.current?.abort();
-    const controller = new AbortController();
-    authorityRequestRef.current = controller;
-    setAuthorityStatus((current) => current === "ready" ? current : "loading");
-    setAuthorityError("");
-    try {
-      const snapshot = await readStudioAuthority(controller.signal);
-      if (controller.signal.aborted) return;
-      setAuthoritySnapshot(snapshot);
-      setAuthorityStatus("ready");
-      authorityLoadedAtRef.current = Date.now();
-    } catch (cause) {
-      if (controller.signal.aborted) return;
-      setAuthorityError(cause instanceof Error ? cause.message : "Connected Studio truth is unavailable.");
-      setAuthorityStatus("error");
-    }
-  }, [scenario]);
-
-  useEffect(() => {
-    if (scenario) return;
-    const controller = new AbortController();
-    authorityRequestRef.current = controller;
-    void readStudioAuthority(controller.signal).then((snapshot) => {
-      if (controller.signal.aborted) return;
-      setAuthoritySnapshot(snapshot);
-      setAuthorityStatus("ready");
-      setAuthorityError("");
-      authorityLoadedAtRef.current = Date.now();
-    }).catch((cause: unknown) => {
-      if (controller.signal.aborted) return;
-      setAuthorityError(cause instanceof Error ? cause.message : "Connected Studio truth is unavailable.");
-      setAuthorityStatus("error");
-    });
-    const onVisibility = () => {
-      if (document.visibilityState === "visible" && Date.now() - authorityLoadedAtRef.current > 30_000) {
-        void refreshAuthority();
-      }
-    };
-    document.addEventListener("visibilitychange", onVisibility);
-    return () => {
-      document.removeEventListener("visibilitychange", onVisibility);
-      controller.abort();
-      authorityRequestRef.current?.abort();
-    };
-  }, [refreshAuthority, scenario]);
-
-  useEffect(() => {
-    if (scenario) return;
-    const controller = new AbortController();
-    applicationRequestRef.current = controller;
-    void readStudioApplication({ signal: controller.signal }).then((snapshot) => {
-      if (controller.signal.aborted) return;
-      setApplicationSnapshot(snapshot);
-      setApplicationStatus("ready");
+  const refreshApplication = useCallback(() => {
+    if (scenario) return Promise.resolve();
+    return applicationSingleFlight.run(async () => {
+      const controller = new AbortController();
+      applicationControllerRef.current = controller;
+      setApplicationStatus((current) => current === "ready" ? current : "loading");
       setApplicationError("");
-      applicationLoadedAtRef.current = Date.now();
-    }).catch((cause: unknown) => {
-      if (controller.signal.aborted) return;
-      setApplicationError(cause instanceof Error ? cause.message : "Studio snapshot is unavailable.");
-      setApplicationStatus("error");
-    });
-    const onVisibility = () => {
-      if (document.visibilityState === "visible" && Date.now() - applicationLoadedAtRef.current > 30_000) {
-        void refreshApplication();
+      try {
+        const snapshot = await readStudioApplication({ signal: controller.signal });
+        if (controller.signal.aborted) return;
+        setApplicationSnapshot(snapshot);
+        applicationLoadedAtRef.current = Date.now();
+        setApplicationStatus("ready");
+      } catch (cause) {
+        if (controller.signal.aborted) return;
+        setApplicationError(cause instanceof Error ? cause.message : "Studio snapshot is unavailable.");
+        setApplicationStatus(applicationLoadedAtRef.current ? "ready" : "error");
+      } finally {
+        if (applicationControllerRef.current === controller) applicationControllerRef.current = null;
       }
+    });
+  }, [applicationSingleFlight, scenario]);
+
+  const refreshAuthority = useCallback(() => {
+    if (scenario) return Promise.resolve(scenarioAuthority);
+    return authoritySingleFlight.run(async () => {
+      await detailHydrationGate.wait();
+      const controller = new AbortController();
+      authorityControllerRef.current = controller;
+      setAuthorityStatus((current) => current === "ready" ? current : "loading");
+      setAuthorityError("");
+      try {
+        const snapshot = await readStudioAuthority(controller.signal);
+        if (controller.signal.aborted) return null;
+        setAuthoritySnapshot(snapshot);
+        authorityLoadedAtRef.current = Date.now();
+        setAuthorityStatus("ready");
+        return snapshot;
+      } catch (cause) {
+        if (controller.signal.aborted) return null;
+        setAuthorityError(cause instanceof Error ? cause.message : "Connected Studio truth is unavailable.");
+        setAuthorityStatus("error");
+        return null;
+      } finally {
+        if (authorityControllerRef.current === controller) authorityControllerRef.current = null;
+      }
+    });
+  }, [authoritySingleFlight, detailHydrationGate, scenario, scenarioAuthority]);
+
+  useEffect(() => {
+    if (scenario) return;
+    let active = true;
+    const releaseDetails = () => {
+      if (!active) return;
+      detailHydrationGate.release();
+      void refreshAuthority();
+    };
+    void refreshApplication().finally(releaseDetails);
+
+    const onVisibility = () => {
+      if (document.visibilityState !== "visible") return;
+      if (Date.now() - applicationLoadedAtRef.current > 30_000) void refreshApplication();
+      if (
+        detailHydrationGate.isReleased()
+        && Date.now() - authorityLoadedAtRef.current > 30_000
+      ) void refreshAuthority();
     };
     document.addEventListener("visibilitychange", onVisibility);
     return () => {
+      active = false;
       document.removeEventListener("visibilitychange", onVisibility);
-      controller.abort();
-      applicationRequestRef.current?.abort();
+      applicationControllerRef.current?.abort();
+      authorityControllerRef.current?.abort();
+      applicationSingleFlight.clear();
+      authoritySingleFlight.clear();
     };
-  }, [refreshApplication, scenario]);
+  }, [applicationSingleFlight, authoritySingleFlight, detailHydrationGate, refreshApplication, refreshAuthority, scenario]);
 
   const application = useMemo<StudioApplicationActions>(() => ({
     snapshot: applicationSnapshot,

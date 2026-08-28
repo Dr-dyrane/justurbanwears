@@ -3,6 +3,7 @@ import { z } from "zod";
 import { getStudioDb } from "../../db/shop-postgres";
 import type { StudioOperator } from "./studio-operator";
 import { StudioEngineError } from "../studio/engine/errors";
+import { sha256 } from "../studio/engine/fingerprint";
 
 export const STOCKTAKE_LOCATIONS = [
   { key: "WARDROBE_RAIL", label: "Wardrobe rail" },
@@ -15,6 +16,8 @@ export type PhysicalCustody = "STUDIO" | "COURIER" | "CUSTOMER" | "UNKNOWN";
 export type PhysicalAvailability = "PRIVATE" | "AVAILABLE" | "RESERVED" | "SOLD" | "ARCHIVED";
 
 export type StocktakeExpectedPiece = {
+  authorityUpdatedAt: string;
+  locationVersion: number;
   pieceKey: string;
   wardrobeItemId: string | null;
   sku: string | null;
@@ -24,6 +27,10 @@ export type StocktakeExpectedPiece = {
   expectedCustody: PhysicalCustody;
   availability: PhysicalAvailability;
   orderReference: string | null;
+  orderVersion: number | null;
+  orderLifecycleStatus: string | null;
+  orderFulfillmentStatus: string | null;
+  orderReturnStatus: string | null;
 };
 
 export type PhysicalObservation = {
@@ -43,6 +50,7 @@ export type PhysicalObservation = {
 };
 
 export type PhysicalPiece = StocktakeExpectedPiece & {
+  authorityRevision: string;
   category: string;
   colour: string;
   condition: string;
@@ -137,8 +145,65 @@ function nullableString(value: unknown): string | null {
   return typeof value === "string" && value.length ? value : null;
 }
 
+function nullableNonnegativeInteger(value: unknown): number | null {
+  if (value === null || value === undefined || value === "") return null;
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed >= 0 ? parsed : null;
+}
+
 function locationLabel(locationKey: StocktakeLocationKey): string {
   return STOCKTAKE_LOCATIONS.find((location) => location.key === locationKey)?.label ?? locationKey;
+}
+
+function stocktakeObservationPersistenceError(error: unknown): StudioEngineError {
+  if (error instanceof StudioEngineError) return error;
+  const message = error instanceof Error ? error.message : "";
+  if (message.includes("STUDIO_IDEMPOTENCY_MISMATCH")) {
+    return new StudioEngineError(
+      "INVALID_REQUEST",
+      409,
+      "That location request key was already used.",
+      "Scan the piece again with a new request key.",
+    );
+  }
+  if (message.includes("STUDIO_STOCKTAKE_VERSION_CONFLICT")) {
+    return new StudioEngineError(
+      "VERSION_CONFLICT",
+      409,
+      "This count changed before the check was saved.",
+      "Reload Stocktake.",
+    );
+  }
+  if (message.includes("STUDIO_STOCKTAKE_AUTHORITY_CONFLICT")) {
+    return new StudioEngineError(
+      "VERSION_CONFLICT",
+      409,
+      "This piece changed after the count started.",
+      "Reload Stocktake and start a new count from current custody.",
+    );
+  }
+  if (message.includes("STUDIO_LOCATION_VERSION_CONFLICT")) {
+    return new StudioEngineError(
+      "VERSION_CONFLICT",
+      409,
+      "This piece changed before the check was saved.",
+      "Reload Stocktake and scan the current piece again.",
+    );
+  }
+  if (message.includes("STUDIO_INVALID_REQUEST")) {
+    return new StudioEngineError(
+      "INVALID_REQUEST",
+      400,
+      "Studio rejected that location check.",
+      "Reload Stocktake and review the scan.",
+    );
+  }
+  return new StudioEngineError(
+    "ENGINE_UNAVAILABLE",
+    503,
+    "The location check could not be saved.",
+    "Try again after reloading Stocktake.",
+  );
 }
 
 function physicalPieceAuthorityCtes(operatorSubject: string) {
@@ -152,8 +217,11 @@ function physicalPieceAuthorityCtes(operatorSubject: string) {
       select
         items.sku,
         orders.reference,
-        orders.fulfillment_status,
-        returns.status as return_status,
+        orders.version,
+        orders.lifecycle_status::text as lifecycle_status,
+        orders.fulfillment_status::text as fulfillment_status,
+        orders.updated_at as authority_updated_at,
+        returns.status::text as return_status,
         row_number() over (
           partition by items.sku
           order by orders.updated_at desc, orders.id desc
@@ -164,7 +232,9 @@ function physicalPieceAuthorityCtes(operatorSubject: string) {
       where orders.lifecycle_status in ('ACTIVE', 'COMPLETED')
     ),
     current_order as (
-      select sku, reference, fulfillment_status, return_status
+      select
+        sku, reference, version, lifecycle_status, fulfillment_status,
+        authority_updated_at, return_status
       from order_candidates
       where rank = 1
     ),
@@ -183,6 +253,10 @@ function physicalPieceAuthorityCtes(operatorSubject: string) {
         catalogue.condition,
         catalogue.tagged_size as size_label,
         inventory.availability::text as availability,
+        greatest(
+          inventory.updated_at,
+          coalesce(current_order.authority_updated_at, inventory.updated_at)
+        ) as authority_updated_at,
         (
           select media.value->>'src'
           from jsonb_array_elements(catalogue.media) with ordinality as media(value, position)
@@ -215,7 +289,11 @@ function physicalPieceAuthorityCtes(operatorSubject: string) {
           when inventory.availability = 'SOLD' then 'CUSTOMER'
           else 'UNKNOWN'
         end as expected_custody,
-        current_order.reference as order_reference
+        current_order.reference as order_reference,
+        current_order.version as order_version,
+        current_order.lifecycle_status as order_lifecycle_status,
+        current_order.fulfillment_status as order_fulfillment_status,
+        current_order.return_status as order_return_status
       from shop_inventory as inventory
       inner join shop_catalogue_items as catalogue on catalogue.sku = inventory.sku
       left join dynamic_publications as publication on publication.sku = inventory.sku
@@ -232,6 +310,7 @@ function physicalPieceAuthorityCtes(operatorSubject: string) {
         wardrobe.condition,
         wardrobe.size_label,
         case when wardrobe.state = 'ARCHIVED' then 'ARCHIVED' else 'PRIVATE' end as availability,
+        wardrobe.updated_at as authority_updated_at,
         case
           when wardrobe.approved_asset_id is null then null
           else '/api/studio/intakes/' || wardrobe.intake_id::text || '/assets/' || wardrobe.approved_asset_id::text
@@ -239,7 +318,11 @@ function physicalPieceAuthorityCtes(operatorSubject: string) {
         case when wardrobe.state = 'ARCHIVED' then 'RETIRED' else 'WARDROBE_RAIL' end as expected_location_key,
         case when wardrobe.state = 'ARCHIVED' then 'Retired' else 'Wardrobe rail' end as expected_location_label,
         case when wardrobe.state = 'ARCHIVED' then 'UNKNOWN' else 'STUDIO' end as expected_custody,
-        null::varchar(40) as order_reference
+        null::varchar(40) as order_reference,
+        null::integer as order_version,
+        null::text as order_lifecycle_status,
+        null::text as order_fulfillment_status,
+        null::text as order_return_status
       from studio_wardrobe_items as wardrobe
       where wardrobe.operator_subject = ${operatorSubject}
         and not exists (
@@ -264,11 +347,17 @@ function physicalPieceAuthorityCtes(operatorSubject: string) {
         piece.condition,
         piece.size_label,
         piece.availability,
+        piece.authority_updated_at,
         piece.image_src,
         coalesce(custody.location_key, piece.expected_location_key) as expected_location_key,
         coalesce(custody.location_label, piece.expected_location_label) as expected_location_label,
         coalesce(custody.custody, piece.expected_custody) as expected_custody,
-        piece.order_reference
+        piece.order_reference,
+        piece.order_version,
+        piece.order_lifecycle_status,
+        piece.order_fulfillment_status,
+        piece.order_return_status,
+        coalesce(custody_revision.version, 0) as location_version
       from base_piece_authority as piece
       left join studio_piece_custody as custody
         on custody.operator_subject = ${operatorSubject}
@@ -277,6 +366,10 @@ function physicalPieceAuthorityCtes(operatorSubject: string) {
         and custody.custody = 'STUDIO'
         and custody.availability = piece.availability
         and custody.order_reference is not distinct from piece.order_reference
+        and custody.updated_at >= piece.authority_updated_at
+      left join studio_piece_custody as custody_revision
+        on custody_revision.operator_subject = ${operatorSubject}
+        and custody_revision.piece_key = piece.piece_key
     )
   `;
 }
@@ -324,23 +417,33 @@ function mapPiece(row: DatabaseRow): PhysicalPiece {
     condition: String(row.condition),
     sizeLabel: String(row.size_label),
     availability: String(row.availability) as PhysicalAvailability,
+    authorityUpdatedAt: iso(row.authority_updated_at),
+    authorityRevision: String(row.authority_revision),
+    locationVersion: nullableNonnegativeInteger(row.location_version) ?? 0,
     imageSrc: nullableString(row.image_src),
     expectedLocationKey: String(row.expected_location_key),
     expectedLocationLabel: String(row.expected_location_label),
     expectedCustody: String(row.expected_custody) as PhysicalCustody,
     orderReference: nullableString(row.order_reference),
+    orderVersion: nullableNonnegativeInteger(row.order_version),
+    orderLifecycleStatus: nullableString(row.order_lifecycle_status),
+    orderFulfillmentStatus: nullableString(row.order_fulfillment_status),
+    orderReturnStatus: nullableString(row.order_return_status),
     latestObservation: mapObservation(row),
   };
 }
 
-export async function listPhysicalPieces(operator: StudioOperator): Promise<PhysicalPiece[]> {
-  const database = await getStudioDb();
-  const authority = physicalPieceAuthorityCtes(operator.subject);
-  const latest = latestObservationCte(operator.subject);
-  const result = await database.execute<DatabaseRow>(sql`
+export function physicalPiecesReadQuery(operatorSubject: string) {
+  const authority = physicalPieceAuthorityCtes(operatorSubject);
+  const latest = latestObservationCte(operatorSubject);
+  return sql`
     with ${authority}, ${latest}
     select
       piece.*,
+      to_char(
+        piece.authority_updated_at at time zone 'UTC',
+        'YYYY-MM-DD"T"HH24:MI:SS.US"Z"'
+      ) as authority_revision,
       observation.id as observation_id,
       observation.stocktake_id as observation_stocktake_id,
       observation.piece_key as observation_piece_key,
@@ -359,8 +462,17 @@ export async function listPhysicalPieces(operator: StudioOperator): Promise<Phys
       case piece.expected_custody when 'STUDIO' then 0 else 1 end,
       piece.title,
       piece.piece_key
-  `);
-  return result.rows.map(mapPiece);
+  `;
+}
+
+export function mapPhysicalPieceRows(rows: readonly Record<string, unknown>[]): PhysicalPiece[] {
+  return rows.map(mapPiece);
+}
+
+export async function listPhysicalPieces(operator: StudioOperator): Promise<PhysicalPiece[]> {
+  const database = await getStudioDb();
+  const result = await database.execute<DatabaseRow>(physicalPiecesReadQuery(operator.subject));
+  return mapPhysicalPieceRows(result.rows);
 }
 
 function matchesPieceKey(piece: PhysicalPiece, candidate: string): boolean {
@@ -388,6 +500,8 @@ function mapExpectedPieces(value: unknown): StocktakeExpectedPiece[] {
     const item = candidate as Record<string, unknown>;
     if (typeof item.pieceKey !== "string" || typeof item.title !== "string") return [];
     return [{
+      authorityUpdatedAt: typeof item.authorityUpdatedAt === "string" ? item.authorityUpdatedAt : "",
+      locationVersion: nullableNonnegativeInteger(item.locationVersion) ?? 0,
       pieceKey: item.pieceKey,
       wardrobeItemId: nullableString(item.wardrobeItemId),
       sku: nullableString(item.sku),
@@ -397,6 +511,10 @@ function mapExpectedPieces(value: unknown): StocktakeExpectedPiece[] {
       expectedCustody: String(item.expectedCustody) as PhysicalCustody,
       availability: String(item.availability) as PhysicalAvailability,
       orderReference: nullableString(item.orderReference),
+      orderVersion: nullableNonnegativeInteger(item.orderVersion),
+      orderLifecycleStatus: nullableString(item.orderLifecycleStatus),
+      orderFulfillmentStatus: nullableString(item.orderFulfillmentStatus),
+      orderReturnStatus: nullableString(item.orderReturnStatus),
     }];
   });
 }
@@ -497,6 +615,8 @@ export async function startStocktake(input: {
     with ${authority},
     expected as (
       select coalesce(jsonb_agg(jsonb_build_object(
+        'authorityUpdatedAt', piece.authority_updated_at,
+        'locationVersion', piece.location_version,
         'pieceKey', piece.piece_key,
         'wardrobeItemId', piece.wardrobe_item_id,
         'sku', piece.sku,
@@ -505,7 +625,11 @@ export async function startStocktake(input: {
         'expectedLocationLabel', piece.expected_location_label,
         'expectedCustody', piece.expected_custody,
         'availability', piece.availability,
-        'orderReference', piece.order_reference
+        'orderReference', piece.order_reference,
+        'orderVersion', piece.order_version,
+        'orderLifecycleStatus', piece.order_lifecycle_status,
+        'orderFulfillmentStatus', piece.order_fulfillment_status,
+        'orderReturnStatus', piece.order_return_status
       ) order by piece.title, piece.piece_key), '[]'::jsonb) as pieces
       from piece_authority as piece
       where piece.expected_location_key = ${input.locationKey}
@@ -588,107 +712,96 @@ export async function observePhysicalPiece(input: {
   pieceKey: string;
   stocktakeId?: string | null;
 }): Promise<{ observation: PhysicalObservation; piece: PhysicalPiece; session: StocktakeSession | null }> {
-  const piece = await getPhysicalPiece(input.operator, input.pieceKey);
-  const session = input.stocktakeId ? await getActiveStocktake(input.operator) : null;
-  if (input.stocktakeId && (!session || session.id !== input.stocktakeId)) {
-    throw new StudioEngineError("INVALID_TRANSITION", 409, "That count is closed.", "Start a new count.");
-  }
-  if (session && session.locationKey !== input.locationKey) {
-    throw new StudioEngineError(
-      "INVALID_REQUEST",
-      400,
-      `This count is for ${session.locationLabel.toLowerCase()}.`,
-      "Record the piece at the count location.",
-    );
-  }
-  const expectedSnapshot = session?.expectedPieces.find((candidate) => candidate.pieceKey === piece.pieceKey);
-  const expected = expectedSnapshot ?? piece;
-  const observedLabel = locationLabel(input.locationKey);
-  const resultValue = expected.expectedCustody === "STUDIO"
-    && expected.expectedLocationKey === input.locationKey
-    ? "MATCH"
-    : "MISMATCH";
   const database = await getStudioDb();
-  const result = await database.execute<DatabaseRow>(sql`
-    with existing as (
-      select *
-      from studio_physical_observations
-      where operator_subject = ${input.operator.subject}
-        and idempotency_key = ${input.idempotencyKey}
-    ),
-    session_lock as (
-      select stocktake.id, stocktake.version
-      from studio_stocktakes as stocktake
-      where ${session?.id ?? null}::uuid is not null
-        and stocktake.id = ${session?.id ?? null}::uuid
-        and stocktake.operator_subject = ${input.operator.subject}
-        and stocktake.state = 'OPEN'
-        and stocktake.version = ${input.expectedVersion ?? -1}
-        and stocktake.location_key = ${input.locationKey}
-        and not exists (select 1 from existing)
-      for update
-    ),
-    session_tick as (
-      update studio_stocktakes as stocktake
-      set version = stocktake.version + 1, updated_at = now()
-      from session_lock
-      where stocktake.id = session_lock.id
-        and stocktake.version = session_lock.version
-        and stocktake.state = 'OPEN'
-      returning stocktake.id
-    ),
-    inserted as (
-      insert into studio_physical_observations (
-        stocktake_id, operator_subject, idempotency_key, piece_key,
-        wardrobe_item_id, sku, command,
-        expected_location_key, expected_location_label, expected_custody,
-        observed_location_key, observed_location_label, observed_custody,
-        result, order_reference, note, occurred_at
-      )
-      select
-        ${session?.id ?? null}::uuid, ${input.operator.subject}, ${input.idempotencyKey}, ${piece.pieceKey},
-        ${piece.wardrobeItemId ?? null}::uuid, ${piece.sku}, 'CONFIRM_IN_HAND',
-        ${expected.expectedLocationKey}, ${expected.expectedLocationLabel}, ${expected.expectedCustody},
-        ${input.locationKey}, ${observedLabel}, 'STUDIO',
-        ${resultValue}, ${expected.orderReference}, ${input.note || null}, now()
-      where ${session?.id ?? null}::uuid is null
-        or exists (select 1 from session_tick)
-      on conflict (operator_subject, idempotency_key) do nothing
-      returning *
-    )
-    select * from inserted
-    union all
-    select * from existing
+  const requestFingerprint = sha256(JSON.stringify({
+    command: "CONFIRM",
+    contract: "juw.studio.location-command.v1",
+    expectedVersion: input.expectedVersion ?? null,
+    locationKey: input.locationKey,
+    note: input.note ?? null,
+    pieceKey: input.pieceKey,
+    source: "STOCKTAKE",
+    stocktakeId: input.stocktakeId ?? null,
+  }));
+  const replay = await database.execute<DatabaseRow>(sql`
+    select
+      receipt.request_fingerprint,
+      receipt.command as receipt_command,
+      observation.*
+    from studio_piece_custody_commands as receipt
+    left join studio_physical_observations as observation
+      on observation.operator_subject = receipt.operator_subject
+      and observation.idempotency_key = receipt.idempotency_key
+    where receipt.operator_subject = ${input.operator.subject}
+      and receipt.idempotency_key = ${input.idempotencyKey}
     limit 1
   `);
-  const row = result.rows[0];
-  if (!row) {
-    if (session) {
+  const replayRow = replay.rows[0];
+  if (replayRow) {
+    if (
+      String(replayRow.request_fingerprint) !== requestFingerprint
+      || String(replayRow.receipt_command) !== "CONFIRM"
+    ) {
       throw new StudioEngineError(
-        "VERSION_CONFLICT",
+        "INVALID_REQUEST",
         409,
-        "This count changed before the check was saved.",
-        "Reload Stocktake.",
+        "That location request key was already used.",
+        "Scan the piece again with a new request key.",
       );
     }
-    throw new StudioEngineError("ENGINE_UNAVAILABLE", 503, "The check could not be saved.", "Try again.");
+    if (!replayRow.id) {
+      throw new StudioEngineError(
+        "ENGINE_UNAVAILABLE",
+        503,
+        "The location check receipt is incomplete.",
+        "Reload Stocktake before trying again.",
+      );
+    }
+    const piece = await getPhysicalPiece(input.operator, String(replayRow.piece_key));
+    return {
+      observation: mapInsertedObservation(replayRow),
+      piece,
+      session: input.stocktakeId ? await getActiveStocktake(input.operator) : null,
+    };
   }
-  if (
-    String(row.piece_key) !== piece.pieceKey
-    || nullableString(row.stocktake_id) !== (session?.id ?? null)
-    || String(row.observed_location_key) !== input.locationKey
-  ) {
+
+  const piece = await getPhysicalPiece(input.operator, input.pieceKey);
+  let row: DatabaseRow | undefined;
+  try {
+    const result = await database.execute<DatabaseRow>(sql`
+      select *
+      from studio_record_piece_confirmation_v2(
+        ${input.operator.subject},
+        ${input.idempotencyKey},
+        ${requestFingerprint},
+        'STOCKTAKE',
+        ${piece.pieceKey},
+        ${piece.wardrobeItemId ?? null}::uuid,
+        ${piece.sku},
+        null::integer,
+        null::text,
+        ${input.locationKey},
+        ${input.note || null},
+        ${input.stocktakeId ?? null}::uuid,
+        ${input.expectedVersion ?? null}::integer
+      )
+    `);
+    row = result.rows[0];
+  } catch (error) {
+    throw stocktakeObservationPersistenceError(error);
+  }
+  if (!row) {
     throw new StudioEngineError(
-      "INVALID_REQUEST",
-      409,
-      "That check request was already used.",
-      "Scan the piece again.",
+      "ENGINE_UNAVAILABLE",
+      503,
+      "The location check could not be saved.",
+      "Try again after reloading Stocktake.",
     );
   }
   return {
     observation: mapInsertedObservation(row),
     piece,
-    session: session ? await getActiveStocktake(input.operator) : null,
+    session: input.stocktakeId ? await getActiveStocktake(input.operator) : null,
   };
 }
 

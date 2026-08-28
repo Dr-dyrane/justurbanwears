@@ -4,6 +4,7 @@ import {
   studioOrderHasDueWork,
 } from "../shop/order-presentation";
 import { CURRENT_SHOP_DROP } from "../shop/current-drop";
+import { getShopCommerceGuidance } from "../shop/server-order/commerce-guidance";
 import {
   DROP_01_INCOMPLETE_ARCHIVED_DRAFT_SKUS,
   SHOP_COLLECTION_COMPATIBILITY,
@@ -32,7 +33,11 @@ import {
   type StudioSummary,
   type StudioSummaryMetric,
 } from "../studio/application/contracts";
-import { getStudioAuthority } from "./studio-authority-repository";
+import {
+  getStudioAuthority,
+  getStudioAuthorityWriteReadiness,
+  type StudioAuthorityWriteReadiness,
+} from "./studio-authority-repository";
 import {
   listStudioCollections,
   type StudioCollectionReadResult,
@@ -181,6 +186,53 @@ function collectionDocuments(scopes: readonly StudioCollectionScope[]): StudioSe
   }));
 }
 
+function pieceAvailableActions(piece: StudioAuthoritySnapshot["pieces"][number]): StudioSearchDocument["availableActions"] {
+  const actions = new Set<NonNullable<StudioSearchDocument["availableActions"]>[number]>();
+  if (piece.expectedCustody === "STUDIO") actions.add("UPDATE_LOCATION");
+  if (
+    piece.activeHold
+    && piece.activeHold.status === "ACTIVE"
+    && piece.availability === "RESERVED"
+    && piece.expectedCustody === "STUDIO"
+    && piece.expectedLocationKey === "WARDROBE_RAIL"
+    && piece.observedLocationKey === "WARDROBE_RAIL"
+    && Boolean(piece.observedAt)
+    && !piece.hasLocationMismatch
+  ) actions.add("RELEASE_HOLD");
+  if (
+    piece.availability === "AVAILABLE"
+    && piece.sku
+    && !piece.activeHold
+    && piece.expectedCustody === "STUDIO"
+    && piece.expectedLocationKey === "WARDROBE_RAIL"
+    && piece.observedLocationKey === "WARDROBE_RAIL"
+    && Boolean(piece.observedAt)
+    && !piece.hasLocationMismatch
+  ) {
+    actions.add("CREATE_HOLD");
+    actions.add("CREATE_ORDER");
+  }
+  return [...actions].sort(compareText);
+}
+
+function orderAvailableActions(order: StudioAuthoritySnapshot["orders"][number]): StudioSearchDocument["availableActions"] {
+  const actions = new Set<NonNullable<StudioSearchDocument["availableActions"]>[number]>();
+  if (studioOrderHasDueWork(order)) actions.add("ADVANCE_ORDER");
+  for (const transition of order.allowedTransitions) {
+    if (transition.dimension === "LIFECYCLE" && transition.target === "CANCELLED") {
+      actions.add("CANCEL_ORDER");
+    }
+    if (transition.dimension === "CANCELLATION_REFUND") {
+      actions.add("CANCEL_ORDER");
+      actions.add("REFUND_ORDER");
+    }
+  }
+  if (order.allowedReturnTransitions.some((transition) => transition.dimension === "REFUND")) {
+    actions.add("REFUND_ORDER");
+  }
+  return [...actions].sort(compareText);
+}
+
 function authorityDocuments(authority: StudioAuthoritySnapshot): StudioSearchDocument[] {
   const documents: StudioSearchDocument[] = [];
   for (const piece of authority.pieces) {
@@ -192,6 +244,7 @@ function authorityDocuments(authority: StudioAuthoritySnapshot): StudioSearchDoc
       ? `/studio/wardrobe/${encodeURIComponent(piece.wardrobeItemId)}`
       : `/studio/operations?view=inventory&piece=${encodeURIComponent(piece.pieceKey)}`;
     documents.push({
+      availableActions: pieceAvailableActions(piece),
       id: `piece:${piece.pieceKey}`,
       kind: "PIECE",
       primaryLabel: piece.title,
@@ -201,6 +254,7 @@ function authorityDocuments(authority: StudioAuthoritySnapshot): StudioSearchDoc
       aliases: [piece.pieceKey, ...(piece.sku ? [piece.sku] : [])],
     });
     if (piece.sku) documents.push({
+      availableActions: pieceAvailableActions(piece),
       id: `sku:${piece.sku}`,
       kind: "SKU",
       primaryLabel: piece.sku,
@@ -211,6 +265,7 @@ function authorityDocuments(authority: StudioAuthoritySnapshot): StudioSearchDoc
     });
   }
   for (const order of authority.orders) documents.push({
+    availableActions: orderAvailableActions(order),
     id: `order:${order.reference}`,
     kind: "ORDER",
     primaryLabel: order.reference,
@@ -219,7 +274,7 @@ function authorityDocuments(authority: StudioAuthoritySnapshot): StudioSearchDoc
     route: `/studio/orders/${encodeURIComponent(order.reference)}`,
     aliases: order.lines.flatMap((line) => [line.sku, line.name]),
   });
-  for (const model of authority.models) documents.push({
+  for (const model of authority.models.filter((candidate) => candidate.state === "READY")) documents.push({
     id: `model:${model.id}`,
     kind: "MODEL",
     primaryLabel: model.name,
@@ -345,19 +400,59 @@ function connectedContinueAction(
   };
 }
 
-function connectedCapabilities(available: boolean, collectionsAvailable = false): StudioCapability[] {
-  const state = available ? "AVAILABLE" as const : "UNAVAILABLE" as const;
-  const compatibilityState = available ? "AVAILABLE" as const : "READ_ONLY_COMPATIBILITY" as const;
+function connectedCapabilities(input: {
+  authorityAvailable: boolean;
+  collectionsAvailable?: boolean;
+  holdWriteReady?: boolean;
+  locationWriteReady?: boolean;
+  mediaWriteReady?: boolean;
+  modelsWriteReady?: boolean;
+  orderWriteReady?: boolean;
+}): StudioCapability[] {
+  const state = input.authorityAvailable ? "AVAILABLE" as const : "UNAVAILABLE" as const;
+  const compatibilityState = input.authorityAvailable ? "AVAILABLE" as const : "READ_ONLY_COMPATIBILITY" as const;
   return [
     { id: "PROJECTION", state: "AVAILABLE" },
     { id: "SEARCH", state: compatibilityState },
     { id: "ASK_READ", state: compatibilityState },
     { id: "WARDROBE_READ", state },
+    { id: "WARDROBE_WRITE", state },
     { id: "ORDERS_READ", state },
+    { id: "ORDERS_CREATE", state: input.authorityAvailable && input.orderWriteReady ? "AVAILABLE" : "UNAVAILABLE" },
+    { id: "ORDERS_WRITE", state },
     { id: "MODELS_READ", state },
+    { id: "MODELS_WRITE", state: input.authorityAvailable && input.modelsWriteReady ? "AVAILABLE" : "UNAVAILABLE" },
     { id: "MEDIA_READ", state },
-    { id: "COLLECTIONS_READ", state: collectionsAvailable ? "AVAILABLE" : "READ_ONLY_COMPATIBILITY" },
-    { id: "COLLECTIONS_WRITE", state: collectionsAvailable ? "AVAILABLE" : "UNAVAILABLE" },
+    { id: "MEDIA_WRITE", state: input.authorityAvailable && input.mediaWriteReady ? "AVAILABLE" : "UNAVAILABLE" },
+    { id: "OPERATIONS_READ", state },
+    { id: "HOLDS_WRITE", state: input.authorityAvailable && input.holdWriteReady ? "AVAILABLE" : "UNAVAILABLE" },
+    { id: "LOCATIONS_WRITE", state: input.authorityAvailable && input.locationWriteReady ? "AVAILABLE" : "UNAVAILABLE" },
+    { id: "OPERATIONS_WRITE", state: input.authorityAvailable && input.holdWriteReady && input.locationWriteReady ? "AVAILABLE" : "UNAVAILABLE" },
+    { id: "COLLECTIONS_READ", state: input.collectionsAvailable ? "AVAILABLE" : "READ_ONLY_COMPATIBILITY" },
+    { id: "COLLECTIONS_WRITE", state: input.collectionsAvailable ? "AVAILABLE" : "UNAVAILABLE" },
+  ];
+}
+
+function scenarioCapabilities(): StudioCapability[] {
+  return [
+    { id: "PROJECTION", state: "AVAILABLE" },
+    { id: "SEARCH", state: "AVAILABLE" },
+    { id: "ASK_READ", state: "AVAILABLE" },
+    { id: "WARDROBE_READ", state: "AVAILABLE" },
+    { id: "WARDROBE_WRITE", state: "UNAVAILABLE" },
+    { id: "ORDERS_READ", state: "AVAILABLE" },
+    { id: "ORDERS_CREATE", state: "UNAVAILABLE" },
+    { id: "ORDERS_WRITE", state: "UNAVAILABLE" },
+    { id: "MODELS_READ", state: "UNAVAILABLE" },
+    { id: "MODELS_WRITE", state: "UNAVAILABLE" },
+    { id: "MEDIA_READ", state: "AVAILABLE" },
+    { id: "MEDIA_WRITE", state: "UNAVAILABLE" },
+    { id: "OPERATIONS_READ", state: "AVAILABLE" },
+    { id: "HOLDS_WRITE", state: "UNAVAILABLE" },
+    { id: "LOCATIONS_WRITE", state: "UNAVAILABLE" },
+    { id: "OPERATIONS_WRITE", state: "UNAVAILABLE" },
+    { id: "COLLECTIONS_READ", state: "AVAILABLE" },
+    { id: "COLLECTIONS_WRITE", state: "UNAVAILABLE" },
   ];
 }
 
@@ -366,6 +461,11 @@ export function projectConnectedStudioApplication(input: {
   now: string;
   authority: StudioAuthoritySnapshot | null;
   collections?: StudioCollectionReadResult | null;
+  holdWriteReady?: boolean;
+  locationWriteReady?: boolean;
+  mediaWriteReady?: boolean;
+  modelsWriteReady?: boolean;
+  orderWriteReady?: boolean;
 }): StudioApplicationProjection {
   const compatibility = compatibilityCollections(input.now);
   const collectionsAvailable = Boolean(input.collections);
@@ -436,7 +536,15 @@ export function projectConnectedStudioApplication(input: {
       ...collectionDocuments(collectionScopes),
       ...(authority ? authorityDocuments(authority) : []),
     ]),
-    capabilities: connectedCapabilities(authorityAvailable, collectionsAvailable),
+    capabilities: connectedCapabilities({
+      authorityAvailable,
+      collectionsAvailable,
+      holdWriteReady: input.holdWriteReady,
+      locationWriteReady: input.locationWriteReady,
+      mediaWriteReady: input.mediaWriteReady,
+      modelsWriteReady: input.modelsWriteReady,
+      orderWriteReady: input.orderWriteReady,
+    }),
     degradedSources: degraded,
   };
 }
@@ -475,6 +583,19 @@ export function projectScenarioStudioApplication(input: {
       route,
       aliases: [garment.title],
     }];
+  });
+  const scenarioOrders: StudioSearchDocument[] = snapshot.orders.map((order) => {
+    const listing = snapshot.listings.find((candidate) => candidate.id === order.listingId);
+    const garment = snapshot.garments.find((candidate) => candidate.id === listing?.garmentId);
+    return {
+      id: `order:${order.id}`,
+      kind: "ORDER",
+      primaryLabel: order.id,
+      secondaryLabel: garment?.title ?? "Scenario order",
+      lifecycleState: order.state,
+      route: studioScenarioHref(`/studio/orders/${encodeURIComponent(order.id)}`, input.scenario),
+      aliases: garment ? [garment.sku, garment.title] : [],
+    };
   });
   const scenarioDrafts = actionableStudioDraftCount(snapshot.garments);
   const scenarioGarmentsById = new Map(snapshot.garments.map((garment) => [garment.id, garment]));
@@ -532,8 +653,9 @@ export function projectScenarioStudioApplication(input: {
         route: studioScenarioHref(document.route, input.scenario),
       })),
       ...documents,
+      ...scenarioOrders,
     ]),
-    capabilities: connectedCapabilities(true, true),
+    capabilities: scenarioCapabilities(),
     degradedSources: collections.degraded,
   };
 }
@@ -544,11 +666,22 @@ export async function getStudioApplicationProjection(
   const now = new Date().toISOString();
   let authority: StudioAuthoritySnapshot | null = null;
   let collections: StudioCollectionReadResult | null = null;
-  const [authorityResult, collectionResult] = await Promise.allSettled([
+  let writeReadiness: StudioAuthorityWriteReadiness | null = null;
+  const [authorityResult, collectionResult, writeReadinessResult] = await Promise.allSettled([
     getStudioAuthority(operator),
     listStudioCollections(),
+    getStudioAuthorityWriteReadiness(),
   ]);
   if (authorityResult.status === "fulfilled") authority = authorityResult.value;
   if (collectionResult.status === "fulfilled") collections = collectionResult.value;
-  return projectConnectedStudioApplication({ operator, now, authority, collections });
+  if (writeReadinessResult.status === "fulfilled") writeReadiness = writeReadinessResult.value;
+  return projectConnectedStudioApplication({
+    operator,
+    now,
+    authority,
+    collections,
+    holdWriteReady: writeReadiness?.holds ?? false,
+    locationWriteReady: writeReadiness?.custody ?? false,
+    orderWriteReady: getShopCommerceGuidance().payment.available,
+  });
 }
