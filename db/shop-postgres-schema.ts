@@ -1011,6 +1011,32 @@ export const studioWardrobeItems = pgTable("studio_wardrobe_items", {
   check("studio_wardrobe_items_state_private", sql`${table.state} in ('DRAFT', 'READY', 'ARCHIVED')`),
 ]);
 
+// One engine owns one exact semantic stage family for one operator garment.
+// Ownership is intentionally permanent: retries by the same owner reuse the
+// row, while another engine cannot inherit an expired or uncertain attempt.
+export const studioEngineWorkOwnership = pgTable("studio_engine_work_ownership", {
+  operatorSubject: text("operator_subject").notNull(),
+  wardrobeItemId: uuid("wardrobe_item_id")
+    .notNull()
+    .references(() => studioWardrobeItems.id, { onDelete: "restrict" }),
+  stageFamily: varchar("stage_family", { length: 40 }).notNull(),
+  owner: varchar("owner", { length: 16 }).notNull(),
+  semanticHash: varchar("semantic_hash", { length: 64 }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  primaryKey({ columns: [table.operatorSubject, table.wardrobeItemId, table.stageFamily] }),
+  index("studio_engine_work_ownership_owner_idx").on(table.owner, table.updatedAt),
+  check("studio_engine_work_ownership_owner_known", sql`${table.owner} in ('LEGACY', 'ATELIER')`),
+  check("studio_engine_work_ownership_stage_known", sql`
+    ${table.stageFamily} in (
+      'GARMENT_FRONT', 'GARMENT_BACK', 'GARMENT_MANNEQUIN',
+      'GARMENT_DETAIL', 'SUBJECT', 'ROOM_FINAL'
+    )
+  `),
+  check("studio_engine_work_ownership_semantic_hash", sql`${table.semanticHash} ~ '^[0-9a-f]{64}$'`),
+]);
+
 // Append-only AI media jobs keep the authority source, generated candidate,
 // actual Gateway accounting, and operator decision separate from a capture
 // that can satisfy catalogue publication.
@@ -1389,6 +1415,7 @@ export const studioPieceCustodyCommands = pgTable("studio_piece_custody_commands
   id: uuid("id").defaultRandom().primaryKey(),
   operatorSubject: text("operator_subject").notNull(),
   idempotencyKey: varchar("idempotency_key", { length: 160 }).notNull(),
+  requestFingerprint: varchar("request_fingerprint", { length: 64 }),
   pieceKey: varchar("piece_key", { length: 96 }).notNull(),
   command: varchar("command", { length: 24 }).notNull(),
   fromLocationKey: varchar("from_location_key", { length: 40 }).notNull(),
@@ -1398,6 +1425,8 @@ export const studioPieceCustodyCommands = pgTable("studio_piece_custody_commands
   custody: varchar("custody", { length: 24 }).notNull(),
   availability: varchar("availability", { length: 24 }).notNull(),
   orderReference: varchar("order_reference", { length: 40 }),
+  expectedVersion: integer("expected_version"),
+  resultingVersion: integer("resulting_version"),
   reason: text("reason"),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
 }, (table) => [
@@ -1406,13 +1435,45 @@ export const studioPieceCustodyCommands = pgTable("studio_piece_custody_commands
     table.idempotencyKey,
   ),
   index("studio_piece_custody_commands_piece_idx").on(table.operatorSubject, table.pieceKey, table.createdAt),
-  check("studio_piece_custody_command_known", sql`${table.command} = 'MOVE'`),
+  check("studio_piece_custody_command_known", sql`${table.command} in ('MOVE', 'CONFIRM')`),
   check("studio_piece_custody_command_custody_known", sql`${table.custody} = 'STUDIO'`),
   check("studio_piece_custody_command_availability_known", sql`
     ${table.availability} in ('PRIVATE', 'AVAILABLE', 'RESERVED', 'SOLD', 'ARCHIVED')
   `),
   check("studio_piece_custody_command_location_known", sql`
     ${table.toLocationKey} in ('WARDROBE_RAIL', 'PACKING_SHELF', 'RETURN_INSPECTION')
+  `),
+  check("studio_piece_custody_command_fingerprint", sql`
+    ${table.requestFingerprint} is null or ${table.requestFingerprint} ~ '^[0-9a-f]{64}$'
+  `),
+  check("studio_piece_custody_command_expected_version_nonnegative", sql`
+    ${table.expectedVersion} is null or ${table.expectedVersion} >= 0
+  `),
+  check("studio_piece_custody_command_resulting_version_nonnegative", sql`
+    ${table.resultingVersion} is null or ${table.resultingVersion} >= 0
+  `),
+  check("studio_piece_custody_command_receipt_pair", sql`
+    (
+      ${table.requestFingerprint} is null
+      and ${table.expectedVersion} is null
+      and ${table.resultingVersion} is null
+    )
+    or (
+      ${table.requestFingerprint} is not null
+      and ${table.expectedVersion} is not null
+      and ${table.resultingVersion} is not null
+    )
+  `),
+  check("studio_piece_custody_command_version_step", sql`
+    (${table.expectedVersion} is null and ${table.resultingVersion} is null)
+    or (
+      ${table.expectedVersion} is not null
+      and ${table.resultingVersion} is not null
+      and (
+        (${table.command} = 'MOVE' and ${table.resultingVersion} = ${table.expectedVersion} + 1)
+        or (${table.command} = 'CONFIRM' and ${table.resultingVersion} = ${table.expectedVersion})
+      )
+    )
   `),
 ]);
 
@@ -1452,6 +1513,8 @@ export const studioStocktakes = pgTable("studio_stocktakes", {
   locationLabel: text("location_label").notNull(),
   state: varchar("state", { length: 24 }).default("OPEN").notNull(),
   expectedPieces: jsonb("expected_pieces").$type<Array<{
+    authorityUpdatedAt: string;
+    locationVersion: number;
     pieceKey: string;
     wardrobeItemId: string | null;
     sku: string | null;
@@ -1461,6 +1524,10 @@ export const studioStocktakes = pgTable("studio_stocktakes", {
     expectedCustody: "STUDIO" | "COURIER" | "CUSTOMER" | "UNKNOWN";
     availability: "PRIVATE" | "AVAILABLE" | "RESERVED" | "SOLD" | "ARCHIVED";
     orderReference: string | null;
+    orderVersion: number | null;
+    orderLifecycleStatus: string | null;
+    orderFulfillmentStatus: string | null;
+    orderReturnStatus: string | null;
   }>>().notNull(),
   version: integer("version").default(1).notNull(),
   startedAt: timestamp("started_at", { withTimezone: true }).defaultNow().notNull(),
@@ -1538,6 +1605,247 @@ export const studioPhysicalObservations = pgTable("studio_physical_observations"
   `),
 ]);
 
+// External human and publisher evidence is recorded separately from Atelier
+// operations. These records do not enable production by themselves: runtime
+// ports must still resolve and verify the exact active receipts at dispatch.
+export const studioAtelierAdultVerificationReceipts = pgTable(
+  "studio_atelier_adult_verification_receipts",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    operatorSubject: text("operator_subject").notNull(),
+    subjectAuthorityId: varchar("subject_authority_id", { length: 80 }).notNull(),
+    authorityRevision: varchar("authority_revision", { length: 80 }).notNull(),
+    authorityManifestSha256: varchar("authority_manifest_sha256", { length: 64 }).notNull(),
+    subjectAge: varchar("subject_age", { length: 32 }).notNull(),
+    verificationMethod: varchar("verification_method", { length: 48 }).notNull(),
+    evidenceReceiptId: varchar("evidence_receipt_id", { length: 180 }).notNull(),
+    evidenceReceiptSha256: varchar("evidence_receipt_sha256", { length: 64 }).notNull(),
+    verifiedAt: timestamp("verified_at", { withTimezone: true }).notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+    recordedBySubject: text("recorded_by_subject").notNull(),
+    recordSha256: varchar("record_sha256", { length: 64 }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex("studio_atelier_adult_verification_operator_receipt_unique").on(
+      table.operatorSubject,
+      table.evidenceReceiptId,
+    ),
+    uniqueIndex("studio_atelier_adult_verification_record_hash_unique").on(table.recordSha256),
+    index("studio_atelier_adult_verification_operator_verified_idx").on(
+      table.operatorSubject,
+      table.verifiedAt,
+    ),
+    check("studio_atelier_adult_verification_subject", sql`${table.subjectAuthorityId} = 'lulu-v4'`),
+    check("studio_atelier_adult_verification_revision_present", sql`length(trim(${table.authorityRevision})) > 0`),
+    check("studio_atelier_adult_verification_manifest_hash", sql`${table.authorityManifestSha256} ~ '^[0-9a-f]{64}$'`),
+    check("studio_atelier_adult_verification_age", sql`${table.subjectAge} = 'VERIFIED_ADULT_18_PLUS'`),
+    check("studio_atelier_adult_verification_method_known", sql`
+      ${table.verificationMethod} in ('TRUSTED_IDENTITY_PROVIDER', 'AUTHORIZED_HUMAN_REVIEW')
+    `),
+    check("studio_atelier_adult_verification_evidence_hash", sql`${table.evidenceReceiptSha256} ~ '^[0-9a-f]{64}$'`),
+    check("studio_atelier_adult_verification_record_hash", sql`${table.recordSha256} ~ '^[0-9a-f]{64}$'`),
+    check("studio_atelier_adult_verification_actor_present", sql`length(trim(${table.recordedBySubject})) > 0`),
+    check("studio_atelier_adult_verification_time_order", sql`
+      (${table.expiresAt} is null or ${table.expiresAt} > ${table.verifiedAt})
+      and (${table.revokedAt} is null or ${table.revokedAt} >= ${table.verifiedAt})
+    `),
+  ],
+);
+
+export const studioAtelierConsentGrants = pgTable("studio_atelier_consent_grants", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  operatorSubject: text("operator_subject").notNull(),
+  adultVerificationId: uuid("adult_verification_id")
+    .notNull()
+    .references(() => studioAtelierAdultVerificationReceipts.id, { onDelete: "restrict" }),
+  subjectAuthorityId: varchar("subject_authority_id", { length: 80 }).notNull(),
+  authorityRevision: varchar("authority_revision", { length: 80 }).notNull(),
+  authorityManifestSha256: varchar("authority_manifest_sha256", { length: 64 }).notNull(),
+  affirmationVersion: varchar("affirmation_version", { length: 80 }).notNull(),
+  affirmationSha256: varchar("affirmation_sha256", { length: 64 }).notNull(),
+  provider: varchar("provider", { length: 32 }).notNull(),
+  model: text("model").notNull(),
+  modelRevision: varchar("model_revision", { length: 80 }).notNull(),
+  providerPolicyRevision: varchar("provider_policy_revision", { length: 80 }).notNull(),
+  providerNoticeVersion: varchar("provider_notice_version", { length: 80 }).notNull(),
+  providerNoticeSha256: varchar("provider_notice_sha256", { length: 64 }).notNull(),
+  zeroDataRetention: boolean("zero_data_retention").notNull(),
+  providerRetentionAcknowledged: boolean("provider_retention_acknowledged").notNull(),
+  likenessUseAuthorized: boolean("likeness_use_authorized").notNull(),
+  purpose: varchar("purpose", { length: 80 }).notNull(),
+  grantSha256: varchar("grant_sha256", { length: 64 }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("studio_atelier_consent_grants_hash_unique").on(table.grantSha256),
+  index("studio_atelier_consent_grants_operator_created_idx").on(table.operatorSubject, table.createdAt),
+  check("studio_atelier_consent_grants_subject", sql`${table.subjectAuthorityId} = 'lulu-v4'`),
+  check("studio_atelier_consent_grants_manifest_hash", sql`${table.authorityManifestSha256} ~ '^[0-9a-f]{64}$'`),
+  check("studio_atelier_consent_grants_affirmation_hash", sql`${table.affirmationSha256} ~ '^[0-9a-f]{64}$'`),
+  check("studio_atelier_consent_grants_notice_hash", sql`${table.providerNoticeSha256} ~ '^[0-9a-f]{64}$'`),
+  check("studio_atelier_consent_grants_grant_hash", sql`${table.grantSha256} ~ '^[0-9a-f]{64}$'`),
+  check("studio_atelier_consent_grants_provider", sql`${table.provider} = 'openai'`),
+  check("studio_atelier_consent_grants_non_zdr", sql`${table.zeroDataRetention} = false`),
+  check("studio_atelier_consent_grants_acknowledged", sql`
+    ${table.providerRetentionAcknowledged} = true and ${table.likenessUseAuthorized} = true
+  `),
+  check("studio_atelier_consent_grants_purpose", sql`
+    ${table.purpose} = 'NON_SEXUAL_RETAIL_FASHION_CATALOGUE'
+  `),
+]);
+
+export const studioAtelierConsentProjections = pgTable("studio_atelier_consent_projections", {
+  operatorSubject: text("operator_subject").primaryKey(),
+  revision: integer("revision").notNull(),
+  state: varchar("state", { length: 24 }).notNull(),
+  currentGrantId: uuid("current_grant_id")
+    .notNull()
+    .references(() => studioAtelierConsentGrants.id, { onDelete: "restrict" }),
+  lastEventHash: varchar("last_event_hash", { length: 64 }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  index("studio_atelier_consent_projections_state_idx").on(table.state, table.updatedAt),
+  check("studio_atelier_consent_projections_revision_positive", sql`${table.revision} > 0`),
+  check("studio_atelier_consent_projections_state_known", sql`${table.state} in ('ACTIVE', 'REVOKED')`),
+  check("studio_atelier_consent_projections_event_hash", sql`${table.lastEventHash} ~ '^[0-9a-f]{64}$'`),
+]);
+
+export const studioAtelierConsentEvents = pgTable("studio_atelier_consent_events", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  operatorSubject: text("operator_subject").notNull(),
+  sequence: integer("sequence").notNull(),
+  eventType: varchar("event_type", { length: 24 }).notNull(),
+  grantId: uuid("grant_id")
+    .notNull()
+    .references(() => studioAtelierConsentGrants.id, { onDelete: "restrict" }),
+  expectedRevision: integer("expected_revision").notNull(),
+  resultingRevision: integer("resulting_revision").notNull(),
+  actorSubject: text("actor_subject").notNull(),
+  idempotencyKey: varchar("idempotency_key", { length: 160 }).notNull(),
+  requestFingerprint: varchar("request_fingerprint", { length: 64 }).notNull(),
+  payload: jsonb("payload").$type<Record<string, unknown>>().default({}).notNull(),
+  previousEventHash: varchar("previous_event_hash", { length: 64 }),
+  eventHash: varchar("event_hash", { length: 64 }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("studio_atelier_consent_events_operator_sequence_unique").on(
+    table.operatorSubject,
+    table.sequence,
+  ),
+  uniqueIndex("studio_atelier_consent_events_operator_idempotency_unique").on(
+    table.operatorSubject,
+    table.idempotencyKey,
+  ),
+  uniqueIndex("studio_atelier_consent_events_hash_unique").on(table.eventHash),
+  index("studio_atelier_consent_events_operator_created_idx").on(table.operatorSubject, table.createdAt),
+  check("studio_atelier_consent_events_sequence_positive", sql`${table.sequence} > 0`),
+  check("studio_atelier_consent_events_versions", sql`
+    ${table.expectedRevision} >= 0
+    and ${table.resultingRevision} = ${table.expectedRevision} + 1
+    and ${table.sequence} = ${table.resultingRevision}
+  `),
+  check("studio_atelier_consent_events_type_known", sql`${table.eventType} in ('GRANTED', 'REVOKED')`),
+  check("studio_atelier_consent_events_actor_present", sql`length(trim(${table.actorSubject})) > 0`),
+  check("studio_atelier_consent_events_fingerprint", sql`${table.requestFingerprint} ~ '^[0-9a-f]{64}$'`),
+  check("studio_atelier_consent_events_payload_object", sql`jsonb_typeof(${table.payload}) = 'object'`),
+  check("studio_atelier_consent_events_previous_hash", sql`
+    ${table.previousEventHash} is null or ${table.previousEventHash} ~ '^[0-9a-f]{64}$'
+  `),
+  check("studio_atelier_consent_events_hash", sql`${table.eventHash} ~ '^[0-9a-f]{64}$'`),
+]);
+
+export const studioAtelierStylingAdvisories = pgTable("studio_atelier_styling_advisories", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  operatorSubject: text("operator_subject").notNull(),
+  wardrobeItemId: uuid("wardrobe_item_id")
+    .notNull()
+    .references(() => studioWardrobeItems.id, { onDelete: "restrict" }),
+  wardrobeVersion: integer("wardrobe_version").notNull(),
+  sourceBindingSha256: varchar("source_binding_sha256", { length: 64 }).notNull(),
+  garmentTruthRevision: varchar("garment_truth_revision", { length: 120 }).notNull(),
+  garmentTruthSourceHash: varchar("garment_truth_source_hash", { length: 64 }).notNull(),
+  publisher: varchar("publisher", { length: 40 }).notNull(),
+  officialUrl: text("official_url").notNull(),
+  resolvedOfficialUrl: text("resolved_official_url").notNull(),
+  pageTitle: text("page_title").notNull(),
+  accessedAt: timestamp("accessed_at", { withTimezone: true }).notNull(),
+  evidenceKind: varchar("evidence_kind", { length: 32 }).notNull(),
+  evidenceBlobPathname: text("evidence_blob_pathname").notNull(),
+  evidenceMimeType: varchar("evidence_mime_type", { length: 120 }).notNull(),
+  evidenceByteSize: integer("evidence_byte_size").notNull(),
+  evidenceSha256: varchar("evidence_sha256", { length: 64 }).notNull(),
+  searchScope: jsonb("search_scope").$type<string[]>().notNull(),
+  matchedGarmentFacts: jsonb("matched_garment_facts").$type<string[]>().notNull(),
+  decision: varchar("decision", { length: 32 }).notNull(),
+  noCloseMatchReason: text("no_close_match_reason"),
+  selectedStylingDirection: text("selected_styling_direction").notNull(),
+  authority: varchar("authority", { length: 40 }).notNull(),
+  passedAsImageReference: boolean("passed_as_image_reference").notNull(),
+  fetchPolicyRevision: varchar("fetch_policy_revision", { length: 80 }).notNull(),
+  advisorySha256: varchar("advisory_sha256", { length: 64 }).notNull(),
+  idempotencyKey: varchar("idempotency_key", { length: 160 }).notNull(),
+  requestFingerprint: varchar("request_fingerprint", { length: 64 }).notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("studio_atelier_styling_advisories_operator_idempotency_unique").on(
+    table.operatorSubject,
+    table.idempotencyKey,
+  ),
+  uniqueIndex("studio_atelier_styling_advisories_hash_unique").on(table.advisorySha256),
+  index("studio_atelier_styling_advisories_binding_idx").on(
+    table.operatorSubject,
+    table.wardrobeItemId,
+    table.sourceBindingSha256,
+    table.createdAt,
+  ),
+  check("studio_atelier_styling_advisories_wardrobe_version", sql`${table.wardrobeVersion} > 0`),
+  check("studio_atelier_styling_advisories_source_hash", sql`${table.sourceBindingSha256} ~ '^[0-9a-f]{64}$'`),
+  check("studio_atelier_styling_advisories_truth_hash", sql`${table.garmentTruthSourceHash} ~ '^[0-9a-f]{64}$'`),
+  check("studio_atelier_styling_advisories_publisher", sql`${table.publisher} = 'Fashion Nova'`),
+  check("studio_atelier_styling_advisories_official_url", sql`
+    ${table.officialUrl} ~* '^https://([a-z0-9-]+[.])*fashionnova[.]com(/|$)'
+    and ${table.resolvedOfficialUrl} ~* '^https://([a-z0-9-]+[.])*fashionnova[.]com(/|$)'
+  `),
+  check("studio_atelier_styling_advisories_page_title", sql`length(trim(${table.pageTitle})) > 0`),
+  check("studio_atelier_styling_advisories_evidence_kind", sql`${table.evidenceKind} = 'OFFICIAL_PAGE_FETCH'`),
+  check("studio_atelier_styling_advisories_evidence_mime", sql`
+    ${table.evidenceMimeType} in ('text/html', 'application/json', 'application/pdf')
+  `),
+  check("studio_atelier_styling_advisories_evidence_bytes", sql`${table.evidenceByteSize} > 0`),
+  check("studio_atelier_styling_advisories_evidence_hash", sql`${table.evidenceSha256} ~ '^[0-9a-f]{64}$'`),
+  check("studio_atelier_styling_advisories_content_addressed", sql`
+    ${table.evidenceBlobPathname} = 'studio/atelier/advisories/'
+      || ${table.evidenceSha256}
+      || case ${table.evidenceMimeType}
+        when 'text/html' then '.html'
+        when 'application/json' then '.json'
+        when 'application/pdf' then '.pdf'
+      end
+  `),
+  check("studio_atelier_styling_advisories_search_array", sql`jsonb_typeof(${table.searchScope}) = 'array'`),
+  check("studio_atelier_styling_advisories_match_array", sql`jsonb_typeof(${table.matchedGarmentFacts}) = 'array'`),
+  check("studio_atelier_styling_advisories_decision", sql`
+    ${table.decision} in ('KEEP', 'REFINE', 'REPLACE', 'NO_CLOSE_MATCH')
+  `),
+  check("studio_atelier_styling_advisories_no_match", sql`
+    (${table.decision} = 'NO_CLOSE_MATCH'
+      and jsonb_array_length(${table.matchedGarmentFacts}) = 0
+      and length(trim(${table.noCloseMatchReason})) > 0
+      and jsonb_array_length(${table.searchScope}) > 0)
+    or (${table.decision} <> 'NO_CLOSE_MATCH'
+      and jsonb_array_length(${table.matchedGarmentFacts}) > 0
+      and ${table.noCloseMatchReason} is null)
+  `),
+  check("studio_atelier_styling_advisories_direction", sql`length(trim(${table.selectedStylingDirection})) > 0`),
+  check("studio_atelier_styling_advisories_boundary", sql`
+    ${table.authority} = 'ADVISORY_STYLING_ONLY' and ${table.passedAsImageReference} = false
+  `),
+  check("studio_atelier_styling_advisories_record_hash", sql`${table.advisorySha256} ~ '^[0-9a-f]{64}$'`),
+  check("studio_atelier_styling_advisories_fingerprint", sql`${table.requestFingerprint} ~ '^[0-9a-f]{64}$'`),
+]);
+
 // Provider-neutral Atelier operations are durable intent records. They do not
 // replace the legacy Studio generation tables: an operation captures the
 // approved production declaration, while one or more executions capture paid
@@ -1545,6 +1853,8 @@ export const studioPhysicalObservations = pgTable("studio_physical_observations"
 export const studioAtelierOperations = pgTable("studio_atelier_operations", {
   id: uuid("id").defaultRandom().primaryKey(),
   operatorSubject: text("operator_subject").notNull(),
+  wardrobeItemId: uuid("wardrobe_item_id")
+    .references(() => studioWardrobeItems.id, { onDelete: "restrict" }),
   operationKey: varchar("operation_key", { length: 160 }).notNull(),
   garmentId: varchar("garment_id", { length: 80 }).notNull(),
   view: varchar("view", { length: 24 }).notNull(),
@@ -1583,6 +1893,12 @@ export const studioAtelierOperations = pgTable("studio_atelier_operations", {
     table.operatorSubject,
     table.garmentId,
     table.view,
+    table.createdAt,
+  ),
+  index("studio_atelier_operations_wardrobe_stage_idx").on(
+    table.operatorSubject,
+    table.wardrobeItemId,
+    table.stage,
     table.createdAt,
   ),
   check("studio_atelier_operations_key_present", sql`length(trim(${table.operationKey})) > 0`),
@@ -1907,3 +2223,156 @@ export const studioAtelierEvents = pgTable("studio_atelier_events", {
   `),
   check("studio_atelier_events_hash", sql`${table.eventHash} ~ '^[0-9a-f]{64}$'`),
 ]);
+
+// Shop adoption is a one-way publication boundary over seven exact LOCKED
+// Atelier artifacts. A receipt claim remains unbound while COMMITTING and may
+// become COMMITTED only with the complete public catalogue identity tuple.
+export const studioAtelierShopAdoptionReceipts = pgTable(
+  "studio_atelier_shop_adoption_receipts",
+  {
+    receiptId: varchar("receipt_id", { length: 64 }).notNull(),
+    operatorSubject: text("operator_subject").notNull(),
+    idempotencyKey: varchar("idempotency_key", { length: 160 }).notNull(),
+    wardrobeItemId: uuid("wardrobe_item_id")
+      .notNull()
+      .references(() => studioWardrobeItems.id, { onDelete: "restrict" }),
+    garmentId: varchar("garment_id", { length: 80 }).notNull(),
+    adoptionRevision: varchar("adoption_revision", { length: 64 }).notNull(),
+    schemaVersion: varchar("schema_version", { length: 80 }).notNull(),
+    state: varchar("state", { length: 24 }).default("COMMITTING").notNull(),
+    receipt: jsonb("receipt").$type<Record<string, unknown>>().notNull(),
+    publicationId: uuid("publication_id")
+      .references(() => studioCataloguePublications.id, { onDelete: "restrict" }),
+    sku: varchar("sku", { length: 40 })
+      .references(() => shopCatalogueItems.sku, { onDelete: "restrict", onUpdate: "cascade" }),
+    slug: text("slug"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    committedAt: timestamp("committed_at", { withTimezone: true }),
+    requestFingerprint: varchar("request_fingerprint", { length: 64 }).notNull(),
+    mediaCount: integer("media_count").notNull(),
+  },
+  (table) => [
+    primaryKey({
+      name: "studio_atelier_shop_adoption_receipts_pkey",
+      columns: [table.receiptId],
+    }),
+    uniqueIndex("studio_atelier_shop_adoption_receipts_operator_idempotency_unique").on(
+      table.operatorSubject,
+      table.idempotencyKey,
+    ),
+    uniqueIndex("studio_atelier_shop_adoption_receipts_wardrobe_unique").on(table.wardrobeItemId),
+    check("studio_atelier_shop_adoption_receipts_id_hash", sql`${table.receiptId} ~ '^[0-9a-f]{64}$'`),
+    check("studio_atelier_shop_adoption_receipts_idempotency_key", sql`
+      length(${table.idempotencyKey}) between 8 and 160
+      and ${table.idempotencyKey} ~ '^[a-zA-Z0-9._:-]+$'
+    `),
+    check("studio_atelier_shop_adoption_receipts_garment_present", sql`
+      length(trim(${table.garmentId})) > 0
+    `),
+    check("studio_atelier_shop_adoption_receipts_revision_hash", sql`
+      ${table.adoptionRevision} ~ '^[0-9a-f]{64}$'
+    `),
+    check("studio_atelier_shop_adoption_receipts_schema", sql`
+      ${table.schemaVersion} = 'juw.studio-atelier-shop-adoption.v1'
+    `),
+    check("studio_atelier_shop_adoption_receipts_state_known", sql`
+      ${table.state} in ('COMMITTING', 'COMMITTED')
+    `),
+    check("studio_atelier_shop_adoption_receipts_fingerprint", sql`
+      ${table.requestFingerprint} = ${table.receiptId}
+      and ${table.requestFingerprint} ~ '^[0-9a-f]{64}$'
+    `),
+    check("studio_atelier_shop_adoption_receipts_media_count", sql`${table.mediaCount} = 7`),
+    check("studio_atelier_shop_adoption_receipts_payload", sql`
+      (
+        jsonb_typeof(${table.receipt}) = 'object'
+        and ${table.receipt}->>'schemaVersion' = ${table.schemaVersion}
+        and ${table.receipt}->>'receiptId' = ${table.receiptId}
+        and ${table.receipt}->>'wardrobeItemId' = ${table.wardrobeItemId}::text
+        and ${table.receipt}->>'garmentId' = ${table.garmentId}
+        and ${table.receipt}->>'adoptionRevision' = ${table.adoptionRevision}
+        and jsonb_typeof(${table.receipt}->'media') = 'array'
+        and jsonb_array_length(${table.receipt}->'media') = ${table.mediaCount}
+      ) is true
+    `),
+    check("studio_atelier_shop_adoption_receipts_commit_tuple", sql`
+      (
+        (${table.state} = 'COMMITTING'
+          and ${table.publicationId} is null
+          and ${table.sku} is null
+          and ${table.slug} is null
+          and ${table.committedAt} is null)
+        or (${table.state} = 'COMMITTED'
+          and ${table.publicationId} is not null
+          and ${table.sku} is not null
+          and length(trim(${table.sku})) > 0
+          and ${table.slug} is not null
+          and length(trim(${table.slug})) > 0
+          and ${table.committedAt} is not null
+          and ${table.committedAt} >= ${table.createdAt})
+      ) is true
+    `),
+  ],
+);
+
+// These rows contain only public, same-origin route identities plus immutable
+// operation/artifact facts. Private Blob coordinates and provider URLs never
+// cross this adoption ledger boundary.
+export const studioAtelierShopAdoptionMedia = pgTable(
+  "studio_atelier_shop_adoption_media",
+  {
+    receiptId: varchar("receipt_id", { length: 64 })
+      .notNull()
+      .references(() => studioAtelierShopAdoptionReceipts.receiptId, { onDelete: "restrict" }),
+    role: varchar("role", { length: 48 }).notNull(),
+    ordinal: integer("ordinal").notNull(),
+    operationId: uuid("operation_id")
+      .notNull()
+      .references(() => studioAtelierOperations.id, { onDelete: "restrict" }),
+    projectionVersion: integer("projection_version").notNull(),
+    lockedArtifactId: uuid("locked_artifact_id")
+      .notNull()
+      .references(() => studioAtelierArtifacts.id, { onDelete: "restrict" }),
+    lockedArtifactSha256: varchar("locked_artifact_sha256", { length: 64 }).notNull(),
+    publicSrc: text("public_src").notNull(),
+    mimeType: varchar("mime_type", { length: 120 }).notNull(),
+    byteSize: integer("byte_size").notNull(),
+    width: integer("width").notNull(),
+    height: integer("height").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => [
+    primaryKey({
+      name: "studio_atelier_shop_adoption_media_pkey",
+      columns: [table.receiptId, table.role],
+    }),
+    uniqueIndex("studio_atelier_shop_adoption_media_receipt_ordinal_unique").on(
+      table.receiptId,
+      table.ordinal,
+    ),
+    check("studio_atelier_shop_adoption_media_role_order", sql`
+      (${table.role} = 'GARMENT_FRONT' and ${table.ordinal} = 0)
+      or (${table.role} = 'GARMENT_BACK' and ${table.ordinal} = 1)
+      or (${table.role} = 'MANNEQUIN_FRONT' and ${table.ordinal} = 2)
+      or (${table.role} = 'FABRIC_DETAIL' and ${table.ordinal} = 3)
+      or (${table.role} = 'MODEL_FRONT' and ${table.ordinal} = 4)
+      or (${table.role} = 'MODEL_LEFT_PROFILE' and ${table.ordinal} = 5)
+      or (${table.role} = 'MODEL_REAR_THREE_QUARTER' and ${table.ordinal} = 6)
+    `),
+    check("studio_atelier_shop_adoption_media_projection_version", sql`
+      ${table.projectionVersion} > 0
+    `),
+    check("studio_atelier_shop_adoption_media_artifact_hash", sql`
+      ${table.lockedArtifactSha256} ~ '^[0-9a-f]{64}$'
+    `),
+    check("studio_atelier_shop_adoption_media_same_origin_src", sql`
+      ${table.publicSrc} = '/api/shop/atelier-media/' || ${table.receiptId} || '/' || ${table.role}
+    `),
+    check("studio_atelier_shop_adoption_media_mime", sql`
+      ${table.mimeType} in ('image/jpeg', 'image/png')
+    `),
+    check("studio_atelier_shop_adoption_media_dimensions", sql`
+      ${table.byteSize} > 0 and ${table.width} > 0 and ${table.height} > 0
+    `),
+  ],
+);

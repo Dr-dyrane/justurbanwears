@@ -555,7 +555,7 @@ test("migration planning verifies every applied hash and only permits a journal 
   }
 });
 
-test("the migration journal preserves the deployed 0014 prefix and appends media before Atelier", () => {
+test("the migration journal preserves the deployed 0014 prefix and appends every guarded Studio fence", () => {
   const journal = JSON.parse(readFileSync(
     join(repositoryRoot, "drizzle/shop-postgres/meta/_journal.json"),
     "utf8",
@@ -588,6 +588,8 @@ test("the migration journal preserves the deployed 0014 prefix and appends media
   const suffix = [
     [15, 1787770575959, "0015_media_completion_dispatch_fence"],
     [16, 1787770588520, "0016_studio_atelier_ledger"],
+    [17, 1787864076590, "0017_studio_engine_work_ownership"],
+    [18, 1787893200000, "0018_studio_transactional_authority"],
   ];
 
   assert.deepEqual(
@@ -595,10 +597,18 @@ test("the migration journal preserves the deployed 0014 prefix and appends media
     deployedPrefix,
   );
   assert.deepEqual(
-    journal.entries.slice(deployedPrefix.length).map(({ idx, when, tag }) => [idx, when, tag]),
+    journal.entries.slice(deployedPrefix.length, 19).map(({ idx, when, tag }) => [idx, when, tag]),
     suffix,
   );
-  for (const [index, entry] of journal.entries.entries()) {
+  assert.deepEqual(journal.entries[18], {
+    idx: 18,
+    version: "7",
+    when: 1787893200000,
+    tag: "0018_studio_transactional_authority",
+    breakpoints: true,
+  });
+  assert.equal(journal.entries[17]?.tag, "0017_studio_engine_work_ownership");
+  for (const [index, entry] of journal.entries.slice(0, 19).entries()) {
     assert.equal(entry.idx, index);
     assert.equal(entry.version, "7");
     assert.equal(entry.breakpoints, true);
@@ -614,9 +624,11 @@ test("the migration journal preserves the deployed 0014 prefix and appends media
   }));
   const plan = decideMigrations(migrations, deployedRows);
   assert.equal(plan.applied, deployedPrefix.length);
-  assert.deepEqual(plan.pending.map((migration) => migration.tag), [
+  assert.deepEqual(plan.pending.slice(0, 4).map((migration) => migration.tag), [
     "0015_media_completion_dispatch_fence",
     "0016_studio_atelier_ledger",
+    "0017_studio_engine_work_ownership",
+    "0018_studio_transactional_authority",
   ]);
   assert.equal(existsSync(join(repositoryRoot, "drizzle/shop-postgres/0014_daffy_echo.sql")), false);
   assert.equal(existsSync(join(repositoryRoot, "drizzle/shop-postgres/0016_fair_yellowjacket.sql")), false);

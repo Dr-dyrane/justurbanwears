@@ -120,6 +120,34 @@
       "when": 1787770588520,
       "tag": "0016_studio_atelier_ledger",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1787864076590,
+      "tag": "0017_studio_engine_work_ownership",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1787893200000,
+      "tag": "0018_studio_transactional_authority",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1787893200001,
+      "tag": "0019_studio_atelier_external_authority",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1787893200002,
+      "tag": "0020_studio_atelier_shop_adoption_receipts",
+      "breakpoints": true
     }
   ]
 }

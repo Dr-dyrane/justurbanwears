@@ -31,7 +31,10 @@ test("canonical 0005 adds only private operator-approved pending captures", () =
   assert.match(migration, /operator_subject","sku","role/);
   assert.ok((journal.entries.at(-1)?.idx ?? -1) >= 5);
   assert.equal(journal.entries.find((entry) => entry.idx === 5)?.tag, "0005_dazzling_sister_grimm");
-  assert.match(journal.entries.at(-1)?.tag ?? "", /^00(?:0[5-9]|1[0-9])_/);
+  assert.deepEqual(
+    journal.entries.map((entry) => entry.idx),
+    journal.entries.map((_, index) => index),
+  );
   assert.ok(snapshot.tables["public.studio_pending_product_captures"]);
   assert.doesNotMatch(migration, /shop_catalogue|shop_inventory/i);
 });
