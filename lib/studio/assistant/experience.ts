@@ -186,7 +186,7 @@ export interface StudioAssistantWorkflowResponse {
 }
 
 const STATUS_PATTERN = /\b(attention|brief|overview|summary|status|today|waiting|what(?:'s| is) happening)\b/i;
-const CAPABILITY_PATTERN = /^(?:help|help me|what can you do|how can you help|capabilities|show capabilities)[?.!\s]*$/i;
+const CAPABILITY_PATTERN = /^(?:help|help me|what can you (?:do|help with)|how can you help|capabilities|show capabilities)[?.!\s]*$/i;
 const PRICE_PATTERN = /\b(price|pricing)\b/i;
 const PRICE_CHANGE_PATTERN = /\b(change|edit|set|update|raise|reduce|lower)\b/i;
 const COLLECTION_PATTERN = /\b(drop|collection)\b/i;

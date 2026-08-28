@@ -28,8 +28,7 @@ function AppShellFrame({ children, operator }: { children: React.ReactNode; oper
   const fallback = studioStackFallback(pathname, searchParams.get("view"));
   const registered = useStudioStackDescriptor();
   const stack = registered ?? fallback;
-  const hydrationDependsOnWardrobe = pathname.startsWith("/studio/wardrobe")
-    || pathname.startsWith("/studio/ask");
+  const hydrationDependsOnWardrobe = pathname.startsWith("/studio/wardrobe");
   const hydrationUnavailable = !studio.scenario
     && hydrationDependsOnWardrobe
     && studio.hydration === "degraded";

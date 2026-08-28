@@ -15,12 +15,12 @@ test("hydration failures retain the connected read error for a fail-closed Studi
   assert.equal(state.lastError, "Connected Wardrobe is unavailable. Try again.");
 });
 
-test("Wardrobe-dependent Studio surfaces fail closed without blocking independent operations", async () => {
+test("Wardrobe hydration fails closed without blocking independent Studio surfaces", async () => {
   const shell = await readFile(new URL("../components/studio/app-shell.tsx", import.meta.url), "utf8");
 
   assert.doesNotMatch(shell, /hydrationDependsOnWardrobe = pathname === "\/studio"/u);
   assert.match(shell, /pathname\.startsWith\("\/studio\/wardrobe"\)/u);
-  assert.match(shell, /pathname\.startsWith\("\/studio\/ask"\)/u);
+  assert.doesNotMatch(shell, /hydrationDependsOnWardrobe[\s\S]{0,120}\/studio\/ask/u);
   assert.match(shell, /studio\.hydration === "degraded"/u);
   assert.match(shell, /Studio data could not be verified\./u);
   assert.match(shell, /window\.location\.reload\(\)/u);

@@ -405,8 +405,6 @@ function connectedCapabilities(input: {
   collectionsAvailable?: boolean;
   holdWriteReady?: boolean;
   locationWriteReady?: boolean;
-  mediaWriteReady?: boolean;
-  modelsWriteReady?: boolean;
   orderWriteReady?: boolean;
 }): StudioCapability[] {
   const state = input.authorityAvailable ? "AVAILABLE" as const : "UNAVAILABLE" as const;
@@ -421,15 +419,15 @@ function connectedCapabilities(input: {
     { id: "ORDERS_CREATE", state: input.authorityAvailable && input.orderWriteReady ? "AVAILABLE" : "UNAVAILABLE" },
     { id: "ORDERS_WRITE", state },
     { id: "MODELS_READ", state },
-    { id: "MODELS_WRITE", state: input.authorityAvailable && input.modelsWriteReady ? "AVAILABLE" : "UNAVAILABLE" },
+    { id: "MODELS_WRITE", state: "UNAVAILABLE" },
     { id: "MEDIA_READ", state },
-    { id: "MEDIA_WRITE", state: input.authorityAvailable && input.mediaWriteReady ? "AVAILABLE" : "UNAVAILABLE" },
+    { id: "MEDIA_WRITE", state: "UNAVAILABLE" },
     { id: "OPERATIONS_READ", state },
     { id: "HOLDS_WRITE", state: input.authorityAvailable && input.holdWriteReady ? "AVAILABLE" : "UNAVAILABLE" },
     { id: "LOCATIONS_WRITE", state: input.authorityAvailable && input.locationWriteReady ? "AVAILABLE" : "UNAVAILABLE" },
     { id: "OPERATIONS_WRITE", state: input.authorityAvailable && input.holdWriteReady && input.locationWriteReady ? "AVAILABLE" : "UNAVAILABLE" },
     { id: "COLLECTIONS_READ", state: input.collectionsAvailable ? "AVAILABLE" : "READ_ONLY_COMPATIBILITY" },
-    { id: "COLLECTIONS_WRITE", state: input.collectionsAvailable ? "AVAILABLE" : "UNAVAILABLE" },
+    { id: "COLLECTIONS_WRITE", state: "UNAVAILABLE" },
   ];
 }
 
@@ -463,8 +461,6 @@ export function projectConnectedStudioApplication(input: {
   collections?: StudioCollectionReadResult | null;
   holdWriteReady?: boolean;
   locationWriteReady?: boolean;
-  mediaWriteReady?: boolean;
-  modelsWriteReady?: boolean;
   orderWriteReady?: boolean;
 }): StudioApplicationProjection {
   const compatibility = compatibilityCollections(input.now);
@@ -541,8 +537,6 @@ export function projectConnectedStudioApplication(input: {
       collectionsAvailable,
       holdWriteReady: input.holdWriteReady,
       locationWriteReady: input.locationWriteReady,
-      mediaWriteReady: input.mediaWriteReady,
-      modelsWriteReady: input.modelsWriteReady,
       orderWriteReady: input.orderWriteReady,
     }),
     degradedSources: degraded,

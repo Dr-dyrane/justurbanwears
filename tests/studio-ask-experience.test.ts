@@ -194,9 +194,15 @@ test("piece intake is a private draft handoff", () => {
 });
 
 test("capability guidance distinguishes navigation from unavailable mutations", () => {
-  const response = resolveStudioAssistant("What can you do?", context);
-  const answer = block(response, "answer");
-  const services = block(response, "results")?.items ?? [];
+  const queries = ["What can you do?", "What can you help with?"];
+  const responses = queries.map((query) => resolveStudioAssistant(query, context));
+  for (const response of responses) {
+    assert.equal(response.intent, "UNDERSTAND");
+    assert.equal(block(response, "answer")?.title, "Studio guide");
+    assert.equal(block(response, "results")?.title, "Try a service");
+  }
+  const answer = block(responses[0], "answer");
+  const services = block(responses[0], "results")?.items ?? [];
   const media = services.find((item) => item.id === "capability:atelier");
   const orders = services.find((item) => item.id === "capability:orders");
 
@@ -206,6 +212,9 @@ test("capability guidance distinguishes navigation from unavailable mutations", 
   assert.match(media?.detail ?? "", /cannot start model generation/i);
   assert.equal(orders?.href, "/studio/orders?scenario=lifecycle");
   assert.match(orders?.detail ?? "", /cannot reserve payment or stock/i);
+
+  const targeted = resolveStudioAssistant("What can you help with for JUW-001?", context);
+  assert.equal(block(targeted, "results")?.items[0]?.label, "Coral Drift Dress");
 });
 
 test("workflow responses add bounded suggestions and stable device-private task drafts", () => {
@@ -1071,7 +1080,7 @@ test("the durable route replaces the fake modal modes and preserves keyboard and
   assert.match(orders, /searchParams\.get\("action"\) !== "create"/);
   assert.match(orders, /searchParams\.get\("piece"\)/);
   assert.match(orders, /searchParams\.get\("search"\)/);
-  assert.match(orders, /candidate\.sku\.toLocaleLowerCase/);
+  assert.match(orders, /resolveExactOrderHandoffPiece\(products, requestedPiece\)/);
   assert.match(operations, /searchParams\.get\("piece"\)/);
   assert.match(operations, /action === "hold"/);
   assert.match(operations, /action === "release"/);

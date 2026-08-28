@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { StudioAuthoritySnapshot } from "../lib/studio/services/studio-authority-client";
+import { resolveStudioAssistantWorkflow } from "../lib/studio/assistant/experience";
+import { studioAssistantContextFromProjection } from "../lib/studio/assistant/projection";
 import { shopProducts } from "../lib/shop/catalog";
 import {
   DROP_01_INCOMPLETE_ARCHIVED_DRAFT_SKUS,
@@ -331,7 +333,7 @@ test("scenario projection is explicit and uses the sanitized collection compatib
   assert.ok(projection.searchDocuments.every((document) => document.route.includes("scenario=lifecycle")));
 });
 
-test("connected projection prefers first-class collections and exposes write capability", () => {
+test("connected projection keeps first-class reads separate from proven write capability", () => {
   const projection = projectConnectedStudioApplication({
     operator,
     now,
@@ -354,22 +356,35 @@ test("connected projection prefers first-class collections and exposes write cap
     },
     holdWriteReady: true,
     locationWriteReady: true,
-    mediaWriteReady: true,
-    modelsWriteReady: true,
     orderWriteReady: true,
   });
   assert.deepEqual(projection.collectionScopes.map((scope) => scope.key), ["drop-03"]);
-  assert.equal(projection.capabilities.find((item) => item.id === "COLLECTIONS_WRITE")?.state, "AVAILABLE");
+  assert.equal(projection.capabilities.find((item) => item.id === "COLLECTIONS_READ")?.state, "AVAILABLE");
+  assert.equal(projection.capabilities.find((item) => item.id === "COLLECTIONS_WRITE")?.state, "UNAVAILABLE");
   assert.equal(projection.capabilities.find((item) => item.id === "WARDROBE_WRITE")?.state, "AVAILABLE");
   assert.equal(projection.capabilities.find((item) => item.id === "ORDERS_CREATE")?.state, "AVAILABLE");
   assert.equal(projection.capabilities.find((item) => item.id === "ORDERS_WRITE")?.state, "AVAILABLE");
-  assert.equal(projection.capabilities.find((item) => item.id === "MEDIA_WRITE")?.state, "AVAILABLE");
+  assert.equal(projection.capabilities.find((item) => item.id === "MEDIA_WRITE")?.state, "UNAVAILABLE");
   assert.equal(projection.capabilities.find((item) => item.id === "HOLDS_WRITE")?.state, "AVAILABLE");
   assert.equal(projection.capabilities.find((item) => item.id === "LOCATIONS_WRITE")?.state, "AVAILABLE");
-  assert.equal(projection.capabilities.find((item) => item.id === "MODELS_WRITE")?.state, "AVAILABLE");
+  assert.equal(projection.capabilities.find((item) => item.id === "MODELS_WRITE")?.state, "UNAVAILABLE");
   assert.equal(projection.capabilities.find((item) => item.id === "OPERATIONS_WRITE")?.state, "AVAILABLE");
   assert.equal(projection.degradedSources.some((item) => item.source === "COLLECTIONS"), false);
   assert.equal(projection.searchDocuments.find((item) => item.id.startsWith("collection:"))?.primaryLabel, "Drop 03");
+
+  const assistantContext = studioAssistantContextFromProjection(projection);
+  for (const query of [
+    "Create a new drop",
+    "Rename Drop 03",
+    "Activate Drop 03",
+    "Archive Drop 03",
+    "Generate media for JUW-025",
+    "Update Lulu model",
+  ]) {
+    const workflow = resolveStudioAssistantWorkflow(query, assistantContext);
+    assert.equal(workflow.response.blocks.some((item) => item.kind === "handoff"), false, query);
+    assert.equal(workflow.taskDraft, null, query);
+  }
 });
 
 test("collection compatibility map exposes only exact Drop 01 and Drop 02 scopes", () => {

@@ -16,6 +16,7 @@ import {
   type AssistedOrderRecoverySignature,
 } from "../../lib/shop/assisted-order-recovery";
 import type { ShopCheckoutFulfillment } from "../../lib/shop/domain/entities";
+import { resolveExactOrderHandoffPiece } from "../../lib/studio/orders/ask-order-handoff";
 import { StudioFeedback } from "./atoms/studio-feedback";
 import { StudioLink as Link } from "./atoms/studio-link";
 import { StudioLoadingStage } from "./atoms/studio-loading-stage";
@@ -210,10 +211,7 @@ export function ConnectedOrderInbox() {
     }
     if (state !== "ready" || !productsReady || requestedPieceHandledRef.current === requestedPiece) return;
     requestedPieceHandledRef.current = requestedPiece;
-    const product = products.find((candidate) => (
-      candidate.slug.toLocaleLowerCase("en-NG") === requestedPiece
-      || candidate.sku.toLocaleLowerCase("en-NG") === requestedPiece
-    ));
+    const product = resolveExactOrderHandoffPiece(products, requestedPiece);
     if (product) {
       setSelectedSlugs([product.slug]);
       setRequestedPieceUnavailable(false);
