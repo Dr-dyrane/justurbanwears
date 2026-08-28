@@ -32,6 +32,7 @@ const projection: StudioApplicationProjection = {
   },
   projectionVersion: "studio-application/v1",
   searchDocuments: [{
+    availableActions: ["CREATE_ORDER"],
     aliases: ["JUW-001"],
     id: "piece:piece-001",
     kind: "PIECE",
@@ -54,6 +55,7 @@ test("the assistant context is a sanitized projection with canonical media targe
   assert.equal(context.provenance.status, "connected");
   assert.equal(context.continueAction?.href, "/studio/wardrobe/private-001");
   assert.equal(context.documents[0].mediaTargetId, "private-001");
+  assert.deepEqual(context.documents[0].availableActions, ["CREATE_ORDER"]);
   assert.equal(context.documents[0].identifiers.includes("JUW-001"), true);
   assert.equal("operator" in context, false);
   assert.equal("sourceRevisions" in context, false);

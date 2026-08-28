@@ -7,19 +7,23 @@ const home = readFileSync(`${root}/components/studio/studio-home.tsx`, "utf8");
 const wardrobe = readFileSync(`${root}/components/studio/wardrobe-workbench.tsx`, "utf8");
 
 test("Home keeps one primary recommendation and exposes concise direct paths", () => {
-  assert.match(home, /aria-label="More recommendations"/);
-  assert.match(home, /label: "Change price"/);
-  assert.match(home, /garment\.state !== "CANCELLED"/);
-  assert.match(home, /garment\.availability !== "ARCHIVED"/);
+  assert.match(home, /aria-expanded=\{sheetRaised\}/);
+  assert.match(
+    home,
+    /aria-label=\{sheetRaised \? "Show Studio recommendation" : "Show Studio services"\}/,
+  );
+  assert.match(home, /onPointerDown=\{/);
+  assert.match(home, /onPointerUp=\{/);
+  assert.doesNotMatch(home, /onScroll=\{/);
+  assert.doesNotMatch(home, /sheetScrollTopRef/);
   assert.match(home, /historicalDrop01Kind\(garment\) === null/);
-  assert.match(home, /Boolean\(garment\.privateWardrobeItemId\)[\s\S]*?historicalDrop01Kind\(garment\) === null[\s\S]*?garment\.state !== "CANCELLED"/);
-  assert.match(home, /\?action=price#garment-lifecycle/);
-  assert.match(home, /label: "Browse drops"/);
-  assert.match(home, /\/studio\/wardrobe\?collection=choose/);
-  assert.match(home, /label: "Add piece"/);
+  assert.match(home, /projectStudioDropScopes\(garments, listings\)/);
+  assert.match(home, /const scenarioTasks = \[/);
+  assert.match(home, /\/studio\/orders\?filter=RETURNS/);
+  assert.match(home, /\/studio\/orders/);
+  assert.match(home, /\/studio\/wardrobe/);
+  assert.match(home, /label: "Add the next piece"/);
   assert.match(home, /\/studio\/wardrobe\?intake=1/);
-  assert.match(home, /label: "Review Shop"/);
-  assert.doesNotMatch(home, /label: "(?:Change|Switch) drop"/);
   assert.match(home, /projected\?\.continueAction/);
   assert.match(home, /primaryOpenCount/);
   assert.match(home, /scenario \? scenarioPrimaryTask\.count/);

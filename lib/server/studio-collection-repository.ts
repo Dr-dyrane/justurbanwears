@@ -123,6 +123,18 @@ function requireVersion(collection: StudioCollectionScope, expectedVersion: numb
   }
 }
 
+function rejectFixedCollectionMutation(intent: StudioCollectionIntent): void {
+  const message = intent.command === "CREATE_COLLECTION"
+    ? "New drops are unavailable while Drop 02 is the fixed active collection."
+    : "Drop 01 and Drop 02 are fixed collections and cannot be changed.";
+  throw new StudioEngineError(
+    "INVALID_TRANSITION",
+    409,
+    message,
+    "Use Drop 02 for active work. Drop 01 remains archived history.",
+  );
+}
+
 export async function listStudioCollections(): Promise<StudioCollectionReadResult> {
   const generatedAt = new Date().toISOString();
   const result = await (await getStudioDb()).execute<DatabaseRow>(sql`
@@ -185,6 +197,7 @@ export async function previewStudioCollectionCommand(
   _operator: StudioOperator,
   rawIntent: StudioCollectionIntent,
 ): Promise<StudioCollectionPreview> {
+  rejectFixedCollectionMutation(rawIntent);
   const intent = normalizedIntent(rawIntent);
   const { scopes } = await listStudioCollections();
   const expectedRevision = revisionFor(scopes, intent);
@@ -318,6 +331,7 @@ export async function applyStudioCollectionCommand(input: {
   expectedRevision: string;
   idempotencyKey: string;
 }): Promise<StudioCollectionReceipt> {
+  rejectFixedCollectionMutation(input.intent);
   const intent = normalizedIntent(input.intent);
   const fingerprint = intentFingerprint(intent);
   const existing = await findReceipt(input.operator, input.idempotencyKey);

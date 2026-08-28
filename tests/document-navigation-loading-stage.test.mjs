@@ -20,6 +20,9 @@ test("the root build bridges slow native document navigation into the brand stag
   assert.match(bridge, /document\.addEventListener\("click", handleClick\)/);
   assert.match(bridge, /document\.addEventListener\("submit", handleSubmit\)/);
   assert.match(bridge, /window\.addEventListener\("pageshow", reset\)/);
+  assert.match(bridge, /window\.addEventListener\(DOCUMENT_NAVIGATION_EVENT, begin\)/);
+  assert.match(bridge, /export function assignDocumentNavigation/);
+  assert.match(bridge, /beginDocumentNavigation\(destination\);[\s\S]*window\.location\.assign\(destination\)/);
   assert.match(bridge, /anchor\.hasAttribute\("download"\)/);
   assert.match(bridge, /anchor\.dataset\.navigationLoading === "off"/);
   assert.match(bridge, /event\.defaultPrevented/);
@@ -28,4 +31,11 @@ test("the root build bridges slow native document navigation into the brand stag
   assert.match(bridge, /isSameDocumentDestination\(destination\)/);
   assert.match(bridge, /active \? <GlobalBrandLoadingStage delayMs=\{0\} \/> : null/);
   assert.match(stage, /GLOBAL_BRAND_LOADING_DELAY_MS = 0/);
+
+  const [intake, dossier] = await Promise.all([
+    readFile(path.join(root, "components", "studio", "garment-intake", "garment-intake-sheet.tsx"), "utf8"),
+    readFile(path.join(root, "components", "studio", "garment-dossier.tsx"), "utf8"),
+  ]);
+  assert.match(intake, /requestCloseAndThen\(\(\) => assignDocumentNavigation\(destination\)\)/);
+  assert.match(dossier, /onDismiss=\{\(\) => assignDocumentNavigation\(/);
 });

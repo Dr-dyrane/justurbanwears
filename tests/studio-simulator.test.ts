@@ -173,6 +173,10 @@ test("scenario navigation stays on safe Studio routes", () => {
     studioScenarioHref("/studio/orders/JUW-ORDER", "lifecycle"),
     "/studio/operations?view=orders&order=JUW-ORDER&scenario=lifecycle#studio-scenario-order",
   );
+  assert.equal(
+    studioScenarioHref("/studio/wardrobe", "lifecycle"),
+    "/studio/wardrobe?scenario=lifecycle",
+  );
   assert.equal(studioScenarioHref("/shop", "lifecycle"), "/shop");
   assert.equal(studioScenarioHref("/shoots", "lifecycle"), "/shoots?scenario=lifecycle");
   assert.equal(studioScenarioHref("#piece-primary-action", "lifecycle"), "#piece-primary-action");

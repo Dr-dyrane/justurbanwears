@@ -34,7 +34,9 @@ test("hydrates JUW-022 with only its approved Lulu bodice detail", async () => {
   assert.equal(contract.garment.estimatedFit, "Measurements confirmed before payment");
   assert.equal(contract.garment.condition, "Excellent · real-worn wardrobe piece");
   assert.equal(contract.garment.quantity, 1);
-  assert.equal(contract.garment.saleEligible, true);
+  assert.equal(contract.garment.saleEligible, false);
+  assert.equal(contract.garment.state, "DRAFT");
+  assert.equal(contract.garment.availability, "ARCHIVED");
   assert.deepEqual(contract.garment.measurements, []);
   assert.deepEqual(contract.approvedViews, ["MODEL_DETAIL"]);
   assert.deepEqual(contract.garment.references, []);

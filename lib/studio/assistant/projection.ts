@@ -36,6 +36,7 @@ function assistantDocument(document: StudioSearchDocument): StudioAssistantDocum
   const historical = document.lifecycleState === "SOLD_OUT"
     || document.lifecycleState === "ARCHIVED_DRAFT";
   return {
+    availableActions: document.availableActions ? [...document.availableActions] : undefined,
     detail: document.secondaryLabel,
     entityId,
     href: document.route,
@@ -61,6 +62,10 @@ export function studioAssistantContextFromProjection(
   const degraded = projection.degradedSources.length > 0;
   const preview = projection.mode.kind === "SCENARIO";
   return {
+    capabilities: projection.capabilities.map((capability) => ({
+      id: capability.id,
+      state: capability.state,
+    })),
     continueAction: projection.continueAction?.href.startsWith("/studio")
       ? { href: projection.continueAction.href, label: projection.continueAction.label }
       : null,
@@ -73,6 +78,7 @@ export function studioAssistantContextFromProjection(
           : "Connected Studio application snapshot",
       generatedAt: projection.generatedAt,
       label: preview ? "Scenario preview" : degraded ? "Studio snapshot" : "Live Studio",
+      scenario: projection.mode.kind === "SCENARIO" ? projection.mode.id : undefined,
       status: preview ? "preview" : degraded ? "degraded" : "connected",
     },
     summary: {

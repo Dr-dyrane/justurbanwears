@@ -19,6 +19,7 @@ import { Message, MessageContent, MessageResponse } from "../../ai-elements/mess
 import { Suggestion, Suggestions } from "../../ai-elements/suggestion";
 import { Task, TaskContent, TaskItem, TaskTrigger } from "../../ai-elements/task";
 import type { StudioAssistantUIMessage } from "../../../lib/ai/studio-assistant-agent";
+import { SHOP_COLLECTION_COMPATIBILITY } from "../../../lib/shop/collection-compatibility";
 import { studioOrderHasDueWork } from "../../../lib/shop/order-presentation";
 import {
   normalizeStudioAssistantText,
@@ -32,6 +33,7 @@ import {
 } from "../../../lib/studio/assistant/experience";
 import type { StudioSearchDocument } from "../../../lib/studio/application/contracts";
 import { STUDIO_SERVICES } from "../../../lib/studio/service-registry";
+import { studioScenarioHref } from "../../../lib/studio/simulator";
 import {
   actionableStudioDraftCount,
   historicalDrop01Kind,
@@ -65,12 +67,26 @@ const MAX_QUERY_LENGTH = 1_200;
 const TASK_RETENTION_MS = 30 * 24 * 60 * 60 * 1_000;
 const STORAGE_KEY = "juw.studio.ask.v2";
 const TASKS_STORAGE_KEY = "juw.studio.ask.tasks.v2";
-const STARTERS = [
-  "What needs attention?",
-  "Create a new drop",
-  "Change JUW-001 price",
-  "Prepare media for JUW-003",
-] as const;
+const SCENARIO_CAPABILITIES: StudioAssistantContext["capabilities"] = [
+  { id: "PROJECTION", state: "AVAILABLE" },
+  { id: "SEARCH", state: "AVAILABLE" },
+  { id: "ASK_READ", state: "AVAILABLE" },
+  { id: "WARDROBE_READ", state: "AVAILABLE" },
+  { id: "WARDROBE_WRITE", state: "UNAVAILABLE" },
+  { id: "ORDERS_READ", state: "AVAILABLE" },
+  { id: "ORDERS_CREATE", state: "UNAVAILABLE" },
+  { id: "ORDERS_WRITE", state: "UNAVAILABLE" },
+  { id: "MODELS_READ", state: "UNAVAILABLE" },
+  { id: "MODELS_WRITE", state: "UNAVAILABLE" },
+  { id: "MEDIA_READ", state: "AVAILABLE" },
+  { id: "MEDIA_WRITE", state: "UNAVAILABLE" },
+  { id: "OPERATIONS_READ", state: "AVAILABLE" },
+  { id: "HOLDS_WRITE", state: "UNAVAILABLE" },
+  { id: "LOCATIONS_WRITE", state: "UNAVAILABLE" },
+  { id: "OPERATIONS_WRITE", state: "UNAVAILABLE" },
+  { id: "COLLECTIONS_READ", state: "AVAILABLE" },
+  { id: "COLLECTIONS_WRITE", state: "UNAVAILABLE" },
+];
 
 function assistantTokens(values: Array<string | null | undefined>) {
   return normalizeStudioAssistantText(values.filter(Boolean).join(" "));
@@ -267,6 +283,7 @@ function projectedAssistantDocument(
     : null;
   const projectedState = historicalState ?? document.lifecycleState;
   return {
+    availableActions: document.availableActions ? [...document.availableActions] : undefined,
     detail: document.secondaryLabel,
     entityId,
     href: document.route,
@@ -310,6 +327,19 @@ function buildContext(studio: ReturnType<typeof useStudio>): StudioAssistantCont
   }
 
   if (!projected) {
+  if (studio.scenario) {
+    documents.push(...SHOP_COLLECTION_COMPATIBILITY.map((collection) => ({
+      detail: `${collection.state.toLowerCase()} collection · ${collection.skus.length} pieces · read-only compatibility truth`,
+      entityId: collection.id,
+      href: studioScenarioHref(`/studio/wardrobe?collection=${encodeURIComponent(collection.key)}`, studio.scenario!),
+      id: `collection:${collection.id}`,
+      identifiers: [collection.id, collection.key, collection.label, ...(collection.isCurrent ? ["current drop"] : [])],
+      kind: "Collection" as const,
+      label: collection.label,
+      state: collection.state,
+      tokens: assistantTokens([collection.id, collection.key, collection.label, collection.state, collection.isCurrent ? "current drop" : "history"]),
+    })));
+  }
   const knownPieceKeys = new Set<string>();
   for (const garment of studio.garments) {
     const historicalState = assistantHistoryState(garment);
@@ -318,6 +348,9 @@ function buildContext(studio: ReturnType<typeof useStudio>): StudioAssistantCont
     knownPieceKeys.add(garment.id.toLocaleLowerCase("en-NG"));
     if (garment.privateWardrobeItemId) knownPieceKeys.add(garment.privateWardrobeItemId.toLocaleLowerCase("en-NG"));
     documents.push({
+      availableActions: garment.availability === "AVAILABLE"
+        ? ["CREATE_HOLD", "CREATE_ORDER"]
+        : undefined,
       detail: pieceDetail({ availability: garment.availability, category: garment.category, colour: garment.color }),
       entityId: garment.id,
       href: `/studio/wardrobe/${encodeURIComponent(garment.id)}`,
@@ -348,6 +381,11 @@ function buildContext(studio: ReturnType<typeof useStudio>): StudioAssistantCont
     const historicalState = piece.sku ? assistantHistoryState({ id: entityId, sku: piece.sku }) : null;
     const projectedState = historicalState ?? piece.availability;
     documents.push({
+      availableActions: piece.activeHold
+        ? ["RELEASE_HOLD"]
+        : piece.availability === "AVAILABLE" && piece.sku
+          ? ["CREATE_HOLD", "CREATE_ORDER"]
+          : undefined,
       detail: pieceDetail({ availability: piece.availability, category: piece.category, colour: piece.colour }),
       entityId,
       href: piece.wardrobeItemId
@@ -399,11 +437,11 @@ function buildContext(studio: ReturnType<typeof useStudio>): StudioAssistantCont
     });
   }
 
-  for (const model of connected?.models ?? []) {
+  for (const model of connected?.models.filter((candidate) => candidate.state === "READY") ?? []) {
     documents.push({
       detail: `${model.kind.replaceAll("_", " ")} · ${model.state.toLocaleLowerCase("en-NG")}`,
       entityId: model.id,
-      href: "/studio/models?view=authority",
+      href: `/studio/models?view=authority&model=${encodeURIComponent(model.id)}`,
       id: `model:${model.id}`,
       identifiers: [model.id, model.name, model.kind],
       kind: "Model",
@@ -466,14 +504,35 @@ function buildContext(studio: ReturnType<typeof useStudio>): StudioAssistantCont
     const garment = localGarmentsById.get(listing.garmentId);
     return !garment || historicalDrop01Kind(garment) === null;
   }).length;
+  const scenarioDrafts = studio.scenario ? actionableStudioDraftCount(studio.garments) : 0;
+  const scenarioContinueAction = studio.scenario
+    ? studio.returns.length
+      ? {
+          href: studioScenarioHref("/studio/orders?filter=RETURNS", studio.scenario),
+          label: `Review ${studio.returns.length} return${studio.returns.length === 1 ? "" : "s"}`,
+        }
+      : scenarioDrafts
+        ? {
+            href: studioScenarioHref("/studio/wardrobe", studio.scenario),
+            label: `Finish ${scenarioDrafts} draft${scenarioDrafts === 1 ? "" : "s"}`,
+          }
+        : {
+            href: studioScenarioHref("/studio/wardrobe?intake=1", studio.scenario),
+            label: "Add the next piece",
+          }
+    : null;
 
   return {
+    capabilities: studio.application.snapshot?.capabilities.map((capability) => ({
+      id: capability.id,
+      state: capability.state,
+    })) ?? (studio.scenario ? SCENARIO_CAPABILITIES : []),
     continueAction: studio.application.snapshot?.continueAction
       ? {
           href: studio.application.snapshot.continueAction.href,
           label: studio.application.snapshot.continueAction.label,
         }
-      : null,
+      : scenarioContinueAction,
     documents,
     provenance: projected
       ? {
@@ -487,9 +546,10 @@ function buildContext(studio: ReturnType<typeof useStudio>): StudioAssistantCont
       : studio.scenario
       ? {
           detail: "Lifecycle simulator · in-memory state",
-          generatedAt: connected?.generatedAt ?? null,
-          label: "Scenario preview",
-          status: "preview",
+           generatedAt: connected?.generatedAt ?? null,
+           label: "Scenario preview",
+           scenario: studio.scenario,
+           status: "preview",
         }
       : studio.authority.status === "ready" && connected
         ? {
@@ -550,7 +610,15 @@ function provenanceTime(value: string | null) {
   return new Intl.DateTimeFormat("en-NG", { hour: "numeric", minute: "2-digit" }).format(date);
 }
 
-function AssistantBlock({ block }: { block: StudioAssistantBlock }) {
+function AssistantBlock({
+  block,
+  busy,
+  onPrompt,
+}: {
+  block: StudioAssistantBlock;
+  busy: boolean;
+  onPrompt(prompt: string): void;
+}) {
   if (block.kind === "answer") {
     return <div className="studio-ask-answer"><strong>{block.title}</strong><p>{block.body}</p></div>;
   }
@@ -579,7 +647,13 @@ function AssistantBlock({ block }: { block: StudioAssistantBlock }) {
     return (
       <div className="studio-ask-clarification">
         <strong>{block.title}</strong><p>{block.body}</p>
-        <div>{block.options.map((option) => <Link href={option.href} key={`${option.href}:${option.label}`}>{option.label}<ArrowRight aria-hidden="true" size={15} /></Link>)}</div>
+        <div>{block.options.map((option) => option.prompt ? (
+          <button aria-busy={busy || undefined} disabled={busy} key={`${option.href}:${option.label}`} onClick={() => onPrompt(option.prompt!)} type="button">
+            {option.label}<ArrowRight aria-hidden="true" size={15} />
+          </button>
+        ) : (
+          <Link href={option.href} key={`${option.href}:${option.label}`}>{option.label}<ArrowRight aria-hidden="true" size={15} /></Link>
+        ))}</div>
       </div>
     );
   }
@@ -621,7 +695,7 @@ function AssistantWorkflowCard({
   return (
     <div className="studio-ask-response">
       {workflow.response.blocks.map((block, index) => (
-        <AssistantBlock block={block} key={`${block.kind}:${index}`} />
+        <AssistantBlock block={block} busy={busy} key={`${block.kind}:${index}`} onPrompt={onPrompt} />
       ))}
 
       {task ? (
@@ -689,18 +763,20 @@ function AssistantFallbackMessage({
   onPrompt,
   onSaveTask,
   savedTaskIds,
+  scenario,
   turn,
 }: {
   busy: boolean;
   onPrompt(prompt: string): void;
   onSaveTask(task: StudioAssistantTaskDraft, returnFocus: HTMLElement): void;
   savedTaskIds: Set<string>;
+  scenario: boolean;
   turn: FallbackTurn;
 }) {
   return (
     <Message className="studio-ask-message" from="assistant">
       <MessageContent className="studio-ask-message-content">
-        <small className="studio-ask-fallback-label">Safe local guidance · agent connection unavailable</small>
+        <small className="studio-ask-fallback-label">{scenario ? "Scenario guidance · current simulator state" : "Safe local guidance · agent connection unavailable"}</small>
         <AssistantWorkflowCard
           busy={busy}
           onPrompt={onPrompt}
@@ -719,6 +795,17 @@ export function StudioAskSurface() {
     ? "AVAILABLE"
     : studio.application.snapshot?.capabilities.find((capability) => capability.id === "ASK_READ")?.state ?? "UNAVAILABLE";
   const context = useMemo(() => buildContext(studio), [studio]);
+  const starters = useMemo(() => {
+    const available = (id: StudioAssistantContext["capabilities"][number]["id"]) => (
+      context.capabilities.some((capability) => capability.id === id && capability.state === "AVAILABLE")
+    );
+    return [
+      "What needs attention?",
+      available("WARDROBE_WRITE") ? "Add a new piece" : "Find a piece",
+      available("COLLECTIONS_WRITE") ? "Create a new drop" : "Show the current drop",
+      "What can you help with?",
+    ];
+  }, [context.capabilities]);
   const operator = studio.application.snapshot?.operator;
   const storageScope = encodeURIComponent((studio.scenario
     ? `scenario:${studio.scenario}:${operator?.storageScope ?? "unavailable"}`
@@ -853,14 +940,19 @@ export function StudioAskSurface() {
       .filter((message) => message.role === "user")
       .map(messageText)
       .filter(Boolean);
+    const localQueries = fallbackTurns.map((turn) => turn.query);
     try {
       window.sessionStorage.setItem(sessionStorageKey, JSON.stringify(
-        [...restoredTurns.filter((turn) => turn.state === "complete").map((turn) => turn.query), ...liveQueries].slice(-12),
+        [
+          ...restoredTurns.filter((turn) => turn.state === "complete").map((turn) => turn.query),
+          ...liveQueries,
+          ...localQueries,
+        ].slice(-12),
       ));
     } catch {
       // A private browsing policy may disable session storage; chat remains usable.
     }
-  }, [messages, restored, restoredTurns, sessionStorageKey]);
+  }, [fallbackTurns, messages, restored, restoredTurns, sessionStorageKey]);
 
   useEffect(() => {
     if (!hasConversation) return;
@@ -880,12 +972,18 @@ export function StudioAskSurface() {
     if (status === "error") clearError();
     setQueryError("");
     setQuery("");
+    if (studio.scenario) {
+      addFallback(active);
+      pendingRef.current = null;
+      flightRef.current = false;
+      return;
+    }
     void sendMessage({ messageId: active.id, text: cleanQuery }).catch(() => {
       addFallback(active);
       pendingRef.current = null;
       flightRef.current = false;
     });
-  }, [addFallback, clearError, sendMessage, status]);
+  }, [addFallback, clearError, sendMessage, status, studio.scenario]);
 
   function resetConversation() {
     if (busy) void stop();
@@ -982,7 +1080,14 @@ export function StudioAskSurface() {
             <Sparkles aria-hidden="true" size={24} />
             <h1>What needs doing?</h1>
             <p>Ask naturally. Studio will answer, surface the right next action, and prepare safe task options.</p>
-            <div>{STARTERS.map((starter) => <button disabled={busy} key={starter} onClick={() => submit(starter)} type="button">{starter}</button>)}</div>
+            {context.continueAction ? (
+              <Link className="studio-ask-welcome-primary" href={context.continueAction.href}>
+                <span>Continue current work</span>
+                <strong>{context.continueAction.label}</strong>
+                <ArrowRight aria-hidden="true" size={17} />
+              </Link>
+            ) : null}
+            <div>{starters.map((starter) => <button disabled={busy} key={starter} onClick={() => submit(starter)} type="button">{starter}</button>)}</div>
           </div>
         ) : (
           <>
@@ -1070,6 +1175,7 @@ export function StudioAskSurface() {
                     onPrompt={submit}
                     onSaveTask={prepareTaskSave}
                     savedTaskIds={savedTaskIds}
+                    scenario={Boolean(studio.scenario)}
                     turn={turn}
                   />
                 )) : null}
@@ -1087,6 +1193,7 @@ export function StudioAskSurface() {
                   onPrompt={submit}
                   onSaveTask={prepareTaskSave}
                   savedTaskIds={savedTaskIds}
+                  scenario={Boolean(studio.scenario)}
                   turn={turn}
                 />
               </Fragment>

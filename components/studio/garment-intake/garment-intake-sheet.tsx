@@ -28,6 +28,7 @@ import { StudioLink } from "../atoms/studio-link";
 import { StudioDisclosureRow } from "../atoms/studio-disclosure-row";
 import { StudioTaskSheet, type StudioTaskSheetControls } from "../atoms/studio-task-sheet";
 import { StudioAdaptiveWorkspace } from "../workspace/studio-adaptive-workspace";
+import { assignDocumentNavigation } from "../../brand/document-navigation-loading-stage";
 import {
   intakeRecoveryStep,
   studioDecisionNoteSha256,
@@ -373,7 +374,7 @@ export function GarmentIntakeSheet({
       : "/studio/wardrobe?collection=private";
     reset();
     onDismiss();
-    window.location.assign(destination);
+    assignDocumentNavigation(destination);
     return true;
   }
 
@@ -700,13 +701,13 @@ export function GarmentIntakeSheet({
         event.preventDefault();
         const destination = event.currentTarget.href;
         explicitCommittedNavigationRef.current = true;
-        requestCloseAndThen(() => window.location.assign(destination));
+        requestCloseAndThen(() => assignDocumentNavigation(destination));
       }}>Back to Wardrobe</StudioLink>
       <StudioLink className="button button-primary" data-studio-workspace-primary="true" href={wardrobeItemId ? `/studio/wardrobe/${encodeURIComponent(wardrobeItemId)}` : "/studio/wardrobe?collection=private"} onClick={(event) => {
         event.preventDefault();
         const destination = event.currentTarget.href;
         explicitCommittedNavigationRef.current = true;
-        requestCloseAndThen(() => window.location.assign(destination));
+        requestCloseAndThen(() => assignDocumentNavigation(destination));
       }}>Open garment</StudioLink>
     </>
   ) : step === "reconcile" ? (

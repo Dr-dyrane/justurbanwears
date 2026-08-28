@@ -28,8 +28,7 @@ function AppShellFrame({ children, operator }: { children: React.ReactNode; oper
   const fallback = studioStackFallback(pathname, searchParams.get("view"));
   const registered = useStudioStackDescriptor();
   const stack = registered ?? fallback;
-  const hydrationDependsOnWardrobe = pathname === "/studio"
-    || pathname.startsWith("/studio/wardrobe")
+  const hydrationDependsOnWardrobe = pathname.startsWith("/studio/wardrobe")
     || pathname.startsWith("/studio/ask");
   const hydrationUnavailable = !studio.scenario
     && hydrationDependsOnWardrobe

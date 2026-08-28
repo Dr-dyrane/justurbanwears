@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { GlobalBrandLoadingStage } from "./global-brand-loading-stage";
 
 const HTTP_PROTOCOLS = new Set(["http:", "https:"]);
+const DOCUMENT_NAVIGATION_EVENT = "juw:document-navigation";
 
 function isSameDocumentDestination(destination: URL) {
   return destination.pathname === window.location.pathname
@@ -15,6 +16,22 @@ function eligibleDestination(value: string) {
   return HTTP_PROTOCOLS.has(destination.protocol)
     && destination.origin === window.location.origin
     && !isSameDocumentDestination(destination);
+}
+
+/**
+ * Gives imperative full-document transitions the same immediate feedback as
+ * native links and forms. The destination check prevents unrelated or
+ * same-document actions from showing a loading stage that will never resolve.
+ */
+export function beginDocumentNavigation(destination: string): boolean {
+  if (typeof window === "undefined" || !eligibleDestination(destination)) return false;
+  window.dispatchEvent(new Event(DOCUMENT_NAVIGATION_EVENT));
+  return true;
+}
+
+export function assignDocumentNavigation(destination: string): void {
+  beginDocumentNavigation(destination);
+  window.location.assign(destination);
 }
 
 function eligibleAnchor(event: MouseEvent) {
@@ -86,11 +103,13 @@ export function DocumentNavigationLoadingStage() {
 
     document.addEventListener("click", handleClick);
     document.addEventListener("submit", handleSubmit);
+    window.addEventListener(DOCUMENT_NAVIGATION_EVENT, begin);
     window.addEventListener("pageshow", reset);
 
     return () => {
       document.removeEventListener("click", handleClick);
       document.removeEventListener("submit", handleSubmit);
+      window.removeEventListener(DOCUMENT_NAVIGATION_EVENT, begin);
       window.removeEventListener("pageshow", reset);
     };
   }, []);

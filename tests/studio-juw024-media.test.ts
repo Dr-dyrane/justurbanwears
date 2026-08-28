@@ -40,8 +40,9 @@ test("hydrates JUW-024 with its approved product upper front and authentic Lulu 
   assert.equal(contract.garment.estimatedFit, "Measurements confirmed before payment");
   assert.equal(contract.garment.condition, "Excellent · real-worn wardrobe piece");
   assert.equal(contract.garment.quantity, 1);
-  assert.equal(contract.garment.saleEligible, true);
-  assert.equal(contract.garment.availability, "AVAILABLE");
+  assert.equal(contract.garment.saleEligible, false);
+  assert.equal(contract.garment.state, "DRAFT");
+  assert.equal(contract.garment.availability, "ARCHIVED");
   assert.deepEqual(contract.garment.measurements, []);
   assert.equal(contract.garment.color, "Pale tone · exact colour to confirm");
   assert.match(contract.garment.notes, /product upper-front and Lulu upper-front detail are ready/iu);

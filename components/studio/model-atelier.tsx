@@ -68,6 +68,7 @@ function ModelTask({
   const [authorityConfirmed, setAuthorityConfirmed] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
+  const pendingRef = useRef(false);
   const authorityConfirmationId = useId();
 
   useEffect(() => {
@@ -84,6 +85,8 @@ function ModelTask({
 
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (pendingRef.current) return;
+    pendingRef.current = true;
     setPending(true);
     setError("");
     try {
@@ -110,29 +113,30 @@ function ModelTask({
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "The model could not be saved.");
     } finally {
+      pendingRef.current = false;
       setPending(false);
     }
   }
 
   return (
-    <StudioTaskSheet eyebrow={mode === "create" ? "Model authority" : "Model styling"} onDismiss={onDismiss} onSubmit={save} open={open} returnFocus={returnFocus} title={mode === "create" ? "Add model" : `Edit ${model?.name ?? "model"}`}>
+    <StudioTaskSheet busy={pending} busyLabel={mode === "create" ? "Adding model authority" : "Saving model styling"} eyebrow={mode === "create" ? "Model authority" : "Model styling"} onDismiss={onDismiss} onSubmit={save} open={open} returnFocus={returnFocus} title={mode === "create" ? "Add model" : `Edit ${model?.name ?? "model"}`}>
         <section className="studio-task-question">
           <h3>{mode === "create" ? "Who can wear the piece?" : "How should this model present it?"}</h3>
           <div className="studio-form-grid studio-task-fields">
-            <label className="studio-field"><span>Model name</span><input autoComplete="off" maxLength={80} onChange={(event) => setName(event.target.value)} required value={name} /></label>
+            <label className="studio-field"><span>Model name</span><input autoComplete="off" disabled={pending} maxLength={80} onChange={(event) => setName(event.target.value)} required value={name} /></label>
             {mode === "create" ? <>
-              <label className="studio-field"><span>Adult model photo</span><input accept="image/jpeg,image/png,image/webp" onChange={(event) => setFile(event.target.files?.[0] ?? null)} required type="file" /></label>
-              <label className="studio-field studio-field-wide"><span>Usage source</span><input inputMode="url" maxLength={500} onChange={(event) => setLicenseUrl(event.target.value)} placeholder="https://…" required type="url" value={licenseUrl} /></label>
-              <label className="studio-settings-switch studio-field-wide" htmlFor={authorityConfirmationId}><span className="sr-only">Usage authority confirmed</span><span><strong>Usage authority confirmed</strong><small>I may use this adult photo for private Studio try-ons.</small></span><input checked={authorityConfirmed} id={authorityConfirmationId} onChange={(event) => setAuthorityConfirmed(event.target.checked)} type="checkbox" /><i aria-hidden="true"><b /></i></label>
+              <label className="studio-field"><span>Adult model photo</span><input accept="image/jpeg,image/png,image/webp" disabled={pending} onChange={(event) => setFile(event.target.files?.[0] ?? null)} required type="file" /></label>
+              <label className="studio-field studio-field-wide"><span>Usage source</span><input disabled={pending} inputMode="url" maxLength={500} onChange={(event) => setLicenseUrl(event.target.value)} placeholder="https://…" required type="url" value={licenseUrl} /></label>
+              <label className="studio-settings-switch studio-field-wide" htmlFor={authorityConfirmationId}><span className="sr-only">Usage authority confirmed</span><span><strong>Usage authority confirmed</strong><small>I may use this adult photo for private Studio try-ons.</small></span><input checked={authorityConfirmed} disabled={pending} id={authorityConfirmationId} onChange={(event) => setAuthorityConfirmed(event.target.checked)} type="checkbox" /><i aria-hidden="true"><b /></i></label>
             </> : <>
-              <label className="studio-field"><span>Hair</span><input maxLength={120} onChange={(event) => setHair(event.target.value)} value={hair} /></label>
-              <label className="studio-field"><span>Makeup</span><input maxLength={120} onChange={(event) => setMakeup(event.target.value)} value={makeup} /></label>
-              <label className="studio-field studio-field-wide"><span>Direction</span><textarea maxLength={240} onChange={(event) => setDirection(event.target.value)} rows={3} value={direction} /></label>
+              <label className="studio-field"><span>Hair</span><input disabled={pending} maxLength={120} onChange={(event) => setHair(event.target.value)} value={hair} /></label>
+              <label className="studio-field"><span>Makeup</span><input disabled={pending} maxLength={120} onChange={(event) => setMakeup(event.target.value)} value={makeup} /></label>
+              <label className="studio-field studio-field-wide"><span>Direction</span><textarea disabled={pending} maxLength={240} onChange={(event) => setDirection(event.target.value)} rows={3} value={direction} /></label>
             </>}
           </div>
         </section>
         {error ? <StudioFeedback detail={error} state="error" title="Couldn’t save" /> : null}
-        <footer className="studio-task-sheet-footer"><button className="button button-secondary" onClick={onDismiss} type="button">Cancel</button><button className="button button-primary" disabled={pending} type="submit">{pending ? "Saving…" : mode === "create" ? "Add model" : "Save changes"}</button></footer>
+        <footer className="studio-task-sheet-footer"><button className="button button-secondary" disabled={pending} onClick={onDismiss} type="button">Cancel</button><button className="button button-primary" disabled={pending} type="submit">{pending ? "Saving…" : mode === "create" ? "Add model" : "Save changes"}</button></footer>
     </StudioTaskSheet>
   );
 }
@@ -141,8 +145,16 @@ export function ModelAtelier() {
   const { authority } = useStudio();
   const searchParams = useSearchParams();
   const intakeHandledRef = useRef(false);
+  const requestedModelHandledRef = useRef("");
+  const archivePendingRef = useRef(false);
   const models = authority.snapshot?.models ?? [];
+  const authorityGeneratedAt = authority.snapshot?.generatedAt;
   const readyModels = models.filter((model) => model.state === "READY");
+  const requestedModelId = searchParams.get("model")?.trim() ?? "";
+  const requestedModel = readyModels.find((model) => model.id === requestedModelId);
+  const requestedModelUnavailable = Boolean(
+    requestedModelId && authority.status === "ready" && !requestedModel,
+  );
   const [selectedId, setSelectedId] = useState("");
   const [task, setTask] = useState<"create" | "edit" | null>(null);
   const [returnFocus, setReturnFocus] = useState<HTMLElement | null>(null);
@@ -150,10 +162,12 @@ export function ModelAtelier() {
   const [archiveReason, setArchiveReason] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
-  const selected = readyModels.find((model) => model.id === selectedId)
-    ?? readyModels.find((model) => model.kind === "LULU_V3")
-    ?? readyModels[0]
-    ?? models[0];
+  const selected = requestedModelUnavailable
+    ? undefined
+    : requestedModel
+      ?? readyModels.find((model) => model.id === selectedId)
+      ?? readyModels.find((model) => model.kind === "LULU_V3")
+      ?? readyModels[0];
   const segments = [
     { key: "profile", label: "Profile" },
     { key: "styling", label: "Styling" },
@@ -162,8 +176,17 @@ export function ModelAtelier() {
   const { active: activeView, isPending: viewPending, select: selectView } = useStudioSegment(segments, "profile");
 
   useEffect(() => {
-    if (!selectedId && selected) setSelectedId(selected.id);
-  }, [selected, selectedId]);
+    if (!requestedModelId && !selectedId && selected) setSelectedId(selected.id);
+  }, [requestedModelId, selected, selectedId]);
+
+  useEffect(() => {
+    const requestKey = `${requestedModelId}:${authorityGeneratedAt ?? "unavailable"}`;
+    if (!requestedModelId || authority.status !== "ready" || requestedModelHandledRef.current === requestKey) return;
+    requestedModelHandledRef.current = requestKey;
+    if (!requestedModel) return;
+    setSelectedId(requestedModel.id);
+    setError("");
+  }, [authority.status, authorityGeneratedAt, requestedModel, requestedModelId]);
 
   useEffect(() => {
     if (searchParams.get("intake") !== "model") {
@@ -188,7 +211,8 @@ export function ModelAtelier() {
 
   async function archiveModel(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!selected || selected.kind === "LULU_V3") return;
+    if (!selected || selected.kind === "LULU_V3" || archivePendingRef.current) return;
+    archivePendingRef.current = true;
     setPending(true);
     setError("");
     try {
@@ -206,12 +230,23 @@ export function ModelAtelier() {
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "The model could not be archived.");
     } finally {
+      archivePendingRef.current = false;
       setPending(false);
     }
   }
 
   if (authority.status === "idle" || authority.status === "loading") return <StudioLoadingStage label="Opening Models…" />;
   if (authority.status === "error" || !authority.snapshot) return <StudioStackPage className="studio-ops-page" kind="service"><StudioFeedback action={<button className="button button-secondary" onClick={() => void authority.refresh()} type="button">Try again</button>} detail={authority.error} state="error" title="Models unavailable" /></StudioStackPage>;
+  if (requestedModelUnavailable) return (
+    <StudioStackPage className="studio-ops-page" kind="service">
+      <StudioFeedback
+        action={<StudioLink className="button button-secondary" href="/studio/models">Review ready models</StudioLink>}
+        detail="The exact model from Ask Studio is not a current ready authority. Studio will not substitute Lulu, another model, or an archived record."
+        state="error"
+        title="Model not found"
+      />
+    </StudioStackPage>
+  );
 
   return (
     <StudioStackPage className="studio-ops-page" kind="service">
@@ -257,7 +292,7 @@ export function ModelAtelier() {
 
       <ModelTask key={`${task ?? "closed"}-${selected?.id ?? "none"}`} mode={task ?? "create"} model={task === "edit" ? selected ?? null : null} onDismiss={dismissTask} onSaved={async (model) => { setSelectedId(model.id); setTask(null); await authority.refresh(); }} open={Boolean(task)} returnFocus={returnFocus} />
 
-      <StudioTaskSheet eyebrow="Withdraw authority" onDismiss={() => setArchiveOpen(false)} onSubmit={archiveModel} open={archiveOpen} returnFocus={returnFocus} title={selected ? `Withdraw ${selected.name}` : "Withdraw model"}><section className="studio-task-question"><h3>Stop using this model?</h3><p>Existing generated media stays in history. New try-ons will no longer offer this model.</p><label className="studio-field"><span>Reason</span><textarea maxLength={240} onChange={(event) => setArchiveReason(event.target.value)} required rows={3} value={archiveReason} /></label></section>{error ? <StudioFeedback detail={error} state="error" title="Couldn’t save" /> : null}<footer className="studio-task-sheet-footer"><button className="button button-secondary" onClick={() => setArchiveOpen(false)} type="button">Keep model</button><button className="button button-primary" disabled={pending} type="submit">{pending ? "Withdrawing…" : "Withdraw authority"}</button></footer></StudioTaskSheet>
+      <StudioTaskSheet busy={pending} busyLabel="Withdrawing model authority" eyebrow="Withdraw authority" onDismiss={() => setArchiveOpen(false)} onSubmit={archiveModel} open={archiveOpen} returnFocus={returnFocus} title={selected ? `Withdraw ${selected.name}` : "Withdraw model"}><section className="studio-task-question"><h3>Stop using this model?</h3><p>Existing generated media stays in history. New try-ons will no longer offer this model.</p><label className="studio-field"><span>Reason</span><textarea disabled={pending} maxLength={240} onChange={(event) => setArchiveReason(event.target.value)} required rows={3} value={archiveReason} /></label></section>{error ? <StudioFeedback detail={error} state="error" title="Couldn’t save" /> : null}<footer className="studio-task-sheet-footer"><button className="button button-secondary" disabled={pending} onClick={() => setArchiveOpen(false)} type="button">Keep model</button><button className="button button-primary" disabled={pending} type="submit">{pending ? "Withdrawing…" : "Withdraw authority"}</button></footer></StudioTaskSheet>
     </StudioStackPage>
   );
 }

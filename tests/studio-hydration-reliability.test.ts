@@ -18,7 +18,7 @@ test("hydration failures retain the connected read error for a fail-closed Studi
 test("Wardrobe-dependent Studio surfaces fail closed without blocking independent operations", async () => {
   const shell = await readFile(new URL("../components/studio/app-shell.tsx", import.meta.url), "utf8");
 
-  assert.match(shell, /pathname === "\/studio"/u);
+  assert.doesNotMatch(shell, /hydrationDependsOnWardrobe = pathname === "\/studio"/u);
   assert.match(shell, /pathname\.startsWith\("\/studio\/wardrobe"\)/u);
   assert.match(shell, /pathname\.startsWith\("\/studio\/ask"\)/u);
   assert.match(shell, /studio\.hydration === "degraded"/u);

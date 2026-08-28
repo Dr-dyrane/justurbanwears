@@ -10,9 +10,43 @@ import { resolveStudioAssistantWorkflow } from "../studio/assistant/experience";
 const assistantActionSchema = z.object({
   href: z.string().max(500),
   label: z.string().max(160),
+  prompt: z.string().trim().min(1).max(1_200).optional(),
+});
+
+const assistantCapabilitySchema = z.object({
+  id: z.enum([
+    "PROJECTION",
+    "SEARCH",
+    "ASK_READ",
+    "WARDROBE_READ",
+    "WARDROBE_WRITE",
+    "ORDERS_READ",
+    "ORDERS_CREATE",
+    "ORDERS_WRITE",
+    "MODELS_READ",
+    "MODELS_WRITE",
+    "MEDIA_READ",
+    "MEDIA_WRITE",
+    "OPERATIONS_READ",
+    "HOLDS_WRITE",
+    "LOCATIONS_WRITE",
+    "OPERATIONS_WRITE",
+    "COLLECTIONS_READ",
+    "COLLECTIONS_WRITE",
+  ]),
+  state: z.enum(["AVAILABLE", "READ_ONLY_COMPATIBILITY", "UNAVAILABLE"]),
 });
 
 const assistantDocumentSchema = z.object({
+  availableActions: z.array(z.enum([
+    "CREATE_HOLD",
+    "RELEASE_HOLD",
+    "CREATE_ORDER",
+    "CANCEL_ORDER",
+    "REFUND_ORDER",
+    "ADVANCE_ORDER",
+    "UPDATE_LOCATION",
+  ])).max(7).optional(),
   detail: z.string().max(1_000),
   entityId: z.string().max(200).optional(),
   href: z.string().max(500),
@@ -26,12 +60,14 @@ const assistantDocumentSchema = z.object({
 });
 
 const assistantContextSchema = z.object({
+  capabilities: z.array(assistantCapabilitySchema).max(20),
   continueAction: assistantActionSchema.nullable().optional(),
   documents: z.array(assistantDocumentSchema).max(400),
   provenance: z.object({
     detail: z.string().max(1_000),
     generatedAt: z.string().max(80).nullable(),
     label: z.string().max(160),
+    scenario: z.string().trim().max(80).optional(),
     status: z.enum(["connected", "degraded", "preview"]),
   }),
   summary: z.object({

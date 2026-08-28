@@ -73,8 +73,8 @@ test("garment intake keeps one visual stage, one control surface, and stable pho
   assert.match(sheet, /className=\{`juw-intake-v2-stage is-\$\{step\}`\}/);
   assert.doesNotMatch(sheet, /<div aria-label=\{`\$\{stageCopy\.title\}/);
   assert.match(sheet.slice(workspaceStart, workspaceEnd), /juw-intake-v2-actions/);
-  assert.match(sheet, /event\.preventDefault\(\)[\s\S]*requestCloseAndThen\(\(\) => window\.location\.assign\(destination\)\)/);
-  assert.match(sheet, /function finishCommittedDismiss\(\)[\s\S]*window\.location\.assign\(destination\)/);
+  assert.match(sheet, /event\.preventDefault\(\)[\s\S]*requestCloseAndThen\(\(\) => assignDocumentNavigation\(destination\)\)/);
+  assert.match(sheet, /function finishCommittedDismiss\(\)[\s\S]*assignDocumentNavigation\(destination\)/);
   assert.match(sheet, /garmentSaved && !explicitCommittedNavigationRef\.current/);
   assert.match(sheet, /className="button button-primary" data-studio-workspace-primary="true"[\s\S]*>Open garment<\/StudioLink>/);
   assert.match(sheet, /href="\/studio\/wardrobe\?collection=private"[\s\S]*>Back to Wardrobe<\/StudioLink>/);

@@ -41,7 +41,6 @@ export function StudioHome() {
   } = useStudio();
   const [sheetRaised, setSheetRaised] = useState(false);
   const sheetRef = useRef<HTMLDivElement>(null);
-  const sheetScrollTopRef = useRef(0);
   const sheetStageRef = useRef<HTMLDivElement>(null);
   const swipeStartRef = useRef<number | null>(null);
   const swipeHandledRef = useRef(false);
@@ -53,7 +52,6 @@ export function StudioHome() {
     const stage = sheetStageRef.current;
     if (!stage) return;
     stage.scrollTop = 0;
-    sheetScrollTopRef.current = 0;
   }, []);
 
   const garmentDrafts = scenario
@@ -104,6 +102,9 @@ export function StudioHome() {
     hydration,
     scenario: Boolean(scenario),
   });
+  const recentPiecesState = scenario || hydration === "ready"
+    ? "ready"
+    : hydration === "degraded" ? "unavailable" : "loading";
   if (homeGate === "loading") {
     return <StudioLoadingStage label="Opening Lulu Studio…" />;
   }
@@ -164,36 +165,6 @@ export function StudioHome() {
   const primaryOpenCount = scenario ? scenarioPrimaryTask.count : projected?.continueAction?.openCount ?? null;
   const dropContext = projectStudioDropScopes(garments, listings);
   const currentDropIds = new Set(dropContext.scopes.find((scope) => scope.key === "current")?.garmentIds ?? []);
-  const canEditPrice = (garment: (typeof garments)[number]) => (
-    Boolean(garment.privateWardrobeItemId)
-    && historicalDrop01Kind(garment) === null
-    && garment.state !== "CANCELLED"
-    && garment.availability !== "ARCHIVED"
-    && garment.dynamicPublication?.state !== "ARCHIVED"
-  );
-  const priceTarget = garments.find((garment) => (
-    currentDropIds.has(garment.id)
-    && canEditPrice(garment)
-    && listings.some((listing) => listing.garmentId === garment.id)
-  )) ?? garments.find((garment) => (
-    canEditPrice(garment)
-    && listings.some((listing) => listing.garmentId === garment.id)
-  ));
-  const recommendationLinks = [
-    ...(priceTarget ? [{
-      href: `/studio/wardrobe/${encodeURIComponent(priceTarget.id)}?action=price#garment-lifecycle`,
-      key: "price",
-      label: "Change price",
-    }] : [{ href: "/studio/wardrobe?view=publishing", key: "prices", label: "Review prices" }]),
-    { href: "/studio/wardrobe?collection=choose", key: "drop", label: "Browse drops" },
-    { href: "/studio/wardrobe?intake=1", key: "intake", label: "Add piece" },
-    { href: "/studio/wardrobe?view=publishing", key: "publishing", label: "Review Shop" },
-    ...(returnWork ? [{ href: "/studio/orders?filter=RETURNS", key: "returns", label: "Review returns" }] : []),
-    ...(activeOrders ? [{ href: "/studio/orders", key: "orders", label: "Open orders" }] : []),
-  ].filter((recommendation, index, all) => (
-    recommendation.href !== primaryTask.href
-    && all.findIndex((candidate) => candidate.href === recommendation.href) === index
-  ));
   const recentGarments = [
     ...garments.filter((garment) => currentDropIds.has(garment.id)),
     ...garments.filter((garment) => !currentDropIds.has(garment.id)),
@@ -226,26 +197,11 @@ export function StudioHome() {
           : primaryOpenCount
             ? `${primaryOpenCount} open`
             : "Studio clear"}</small>
-        <nav aria-label="More recommendations" className="studio-home-recommendation-actions">
-          {recommendationLinks.map((recommendation) => (
-            <Link href={recommendation.href} key={recommendation.key}>
-              <span>{recommendation.label}</span>
-              <ArrowRight aria-hidden="true" size={14} />
-            </Link>
-          ))}
-        </nav>
       </section>
 
       <div
         className="studio-home-sheet-stage"
         data-raised={sheetRaised || undefined}
-        onScroll={(event) => {
-          const currentScrollTop = event.currentTarget.scrollTop;
-          const previousScrollTop = sheetScrollTopRef.current;
-          sheetScrollTopRef.current = currentScrollTop;
-          if (!sheetRaised && currentScrollTop > 4) setSheetRaised(true);
-          if (sheetRaised && previousScrollTop > 4 && currentScrollTop <= 0) setSheetRaised(false);
-        }}
         ref={sheetStageRef}
       >
       <div className="studio-home-sheet" data-raised={sheetRaised || undefined} ref={sheetRef}>
@@ -294,7 +250,18 @@ export function StudioHome() {
             <Link href="/studio/wardrobe">View all <ArrowRight aria-hidden="true" size={14} /></Link>
           </div>
 
-          {recentGarments.length ? (
+          {recentPiecesState === "loading" ? (
+            <div className="studio-quiet-empty" role="status">
+              <Shirt aria-hidden="true" size={24} strokeWidth={1.6} />
+              <div><strong>Loading recent pieces…</strong><p>Wardrobe details are catching up.</p></div>
+            </div>
+          ) : recentPiecesState === "unavailable" ? (
+            <div className="studio-quiet-empty" role="status">
+              <Shirt aria-hidden="true" size={24} strokeWidth={1.6} />
+              <div><strong>Recent pieces unavailable</strong><p>Wardrobe could not be verified. Other Studio areas remain available.</p></div>
+              <Link className="button button-secondary" href="/studio/wardrobe">Retry in Wardrobe</Link>
+            </div>
+          ) : recentGarments.length ? (
             <div className="studio-recent-list">
               {recentGarments.map((garment) => {
                 const listing = listings.find((candidate) => candidate.garmentId === garment.id);
