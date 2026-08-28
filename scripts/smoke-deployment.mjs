@@ -46,8 +46,13 @@ function visibleText(html) {
 function hasMatchingDropCounts(html) {
   const text = visibleText(html);
   const hero = text.match(/(\d+) pieces\. No restocks\./);
-  const discovery = text.match(/Drop 02 · (\d+) one-off pieces/);
-  return Boolean(hero && discovery && hero[1] === discovery[1] && Number(hero[1]) > 0);
+  const discovery = text.match(/Drop 02 · (\d+) more one-off pieces/);
+  return Boolean(
+    hero
+    && discovery
+    && Number(hero[1]) === Number(discovery[1]) + 1
+    && Number(hero[1]) > 0,
+  );
 }
 function hasNoCustomerAiCopy(html) {
   return !/\b(?:AI|provenance|AI-completed|generated evidence)\b/i.test(visibleMarkup(html));

@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "workflowRevision": "2026-08-28.181",
-  "updatedAt": "2026-08-28T04:28:20Z",
+  "workflowRevision": "2026-08-28.182",
+  "updatedAt": "2026-08-28T05:00:30Z",
   "model": "LULU_V4",
-  "activeGarment": "031",
-  "activeView": null,
-  "status": "G031_PUBLICATION_AUTHORIZED_RELEASE_PACKET_PREPARED_BLOB_SYNCED_DATABASE_AND_DEPLOYMENT_PENDING_G032_01_PRIVATE_CANDIDATE_AWAITING_KEEP",
+  "activeGarment": "032",
+  "activeView": "01",
+  "status": "G031_RELEASED_LIVE_VERIFIED_G032_01_PRIVATE_CANDIDATE_AWAITING_KEEP",
   "identityReview": {
     "candidateId": "lulu.face.v4.front.candidate.v1",
     "acceptedAssetId": "lulu.face.v4.front.lock.v1",
@@ -1996,7 +1996,7 @@
       "releaseGate":"LIVE_VERIFIED_PUBLIC_RELEASE"
     },
     "031": {
-      "status":"PUBLICATION_AUTHORIZED_RELEASE_PACKET_PREPARED_BLOB_SYNCED_DATABASE_AND_DEPLOYMENT_PENDING",
+      "status":"RELEASED_LIVE_VERIFIED",
       "name":"Cobalt Long-Sleeve Crossover Cutout Mini Dress",
       "sourceManifest":"storage/garments/drop-02/031/source/manifest.json",
       "sourceManifestSha256":"33003df6aff180e0500de5118934f2a335c624bdd5c4344614469fed1299ee05",
@@ -2043,8 +2043,8 @@
       "view05Acceptance":{"userStatement":"approve please 06 and 07 we still ahve 3 garments left","acceptedAt":"2026-08-28T02:55:58Z","record":"storage/garments/drop-02/031/operations/g031-v05-r001-user-acceptance.json","recordSha256":"fa444d51b3ce5a2d30eaaa98ff99472c32b481a986062932c882b69d2926bdac","lockedPath":"storage/garments/drop-02/031/locked/05-on-lulu-front.png","lockedSha256":"dc6cbcb995054252e97f5a6aa2d1f40986338e0ac42a6eb59b42d2d72e96635b","status":"USER_ACCEPTED_LOCKED_06_07_AUTHORIZED"},
       "publicationAuthority":true,
       "releaseIdentity":{"sku":"JUW-055","slug":"cobalt-long-sleeve-crossover-cutout-mini-dress","simulatedPriceNgn":28500,"pricingComparators":[{"garmentId":"027","sku":"JUW-052","priceNgn":28500,"basis":"long-sleeve cutout ruched mini"},{"garmentId":"023","sku":"JUW-047","priceNgn":29500,"basis":"long-sleeve asymmetric ruched mini at the next construction tier"}],"pricingMethod":"closest-live-comparable midpoint of 29000 ties two existing tiers and resolves downward to 28500"},
-      "shopRelease":{"catalogueRevision":"2026-08-27-catalogue-41","catalogueManifestChecksum":"e5195329e5af0e370fdcb760c279e4f7a26b24094182904125af15d7383a7526","cataloguePresentationChecksum":"604ef89ad9d822cf4d6af89cf2cc71b1c3ee0d46ffefb1ad47241ec637271e1c","publicRoot":"public/shop/products/cobalt-long-sleeve-crossover-cutout-mini-dress","mediaCount":7,"publicBlobActiveAssetCount":317,"publicBlobLegacyAssetCount":11,"exportReceipt":"storage/garments/drop-02/031/operations/g031-shop-media-export-v001.json","exportReceiptSha256":"64e3f8a11c81479d006d205ff97c74048ad0089601b880abf34daf9aaa0ed13e","databaseMutation":"PENDING","state":"RELEASE_PACKET_PREPARED_BLOB_SYNCED"},
-      "nextPermittedOperation":"GUARDED_DATABASE_RELEASE_AND_SOURCE_DEPLOYMENT_FROM_EXACT_COMMITTED_PACKET"
+      "shopRelease":{"catalogueRevision":"2026-08-27-catalogue-41","catalogueManifestChecksum":"e5195329e5af0e370fdcb760c279e4f7a26b24094182904125af15d7383a7526","cataloguePresentationChecksum":"604ef89ad9d822cf4d6af89cf2cc71b1c3ee0d46ffefb1ad47241ec637271e1c","publicRoot":"public/shop/products/cobalt-long-sleeve-crossover-cutout-mini-dress","mediaCount":7,"publicBlobActiveAssetCount":317,"publicBlobLegacyAssetCount":11,"exportReceipt":"storage/garments/drop-02/031/operations/g031-shop-media-export-v001.json","exportReceiptSha256":"64e3f8a11c81479d006d205ff97c74048ad0089601b880abf34daf9aaa0ed13e","sourceCommit":"2d4a5d42bc149717b4fa42124b42e88937125bdd","deployedCommit":"2d4a5d42bc149717b4fa42124b42e88937125bdd","deploymentId":"dpl_FAtU7ycCmDiPtAcDCaXwRrkCdXG8","deployment":"https://justurbanwears-m4zjmvlxk-drdyranes-projects.vercel.app","canonicalUrl":"https://www.justurbanwears.com/shop/products/cobalt-long-sleeve-crossover-cutout-mini-dress","deploymentState":"READY","databaseProjectId":"calm-glade-28091571","databaseBranchId":"br-mute-paper-awfdn96n","databaseMutation":"APPLIED_AND_VERIFIED","databaseSchemaMigrationsApplied":21,"databaseSchemaMigrationsPending":0,"databaseReleaseMigrationsApplied":0,"catalogueRowCount":49,"availability":"AVAILABLE","availabilityApi":"HTTP_200_CONFIRMED","productionSmoke":"32_OF_32_PASS","experienceSmoke":"26_OF_26_PASS","browserProductGallery":"7_OF_7_1120X1400_ACTUAL_LIGHTBOX_05_06_07_TRAVERSAL","browserDeclaredResources":"83_OF_83_HTTP_200","browserConsole":"CLEAN","verifiedAt":"2026-08-28T05:00:30Z","state":"LIVE_VERIFIED","status":"LIVE_VERIFIED"},
+      "nextPermittedOperation":"NONE_RELEASE_COMPLETE_PRIVATE_LOCKS_IMMUTABLE"
     },
     "032": {
       "status":"PRIVATE_VIEW_01_CANDIDATE_READY_AWAITING_USER_KEEP",
@@ -2145,9 +2145,9 @@
     }
   },
   "nextOperation": {
-    "garmentId": "031",
-    "view": null,
-    "status": "G031_RELEASE_INTEGRATION_IN_PROGRESS_G032_VIEW_01_AWAITING_KEEP"
+    "garmentId": "032",
+    "view": "01",
+    "status": "G032_VIEW_01_AWAITING_USER_KEEP_OR_REJECT"
   },
-  "requiredNext": "Commit the exact G031 catalogue-41 packet, run the guarded production database release, source-build the committed revision, then require production smoke and browser acceptance before LIVE_VERIFIED. G032/01 remains private and non-parentable until the user explicitly Keeps or rejects its exact bytes."
+  "requiredNext": "User must Keep or reject exact G032/01 bytes. Only a Keep may promote the candidate and authorize independent G032/02; G031 is live-verified and its private locks remain immutable."
 }
