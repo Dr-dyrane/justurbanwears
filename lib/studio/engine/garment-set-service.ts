@@ -7,6 +7,10 @@ import {
   updateGeneration,
 } from "../../server/studio-intake-repository";
 import type { StudioOperator } from "../../server/studio-operator";
+import {
+  claimLegacyStudioEngineWork,
+  legacyStageFamilyForGarmentSetSlot,
+} from "../../server/studio-engine-work-ownership-service";
 import { StudioEngineError } from "./errors";
 import { sha256 } from "./fingerprint";
 import type {
@@ -440,7 +444,12 @@ export async function commandGarmentSet(
     if (existingCommand.state === "COMPLETE" || existingCommand.state === "RUNNING") return before;
   }
 
-  assertCurrentCommand(before, input);
+  const ownershipSlot = assertCurrentCommand(before, input);
+  await claimLegacyStudioEngineWork({
+    operatorSubject: operator.subject,
+    wardrobeItemId,
+    stageFamily: legacyStageFamilyForGarmentSetSlot(ownershipSlot.key),
+  });
   const commandJob = existingCommand ?? await createOrReuseGeneration({
     intakeId: item.intakeId,
     operation: "GENESIS_COMMAND",

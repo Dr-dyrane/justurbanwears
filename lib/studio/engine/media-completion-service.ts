@@ -20,6 +20,10 @@ import {
   type MediaCompletionJobRow,
 } from "../../server/studio-media-completion-repository";
 import { getOwnedAsset, getOwnedWardrobeItem } from "../../server/studio-intake-repository";
+import {
+  claimLegacyStudioEngineWork,
+  legacyStageFamilyForMediaCompletionRole,
+} from "../../server/studio-engine-work-ownership-service";
 import type { StudioOperator } from "../../server/studio-operator";
 import { getShopBlobToken, putShopBlob } from "../../server/vercel-blob";
 import type { IntakeFacts } from "./contracts";
@@ -355,6 +359,19 @@ async function readRetainedProviderResult(job: MediaCompletionJobRow): Promise<R
     usage: job.usage ?? {},
     costUsd: parsedCost !== null && Number.isFinite(parsedCost) && parsedCost >= 0 ? parsedCost : null,
   };
+}
+
+async function claimWardrobeCompletionOwnership(input: Readonly<{
+  target: ResolvedTarget;
+  role: MediaCompletionRole;
+  operator: StudioOperator;
+}>): Promise<void> {
+  if (input.target.kind !== "WARDROBE_ITEM") return;
+  await claimLegacyStudioEngineWork({
+    operatorSubject: input.operator.subject,
+    wardrobeItemId: input.target.key,
+    stageFamily: legacyStageFamilyForMediaCompletionRole(input.role),
+  });
 }
 
 function storedValidationEligibility(
@@ -763,6 +780,7 @@ export async function createMediaCompletion(input: {
     }
   }
   const target = await resolveTarget(input.target, role, input.operator);
+  await claimWardrobeCompletionOwnership({ target, role, operator: input.operator });
   await recoverStaleMediaCompletionJobs({
     operatorSubject: input.operator.subject,
     targetKind: target.kind,
@@ -863,6 +881,7 @@ export async function decideMediaCompletion(input: {
   if (job.targetKind !== target.kind || job.targetKey !== target.key) {
     throw new StudioEngineError("INTAKE_NOT_FOUND", 404, "That AI view was not found.", "Open the piece again.");
   }
+  await claimWardrobeCompletionOwnership({ target, role, operator: input.operator });
   if (input.decision === "KEEP") {
     const sourceMode = jobSourceMode(job);
     assertMediaCompletionTruthConfirmation(sourceMode, input.decision, input.truthConfirmed);

@@ -47,6 +47,10 @@ import {
 } from "../../server/studio-generation-result-store";
 import type { StudioOperator } from "../../server/studio-operator";
 import {
+  claimLegacyStudioEngineWork,
+  legacyStageFamilyForWearOperation,
+} from "../../server/studio-engine-work-ownership-service";
+import {
   intakeFactsSchema,
   type OperatorSafeDecisionReceipt,
   type OperatorSafeWearGeneration,
@@ -375,6 +379,11 @@ export async function generateWearCandidate(input: {
     parameters,
   });
   if (requestGeneration) assertStudioGenerationRequestIdentity(requestGeneration, fingerprint);
+  await claimLegacyStudioEngineWork({
+    operatorSubject: input.operator.subject,
+    wardrobeItemId: input.wardrobeItemId,
+    stageFamily: legacyStageFamilyForWearOperation(input.operation),
+  });
   if (requestGeneration && isTerminalWearRequestReplay(requestGeneration, input.requestId)) {
     return wearGenerationResponse({
       generationId: requestGeneration.id,

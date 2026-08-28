@@ -1179,6 +1179,45 @@ export async function commitStudioIntakeAtomic(input: {
       where existing.intake_id = ${input.intakeId}::uuid
         and exists (select 1 from claimed_intake)
       limit 1
+    ), ownership_item as (
+      select id, created_at from committed_item
+      union all
+      select existing.id, existing.created_at
+      from studio_wardrobe_items as existing
+      where existing.intake_id = ${input.intakeId}::uuid
+        and existing.operator_subject = ${input.operatorSubject}
+        and existing.title = ${input.facts.title}
+        and existing.category = ${input.facts.category}
+        and existing.colour = ${input.facts.colour}
+        and existing.size_label = ${input.facts.sizeLabel}
+        and existing.condition = ${input.facts.condition}
+        and existing.price = ${input.facts.price}
+        and existing.approved_asset_id = ${input.approvedAssetId}::uuid
+        and exists (select 1 from approved_generation)
+        and not exists (select 1 from committed_item)
+      limit 1
+    ), ownership_claim as (
+      insert into studio_engine_work_ownership (
+        operator_subject, wardrobe_item_id, stage_family, owner,
+        semantic_hash, created_at, updated_at
+      )
+      select
+        ${input.operatorSubject}, item.id, 'GARMENT_FRONT', 'LEGACY',
+        encode(digest(convert_to(
+          'juw.studio-engine-work-ownership.v1' || E'\n'
+          || ${input.operatorSubject} || E'\n'
+          || item.id::text || E'\n'
+          || 'GARMENT_FRONT',
+          'UTF8'
+        ), 'sha256'), 'hex'),
+        item.created_at,
+        item.created_at
+      from ownership_item as item
+      on conflict (operator_subject, wardrobe_item_id, stage_family)
+      do update set updated_at = studio_engine_work_ownership.updated_at
+      where studio_engine_work_ownership.owner = 'LEGACY'
+        and studio_engine_work_ownership.semantic_hash = excluded.semantic_hash
+      returning wardrobe_item_id
     ), inserted_event as (
       insert into studio_garment_events (
         wardrobe_item_id, operator_subject, event_type, summary, details, occurred_at
@@ -1196,11 +1235,20 @@ export async function commitStudioIntakeAtomic(input: {
       )
       returning id
     )
-    select exists(select 1 from claimed_intake) as claimed
+    select
+      exists(select 1 from claimed_intake) as claimed,
+      exists(select 1 from ownership_claim) as ownership_claimed
   `);
-  const claimed = Boolean((result.rows[0] as { claimed?: boolean | string | number } | undefined)?.claimed === true
-    || (result.rows[0] as { claimed?: boolean | string | number } | undefined)?.claimed === "true"
-    || (result.rows[0] as { claimed?: boolean | string | number } | undefined)?.claimed === 1);
+  const resultRow = result.rows[0] as {
+    claimed?: boolean | string | number;
+    ownership_claimed?: boolean | string | number;
+  } | undefined;
+  const claimed = Boolean(resultRow?.claimed === true
+    || resultRow?.claimed === "true"
+    || resultRow?.claimed === 1);
+  const ownershipClaimed = Boolean(resultRow?.ownership_claimed === true
+    || resultRow?.ownership_claimed === "true"
+    || resultRow?.ownership_claimed === 1);
   const [intake, wardrobeItem] = await Promise.all([
     ownedIntake(input.intakeId, input.operatorSubject),
     getCommittedWardrobeItem({ intakeId: input.intakeId, operatorSubject: input.operatorSubject }),
@@ -1214,6 +1262,14 @@ export async function commitStudioIntakeAtomic(input: {
     && savedFacts.condition === input.facts.condition
     && savedFacts.price === input.facts.price;
   if (intake.state === "COMMITTED" && intentMatches && intakeFactsMatch && wardrobeItem) {
+    if (!ownershipClaimed) {
+      throw new StudioEngineError(
+        "INVALID_TRANSITION",
+        409,
+        "This garment stage is already owned by another Studio workflow.",
+        "Continue from the saved workflow for this garment stage. No new generation was started.",
+      );
+    }
     return { intake, wardrobeItem, repeated: !claimed };
   }
   if (intake.state === "COMMITTED" || wardrobeItem) {
