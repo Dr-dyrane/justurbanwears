@@ -4588,22 +4588,38 @@ html[data-theme="dark"] body .studio-shell.studio-stack-shell[data-studio-page="
 
 body .studio-shell.studio-stack-shell[data-studio-page="stack"] {
   background: var(--studio-stack-field);
-  min-height: 100dvh;
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
 }
 
 body .studio-shell.studio-stack-shell[data-studio-page="stack"] .workspace {
   background: var(--studio-stack-field);
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+}
+
+body .studio-shell.studio-stack-shell[data-studio-page="stack"] .demo-ribbon {
+  flex: 0 0 auto;
 }
 
 body .studio-shell.studio-stack-shell[data-studio-page="stack"] main.page-canvas.studio-native-canvas {
   background: var(--studio-canvas);
   border-radius: 38px 38px 0 0;
   box-shadow: var(--studio-stack-sheet-shadow);
+  flex: 1 1 auto;
+  height: auto;
   isolation: isolate;
   margin-top: 8px;
   max-width: none;
-  min-height: calc(100dvh - var(--studio-command-height) - 36px);
+  min-height: 0;
   overflow-x: clip;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scrollbar-gutter: stable;
   width: 100%;
 }
 

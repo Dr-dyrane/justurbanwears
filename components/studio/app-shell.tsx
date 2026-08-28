@@ -68,7 +68,11 @@ function AppShellFrame({ children, operator }: { children: React.ReactNode; oper
           </div>
         ) : null}
 
-        <main className={`page-canvas${isHome ? "" : " studio-native-canvas"}`} id="studio-content">
+        <main
+          className={`page-canvas${isHome ? "" : " studio-native-canvas"}`}
+          id="studio-content"
+          tabIndex={-1}
+        >
           {hydrationUnavailable ? (
             <section className="studio-quiet-empty" role="alert">
               <RotateCcw aria-hidden="true" size={24} />

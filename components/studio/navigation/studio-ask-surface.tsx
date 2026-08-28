@@ -1102,7 +1102,20 @@ export function StudioAskSurface() {
 
   useEffect(() => {
     if (!hasConversation) return;
-    endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    const end = endRef.current;
+    const scroller = end?.closest("main");
+    const composer = end?.closest(".studio-ask-page")?.querySelector(".studio-ask-composer-dock");
+    if (!end || !(scroller instanceof HTMLElement) || !(composer instanceof HTMLElement)) {
+      end?.scrollIntoView({ behavior: "smooth", block: "end" });
+      return;
+    }
+    const targetBottom = Math.min(
+      scroller.getBoundingClientRect().bottom,
+      composer.getBoundingClientRect().top,
+    ) - 12;
+    const delta = end.getBoundingClientRect().bottom - targetBottom;
+    if (delta <= 0) return;
+    scroller.scrollTo({ behavior: "smooth", top: scroller.scrollTop + delta });
   }, [fallbackTurns, hasConversation, messages, status]);
 
   const submit = useCallback((requestedQuery: string) => {
@@ -1353,7 +1366,7 @@ export function StudioAskSurface() {
             ) : null}
           </>
         )}
-        <div ref={endRef} />
+        <div className="studio-ask-end" ref={endRef} />
       </div>
 
       <div className="studio-ask-composer-dock">

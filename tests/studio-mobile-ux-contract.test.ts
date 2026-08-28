@@ -55,6 +55,10 @@ test("Studio uses Home-owned navigation and one shell-owned stack header", () =>
   assert.match(stackCss, /\.studio-command-nav\.is-stack \{[\s\S]*?grid-template-columns: 48px minmax\(0, 1fr\) 48px/);
   assert.match(stackCss, /\.studio-command-header \{[\s\S]*?z-index: var\(--z-header\)/);
   assert.doesNotMatch(stackCss, /\.studio-stack-nav/);
+  assert.match(shell, /id="studio-content"[\s\S]*?tabIndex=\{-1\}/);
+  assert.match(stackCss, /studio-stack-shell\[data-studio-page="stack"\] \{[\s\S]*?height: 100dvh;[\s\S]*?overflow: hidden;/);
+  assert.match(stackCss, /studio-stack-shell\[data-studio-page="stack"\] \.workspace \{[\s\S]*?display: flex;[\s\S]*?height: 100dvh;[\s\S]*?overflow: hidden;/);
+  assert.match(stackCss, /main\.page-canvas\.studio-native-canvas \{[\s\S]*?flex: 1 1 auto;[\s\S]*?min-height: 0;[\s\S]*?overflow-y: auto;[\s\S]*?overscroll-behavior-y: contain;/);
   assert.match(stackCss, /@media \(max-width: 680px\)[\s\S]*?grid-template-columns: 44px minmax\(0, 1fr\) 44px/);
   assert.match(stackCss, /padding-bottom: max\(36px, env\(safe-area-inset-bottom, 0px\)\)/);
   assert.doesNotMatch(mobileCss, /\.shop-shell > main,\s*\.studio-shell \.page-canvas/);

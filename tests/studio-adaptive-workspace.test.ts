@@ -8,6 +8,7 @@ const root = process.cwd();
 const read = (path: string) => readFileSync(`${root}/${path}`, "utf8");
 const component = read("components/studio/workspace/studio-adaptive-workspace.tsx");
 const css = read("app/studio-adaptive-workspace.css");
+const stackCss = read("app/studio-stack-navigation.css");
 const dossier = read("components/studio/garment-dossier.tsx");
 const focusHelper = read("components/studio/workspace/studio-workspace-focus.ts");
 const layout = read("app/(studio)/layout.tsx");
@@ -104,6 +105,8 @@ test("responsive posture is capacity-derived and keeps a measured safe canvas", 
   assert.match(css, /@media \(max-height: 680px\) and \(orientation: portrait\)[\s\S]*?\.juw-order-v2-heading > p[\s\S]*?display: none/);
   assert.match(css, /@media \(max-width: 680px\)[\s\S]*?\.juw-piece-v2-summary > \.studio-card-heading > \.studio-piece-stage \{[\s\S]*?flex: 0 0 auto;[\s\S]*?max-width: none;[\s\S]*?overflow: visible/);
   assert.match(css, /html:has\(\[data-studio-adaptive-workspace="true"\]\)[\s\S]*?overflow: hidden/);
+  assert.match(stackCss, /main\.page-canvas\.studio-native-canvas \{[\s\S]*?overflow-y: auto/);
+  assert.match(css, /main\.page-canvas\.studio-native-canvas:has\(\[data-studio-adaptive-workspace="true"\]\) \{[\s\S]*?overflow: hidden/);
   assert.match(css, /\.juw-piece-v2-summary > p \{[\s\S]*?order: 3/);
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)/);
   assert.match(css, /@media \(forced-colors: active\)/);
