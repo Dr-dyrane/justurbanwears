@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "catalogueRevision": "2026-08-27-catalogue-40",
-  "catalogueChecksum": "e45ec2cd5a9be7d06eeaf2803b119e5212b9a01cecfa71ce1a44d36095ac38bc",
-  "cataloguePresentationChecksum": "c42b73d3041f4f30df9b3507235c8134a201b73155dfd7e2ca47a2b39c09f1cb",
+  "catalogueRevision": "2026-08-27-catalogue-41",
+  "catalogueChecksum": "e5195329e5af0e370fdcb760c279e4f7a26b24094182904125af15d7383a7526",
+  "cataloguePresentationChecksum": "604ef89ad9d822cf4d6af89cf2cc71b1c3ee0d46ffefb1ad47241ec637271e1c",
   "legacyAssets": [
     {
       "sourcePath": "/shop/products/black-cropped-tee-pink-distressed-shorts-set/04-model-front.webp",
@@ -1036,6 +1036,62 @@
       "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/50f7fb0ef64dc3e056483b8661b1fd3ef58e4417cea87d57525a2015d41513e9/products/charcoal-wrap-front-ruched-slit-midi-dress/07-model-left-profile.webp",
       "sha256": "50f7fb0ef64dc3e056483b8661b1fd3ef58e4417cea87d57525a2015d41513e9",
       "size": 174858,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/cobalt-long-sleeve-crossover-cutout-mini-dress/01-garment-front.webp",
+      "pathname": "shop/catalogue/1e504c31529cc780b2918676993d3571debb806db6502e909985fee86bb20810/products/cobalt-long-sleeve-crossover-cutout-mini-dress/01-garment-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/1e504c31529cc780b2918676993d3571debb806db6502e909985fee86bb20810/products/cobalt-long-sleeve-crossover-cutout-mini-dress/01-garment-front.webp",
+      "sha256": "1e504c31529cc780b2918676993d3571debb806db6502e909985fee86bb20810",
+      "size": 92086,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/cobalt-long-sleeve-crossover-cutout-mini-dress/02-garment-back.webp",
+      "pathname": "shop/catalogue/4a2e5f3cc618fdc9c7e2daca981ca10f88c74cfd4fab9e055724b0dfd17eec42/products/cobalt-long-sleeve-crossover-cutout-mini-dress/02-garment-back.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/4a2e5f3cc618fdc9c7e2daca981ca10f88c74cfd4fab9e055724b0dfd17eec42/products/cobalt-long-sleeve-crossover-cutout-mini-dress/02-garment-back.webp",
+      "sha256": "4a2e5f3cc618fdc9c7e2daca981ca10f88c74cfd4fab9e055724b0dfd17eec42",
+      "size": 69434,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/cobalt-long-sleeve-crossover-cutout-mini-dress/03-mannequin-front.webp",
+      "pathname": "shop/catalogue/b6de5b09f69c7e81e0adedde132d1b9401aa852e7bb701c66a00e79f59ae8cda/products/cobalt-long-sleeve-crossover-cutout-mini-dress/03-mannequin-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/b6de5b09f69c7e81e0adedde132d1b9401aa852e7bb701c66a00e79f59ae8cda/products/cobalt-long-sleeve-crossover-cutout-mini-dress/03-mannequin-front.webp",
+      "sha256": "b6de5b09f69c7e81e0adedde132d1b9401aa852e7bb701c66a00e79f59ae8cda",
+      "size": 67030,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/cobalt-long-sleeve-crossover-cutout-mini-dress/04-model-front.webp",
+      "pathname": "shop/catalogue/e4cad03cf496fe05fe57a38426ba4f7808f7528ff7c955eadaadf5bef8144b31/products/cobalt-long-sleeve-crossover-cutout-mini-dress/04-model-front.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/e4cad03cf496fe05fe57a38426ba4f7808f7528ff7c955eadaadf5bef8144b31/products/cobalt-long-sleeve-crossover-cutout-mini-dress/04-model-front.webp",
+      "sha256": "e4cad03cf496fe05fe57a38426ba4f7808f7528ff7c955eadaadf5bef8144b31",
+      "size": 188824,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/cobalt-long-sleeve-crossover-cutout-mini-dress/05-model-rear-three-quarter.webp",
+      "pathname": "shop/catalogue/2b3d03a23e74307ecd03153b6681470d373aa71667fd6acafde9134b5ce193f7/products/cobalt-long-sleeve-crossover-cutout-mini-dress/05-model-rear-three-quarter.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/2b3d03a23e74307ecd03153b6681470d373aa71667fd6acafde9134b5ce193f7/products/cobalt-long-sleeve-crossover-cutout-mini-dress/05-model-rear-three-quarter.webp",
+      "sha256": "2b3d03a23e74307ecd03153b6681470d373aa71667fd6acafde9134b5ce193f7",
+      "size": 173630,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/cobalt-long-sleeve-crossover-cutout-mini-dress/06-fabric-detail.webp",
+      "pathname": "shop/catalogue/03fc85641f41af10bd66285fc10fd5727472e42aa17e4c5ff3fe0e924a491900/products/cobalt-long-sleeve-crossover-cutout-mini-dress/06-fabric-detail.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/03fc85641f41af10bd66285fc10fd5727472e42aa17e4c5ff3fe0e924a491900/products/cobalt-long-sleeve-crossover-cutout-mini-dress/06-fabric-detail.webp",
+      "sha256": "03fc85641f41af10bd66285fc10fd5727472e42aa17e4c5ff3fe0e924a491900",
+      "size": 125148,
+      "contentType": "image/webp"
+    },
+    {
+      "sourcePath": "/shop/products/cobalt-long-sleeve-crossover-cutout-mini-dress/07-model-left-profile.webp",
+      "pathname": "shop/catalogue/fe30e1f44da4fe1a40122dd0cc8fea2c7a09ea0ffd388220f63ded2112b558cb/products/cobalt-long-sleeve-crossover-cutout-mini-dress/07-model-left-profile.webp",
+      "url": "https://3zahcgtjznzcxgsl.public.blob.vercel-storage.com/shop/catalogue/fe30e1f44da4fe1a40122dd0cc8fea2c7a09ea0ffd388220f63ded2112b558cb/products/cobalt-long-sleeve-crossover-cutout-mini-dress/07-model-left-profile.webp",
+      "sha256": "fe30e1f44da4fe1a40122dd0cc8fea2c7a09ea0ffd388220f63ded2112b558cb",
+      "size": 168984,
       "contentType": "image/webp"
     },
     {

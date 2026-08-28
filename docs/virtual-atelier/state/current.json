@@ -1,11 +1,11 @@
 {
   "schemaVersion": 1,
-  "workflowRevision": "2026-08-28.180",
-  "updatedAt": "2026-08-28T03:33:36Z",
+  "workflowRevision": "2026-08-28.181",
+  "updatedAt": "2026-08-28T04:28:20Z",
   "model": "LULU_V4",
   "activeGarment": "031",
   "activeView": null,
-  "status": "G031_PRIVATE_01_07_COMPLETE_ALL_RESERVATIONS_RELEASED_NO_PUBLICATION_AUTHORITY",
+  "status": "G031_PUBLICATION_AUTHORIZED_RELEASE_PACKET_PREPARED_BLOB_SYNCED_DATABASE_AND_DEPLOYMENT_PENDING_G032_01_PRIVATE_CANDIDATE_AWAITING_KEEP",
   "identityReview": {
     "candidateId": "lulu.face.v4.front.candidate.v1",
     "acceptedAssetId": "lulu.face.v4.front.lock.v1",
@@ -1996,7 +1996,7 @@
       "releaseGate":"LIVE_VERIFIED_PUBLIC_RELEASE"
     },
     "031": {
-      "status":"PRIVATE_ATELIER_01_07_COMPLETE_ALL_EXACT_LOCKS_NO_PUBLICATION_AUTHORITY",
+      "status":"PUBLICATION_AUTHORIZED_RELEASE_PACKET_PREPARED_BLOB_SYNCED_DATABASE_AND_DEPLOYMENT_PENDING",
       "name":"Cobalt Long-Sleeve Crossover Cutout Mini Dress",
       "sourceManifest":"storage/garments/drop-02/031/source/manifest.json",
       "sourceManifestSha256":"33003df6aff180e0500de5118934f2a335c624bdd5c4344614469fed1299ee05",
@@ -2041,11 +2041,13 @@
       "lockedManifest":{"path":"storage/garments/drop-02/031/locked/manifest.json","sha256":"eb1004fe299e4180760f0690d2321f728325885dc99e929469154abfcb249344","bytes":10210,"status":"COMPLETE_01_07_USER_ACCEPTED_LOCKED"},
       "view05Candidate":{"operationId":"atelier:031:model-front:ed64cfc197d6ef0a3149f497","semanticOperationHash":"ed64cfc197d6ef0a3149f497abf6a2e5f1944cd807211b4cddc1c4781bb4c767","operationRecord":"storage/garments/drop-02/031/operations/g031-v05-r001-manual-chat.json","receipt":"storage/garments/drop-02/031/operations/g031-v05-r001-manual-chat-receipt.json","path":"storage/garments/drop-02/031/candidates/v4-model-set-v1/05-on-lulu-front-r001.png","sha256":"dc6cbcb995054252e97f5a6aa2d1f40986338e0ac42a6eb59b42d2d72e96635b","bytes":2076254,"dimensions":"1122x1402","status":"USER_ACCEPTED_EXACT_BYTES_PROMOTED_UNCHANGED_TO_LOCK","localReview":"PASS","independentReview":"PASS","renderQualityReview":{"photographicRealism":"PASS","skinTexture":"PASS","garmentTexture":"PASS","lightingIntegration":"PASS","opticsPerspective":"PASS","artifactRejection":"PASS"},"boundedCorrectionRequired":false,"mayParent":true,"lockedPath":"storage/garments/drop-02/031/locked/05-on-lulu-front.png","acceptanceRecord":"storage/garments/drop-02/031/operations/g031-v05-r001-user-acceptance.json","acceptanceRecordSha256":"fa444d51b3ce5a2d30eaaa98ff99472c32b481a986062932c882b69d2926bdac"},
       "view05Acceptance":{"userStatement":"approve please 06 and 07 we still ahve 3 garments left","acceptedAt":"2026-08-28T02:55:58Z","record":"storage/garments/drop-02/031/operations/g031-v05-r001-user-acceptance.json","recordSha256":"fa444d51b3ce5a2d30eaaa98ff99472c32b481a986062932c882b69d2926bdac","lockedPath":"storage/garments/drop-02/031/locked/05-on-lulu-front.png","lockedSha256":"dc6cbcb995054252e97f5a6aa2d1f40986338e0ac42a6eb59b42d2d72e96635b","status":"USER_ACCEPTED_LOCKED_06_07_AUTHORIZED"},
-      "publicationAuthority":false,
-      "nextPermittedOperation":"NONE_G031_PRIVATE_SET_COMPLETE_AWAIT_SEPARATE_G032_OR_RELEASE_AUTHORITY"
+      "publicationAuthority":true,
+      "releaseIdentity":{"sku":"JUW-055","slug":"cobalt-long-sleeve-crossover-cutout-mini-dress","simulatedPriceNgn":28500,"pricingComparators":[{"garmentId":"027","sku":"JUW-052","priceNgn":28500,"basis":"long-sleeve cutout ruched mini"},{"garmentId":"023","sku":"JUW-047","priceNgn":29500,"basis":"long-sleeve asymmetric ruched mini at the next construction tier"}],"pricingMethod":"closest-live-comparable midpoint of 29000 ties two existing tiers and resolves downward to 28500"},
+      "shopRelease":{"catalogueRevision":"2026-08-27-catalogue-41","catalogueManifestChecksum":"e5195329e5af0e370fdcb760c279e4f7a26b24094182904125af15d7383a7526","cataloguePresentationChecksum":"604ef89ad9d822cf4d6af89cf2cc71b1c3ee0d46ffefb1ad47241ec637271e1c","publicRoot":"public/shop/products/cobalt-long-sleeve-crossover-cutout-mini-dress","mediaCount":7,"publicBlobActiveAssetCount":317,"publicBlobLegacyAssetCount":11,"exportReceipt":"storage/garments/drop-02/031/operations/g031-shop-media-export-v001.json","exportReceiptSha256":"64e3f8a11c81479d006d205ff97c74048ad0089601b880abf34daf9aaa0ed13e","databaseMutation":"PENDING","state":"RELEASE_PACKET_PREPARED_BLOB_SYNCED"},
+      "nextPermittedOperation":"GUARDED_DATABASE_RELEASE_AND_SOURCE_DEPLOYMENT_FROM_EXACT_COMMITTED_PACKET"
     },
     "032": {
-      "status":"PRIVATE_INTAKE_SAVED_NOT_STARTED",
+      "status":"PRIVATE_VIEW_01_CANDIDATE_READY_AWAITING_USER_KEEP",
       "name":"Mauve Architectural Cutout Open-Back Mini Dress",
       "sourceManifest":"storage/garments/drop-02/032/source/manifest.json",
       "sourceManifestSha256":"2da0f31ad5f9685e60ab201dd1cf5792e873dd4df6aa1f27bf1aad855b66f7b3",
@@ -2058,10 +2060,11 @@
       "timeFreezeAuthority":"ARCHIVAL_AUDIT_AND_RECOVERY_ONLY_DO_NOT_AUTO_INJECT",
       "packetGeneratedOutputMayParent":false,
       "reservedViews":[],
-      "imageGenerationReservation":"NONE",
+      "view01Candidate":{"operationId":"atelier:032:garment-front:7cd8df2e8270476ace71af07","semanticOperationHash":"7cd8df2e8270476ace71af071c3e8769bbb7a5ac27f4c44307019aa5ddddbe89","path":"storage/garments/drop-02/032/candidates/v4-model-set-v1/01-garment-front-r001.png","sha256":"2b38aaa3b9ed953ea15986152dae6b37694f66f5f156a01faf16d487e36b7d36","bytes":1953985,"dimensions":"1122x1402","status":"PRIVATE_UNLOCKED_AWAITING_USER_KEEP","mayParent":false,"claimStatus":"RELEASED"},
+      "imageGenerationReservation":"RELEASED_AFTER_G032_VIEW_01_CANDIDATE_CREATED",
       "operationReserved":false,
       "publicationAuthority":false,
-      "nextPermittedOperation":"EXPLICIT_USER_START_REQUIRED"
+      "nextPermittedOperation":"USER_KEEP_OR_REJECT_VIEW_01_REQUIRED_BEFORE_VIEW_02"
     },
     "033": {
       "status":"PRIVATE_INTAKE_SAVED_NOT_STARTED",
@@ -2144,7 +2147,7 @@
   "nextOperation": {
     "garmentId": "031",
     "view": null,
-    "status": "G031_PRIVATE_SET_COMPLETE_NO_ACTIVE_RESERVATION"
+    "status": "G031_RELEASE_INTEGRATION_IN_PROGRESS_G032_VIEW_01_AWAITING_KEEP"
   },
-  "requiredNext": "G031 private 01-07, FACE, BODY and PRE_ROOM are complete and exact-byte locked. All reservations are released. Await separate authority to begin G032 or to release/publish G031; durable native-room qualification remains pending and publication is not authorized."
+  "requiredNext": "Commit the exact G031 catalogue-41 packet, run the guarded production database release, source-build the committed revision, then require production smoke and browser acceptance before LIVE_VERIFIED. G032/01 remains private and non-parentable until the user explicitly Keeps or rejects its exact bytes."
 }

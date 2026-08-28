@@ -37,6 +37,7 @@ const V4_MODEL_SLUGS = new Set([
   "scarlet-long-sleeve-layered-cutout-ruched-mini-dress",
   "red-lace-cup-long-sleeve-satin-look-mini-dress",
   "orange-halter-tie-front-gathered-wrap-mini-dress",
+  "cobalt-long-sleeve-crossover-cutout-mini-dress",
 ]);
 
 const V3_MODEL_FRONT_SLUGS = new Set([
@@ -126,7 +127,7 @@ function presentation(product) {
  */
 export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
   schemaVersion: 2,
-  revision: "2026-08-27-catalogue-40",
+  revision: "2026-08-27-catalogue-41",
   products: Object.freeze([
     presentation({
       slug: "coral-drift-dress",
@@ -1109,6 +1110,26 @@ export const SHOP_CATALOGUE_MANIFEST = Object.freeze({
       note: "A bright-orange halter mini defined by a deep open front, centre knot with long tails, gathered wrap shaping and an overlapping tulip hem.",
       story: "Broad halter panels frame the deep open front and meet at a centre waist knot with long tails, while radiating gathers shape the fitted wrap-effect mini and overlapping tulip hem; the verified exact-match rear adds a self-tie neck, fully open upper back and clean fitted rear.",
       details: ["Deep broad-panel halter front", "Centre waist knot with long tails", "Radiating gathered wrap shaping", "Self-tie halter with low open back"],
+      measurements: [],
+      mediaSlots: ["MODEL_FRONT", "MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
+    }),
+    presentation({
+      slug: "cobalt-long-sleeve-crossover-cutout-mini-dress",
+      sku: "JUW-055",
+      name: "Cobalt Long-Sleeve Crossover Cutout Mini Dress",
+      category: "Dresses",
+      price: 28500,
+      taggedSize: "Size on request",
+      fit: "Measurements confirmed before payment",
+      condition: "Condition confirmed before payment",
+      colour: "Cobalt blue",
+      availability: "AVAILABLE",
+      drop: "Drop 02",
+      tone: "indigo",
+      silhouette: "dress",
+      note: "A cobalt-blue long-sleeve mini defined by a shallow wide neckline, asymmetric crossover waist, single side cutout and dense gathered shaping.",
+      story: "Gathered shoulders frame the shallow wide neckline and fitted long sleeves, while diagonal crossover panels form the single side-waist cutout above the densely gathered fitted mini skirt; the verified exact-match rear adds a high closed neckline, centre invisible zip and continued rear ruching.",
+      details: ["Shallow wide neckline", "Asymmetric crossover waist", "Single side-waist cutout", "High closed back with centre invisible zip"],
       measurements: [],
       mediaSlots: ["MODEL_FRONT", "MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"],
     }),
