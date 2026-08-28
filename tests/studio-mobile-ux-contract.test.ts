@@ -108,8 +108,19 @@ test("Home presents four primary destinations while search retains all seven dom
   assert.ok(home.indexOf("studio-home-recent") < home.indexOf("<ArrangeStudioHomeControl"));
 });
 
-test("Wardrobe mobile filters never place the result count over a status", () => {
-  assert.match(wardrobeMobileCss, /#studio-view-garments > \.studio-filter-bar > span \{\s*display: none;\s*\}/);
+test("Wardrobe mobile tabs and filters target the rendered workspace structure", () => {
+  assert.match(wardrobe, /className="studio-ops-page studio-premium-surface studio-wardrobe-page"/);
+  assert.match(wardrobe, /<StudioSegmentedView active=\{activeView\}/);
+  assert.match(
+    wardrobeMobileCss,
+    /\.studio-wardrobe-page > \.studio-segmented-view \{[\s\S]*?grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);/,
+  );
+  assert.doesNotMatch(wardrobeMobileCss, /#garments \+ \.studio-segmented-view/);
+  assert.match(
+    wardrobeMobileCss,
+    /#studio-view-garments > \.studio-stack-filter > \.studio-filter-bar > span \{\s*display: none;\s*\}/,
+  );
+  assert.doesNotMatch(wardrobeMobileCss, /#studio-view-garments > \.studio-filter-bar/);
 });
 
 test("product add-to-bag uses one compact editorial pill", () => {

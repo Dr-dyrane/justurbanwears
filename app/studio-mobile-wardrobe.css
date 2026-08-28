@@ -15,7 +15,7 @@
   }
 
   /* Wardrobe has two top-level views. They are navigation, not a carousel. */
-  .studio-shell .studio-ops-page > #garments + .studio-segmented-view {
+  .studio-shell .studio-wardrobe-page > .studio-segmented-view {
     -webkit-mask-image: none;
     display: grid;
     gap: 6px;
@@ -29,7 +29,7 @@
     width: 100%;
   }
 
-  .studio-shell .studio-ops-page > #garments + .studio-segmented-view button {
+  .studio-shell .studio-wardrobe-page > .studio-segmented-view button {
     align-items: center;
     display: flex;
     gap: 8px;
@@ -41,14 +41,14 @@
     width: 100%;
   }
 
-  .studio-shell .studio-ops-page > #garments + .studio-segmented-view button > span {
+  .studio-shell .studio-wardrobe-page > .studio-segmented-view button > span {
     min-width: 0;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
 
-  .studio-shell .studio-ops-page > #garments + .studio-segmented-view button > small {
+  .studio-shell .studio-wardrobe-page > .studio-segmented-view button > small {
     align-items: center;
     display: inline-flex;
     flex: 0 0 auto;
@@ -61,7 +61,7 @@
   }
 
   /* Status filters may scroll, but they must never widen the page. */
-  .studio-shell #studio-view-garments > .studio-filter-bar {
+  .studio-shell #studio-view-garments > .studio-stack-filter > .studio-filter-bar {
     box-sizing: border-box;
     margin-inline: 0;
     max-width: 100%;
@@ -71,7 +71,7 @@
     width: 100%;
   }
 
-  .studio-shell #studio-view-garments > .studio-filter-bar > span {
+  .studio-shell #studio-view-garments > .studio-stack-filter > .studio-filter-bar > span {
     display: none;
   }
 
