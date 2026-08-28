@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
   createServerWardrobeOverlayRepository,
@@ -314,4 +315,51 @@ test("an archived adopted piece remains archived instead of resurfacing as Ready
   assert.equal(hydrated.garments[0].saleEligible, false);
   assert.equal(hydrated.listings[0].state, "CANCELLED");
   assert.equal(hydrated.inventory[0].state, "CANCELLED");
+});
+
+test("a server-unpublished piece keeps the durable lifecycle as its only publication authority", async () => {
+  const repository = createServerWardrobeOverlayRepository({
+    read: async () => createEmptyStudioSnapshot(),
+    write: async () => undefined,
+    subscribe: () => () => undefined,
+  }, async () => [{
+    id: "11111111-1111-4111-8111-111111111111",
+    intakeId: "22222222-2222-4222-8222-222222222222",
+    title: "Private Coral Dress",
+    category: "Dress",
+    colour: "Coral",
+    sizeLabel: "UK 10",
+    condition: "Excellent",
+    price: 25_000,
+    quantity: 1,
+    state: "READY",
+    approvedAssetId: null,
+    createdAt: "2026-08-12T01:00:00.000Z",
+    updatedAt: "2026-08-12T01:01:00.000Z",
+    publication: {
+      publicationId: "44444444-4444-4444-8444-444444444444",
+      wardrobeItemId: "11111111-1111-4111-8111-111111111111",
+      sku: "JUW-025",
+      slug: "private-coral-dress",
+      origin: "CATALOGUE_ADOPTED",
+      state: "UNPUBLISHED",
+      publishedAt: "2026-08-12T01:01:00.000Z",
+      shopUrl: "/shop/products/private-coral-dress",
+    },
+  }]);
+
+  const hydrated = await repository.read();
+  assert.equal(hydrated.garments[0].privateWardrobeItemId, "11111111-1111-4111-8111-111111111111");
+  assert.equal(hydrated.garments[0].dynamicPublication?.state, "UNPUBLISHED");
+  assert.equal(hydrated.listings[0].state, "READY");
+
+  const workbench = readFileSync(`${process.cwd()}/components/studio/wardrobe-workbench.tsx`, "utf8");
+  assert.match(
+    workbench,
+    /\{garment\.privateWardrobeItemId\s*\?\s*<GarmentLifecyclePanel[\s\S]*?: listing \? <section className="studio-piece-shop"><ListingEditor listing=\{listing\} \/><\/section> : null\}/u,
+  );
+  assert.doesNotMatch(
+    workbench,
+    /\{garment\.privateWardrobeItemId \? <GarmentLifecyclePanel[\s\S]*?\/> : null\}\s*\{listing \? <section/u,
+  );
 });

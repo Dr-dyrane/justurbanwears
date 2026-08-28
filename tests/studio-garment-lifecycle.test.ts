@@ -62,7 +62,7 @@ test("a revision swaps garment truth and Shop projection only after all guards p
 
 test("catalogue-adopted revisions update reviewed facts while preserving the authored photo set", () => {
   const adoptedPublication = publicationRepository.match(
-    /export async function publishAdoptedCatalogueRevisionAtomically[\s\S]*?function resultRows/,
+    /export async function publishAdoptedCatalogueRevisionAtomically[\s\S]*?(?=export async function publishAtelierAdoptionRevisionAtomically|function resultRows)/,
   )?.[0] ?? "";
   assert.match(publicationRepository, /publishAdoptedCatalogueRevisionAtomically/);
   assert.match(publicationRepository, /publication\.origin = 'CATALOGUE_ADOPTED'/);

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { intakeFactsSchema, type IntakeFacts } from "./contracts";
 import type {
-  PublicationMediaSlot,
+  StudioPublishedMediaSlot,
   StudioPublicationPreviewMedia,
   StudioPublicationReceipt,
 } from "./catalogue-publication-contracts";
@@ -90,7 +90,7 @@ export type GarmentLifecycleWorkspace = {
     sourceRevision: string;
     facts: IntakeFacts;
     media: Array<{
-      slot: PublicationMediaSlot;
+      slot: StudioPublishedMediaSlot;
       label: string;
       src: string;
     }>;

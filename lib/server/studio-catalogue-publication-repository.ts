@@ -6,9 +6,20 @@ import {
   studioCataloguePublications,
 } from "../../db/shop-postgres-schema";
 import { CURRENT_SHOP_DROP } from "../shop/current-drop";
-import type { PublicationMediaSlot, StudioPublicationReceipt } from "../studio/engine/catalogue-publication-contracts";
+import {
+  parseStudioAtelierPublicationMediaSet,
+  type PublicationMediaSlot,
+  type StudioAtelierPublicationMedia,
+  type StudioPublicationReceipt,
+} from "../studio/engine/catalogue-publication-contracts";
 
-export type CataloguePublicationRow = typeof studioCataloguePublications.$inferSelect;
+type LegacyCataloguePublicationMedia = (typeof studioCataloguePublications.$inferSelect)["media"][number];
+export type CataloguePublicationRow = Omit<
+  typeof studioCataloguePublications.$inferSelect,
+  "media"
+> & {
+  media: Array<LegacyCataloguePublicationMedia | StudioAtelierPublicationMedia>;
+};
 export type CataloguePublicationWithDrop = CataloguePublicationRow & {
   dropLabel: string;
 };
@@ -171,6 +182,14 @@ export type AtomicAdoptedRevisionPublicationInput = {
   tone: string;
   silhouette: string;
   facts: Record<string, unknown>;
+};
+
+export type AtomicAtelierAdoptionRevisionPublicationInput = Omit<
+  AtomicAdoptedRevisionPublicationInput,
+  "sourceRevision"
+> & {
+  receiptId: string;
+  media: readonly StudioAtelierPublicationMedia[];
 };
 
 /**
@@ -653,6 +672,157 @@ export async function publishAdoptedCatalogueRevisionAtomically(
     facts: raw.facts as Record<string, unknown>,
     media: raw.media as CataloguePublicationRow["media"],
     baseline: raw.baseline && typeof raw.baseline === "object" ? raw.baseline as Record<string, unknown> : null,
+    publishedAt: new Date(String(raw.published_at)),
+    createdAt: new Date(String(raw.created_at)),
+  };
+}
+
+/**
+ * Atelier-adopted pieces use the same garment lifecycle as every other Studio
+ * piece, but their seven LOCKED bytes and adoption revision are immutable.
+ * This atom updates reviewed facts and visibility while preserving the exact
+ * receipt-bound publication and catalogue media JSON.
+ */
+export async function publishAtelierAdoptionRevisionAtomically(
+  input: AtomicAtelierAdoptionRevisionPublicationInput,
+): Promise<CataloguePublicationRow | null> {
+  const parsed = parseStudioAtelierPublicationMediaSet(input.media);
+  if (
+    parsed.receiptId !== input.receiptId
+    || input.facts.atelierAdoptionRevision !== input.baseSourceRevision
+  ) throw new Error("The Atelier facts revision does not match its immutable adoption receipt.");
+  const catalogueMedia = input.media.map((item) => ({
+    slot: item.slot,
+    src: item.src,
+    ...(["MODEL_FRONT", "MODEL_LEFT_PROFILE", "MODEL_REAR_THREE_QUARTER"].includes(item.slot)
+      ? { modelAnchorId: "lulu-v4" }
+      : {}),
+  }));
+  const result = await (await getStudioDb()).execute(sql`
+    with revision_source as materialized (
+      select revision.id, revision.wardrobe_item_id, revision.operator_subject,
+        revision.revision_number, publication.id as publication_id,
+        publication.sku, publication.slug, publication.source_revision
+      from studio_garment_revisions revision
+      join studio_catalogue_publications publication
+        on publication.wardrobe_item_id = revision.wardrobe_item_id
+       and publication.operator_subject = revision.operator_subject
+      join studio_wardrobe_items item on item.id = revision.wardrobe_item_id
+      join shop_catalogue_items catalogue on catalogue.sku = publication.sku
+      where revision.id = ${input.revisionId}::uuid
+        and revision.wardrobe_item_id = ${input.wardrobeItemId}::uuid
+        and revision.operator_subject = ${input.operatorSubject}
+        and revision.state = 'DRAFT'
+        and revision.version = ${input.revisionVersion}
+        and revision.media = ${JSON.stringify(input.media)}::jsonb
+        and publication.origin = 'STUDIO_NATIVE'
+        and publication.baseline is null
+        and publication.source_revision = ${input.baseSourceRevision}
+        and publication.facts->>'atelierAdoptionRevision' = ${input.baseSourceRevision}
+        and publication.media = ${JSON.stringify(input.media)}::jsonb
+        and jsonb_array_length(publication.media) = 7
+        and publication.sku = ${input.sku}
+        and publication.slug = ${input.slug}
+        and publication.state in ('PUBLISHED', 'UNPUBLISHED')
+        and catalogue.media = ${JSON.stringify(catalogueMedia)}::jsonb
+        and catalogue.model_anchor = '{"id":"lulu-v4"}'::jsonb
+        and item.intake_id = ${input.intakeId}::uuid
+        and item.quantity = 1
+        and item.state = 'READY'
+        and item.version = ${input.expectedVersion}
+      for update of revision, publication, item, catalogue
+    ), inventory_ready as (
+      update shop_inventory inventory
+      set availability = 'AVAILABLE', updated_at = now()
+      from revision_source
+      where inventory.sku = revision_source.sku
+        and inventory.availability in ('AVAILABLE', 'ARCHIVED')
+        and inventory.on_hand = 1
+        and inventory.reserved = 0
+        and inventory.sold = inventory.returned
+        and inventory.write_off = 0
+      returning inventory.sku
+    ), piece as (
+      update studio_wardrobe_items item
+      set title = ${input.title}, category = ${input.sourceCategory},
+        colour = ${input.colour}, size_label = ${input.taggedSize},
+        condition = ${input.condition}, price = ${input.price},
+        version = version + 1, updated_at = now()
+      from revision_source, inventory_ready
+      where item.id = revision_source.wardrobe_item_id
+        and inventory_ready.sku = revision_source.sku
+      returning item.id
+    ), catalogue as (
+      update shop_catalogue_items target
+      set name = ${input.title}, category = ${input.category}, price = ${input.price},
+        tagged_size = ${input.taggedSize}, condition = ${input.condition},
+        colour = ${input.colour}, tone = ${input.tone}, silhouette = ${input.silhouette},
+        updated_at = now()
+      from revision_source, inventory_ready, piece
+      where target.sku = revision_source.sku
+        and inventory_ready.sku = target.sku
+        and target.media = ${JSON.stringify(catalogueMedia)}::jsonb
+        and target.model_anchor = '{"id":"lulu-v4"}'::jsonb
+      returning target.sku
+    ), publication as (
+      update studio_catalogue_publications target
+      set idempotency_key = ${input.idempotencyKey}, state = 'PUBLISHED',
+        facts = ${JSON.stringify(input.facts)}::jsonb, published_at = now()
+      from revision_source, catalogue
+      where target.id = revision_source.publication_id
+        and target.source_revision = revision_source.source_revision
+        and target.media = ${JSON.stringify(input.media)}::jsonb
+        and catalogue.sku = target.sku
+      returning target.*
+    ), revisions as (
+      update studio_garment_revisions revision
+      set state = case when revision.id = revision_source.id then 'PUBLISHED' else 'SUPERSEDED' end,
+        version = version + 1,
+        base_source_revision = case when revision.id = revision_source.id then revision_source.source_revision else revision.base_source_revision end,
+        facts = case when revision.id = revision_source.id then ${JSON.stringify(input.facts)}::jsonb else revision.facts end,
+        idempotency_key = case when revision.id = revision_source.id then ${input.idempotencyKey} else revision.idempotency_key end,
+        published_at = case when revision.id = revision_source.id then now() else revision.published_at end,
+        updated_at = now()
+      from revision_source, publication
+      where revision.wardrobe_item_id = revision_source.wardrobe_item_id
+        and (revision.id = revision_source.id or revision.state = 'PUBLISHED')
+      returning revision.id, revision.revision_number
+    ), published_revision as (
+      select revisions.revision_number
+      from revisions, revision_source
+      where revisions.id = revision_source.id
+    ), event as (
+      insert into studio_garment_events (
+        wardrobe_item_id, operator_subject, event_type, summary, details, occurred_at
+      )
+      select publication.wardrobe_item_id, publication.operator_subject,
+        'REVISION_PUBLISHED', 'Published revision ' || published_revision.revision_number,
+        jsonb_build_object(
+          'revisionNumber', published_revision.revision_number,
+          'sku', publication.sku,
+          'slug', publication.slug,
+          'mediaPreserved', true,
+          'adoptionReceiptId', ${input.receiptId}
+        ), now()
+      from publication cross join published_revision
+    )
+    select * from publication
+  `);
+  const raw = resultRows(result)[0];
+  if (!raw) return null;
+  return {
+    id: String(raw.id),
+    wardrobeItemId: String(raw.wardrobe_item_id),
+    operatorSubject: String(raw.operator_subject),
+    idempotencyKey: String(raw.idempotency_key),
+    sourceRevision: String(raw.source_revision),
+    sku: String(raw.sku),
+    slug: String(raw.slug),
+    origin: "STUDIO_NATIVE",
+    state: "PUBLISHED",
+    facts: raw.facts as Record<string, unknown>,
+    media: raw.media as CataloguePublicationRow["media"],
+    baseline: null,
     publishedAt: new Date(String(raw.published_at)),
     createdAt: new Date(String(raw.created_at)),
   };

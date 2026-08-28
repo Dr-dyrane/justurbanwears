@@ -5,6 +5,7 @@
 
 import { FormEvent, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { assignDocumentNavigation } from "../brand/document-navigation-loading-stage";
 import {
   ArrowRight,
   Check,
@@ -75,6 +76,10 @@ import { GarmentLifecyclePanel } from "./garment-lifecycle-panel";
 import type { GarmentLifecycleWorkspace } from "../../lib/studio/engine/garment-lifecycle-contracts";
 import { StudioAdaptiveWorkspace } from "./workspace/studio-adaptive-workspace";
 import {
+  StudioAtelierShopAdoption,
+  type StudioAtelierAdoptionUiMode,
+} from "./atelier/studio-atelier-shop-adoption";
+import {
   projectStudioDropScopes,
   studioDropScopeForGarment,
 } from "../../lib/studio/projections/drop-context";
@@ -96,6 +101,7 @@ const filters: Array<"ALL" | StudioLifecycleState> = [
 
 const garmentPageSize = 9;
 const publishingPageSize = 8;
+const studioUuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 type WardrobeDropScope = StudioCollectionScope["key"];
 type WardrobeCollectionScope = "all" | "private" | WardrobeDropScope;
@@ -272,6 +278,8 @@ export function PieceWorkspaceView({ garment, initialAction, layout = "embedded"
   const [publishing, setPublishing] = useState(false);
   const [publicationError, setPublicationError] = useState("");
   const [publicationNeedsRefresh, setPublicationNeedsRefresh] = useState(false);
+  const [atelierAdoptionMode, setAtelierAdoptionMode] = useState<StudioAtelierAdoptionUiMode>("idle");
+  const [atelierAdoptionBusy, setAtelierAdoptionBusy] = useState(false);
   const [lifecycleWorkspace, setLifecycleWorkspace] = useState<GarmentLifecycleWorkspace>();
   const [photosOpen, setPhotosOpen] = useState(false);
   const [photosReturnFocus, setPhotosReturnFocus] = useState<HTMLElement | null>(null);
@@ -312,6 +320,19 @@ export function PieceWorkspaceView({ garment, initialAction, layout = "embedded"
   const captureRevision = captures.map((capture) => `${capture.id}:${capture.approvedAt}`).join("|");
   const dynamicReview = garment.privateWardrobeItemId ? publicationReview : null;
   const authoritativePublicationState = lifecycleWorkspace?.state ?? garment.dynamicPublication?.state;
+  const atelierAdoptionPublished = atelierAdoptionMode === "published";
+  const hasAtelierAdoptionRoute = Boolean(
+    garment.privateWardrobeItemId && studioUuidPattern.test(garment.privateWardrobeItemId),
+  );
+  const atelierAdoptionActive = hasAtelierAdoptionRoute
+    && reviewOpen
+    && authoritativePublicationState !== "PUBLISHED"
+    && authoritativePublicationState !== "UNPUBLISHED"
+    && authoritativePublicationState !== "ARCHIVED"
+    && dynamicReview?.state !== "PUBLISHED";
+  const atelierAdoptionOwnsShopSheet = atelierAdoptionActive
+    && atelierAdoptionMode !== "blocked"
+    && atelierAdoptionMode !== "error";
   const lifecycleOwnsMedia = authoritativePublicationState === "PUBLISHED"
     || authoritativePublicationState === "UNPUBLISHED";
   const nextAction = historicalDrop01
@@ -320,8 +341,12 @@ export function PieceWorkspaceView({ garment, initialAction, layout = "embedded"
     ? { kind: "DYNAMIC_MANAGE", label: "View history", detail: "This piece is archived." }
     : authoritativePublicationState === "UNPUBLISHED"
       ? { kind: "DYNAMIC_MANAGE", label: "Manage listing", detail: "Edit it or return it to Shop." }
-      : authoritativePublicationState === "PUBLISHED" || dynamicReview?.state === "PUBLISHED"
+      : authoritativePublicationState === "PUBLISHED" || dynamicReview?.state === "PUBLISHED" || atelierAdoptionPublished
         ? { kind: "DYNAMIC_MANAGE", label: "Manage listing", detail: "Change price, photos, or visibility." }
+        : atelierAdoptionMode === "loading"
+          ? { kind: "DYNAMIC_LOADING", label: "Checking readiness…", detail: "" }
+          : atelierAdoptionMode === "ready"
+            ? { kind: "DYNAMIC_REVIEW", label: "Review seven Shop views", detail: "Publish the exact locked Atelier set." }
         : publicationLoading
           ? { kind: "DYNAMIC_LOADING", label: "Checking readiness…", detail: "" }
           : publicationLoadError
@@ -339,7 +364,7 @@ export function PieceWorkspaceView({ garment, initialAction, layout = "embedded"
     ? { stage: "ARCHIVED", label: "Archived" }
     : authoritativePublicationState === "UNPUBLISHED"
       ? { stage: "PRIVATE", label: "Off Shop" }
-      : authoritativePublicationState === "PUBLISHED"
+      : authoritativePublicationState === "PUBLISHED" || atelierAdoptionPublished
         ? { stage: "LIVE", label: "Live" }
         : dynamicReview?.state === "READY"
     ? { stage: "READY", label: "Ready to publish" }
@@ -365,8 +390,12 @@ export function PieceWorkspaceView({ garment, initialAction, layout = "embedded"
     ? "Archived"
     : authoritativePublicationState === "UNPUBLISHED"
       ? "Off Shop"
-      : authoritativePublicationState === "PUBLISHED"
+      : authoritativePublicationState === "PUBLISHED" || atelierAdoptionPublished
         ? "Live"
+        : atelierAdoptionMode === "loading"
+          ? "Checking"
+          : atelierAdoptionMode === "ready"
+            ? "Ready to publish"
         : publicationLoading
           ? "Checking"
           : publicationLoadError
@@ -390,6 +419,22 @@ export function PieceWorkspaceView({ garment, initialAction, layout = "embedded"
     if (!response.ok || !body.review) throw new Error(body.error?.message || "Readiness is unavailable.");
     return body.review;
   }, [garment.privateWardrobeItemId]);
+
+  const reconcilePublicationReview = useCallback(async () => {
+    const review = await readPublicationReview();
+    if (review) {
+      setPublicationReview(review);
+      if (review.state === "PUBLISHED") {
+        setPublicationError("");
+        setPublicationNeedsRefresh(true);
+      }
+    }
+    return review;
+  }, [readPublicationReview]);
+
+  const markAtelierAdoptionCommitted = useCallback(() => {
+    setPublicationNeedsRefresh(true);
+  }, []);
 
   useEffect(() => {
     if (!garment.privateWardrobeItemId || historicalDrop01) return;
@@ -507,7 +552,7 @@ export function PieceWorkspaceView({ garment, initialAction, layout = "embedded"
 
   function dismissShop() {
     if (publicationNeedsRefresh) {
-      window.location.assign(`/studio/wardrobe/${encodeURIComponent(garment.id)}`);
+      assignDocumentNavigation(`/studio/wardrobe/${encodeURIComponent(garment.id)}`);
       return;
     }
     setReviewOpen(false);
@@ -534,9 +579,9 @@ export function PieceWorkspaceView({ garment, initialAction, layout = "embedded"
     } else if (workspace.nextAction.kind === "PUBLISH" && listing) {
       studio.publishListing(listing.id);
     } else if (workspace.nextAction.kind === "VIEW_SHOP" && listing) {
-      window.location.assign(`/shop/products/${listing.slug}`);
+      assignDocumentNavigation(`/shop/products/${listing.slug}`);
     } else if (workspace.nextAction.kind === "VIEW_OPERATIONS") {
-      window.location.assign(studioScenarioHref("/studio/operations", studio.scenario));
+      assignDocumentNavigation(studioScenarioHref("/studio/operations", studio.scenario));
     } else if (workspace.nextAction.kind === "KEEP_PRIVATE") {
       onDismiss();
     }
@@ -633,13 +678,25 @@ export function PieceWorkspaceView({ garment, initialAction, layout = "embedded"
 
         {garment.privateWardrobeItemId && !historicalDrop01 ? (
           <StudioTaskSheet
+            busy={publishing || atelierAdoptionBusy}
+            busyLabel={atelierAdoptionBusy ? "Publishing seven locked Atelier views" : "Publishing this piece"}
             className="studio-piece-shop-sheet"
             onDismiss={dismissShop}
             open={reviewOpen}
             returnFocus={shopReturnFocus}
             title="Shop"
           >
-            {dynamicReview?.state === "READY" ? <section className="studio-piece-shop studio-publication-review" id="piece-publication-review">
+            {hasAtelierAdoptionRoute ? (
+              <StudioAtelierShopAdoption
+                active={atelierAdoptionActive}
+                onBusyChange={setAtelierAdoptionBusy}
+                onCommitted={markAtelierAdoptionCommitted}
+                onModeChange={setAtelierAdoptionMode}
+                reconcilePublication={reconcilePublicationReview}
+                wardrobeItemId={garment.privateWardrobeItemId}
+              />
+            ) : null}
+            {!atelierAdoptionOwnsShopSheet && dynamicReview?.state === "READY" ? <section className="studio-piece-shop studio-publication-review" id="piece-publication-review">
               <div className="studio-card-heading"><div><small>Preview</small><h3>{dynamicReview.title}</h3></div><strong>{formatNaira(dynamicReview.price)}</strong></div>
               <div className="studio-publication-media">
                 {dynamicReview.media.map((item) => <StudioMediaButton items={[{
@@ -657,9 +714,9 @@ export function PieceWorkspaceView({ garment, initialAction, layout = "embedded"
               {publicationError ? <p className="studio-engine-error" role="alert">{publicationError}</p> : null}
               <div className="studio-sheet-actions"><button className="button button-primary" disabled={!publicationConfirmed || publishing} onClick={() => void publishDynamicPiece()} type="button">{publishing ? "Publishing…" : "Publish"}</button></div>
             </section> : null}
-            {publicationLoading ? <StudioLoadingStage label="Checking Shop…" /> : null}
-            {!publicationLoading && publicationLoadError ? <section className="studio-piece-shop-status"><p className="studio-engine-error" role="alert">{publicationLoadError}</p><button className="button button-primary" onClick={() => setPublicationReload((value) => value + 1)} type="button">Try again</button></section> : null}
-            {!publicationLoading && dynamicReview?.state === "BLOCKED" ? <section className="studio-piece-shop-status">
+            {!atelierAdoptionOwnsShopSheet && publicationLoading ? <StudioLoadingStage label="Checking Shop…" /> : null}
+            {!atelierAdoptionOwnsShopSheet && !publicationLoading && publicationLoadError ? <section className="studio-piece-shop-status"><p className="studio-engine-error" role="alert">{publicationLoadError}</p><button className="button button-primary" onClick={() => setPublicationReload((value) => value + 1)} type="button">Try again</button></section> : null}
+            {!atelierAdoptionOwnsShopSheet && !publicationLoading && dynamicReview?.state === "BLOCKED" ? <section className="studio-piece-shop-status">
               <span aria-hidden="true"><Send size={20} /></span>
               <div><strong>Not ready yet</strong><small>{dynamicReview.blockers.length} step{dynamicReview.blockers.length === 1 ? "" : "s"} left</small></div>
               <div className="studio-piece-shop-blockers">{dynamicReview.blockers.map((blocker) => <span key={blocker}>{blocker}</span>)}</div>
@@ -701,8 +758,9 @@ export function PieceWorkspaceView({ garment, initialAction, layout = "embedded"
                   </div>
                 </section>
               ) : <>
-                {garment.privateWardrobeItemId ? <GarmentLifecyclePanel initialAction={initialAction} onWorkspaceChange={setLifecycleWorkspace} wardrobeItemId={garment.privateWardrobeItemId} /> : null}
-                {listing ? <section className="studio-piece-shop"><ListingEditor listing={listing} /></section> : null}
+                {garment.privateWardrobeItemId
+                  ? <GarmentLifecyclePanel initialAction={initialAction} onWorkspaceChange={setLifecycleWorkspace} wardrobeItemId={garment.privateWardrobeItemId} />
+                  : listing ? <section className="studio-piece-shop"><ListingEditor listing={listing} /></section> : null}
               </>}
             </div>
           </StudioTaskSheet>
@@ -903,16 +961,9 @@ export function WardrobeWorkbench() {
     () => studio.listings.filter((listing) => collectionIds.has(listing.garmentId)),
     [collectionIds, studio.listings],
   );
-  const publishingGarments = useMemo(
-    () => studio.garments.filter((garment) => (
-      historicalDrop01Kind(garment) === null
-      && (collectionIds.has(garment.id) || garment.nativeShopReadiness?.state === "READY")
-    )),
-    [collectionIds, studio.garments],
-  );
   const publishingQueue = useMemo(
-    () => selectStudioPublishingQueue(publishingGarments, scopedListings),
-    [publishingGarments, scopedListings],
+    () => selectStudioPublishingQueue(activeScopedGarments, scopedListings),
+    [activeScopedGarments, scopedListings],
   );
   const segments = useMemo(() => historyOnly ? [
     { key: "garments", label: "Garments", count: scopedGarments.length },

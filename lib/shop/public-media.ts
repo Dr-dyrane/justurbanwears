@@ -1,5 +1,6 @@
 import mediaManifest from "./public-media-manifest.json" with { type: "json" };
 import sourceManifest from "./public-media-source-manifest.json" with { type: "json" };
+import { parseStudioAtelierPublicationMediaPath } from "../studio/engine/catalogue-publication-contracts";
 
 const canonicalShopOrigin = "https://www.justurbanwears.com";
 const uploadedAssetsBySource = new Map(
@@ -37,6 +38,7 @@ export function resolveShopPublicMediaUrl(sourcePath: string): string {
 }
 
 export function isSafeShopProductMediaUrl(value: string, slug: string): boolean {
+  if (isSafeStudioAtelierPublicationMediaUrl(value)) return true;
   const asset = assetsBySource.get(value) ?? assetsByUrl.get(value);
   if (asset?.sourcePath.startsWith(`/shop/products/${slug}/`)) return true;
   try {
@@ -50,6 +52,15 @@ export function isSafeShopProductMediaUrl(value: string, slug: string): boolean 
   } catch {
     return false;
   }
+}
+
+/**
+ * Receipt media is deliberately accepted only as an exact relative app-owned
+ * path. Absolute origins, query strings, fragments, unknown roles and encoded
+ * path variations never bypass the per-request publication authorization.
+ */
+export function isSafeStudioAtelierPublicationMediaUrl(value: string): boolean {
+  return parseStudioAtelierPublicationMediaPath(value) !== null;
 }
 
 export function absoluteShopMediaUrl(value: string): string {

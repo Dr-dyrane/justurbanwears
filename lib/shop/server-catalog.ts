@@ -24,6 +24,12 @@ import type {
   WardrobePublicModelAnchor,
   WardrobePublicProduct,
 } from "../wardrobe-public-view/domain/entities";
+import {
+  parseStudioAtelierAdoptionRevision,
+  parseStudioAtelierPublicationMediaSet,
+  studioAtelierPublicationMediaPath,
+} from "../studio/engine/catalogue-publication-contracts";
+import { STUDIO_ATELIER_SHOP_MEDIA_ROLE_ORDER } from "../studio/atelier/publication-adoption-contracts";
 
 const CACHE_TTL_MS = 30_000;
 const DATABASE_TIMEOUT_MS = 5_000;
@@ -62,7 +68,7 @@ type DatabaseCatalogueRow = Omit<
   publicationOrigin?: string | null;
   publicationState?: string | null;
   publicationSourceRevision?: string | null;
-  publicationMedia?: (typeof studioCataloguePublications.$inferSelect)["media"] | null;
+  publicationMedia?: unknown[] | null;
   publicationSlug?: string | null;
   publicationFacts?: Record<string, unknown> | null;
   publicationBaseline?: Record<string, unknown> | null;
@@ -181,7 +187,7 @@ function parseMedia(value: unknown, slug: string): WardrobePublicMedia[] {
   });
 }
 
-function dynamicCatalogueRowToShopProduct(row: DatabaseCatalogueRow): ShopProduct {
+function legacyDynamicCatalogueRowToShopProduct(row: DatabaseCatalogueRow): ShopProduct {
   if (
     !row.publicationId
     || row.publicationOrigin !== "STUDIO_NATIVE"
@@ -291,7 +297,160 @@ function dynamicCatalogueRowToShopProduct(row: DatabaseCatalogueRow): ShopProduc
   };
 }
 
+const atelierModelSlots = new Set([
+  "MODEL_FRONT",
+  "MODEL_LEFT_PROFILE",
+  "MODEL_REAR_THREE_QUARTER",
+]);
+
+function hasExactKeys(value: object, expected: readonly string[]): boolean {
+  const actual = Object.keys(value).sort();
+  return actual.length === expected.length
+    && actual.every((key, index) => key === [...expected].sort()[index]);
+}
+
+function atelierDynamicCatalogueRowToShopProduct(
+  row: DatabaseCatalogueRow,
+  adoptionRevision: string,
+): ShopProduct {
+  if (
+    !row.publicationId
+    || row.publicationOrigin !== "STUDIO_NATIVE"
+    || row.publicationState !== "PUBLISHED"
+    || row.publicationSourceRevision !== adoptionRevision
+    || row.publicationSlug !== row.slug
+    || !row.publicationFacts
+    || typeof row.publicationFacts !== "object"
+  ) throw new Error("Invalid Atelier publication ledger.");
+
+  const slug = nonEmptyString(row.slug, "slug");
+  const sku = nonEmptyString(row.sku, "SKU");
+  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) throw new Error("Invalid Studio catalogue slug.");
+  if (!/^JUW-[0-9]{3,}$/.test(sku)) throw new Error("Invalid Studio catalogue SKU.");
+  if (!Number.isSafeInteger(row.price) || row.price <= 0) throw new Error("Invalid Studio catalogue price.");
+  if (!categories.has(row.category) || !tones.has(row.tone) || !silhouettes.has(row.silhouette)) {
+    throw new Error("Invalid Studio catalogue presentation.");
+  }
+  if (
+    !row.modelAnchor
+    || typeof row.modelAnchor !== "object"
+    || Array.isArray(row.modelAnchor)
+    || !hasExactKeys(row.modelAnchor, ["id"])
+    || row.modelAnchor.id !== "lulu-v4"
+  ) throw new Error("Invalid Atelier model anchor.");
+
+  const facts = row.publicationFacts;
+  if (
+    facts.title !== row.name
+    || facts.category !== row.category
+    || facts.colour !== row.colour
+    || facts.sizeLabel !== row.taggedSize
+    || facts.condition !== row.condition
+    || facts.price !== row.price
+    || facts.quantity !== 1
+    || facts.atelierAdoptionRevision !== adoptionRevision
+  ) throw new Error("Atelier catalogue facts drifted from its adoption receipt.");
+
+  const publication = parseStudioAtelierPublicationMediaSet(row.publicationMedia);
+  if (!Array.isArray(row.media) || row.media.length !== publication.media.length) {
+    throw new Error("Invalid Atelier catalogue media set.");
+  }
+  const catalogueMedia = row.media.map((item, index): WardrobePublicMedia => {
+    const expectedRole = STUDIO_ATELIER_SHOP_MEDIA_ROLE_ORDER[index];
+    const expectedPublication = publication.media[index];
+    const isModel = atelierModelSlots.has(expectedRole);
+    const expectedKeys = isModel ? ["modelAnchorId", "slot", "src"] : ["slot", "src"];
+    if (
+      !item
+      || typeof item !== "object"
+      || Array.isArray(item)
+      || !hasExactKeys(item, expectedKeys)
+      || item.slot !== expectedRole
+      || item.src !== expectedPublication.src
+      || item.src !== studioAtelierPublicationMediaPath(publication.receiptId, expectedRole)
+      || (isModel ? item.modelAnchorId !== "lulu-v4" : "modelAnchorId" in item)
+    ) throw new Error("Atelier catalogue media drifted from its exact publication receipt.");
+    return {
+      slot: expectedRole,
+      src: item.src,
+      ...(isModel ? { modelAnchorId: "lulu-v4" as const } : {}),
+    };
+  });
+
+  if (row.availability !== "AVAILABLE" && row.availability !== "RESERVED" && row.availability !== "SOLD") {
+    throw new Error("Studio catalogue inventory is missing or invalid.");
+  }
+  const publicProduct: WardrobePublicProduct = {
+    slug,
+    sku,
+    name: nonEmptyString(row.name, "name"),
+    category: row.category as WardrobePublicProduct["category"],
+    price: row.price,
+    taggedSize: nonEmptyString(row.taggedSize, "tagged size"),
+    fit: nonEmptyString(row.fit, "fit"),
+    condition: nonEmptyString(row.condition, "condition"),
+    colour: nonEmptyString(row.colour, "colour"),
+    availability: row.availability,
+    drop: nonEmptyString(row.dropLabel, "drop label"),
+    tone: row.tone as WardrobePublicProduct["tone"],
+    silhouette: row.silhouette as WardrobePublicProduct["silhouette"],
+    note: nonEmptyString(row.note, "note"),
+    story: nonEmptyString(row.story, "story"),
+    details: stringArray(row.details, "details"),
+    measurements: parseMeasurements(row.measurements),
+    modelAnchor: { id: "lulu-v4" },
+    media: catalogueMedia,
+  };
+  const converted = wardrobePublicProductToShopProduct(publicProduct);
+  const exactDimensions = new Map(publication.media.map((item) => [
+    item.slot.toLowerCase().replaceAll("_", "-"),
+    item,
+  ] as const));
+  const withExactDimensions = <T extends { id: string; src: string; width: number; height: number }>(item: T): T => {
+    const exact = exactDimensions.get(item.id);
+    if (!exact || exact.src !== item.src) {
+      throw new Error("Atelier Shop media lost its exact locked dimensions.");
+    }
+    return { ...item, width: exact.width, height: exact.height };
+  };
+  if (converted.modelTryout.modelStatus !== "APPROVED") {
+    throw new Error("Atelier MODEL_FRONT did not produce an approved Lulu v4 tryout.");
+  }
+  const modelFrame = withExactDimensions(converted.modelTryout.frame);
+  const expectedModelFront = publication.media.find((item) => item.slot === "MODEL_FRONT");
+  if (
+    !expectedModelFront
+    || converted.modelTryout.modelAnchorId !== "lulu-v4"
+    || modelFrame.src !== expectedModelFront.src
+    || modelFrame.modelAnchorId !== "lulu-v4"
+  ) throw new Error("Atelier MODEL_FRONT drifted from the Lulu v4 tryout receipt.");
+
+  return {
+    ...converted,
+    media: converted.media?.map(withExactDimensions),
+    modelTryout: {
+      modelStatus: "APPROVED",
+      modelAnchorId: "lulu-v4",
+      frame: modelFrame,
+    },
+  };
+}
+
+function dynamicCatalogueRowToShopProduct(row: DatabaseCatalogueRow): ShopProduct {
+  const adoptionRevision = parseStudioAtelierAdoptionRevision(
+    row.publicationFacts,
+    row.publicationSourceRevision,
+  );
+  return adoptionRevision
+    ? atelierDynamicCatalogueRowToShopProduct(row, adoptionRevision)
+    : legacyDynamicCatalogueRowToShopProduct(row);
+}
+
 export function databaseCatalogueRowToShopProduct(row: DatabaseCatalogueRow): ShopProduct | null {
+  if (
+    row.publicationId
+    && (row.publicationState === "UNPUBLISHED" || row.publicationState === "ARCHIVED")
+  ) return null;
   if (row.availability === "ARCHIVED") return null;
   if (row.publicationId && row.publicationOrigin === "CATALOGUE_ADOPTED") {
     if (row.publicationState !== "PUBLISHED") return null;

@@ -6,6 +6,7 @@ import {
 import {
   findCataloguePublication,
   publishAdoptedCatalogueRevisionAtomically,
+  publishAtelierAdoptionRevisionAtomically,
   publishCatalogueRevisionAtomically,
 } from "../../server/studio-catalogue-publication-repository";
 import {
@@ -35,6 +36,12 @@ import {
 import type { IntakeFacts } from "./contracts";
 import { StudioEngineError } from "./errors";
 import { sha256 } from "./fingerprint";
+import {
+  parseStudioAtelierAdoptionRevision,
+  parseStudioAtelierPublicationMediaSet,
+  type StudioAtelierPublicationMedia,
+  type StudioPublishedMediaSlot,
+} from "./catalogue-publication-contracts";
 import type {
   GarmentLifecycleCommand,
   GarmentLifecycleDraft,
@@ -46,11 +53,15 @@ import type {
 type WardrobeItem = Awaited<ReturnType<typeof getOwnedWardrobeItem>>;
 type Publication = NonNullable<Awaited<ReturnType<typeof findCataloguePublication>>>;
 
-const labels = {
+const labels: Record<StudioPublishedMediaSlot, string> = {
   GARMENT_FRONT: "Garment front",
   GARMENT_BACK: "Garment back",
+  MANNEQUIN_FRONT: "On mannequin",
   FABRIC_DETAIL: "Fabric detail",
-} as const;
+  MODEL_FRONT: "On Lulu · front",
+  MODEL_LEFT_PROFILE: "On Lulu · left profile",
+  MODEL_REAR_THREE_QUARTER: "On Lulu · right rear three-quarter",
+};
 
 function itemFacts(item: WardrobeItem): IntakeFacts {
   return {
@@ -179,8 +190,47 @@ function isCatalogueAdopted(publication: Publication | null | undefined) {
   return publication?.origin === "CATALOGUE_ADOPTED";
 }
 
+type AtelierAdoptionIdentity = Readonly<{
+  adoptionRevision: string;
+  receiptId: string;
+  media: readonly StudioAtelierPublicationMedia[];
+}>;
+
+function atelierAdoptionIdentity(
+  publication: Publication | null | undefined,
+): AtelierAdoptionIdentity | null {
+  if (!publication) return null;
+  try {
+    const adoptionRevision = parseStudioAtelierAdoptionRevision(
+      publication.facts,
+      publication.sourceRevision,
+    );
+    if (!adoptionRevision) return null;
+    if (publication.origin !== "STUDIO_NATIVE" || publication.baseline !== null) {
+      throw new Error("The adoption marker is attached to the wrong publication origin.");
+    }
+    const parsed = parseStudioAtelierPublicationMediaSet(publication.media);
+    return Object.freeze({
+      adoptionRevision,
+      receiptId: parsed.receiptId,
+      media: parsed.media,
+    });
+  } catch {
+    throw new StudioEngineError(
+      "INVALID_TRANSITION",
+      409,
+      "This locked Atelier publication is inconsistent.",
+      "Reload the piece and verify its adoption receipt before changing it.",
+    );
+  }
+}
+
+function hasImmutablePublicationMedia(publication: Publication | null | undefined) {
+  return isCatalogueAdopted(publication) || atelierAdoptionIdentity(publication) !== null;
+}
+
 function revisionMedia(publication: Publication | null, sources: PublicationSource[]) {
-  return publication && isCatalogueAdopted(publication)
+  return publication && hasImmutablePublicationMedia(publication)
     ? publication.media as Array<Record<string, unknown>>
     : sourceRecords(sources);
 }
@@ -210,8 +260,9 @@ export async function getGarmentLifecycleWorkspace(
     listGarmentEvents({ wardrobeItemId, operatorSubject: operator.subject }),
   ]);
   const baseline = publication ? liveFacts(publication, item) : itemFacts(item);
+  const immutablePublicationMedia = hasImmutablePublicationMedia(publication);
   const currentRevisionMedia = publication
-    ? isCatalogueAdopted(publication) ? (draft?.media ?? publication.media) : sourceRecords(context.sources)
+    ? immutablePublicationMedia ? (draft?.media ?? publication.media) : sourceRecords(context.sources)
     : sourceRecords(context.sources);
   const draftView: GarmentLifecycleDraft | undefined = draft ? {
     id: draft.id,
@@ -219,7 +270,7 @@ export async function getGarmentLifecycleWorkspace(
     version: draft.version,
     expectedRevision: expectedDraftRevision({ draft, item, media: currentRevisionMedia as Array<Record<string, unknown>> }),
     facts: draft.facts,
-    media: isCatalogueAdopted(publication) ? [] : context.sources.map((source) => ({
+    media: immutablePublicationMedia ? [] : context.sources.map((source) => ({
       id: source.id,
       slot: source.slot,
       label: source.label,
@@ -246,7 +297,7 @@ export async function getGarmentLifecycleWorkspace(
     state,
     facts: baseline,
     editableFacts: draft?.facts ?? itemFacts(item),
-    mediaEditable: !isCatalogueAdopted(publication),
+    mediaEditable: !immutablePublicationMedia,
     ...(publication ? {
       live: {
         receipt: {
@@ -399,10 +450,12 @@ async function publishGarmentRevision(input: {
   if (!publication || !draft) {
     throw new StudioEngineError("INVALID_TRANSITION", 409, "There is no private revision to publish.", "Edit the piece first.");
   }
+  const atelierAdoption = atelierAdoptionIdentity(publication);
+  const immutablePublicationMedia = isCatalogueAdopted(publication) || atelierAdoption !== null;
   const currentExpected = expectedDraftRevision({
     draft,
     item,
-    media: isCatalogueAdopted(publication) ? draft.media : sourceRecords(context.sources),
+    media: immutablePublicationMedia ? draft.media : sourceRecords(context.sources),
   });
   if (currentExpected !== input.expectedRevision) {
     throw new StudioEngineError("VERSION_CONFLICT", 409, "This revision changed during review.", "Review it again.");
@@ -436,6 +489,60 @@ async function publishGarmentRevision(input: {
       facts: { ...facts, category: shopCategory(facts.category), quantity: 1 },
     });
     if (!row) throw new StudioEngineError("VERSION_CONFLICT", 409, "This revision could not replace the live piece.", "Review it again.");
+    invalidateServerShopCatalogue();
+    return;
+  }
+  if (atelierAdoption) {
+    if (
+      draft.baseSourceRevision !== atelierAdoption.adoptionRevision
+      || JSON.stringify(draft.media) !== JSON.stringify(publication.media)
+      || JSON.stringify(publication.media) !== JSON.stringify(atelierAdoption.media)
+    ) {
+      throw new StudioEngineError(
+        "INVALID_TRANSITION",
+        409,
+        "This locked Atelier photo set changed.",
+        "Reload the piece and verify the adoption receipt.",
+      );
+    }
+    const facts = draft.facts;
+    const row = await publishAtelierAdoptionRevisionAtomically({
+      wardrobeItemId: item.id,
+      intakeId: item.intakeId,
+      operatorSubject: input.operator.subject,
+      idempotencyKey: input.idempotencyKey,
+      baseSourceRevision: atelierAdoption.adoptionRevision,
+      expectedVersion: item.version,
+      revisionId: draft.id,
+      revisionVersion: draft.version,
+      sku: publication.sku,
+      slug: publication.slug,
+      title: facts.title,
+      sourceCategory: facts.category,
+      category: shopCategory(facts.category),
+      price: facts.price,
+      taggedSize: facts.sizeLabel,
+      condition: facts.condition,
+      colour: facts.colour,
+      tone: presentationTone(facts.colour),
+      silhouette: shopSilhouette(facts.category),
+      facts: {
+        ...facts,
+        category: shopCategory(facts.category),
+        quantity: 1,
+        atelierAdoptionRevision: atelierAdoption.adoptionRevision,
+      },
+      receiptId: atelierAdoption.receiptId,
+      media: atelierAdoption.media,
+    });
+    if (!row) {
+      throw new StudioEngineError(
+        "VERSION_CONFLICT",
+        409,
+        "This Atelier revision could not replace the live piece.",
+        "Review it again.",
+      );
+    }
     invalidateServerShopCatalogue();
     return;
   }
@@ -501,8 +608,13 @@ export async function replaceGarmentRevisionMedia(input: {
     findCataloguePublication({ wardrobeItemId: input.wardrobeItemId, operatorSubject: input.operator.subject }),
     getStudioPublicationContext(input.wardrobeItemId, input.operator),
   ]);
-  if (isCatalogueAdopted(publication)) {
-    throw new StudioEngineError("INVALID_TRANSITION", 409, "This piece still uses its approved catalogue photo set.", "Use garment intake to replace all three product photos together.");
+  if (hasImmutablePublicationMedia(publication)) {
+    throw new StudioEngineError(
+      "INVALID_TRANSITION",
+      409,
+      "This piece still uses its approved immutable photo set.",
+      "Create a new verified media adoption before replacing it.",
+    );
   }
   if (item.version !== input.expectedVersion || item.state === "ARCHIVED" || publication?.state === "ARCHIVED") {
     throw new StudioEngineError("VERSION_CONFLICT", 409, "This piece changed in another window.", "Reload the piece.");

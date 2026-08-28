@@ -129,6 +129,8 @@ test("the Wardrobe route and queue keep three-photo readiness explicit and separ
   assert.match(route, /projectStudioNativeShopReadiness/u);
   assert.match(projection, /STUDIO_NATIVE_THREE_PHOTO/u);
   assert.match(workbench, /selectStudioPublishingQueue/u);
+  assert.match(workbench, /selectStudioPublishingQueue\(activeScopedGarments, scopedListings\)/u);
+  assert.doesNotMatch(workbench, /collectionIds\.has\(garment\.id\) \|\| garment\.nativeShopReadiness\?\.state === "READY"/u);
   assert.match(workbench, /3-photo Shop/u);
   assert.doesNotMatch(workbench, /nativeShopReadiness[^\n]*(?:Atelier|01.?07)/u);
 });
