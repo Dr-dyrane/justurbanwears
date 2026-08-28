@@ -8,6 +8,8 @@ import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { Pool } from "@neondatabase/serverless";
 import {
+  ADMIN_LOCK_SQL,
+  CATALOGUE_NAMESPACE,
   loadMigrations,
   manifestChecksum,
   resolveDatabaseAccess,
@@ -81,6 +83,11 @@ const CANONICAL_LEGACY_STOCKTAKE_JSON_SQL = `
       else to_char(stocktake.closed_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')
     end,
     'updated_at', to_char(stocktake.updated_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')
+  )
+`;
+const CANONICAL_CATALOGUE_LEDGER_JSON_SQL = `
+  to_jsonb(seed) || jsonb_build_object(
+    'applied_at', to_char(seed.applied_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')
   )
 `;
 
@@ -220,6 +227,11 @@ export function parseQualificationEnvironment(env = process.env) {
   );
   const legacyStocktakeId = env.JUW_DB_QUALIFICATION_LEGACY_STOCKTAKE_ID?.trim() ?? "";
   const legacyResolutionReference = env.JUW_DB_QUALIFICATION_LEGACY_RESOLUTION_REFERENCE?.trim() ?? "";
+  const normalizationRetryReceiptSha256 = env.JUW_DB_QUALIFICATION_NORMALIZATION_RECEIPT_SHA256?.trim().toLowerCase() ?? "";
+  invariant(
+    !normalizationRetryReceiptSha256 || SHA256.test(normalizationRetryReceiptSha256),
+    "JUW_DB_QUALIFICATION_NORMALIZATION_RECEIPT_SHA256 must be an exact lowercase SHA-256 when supplied.",
+  );
   if (phase === "legacy-block") {
     invariant(!legacyStocktakeId && !legacyResolutionReference, "legacy-block cannot claim a pre-existing resolution.");
   } else {
@@ -270,8 +282,10 @@ export function parseQualificationEnvironment(env = process.env) {
     host: qualificationHost,
     legacyResolutionReference: legacyResolutionReference || null,
     legacyStocktakeId: legacyStocktakeId || null,
+    normalizationRetryReceiptSha256: normalizationRetryReceiptSha256 || null,
     parentBranchId: CANONICAL_NEON_PARENT_BRANCH_ID,
     phase,
+    productionHost,
     projectId: CANONICAL_NEON_PROJECT_ID,
     resultPath: resolveAuditResultPath(env),
     runId,
@@ -403,6 +417,183 @@ export function runReleaseCommand(script, args, env = process.env) {
   }).trim();
 }
 
+export function assertQualificationCheckout(gitSha, root = repositoryRoot, run = execFileSync) {
+  const options = {
+    cwd: root,
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "pipe"],
+  };
+  const head = String(run("git", ["rev-parse", "HEAD"], options)).trim().toLowerCase();
+  invariant(head === gitSha, "Qualification git SHA does not match the checked-out HEAD.");
+  const status = String(run("git", ["status", "--porcelain=v1", "--untracked-files=all"], options)).trim();
+  invariant(status === "", "Qualification requires a clean committed worktree.");
+  return Object.freeze({ clean: true, head });
+}
+
+function assertDisposableCloneCatalogueLedgerState(state, configuration) {
+  invariant(state && typeof state === "object" && !Array.isArray(state), "Disposable clone catalogue ledger row is invalid.");
+  invariant(state.namespace === CATALOGUE_NAMESPACE, "Disposable clone catalogue ledger namespace does not match.");
+  invariant(state.revision === SHOP_CATALOGUE_MANIFEST.revision, "Disposable clone catalogue ledger revision does not match.");
+  invariant(
+    state.target === "production" || state.target === "preview",
+    "Disposable clone catalogue ledger target must be production or preview.",
+  );
+  invariant(state.checksum === configuration.catalogueChecksum, "Disposable clone catalogue ledger checksum does not match.");
+  invariant(
+    Number(state.row_count) === SHOP_CATALOGUE_MANIFEST.products.length,
+    "Disposable clone catalogue ledger row count does not match.",
+  );
+  invariant(state.operation === "descriptive-sync", "Disposable clone catalogue ledger operation does not match.");
+  invariant(
+    typeof state.git_sha === "string" && /^[0-9a-f]{7,64}$/.test(state.git_sha),
+    "Disposable clone catalogue ledger git SHA is invalid.",
+  );
+  invariant(
+    typeof state.applied_at === "string" && state.applied_at.length > 0,
+    "Disposable clone catalogue ledger applied timestamp is missing.",
+  );
+}
+
+function catalogueLedgerPreservedState(state) {
+  const preserved = { ...state };
+  delete preserved.target;
+  return preserved;
+}
+
+function catalogueNormalizationRetryReceipt(configuration, before, after) {
+  return digest({
+    afterSha256: digest(after),
+    beforeSha256: digest(before),
+    branchId: configuration.branchId,
+    committedSha: configuration.gitSha,
+    parentBranchId: configuration.parentBranchId,
+    projectId: configuration.projectId,
+    runId: configuration.runId,
+  });
+}
+
+async function readCanonicalCatalogueLedgerStates(client) {
+  const result = await client.query(`
+    select ${CANONICAL_CATALOGUE_LEDGER_JSON_SQL} as state
+    from shop_seed_ledger as seed
+    order by seed.namespace, seed.revision
+  `);
+  return rows(result).map((row) => row.state);
+}
+
+export async function normalizeDisposableCloneCatalogueLedger(client, configuration, manifest) {
+  invariant(configuration.phase === "apply-and-race", "Catalogue target normalization is apply-and-race only.");
+  invariant(
+    configuration.host !== normalizeHost(configuration.productionHost),
+    "Catalogue target normalization cannot target production.",
+  );
+  return transaction(client, async (tx) => {
+    await tx.query("select set_config('lock_timeout', $1, true)", ["30s"]);
+    await tx.query(ADMIN_LOCK_SQL);
+    const boundaryBefore = await capturePreCutoverBoundary(tx);
+    assertPreCutoverBoundary(boundaryBefore, manifest);
+    const ledgerBefore = await readCanonicalCatalogueLedgerStates(tx);
+    const selected = await tx.query(`
+      select ${CANONICAL_CATALOGUE_LEDGER_JSON_SQL} as state
+      from shop_seed_ledger as seed
+      where seed.namespace = $1 and seed.revision = $2
+      for update
+    `, [CATALOGUE_NAMESPACE, SHOP_CATALOGUE_MANIFEST.revision]);
+    invariant(rows(selected).length === 1, "Expected exactly one current catalogue ledger row on the disposable clone.");
+    const before = rows(selected)[0].state;
+    assertDisposableCloneCatalogueLedgerState(before, configuration);
+    const capturedCurrentRows = ledgerBefore.filter((state) => (
+      state.namespace === before.namespace && state.revision === before.revision
+    ));
+    assert.equal(capturedCurrentRows.length, 1, "Canonical seed-ledger capture does not contain the exact current catalogue row.");
+    assert.deepEqual(capturedCurrentRows[0], before, "Locked catalogue ledger row differs from its canonical boundary capture.");
+    const preserved = catalogueLedgerPreservedState(before);
+    let after = before;
+    let action = "ALREADY_PREVIEW";
+
+    if (before.target === "production") {
+      invariant(
+        configuration.normalizationRetryReceiptSha256 === null,
+        "A fresh production-clone normalization cannot supply a retry receipt.",
+      );
+      const updated = await tx.query(`
+        update shop_seed_ledger as seed
+        set target = 'preview'
+        where seed.namespace = $1
+          and seed.revision = $2
+          and seed.target = 'production'
+          and seed.checksum = $3
+          and seed.row_count = $4
+          and seed.git_sha = $5
+          and seed.operation = $6
+        returning ${CANONICAL_CATALOGUE_LEDGER_JSON_SQL} as state
+      `, [
+        CATALOGUE_NAMESPACE,
+        SHOP_CATALOGUE_MANIFEST.revision,
+        configuration.catalogueChecksum,
+        SHOP_CATALOGUE_MANIFEST.products.length,
+        before.git_sha,
+        before.operation,
+      ]);
+      invariant(rows(updated).length === 1, "Disposable clone catalogue ledger compare-and-swap did not update exactly one row.");
+      after = rows(updated)[0].state;
+      action = "NORMALIZED_PRODUCTION_CLONE_TO_PREVIEW";
+    } else {
+      const inferredBefore = { ...before, target: "production" };
+      const expectedRetryReceipt = catalogueNormalizationRetryReceipt(configuration, inferredBefore, before);
+      invariant(
+        configuration.normalizationRetryReceiptSha256 === expectedRetryReceipt,
+        "An already-preview catalogue row requires the exact prior normalization retry receipt.",
+      );
+    }
+
+    assertDisposableCloneCatalogueLedgerState(after, configuration);
+    invariant(after.target === "preview", "Disposable clone catalogue ledger target was not normalized to preview.");
+    assert.deepEqual(
+      catalogueLedgerPreservedState(after),
+      preserved,
+      "Disposable clone catalogue ledger normalization changed immutable evidence.",
+    );
+    const ledgerAfter = await readCanonicalCatalogueLedgerStates(tx);
+    const expectedLedgerAfter = ledgerBefore.map((state) => (
+      state.namespace === before.namespace && state.revision === before.revision ? after : state
+    ));
+    assert.deepEqual(
+      ledgerAfter,
+      expectedLedgerAfter,
+      "Disposable clone catalogue ledger normalization changed more than the exact current target.",
+    );
+    const boundaryAfter = await capturePreCutoverBoundary(tx);
+    assert.deepEqual(boundaryAfter.ledger, boundaryBefore.ledger, "Catalogue target normalization advanced the migration ledger.");
+    assert.equal(boundaryAfter.schemaHash, boundaryBefore.schemaHash, "Catalogue target normalization changed the database schema.");
+    assert.equal(boundaryBefore.seedLedgerHash, digest(ledgerBefore), "Pre-normalization seed-ledger hash is not canonical.");
+    assert.equal(boundaryAfter.seedLedgerHash, digest(ledgerAfter), "Post-normalization seed-ledger hash is not canonical.");
+    const retryReceiptSha256 = catalogueNormalizationRetryReceipt(
+      configuration,
+      before.target === "production" ? before : { ...before, target: "production" },
+      after,
+    );
+    return Object.freeze({
+      action,
+      afterSha256: digest(after),
+      beforeSha256: digest(before),
+      boundaryAfterSha256: boundaryAfter.seedLedgerHash,
+      boundaryBeforeSha256: boundaryBefore.seedLedgerHash,
+      checksum: after.checksum,
+      from: before.target,
+      migrationLedgerUnchanged: true,
+      namespace: after.namespace,
+      operation: after.operation,
+      preservedFieldsSha256: digest(preserved),
+      revision: after.revision,
+      retryReceiptSha256,
+      rowCount: Number(after.row_count),
+      schemaUnchanged: true,
+      to: after.target,
+    });
+  }, { isolationLevel: "serializable" });
+}
+
 function releaseFailureText(error) {
   return [error?.message, error?.stdout, error?.stderr]
     .filter(Boolean)
@@ -467,7 +658,11 @@ async function capturePreCutoverBoundary(client) {
         and (type_record.typname like 'shop\\_%' escape '\\' or type_record.typname like 'studio\\_%' escape '\\')
       order by type_record.typname, enum_value.enumsortorder
     `),
-    client.query(`select to_jsonb(seed) as state from shop_seed_ledger as seed order by seed.namespace, seed.revision`),
+    client.query(`
+      select ${CANONICAL_CATALOGUE_LEDGER_JSON_SQL} as state
+      from shop_seed_ledger as seed
+      order by seed.namespace, seed.revision
+    `),
   ]);
   const schemaState = {
     columns: rows(columns),
@@ -1695,7 +1890,7 @@ async function openStocktake(client, fixture, suffix, expectedLocationKey = null
           'pieceKey', $3,
           'wardrobeItemId', null,
           'sku', $1,
-          'title', $5,
+          'title', $5::text,
           'expectedLocationKey', authority.effective_location_key,
           'expectedLocationLabel', authority.effective_location_label,
           'expectedCustody', authority.base_custody,
@@ -2314,6 +2509,7 @@ export async function executeQualification(env = process.env, dependencies = {})
   let manifest;
   let pool;
   try {
+    report.checkout = await (dependencies.verifyCheckout ?? assertQualificationCheckout)(configuration.gitSha);
     await (dependencies.verifyCredentialFile ?? verifyCredentialFile)(configuration.credentialPath);
     manifest = await loadQualificationManifest();
     assertQualificationManifestIdentity(configuration.expectedManifestIdentity, manifest);
@@ -2397,6 +2593,11 @@ export async function executeQualification(env = process.env, dependencies = {})
         const preCutoverBoundary = await capturePreCutoverBoundary(preCutoverClient);
         assertPreCutoverBoundary(preCutoverBoundary, manifest);
         report.legacyResolution = await verifyExplicitLegacyResolution(preCutoverClient, configuration);
+        report.catalogueTargetNormalization = await normalizeDisposableCloneCatalogueLedger(
+          preCutoverClient,
+          configuration,
+          manifest,
+        );
       } finally {
         preCutoverClient.release();
       }

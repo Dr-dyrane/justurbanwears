@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import test from "node:test";
 import { SHOP_CATALOGUE_MANIFEST } from "../scripts/shop-db/catalogue-manifest.mjs";
-import { manifestChecksum } from "../scripts/shop-db/release-core.mjs";
+import { ADMIN_LOCK_SQL, CATALOGUE_NAMESPACE, manifestChecksum } from "../scripts/shop-db/release-core.mjs";
 import {
   CANONICAL_NEON_PARENT_BRANCH_ID,
   CANONICAL_NEON_PROJECT_ID,
@@ -16,11 +16,13 @@ import {
   LEGACY_RESOLUTION_REFERENCE_PREFIX,
   QUALIFICATION_CONFIRMATION,
   assertConfirmationStateUnchanged,
+  assertQualificationCheckout,
   assertQualificationManifestIdentity,
   deterministicLegacyResolutionReference,
   executeQualification,
   legacyQualificationStocktakeBinding,
   loadQualificationManifest,
+  normalizeDisposableCloneCatalogueLedger,
   oneMicrosecondEarlier,
   parseQualificationEnvironment,
   redactSensitive,
@@ -104,6 +106,47 @@ function exactLegacyClosedState(openState = exactLegacyOpenState()) {
   };
 }
 
+function exactCatalogueLedgerState(target = "production", overrides = {}) {
+  return {
+    applied_at: "2026-08-27T20:00:00.123456Z",
+    checksum: manifestChecksum(SHOP_CATALOGUE_MANIFEST),
+    git_sha: "30f36848ce2a33b807621ad840cb0b339943837c",
+    namespace: CATALOGUE_NAMESPACE,
+    operation: "descriptive-sync",
+    revision: SHOP_CATALOGUE_MANIFEST.revision,
+    row_count: SHOP_CATALOGUE_MANIFEST.products.length,
+    target,
+    ...overrides,
+  };
+}
+
+function catalogueLedgerClient(options = {}) {
+  const trace = [];
+  let currentRows = Object.hasOwn(options, "selectedRows")
+    ? options.selectedRows
+    : [{ state: exactCatalogueLedgerState(options.target ?? "production", options.selectedOverrides) }];
+  const selectedState = currentRows[0]?.state;
+  const updatedRows = Object.hasOwn(options, "updatedRows")
+    ? options.updatedRows
+    : selectedState
+      ? [{ state: { ...structuredClone(selectedState), target: "preview" } }]
+      : [];
+  return {
+    client: {
+      async query(text, values = []) {
+        trace.push({ text: String(text).trim(), values: structuredClone(values) });
+        if (String(text).includes("update shop_seed_ledger as seed")) {
+          if (updatedRows.length > 0) currentRows = structuredClone(updatedRows);
+          return { rows: structuredClone(updatedRows) };
+        }
+        if (String(text).includes("from shop_seed_ledger as seed")) return { rows: structuredClone(currentRows) };
+        return { rows: [] };
+      },
+    },
+    trace,
+  };
+}
+
 function legacyResolverClient(options = {}) {
   const trace = [];
   const targetRows = Object.hasOwn(options, "targetRows")
@@ -176,6 +219,10 @@ test("qualification environment requires an exact disposable preview target", ()
     () => parseQualificationEnvironment(environment({ JUW_DB_QUALIFICATION_LEGACY_STOCKTAKE_ID: "" })),
     /exact legacy stocktake UUID/,
   );
+  assert.throws(
+    () => parseQualificationEnvironment(environment({ JUW_DB_QUALIFICATION_NORMALIZATION_RECEIPT_SHA256: "not-a-hash" })),
+    /must be an exact lowercase SHA-256/,
+  );
   const legacyBlock = parseQualificationEnvironment(environment({
     JUW_DB_QUALIFICATION_LEGACY_RESOLUTION_REFERENCE: "",
     JUW_DB_QUALIFICATION_LEGACY_STOCKTAKE_ID: "",
@@ -205,6 +252,32 @@ test("qualification environment requires an exact disposable preview target", ()
   );
 });
 
+test("qualification checkout binds the exact clean committed HEAD before database access", () => {
+  const calls = [];
+  const gitSha = "a".repeat(40);
+  const clean = assertQualificationCheckout(gitSha, repositoryRoot, (_command, args) => {
+    calls.push(args);
+    return args[0] === "rev-parse" ? `${gitSha}\n` : "";
+  });
+  assert.deepEqual(clean, { clean: true, head: gitSha });
+  assert.deepEqual(calls, [
+    ["rev-parse", "HEAD"],
+    ["status", "--porcelain=v1", "--untracked-files=all"],
+  ]);
+  assert.throws(
+    () => assertQualificationCheckout(gitSha, repositoryRoot, (_command, args) => (
+      args[0] === "rev-parse" ? `${"b".repeat(40)}\n` : ""
+    )),
+    /does not match the checked-out HEAD/,
+  );
+  assert.throws(
+    () => assertQualificationCheckout(gitSha, repositoryRoot, (_command, args) => (
+      args[0] === "rev-parse" ? `${gitSha}\n` : " M changed.mjs\n"
+    )),
+    /clean committed worktree/,
+  );
+});
+
 test("result and credential paths are tightly scoped", () => {
   assert.match(resolveAuditResultPath(environment(), repositoryRoot), /storage[\\/]runtime-audit/);
   assert.throws(
@@ -222,6 +295,119 @@ test("result and credential paths are tightly scoped", () => {
     }), repositoryRoot),
     /must stay in the OS temp directory/,
   );
+});
+
+test("disposable production clone normalizes only the exact catalogue target under the admin lock", async () => {
+  const configuration = parseQualificationEnvironment(environment());
+  const { client, trace } = catalogueLedgerClient();
+  const receipt = await normalizeDisposableCloneCatalogueLedger(client, configuration, frozenManifest);
+  assert.equal(receipt.action, "NORMALIZED_PRODUCTION_CLONE_TO_PREVIEW");
+  assert.equal(receipt.from, "production");
+  assert.equal(receipt.to, "preview");
+  assert.equal(receipt.namespace, CATALOGUE_NAMESPACE);
+  assert.equal(receipt.revision, SHOP_CATALOGUE_MANIFEST.revision);
+  assert.equal(receipt.checksum, manifestChecksum(SHOP_CATALOGUE_MANIFEST));
+  assert.equal(receipt.rowCount, SHOP_CATALOGUE_MANIFEST.products.length);
+  assert.match(receipt.beforeSha256, /^[0-9a-f]{64}$/);
+  assert.match(receipt.afterSha256, /^[0-9a-f]{64}$/);
+  assert.notEqual(receipt.beforeSha256, receipt.afterSha256);
+  assert.match(receipt.preservedFieldsSha256, /^[0-9a-f]{64}$/);
+
+  const sql = trace.map((entry) => entry.text);
+  const beginIndex = sql.indexOf("begin isolation level serializable");
+  const timeoutIndex = sql.findIndex((text) => text.includes("set_config('lock_timeout'"));
+  const advisoryIndex = sql.indexOf(ADMIN_LOCK_SQL);
+  const selectIndex = sql.findIndex((text) => text.includes("from shop_seed_ledger as seed") && text.includes("for update"));
+  const updateIndex = sql.findIndex((text) => text.includes("update shop_seed_ledger as seed"));
+  const commitIndex = sql.indexOf("commit");
+  assert.ok(beginIndex >= 0 && beginIndex < timeoutIndex);
+  assert.ok(timeoutIndex < advisoryIndex && advisoryIndex < selectIndex);
+  assert.ok(selectIndex < updateIndex && updateIndex < commitIndex);
+  assert.match(sql[selectIndex], /for update/);
+  assert.match(sql[updateIndex], /set target = 'preview'/);
+  assert.doesNotMatch(sql[updateIndex].match(/\bset\b([\s\S]*?)\bwhere\b/i)?.[1] ?? "", /checksum|row_count|git_sha|operation|applied_at/);
+  assert.match(sql[updateIndex], /seed\.target = 'production'/);
+  assert.match(sql[updateIndex], /seed\.checksum = \$3/);
+  assert.match(sql[updateIndex], /seed\.row_count = \$4/);
+  assert.match(sql[updateIndex], /seed\.git_sha = \$5/);
+  assert.match(sql[updateIndex], /seed\.operation = \$6/);
+  assert.deepEqual(trace[updateIndex].values, [
+    CATALOGUE_NAMESPACE,
+    SHOP_CATALOGUE_MANIFEST.revision,
+    manifestChecksum(SHOP_CATALOGUE_MANIFEST),
+    SHOP_CATALOGUE_MANIFEST.products.length,
+    "30f36848ce2a33b807621ad840cb0b339943837c",
+    "descriptive-sync",
+  ]);
+  assert.equal(sql.some((text) => /\b(?:delete|insert)\b/i.test(text)), false);
+});
+
+test("already-preview catalogue normalization is an exact zero-write retry", async () => {
+  const configuration = parseQualificationEnvironment(environment());
+  const initial = await normalizeDisposableCloneCatalogueLedger(
+    catalogueLedgerClient().client,
+    configuration,
+    frozenManifest,
+  );
+  const { client, trace } = catalogueLedgerClient({ target: "preview" });
+  const receipt = await normalizeDisposableCloneCatalogueLedger(client, {
+    ...configuration,
+    normalizationRetryReceiptSha256: initial.retryReceiptSha256,
+  }, frozenManifest);
+  assert.equal(receipt.action, "ALREADY_PREVIEW");
+  assert.equal(receipt.from, "preview");
+  assert.equal(receipt.to, "preview");
+  assert.equal(receipt.beforeSha256, receipt.afterSha256);
+  assert.equal(trace.some(({ text }) => text.includes("update shop_seed_ledger as seed")), false);
+  assert.equal(trace.at(-1).text, "commit");
+});
+
+test("catalogue normalization rolls back every identity, evidence, target, and CAS mismatch", async (context) => {
+  const configuration = parseQualificationEnvironment(environment());
+  const cases = [
+    { name: "missing row", options: { selectedRows: [] }, error: /exactly one current catalogue ledger row/ },
+    {
+      name: "multiple rows",
+      options: { selectedRows: [{ state: exactCatalogueLedgerState() }, { state: exactCatalogueLedgerState() }] },
+      error: /exactly one current catalogue ledger row/,
+    },
+    { name: "local target", options: { selectedOverrides: { target: "local" } }, error: /target must be production or preview/ },
+    { name: "unproven preview retry", options: { selectedOverrides: { target: "preview" } }, error: /exact prior normalization retry receipt/ },
+    { name: "wrong namespace", options: { selectedOverrides: { namespace: "other" } }, error: /namespace does not match/ },
+    { name: "wrong revision", options: { selectedOverrides: { revision: "other" } }, error: /revision does not match/ },
+    { name: "wrong checksum", options: { selectedOverrides: { checksum: "0".repeat(64) } }, error: /checksum does not match/ },
+    { name: "wrong row count", options: { selectedOverrides: { row_count: 47 } }, error: /row count does not match/ },
+    { name: "wrong operation", options: { selectedOverrides: { operation: "seed" } }, error: /operation does not match/ },
+    { name: "invalid historical SHA", options: { selectedOverrides: { git_sha: "not-a-sha" } }, error: /git SHA is invalid/ },
+    { name: "missing applied timestamp", options: { selectedOverrides: { applied_at: null } }, error: /timestamp is missing/ },
+    { name: "zero-row CAS", options: { updatedRows: [] }, error: /compare-and-swap did not update exactly one row/ },
+    {
+      name: "multi-row CAS",
+      options: { updatedRows: [{ state: exactCatalogueLedgerState("preview") }, { state: exactCatalogueLedgerState("preview") }] },
+      error: /compare-and-swap did not update exactly one row/,
+    },
+    {
+      name: "returned immutable drift",
+      options: { updatedRows: [{ state: exactCatalogueLedgerState("preview", { applied_at: "2026-08-27T20:00:01.123456Z" }) }] },
+      error: /changed immutable evidence/,
+    },
+  ];
+
+  for (const mismatch of cases) {
+    await context.test(mismatch.name, async () => {
+      const { client, trace } = catalogueLedgerClient(mismatch.options);
+      await assert.rejects(normalizeDisposableCloneCatalogueLedger(client, configuration, frozenManifest), mismatch.error);
+      assert.equal(trace.some(({ text }) => text === "rollback"), true);
+      assert.equal(trace.some(({ text }) => text === "commit"), false);
+    });
+  }
+
+  const { client, trace } = catalogueLedgerClient();
+  await assert.rejects(
+    normalizeDisposableCloneCatalogueLedger(client, { ...configuration, phase: "resolve-legacy" }, frozenManifest),
+    /apply-and-race only/,
+  );
+  assert.equal(trace.length, 0);
 });
 
 test("migration identity is derived from the frozen journal and snapshot chain", async () => {
@@ -270,6 +456,7 @@ test("live matrix binds opaque six-microsecond authority and frozen function ari
   assert.match(source, /location-confirm-vs-delayed-fulfillment/);
   assert.match(source, /operations-six-microsecond-authority-and-exact-replay/);
   assert.match(source, /operations-one-microsecond-stale-no-write/);
+  assert.match(source, /'title', \$5::text,/);
 });
 
 test("sensitive errors are redacted before reporting", () => {
@@ -448,6 +635,7 @@ test("legacy-block phase proves release rollback and never resolves the OPEN cou
       }
       return "offline prefix check";
     },
+    verifyCheckout: () => ({ clean: true, head: legacyEnv.SHOP_DB_GIT_SHA }),
     verifyCredentialFile: async () => {},
     writeReport: async (_path, value) => { report = structuredClone(value); },
   });
@@ -646,6 +834,7 @@ test("resolve-legacy persists its deterministic reference without applying migra
       releaseCalls.push({ args, script });
       return "offline prefix check";
     },
+    verifyCheckout: () => ({ clean: true, head: "a".repeat(40) }),
     verifyCredentialFile: async () => {},
     writeReport: async (_path, report) => { persistedReport = structuredClone(report); },
   });
@@ -672,6 +861,7 @@ test("frozen manifest mismatch still cleans credentials and writes a redacted fa
       poolFactory: () => { throw new Error("pool must not open"); },
       removeCredentialFile: async () => { calls.push("credential-cleanup"); },
       runReleaseCommand: () => { throw new Error("release must not run"); },
+      verifyCheckout: () => ({ clean: true, head: "a".repeat(40) }),
       verifyCredentialFile: async () => {},
       writeReport: async (_path, value) => { report = structuredClone(value); },
     }),
@@ -707,6 +897,7 @@ test("injected offline execution cleans resources and never needs a real connect
       removeCredentialFile: async (path) => { calls.push(`remove:${path}`); },
       runReleaseCommand: () => "offline",
       runLiveMatrix: async () => ["offline-scenario"],
+      verifyCheckout: () => ({ clean: true, head: env.SHOP_DB_GIT_SHA }),
       writeReport: async (_path, report) => { capturedReport = structuredClone(report); },
     }),
     /client\.query is not a function/,

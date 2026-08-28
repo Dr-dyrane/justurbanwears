@@ -13,6 +13,31 @@ Postgres is authoritative for server catalogue rows and operational inventory af
 
 A preview command must use `SHOP_DB_TARGET=preview` and the dedicated preview branch host. Never reuse the production host as a preview target. Vercel's `VERCEL_ENV`, when present, must agree with the declared target.
 
+### Disposable transactional-authority qualification
+
+The transactional-authority race qualification must run on a fresh Neon branch
+cloned from the exact production parent, never on production itself. A production
+clone inherits the current immutable catalogue ledger row with
+`target=production`, while every qualification command correctly remains a
+`preview` command. During `apply-and-race`, the qualification harness first
+verifies the exact preserved CLOSED legacy stocktake and then, under the shared
+database-admin advisory lock, compare-and-swaps only that one current ledger
+row's target from `production` to `preview`. It requires the exact namespace,
+revision, checksum, row count, historical git SHA and `descriptive-sync`
+operation; it records canonical before/after and preserved-field hashes and
+proves the migration ledger and schema did not change. An already-`preview`
+row is a zero-write retry only when the caller supplies the exact prior
+branch/run/commit-bound normalization receipt from the preserved failed report.
+Any other target or evidence mismatch rolls back before the release command.
+
+This disposable normalization does not weaken ordinary release semantics:
+normal preview and production releases still reject a same revision recorded
+for a different target. The unchanged full preview release then performs the
+atomic migration, catalogue no-op, Drop 02 transition and exact catalogue
+verification before the real two-session race matrix runs. Preserve every
+failed audit report, use a unique report path for a retry, and delete the exact
+disposable branch after qualification and explicit operator confirmation.
+
 ## Local access bootstrap
 
 Before resolving any provider credential, read
