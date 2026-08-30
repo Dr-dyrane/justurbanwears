@@ -23,6 +23,10 @@ test("Studio Home keeps garment status compact, semantic, and motion-aware", asy
 
   assert.match(styles, /grid-template-columns: 86px minmax\(0, 1fr\) 20px/);
   assert.match(styles, /grid-template-columns: 78px minmax\(0, 1fr\) 18px/);
+  assert.match(styles, /\.studio-publishing-row\.studio-compact-row[\s\S]*?grid-template-columns: 112px minmax\(0, 1fr\) 20px/);
+  assert.match(styles, /\.studio-publishing-queue[\s\S]*?grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
+  assert.match(styles, /main\.page-canvas\.studio-native-canvas:not\(:has\(\[data-studio-adaptive-workspace="true"\]\)\) \.studio-publishing-queue \{\s*grid-template-columns: minmax\(0, 1fr\);/);
+  assert.match(styles, /\.studio-publishing-queue > :not\(:last-child\)::after \{[\s\S]*?content: none/);
   assert.match(styles, /\.studio-recent-row\[data-state-tone="positive"\]/);
   assert.match(styles, /\.studio-recent-row\[data-state-tone="caution"\]/);
   assert.match(styles, /\.studio-recent-row\[data-state-tone="critical"\]/);

@@ -64,10 +64,13 @@ export function StudioTaskSheet({
   useDocumentScrollLock(open);
 
   const acceptDismiss = useCallback(() => {
+    const dialog = dialogRef.current;
+    // An already accepted close can still unwind its history marker. Do not
+    // invoke the owning dismissal callback twice during that traversal.
+    if (dialog && !dialog.open) return true;
     if (busy) return false;
     const accepted = onDismiss();
     if (accepted === false) return false;
-    const dialog = dialogRef.current;
     if (dialog?.open) dialog.close();
     return true;
   }, [busy, onDismiss]);
@@ -77,6 +80,10 @@ export function StudioTaskSheet({
     marker: `studio-task:${titleId}`,
     onDismiss: acceptDismiss,
   });
+  const requestGuardedClose = useCallback(() => {
+    if (!acceptDismiss()) return;
+    requestClose();
+  }, [acceptDismiss, requestClose]);
   useEffect(() => {
     const dialog = dialogRef.current;
     if (!dialog) return;
@@ -108,12 +115,12 @@ export function StudioTaskSheet({
         || event.clientX > bounds.right
         || event.clientY < bounds.top
         || event.clientY > bounds.bottom;
-      if (outside) requestClose();
+      if (outside) requestGuardedClose();
     };
 
     dialog.addEventListener("click", closeFromBackdrop);
     return () => dialog.removeEventListener("click", closeFromBackdrop);
-  }, [open, requestClose]);
+  }, [open, requestGuardedClose]);
 
   const restoreFocus = useCallback(() => {
     const target = returnFocus?.isConnected
@@ -139,10 +146,21 @@ export function StudioTaskSheet({
       data-experience-layer="sheet"
       data-studio-sheet-safety="guarded"
       onCancel={(event) => {
+        if (event.target !== event.currentTarget) return;
         event.preventDefault();
-        requestClose();
+        requestGuardedClose();
       }}
       onClose={restoreFocus}
+      onKeyDownCapture={(event) => {
+        if (event.key !== "Escape" || event.nativeEvent.isComposing) return;
+        const ownerDialog = event.target instanceof Element
+          ? event.target.closest("dialog")
+          : null;
+        if (ownerDialog !== event.currentTarget) return;
+        event.preventDefault();
+        event.stopPropagation();
+        requestGuardedClose();
+      }}
       ref={dialogRef}
     >
       <div aria-busy={busy || undefined} className="studio-task-sheet-frame">
@@ -163,7 +181,7 @@ export function StudioTaskSheet({
             aria-label={`Close ${title}`}
             className="studio-icon-action"
             disabled={busy}
-            onClick={requestClose}
+            onClick={requestGuardedClose}
             ref={closeButtonRef}
             type="button"
           >

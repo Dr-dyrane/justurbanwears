@@ -37,6 +37,8 @@ import {
 
 type ErrorBody = { error?: { message?: string; recovery?: string } };
 type GarmentDecision = "ARCHIVE" | "DISCARD_REVISION" | "PUBLISH_REVISION" | "REPUBLISH" | "UNPUBLISH";
+type FactsEditMode = "details" | "price";
+type GarmentMilestone = "details-saved" | "media-saved" | "price-saved" | "published" | "returned";
 
 function formatNaira(value: number) {
   return new Intl.NumberFormat("en-NG", {
@@ -86,16 +88,17 @@ export function GarmentLifecyclePanel({
 }) {
   const [workspace, setWorkspace] = useState<GarmentLifecycleWorkspace>();
   const [draftFacts, setDraftFacts] = useState<IntakeFacts>();
-  const [editing, setEditing] = useState(false);
+  const [editMode, setEditMode] = useState<FactsEditMode | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [busy, setBusy] = useState("");
   const [error, setError] = useState("");
   const [decision, setDecision] = useState<GarmentDecision | null>(null);
   const [decisionReturnFocus, setDecisionReturnFocus] = useState<HTMLElement | null>(null);
-  const [milestone, setMilestone] = useState<"published" | "returned" | null>(null);
+  const [milestone, setMilestone] = useState<GarmentMilestone | null>(null);
   const [reload, setReload] = useState(0);
   const priceRef = useRef<HTMLInputElement>(null);
   const panelRef = useRef<HTMLElement>(null);
+  const milestoneRef = useRef<HTMLElement>(null);
   const initialActionHandledRef = useRef(false);
   const commandInFlightRef = useRef(false);
   const publicationKeyRef = useRef("");
@@ -132,6 +135,7 @@ export function GarmentLifecyclePanel({
     const controller = new AbortController();
     initialActionHandledRef.current = false;
     setWorkspace(undefined);
+    setEditMode(null);
     setError("");
     setMilestone(null);
     setDecision(null);
@@ -155,10 +159,15 @@ export function GarmentLifecyclePanel({
     ) return;
     initialActionHandledRef.current = true;
     setDraftFacts(workspace.editableFacts);
-    setEditing(true);
+    setEditMode("price");
     setError("");
     requestAnimationFrame(() => priceRef.current?.focus({ preventScroll: true }));
   }, [initialAction, wardrobeItemId, workspace]);
+
+  useEffect(() => {
+    if (!milestone) return;
+    milestoneRef.current?.focus({ preventScroll: true });
+  }, [milestone]);
 
   async function command(value: GarmentLifecycleCommand, action: string): Promise<StudioDecisionResult> {
     if (commandInFlightRef.current) return { error: "Another Studio change is still finishing.", ok: false };
@@ -182,7 +191,10 @@ export function GarmentLifecyclePanel({
         scope: publicationCommandScope,
       });
       accept(body.workspace);
-      if (value.command === "SAVE_FACTS") setEditing(false);
+      if (value.command === "SAVE_FACTS") {
+        setMilestone(editMode === "price" ? "price-saved" : "details-saved");
+        setEditMode(null);
+      }
       if (value.command === "PUBLISH_REVISION") {
         setMilestone("published");
       }
@@ -198,7 +210,10 @@ export function GarmentLifecyclePanel({
             ...publicationIdentity,
             scope: publicationCommandScope,
           });
-          if (value.command === "SAVE_FACTS") setEditing(false);
+          if (value.command === "SAVE_FACTS") {
+            setMilestone(editMode === "price" ? "price-saved" : "details-saved");
+            setEditMode(null);
+          }
           if (value.command === "PUBLISH_REVISION") {
             setMilestone("published");
           }
@@ -272,6 +287,7 @@ export function GarmentLifecyclePanel({
     const expectedVersion = workspace.itemVersion;
     setBusy(role);
     setError("");
+    setMilestone(null);
     const body = new FormData();
     body.set("file", file);
     body.set("role", role);
@@ -284,10 +300,12 @@ export function GarmentLifecyclePanel({
       });
       const result = await responseJson<{ workspace: GarmentLifecycleWorkspace }>(response);
       accept(result.workspace);
+      setMilestone("media-saved");
     } catch (caught) {
       const reconciled = await readWorkspace().catch(() => null);
       if (reconciled && reconciled.itemVersion > expectedVersion) {
         accept(reconciled);
+        setMilestone("media-saved");
       } else {
         setError(caught instanceof Error ? caught.message : "That photo did not save.");
       }
@@ -297,12 +315,12 @@ export function GarmentLifecyclePanel({
     }
   }
 
-  function beginEdit(priceOnly = false) {
+  function beginEdit(mode: FactsEditMode) {
     if (!workspace) return;
     setDraftFacts(workspace.editableFacts);
-    setEditing(true);
+    setEditMode(mode);
     setError("");
-    if (priceOnly) requestAnimationFrame(() => priceRef.current?.focus({ preventScroll: true }));
+    if (mode === "price") requestAnimationFrame(() => priceRef.current?.focus({ preventScroll: true }));
   }
 
   function save(event: FormEvent<HTMLFormElement>) {
@@ -381,6 +399,33 @@ export function GarmentLifecyclePanel({
       title: "Remove from Shop?",
     },
   }[decision] : null;
+  const milestoneCopy = milestone ? {
+    "details-saved": {
+      detail: workspace.live ? "The revision remains private until you publish it." : "The private garment now shows these details.",
+      eyebrow: "Piece updated",
+      title: workspace.live ? "Private revision saved." : "Garment details saved.",
+    },
+    "media-saved": {
+      detail: workspace.live ? "The photo is in the private revision; the current Shop listing is unchanged." : "The private garment now uses this photo.",
+      eyebrow: "Photo updated",
+      title: "Garment photo saved.",
+    },
+    "price-saved": {
+      detail: workspace.live ? "The new price remains private until you publish the revision." : "The private garment now shows this price.",
+      eyebrow: "Price updated",
+      title: "Price saved.",
+    },
+    published: {
+      detail: "Customers can now see this exact revision.",
+      eyebrow: "Shop updated",
+      title: "Published to Shop.",
+    },
+    returned: {
+      detail: "The approved listing is visible to customers again.",
+      eyebrow: "Shop updated",
+      title: "Returned to Shop.",
+    },
+  }[milestone] : null;
 
   return (
     <section className="studio-piece-shop studio-listing-editor" id="garment-lifecycle" aria-labelledby="garment-lifecycle-title" ref={panelRef} tabIndex={-1}>
@@ -389,20 +434,20 @@ export function GarmentLifecyclePanel({
         {busy ? <LoaderCircle aria-label="Working" className="studio-spin" size={18} /> : null}
       </div>
 
-      {milestone ? (
-        <section aria-live="polite" className="juw-studio-publish-receipt">
+      {milestoneCopy ? (
+        <section aria-live="polite" className="juw-studio-publish-receipt" ref={milestoneRef} role="status" tabIndex={-1}>
           <div className="juw-receipt-motion">
             <WardrobeMotion artwork="logo" polarity="auto" size="sm" variant="success" />
           </div>
           <div>
-            <small>Shop updated</small>
-            <strong>{milestone === "published" ? "Published to Shop." : "Returned to Shop."}</strong>
-            <p>{milestone === "published" ? "Customers can now see this exact revision." : "The approved listing is visible to customers again."}</p>
+            <small>{milestoneCopy.eyebrow}</small>
+            <strong>{milestoneCopy.title}</strong>
+            <p>{milestoneCopy.detail}</p>
           </div>
         </section>
       ) : null}
 
-      {!editing ? (
+      {!editMode ? (
         <div className="studio-garment-facts">
           <span>{formatNaira(workspace.editableFacts.price)}</span>
           <span>{workspace.editableFacts.sizeLabel}</span>
@@ -410,27 +455,29 @@ export function GarmentLifecyclePanel({
         </div>
       ) : null}
 
-      {!editing && editable ? (
+      {!editMode && editable ? (
         <div className="studio-card-actions">
-          <button className="button button-primary" onClick={() => beginEdit(true)} type="button"><Pencil aria-hidden="true" size={16} />Change price</button>
-          <button className="button button-secondary" onClick={() => beginEdit()} type="button">Edit details</button>
+          <button className="button button-primary" onClick={() => beginEdit("price")} type="button"><Pencil aria-hidden="true" size={16} />Change price</button>
+          <button className="button button-secondary" onClick={() => beginEdit("details")} type="button">Edit details</button>
         </div>
       ) : null}
 
-      {editing && draftFacts ? (
+      {editMode && draftFacts ? (
         <form onSubmit={save}>
           <div className="studio-form-grid studio-listing-fields">
-            <label className="studio-field"><span>Name</span><input maxLength={100} onChange={(event) => setDraftFacts({ ...draftFacts, title: event.target.value })} required value={draftFacts.title} /></label>
+            {editMode === "details" ? <label className="studio-field"><span>Name</span><input maxLength={100} onChange={(event) => setDraftFacts({ ...draftFacts, title: event.target.value })} required value={draftFacts.title} /></label> : null}
             <label className="studio-field"><span>Price (₦)</span><input inputMode="numeric" min="1" onChange={(event) => setDraftFacts({ ...draftFacts, price: Math.max(0, Number(event.target.value)) })} ref={priceRef} required type="number" value={draftFacts.price || ""} /></label>
-            <label className="studio-field"><span>Category</span><select onChange={(event) => setDraftFacts({ ...draftFacts, category: event.target.value as IntakeFacts["category"] })} value={draftFacts.category}>{["Dress", "Shirt", "Set", "Knitwear", "Skirt", "Trousers", "Other"].map((value) => <option key={value}>{value}</option>)}</select></label>
-            <label className="studio-field"><span>Colour</span><input maxLength={60} onChange={(event) => setDraftFacts({ ...draftFacts, colour: event.target.value })} required value={draftFacts.colour} /></label>
-            <label className="studio-field"><span>Size</span><input maxLength={60} onChange={(event) => setDraftFacts({ ...draftFacts, sizeLabel: event.target.value })} required value={draftFacts.sizeLabel} /></label>
-            <label className="studio-field"><span>Condition</span><input maxLength={100} onChange={(event) => setDraftFacts({ ...draftFacts, condition: event.target.value })} required value={draftFacts.condition} /></label>
+            {editMode === "details" ? <>
+              <label className="studio-field"><span>Category</span><select onChange={(event) => setDraftFacts({ ...draftFacts, category: event.target.value as IntakeFacts["category"] })} value={draftFacts.category}>{["Dress", "Shirt", "Set", "Knitwear", "Skirt", "Trousers", "Other"].map((value) => <option key={value}>{value}</option>)}</select></label>
+              <label className="studio-field"><span>Colour</span><input maxLength={60} onChange={(event) => setDraftFacts({ ...draftFacts, colour: event.target.value })} required value={draftFacts.colour} /></label>
+              <label className="studio-field"><span>Size</span><input maxLength={60} onChange={(event) => setDraftFacts({ ...draftFacts, sizeLabel: event.target.value })} required value={draftFacts.sizeLabel} /></label>
+              <label className="studio-field"><span>Condition</span><input maxLength={100} onChange={(event) => setDraftFacts({ ...draftFacts, condition: event.target.value })} required value={draftFacts.condition} /></label>
+            </> : null}
           </div>
           <p className="studio-inline-state">{workspace.live ? "Changes stay private until you publish them." : "This changes the private garment only."}</p>
           <div className="studio-card-actions">
-            <button className="button button-secondary" onClick={() => { setEditing(false); setDraftFacts(workspace.editableFacts); }} type="button">Cancel</button>
-            <button className="button button-primary" disabled={busy === "SAVE_FACTS"} type="submit">{busy === "SAVE_FACTS" ? "Saving…" : workspace.live ? "Save private revision" : "Save changes"}</button>
+            <button className="button button-secondary" onClick={() => { setEditMode(null); setDraftFacts(workspace.editableFacts); }} type="button">Cancel</button>
+            <button className="button button-primary" disabled={busy === "SAVE_FACTS"} type="submit">{busy === "SAVE_FACTS" ? "Saving…" : editMode === "price" ? "Save price" : workspace.live ? "Save private revision" : "Save changes"}</button>
           </div>
         </form>
       ) : null}

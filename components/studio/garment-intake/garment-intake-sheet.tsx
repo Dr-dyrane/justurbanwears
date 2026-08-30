@@ -24,6 +24,7 @@ import {
 import { WardrobeMotion } from "../../brand/wardrobe-motion";
 import type { GarmentCategory } from "../../../lib/studio/domain/entities";
 import { LifecycleBadge } from "../atoms/lifecycle-badge";
+import { StudioDecisionSheet } from "../atoms/studio-decision-sheet";
 import { StudioLink } from "../atoms/studio-link";
 import { StudioDisclosureRow } from "../atoms/studio-disclosure-row";
 import { StudioTaskSheet, type StudioTaskSheetControls } from "../atoms/studio-task-sheet";
@@ -45,6 +46,7 @@ import {
 type IntakeStep = "start" | "source" | "build" | "confirm" | "edit" | "receipt" | "reconcile";
 type BuildStage = "READING" | "GARMENT" | "VIEWS" | "READY";
 type PendingAction = "BUILD" | "KEEP" | "RETRY";
+type IntakeDismissDecision = "DISCARD_DRAFT" | "LEAVE_ACTIVE";
 
 interface GarmentIntakeSheetProps {
   client?: GarmentIntakeClient;
@@ -165,6 +167,7 @@ export function GarmentIntakeSheet({
 }: GarmentIntakeSheetProps) {
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const commandInFlightRef = useRef(false);
+  const confirmedDismissRef = useRef<IntakeDismissDecision | undefined>(undefined);
   const explicitCommittedNavigationRef = useRef(false);
   const factsBeforeEditRef = useRef<IntakeFacts | undefined>(undefined);
   const intakeIntentRef = useRef<StoredIntakeIntent | undefined>(undefined);
@@ -190,6 +193,8 @@ export function GarmentIntakeSheet({
   const [recoveryStatus, setRecoveryStatus] = useState<"error" | "idle" | "loading" | "ready">("idle");
   const [recoveryError, setRecoveryError] = useState("");
   const [recoveryReload, setRecoveryReload] = useState(0);
+  const [dismissDecision, setDismissDecision] = useState<IntakeDismissDecision>();
+  const [dismissReturnFocus, setDismissReturnFocus] = useState<HTMLElement | null>(null);
 
   const candidatePreview = intake ? client.candidateUrl(intake) : undefined;
   const pollingIntakeId = intake?.id;
@@ -359,6 +364,9 @@ export function GarmentIntakeSheet({
     setRecoverableIntakes([]);
     setRecoveryStatus("idle");
     setRecoveryError("");
+    setDismissDecision(undefined);
+    confirmedDismissRef.current = undefined;
+    setDismissReturnFocus(null);
     explicitCommittedNavigationRef.current = false;
   }
 
@@ -385,10 +393,8 @@ export function GarmentIntakeSheet({
     }
 
     if (working || step === "build") {
-      if (!window.confirm("Leave this Studio task? The active request may still finish, and Studio will preserve this intake for recovery.")) {
-        return false;
-      }
-      return finishDismiss({ preserveIntent: true });
+      requestDismissDecision("LEAVE_ACTIVE");
+      return false;
     }
 
     if (step === "reconcile") return finishDismiss();
@@ -398,12 +404,38 @@ export function GarmentIntakeSheet({
     if (
       !garmentSaved
       && step !== "start"
-      && !window.confirm("Discard this garment intake? The current source and edits will be cleared.")
     ) {
+      requestDismissDecision("DISCARD_DRAFT");
       return false;
     }
 
     return finishDismiss();
+  }
+
+  function requestDismissDecision(decision: IntakeDismissDecision) {
+    if (dismissDecision) return;
+    const activeElement = document.activeElement;
+    setDismissReturnFocus(activeElement instanceof HTMLElement ? activeElement : null);
+    setDismissDecision(decision);
+  }
+
+  async function confirmDismissDecision() {
+    if (!dismissDecision) {
+      return { error: "The intake close decision is no longer current.", ok: false as const };
+    }
+    confirmedDismissRef.current = dismissDecision;
+    return { ok: true as const };
+  }
+
+  function closeDismissDecision() {
+    const confirmed = confirmedDismissRef.current;
+    confirmedDismissRef.current = undefined;
+    setDismissDecision(undefined);
+    if (confirmed === "LEAVE_ACTIVE") {
+      finishDismiss({ preserveIntent: true });
+    } else if (confirmed === "DISCARD_DRAFT") {
+      finishDismiss();
+    }
   }
 
   function back() {
@@ -748,7 +780,27 @@ export function GarmentIntakeSheet({
     </div>
   );
 
-  return (
+  const dismissCopy = dismissDecision === "LEAVE_ACTIVE"
+    ? {
+      confirmLabel: "Leave task",
+      consequence: "Studio keeps the intake recoverable and continues checking the active request without starting another paid attempt.",
+      receiptDetail: "The intake will remain available to resume from Wardrobe.",
+      receiptTitle: "Work preserved",
+      summary: "Leave this task while Studio is still working?",
+      title: "Leave active intake?",
+    }
+    : dismissDecision === "DISCARD_DRAFT"
+      ? {
+        confirmLabel: "Discard intake",
+        consequence: "The current source selection and unsaved fact edits are cleared. No saved garment is removed.",
+        receiptDetail: "The unsaved intake will close without changing Wardrobe.",
+        receiptTitle: "Draft ready to discard",
+        summary: "Discard this unsaved garment intake?",
+        title: "Discard intake?",
+      }
+      : null;
+
+  return (<>
     <StudioTaskSheet
       className="studio-garment-task-sheet is-adaptive-host"
       eyebrow={sourceMode ? sourceLabel : "New garment"}
@@ -930,5 +982,21 @@ export function GarmentIntakeSheet({
       <span aria-live="polite" className="sr-only">{working ? `${buildStage.toLowerCase()} in progress` : error?.message ?? ""}</span>
       </>}
     </StudioTaskSheet>
-  );
+    {dismissDecision && dismissCopy ? (
+      <StudioDecisionSheet
+        confirmLabel={dismissCopy.confirmLabel}
+        consequence={dismissCopy.consequence}
+        destructive={dismissDecision === "DISCARD_DRAFT"}
+        eyebrow="Garment intake"
+        onConfirm={confirmDismissDecision}
+        onDismiss={closeDismissDecision}
+        open
+        receiptDetail={dismissCopy.receiptDetail}
+        receiptTitle={dismissCopy.receiptTitle}
+        returnFocus={dismissReturnFocus}
+        summary={dismissCopy.summary}
+        title={dismissCopy.title}
+      />
+    ) : null}
+  </>);
 }

@@ -22,7 +22,7 @@ test("Atelier routes use the shared native stack and feedback grammar", () => {
 });
 
 test("Atelier gallery rows keep only image, title, media state, and disclosure", () => {
-  assert.match(gallery, /className="shoot-card-copy"><h2>\{item\.title\}<\/h2><p><span>\{label\(item\.operation\)\}<\/span><MediaStateMeta/);
+  assert.match(gallery, /className="shoot-card-copy"><h2>\{item\.title\}<\/h2><p><span>\{privateMediaUnavailable \? "Private media unavailable" : label\(item\.operation\)\}<\/span><MediaStateMeta/);
   assert.match(gallery, /className="shoot-card-disclosure"/);
   assert.doesNotMatch(gallery, /item\.createdAt|item\.modelName|shoot-card-overlay/);
 });

@@ -49,6 +49,7 @@ test("Piece work is split into concise task launchers and bounded sheets", () =>
   assert.match(wardrobe, /<strong>\{historicalDrop01 \? "History" : "Facts & price"\}<\/strong>/);
   assert.match(wardrobe, /<strong>Shop<\/strong>/);
   assert.match(wardrobe, /const hasFactsTask = historicalDrop01 \|\| Boolean\(garment\.privateWardrobeItemId \|\| listing\)/);
+  assert.match(wardrobe, /hasFactsTask && \(historicalDrop01 \|\| nextAction\.kind !== "DYNAMIC_MANAGE"\)/);
   assert.match(wardrobe, /<StudioTaskSheet[\s\S]*?className="studio-piece-photos-sheet"[\s\S]*?title="Product photos"/);
   assert.match(wardrobe, /<StudioTaskSheet[\s\S]*?className="studio-piece-shop-sheet"[\s\S]*?title="Shop"/);
   assert.match(wardrobe, /<StudioTaskSheet[\s\S]*?className="studio-piece-details-sheet"[\s\S]*?title=\{historicalDrop01 \? "History" : "Facts & price"\}/);

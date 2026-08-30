@@ -1077,6 +1077,8 @@ test("the durable route replaces the fake modal modes and preserves keyboard and
   assert.match(surface, /resolveStudioAssistantWorkflow\(stored, context\)/);
   assert.match(surface, /useChat<StudioAssistantUIMessage>/);
   assert.match(surface, /new DefaultChatTransport<StudioAssistantUIMessage>/);
+  assert.match(surface, /sendMessage\(\{[\s\S]*?id: active\.id,[\s\S]*?parts: \[\{ text: cleanQuery, type: "text" \}\],[\s\S]*?role: "user"/);
+  assert.doesNotMatch(surface, /sendMessage\(\{ messageId: active\.id/);
   assert.match(surface, /if \(studio\.scenario\) \{[\s\S]*?addFallback\(active\)/);
   assert.match(surface, /MessageResponse/);
   assert.match(surface, /StudioDecisionSheet/);
@@ -1152,7 +1154,8 @@ test("the Ask surface keeps prompts, fallbacks and private tasks consistent", ()
 
   assert.match(surface, /const MAX_QUERY_LENGTH = 1_200/);
   assert.match(surface, /maxLength=\{MAX_QUERY_LENGTH\}/);
-  assert.match(surface, /messageId: active\.id/);
+  assert.match(surface, /id: active\.id,[\s\S]*?role: "user"/);
+  assert.doesNotMatch(surface, /messageId: active\.id/);
   assert.match(surface, /turn\.id === message\.id/);
   assert.match(surface, /TASK_RETENTION_MS = 30/);
   assert.match(surface, /Omit<StudioAssistantTaskDraft, "sourceQuery">/);

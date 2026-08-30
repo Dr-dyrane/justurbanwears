@@ -1137,7 +1137,11 @@ export function StudioAskSurface() {
       flightRef.current = false;
       return;
     }
-    void sendMessage({ messageId: active.id, text: cleanQuery }).catch(() => {
+    void sendMessage({
+      id: active.id,
+      parts: [{ text: cleanQuery, type: "text" }],
+      role: "user",
+    }).catch(() => {
       addFallback(active);
       pendingRef.current = null;
       flightRef.current = false;

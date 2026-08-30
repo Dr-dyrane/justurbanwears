@@ -1,6 +1,13 @@
-import { createAgentUIStreamResponse } from "ai";
+import {
+  createAgentUIStreamResponse,
+  createUIMessageStreamResponse,
+} from "ai";
 import { z } from "zod";
 import { createStudioAssistantAgent } from "../../../../lib/ai/studio-assistant-agent";
+import {
+  createDeterministicStudioAssistantStream,
+  studioAssistantModelConnected,
+} from "../../../../lib/ai/studio-assistant-deterministic-stream";
 import {
   getStudioApplicationProjection,
   projectScenarioStudioApplication,
@@ -101,10 +108,14 @@ export async function POST(request: Request): Promise<Response> {
 
     const uiMessages = boundedTextConversation(input.messages);
     const query = uiMessages[uiMessages.length - 1].parts[0].text;
-    const agent = createStudioAssistantAgent({
-      context: studioAssistantContextFromProjection(projection),
-      query,
-    });
+    const context = studioAssistantContextFromProjection(projection);
+    if (!studioAssistantModelConnected()) {
+      return createUIMessageStreamResponse({
+        headers: noStoreJsonHeaders,
+        stream: createDeterministicStudioAssistantStream({ context, query }),
+      });
+    }
+    const agent = createStudioAssistantAgent({ context, query });
     return await createAgentUIStreamResponse({
       abortSignal: request.signal,
       agent,

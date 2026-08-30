@@ -6,6 +6,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Check, CircleAlert, Clock3, ImagePlus, LoaderCircle, Maximize2, Plus, Shirt, Sparkles, UserRound, X } from "lucide-react";
 import { WardrobeMotion } from "../../brand/wardrobe-motion";
+import { StudioDecisionSheet } from "../atoms/studio-decision-sheet";
 import { StudioDisclosureRow } from "../atoms/studio-disclosure-row";
 import { StudioTaskSheet } from "../atoms/studio-task-sheet";
 import {
@@ -18,6 +19,7 @@ import { addWearModel, decideWear, generateWear, readWear, type WearGeneration, 
 type Step = "choose" | "add-model" | "working" | "review" | "edit" | "failed" | "reconcile" | "saved";
 type PendingCommand = "ADD_MODEL" | "DECIDE_EDIT" | "DECIDE_KEEP" | "DECIDE_REJECT" | "GENERATE" | "RETRY";
 type WearCorrectionAuthority = { generationId: string; decisionReceiptId: string };
+type WearDismissDecision = "DISCARD_DRAFT" | "LEAVE_ACTIVE";
 
 const WEAR_POLL_BASE_MS = 1_600;
 const WEAR_POLL_MAX_BACKOFF_MS = 8_000;
@@ -115,6 +117,7 @@ export function WearSheet({ onDismiss, open, returnFocus, wardrobeItemId }: {
   const closePreviewRef = useRef<HTMLButtonElement>(null);
   const expandPreviewRef = useRef<HTMLButtonElement>(null);
   const commandInFlightRef = useRef(false);
+  const confirmedDismissRef = useRef<WearDismissDecision | undefined>(undefined);
   const recoveryFallbackRef = useRef<Extract<Step, "choose" | "edit">>("choose");
   const [workspace, setWorkspace] = useState<WearWorkspace>();
   const [step, setStep] = useState<Step>("choose");
@@ -135,6 +138,8 @@ export function WearSheet({ onDismiss, open, returnFocus, wardrobeItemId }: {
   const [hydrationError, setHydrationError] = useState<StudioEngineError>();
   const [expanded, setExpanded] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
+  const [dismissDecision, setDismissDecision] = useState<WearDismissDecision>();
+  const [dismissReturnFocus, setDismissReturnFocus] = useState<HTMLElement | null>(null);
   const commandBusy = pendingCommand !== undefined;
   const modelPreview = useMemo(() => file ? URL.createObjectURL(file) : undefined, [file]);
   const latestTryOnByModel = useMemo(() => {
@@ -557,6 +562,9 @@ export function WearSheet({ onDismiss, open, returnFocus, wardrobeItemId }: {
 
   function finishDismiss() {
     setExpanded(false);
+    setDismissDecision(undefined);
+    confirmedDismissRef.current = undefined;
+    setDismissReturnFocus(null);
     onDismiss();
     return true;
   }
@@ -593,10 +601,8 @@ export function WearSheet({ onDismiss, open, returnFocus, wardrobeItemId }: {
 
     if (step === "reconcile") return finishDismiss();
 
-    if (
-      step === "working"
-      && !window.confirm("Leave this Wear task? Studio may continue processing the private view.")
-    ) {
+    if (step === "working") {
+      requestDismissDecision("LEAVE_ACTIVE");
       return false;
     }
 
@@ -605,12 +611,34 @@ export function WearSheet({ onDismiss, open, returnFocus, wardrobeItemId }: {
     const hasCorrectionDraft = step === "edit" && Boolean(note.trim());
     if (
       (hasModelDraft || hasCorrectionDraft)
-      && !window.confirm("Discard these unsaved Wear changes?")
     ) {
+      requestDismissDecision("DISCARD_DRAFT");
       return false;
     }
 
     return finishDismiss();
+  }
+
+  function requestDismissDecision(decision: WearDismissDecision) {
+    if (dismissDecision) return;
+    const activeElement = document.activeElement;
+    setDismissReturnFocus(activeElement instanceof HTMLElement ? activeElement : null);
+    setDismissDecision(decision);
+  }
+
+  async function confirmDismissDecision() {
+    if (!dismissDecision) {
+      return { error: "The Wear close decision is no longer current.", ok: false as const };
+    }
+    confirmedDismissRef.current = dismissDecision;
+    return { ok: true as const };
+  }
+
+  function closeDismissDecision() {
+    const confirmed = confirmedDismissRef.current;
+    confirmedDismissRef.current = undefined;
+    setDismissDecision(undefined);
+    if (confirmed) finishDismiss();
   }
 
   const footer = !hydrated ? hydrationError ? (
@@ -643,7 +671,27 @@ export function WearSheet({ onDismiss, open, returnFocus, wardrobeItemId }: {
     </>
   ) : undefined;
 
-  return (
+  const dismissCopy = dismissDecision === "LEAVE_ACTIVE"
+    ? {
+      confirmLabel: "Leave task",
+      consequence: "Studio continues checking this exact private Wear request. Returning later will reconcile its saved state without starting another generation.",
+      receiptDetail: "The current Wear request will remain available to resume.",
+      receiptTitle: "Work preserved",
+      summary: "Leave while Studio is still making this private view?",
+      title: "Leave active Wear task?",
+    }
+    : dismissDecision === "DISCARD_DRAFT"
+      ? {
+        confirmLabel: "Discard changes",
+        consequence: "Only the unsaved correction or model form is cleared. Saved Wear views and garment truth remain unchanged.",
+        receiptDetail: "The unsaved form will close without changing saved Wear media.",
+        receiptTitle: "Draft ready to discard",
+        summary: "Discard these unsaved Wear changes?",
+        title: "Discard Wear changes?",
+      }
+      : null;
+
+  return (<>
     <StudioTaskSheet
       busy={commandBusy && step !== "working"}
       busyLabel="Saving the current Wear action"
@@ -738,5 +786,21 @@ export function WearSheet({ onDismiss, open, returnFocus, wardrobeItemId }: {
       {expanded && selected?.outputUrl ? <div aria-label="Expanded Wear review" aria-modal="true" className="studio-receipt-preview" role="dialog"><img alt="Expanded private Wear review" src={selected.outputUrl} /><button aria-label="Close expanded Wear image" className="studio-icon-action" onClick={closeExpandedPreview} ref={closePreviewRef} type="button"><X aria-hidden="true" size={19} /></button></div> : null}
       <span aria-live="polite" className="sr-only">{step === "working" ? "Wear generation in progress" : error?.message || ""}</span>
     </StudioTaskSheet>
-  );
+    {dismissDecision && dismissCopy ? (
+      <StudioDecisionSheet
+        confirmLabel={dismissCopy.confirmLabel}
+        consequence={dismissCopy.consequence}
+        destructive={dismissDecision === "DISCARD_DRAFT"}
+        eyebrow="Private Wear"
+        onConfirm={confirmDismissDecision}
+        onDismiss={closeDismissDecision}
+        open
+        receiptDetail={dismissCopy.receiptDetail}
+        receiptTitle={dismissCopy.receiptTitle}
+        returnFocus={dismissReturnFocus}
+        summary={dismissCopy.summary}
+        title={dismissCopy.title}
+      />
+    ) : null}
+  </>);
 }

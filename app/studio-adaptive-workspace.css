@@ -48,12 +48,19 @@ body .studio-shell.studio-stack-shell .studio-native-canvas > [data-studio-adapt
 
 [data-studio-adaptive-workspace="true"] {
   --studio-workspace-surface-fallback: min(46dvh, 420px);
+  --studio-workspace-sheet-shadow: 0 -16px 40px rgba(44, 24, 18, 0.2);
+  --studio-workspace-island-shadow: 0 0 22px rgba(44, 24, 18, 0.18);
   container-name: studio-adaptive-workspace;
   container-type: inline-size;
   height: 100%;
   min-height: 0;
   position: relative;
   width: 100%;
+}
+
+html[data-theme="dark"] [data-studio-adaptive-workspace="true"] {
+  --studio-workspace-sheet-shadow: 0 -16px 40px rgba(0, 0, 0, 0.52);
+  --studio-workspace-island-shadow: 0 0 22px rgba(0, 0, 0, 0.56);
 }
 
 [data-studio-adaptive-workspace="true"][data-detent="peek"] {
@@ -93,7 +100,7 @@ body .studio-shell.studio-stack-shell .studio-native-canvas > [data-studio-adapt
   border: 0;
   border-radius: 28px 28px 0 0;
   bottom: 0;
-  box-shadow: 0 -18px 48px color-mix(in srgb, var(--studio-ink) 14%, transparent);
+  box-shadow: var(--studio-workspace-sheet-shadow);
   color: var(--studio-ink);
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
@@ -112,7 +119,7 @@ body .studio-shell.studio-stack-shell .studio-native-canvas > [data-studio-adapt
 }
 
 [data-studio-adaptive-workspace="true"][data-detent="full"] .studio-adaptive-workspace-surface {
-  height: calc(100% - clamp(72px, 12dvh, 104px));
+  height: calc(100% - 8px);
 }
 
 .studio-adaptive-workspace-grip {
@@ -795,10 +802,13 @@ html[data-theme="dark"] .studio-garment-task-sheet.is-adaptive-host {
 }
 
 @media (min-height: 600px) {
-  @container studio-adaptive-workspace (min-width: 60rem) {
+  @container studio-adaptive-workspace (min-width: 68.75rem) {
     .studio-adaptive-workspace-frame {
+      box-sizing: border-box;
+      column-gap: clamp(18px, 2vw, 28px);
       grid-template-areas: "stage surface";
-      grid-template-columns: minmax(32rem, 1fr) clamp(22rem, 28vw, 27.5rem);
+      grid-template-columns: minmax(32rem, 1fr) clamp(28rem, 32vw, 32rem);
+      padding: clamp(22px, 2.6vh, 28px) clamp(22px, 2.6vw, 32px) clamp(22px, 2.6vh, 28px) 0;
     }
 
     .studio-adaptive-workspace-stage {
@@ -808,8 +818,8 @@ html[data-theme="dark"] .studio-garment-task-sheet.is-adaptive-host {
     .studio-adaptive-workspace-surface,
     [data-studio-adaptive-workspace="true"][data-detent="peek"] .studio-adaptive-workspace-surface,
     [data-studio-adaptive-workspace="true"][data-detent="full"] .studio-adaptive-workspace-surface {
-      border-radius: 28px 0 0 28px;
-      box-shadow: -18px 0 48px color-mix(in srgb, var(--studio-ink) 11%, transparent);
+      border-radius: 28px;
+      box-shadow: var(--studio-workspace-island-shadow);
       grid-area: surface;
       height: 100%;
       left: auto;

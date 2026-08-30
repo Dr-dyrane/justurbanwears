@@ -1,8 +1,10 @@
 "use client";
 
-import type { AnchorHTMLAttributes, MouseEvent } from "react";
+import { useState, type AnchorHTMLAttributes, type MouseEvent } from "react";
+import { assignDocumentNavigation } from "../../brand/document-navigation-loading-stage";
 import { studioScenarioHref } from "../../../lib/studio/simulator";
 import { useStudio } from "../studio-provider";
+import { StudioDecisionSheet } from "./studio-decision-sheet";
 
 export type StudioLinkProps = Omit<AnchorHTMLAttributes<HTMLAnchorElement>, "href"> & {
   href: string;
@@ -16,6 +18,8 @@ export function StudioLink({ children, href: requestedHref, ...props }: StudioLi
   const { persistence, scenario } = useStudio();
   const { onClick, ...anchorProps } = props;
   const href = studioScenarioHref(requestedHref, scenario);
+  const [pendingNavigation, setPendingNavigation] = useState<{ href: string; label: string }>();
+  const [navigationReturnFocus, setNavigationReturnFocus] = useState<HTMLAnchorElement | null>(null);
 
   function follow(event: MouseEvent<HTMLAnchorElement>) {
     onClick?.(event);
@@ -35,8 +39,13 @@ export function StudioLink({ children, href: requestedHref, ...props }: StudioLi
       && Boolean(destination.hash);
     if (samePageHash) return;
 
-    if (persistence === "unavailable" && !window.confirm("This work is not saved. Leave this page?")) {
+    if (persistence === "unavailable") {
       event.preventDefault();
+      setNavigationReturnFocus(event.currentTarget);
+      setPendingNavigation({
+        href: destination.href,
+        label: event.currentTarget.textContent?.trim() || "this page",
+      });
       return;
     }
 
@@ -46,5 +55,45 @@ export function StudioLink({ children, href: requestedHref, ...props }: StudioLi
     }
   }
 
-  return <a href={href} onClick={follow} {...anchorProps}>{children}</a>;
+  async function confirmNavigation() {
+    if (!pendingNavigation) {
+      return { error: "The navigation request is no longer current.", ok: false as const };
+    }
+    const trigger = navigationReturnFocus;
+    trigger?.setAttribute("data-pending", "true");
+    trigger?.setAttribute("aria-busy", "true");
+    try {
+      assignDocumentNavigation(pendingNavigation.href);
+      return { ok: true as const };
+    } catch {
+      trigger?.removeAttribute("data-pending");
+      trigger?.removeAttribute("aria-busy");
+      return { error: "Studio could not open that page. Try again.", ok: false as const };
+    }
+  }
+
+  function closeNavigationDecision() {
+    setPendingNavigation(undefined);
+    setNavigationReturnFocus(null);
+  }
+
+  return <>
+    <a href={href} onClick={follow} {...anchorProps}>{children}</a>
+    {pendingNavigation ? (
+      <StudioDecisionSheet
+        confirmLabel="Leave page"
+        consequence="Studio opens the selected destination. Unsaved work on this page is not carried across."
+        destructive
+        eyebrow="Unsaved work"
+        onConfirm={confirmNavigation}
+        onDismiss={closeNavigationDecision}
+        open
+        receiptDetail="Studio is opening the selected page."
+        receiptTitle="Leaving page"
+        returnFocus={navigationReturnFocus}
+        summary={`Open ${pendingNavigation.label}? This work is not saved.`}
+        title="Leave this page?"
+      />
+    ) : null}
+  </>;
 }

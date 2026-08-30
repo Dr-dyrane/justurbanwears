@@ -4,12 +4,13 @@
 /* eslint-disable @next/next/no-img-element */
 
 import { useState } from "react";
-import { ArrowRight, Camera, ImagePlus, Shirt, Users } from "lucide-react";
+import { ArrowRight, Camera, ImagePlus, LockKeyhole, Shirt, Users } from "lucide-react";
 import { StudioLink as Link } from "../studio/atoms/studio-link";
 import { StudioLoadingStage } from "../studio/atoms/studio-loading-stage";
 import { StudioFeedback } from "../studio/atoms/studio-feedback";
 import { StudioStackPage, StudioStackSection } from "../studio/atoms/studio-stack-page";
 import { useStudio } from "../studio/studio-provider";
+import type { StudioAuthorityMedia } from "../../lib/studio/services/studio-authority-client";
 import { MediaStateMeta, mediaStatePresentation, type MediaState } from "./media-state-presentation";
 
 const filters = [
@@ -46,10 +47,42 @@ function currentActionLabel(state: MediaState) {
   return "Approved";
 }
 
+function galleryPreviewAttemptKey(outputUrl: string | null, authorityGeneratedAt: string) {
+  return `${authorityGeneratedAt}\u0000${outputUrl ?? ""}`;
+}
+
+function ShootGalleryCard({
+  authorityGeneratedAt,
+  item,
+}: {
+  authorityGeneratedAt: string;
+  item: StudioAuthorityMedia;
+}) {
+  const previewAttemptKey = galleryPreviewAttemptKey(item.outputUrl, authorityGeneratedAt);
+  const [failedPreviewAttemptKey, setFailedPreviewAttemptKey] = useState("");
+  const privateMediaUnavailable = Boolean(
+    item.outputUrl && failedPreviewAttemptKey === previewAttemptKey,
+  );
+  const garmentEvidence = item.operation.startsWith("GARMENT") || item.operation === "FABRIC_DETAIL";
+
+  return (
+    <Link className="shoot-card" href={`/studio/media/${item.id}`}>
+      {item.outputUrl && !privateMediaUnavailable
+        ? <img alt="" className="visual-asset ratio-portrait" height={1280} key={previewAttemptKey} loading="lazy" onError={(event) => { event.currentTarget.hidden = true; setFailedPreviewAttemptKey(previewAttemptKey); }} onLoad={() => setFailedPreviewAttemptKey("")} src={item.outputUrl} style={{ objectFit: "cover" }} width={1024} />
+        : privateMediaUnavailable
+          ? <span aria-label={`${item.title} private media unavailable`} className="empty-authority" role="img"><LockKeyhole aria-hidden="true" size={30} /></span>
+          : <span className="empty-authority">{garmentEvidence ? <Shirt aria-hidden="true" size={30} /> : <Camera aria-hidden="true" size={30} />}</span>}
+      <div className="shoot-card-copy"><h2>{item.title}</h2><p><span>{privateMediaUnavailable ? "Private media unavailable" : label(item.operation)}</span><MediaStateMeta state={item.state} /></p></div>
+      <ArrowRight aria-hidden="true" className="shoot-card-disclosure" size={18} />
+    </Link>
+  );
+}
+
 export function ShootGallery() {
   const { authority } = useStudio();
   const [filter, setFilter] = useState<(typeof filters)[number]>("ALL");
   const media = authority.snapshot?.media ?? [];
+  const authorityGeneratedAt = authority.snapshot?.generatedAt ?? "unhydrated";
   const visible = media.filter((item) => filter === "ALL" || item.state === filter);
   const currentMedia = currentPriority
     .map((state) => media.find((item) => item.state === state))
@@ -79,11 +112,7 @@ export function ShootGallery() {
           <summary>Filter · {selectedFilterLabel}</summary>
           <div className="filter-bar" role="group" aria-label="Filter media">{filters.map((item) => <button aria-pressed={filter === item} className={filter === item ? "filter-chip active" : "filter-chip"} onClick={() => setFilter(item)} key={item} type="button">{item === "ALL" ? "all" : mediaStatePresentation(item).label.toLowerCase()}</button>)}</div>
         </details>
-        {visible.length ? <div className="shoot-gallery">{visible.map((item) => <Link className="shoot-card" href={`/studio/media/${item.id}`} key={item.id}>
-          {item.outputUrl ? <img alt={`${item.title}, ${label(item.operation)} generated view`} className="visual-asset ratio-portrait" height={1280} loading="lazy" src={item.outputUrl} style={{ objectFit: "cover" }} width={1024} /> : <span className="empty-authority">{item.operation.startsWith("GARMENT") || item.operation === "FABRIC_DETAIL" ? <Shirt aria-hidden="true" size={30} /> : <Camera aria-hidden="true" size={30} />}</span>}
-          <div className="shoot-card-copy"><h2>{item.title}</h2><p><span>{label(item.operation)}</span><MediaStateMeta state={item.state} /></p></div>
-          <ArrowRight aria-hidden="true" className="shoot-card-disclosure" size={18} />
-        </Link>)}</div> : media.length === 0
+        {visible.length ? <div className="shoot-gallery">{visible.map((item) => <ShootGalleryCard authorityGeneratedAt={authorityGeneratedAt} item={item} key={item.id} />)}</div> : media.length === 0
           ? <StudioFeedback action={<Link className="button button-primary" href="/studio/media/new">Create media</Link>} detail="Choose a private garment to create its first view." state="empty" title="No media yet" />
           : <StudioFeedback action={<button className="button button-primary" onClick={() => setFilter("ALL")} type="button">Show all</button>} detail={`The ${selectedFilterLabel} filter is empty. Show all to see the other media.`} state="empty" title={`No ${selectedFilterLabel} media`} />}
       </StudioStackSection>

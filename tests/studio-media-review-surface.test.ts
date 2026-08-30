@@ -19,6 +19,7 @@ const root = process.cwd();
 const read = (file: string) => readFileSync(join(root, file), "utf8");
 const gallery = read("components/shoot/shoot-gallery.tsx");
 const detail = read("components/shoot/shoot-detail.tsx");
+const stackStyles = read("app/studio-stack-navigation.css");
 const OPERATOR_SCOPE = "c".repeat(64);
 const OTHER_OPERATOR_SCOPE = "d".repeat(64);
 
@@ -78,6 +79,60 @@ test("filtered-empty Media keeps Show all primary and reserves Create media for 
   assert.match(gallery, /The \$\{selectedFilterLabel\} filter is empty/);
   assert.match(gallery, /setFilter\("ALL"\)/);
   assert.match(gallery, /"REJECTED",[\s\S]*?"FAILED",[\s\S]*?"INDETERMINATE"/);
+});
+
+test("private media failures replace broken images without regenerating or hiding record context", () => {
+  assert.match(gallery, /failedPreviewAttemptKey/);
+  assert.match(detail, /failedPreviewAttemptKey/);
+  for (const source of [gallery, detail]) {
+    assert.match(source, /Private media unavailable/);
+    assert.match(source, /event\.currentTarget\.hidden = true/);
+    assert.doesNotMatch(source, /onError=\{[\s\S]{0,300}(generate|refresh)/i);
+  }
+  assert.match(gallery, /<img alt=""/);
+  assert.match(gallery, /LockKeyhole/);
+  assert.match(gallery, /<MediaStateMeta state=\{item\.state\}/);
+  assert.match(detail, /Retry only reloads this exact private file/);
+  assert.match(detail, /disabled=\{!privateMediaReady\}/);
+  assert.match(detail, /No action was sent/);
+  assert.match(detail, /<summary>Generation history<span>Provenance/);
+});
+
+test("detail preview retry is attempt-scoped and keeps decisions disabled until exact bytes load", () => {
+  assert.match(detail, /detailPreviewAttemptKey\([\s\S]*?authority\.snapshot\?\.generatedAt[\s\S]*?previewRetryAttempt/);
+  assert.match(detail, /failedPreviewAttemptKey === previewAttemptKey/);
+  assert.match(detail, /loadedPreviewAttemptKey === previewAttemptKey/);
+  assert.match(detail, /key=\{previewAttemptKey\}/);
+  assert.match(detail, /onLoad=\{\(\) => \{ setFailedPreviewAttemptKey\(""\); setLoadedPreviewAttemptKey\(previewAttemptKey\); \}\}/);
+  assert.match(detail, /function retryPrivateMedia\(\)[\s\S]*?setFailedPreviewAttemptKey\(""\)[\s\S]*?setLoadedPreviewAttemptKey\(""\)[\s\S]*?setPreviewRetryAttempt\(\(attempt\) => attempt \+ 1\)/);
+  assert.match(detail, />Try preview again<\/button>/);
+  assert.match(detail, /if \(!privateMediaReady\)[\s\S]*?No action was sent/);
+  assert.doesNotMatch(detail, /function retryPrivateMedia\(\)[\s\S]{0,300}(fetch|generate|decide\()/i);
+});
+
+test("gallery preview failures are scoped to the current authenticated authority read", () => {
+  assert.match(gallery, /galleryPreviewAttemptKey\(item\.outputUrl, authorityGeneratedAt\)/);
+  assert.match(gallery, /return `\$\{authorityGeneratedAt\}\\u0000\$\{outputUrl \?\? ""\}`/);
+  assert.match(gallery, /authority\.snapshot\?\.generatedAt/);
+  assert.match(gallery, /failedPreviewAttemptKey === previewAttemptKey/);
+  assert.match(gallery, /key=\{previewAttemptKey\}/);
+  assert.match(gallery, /onLoad=\{\(\) => setFailedPreviewAttemptKey\(""\)\}/);
+  assert.doesNotMatch(gallery, /failedMediaUrl === item\.outputUrl/);
+});
+
+test("Media sheet keeps its top action and archive padding intact", () => {
+  assert.match(
+    stackStyles,
+    /main\.page-canvas\.studio-native-canvas:has\(> #shoot-gallery\) \{[\s\S]*?padding-block: 24px max\(36px, env\(safe-area-inset-bottom, 0px\)\)/,
+  );
+  assert.match(
+    stackStyles,
+    /#shoot-gallery \.studio-stack-current:has\(\.studio-lifecycle-meta\) \{[\s\S]*?grid-template-columns: minmax\(0, 1fr\) auto 18px/,
+  );
+  assert.match(
+    stackStyles,
+    /#shoot-gallery \.studio-stack-current:has\(\.studio-lifecycle-meta\) > svg \{[\s\S]*?grid-column: 3;[\s\S]*?grid-row: 1/,
+  );
 });
 
 test("review decisions fail closed and map one bounded fix to the correct engine command", () => {

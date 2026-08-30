@@ -243,25 +243,20 @@ function authorityDocuments(authority: StudioAuthoritySnapshot): StudioSearchDoc
     const route = piece.wardrobeItemId
       ? `/studio/wardrobe/${encodeURIComponent(piece.wardrobeItemId)}`
       : `/studio/operations?view=inventory&piece=${encodeURIComponent(piece.pieceKey)}`;
+    const pieceMetadata = [piece.title, piece.category, piece.colour, piece.sizeLabel]
+      .filter(Boolean)
+      .join(" · ");
     documents.push({
       availableActions: pieceAvailableActions(piece),
       id: `piece:${piece.pieceKey}`,
       kind: "PIECE",
-      primaryLabel: piece.title,
-      secondaryLabel: [piece.category, piece.colour, piece.sizeLabel].filter(Boolean).join(" · "),
+      // A single route-bound result keeps the exact SKU as the strongest search key
+      // while retaining the human title and safe garment facts as supporting copy.
+      primaryLabel: piece.sku ?? piece.title,
+      secondaryLabel: piece.sku ? pieceMetadata : [piece.category, piece.colour, piece.sizeLabel].filter(Boolean).join(" · "),
       lifecycleState,
       route,
-      aliases: [piece.pieceKey, ...(piece.sku ? [piece.sku] : [])],
-    });
-    if (piece.sku) documents.push({
-      availableActions: pieceAvailableActions(piece),
-      id: `sku:${piece.sku}`,
-      kind: "SKU",
-      primaryLabel: piece.sku,
-      secondaryLabel: piece.title,
-      lifecycleState,
-      route,
-      aliases: [piece.title],
+      aliases: [piece.pieceKey, ...(piece.sku ? [piece.sku] : []), piece.title],
     });
   }
   for (const order of authority.orders) documents.push({
@@ -557,26 +552,18 @@ export function projectScenarioStudioApplication(input: {
     label: STUDIO_SCENARIO_LABELS[input.scenario],
     notice: "Development simulator · isolated from connected Studio",
   };
-  const documents: StudioSearchDocument[] = snapshot.garments.flatMap((garment) => {
+  const documents: StudioSearchDocument[] = snapshot.garments.map((garment) => {
     const route = `/studio/wardrobe/${encodeURIComponent(garment.id)}?scenario=${encodeURIComponent(input.scenario)}`;
     const lifecycleState = historicalDrop01Kind(garment) ?? garment.state;
-    return [{
+    return {
       id: `piece:${garment.id}`,
       kind: "PIECE" as const,
-      primaryLabel: garment.title,
-      secondaryLabel: [garment.category, garment.color, garment.sizeLabel].join(" · "),
-      lifecycleState,
-      route,
-      aliases: [garment.sku],
-    }, {
-      id: `sku:${garment.sku}`,
-      kind: "SKU" as const,
       primaryLabel: garment.sku,
-      secondaryLabel: garment.title,
+      secondaryLabel: [garment.title, garment.category, garment.color, garment.sizeLabel].join(" · "),
       lifecycleState,
       route,
-      aliases: [garment.title],
-    }];
+      aliases: [garment.id, garment.sku, garment.title],
+    };
   });
   const scenarioOrders: StudioSearchDocument[] = snapshot.orders.map((order) => {
     const listing = snapshot.listings.find((candidate) => candidate.id === order.listingId);

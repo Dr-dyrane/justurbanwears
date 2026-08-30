@@ -10,6 +10,7 @@ import {
 } from "../../lib/studio/simulator";
 import { StudioLink as Link } from "./atoms/studio-link";
 import { StudioCommandCenter } from "./navigation/studio-command-center";
+import { StudioDesktopContextStage } from "./navigation/studio-desktop-context-stage";
 import {
   StudioStackContextProvider,
   studioStackFallback,
@@ -67,6 +68,8 @@ function AppShellFrame({ children, operator }: { children: React.ReactNode; oper
             <span>Simulator · {STUDIO_SCENARIO_LABELS[studio.scenario]} · Resets on reload</span>
           </div>
         ) : null}
+
+        {isHome ? null : <StudioDesktopContextStage title={stack.title} />}
 
         <main
           className={`page-canvas${isHome ? "" : " studio-native-canvas"}`}

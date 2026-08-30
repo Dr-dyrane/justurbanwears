@@ -169,7 +169,7 @@ test("Wear resumes read-only polling after connection failures without paid auto
   assert.doesNotMatch(pollingEffect, /generateWear|decideWear|addWearModel/u);
   assert.match(sheet, /no new generation was started/u);
   assert.equal((sheet.match(/\bgenerateWear\(/gu) ?? []).length, 1);
-  assert.match(sheet, /Studio may continue processing the private view/u);
+  assert.match(sheet, /continues checking this exact private Wear request/u);
 });
 
 test("Wear hydrates before actions and expanded review contains keyboard focus", () => {

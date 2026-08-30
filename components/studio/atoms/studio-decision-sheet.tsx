@@ -84,6 +84,7 @@ export function StudioDecisionSheet({
     setPhase("review");
     setError("");
     onDismiss();
+    return true;
   }
 
   return (

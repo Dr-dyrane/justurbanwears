@@ -11,7 +11,8 @@ import {
 import { Camera, Check, X } from "lucide-react";
 import { useDocumentScrollLock } from "../../../hooks/use-document-scroll-lock";
 import { useHistoryBackedDialog } from "../../../hooks/use-history-backed-dialog";
-import type { GarmentCategory } from "../../../lib/studio/domain/entities";
+import type { Garment, GarmentCategory, NewGarmentInput } from "../../../lib/studio/domain/entities";
+import { StudioDecisionSheet } from "../atoms/studio-decision-sheet";
 import { useStudio } from "../studio-provider";
 
 type CaptureKey = "front" | "back" | "detail";
@@ -37,9 +38,16 @@ export function LocalGarmentIntakeDialog({
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const fallbackReturnFocusRef = useRef<HTMLElement | null>(null);
   const committedRef = useRef(false);
+  const confirmedDiscardRef = useRef(false);
+  const createInFlightRef = useRef(false);
   const dialogId = useId();
   const [dirty, setDirty] = useState(false);
+  const [discardOpen, setDiscardOpen] = useState(false);
+  const [discardReturnFocus, setDiscardReturnFocus] = useState<HTMLElement | null>(null);
   const [files, setFiles] = useState<Record<CaptureKey, File | null>>(emptyCaptures);
+  const [pendingGarment, setPendingGarment] = useState<NewGarmentInput>();
+  const [createdGarment, setCreatedGarment] = useState<Garment>();
+  const [createReturnFocus, setCreateReturnFocus] = useState<HTMLElement | null>(null);
   useDocumentScrollLock(open);
 
   const resetDraft = useCallback(() => {
@@ -48,22 +56,31 @@ export function LocalGarmentIntakeDialog({
     setDirty(false);
   }, []);
 
-  const acceptDismiss = useCallback(() => {
-    if (
-      !committedRef.current
-      && dirty
-      && !window.confirm("Discard this garment draft? Photos and entered details will be cleared.")
-    ) {
-      return false;
-    }
-
+  const finishDismiss = useCallback(() => {
     committedRef.current = false;
+    confirmedDiscardRef.current = false;
+    createInFlightRef.current = false;
+    setDiscardReturnFocus(null);
+    setDiscardOpen(false);
+    setPendingGarment(undefined);
+    setCreatedGarment(undefined);
+    setCreateReturnFocus(null);
     resetDraft();
     const dialog = dialogRef.current;
     if (dialog?.open) dialog.close();
     onDismiss();
     return true;
-  }, [dirty, onDismiss, resetDraft]);
+  }, [onDismiss, resetDraft]);
+
+  const acceptDismiss = useCallback(() => {
+    if (!committedRef.current && dirty) {
+      const activeElement = document.activeElement;
+      setDiscardReturnFocus(activeElement instanceof HTMLElement ? activeElement : null);
+      setDiscardOpen(true);
+      return false;
+    }
+    return finishDismiss();
+  }, [dirty, finishDismiss]);
 
   const { openWithHistory, requestClose } = useHistoryBackedDialog({
     isOpen: open,
@@ -118,7 +135,10 @@ export function LocalGarmentIntakeDialog({
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
-    createGarment({
+    const activeElement = document.activeElement;
+    setCreateReturnFocus(activeElement instanceof HTMLElement ? activeElement : null);
+    setCreatedGarment(undefined);
+    setPendingGarment({
       sku: String(form.get("sku")),
       title: String(form.get("title")),
       category: String(form.get("category")) as GarmentCategory,
@@ -143,11 +163,54 @@ export function LocalGarmentIntakeDialog({
       hasBack: Boolean(files.back),
       hasDetail: Boolean(files.detail),
     });
-    committedRef.current = true;
-    requestClose();
   }
 
-  return (
+  async function confirmCreate() {
+    if (!pendingGarment || createInFlightRef.current) {
+      return { error: "The garment creation request is no longer current.", ok: false as const };
+    }
+    createInFlightRef.current = true;
+    try {
+      const created = createGarment(pendingGarment);
+      if (!created?.id || created.sku !== pendingGarment.sku.trim().toUpperCase()) {
+        return { error: "Studio could not confirm the created garment. Review the draft and try again.", ok: false as const };
+      }
+      setCreatedGarment(created);
+      return { ok: true as const };
+    } catch (caught) {
+      return {
+        error: caught instanceof Error ? caught.message : "Studio could not create this garment. Try again.",
+        ok: false as const,
+      };
+    } finally {
+      createInFlightRef.current = false;
+    }
+  }
+
+  function closeCreateDecision() {
+    const created = createdGarment;
+    setPendingGarment(undefined);
+    setCreatedGarment(undefined);
+    setCreateReturnFocus(null);
+    if (created) {
+      committedRef.current = true;
+      finishDismiss();
+    }
+  }
+
+  async function confirmDiscard() {
+    confirmedDiscardRef.current = true;
+    return { ok: true as const };
+  }
+
+  function closeDiscardDecision() {
+    const confirmed = confirmedDiscardRef.current;
+    confirmedDiscardRef.current = false;
+    setDiscardOpen(false);
+    if (confirmed) finishDismiss();
+  }
+
+  return (<>
     <dialog
       aria-labelledby="studio-local-intake-title"
       aria-modal="true"
@@ -160,6 +223,12 @@ export function LocalGarmentIntakeDialog({
         requestClose();
       }}
       onClose={restoreFocus}
+      onKeyDownCapture={(event) => {
+        if (event.key !== "Escape" || event.nativeEvent.isComposing) return;
+        event.preventDefault();
+        event.stopPropagation();
+        requestClose();
+      }}
       ref={dialogRef}
     >
       <form
@@ -246,5 +315,44 @@ export function LocalGarmentIntakeDialog({
         </footer>
       </form>
     </dialog>
-  );
+    {discardOpen ? (
+      <StudioDecisionSheet
+        confirmLabel="Discard draft"
+        consequence="The selected photos and entered garment details are cleared. No saved Wardrobe garment is removed."
+        destructive
+        eyebrow="Unsaved garment"
+        onConfirm={confirmDiscard}
+        onDismiss={closeDiscardDecision}
+        open
+        receiptDetail="The unsaved local garment draft will close without changing Wardrobe."
+        receiptTitle="Draft ready to discard"
+        returnFocus={discardReturnFocus}
+        summary="Discard this unsaved garment draft?"
+        title="Discard garment draft?"
+      />
+    ) : null}
+    {pendingGarment ? (
+      <StudioDecisionSheet
+        confirmLabel="Create garment"
+        consequence="Studio creates one private Wardrobe garment with these facts. It stays out of Shop until its separate publication review is approved."
+        eyebrow="New garment"
+        onConfirm={confirmCreate}
+        onDismiss={closeCreateDecision}
+        open
+        receiptDetail={createdGarment
+          ? `${createdGarment.sku} is saved privately in Wardrobe.`
+          : "Studio will reconcile the newly created private garment before closing this intake."}
+        receiptTitle="Garment created"
+        returnFocus={createReturnFocus}
+        summary={`Create ${pendingGarment.title.trim()} as ${pendingGarment.sku.trim().toUpperCase()}?`}
+        title="Review garment"
+      >
+        <div aria-label="Garment to create" className="studio-decision-diff">
+          <p><strong>Name</strong><span>New</span><i aria-hidden="true">→</i><span>{pendingGarment.title.trim()}</span></p>
+          <p><strong>Price</strong><span>Unset</span><i aria-hidden="true">→</i><span>{pendingGarment.price > 0 ? `₦${pendingGarment.price.toLocaleString("en-NG")}` : "Price later"}</span></p>
+          <p><strong>Visibility</strong><span>None</span><i aria-hidden="true">→</i><span>Private</span></p>
+        </div>
+      </StudioDecisionSheet>
+    ) : null}
+  </>);
 }

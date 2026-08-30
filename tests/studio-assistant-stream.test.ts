@@ -1,10 +1,15 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { LanguageModelV3StreamPart } from "@ai-sdk/provider";
-import { createAgentUIStream, simulateReadableStream } from "ai";
+import { createAgentUIStream, readUIMessageStream, simulateReadableStream } from "ai";
 import { MockLanguageModelV3 } from "ai/test";
 import { createStudioAssistantAgent } from "../lib/ai/studio-assistant-agent";
+import {
+  createDeterministicStudioAssistantStream,
+  studioAssistantModelConnected,
+} from "../lib/ai/studio-assistant-deterministic-stream";
 import { projectScenarioStudioApplication } from "../lib/server/studio-application-projection";
+import { resolveStudioAssistantWorkflow } from "../lib/studio/assistant/experience";
 import { studioAssistantContextFromProjection } from "../lib/studio/assistant/projection";
 
 const query = "What needs attention?";
@@ -12,69 +17,6 @@ const prose = "One item needs attention. Open the return workspace to review it;
 const usage = {
   inputTokens: { cacheRead: 0, cacheWrite: 0, noCache: 1, total: 1 },
   outputTokens: { reasoning: 0, text: 1, total: 1 },
-};
-
-const expectedWorkflow = {
-  response: {
-    blocks: [
-      {
-        body: "1 item need attention. Start there, or open any current state below.",
-        kind: "answer",
-        title: "Studio now",
-      },
-      {
-        items: [
-          { href: "/studio/operations?scenario=lifecycle", label: "Attention", value: 1 },
-          {
-            href: "/studio/operations?view=inventory&scenario=lifecycle",
-            label: "Available",
-            value: 33,
-          },
-          {
-            href: "/studio/wardrobe?view=publishing&scenario=lifecycle",
-            label: "Live",
-            value: 32,
-          },
-          { href: "/studio/orders?scenario=lifecycle", label: "Orders", value: 2 },
-        ],
-        kind: "metrics",
-      },
-      {
-        action: {
-          href: "/studio/operations?view=orders&scenario=lifecycle",
-          label: "Review 1 return",
-        },
-        body: "Resume the highest-priority open Studio work from its owning workspace.",
-        consequence: "Opening the workspace does not apply a change.",
-        kind: "handoff",
-        risk: "R0",
-        title: "Continue next",
-      },
-    ],
-    intent: "RESOLVE",
-    provenance: {
-      detail: "Development simulator · isolated from connected Studio",
-      generatedAt: "2026-08-26T12:00:00.000Z",
-      label: "Scenario preview",
-      scenario: "lifecycle",
-      status: "preview",
-    },
-    risk: "R0",
-  },
-  schemaVersion: "studio-assistant-workflow/v1",
-  suggestions: [
-    {
-      id: "studio-suggestion-16a7mft",
-      label: "Choose the next task",
-      prompt: "What needs attention?",
-    },
-    {
-      id: "studio-suggestion-1gdjmkb",
-      label: "Show private drafts",
-      prompt: "Show private Wardrobe drafts",
-    },
-  ],
-  taskDraft: null,
 };
 
 function isStreamChunk(chunk: unknown): chunk is Record<string, unknown> & { type: string } {
@@ -101,6 +43,7 @@ test("Ask Studio executes its forced read-only resolver before bounded prose wit
     },
     scenario: "lifecycle",
   }));
+  const expectedWorkflow = resolveStudioAssistantWorkflow(query, context);
   assert.equal("operator" in context, false);
   assert.equal("sourceRevisions" in context, false);
 
@@ -195,4 +138,39 @@ test("Ask Studio executes its forced read-only resolver before bounded prose wit
   assert.equal(streamedProse, prose);
   assert.equal(streamedProse.length < 240, true);
   assert.equal(streamChunks.slice(0, toolOutputIndex).some((chunk) => chunk.type === "text-delta"), false);
+});
+
+test("Ask Studio returns the authoritative resolver as a successful stream without Gateway credentials", async () => {
+  const context = studioAssistantContextFromProjection(projectScenarioStudioApplication({
+    now: "2026-08-26T12:00:00.000Z",
+    operator: {
+      displayName: "Lulu",
+      email: "lulu@example.com",
+      role: "admin",
+      subject: "studio-operator",
+    },
+    scenario: "lifecycle",
+  }));
+  const expectedWorkflow = resolveStudioAssistantWorkflow(query, context);
+  const chunks: unknown[] = [];
+  const stream = createDeterministicStudioAssistantStream({ context, query });
+  const [inspectionStream, clientStream] = stream.tee();
+  for await (const chunk of inspectionStream) chunks.push(chunk);
+  const streamChunks = chunks.filter(isStreamChunk);
+  const clientMessages = [];
+  for await (const message of readUIMessageStream({ stream: clientStream })) clientMessages.push(message);
+
+  assert.equal(studioAssistantModelConnected({ AI_GATEWAY_API_KEY: undefined, VERCEL_OIDC_TOKEN: undefined }), false);
+  assert.equal(studioAssistantModelConnected({ AI_GATEWAY_API_KEY: "gateway-key", VERCEL_OIDC_TOKEN: undefined }), true);
+  assert.deepEqual(streamChunks.map((chunk) => chunk.type), [
+    "tool-input-available",
+    "tool-output-available",
+  ]);
+  assert.deepEqual(streamChunks[1]?.output, expectedWorkflow);
+  const resolvedPart = clientMessages.at(-1)?.parts.at(-1);
+  assert.equal(resolvedPart?.type, "tool-resolveStudioRequest");
+  assert.equal(resolvedPart?.state, "output-available");
+  assert.equal(resolvedPart?.toolCallId, "resolve-studio-request");
+  assert.deepEqual(resolvedPart?.input, {});
+  assert.deepEqual(resolvedPart?.output, expectedWorkflow);
 });

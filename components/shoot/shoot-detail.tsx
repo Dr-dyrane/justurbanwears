@@ -5,7 +5,7 @@
 
 import { useParams } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
-import { Check, PencilLine, Shirt } from "lucide-react";
+import { Check, LockKeyhole, PencilLine, Shirt } from "lucide-react";
 import { StudioFeedback } from "../studio/atoms/studio-feedback";
 import { StudioLoadingStage } from "../studio/atoms/studio-loading-stage";
 import { StudioLink as Link } from "../studio/atoms/studio-link";
@@ -52,6 +52,14 @@ function reviewReceipt(decision: MediaReviewDecision, completion: boolean) {
     : "Correction saved. Next: open the piece to create the corrected view.";
 }
 
+function detailPreviewAttemptKey(
+  outputUrl: string | null,
+  authorityGeneratedAt: string,
+  retryAttempt: number,
+) {
+  return `${authorityGeneratedAt}\u0000${outputUrl ?? ""}\u0000${retryAttempt}`;
+}
+
 export function ShootDetail() {
   const params = useParams<{ id: string }>();
   const { application, authority } = useStudio();
@@ -63,6 +71,9 @@ export function ShootDetail() {
   const [pendingLabel, setPendingLabel] = useState("");
   const [receipt, setReceipt] = useState("");
   const [error, setError] = useState("");
+  const [previewRetryAttempt, setPreviewRetryAttempt] = useState(0);
+  const [failedPreviewAttemptKey, setFailedPreviewAttemptKey] = useState("");
+  const [loadedPreviewAttemptKey, setLoadedPreviewAttemptKey] = useState("");
   const [recoveryIntent, setRecoveryIntent] = useState<MediaReviewIntent | null>(null);
   const [settledMediaId, setSettledMediaId] = useState("");
   const pendingRef = useRef(false);
@@ -97,6 +108,25 @@ export function ShootDetail() {
     : media.state === "COMPLETE");
   const correction = note.trim();
   const statePresentation = mediaStatePresentation(media.state);
+  const previewAttemptKey = detailPreviewAttemptKey(
+    media.outputUrl,
+    authority.snapshot?.generatedAt ?? "unhydrated",
+    previewRetryAttempt,
+  );
+  const privateMediaUnavailable = Boolean(
+    media.outputUrl && failedPreviewAttemptKey === previewAttemptKey,
+  );
+  const privateMediaReady = Boolean(
+    media.outputUrl
+    && loadedPreviewAttemptKey === previewAttemptKey
+    && !privateMediaUnavailable,
+  );
+
+  function retryPrivateMedia() {
+    setFailedPreviewAttemptKey("");
+    setLoadedPreviewAttemptKey("");
+    setPreviewRetryAttempt((attempt) => attempt + 1);
+  }
 
   async function reconcileSavedDecision(intent: MediaReviewIntent) {
     if (pendingRef.current) return;
@@ -124,6 +154,10 @@ export function ShootDetail() {
 
   async function decide(decision: "KEEP" | "FIX" | "REJECT") {
     if (!media || pendingRef.current || recoveryIntent) return;
+    if (!privateMediaReady) {
+      setError("Open the protected preview before making a review decision. No action was sent.");
+      return;
+    }
     if (decision === "FIX" && !correction) {
       setError("Describe the one thing to fix before continuing.");
       return;
@@ -209,7 +243,7 @@ export function ShootDetail() {
       active
       initialDetent="half"
       stage={(
-        <section className="review-stage"><div className="stage-main">{media.outputUrl ? <img alt={`${media.title}, ${label(media.operation)} review`} className="visual-asset ratio-portrait" height={1280} src={media.outputUrl} width={1024} /> : <div className="empty-authority"><Shirt aria-hidden="true" size={52} /><span>{statePresentation.label}</span></div>}</div></section>
+        <section className="review-stage"><div className="stage-main">{media.outputUrl && !privateMediaUnavailable ? <img alt={`${media.title}, ${label(media.operation)} review`} className="visual-asset ratio-portrait" height={1280} key={previewAttemptKey} onError={(event) => { event.currentTarget.hidden = true; setLoadedPreviewAttemptKey(""); setFailedPreviewAttemptKey(previewAttemptKey); }} onLoad={() => { setFailedPreviewAttemptKey(""); setLoadedPreviewAttemptKey(previewAttemptKey); }} src={media.outputUrl} width={1024} /> : privateMediaUnavailable ? <div aria-label="Private media unavailable" aria-live="polite" className="empty-authority" role="status"><LockKeyhole aria-hidden="true" size={52} /><span>Private media unavailable</span></div> : <div className="empty-authority"><Shirt aria-hidden="true" size={52} /><span>{statePresentation.label}</span></div>}</div></section>
       )}
       surfaceLabel="Media review controls"
     >
@@ -220,10 +254,11 @@ export function ShootDetail() {
         <p className="review-piece-name">{media.title}</p>
         <MediaStateMeta state={media.state} />
         <p>{statePresentation.detail}</p>
-        {canReview && completion ? <label className="studio-settings-switch" htmlFor={truthConfirmationId}><span className="sr-only">Matches the real garment</span><span><strong>Matches the real garment</strong><small>Required before Keep. Unseen construction stays unverified.</small></span><input checked={truthConfirmed} id={truthConfirmationId} onChange={(event) => setTruthConfirmed(event.target.checked)} type="checkbox" /><i aria-hidden="true"><b /></i></label> : null}
-        {canReview ? <button className="button button-primary button-full" disabled={pending || (completion && !truthConfirmed)} onClick={() => void decide("KEEP")} type="button"><Check aria-hidden="true" size={17} />Keep</button> : null}
-        {canReview ? <details className="studio-transition-action review-secondary-decisions"><summary>Fix one thing or Reject<span>Other decisions</span></summary><div className="studio-transition-action-body"><label className="review-note"><span>Describe one correction</span><textarea aria-describedby={`${truthConfirmationId}-correction-help`} maxLength={500} onChange={(event) => setNote(event.target.value)} required rows={3} value={note} /></label><small id={`${truthConfirmationId}-correction-help`}>Required for Fix one thing · up to 500 characters.</small><button className="button button-secondary button-full" disabled={pending || !correction} onClick={() => void decide("FIX")} type="button"><PencilLine aria-hidden="true" size={17} />Fix one thing</button><button className="button button-secondary button-full" disabled={pending} onClick={() => void decide("REJECT")} type="button">Reject</button></div></details> : null}
-        {!canReview && canFix ? <div className="studio-transition-action-body"><label className="review-note"><span>Describe one correction</span><textarea aria-describedby={`${truthConfirmationId}-correction-help`} maxLength={500} onChange={(event) => setNote(event.target.value)} required rows={3} value={note} /></label><small id={`${truthConfirmationId}-correction-help`}>Required for Fix one thing · up to 500 characters.</small><button className="button button-primary button-full" disabled={pending || !correction} onClick={() => void decide("FIX")} type="button"><PencilLine aria-hidden="true" size={17} />Fix one thing</button></div> : null}
+        {privateMediaUnavailable ? <StudioFeedback action={<button className="button button-secondary" onClick={retryPrivateMedia} type="button">Try preview again</button>} detail="The protected file could not be opened. Retry only reloads this exact private file; it does not generate media or send a review decision." state="error" title="Private media unavailable" /> : null}
+        {canReview && completion ? <label className="studio-settings-switch" htmlFor={truthConfirmationId}><span className="sr-only">Matches the real garment</span><span><strong>Matches the real garment</strong><small>Required before Keep. Unseen construction stays unverified.</small></span><input checked={truthConfirmed} disabled={!privateMediaReady} id={truthConfirmationId} onChange={(event) => setTruthConfirmed(event.target.checked)} type="checkbox" /><i aria-hidden="true"><b /></i></label> : null}
+        {canReview ? <button className="button button-primary button-full" disabled={pending || !privateMediaReady || (completion && !truthConfirmed)} onClick={() => void decide("KEEP")} type="button"><Check aria-hidden="true" size={17} />Keep</button> : null}
+        {canReview ? <details className="studio-transition-action review-secondary-decisions"><summary>Fix one thing or Reject<span>Other decisions</span></summary><div className="studio-transition-action-body"><label className="review-note"><span>Describe one correction</span><textarea aria-describedby={`${truthConfirmationId}-correction-help`} disabled={!privateMediaReady} maxLength={500} onChange={(event) => setNote(event.target.value)} required rows={3} value={note} /></label><small id={`${truthConfirmationId}-correction-help`}>Required for Fix one thing · up to 500 characters.</small><button className="button button-secondary button-full" disabled={pending || !privateMediaReady || !correction} onClick={() => void decide("FIX")} type="button"><PencilLine aria-hidden="true" size={17} />Fix one thing</button><button className="button button-secondary button-full" disabled={pending || !privateMediaReady} onClick={() => void decide("REJECT")} type="button">Reject</button></div></details> : null}
+        {!canReview && canFix ? <div className="studio-transition-action-body"><label className="review-note"><span>Describe one correction</span><textarea aria-describedby={`${truthConfirmationId}-correction-help`} disabled={!privateMediaReady} maxLength={500} onChange={(event) => setNote(event.target.value)} required rows={3} value={note} /></label><small id={`${truthConfirmationId}-correction-help`}>Required for Fix one thing · up to 500 characters.</small><button className="button button-primary button-full" disabled={pending || !privateMediaReady || !correction} onClick={() => void decide("FIX")} type="button"><PencilLine aria-hidden="true" size={17} />Fix one thing</button></div> : null}
         {!completion && ["FAILED", "REJECTED"].includes(media.state) ? <Link className="button button-primary button-full" href={`/studio/wardrobe/${media.wardrobeItemId}`}>Open piece</Link> : null}
         {["PENDING", "RUNNING"].includes(media.state) ? <StudioFeedback detail={statePresentation.detail} state="loading" title={statePresentation.label} /> : null}
         {media.state === "APPROVED" ? <StudioFeedback detail={statePresentation.detail} state="success" title="Approved" /> : null}

@@ -10,11 +10,14 @@ const component = read("components/studio/workspace/studio-adaptive-workspace.ts
 const css = read("app/studio-adaptive-workspace.css");
 const stackCss = read("app/studio-stack-navigation.css");
 const dossier = read("components/studio/garment-dossier.tsx");
+const home = read("components/studio/studio-home.tsx");
 const focusHelper = read("components/studio/workspace/studio-workspace-focus.ts");
 const layout = read("app/(studio)/layout.tsx");
 const orderDetail = read("components/studio/connected-order-detail.tsx");
 const orderWorkspace = read("components/studio/orders/studio-order-adaptive-workspace.tsx");
 const workbench = read("components/studio/wardrobe-workbench.tsx");
+const intake = read("components/studio/garment-intake/garment-intake-sheet.tsx");
+const atelierOperation = read("components/studio/atelier/studio-atelier-operation-workspace.tsx");
 
 test("adaptive workspace is one persistent, non-modal stage and surface", () => {
   assert.match(component, /type StudioWorkspaceDetent = "peek" \| "half" \| "full"/);
@@ -30,9 +33,17 @@ test("adaptive workspace is one persistent, non-modal stage and surface", () => 
   assert.match(focusHelper, /\[data-studio-workspace-primary='true'\]:not\(:disabled\)/);
   assert.match(component, /ResizeObserver/);
   assert.match(component, /observer\.observe\(root\)/);
+  assert.match(component, /root\.clientWidth >= 1100/);
   assert.match(component, /return \(\) => observer\.disconnect\(\)/);
   assert.doesNotMatch(component, /--studio-workspace-surface-width/);
   assert.doesNotMatch(component, /<dialog|aria-modal|window\.history|provider|prompt/i);
+});
+
+test("the adaptive adoption map covers every staged Studio workflow", () => {
+  assert.match(workbench, /if \(adaptive\)[\s\S]*?<StudioAdaptiveWorkspace/);
+  assert.match(orderWorkspace, /<StudioAdaptiveWorkspace/);
+  assert.match(intake, /<StudioAdaptiveWorkspace active=\{open\}/);
+  assert.match(atelierOperation, /<StudioAdaptiveWorkspace[\s\S]*?className="studio-atelier-operation-workspace"/);
 });
 
 test("focus moves to an enabled surface control before the mobile grip is hidden", () => {
@@ -53,6 +64,20 @@ test("focus moves to an enabled surface control before the mobile grip is hidden
   assert.equal(activeElement, enabledControl);
   assert.match(selectors[0], /:not\(:disabled\)/);
   assert.match(selectors[1], /button:not\(:disabled\)/);
+});
+
+test("Home hands focus off its compact grip before desktop hides it", () => {
+  assert.match(home, /ref=\{sheetHandleRef\}/);
+  assert.match(home, /ref=\{sheetContentRef\}/);
+  assert.match(home, /desktopWorkspaceQuery\.matches/);
+  assert.match(home, /hidden=\{desktopWorkspace\}/);
+  assert.match(home, /onBlur=\{\(event\) => \{/);
+  assert.match(home, /event\.relatedTarget \|\| !window\.matchMedia/);
+  assert.match(home, /moveFocusFromWorkspaceGrip\([\s\S]*?sheetContentRef\.current,[\s\S]*?sheetHandleRef\.current/);
+  assert.match(home, /window\.addEventListener\("resize", synchronizeWorkspace\)/);
+  assert.match(home, /\[application\.status, authority\.status, hydration, scenario\]/);
+  assert.match(stackCss, /\.studio-home-sheet-handle\[hidden\] \{\s*display: none;/);
+  assert.match(stackCss, /\.studio-home-control-plane \.studio-home-sheet-handle \{[\s\S]*?clip-path: inset\(50%\)/);
 });
 
 test("focus falls back to the surface content when no enabled control exists", () => {
@@ -96,8 +121,14 @@ test("responsive posture is capacity-derived and keeps a measured safe canvas", 
   assert.match(css, /position: absolute/);
   assert.match(css, /bottom: 0/);
   assert.match(css, /--studio-workspace-surface-height/);
-  assert.match(css, /@media \(min-height: 600px\)[\s\S]*?@container studio-adaptive-workspace \(min-width: 60rem\)/);
+  assert.match(css, /@media \(min-height: 600px\)[\s\S]*?@container studio-adaptive-workspace \(min-width: 68\.75rem\)/);
   assert.match(css, /grid-template-areas: "stage surface"/);
+  assert.match(css, /grid-template-columns: minmax\(32rem, 1fr\) clamp\(28rem, 32vw, 32rem\)/);
+  assert.match(css, /border-radius: 28px;/);
+  assert.match(css, /\[data-detent="full"\] \.studio-adaptive-workspace-surface \{[\s\S]*?height: calc\(100% - 8px\)/);
+  assert.match(css, /--studio-workspace-island-shadow: 0 0 22px rgba\(0, 0, 0, 0\.56\)/);
+  assert.match(stackCss, /--studio-stack-island-shadow: 0 0 22px rgba\(0, 0, 0, 0\.56\)/);
+  assert.match(stackCss, /main\.page-canvas\.studio-native-canvas:not\(:has\(\[data-studio-adaptive-workspace="true"\]\)\)[\s\S]*?min-width: 28rem;[\s\S]*?width: clamp\(28rem, 32vw, 32rem\)/);
   assert.match(css, /touch-action: pan-y pinch-zoom/);
   assert.match(css, /@media \(max-height: 599px\) and \(orientation: landscape\)[\s\S]*?\.juw-piece-v2-summary \{[\s\S]*?display: contents/);
   assert.match(css, /@media \(max-height: 599px\) and \(orientation: landscape\)[\s\S]*?\[data-detent="full"\][\s\S]*?height: calc\(100% - 8px\)/);

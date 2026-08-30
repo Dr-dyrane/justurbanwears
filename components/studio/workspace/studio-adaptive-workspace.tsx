@@ -52,7 +52,7 @@ export function StudioAdaptiveWorkspace({
         root.style.setProperty("--studio-workspace-surface-height", `${surfaceHeight}px`);
       }
 
-      const nextUsesSideSurface = root.clientWidth >= 960 && window.innerHeight >= 600;
+      const nextUsesSideSurface = root.clientWidth >= 1100 && window.innerHeight >= 600;
       if (nextUsesSideSurface !== usesSideSurface) {
         if (nextUsesSideSurface && document.activeElement === gripButtonRef.current) {
           const focusMoved = moveFocusFromWorkspaceGrip(surfaceContentRef.current, gripButtonRef.current);

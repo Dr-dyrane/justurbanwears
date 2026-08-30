@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { StudioAuthoritySnapshot } from "../lib/studio/services/studio-authority-client";
-import { resolveStudioAssistantWorkflow } from "../lib/studio/assistant/experience";
+import {
+  resolveStudioAssistantWorkflow,
+  scoreStudioAssistantDocument,
+} from "../lib/studio/assistant/experience";
 import { studioAssistantContextFromProjection } from "../lib/studio/assistant/projection";
 import { shopProducts } from "../lib/shop/catalog";
 import {
@@ -159,9 +162,16 @@ test("search documents are bounded, canonical and deterministic", () => {
   assert.deepEqual(first.searchDocuments, second.searchDocuments);
   assert.ok(first.searchDocuments.length <= 300);
   assert.equal(first.searchDocuments[0]?.id, "service:atelier");
-  assert.equal(first.searchDocuments.find((item) => item.id === "sku:JUW-025")?.route, "/studio/wardrobe/wardrobe-025");
-  assert.deepEqual(first.searchDocuments.find((item) => item.id === "piece:sku:JUW-025")?.availableActions, ["CREATE_HOLD", "CREATE_ORDER", "UPDATE_LOCATION"]);
-  assert.deepEqual(first.searchDocuments.find((item) => item.id === "sku:JUW-025")?.availableActions, ["CREATE_HOLD", "CREATE_ORDER", "UPDATE_LOCATION"]);
+  const pieceResult = first.searchDocuments.find((item) => item.id === "piece:sku:JUW-025");
+  assert.equal(pieceResult?.route, "/studio/wardrobe/wardrobe-025");
+  assert.equal(pieceResult?.primaryLabel, "JUW-025");
+  assert.equal(pieceResult?.secondaryLabel, "Teal Draped Mini Set · Sets · Teal · M");
+  assert.deepEqual(pieceResult?.aliases, ["sku:JUW-025", "JUW-025", "Teal Draped Mini Set"]);
+  assert.deepEqual(pieceResult?.availableActions, ["CREATE_HOLD", "CREATE_ORDER", "UPDATE_LOCATION"]);
+  assert.equal(first.searchDocuments.filter((item) => item.route === "/studio/wardrobe/wardrobe-025").length, 1);
+  const assistantPiece = studioAssistantContextFromProjection(first).documents.find((item) => item.id === pieceResult?.id);
+  assert.ok(assistantPiece);
+  assert.equal(scoreStudioAssistantDocument(assistantPiece, "JUW-025"), 180);
   assert.equal(first.summary.orders.value, null);
   assert.ok(first.degradedSources.some((item) => item.source === "ORDERS"));
   assert.equal(first.summary.live.value, null);
@@ -192,7 +202,7 @@ test("location or custody mismatches suppress reservation actions", () => {
     orderWriteReady: true,
   });
   assert.deepEqual(projection.searchDocuments.find((item) => item.id === "piece:sku:JUW-025")?.availableActions, ["UPDATE_LOCATION"]);
-  assert.deepEqual(projection.searchDocuments.find((item) => item.id === "sku:JUW-025")?.availableActions, ["UPDATE_LOCATION"]);
+  assert.equal(projection.searchDocuments.some((item) => item.id === "sku:JUW-025"), false);
 });
 
 test("reservation actions require a positive exact Wardrobe observation", () => {
@@ -329,6 +339,12 @@ test("scenario projection is explicit and uses the sanitized collection compatib
   assert.equal(projection.summary.available.value, 37);
   assert.equal(projection.summary.live.value, 36);
   assert.ok(projection.searchDocuments.some((document) => document.kind === "ORDER" && document.route.includes("order=scenario-order-reserved")));
+  const scenarioPiece = projection.searchDocuments.find((document) => document.kind === "PIECE");
+  assert.ok(scenarioPiece);
+  assert.match(scenarioPiece.primaryLabel, /^(?:JUW|SIM)-/);
+  assert.ok(scenarioPiece.aliases.some((alias) => alias !== scenarioPiece.primaryLabel));
+  assert.equal(projection.searchDocuments.filter((document) => document.route === scenarioPiece.route).length, 1);
+  assert.equal(projection.searchDocuments.some((document) => document.kind === "SKU"), false);
   assert.equal(projection.searchDocuments.some((document) => document.kind === "MODEL"), false);
   assert.ok(projection.searchDocuments.every((document) => document.route.includes("scenario=lifecycle")));
 });

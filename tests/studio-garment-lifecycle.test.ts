@@ -87,6 +87,10 @@ test("unpublish and archive fail closed around reservation and sale truth", () =
 
 test("Piece exposes direct price, media, visibility and history controls", () => {
   assert.match(lifecyclePanel, />Change price</);
+  assert.match(lifecyclePanel, /type FactsEditMode = "details" \| "price"/);
+  assert.match(lifecyclePanel, /beginEdit\("price"\)/);
+  assert.match(lifecyclePanel, /editMode === "details" \? <label className="studio-field"><span>Name<\/span>/);
+  assert.match(lifecyclePanel, /editMode === "price" \? "Save price"/);
   assert.match(lifecyclePanel, /Replace \{role === "GARMENT_FRONT"/);
   assert.match(lifecyclePanel, /"Publish changes"/);
   assert.match(lifecyclePanel, /Remove from Shop/);
@@ -94,6 +98,11 @@ test("Piece exposes direct price, media, visibility and history controls", () =>
   assert.match(lifecyclePanel, />Archive</);
   assert.match(lifecyclePanel, />History</);
   assert.match(lifecyclePanel, /Changes stay private until you publish them\./);
+  assert.match(lifecyclePanel, /Price saved\./);
+  assert.match(lifecyclePanel, /Garment details saved\./);
+  assert.match(lifecyclePanel, /Garment photo saved\./);
+  assert.match(lifecyclePanel, /The photo is in the private revision; the current Shop listing is unchanged\./);
+  assert.match(lifecyclePanel, /milestoneRef\.current\?\.focus\(\{ preventScroll: true \}\)/);
   assert.match(dossier, /searchParams\.get\("action"\) === "price"/);
   assert.match(lifecyclePanel, /initialAction !== "price"/);
   assert.match(lifecyclePanel, /priceRef\.current\?\.focus/);

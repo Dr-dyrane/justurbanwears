@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import type {
   Garment,
+  ListingUpdateInput,
   StudioListing,
   StudioLifecycleState,
 } from "../../lib/studio/domain/entities";
@@ -40,6 +41,7 @@ import {
 import { LifecycleBadge } from "./atoms/lifecycle-badge";
 import { LifecycleMeta, STUDIO_LIFECYCLE_PRESENTATION } from "./atoms/lifecycle-meta";
 import { ReadinessList } from "./atoms/readiness-list";
+import { StudioDecisionSheet } from "./atoms/studio-decision-sheet";
 import { StudioLoadingStage } from "./atoms/studio-loading-stage";
 import { StudioPager, StudioSegmentedView, useStudioSegment } from "./atoms/studio-segmented-view";
 import { StudioLink } from "./atoms/studio-link";
@@ -577,7 +579,7 @@ export function PieceWorkspaceView({ garment, initialAction, layout = "embedded"
     } else if (workspace.nextAction.kind === "REVIEW_SHOP") {
       openDetails();
     } else if (workspace.nextAction.kind === "PUBLISH" && listing) {
-      studio.publishListing(listing.id);
+      openDetails();
     } else if (workspace.nextAction.kind === "VIEW_SHOP" && listing) {
       assignDocumentNavigation(`/shop/products/${listing.slug}`);
     } else if (workspace.nextAction.kind === "VIEW_OPERATIONS") {
@@ -635,7 +637,7 @@ export function PieceWorkspaceView({ garment, initialAction, layout = "embedded"
               <ArrowRight aria-hidden="true" size={17} />
             </button>
           ) : null}
-          {hasFactsTask ? (
+          {hasFactsTask && (historicalDrop01 || nextAction.kind !== "DYNAMIC_MANAGE") ? (
             <button
               aria-haspopup="dialog"
               className="studio-service-row studio-piece-task-row"
@@ -835,17 +837,102 @@ function ListingEditor({ listing }: { listing: StudioListing }) {
   const [description, setDescription] = useState(listing.description);
   const [price, setPrice] = useState(String(listing.price));
   const [modelId, setModelId] = useState(listing.modelId);
+  const [decision, setDecision] = useState<
+    | { kind: "CONFIRM_READY" | "PUBLISH" }
+    | { kind: "SAVE"; update: ListingUpdateInput }
+  >();
+  const [decisionReturnFocus, setDecisionReturnFocus] = useState<HTMLElement | null>(null);
+  const decisionInFlightRef = useRef(false);
   const gates = listingReadiness(studio, listing);
   const allReady = everyGateReady(gates);
   const approvedContract = getApprovedPublicListingContract(garment?.sku ?? "", listing.slug);
   if (!garment) return null;
 
-  function save(event: FormEvent) {
-    event.preventDefault();
-    studio.updateListing(listing.id, { title, description, price: Number(price), modelId });
+  function requestDecision(
+    kind: "CONFIRM_READY" | "PUBLISH",
+    returnFocus: HTMLElement,
+  ): void;
+  function requestDecision(
+    kind: "SAVE",
+    returnFocus: HTMLElement,
+    update: ListingUpdateInput,
+  ): void;
+  function requestDecision(
+    kind: "CONFIRM_READY" | "PUBLISH" | "SAVE",
+    returnFocus: HTMLElement,
+    update?: ListingUpdateInput,
+  ) {
+    if (decisionInFlightRef.current) return;
+    setDecisionReturnFocus(returnFocus);
+    setDecision(kind === "SAVE" ? { kind, update: update! } : { kind });
   }
 
-  return (
+  function save(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const activeElement = document.activeElement;
+    requestDecision(
+      "SAVE",
+      activeElement instanceof HTMLElement ? activeElement : event.currentTarget,
+      { title, description, price: Number(price), modelId },
+    );
+  }
+
+  async function confirmDecision() {
+    if (!decision || decisionInFlightRef.current) {
+      return { error: "The listing decision is no longer current.", ok: false as const };
+    }
+    decisionInFlightRef.current = true;
+    try {
+      if (decision.kind === "SAVE") {
+        studio.updateListing(listing.id, decision.update);
+      } else if (decision.kind === "CONFIRM_READY") {
+        if (!studio.confirmListingReady(listing.id)) {
+          return { error: "The Shop preview is no longer ready. Review the refreshed checks and try again.", ok: false as const };
+        }
+      } else if (!studio.publishListing(listing.id)) {
+        return { error: "The listing was not published. Review its current readiness and try again.", ok: false as const };
+      }
+      return { ok: true as const };
+    } catch (caught) {
+      return {
+        error: caught instanceof Error ? caught.message : "Studio could not finish that listing change. Try again.",
+        ok: false as const,
+      };
+    } finally {
+      decisionInFlightRef.current = false;
+    }
+  }
+
+  const decisionCopy = decision?.kind === "SAVE"
+    ? {
+      confirmLabel: "Save details",
+      consequence: "Studio updates this private Shop draft. Customers see no change until the separate publish confirmation succeeds.",
+      receiptDetail: "The authoritative local listing now contains the reviewed title, description, price, and model.",
+      receiptTitle: "Details saved",
+      summary: `Save the reviewed Shop details for ${listing.title}?`,
+      title: "Review listing changes",
+    }
+    : decision?.kind === "CONFIRM_READY"
+      ? {
+        confirmLabel: "Approve preview",
+        consequence: "The listing moves to Ready. It remains private until a separate publish confirmation.",
+        receiptDetail: "The Shop preview is approved and ready for its final publication review.",
+        receiptTitle: "Preview approved",
+        summary: `Approve ${listing.title} as ready to publish?`,
+        title: "Approve Shop preview?",
+      }
+      : decision?.kind === "PUBLISH"
+        ? {
+          confirmLabel: "Publish",
+          consequence: "The approved listing becomes customer-visible in Shop using the reviewed facts and public media.",
+          receiptDetail: "The authoritative local listing is now published in the simulator Shop.",
+          receiptTitle: "Listing published",
+          summary: `Publish ${listing.title} to Shop?`,
+          title: "Publish listing?",
+        }
+        : null;
+
+  return (<>
     <article className="studio-listing-card" id={listing.id}>
       <div className="studio-listing-preview">
         <span className="studio-public-label"><Send aria-hidden="true" size={13} />Shop preview</span>
@@ -867,8 +954,8 @@ function ListingEditor({ listing }: { listing: StudioListing }) {
         <ReadinessList gates={gates} />
         <div className="studio-card-actions">
           {listing.state === "DRAFT" ? <button className="button button-secondary" type="submit">Save details</button> : null}
-          {listing.state === "DRAFT" && approvedContract ? <button className="button button-primary" disabled={!allReady} onClick={() => studio.confirmListingReady(listing.id)} type="button">Approve Shop preview</button> : null}
-          {listing.state === "READY" && approvedContract ? <button className="button button-primary" onClick={() => studio.publishListing(listing.id)} type="button">Publish</button> : null}
+          {listing.state === "DRAFT" && approvedContract ? <button className="button button-primary" disabled={!allReady} onClick={(event) => requestDecision("CONFIRM_READY", event.currentTarget)} type="button">Approve Shop preview</button> : null}
+          {listing.state === "READY" && approvedContract ? <button className="button button-primary" onClick={(event) => requestDecision("PUBLISH", event.currentTarget)} type="button">Publish</button> : null}
           {!approvedContract && ["DRAFT", "READY"].includes(listing.state) ? <span className="studio-inline-state"><LockKeyhole aria-hidden="true" size={16} />Private · photos still need approval</span> : null}
           {listing.state === "PUBLISHED" ? <span className="studio-inline-state"><Check aria-hidden="true" size={16} />Live in Shop</span> : null}
           {listing.state === "RESERVED" ? <span className="studio-inline-state">Reserved by an open order</span> : null}
@@ -876,7 +963,32 @@ function ListingEditor({ listing }: { listing: StudioListing }) {
         </div>
       </form>
     </article>
-  );
+    {decision && decisionCopy ? (
+      <StudioDecisionSheet
+        confirmLabel={decisionCopy.confirmLabel}
+        consequence={decisionCopy.consequence}
+        eyebrow="Shop listing"
+        onConfirm={confirmDecision}
+        onDismiss={() => {
+          setDecision(undefined);
+          setDecisionReturnFocus(null);
+        }}
+        open
+        receiptDetail={decisionCopy.receiptDetail}
+        receiptTitle={decisionCopy.receiptTitle}
+        returnFocus={decisionReturnFocus}
+        summary={decisionCopy.summary}
+        title={decisionCopy.title}
+      >
+        {decision.kind === "SAVE" ? (
+          <div aria-label="Listing changes" className="studio-decision-diff">
+            <p><strong>Title</strong><span>{listing.title}</span><i aria-hidden="true">→</i><span>{decision.update.title}</span></p>
+            <p><strong>Price</strong><span>{formatNaira(listing.price)}</span><i aria-hidden="true">→</i><span>{formatNaira(decision.update.price ?? listing.price)}</span></p>
+          </div>
+        ) : null}
+      </StudioDecisionSheet>
+    ) : null}
+  </>);
 }
 
 export function WardrobeWorkbench() {
@@ -1217,7 +1329,10 @@ export function WardrobeWorkbench() {
       {activeView === "garments" ? (
         <StudioStackSection aria-labelledby="studio-tab-garments" id="studio-view-garments" role="tabpanel">
           {historyOnly ? null : <details className="studio-stack-filter">
-            <summary>Filter · {filter.toLowerCase()} <span>{visibleGarments.length}</span></summary>
+            <summary>
+              <span className="studio-stack-filter-label"><SlidersHorizontal aria-hidden="true" size={15} strokeWidth={1.8} />Filter · {filter.toLowerCase()}</span>
+              <span>{visibleGarments.length}</span>
+            </summary>
             <div className="studio-filter-bar" role="group" aria-label="Filter wardrobe">
               {filters.map((item) => <button aria-pressed={filter === item} className={filter === item ? "is-active" : undefined} onClick={() => { setFilter(item); setGarmentPage(0); }} key={item} type="button">{item.toLowerCase()}</button>)}
             </div>

@@ -22,6 +22,7 @@ import {
   studioOrderHasDueReturnWork,
   studioOrderHasDueWork,
 } from "../../lib/shop/order-presentation";
+import { moveFocusFromWorkspaceGrip } from "./workspace/studio-workspace-focus";
 import { projectStudioDropScopes } from "../../lib/studio/projections/drop-context";
 import {
   actionableStudioDraftCount,
@@ -40,7 +41,10 @@ export function StudioHome() {
     scenario,
   } = useStudio();
   const [sheetRaised, setSheetRaised] = useState(false);
+  const [desktopWorkspace, setDesktopWorkspace] = useState(false);
   const sheetRef = useRef<HTMLDivElement>(null);
+  const sheetContentRef = useRef<HTMLElement>(null);
+  const sheetHandleRef = useRef<HTMLButtonElement>(null);
   const sheetStageRef = useRef<HTMLDivElement>(null);
   const swipeStartRef = useRef<number | null>(null);
   const swipeHandledRef = useRef(false);
@@ -51,8 +55,23 @@ export function StudioHome() {
   useEffect(() => {
     const stage = sheetStageRef.current;
     if (!stage) return;
-    stage.scrollTop = 0;
-  }, []);
+    const desktopWorkspaceQuery = window.matchMedia("(min-width: 1100px) and (min-height: 600px)");
+    const synchronizeWorkspace = () => {
+      stage.scrollTo({ top: 0 });
+      if (desktopWorkspaceQuery.matches) {
+        moveFocusFromWorkspaceGrip(sheetContentRef.current, sheetHandleRef.current);
+      }
+      setDesktopWorkspace(desktopWorkspaceQuery.matches);
+    };
+
+    synchronizeWorkspace();
+    desktopWorkspaceQuery.addEventListener("change", synchronizeWorkspace);
+    window.addEventListener("resize", synchronizeWorkspace);
+    return () => {
+      desktopWorkspaceQuery.removeEventListener("change", synchronizeWorkspace);
+      window.removeEventListener("resize", synchronizeWorkspace);
+    };
+  }, [application.status, authority.status, hydration, scenario]);
 
   const garmentDrafts = scenario
     ? actionableStudioDraftCount(garments)
@@ -209,6 +228,24 @@ export function StudioHome() {
           aria-expanded={sheetRaised}
           aria-label={sheetRaised ? "Show Studio recommendation" : "Show Studio services"}
           className="studio-home-sheet-handle"
+          hidden={desktopWorkspace}
+          onBlur={(event) => {
+            if (event.relatedTarget || !window.matchMedia("(min-width: 1100px) and (min-height: 600px)").matches) return;
+            window.requestAnimationFrame(() => {
+              let firstActiveRead = true;
+              moveFocusFromWorkspaceGrip(
+                sheetContentRef.current,
+                sheetHandleRef.current,
+                () => {
+                  if (firstActiveRead) {
+                    firstActiveRead = false;
+                    return sheetHandleRef.current;
+                  }
+                  return document.activeElement;
+                },
+              );
+            });
+          }}
           onClick={() => {
             if (swipeHandledRef.current) {
               swipeHandledRef.current = false;
@@ -228,10 +265,11 @@ export function StudioHome() {
             swipeHandledRef.current = true;
             if (distance < 0) showServices(); else showRecommendation();
           }}
+          ref={sheetHandleRef}
           type="button"
         ><span /></button>
 
-        <section className="studio-home-summary" aria-label="Studio summary">
+        <section className="studio-home-summary" aria-label="Studio summary" ref={sheetContentRef}>
           <ul className="studio-summary-grid">
             <li><Link aria-label={needsAttention === null ? "Attention unavailable" : `Attention ${needsAttention}`} className={`studio-summary-item${needsAttention ? " is-attention" : ""}`} href="/studio/operations"><span className="studio-summary-orb"><strong>{needsAttention ?? "—"}</strong></span><small>Attention</small></Link></li>
             <li><Link aria-label={availableUnits === null ? "Available state unavailable" : `Available ${availableUnits}`} className="studio-summary-item" href="/studio/operations?view=inventory"><span className="studio-summary-orb"><strong>{availableUnits ?? "—"}</strong></span><small>Available</small></Link></li>
