@@ -22,6 +22,10 @@ import {
 } from "./studio-atelier-agent-engine";
 import type { StudioAtelierBackgroundGate } from "./studio-atelier-background-gate";
 import {
+  STUDIO_ATELIER_PRIVATE_AUTHORITY_ASSET_COUNT,
+  STUDIO_ATELIER_PRIVATE_MANIFEST_SHA256,
+} from "./studio-atelier-authority-constants";
+import {
   createDurableStudioAtelierEngine,
   type CreateDurableStudioAtelierEngineInput,
   type StudioAtelierCorrectionPreparer,
@@ -76,9 +80,10 @@ export const STUDIO_ATELIER_EXTERNAL_AUTHORITY_MIGRATION_CREATED_AT =
   1_787_893_200_001 as const;
 export const STUDIO_ATELIER_EXTERNAL_AUTHORITY_MIGRATION_SHA256 =
   "066326e3799bede35c4f0f691691ec05a4c0563507ed3aa5d42475eeec44fc0e" as const;
-export const STUDIO_ATELIER_PRIVATE_MANIFEST_SHA256 =
-  "d245096f4582e6638bbc9ab1c9abe41df9aa447736372824cdc6803d651824bb" as const;
-export const STUDIO_ATELIER_PRIVATE_AUTHORITY_ASSET_COUNT = 11 as const;
+export {
+  STUDIO_ATELIER_PRIVATE_AUTHORITY_ASSET_COUNT,
+  STUDIO_ATELIER_PRIVATE_MANIFEST_SHA256,
+};
 const SHA256_PATTERN = /^[a-f0-9]{64}$/;
 const FINAL_SCENE_STAGES = new Set<AtelierStage>([
   "ROOM_FINAL_05",

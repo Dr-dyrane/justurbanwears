@@ -135,6 +135,7 @@ export function StudioSettingsCenter({ operator }: { operator: StudioOperatorCli
   const liveListings = studio.scenario
     ? scenarioLiveListings
     : studio.application.snapshot?.summary.live.value ?? null;
+  const availableShopPieces = studio.application.snapshot?.summary.available.value ?? null;
   const intakeDrafts = studio.scenario
     ? actionableStudioDraftCount(studio.garments)
     : authority?.pieces.filter((piece) => piece.availability === "PRIVATE").length ?? null;
@@ -157,7 +158,7 @@ export function StudioSettingsCenter({ operator }: { operator: StudioOperatorCli
       return current;
     } catch (error) {
       if (!(error instanceof DOMException && error.name === "AbortError")) {
-        setConsentMessage(error instanceof Error ? error.message : "Atelier authorization is unavailable.");
+        setConsentMessage(error instanceof Error ? error.message : "Atelier authorization status needs a refresh.");
       }
       return null;
     } finally {
@@ -246,23 +247,25 @@ export function StudioSettingsCenter({ operator }: { operator: StudioOperatorCli
   const consentSummary = consentLoading && !consent
     ? "Checking authorization…"
     : consentMessage && !consent
-      ? "Authorization unavailable"
+      ? "Status needs a refresh"
       : consent?.status === "ACTIVE"
-        ? "Authorization active"
+        ? "Authorized for future use"
         : consent?.status === "REVOKED"
-          ? "Future use revoked"
+          ? "Future use is blocked"
           : consent?.status === "RECONFIRMATION_REQUIRED"
-            ? "Review required"
+            ? "Authorization needs review"
             : consent?.status === "VERIFICATION_REQUIRED"
-              ? "Verification required"
+              ? "Not authorized yet"
               : consent?.status === "NOT_RECORDED"
-                ? "Not recorded"
+                ? "Ready to authorize"
                 : operator ? "Authorization not checked" : "Local preview only";
   const stocktakeSummary = studioHeldPieces === null
     ? "Physical state unavailable"
     : `${studioHeldPieces} Studio-held piece${studioHeldPieces === 1 ? "" : "s"}`;
   const shopSummary = liveListings === null
-    ? "Live state unavailable"
+    ? availableShopPieces === null
+      ? "Shop state needs a refresh"
+      : `${availableShopPieces} piece${availableShopPieces === 1 ? "" : "s"} available`
     : `${liveListings} live listing${liveListings === 1 ? "" : "s"}`;
   const intakeSummary = intakeDrafts === null
     ? "Draft state unavailable"
@@ -356,7 +359,7 @@ export function StudioSettingsCenter({ operator }: { operator: StudioOperatorCli
     >
       <section className="studio-task-question">
         {consentLoading && !consent ? <><h3>Checking durable authority…</h3><p>No generation can start from Settings.</p></> : null}
-        {consent?.status === "VERIFICATION_REQUIRED" ? <><h3>Trusted verification is still required</h3><p>No authorization has been recorded. A separate trusted adult-verification receipt must bind Lulu and the locked Lulu V4 authority before this form can save consent.</p></> : null}
+        {consent?.status === "VERIFICATION_REQUIRED" ? <><h3>Private Atelier isn’t authorized yet</h3><p>This is a safeguard, not a service outage. Lulu’s identity verification must be recorded separately before this page can authorize future provider use.</p></> : null}
         {consent?.status === "ACTIVE" ? <><h3>Authorization is active</h3><p>Future private Atelier processing is authorized under provider policy {consent.providerPolicyRevision}. Revoking blocks new provider use; it does not recall already-started processing, erase audit records, or alter approved locked outputs.</p></> : null}
         {consent && consent.status !== "ACTIVE" && consent.canGrant ? <>
           <h3>Confirm once for future private Atelier work</h3>
@@ -370,7 +373,7 @@ export function StudioSettingsCenter({ operator }: { operator: StudioOperatorCli
           <p><small>{consent.providerNotice}</small></p>
         </> : null}
         {consent?.status === "REVOKED" && !consent.canGrant ? <><h3>Future provider use is revoked</h3><p>A new trusted verification record is required before authorization can be recorded again.</p></> : null}
-        {consentMessage && !consent && !consentLoading ? <><h3>Authorization couldn’t load</h3><p className="studio-engine-error" role="status">{consentMessage}</p></> : null}
+        {consentMessage && !consent && !consentLoading ? <><h3>Authorization status needs a refresh</h3><p className="studio-engine-error" role="status">We couldn’t refresh the durable record just now. Nothing has changed, and no Atelier work can start from Settings.</p></> : null}
         {consentMessage && consent ? <p className="studio-engine-error" role="status">{consentMessage}</p> : null}
       </section>
       <footer className="studio-task-sheet-footer">

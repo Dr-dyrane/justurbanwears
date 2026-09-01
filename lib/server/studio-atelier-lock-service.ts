@@ -17,7 +17,9 @@ import {
   compositeStudioAtelierSubject,
   preflightStudioAtelierSubjectComposite,
 } from "./studio-atelier-subject-compositor";
-import { getShopBlob } from "./vercel-blob";
+import { readAtelierArtifactBytes } from "./studio-atelier-artifact-readback";
+
+export { readAtelierArtifactBytes } from "./studio-atelier-artifact-readback";
 
 const SHA256_PATTERN = /^[a-f0-9]{64}$/;
 
@@ -62,32 +64,6 @@ const defaultDependencies = Object.freeze({
 
 function sha256(bytes: Uint8Array): string {
   return createHash("sha256").update(bytes).digest("hex");
-}
-
-export async function readAtelierArtifactBytes(artifact: AtelierArtifactRow): Promise<Uint8Array> {
-  const result = await getShopBlob("private", artifact.blobPathname, { useCache: false });
-  if (!result || result.statusCode !== 200 || !result.stream) {
-    throw new StudioEngineError(
-      "INVALID_ASSET",
-      503,
-      "The approved Atelier artifact is unavailable.",
-      "Restore the exact private content-addressed artifact before locking.",
-    );
-  }
-  const bytes = new Uint8Array(await new Response(result.stream).arrayBuffer());
-  if (
-    bytes.byteLength !== artifact.byteSize
-    || result.blob.size !== artifact.byteSize
-    || sha256(bytes) !== artifact.sha256
-  ) {
-    throw new StudioEngineError(
-      "INVALID_ASSET",
-      503,
-      "The approved Atelier artifact failed content-addressed verification.",
-      "Restore the exact private artifact before locking.",
-    );
-  }
-  return bytes;
 }
 
 function notFound(): StudioEngineError {

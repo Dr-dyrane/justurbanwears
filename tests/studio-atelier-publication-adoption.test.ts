@@ -29,6 +29,26 @@ const operator = {
   role: "operator" as const,
 };
 
+const listingFacts = Object.freeze({
+  title: "Coral atelier dress",
+  description: "A coral atelier dress with a softly draped finish.",
+  category: "Dresses" as const,
+  colour: "Coral",
+  sizeLabel: "M",
+  condition: "Excellent",
+  price: 12_500,
+});
+
+function publicationAuthority(
+  expectedItemVersion = 9,
+  description = listingFacts.description,
+) {
+  return Object.freeze({
+    expectedItemVersion,
+    listingFacts: Object.freeze({ ...listingFacts, description }),
+  });
+}
+
 const stages = [
   ["GARMENT_FRONT", "GARMENT_01_FRONT", "01"],
   ["GARMENT_BACK", "GARMENT_02_BACK", "02"],
@@ -134,6 +154,7 @@ async function expectCode(action: () => Promise<unknown>, code: StudioEngineErro
 test("the review exposes one deterministic seven-role readiness shape and no private coordinates", async () => {
   const fixture = lockedSet();
   const review = createStudioAtelierShopAdoptionReviewService({
+    readPublicationAuthority: async () => publicationAuthority(),
     listCandidates: async (input) => {
       assert.deepEqual(input, { operatorSubject: OPERATOR, wardrobeItemId: WARDROBE_ITEM_ID });
       return fixture.rows;
@@ -148,11 +169,66 @@ test("the review exposes one deterministic seven-role readiness shape and no pri
   assert.doesNotMatch(serialized, /blob|provider|pathname|private\.invalid|sha256/i);
 });
 
+test("review and adoption bind the exact listing facts and item version into one revision", async () => {
+  const fixture = lockedSet();
+  let authority = publicationAuthority();
+  const review = createStudioAtelierShopAdoptionReviewService({
+    listCandidates: async () => fixture.rows,
+    readPublicationAuthority: async () => authority,
+  });
+  const first = await review({ operator, wardrobeItemId: WARDROBE_ITEM_ID });
+  assert.equal(first.state, "READY");
+  if (first.state !== "READY") return;
+  assert.deepEqual(first.listingFacts, listingFacts);
+
+  authority = publicationAuthority(10, "A newly edited description.");
+  const changed = await review({ operator, wardrobeItemId: WARDROBE_ITEM_ID });
+  assert.equal(changed.state, "READY");
+  if (changed.state !== "READY") return;
+  assert.notEqual(changed.expectedRevision, first.expectedRevision);
+
+  let authorityReads = 0;
+  let commits = 0;
+  const adopt = createStudioAtelierShopAdoptionService({
+    dependencies: {
+      listCandidates: async () => fixture.rows,
+      readPublicationAuthority: async () => {
+        authorityReads += 1;
+        return authorityReads === 1
+          ? publicationAuthority()
+          : publicationAuthority(10, "A newly edited description.");
+      },
+      readArtifact: async (artifact) => fixture.bytes.get(artifact.id)!,
+    },
+    ledger: {
+      findByIdempotencyKey: async () => null,
+      commit: async (input) => {
+        commits += 1;
+        return input.receipt;
+      },
+    },
+  });
+  await expectCode(
+    () => adopt({
+      operator,
+      command: {
+        wardrobeItemId: WARDROBE_ITEM_ID,
+        expectedRevision: first.expectedRevision,
+        idempotencyKey: "atelier-shop:test:facts-change",
+        confirmation: "ADOPT_LOCKED_ATELIER_MEDIA",
+      },
+    }),
+    "VERSION_CONFLICT",
+  );
+  assert.equal(commits, 0);
+});
+
 test("SEMANTIC_PASS or missing locks are never presented as publishable", async () => {
   const fixture = lockedSet();
   const semanticOnly = fixture.rows.filter((row) => row.stage !== "SIBLING_06");
   const review = createStudioAtelierShopAdoptionReviewService({
     listCandidates: async () => semanticOnly,
+    readPublicationAuthority: async () => publicationAuthority(),
   });
   const result = await review({ operator, wardrobeItemId: WARDROBE_ITEM_ID });
   assert.deepEqual(result, {
@@ -165,6 +241,7 @@ test("SEMANTIC_PASS or missing locks are never presented as publishable", async 
   includedButNotLocked.rows[5].projectionState = "SEMANTIC_PASS";
   const malformedReview = createStudioAtelierShopAdoptionReviewService({
     listCandidates: async () => includedButNotLocked.rows,
+    readPublicationAuthority: async () => publicationAuthority(),
   });
   await expectCode(
     () => malformedReview({ operator, wardrobeItemId: WARDROBE_ITEM_ID }),
@@ -178,6 +255,7 @@ test("cross-garment sets, duplicate roles, and sibling chains that do not bind e
   crossGarment.rows[3].canonicalOperation.garmentId = "wardrobe:different";
   const crossReview = createStudioAtelierShopAdoptionReviewService({
     listCandidates: async () => crossGarment.rows,
+    readPublicationAuthority: async () => publicationAuthority(),
   });
   await expectCode(
     () => crossReview({ operator, wardrobeItemId: WARDROBE_ITEM_ID }),
@@ -187,6 +265,7 @@ test("cross-garment sets, duplicate roles, and sibling chains that do not bind e
   const duplicate = lockedSet();
   const duplicateReview = createStudioAtelierShopAdoptionReviewService({
     listCandidates: async () => [...duplicate.rows, duplicate.rows[0]],
+    readPublicationAuthority: async () => publicationAuthority(),
   });
   await expectCode(
     () => duplicateReview({ operator, wardrobeItemId: WARDROBE_ITEM_ID }),
@@ -199,6 +278,7 @@ test("cross-garment sets, duplicate roles, and sibling chains that do not bind e
   wrongParent.sha256 = chained.rows[5].lockedArtifactSha256;
   const chainedReview = createStudioAtelierShopAdoptionReviewService({
     listCandidates: async () => chained.rows,
+    readPublicationAuthority: async () => publicationAuthority(),
   });
   await expectCode(
     () => chainedReview({ operator, wardrobeItemId: WARDROBE_ITEM_ID }),
@@ -213,6 +293,7 @@ test("adoption reauthorizes every exact private byte before and after read and c
   let committed: StudioAtelierShopAdoptionCommitInput | null = null;
   const review = createStudioAtelierShopAdoptionReviewService({
     listCandidates: async () => fixture.rows,
+    readPublicationAuthority: async () => publicationAuthority(),
   });
   const ready = await review({ operator, wardrobeItemId: WARDROBE_ITEM_ID });
   assert.equal(ready.state, "READY");
@@ -223,6 +304,7 @@ test("adoption reauthorizes every exact private byte before and after read and c
         listCalls += 1;
         return fixture.rows;
       },
+      readPublicationAuthority: async () => publicationAuthority(),
       readArtifact: async (artifact) => {
         readCalls += 1;
         return fixture.bytes.get(artifact.id)!;
@@ -265,6 +347,7 @@ test("lost-response replay returns only the exact immutable receipt without rere
   let commits = 0;
   const review = createStudioAtelierShopAdoptionReviewService({
     listCandidates: async () => fixture.rows,
+    readPublicationAuthority: async () => publicationAuthority(),
   });
   const ready = await review({ operator, wardrobeItemId: WARDROBE_ITEM_ID });
   assert.equal(ready.state, "READY");
@@ -272,6 +355,7 @@ test("lost-response replay returns only the exact immutable receipt without rere
   const adopt = createStudioAtelierShopAdoptionService({
     dependencies: {
       listCandidates: async () => fixture.rows,
+      readPublicationAuthority: async () => publicationAuthority(),
       readArtifact: async (artifact) => {
         reads += 1;
         return fixture.bytes.get(artifact.id)!;
@@ -303,6 +387,7 @@ test("a lock change or byte mismatch during readback prevents the adoption commi
   const fixture = lockedSet();
   const review = createStudioAtelierShopAdoptionReviewService({
     listCandidates: async () => fixture.rows,
+    readPublicationAuthority: async () => publicationAuthority(),
   });
   const ready = await review({ operator, wardrobeItemId: WARDROBE_ITEM_ID });
   assert.equal(ready.state, "READY");
@@ -320,6 +405,7 @@ test("a lock change or byte mismatch during readback prevents the adoption commi
         }
         return fixture.rows;
       },
+      readPublicationAuthority: async () => publicationAuthority(),
       readArtifact: async (artifact) => fixture.bytes.get(artifact.id)!,
     },
     ledger: {
@@ -347,6 +433,7 @@ test("a lock change or byte mismatch during readback prevents the adoption commi
   const badBytes = createStudioAtelierShopAdoptionService({
     dependencies: {
       listCandidates: async () => fixture.rows,
+      readPublicationAuthority: async () => publicationAuthority(),
       readArtifact: async () => new Uint8Array([9, 9, 9]),
     },
     ledger: {
@@ -388,4 +475,6 @@ test("the production reader is SELECT-only and the migration hold is explicit", 
   assert.match(service, /There is intentionally no default ledger port/);
   assert.match(service, /expectedProjectionVersion/);
   assert.match(service, /It may copy bytes; it may not decode/);
+  assert.doesNotMatch(service, /studio-atelier-lock-service/);
+  assert.match(service, /studio-atelier-artifact-readback/);
 });

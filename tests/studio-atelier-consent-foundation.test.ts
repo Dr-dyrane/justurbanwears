@@ -9,10 +9,12 @@ import {
   STUDIO_ATELIER_PROVIDER_NOTICE_SHA256,
   STUDIO_ATELIER_PROVIDER_NOTICE_VERSION,
   STUDIO_ATELIER_PROVIDER_RETENTION_NOTICE,
+  STUDIO_ATELIER_HUMAN_REVIEW_VERSION,
   deriveStudioAtelierAdultVerificationRecordHash,
   deriveStudioAtelierConsentCommandFingerprint,
   deriveStudioAtelierConsentEventHash,
   studioAtelierConsentCommandSchema,
+  studioAtelierHumanReviewCommandSchema,
   type StudioAtelierAdultVerificationBody,
 } from "../lib/server/studio-atelier-consent-repository";
 import { sha256Text } from "../lib/studio/atelier/canonical";
@@ -67,6 +69,28 @@ test("adult verification is independent, content addressed, and cannot be minted
     ...trusted,
     subjectAge: "SELF_ATTESTED_ADULT" as "VERIFIED_ADULT_18_PLUS",
   }));
+});
+
+test("authorized human review is exact-authority bound and requires positive evidence checks", () => {
+  const review = {
+    action: "RECORD_AUTHORIZED_HUMAN_REVIEW" as const,
+    expectedAuthorityRevision: "LULU_V4_2026-08-25.7" as const,
+    expectedAuthorityManifestSha256: "d245096f4582e6638bbc9ab1c9abe41df9aa447736372824cdc6803d651824bb" as const,
+    declarationVersion: STUDIO_ATELIER_HUMAN_REVIEW_VERSION,
+    reviewedReliableAdultIdentityEvidence: true as const,
+    matchedEvidenceToLuluAuthority: true as const,
+    reviewedAt: "2026-08-27T12:00:00.000Z",
+    idempotencyKey: "atelier-human-review:one",
+  };
+  assert.equal(studioAtelierHumanReviewCommandSchema.safeParse(review).success, true);
+  assert.equal(studioAtelierHumanReviewCommandSchema.safeParse({
+    ...review,
+    reviewedReliableAdultIdentityEvidence: false,
+  }).success, false);
+  assert.equal(studioAtelierHumanReviewCommandSchema.safeParse({
+    ...review,
+    expectedAuthorityRevision: "stale-authority",
+  }).success, false);
 });
 
 test("grant and revoke commands are strict, CAS-bound, and fingerprint idempotently", () => {
@@ -129,6 +153,26 @@ test("the public consent route cannot submit verification evidence and mutations
   assert.doesNotMatch(route, /recordStudioAtelierAdultVerificationEvidence|evidenceReceiptSha256|VERIFIED_ADULT_18_PLUS/);
 });
 
+test("the Models verification route records only an authenticated independent admin review", () => {
+  const route = readFileSync(
+    new URL("../app/api/studio/models/lulu/verification/route.ts", import.meta.url),
+    "utf8",
+  );
+  const repository = readFileSync(
+    new URL("../lib/server/studio-atelier-consent-repository.ts", import.meta.url),
+    "utf8",
+  );
+  assert.match(route, /assertStudioAtelierMutationOrigin\(request\)/);
+  assert.match(route, /requireStudioOperator\(\)/);
+  assert.match(route, /studioAtelierHumanReviewCommandSchema/);
+  assert.match(route, /recordStudioAtelierAuthorizedHumanReview/);
+  assert.doesNotMatch(route, /recordStudioAtelierAdultVerificationEvidence/);
+  assert.match(repository, /input\.operator\.role !== "admin"/);
+  assert.match(repository, /input\.operator\.actorSubject === input\.operator\.subject/);
+  assert.match(repository, /input\.operator\.actorSubject !== input\.operator\.subject/);
+  assert.match(repository, /Only Lulu can confirm future use of her private likeness/);
+});
+
 test("the repository uses one operator-scoped CAS projection and append-only event chain", () => {
   const repository = readFileSync(
     new URL("../lib/server/studio-atelier-consent-repository.ts", import.meta.url),
@@ -147,16 +191,16 @@ test("the repository uses one operator-scoped CAS projection and append-only eve
   assert.doesNotMatch(repository, /status:\s*"PRODUCTION_READY"|productionReady:\s*true/);
 });
 
-test("Settings keeps one quiet durable row and preserves the private Lulu avatar boundary", () => {
+test("Settings keeps one on-demand durable control and preserves the private Lulu avatar boundary", () => {
   const settings = readFileSync(
     new URL("../components/studio/settings/studio-settings-center.tsx", import.meta.url),
     "utf8",
   );
-  assert.equal(settings.match(/<strong>Atelier authorization<\/strong>/g)?.length, 1);
+  assert.equal(settings.match(/<strong>Private Atelier use<\/strong>/g)?.length, 1);
   assert.match(settings, /ATELIER_CONSENT_ENDPOINT/);
   assert.match(settings, /consentCommandKeyRef/);
   assert.match(settings, /stable key is deliberately retained/);
-  assert.match(settings, /Trusted verification is still required/);
+  assert.match(settings, /Private Atelier isn’t authorized yet/);
   assert.match(settings, /Revoke future use/);
   assert.match(settings, /const LULU_PROFILE_AVATAR_SRC = "\/api\/studio\/profile\/avatar"/);
   assert.match(settings, /onError=\{\(event\) => \{ event\.currentTarget\.hidden = true; \}\}/);

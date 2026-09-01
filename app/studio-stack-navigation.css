@@ -4614,6 +4614,39 @@ html[data-theme="dark"] body .studio-task-sheet {
   padding: 6px 2px 18px;
 }
 
+.studio-publication-summary {
+  border-block: 1px solid var(--studio-line);
+  display: grid;
+  gap: 8px;
+  padding: 16px 2px;
+}
+
+.studio-publication-summary > small {
+  color: var(--studio-accent-display, var(--studio-accent));
+  font-size: 9px;
+  font-weight: 760;
+}
+
+.studio-publication-summary > strong {
+  color: var(--studio-ink);
+  font-family: var(--font-display);
+  font-size: clamp(24px, 3vw, 34px);
+  font-weight: 500;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+.studio-publication-summary > p {
+  color: var(--studio-muted);
+  font-size: 11px;
+  line-height: 1.5;
+  margin: 0;
+}
+
+.studio-publication-summary .studio-garment-facts {
+  margin-top: 2px;
+}
+
 .studio-decision-consequence {
   border-block: 1px solid var(--studio-line);
   display: grid;

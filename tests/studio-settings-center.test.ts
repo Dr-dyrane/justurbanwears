@@ -9,6 +9,7 @@ const wardrobe = readFileSync(`${root}/components/studio/wardrobe-workbench.tsx`
 const operator = readFileSync(`${root}/lib/server/studio-operator.ts`, "utf8");
 const taskSheet = readFileSync(`${root}/components/studio/atoms/studio-task-sheet.tsx`, "utf8");
 const avatarRoute = readFileSync(`${root}/app/api/studio/profile/avatar/route.ts`, "utf8");
+const consentRepository = readFileSync(`${root}/lib/server/studio-atelier-consent-repository.ts`, "utf8");
 
 test("Studio exposes one global profile and settings centre", () => {
   assert.match(shell, /StudioSettingsCenter operator=\{operator\}/);
@@ -31,11 +32,16 @@ test("Studio exposes one global profile and settings centre", () => {
   assert.match(settings, /readyModels/);
   assert.match(settings, /studioHeldPieces/);
   assert.match(settings, /liveListings/);
+  assert.match(settings, /summary\.available\.value/);
+  assert.match(settings, /piece\$\{availableShopPieces === 1 \? "" : "s"\} available/);
   assert.match(settings, /intakeDrafts/);
   assert.match(settings, /consentSummary/);
+  assert.match(settings, /Not authorized yet/);
+  assert.match(settings, /This is a safeguard, not a service outage/);
   assert.doesNotMatch(settings, /Lulu, body canon and styling|Control likeness and provider access|Check pieces against physical stock|See the customer-facing store|Five visual steps/);
   assert.doesNotMatch(settings, /AI intake|Private server drafts|Connected Studio record|workspaceAvailable/);
   assert.doesNotMatch(settings, /Choose the light|Data & access|Keep the steps close/);
+  assert.doesNotMatch(settings, /Authorization unavailable|authorization is unavailable|Live state unavailable/);
   assert.match(operator, /return projectStudioOperator\(/);
   assert.match(operator, /membership,/);
 });
@@ -71,8 +77,15 @@ test("settings links directly to the visual guide", () => {
 test("Atelier authorization loads on demand and exposes a recoverable failure", () => {
   assert.match(settings, /if \(open && operator\) void loadConsent\(\)/);
   assert.match(settings, /if \(!consent && !consentLoading\) void loadConsent\(\)/);
-  assert.match(settings, /Authorization couldn’t load/);
+  assert.match(settings, /Authorization status needs a refresh/);
   assert.match(settings, />Try again<\/button>/);
+});
+
+test("Atelier authorization queries avoid PostgreSQL's reserved GRANT keyword", () => {
+  assert.match(consentRepository, /studio_atelier_consent_grants consent_grant/);
+  assert.doesNotMatch(consentRepository, /studio_atelier_consent_grants grant\b/);
+  assert.match(consentRepository, /studio-atelier-authority-constants/);
+  assert.doesNotMatch(consentRepository, /studio-atelier-production-runtime/);
 });
 
 test("navbar sheets share one guarded state-first dismissal path", () => {

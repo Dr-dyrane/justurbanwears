@@ -1007,6 +1007,23 @@ html[data-theme="dark"] .studio-shell .studio-atelier-pulse {
   width: 100%;
 }
 
+/* The native Studio canvas is intentionally phone-width on desktop. Keep the
+   Models workspace responsive to that canvas instead of the browser viewport,
+   otherwise its desktop grid can collapse the approved portrait to 0px. */
+.studio-shell.studio-stack-shell .studio-native-canvas .studio-model-layout,
+.studio-shell.studio-stack-shell .studio-native-canvas .studio-model-stage {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.studio-shell.studio-stack-shell .studio-native-canvas .studio-model-index {
+  position: static;
+}
+
+.studio-shell.studio-stack-shell .studio-native-canvas .studio-model-portrait {
+  aspect-ratio: 4 / 5;
+  min-height: 0;
+}
+
 .studio-shell .studio-private-chip {
   background: var(--atelier-positive-soft);
   color: var(--atelier-positive);

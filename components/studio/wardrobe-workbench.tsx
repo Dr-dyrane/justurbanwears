@@ -711,7 +711,7 @@ export function PieceWorkspaceView({ garment, initialAction, layout = "embedded"
                 </StudioMediaButton>)}
               </div>
               <div className="studio-garment-facts">
-                <span>{dynamicReview.category}</span><span>{dynamicReview.colour}</span><span>{dynamicReview.sizeLabel}</span><span>1 available</span>
+                <span>{dynamicReview.category}</span><span>{dynamicReview.colour}</span><span>{dynamicReview.sizeLabel}</span><span>{dynamicReview.condition}</span><span>1 available</span>
               </div>
               <div className="studio-publication-confirm"><input checked={publicationConfirmed} id={publicationConfirmationId} onChange={(event) => setPublicationConfirmed(event.target.checked)} type="checkbox" /><label htmlFor={publicationConfirmationId}><strong>Make public</strong><small>These facts and photos will appear in Shop.</small></label></div>
               {publicationError ? <p className="studio-engine-error" role="alert">{publicationError}</p> : null}
@@ -837,7 +837,6 @@ function ListingEditor({ listing }: { listing: StudioListing }) {
   const [title, setTitle] = useState(listing.title);
   const [description, setDescription] = useState(listing.description);
   const [price, setPrice] = useState(String(listing.price));
-  const [modelId, setModelId] = useState(listing.modelId);
   const [decision, setDecision] = useState<
     | { kind: "CONFIRM_READY" | "PUBLISH" }
     | { kind: "SAVE"; update: ListingUpdateInput }
@@ -874,7 +873,7 @@ function ListingEditor({ listing }: { listing: StudioListing }) {
     requestDecision(
       "SAVE",
       activeElement instanceof HTMLElement ? activeElement : event.currentTarget,
-      { title, description, price: Number(price), modelId },
+      { title, description, price: Number(price), modelId: listing.modelId },
     );
   }
 
@@ -908,7 +907,7 @@ function ListingEditor({ listing }: { listing: StudioListing }) {
     ? {
       confirmLabel: "Save details",
       consequence: "Studio updates this private Shop draft. Customers see no change until the separate publish confirmation succeeds.",
-      receiptDetail: "The authoritative local listing now contains the reviewed title, description, price, and model.",
+      receiptDetail: "The authoritative local listing now contains the reviewed title, description, and price.",
       receiptTitle: "Details saved",
       summary: `Save the reviewed Shop details for ${listing.title}?`,
       title: "Review listing changes",
@@ -949,7 +948,6 @@ function ListingEditor({ listing }: { listing: StudioListing }) {
         <div className="studio-form-grid studio-listing-fields">
           <label className="studio-field"><span>Shop title</span><input value={title} disabled={!['DRAFT', 'READY'].includes(listing.state)} onChange={(event) => setTitle(event.target.value)} /></label>
           <label className="studio-field"><span>Price (₦)</span><input type="number" min="1" value={price} disabled={!['DRAFT', 'READY'].includes(listing.state)} onChange={(event) => setPrice(event.target.value)} /></label>
-          <label className="studio-field"><span>Model</span><select value={modelId} disabled={!['DRAFT', 'READY'].includes(listing.state)} onChange={(event) => setModelId(event.target.value)}>{studio.models.map((model) => <option value={model.id} key={model.id}>{model.name} · {model.state.toLowerCase()}</option>)}</select></label>
           <label className="studio-field studio-field-wide"><span>Shop description</span><textarea rows={3} value={description} disabled={!['DRAFT', 'READY'].includes(listing.state)} onChange={(event) => setDescription(event.target.value)} /></label>
         </div>
         <ReadinessList gates={gates} />

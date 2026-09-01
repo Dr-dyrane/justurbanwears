@@ -15,7 +15,6 @@ import {
   UserRound,
 } from "lucide-react";
 import type { StudioAuthorityModel } from "../../lib/studio/services/studio-authority-client";
-import { APPROVED_PUBLIC_MODEL_PREVIEW } from "../../lib/studio/projections/approved-catalogue";
 import { LifecycleMeta } from "./atoms/lifecycle-meta";
 import { StudioFeedback } from "./atoms/studio-feedback";
 import { StudioLoadingStage } from "./atoms/studio-loading-stage";
@@ -26,6 +25,29 @@ import { StudioTaskSheet } from "./atoms/studio-task-sheet";
 import { useStudio } from "./studio-provider";
 
 type ApiFailure = { error?: { message?: string; recovery?: string } };
+
+type LuluVerification = {
+  schemaVersion: "juw.atelier-adult-verification-evidence.v1";
+  status: "VERIFIED" | "REVIEW_REQUIRED";
+  canRecordReview: boolean;
+  reviewBlockedReason: "ADMIN_REQUIRED" | "INDEPENDENT_REVIEWER_REQUIRED" | null;
+  authorityRevision: string;
+  authorityManifestSha256: string;
+  verificationMethod: string | null;
+  verifiedAt: string | null;
+  expiresAt: string | null;
+};
+
+type LuluReviewCommand = {
+  action: "RECORD_AUTHORIZED_HUMAN_REVIEW";
+  expectedAuthorityRevision: string;
+  expectedAuthorityManifestSha256: string;
+  declarationVersion: "juw.atelier-authorized-human-review.v1";
+  reviewedReliableAdultIdentityEvidence: true;
+  matchedEvidenceToLuluAuthority: true;
+  reviewedAt: string;
+  idempotencyKey: string;
+};
 
 async function responseBody<T>(response: Response): Promise<T> {
   const body = await response.json().catch(() => ({})) as T | ApiFailure;
@@ -41,6 +63,140 @@ function styling(model: StudioAuthorityModel) {
     makeup: value?.makeup || "Fresh skin, quiet definition",
     direction: value?.direction || "Neutral posture, product first",
   };
+}
+
+function verificationDate(value: string | null) {
+  if (!value) return "Not set";
+  return new Intl.DateTimeFormat("en-NG", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value));
+}
+
+async function readLuluVerification(signal?: AbortSignal) {
+  const response = await fetch("/api/studio/models/lulu/verification", {
+    credentials: "same-origin",
+    headers: { accept: "application/json" },
+    signal,
+  });
+  return responseBody<{ verification: LuluVerification }>(response);
+}
+
+function LuluVerificationPanel() {
+  const [verification, setVerification] = useState<LuluVerification | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState("");
+  const [reviewedEvidence, setReviewedEvidence] = useState(false);
+  const [matchedAuthority, setMatchedAuthority] = useState(false);
+  const pendingRef = useRef(false);
+  const reviewCommandRef = useRef<LuluReviewCommand | null>(null);
+  const reviewedEvidenceId = useId();
+  const matchedAuthorityId = useId();
+
+  useEffect(() => {
+    const controller = new AbortController();
+    void (async () => {
+      setLoading(true);
+      setError("");
+      try {
+        const result = await readLuluVerification(controller.signal);
+        setVerification(result.verification);
+      } catch (cause) {
+        if (cause instanceof DOMException && cause.name === "AbortError") return;
+        setError(cause instanceof Error ? cause.message : "Lulu verification could not be read.");
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
+      }
+    })();
+    return () => controller.abort();
+  }, []);
+
+  async function recordReview(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!verification?.canRecordReview || !reviewedEvidence || !matchedAuthority || pendingRef.current) return;
+    pendingRef.current = true;
+    setPending(true);
+    setError("");
+    const command = reviewCommandRef.current ?? {
+      action: "RECORD_AUTHORIZED_HUMAN_REVIEW",
+      expectedAuthorityRevision: verification.authorityRevision,
+      expectedAuthorityManifestSha256: verification.authorityManifestSha256,
+      declarationVersion: "juw.atelier-authorized-human-review.v1",
+      reviewedReliableAdultIdentityEvidence: true,
+      matchedEvidenceToLuluAuthority: true,
+      reviewedAt: new Date().toISOString(),
+      idempotencyKey: `lulu-review:${crypto.randomUUID()}`,
+    } satisfies LuluReviewCommand;
+    reviewCommandRef.current = command;
+    try {
+      const response = await fetch("/api/studio/models/lulu/verification", {
+        body: JSON.stringify(command),
+        credentials: "same-origin",
+        headers: { accept: "application/json", "content-type": "application/json" },
+        method: "POST",
+      });
+      const result = await responseBody<{ verification: LuluVerification }>(response);
+      setVerification(result.verification);
+      setReviewedEvidence(false);
+      setMatchedAuthority(false);
+      reviewCommandRef.current = null;
+    } catch (cause) {
+      const message = cause instanceof Error ? cause.message : "The independent review could not be recorded.";
+      try {
+        const current = (await readLuluVerification()).verification;
+        setVerification(current);
+        if (current.status === "VERIFIED") {
+          setReviewedEvidence(false);
+          setMatchedAuthority(false);
+          reviewCommandRef.current = null;
+        } else {
+          if (current.authorityRevision !== command.expectedAuthorityRevision
+            || current.authorityManifestSha256 !== command.expectedAuthorityManifestSha256) {
+            reviewCommandRef.current = null;
+          }
+          setError(message);
+        }
+      } catch {
+        setError(message);
+      }
+    } finally {
+      pendingRef.current = false;
+      setPending(false);
+    }
+  }
+
+  if (loading) return <p role="status">Checking durable verification…</p>;
+  if (!verification) return <StudioFeedback detail={error} state="error" title="Verification unavailable" />;
+  if (verification.status === "VERIFIED") return (
+    <>
+      <dl className="studio-model-facts">
+        <div><dt>Adult verification</dt><dd>Verified</dd></div>
+        <div><dt>Method</dt><dd>{verification.verificationMethod ?? "Authorized human review"}</dd></div>
+        <div><dt>Verified</dt><dd>{verificationDate(verification.verifiedAt)}</dd></div>
+        <div><dt>Expires</dt><dd>{verification.expiresAt ? verificationDate(verification.expiresAt) : "No expiry recorded"}</dd></div>
+      </dl>
+      {error ? <StudioFeedback detail={error} state="error" title="Verification refresh failed" /> : null}
+    </>
+  );
+
+  if (!verification.canRecordReview) {
+    const independentReviewerRequired = verification.reviewBlockedReason === "INDEPENDENT_REVIEWER_REQUIRED";
+    return <StudioFeedback
+      detail={independentReviewerRequired
+        ? "Another Studio admin must review Lulu’s reliable adult identity evidence. Lulu cannot review her own authority."
+        : "A Studio admin must review Lulu’s reliable adult identity evidence."}
+      state="empty"
+      title="Independent review required"
+    />;
+  }
+
+  return (
+    <form className="studio-form-grid studio-task-fields" onSubmit={recordReview}>
+      <div className="studio-field studio-field-wide"><span>Independent review</span><small>You are eligible to record the authorized human review for this exact Lulu V4 authority.</small></div>
+      <label className="studio-settings-switch studio-field-wide" htmlFor={reviewedEvidenceId}><span className="sr-only">Reliable adult identity evidence reviewed</span><span><strong>I reviewed reliable adult identity evidence</strong><small>This confirmation is about Lulu’s real evidence, not generated output.</small></span><input checked={reviewedEvidence} disabled={pending} id={reviewedEvidenceId} onChange={(event) => setReviewedEvidence(event.target.checked)} type="checkbox" /><i aria-hidden="true"><b /></i></label>
+      <label className="studio-settings-switch studio-field-wide" htmlFor={matchedAuthorityId}><span className="sr-only">Evidence matched to Lulu authority</span><span><strong>I matched the evidence to Lulu V4 authority</strong><small>This binds the review to the current authority revision and manifest.</small></span><input checked={matchedAuthority} disabled={pending} id={matchedAuthorityId} onChange={(event) => setMatchedAuthority(event.target.checked)} type="checkbox" /><i aria-hidden="true"><b /></i></label>
+      {error ? <StudioFeedback detail={error} state="error" title="Review not recorded" /> : null}
+      <button className="button button-primary" disabled={pending || !reviewedEvidence || !matchedAuthority} type="submit">{pending ? "Recording review…" : "Record independent review"}</button>
+    </form>
+  );
 }
 
 function ModelTask({
@@ -273,7 +429,7 @@ export function ModelAtelier() {
         </aside>
 
         {selected ? <div className={`studio-model-stage${activeView === "profile" ? "" : " is-panel-only"}`}>
-          {activeView === "profile" ? <div className={`studio-model-portrait${selected.kind === "LULU_V3" ? " is-approved" : ""}`}><img alt={`${selected.name}, private approved model authority`} className="studio-model-approved-image" height={1619} src={selected.kind === "LULU_V3" ? APPROVED_PUBLIC_MODEL_PREVIEW.src : selected.sourceAssetUrl} width={972} /><div className="studio-model-master-caption"><small>{selected.kind === "LULU_V3" ? "Approved default" : "Usage confirmed"}</small><strong>{selected.name}</strong><span>Approved for Studio reference</span></div></div> : null}
+          {activeView === "profile" ? <div className={`studio-model-portrait${selected.kind === "LULU_V3" ? " is-approved" : ""}`}><img alt={`${selected.name}, current Studio model preview`} className="studio-model-approved-image" height={selected.previewHeight ?? 1619} src={selected.previewAssetUrl ?? selected.sourceAssetUrl} width={selected.previewWidth ?? 972} /><div className="studio-model-master-caption"><small>{selected.kind === "LULU_V3" ? "Lulu V4 · current authority" : "Usage confirmed"}</small><strong>{selected.name}</strong><span>{selected.kind === "LULU_V3" ? "Face and body authority synced" : "Approved for Studio reference"}</span></div></div> : null}
           <StudioStackSection
             aria-labelledby={`studio-tab-${activeView}`}
             className="studio-model-profile studio-stack-panel"
@@ -283,8 +439,8 @@ export function ModelAtelier() {
             title={selected.name}
           >
             {activeView === "styling" ? <dl className="studio-model-facts"><div><dt>Hair</dt><dd>{styling(selected).hair}</dd></div><div><dt>Makeup</dt><dd>{styling(selected).makeup}</dd></div><div><dt>Direction</dt><dd>{styling(selected).direction}</dd></div></dl> : null}
-            {activeView === "authority" ? <dl className="studio-model-facts"><div><dt>Confirmed</dt><dd>{new Intl.DateTimeFormat("en-NG", { dateStyle: "medium" }).format(new Date(selected.authorityConfirmedAt))}</dd></div><div><dt>Source</dt><dd>{selected.licenseUrl ? <a href={selected.licenseUrl} rel="noreferrer" target="_blank">Open usage source</a> : "Lulu private authority"}</dd></div><div><dt>Allowed</dt><dd>{String(selected.authority.allowedUse ?? "Private Studio try-on generation")}</dd></div><div><dt>Restricted</dt><dd>{String(selected.authority.restrictedUse ?? "No public use without separate approval")}</dd></div></dl> : null}
-            <div className="studio-model-profile-actions">{selected.kind === "LULU_V3" && activeView === "profile" ? <div className="studio-model-lock-note"><Lock aria-hidden="true" size={16} /><span><strong>Lulu stays consistent.</strong><small>Add another model for a different identity.</small></span></div> : selected.kind !== "LULU_V3" && activeView === "styling" ? <button className="button button-primary" onClick={(event) => openTask("edit", event.currentTarget)} type="button"><Pencil aria-hidden="true" size={16} />Edit styling</button> : selected.kind !== "LULU_V3" && activeView === "authority" ? <button className="button button-secondary" onClick={(event) => { setReturnFocus(event.currentTarget); setArchiveOpen(true); }} type="button"><Archive aria-hidden="true" size={16} />Withdraw</button> : null}</div>
+            {activeView === "authority" ? <><dl className="studio-model-facts"><div><dt>Version</dt><dd>{selected.kind === "LULU_V3" ? "Lulu V4" : selected.authorityRevision ?? "Authorized model"}</dd></div><div><dt>Confirmed</dt><dd>{new Intl.DateTimeFormat("en-NG", { dateStyle: "medium" }).format(new Date(selected.authorityConfirmedAt))}</dd></div><div><dt>Source</dt><dd>{selected.licenseUrl ? <a href={selected.licenseUrl} rel="noreferrer" target="_blank">Open usage source</a> : "Lulu private authority"}</dd></div><div><dt>Allowed</dt><dd>{String(selected.authority.allowedUse ?? "Private Studio try-on generation")}</dd></div><div><dt>Restricted</dt><dd>{String(selected.authority.restrictedUse ?? "No public use without separate approval")}</dd></div></dl>{selected.kind === "LULU_V3" ? <LuluVerificationPanel /> : null}</> : null}
+            <div className="studio-model-profile-actions">{selected.kind === "LULU_V3" && activeView === "profile" ? <div className="studio-model-lock-note"><Lock aria-hidden="true" size={16} /><span><strong>Lulu V4 stays consistent.</strong><small>Face, body and rear authorities move together.</small></span></div> : selected.kind !== "LULU_V3" && activeView === "styling" ? <button className="button button-primary" onClick={(event) => openTask("edit", event.currentTarget)} type="button"><Pencil aria-hidden="true" size={16} />Edit styling</button> : selected.kind !== "LULU_V3" && activeView === "authority" ? <button className="button button-secondary" onClick={(event) => { setReturnFocus(event.currentTarget); setArchiveOpen(true); }} type="button"><Archive aria-hidden="true" size={16} />Withdraw</button> : null}</div>
           </StudioStackSection>
         </div> : <StudioFeedback action={<button className="button button-primary" onClick={(event) => openTask("create", event.currentTarget)} type="button">Add model</button>} state="empty" title="No model authority" />}
       </div>

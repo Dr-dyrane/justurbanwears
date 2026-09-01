@@ -29,7 +29,14 @@ test("live garment commands require explicit, versioned intent", () => {
     expectedVersion: 3,
     facts,
   }).success, true);
-  const { description: _description, ...priceOnlyCompatibleFacts } = facts;
+  const priceOnlyCompatibleFacts = {
+    title: facts.title,
+    category: facts.category,
+    colour: facts.colour,
+    sizeLabel: facts.sizeLabel,
+    condition: facts.condition,
+    price: facts.price,
+  };
   assert.equal(garmentLifecycleCommandSchema.safeParse({
     command: "SAVE_FACTS",
     expectedVersion: 3,
@@ -128,6 +135,9 @@ test("Piece exposes direct price, media, visibility and history controls", () =>
   assert.match(lifecyclePanel, />Archive</);
   assert.match(lifecyclePanel, />History</);
   assert.match(lifecyclePanel, /Changes stay private until you publish them\./);
+  assert.match(lifecyclePanel, /aria-label="Final Shop listing"/);
+  assert.match(lifecyclePanel, /<small>Customers will see<\/small>/);
+  assert.match(lifecyclePanel, /workspace\.draft\.facts\.description/);
   assert.match(lifecyclePanel, /Price saved\./);
   assert.match(lifecyclePanel, /Garment details saved\./);
   assert.match(lifecyclePanel, /Garment photo saved\./);

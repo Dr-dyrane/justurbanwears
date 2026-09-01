@@ -372,3 +372,14 @@ test("connected Wardrobe reads one canonical Studio scope for every authenticate
   assert.doesNotMatch(route, /listWardrobeItems\(operator\.actorSubject\)/);
   assert.doesNotMatch(route, /listCataloguePublications\(operator\.actorSubject\)/);
 });
+
+test("legacy listing fallback preserves the approved model without exposing an obsolete selector", () => {
+  const workbench = readFileSync(`${process.cwd()}/components/studio/wardrobe-workbench.tsx`, "utf8");
+  const listingEditor = workbench.slice(
+    workbench.indexOf("function ListingEditor"),
+    workbench.indexOf("export function WardrobeWorkbench"),
+  );
+  assert.doesNotMatch(listingEditor, /<span>Model<\/span>/);
+  assert.doesNotMatch(listingEditor, /setModelId/);
+  assert.match(listingEditor, /modelId: listing\.modelId/);
+});

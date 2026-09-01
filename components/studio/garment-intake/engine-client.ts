@@ -2,6 +2,7 @@ export type IntakeSourceMode = "CAMERA" | "UPLOAD" | "DESCRIBE";
 
 export interface IntakeFacts {
   title: string;
+  description?: string;
   category: string;
   colour: string;
   sizeLabel: string;

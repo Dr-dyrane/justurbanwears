@@ -32,6 +32,15 @@ function readyEnvelope() {
       wardrobeItemId,
       garmentId: `wardrobe:${wardrobeItemId}`,
       expectedRevision: revision,
+      listingFacts: {
+        title: "Violet Beaded Ruffle Romper",
+        description: "A deep-violet beaded romper framed by soft flounces and an asymmetric ruffled hem.",
+        category: "Rompers",
+        colour: "Deep violet",
+        sizeLabel: "S,M",
+        condition: "New",
+        price: 32_000,
+      },
       roles: [...STUDIO_ATELIER_SHOP_MEDIA_ROLE_ORDER],
     },
   };
@@ -67,6 +76,15 @@ test("the client accepts only the exact seven-role READY review and preserves ex
   const reordered = readyEnvelope();
   reordered.adoption.roles.reverse();
   assert.equal(parseStudioAtelierAdoptionReviewEnvelope(reordered, wardrobeItemId), null);
+
+  const missingFacts = readyEnvelope();
+  assert.equal(parseStudioAtelierAdoptionReviewEnvelope({
+    adoption: { ...missingFacts.adoption, listingFacts: undefined },
+  }, wardrobeItemId), null);
+
+  const invalidFacts = readyEnvelope();
+  invalidFacts.adoption.listingFacts.description = " ";
+  assert.equal(parseStudioAtelierAdoptionReviewEnvelope(invalidFacts, wardrobeItemId), null);
 
   const blocked = parseStudioAtelierAdoptionReviewEnvelope({
     adoption: {
@@ -123,6 +141,10 @@ test("the adoption action is explicit, single-flight, reload-stable, and reconci
   assert.match(source, /This check is read-only\. It cannot start image generation\./);
   assert.match(source, /aria-busy=\{busy \|\| undefined\}/);
   assert.match(source, /aria-label="Seven locked Atelier views" role="list"/);
+  assert.match(source, /aria-label="Final Shop listing"/);
+  assert.match(source, /panel\.review\.listingFacts\.description/);
+  assert.match(source, /panel\.review\.listingFacts\.condition/);
+  assert.doesNotMatch(source, /listingFactsError|onRetryListingFacts/);
   assert.match(source, /role="alert">\{panel\.notice\}/);
   assert.doesNotMatch(source, /<img|assetUrl|blobPathname|providerUrl/);
 
@@ -160,6 +182,8 @@ test("the existing adaptive Shop sheet gives READY adoption one primary action w
   assert.match(source, /<StudioTaskSheet[\s\S]*?className="studio-piece-shop-sheet"/);
   assert.match(source, /<StudioAtelierShopAdoption/);
   assert.match(source, /active=\{atelierAdoptionActive\}/);
+  assert.doesNotMatch(source, /listingFacts=\{|listingFactsError=|onRetryListingFacts=/);
+  assert.doesNotMatch(source, /fetch\(`\/api\/studio\/wardrobe\/\$\{encodeURIComponent\(garment\.privateWardrobeItemId\)\}\/lifecycle`/);
   assert.match(source, /atelierAdoptionOwnsShopSheet/);
   assert.match(source, /!atelierAdoptionOwnsShopSheet && dynamicReview\?\.state === "READY"/);
   assert.match(source, /busy=\{publishing \|\| atelierAdoptionBusy\}/);

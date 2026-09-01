@@ -68,6 +68,14 @@ class AdoptionRequestError extends Error {
   }
 }
 
+function formatNaira(value: number) {
+  return new Intl.NumberFormat("en-NG", {
+    style: "currency",
+    currency: "NGN",
+    maximumFractionDigits: 0,
+  }).format(value);
+}
+
 async function responseBody(response: Response): Promise<unknown> {
   return response.json().catch(() => null);
 }
@@ -384,6 +392,18 @@ export function StudioAtelierShopAdoption({
         <div><small>Seven locked views</small><h3>Ready for Shop</h3></div>
         <LockKeyhole aria-label="Exact locked Atelier media" size={18} />
       </div>
+      <section aria-label="Final Shop listing" className="studio-publication-summary">
+        <small>Customer listing</small>
+        <strong>{panel.review.listingFacts.title}</strong>
+        <p>{panel.review.listingFacts.description}</p>
+        <div className="studio-garment-facts">
+          <span>{formatNaira(panel.review.listingFacts.price)}</span>
+          <span>{panel.review.listingFacts.category}</span>
+          <span>{panel.review.listingFacts.colour}</span>
+          <span>{panel.review.listingFacts.sizeLabel}</span>
+          <span>{panel.review.listingFacts.condition}</span>
+        </div>
+      </section>
       <p className="studio-inline-state">Review the roles below. Private storage and provider details never enter this screen.</p>
       <div className="studio-readiness-list" aria-label="Seven locked Atelier views" role="list">
         {panel.review.roles.map((role) => (

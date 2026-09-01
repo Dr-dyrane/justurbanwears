@@ -14,6 +14,7 @@ import {
   studioAtelierShopAdoptionSqlRepository,
   type StudioAtelierShopAdoptionPublicMedia,
   type StudioAtelierShopAdoptionSqlRepository,
+  type StudioAtelierShopAdoptionTarget,
 } from "./studio-atelier-publication-adoption-ledger-repository";
 
 function conflict(message: string): StudioEngineError {
@@ -52,6 +53,23 @@ function sameReceipt(
 
 function sha256(bytes: Uint8Array): string {
   return createHash("sha256").update(bytes).digest("hex");
+}
+
+function targetMatchesReviewedAuthority(
+  target: StudioAtelierShopAdoptionTarget,
+  commit: StudioAtelierShopAdoptionCommitInput,
+): boolean {
+  const authority = commit.publicationAuthority;
+  if (!authority || authority.expectedItemVersion !== target.expectedVersion) return false;
+  return canonicalStringify(authority.listingFacts) === canonicalStringify({
+    title: target.title,
+    description: target.description,
+    category: target.category,
+    colour: target.colour,
+    sizeLabel: target.sizeLabel,
+    condition: target.condition,
+    price: target.price,
+  });
 }
 
 function publicMediaFor(input: StudioAtelierShopAdoptionCommitInput): readonly StudioAtelierShopAdoptionPublicMedia[] {
@@ -121,6 +139,9 @@ export function createStudioAtelierShopAdoptionProductionLedger(input: Readonly<
         }
         throw invalidTransition("This Wardrobe piece cannot begin a new Atelier Shop adoption.");
       }
+      if (!targetMatchesReviewedAuthority(target, commit)) {
+        throw conflict("The reviewed Shop listing changed before publication.");
+      }
 
       const committed = await repository.commitAtomically({
         commit: Object.freeze({
@@ -128,6 +149,7 @@ export function createStudioAtelierShopAdoptionProductionLedger(input: Readonly<
           idempotencyKey: commit.idempotencyKey,
           expectedRevision: commit.expectedRevision,
           receipt: commit.receipt,
+          publicationAuthority: commit.publicationAuthority,
           expectedLocks: commit.expectedLocks,
         }),
         target,

@@ -23,6 +23,11 @@ test("garment intake is one progressive mounted sheet with no select controls", 
   assert.match(sheet, /Photos/);
   assert.match(sheet, /Describe/);
   assert.match(sheet, /Keep/);
+  assert.match(sheet, /<dt>Description<\/dt>/);
+  assert.match(sheet, /<span>Description<\/span><textarea maxLength=\{2000\} required/);
+  assert.match(sheet, /facts\.description\?\.trim\(\)/);
+  assert.match(sheet, /description: String\(value\?\.description \?\? ""\)\.trim\(\)/);
+  assert.match(client, /description\?: string/);
   assert.match(sheet, /Try again/);
   assert.match(sheet, /Expand garment preview/);
   assert.match(sheet, /Private · not for sale/);

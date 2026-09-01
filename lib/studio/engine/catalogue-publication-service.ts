@@ -1,5 +1,4 @@
 import { get } from "@vercel/blob";
-import sharp from "sharp";
 import { getOwnedAsset, getOwnedWardrobeItem } from "../../server/studio-intake-repository";
 import { findPrivateGarmentDescription } from "../../server/studio-garment-lifecycle-repository";
 import {
@@ -34,8 +33,6 @@ type PublicationImagePipeline = {
   webp(options: { quality: number; alphaQuality: number; effort: number }): PublicationImagePipeline;
   toBuffer(): Promise<Uint8Array>;
 };
-
-const createPublicationImagePipeline = sharp as unknown as (input: Uint8Array) => PublicationImagePipeline;
 
 export type PublicationSource = {
   id: string;
@@ -279,6 +276,10 @@ async function verifiedPrivateSource(source: PublicationSource) {
 }
 
 export async function normalizeStudioPublicationImage(bytes: Uint8Array) {
+  // Read-only Wardrobe routes import publication readiness from this module.
+  // Load native image processing only after an operator actually publishes.
+  const { default: sharp } = await import("sharp");
+  const createPublicationImagePipeline = sharp as unknown as (input: Uint8Array) => PublicationImagePipeline;
   const normalizedBytes = new Uint8Array(await createPublicationImagePipeline(bytes)
     .rotate()
     .toColourspace("srgb")

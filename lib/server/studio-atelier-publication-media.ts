@@ -10,7 +10,7 @@ import {
   type StudioAtelierPublishedMediaAuthorization,
   type StudioAtelierShopAdoptionSqlRepository,
 } from "./studio-atelier-publication-adoption-ledger-repository";
-import { readAtelierArtifactBytes } from "./studio-atelier-lock-service";
+import { readAtelierArtifactBytes } from "./studio-atelier-artifact-readback";
 
 const SHA256_PATTERN = /^[0-9a-f]{64}$/;
 

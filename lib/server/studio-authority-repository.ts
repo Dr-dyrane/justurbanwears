@@ -22,6 +22,8 @@ import type { StudioOperator } from "./studio-operator";
 import { verifyStudioImage } from "../studio/engine/assets";
 import { StudioEngineError } from "../studio/engine/errors";
 import { sha256 } from "../studio/engine/fingerprint";
+import { APPROVED_PUBLIC_MODEL_PREVIEW } from "../studio/projections/approved-catalogue";
+import { LULU_V4_AUTHORITY_REVISION } from "./studio-lulu-v4-authority";
 import type {
   StudioAuthorityHold,
   StudioAuthorityMedia,
@@ -485,15 +487,28 @@ export async function releaseManualHold(
 }
 
 function mapModel(row: Awaited<ReturnType<typeof listOwnedModelProfiles>>[number]): StudioAuthorityModel {
+  const canonicalLulu = row.kind === "LULU_V3" && row.authorityId === "lulu-v3";
   return {
     id: row.id,
     name: row.name,
     kind: row.kind as StudioAuthorityModel["kind"],
     state: row.state as StudioAuthorityModel["state"],
     sourceAssetUrl: `/api/studio/models/${row.id}/asset`,
+    previewAssetUrl: canonicalLulu ? APPROVED_PUBLIC_MODEL_PREVIEW.src : `/api/studio/models/${row.id}/asset`,
+    previewWidth: canonicalLulu ? APPROVED_PUBLIC_MODEL_PREVIEW.width : row.sourceWidth ?? 1200,
+    previewHeight: canonicalLulu ? APPROVED_PUBLIC_MODEL_PREVIEW.height : row.sourceHeight ?? 1500,
+    authorityId: canonicalLulu ? "lulu-v4" : row.authorityId,
+    authorityRevision: canonicalLulu ? LULU_V4_AUTHORITY_REVISION : row.updatedAt.toISOString(),
     licenseUrl: row.licenseUrl,
     authorityConfirmedAt: row.authorityConfirmedAt.toISOString(),
-    authority: record(row.authority),
+    authority: canonicalLulu ? {
+      ...record(row.authority),
+      canonVersion: "4.0.0",
+      approvalState: "CURRENT_V4_OPERATIONAL_AUTHORITY",
+      faceAuthority: "LOCKED",
+      bodyAuthority: "LOCKED",
+      rearAuthority: "LOCKED",
+    } : record(row.authority),
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
@@ -563,7 +578,7 @@ export async function updateStudioModelAuthority(
         set state = 'ARCHIVED',
             authority = authority || jsonb_build_object(
               'revokedAt', now()::text,
-              'revocationReason', ${input.reason}
+              'revocationReason', ${input.reason}::text
             ),
             updated_at = now()
         where id = ${modelId}::uuid

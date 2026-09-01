@@ -12,7 +12,7 @@ import {
   isStudioAtelierReviewableState,
   type StudioAtelierReviewableState,
 } from "./studio-atelier-candidate-visibility";
-import { readAtelierArtifactBytes } from "./studio-atelier-lock-service";
+import { readAtelierArtifactBytes } from "./studio-atelier-artifact-readback";
 import type { StudioOperator } from "./studio-operator";
 
 const OPERATION_ID_PATTERN = /^[a-zA-Z0-9._:/-]+$/;

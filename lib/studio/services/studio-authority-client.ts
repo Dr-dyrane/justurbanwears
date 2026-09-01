@@ -47,6 +47,11 @@ export type StudioAuthorityModel = {
   kind: "LULU_V3" | "AUTHORIZED_STOCK";
   state: "READY" | "ARCHIVED";
   sourceAssetUrl: string;
+  previewAssetUrl?: string;
+  previewWidth?: number;
+  previewHeight?: number;
+  authorityId?: string;
+  authorityRevision?: string;
   licenseUrl: string | null;
   authorityConfirmedAt: string;
   authority: {

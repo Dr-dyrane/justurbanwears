@@ -197,7 +197,10 @@ test("model segmented content can render without the portrait obstruction", () =
 test("operator copy and recovery stay action-led", () => {
   assert.match(home, /scenario[\s\S]*?Scenario preview/);
   assert.match(home, /projected\.degradedSources\.length \? "Studio snapshot" : "Live Studio"/);
-  assert.match(home, /Live state unavailable/);
+  assert.match(home, /currentPublishedListings/);
+  assert.match(home, /liveListingsLabel/);
+  assert.match(home, /summary\.orders\.value \?\? connectedActiveOrders/);
+  assert.doesNotMatch(home, /Live state unavailable/);
   assert.match(home, /studio\/wardrobe\/\$\{encodeURIComponent/);
   assert.doesNotMatch(directCaptures, /studio-magic-capture-shortcut/);
   assert.match(directCaptures, /Magic Wand/);

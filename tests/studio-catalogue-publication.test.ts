@@ -218,6 +218,8 @@ test("publication is one atomic guarded statement and Piece owns Review to Publi
   assert.match(service, /sha256\(convergedBytes\) !== publicSha256/);
   assert.match(service, /current\.ready\.sourceRevision !== input\.expectedRevision/);
   assert.match(service, /toColourspace\("srgb"\)/);
+  assert.doesNotMatch(service, /^import sharp from "sharp";/m);
+  assert.match(service, /const \{ default: sharp \} = await import\("sharp"\)/);
   assert.match(service, /sourceSha256: source\.sha256/);
   assert.match(service, /description: item\.description/);
   assert.match(service, /blockers\.push\("Shop description"\)/);

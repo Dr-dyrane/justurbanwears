@@ -146,6 +146,7 @@ function normalizeFacts(value?: Partial<IntakeFacts>): IntakeFacts {
   const price = Number(value?.price ?? 0);
   return {
     title: String(value?.title ?? "").trim(),
+    description: String(value?.description ?? "").trim(),
     category: String(value?.category ?? "Dress").trim() || "Dress",
     colour: String(value?.colour ?? "").trim(),
     sizeLabel: String(value?.sizeLabel ?? "Size on request").trim() || "Size on request",
@@ -201,7 +202,7 @@ export function GarmentIntakeSheet({
   const pollingIntakeState = intake?.state;
   const working = pendingAction !== undefined;
   const progress = ({ start: 8, source: 24, build: 54, confirm: 70, edit: 70, receipt: 100, reconcile: 70 } satisfies Record<IntakeStep, number>)[step];
-  const canKeep = Boolean(facts.title && facts.category && facts.colour);
+  const canKeep = Boolean(facts.title && facts.description?.trim() && facts.category && facts.colour);
   const sourceLabel = sourceMode === "DESCRIBE" ? "Description" : sourceMode === "CAMERA" ? "Camera" : "Photos";
 
   const currentImage = candidatePreview ?? (intake ? client.sourceUrl?.(intake) : undefined) ?? preview;
@@ -901,6 +902,7 @@ export function GarmentIntakeSheet({
             <p className="eyebrow">Confirm</p>
             <h3>{facts.title || "Name this garment"}</h3>
             <dl className="studio-confirm-facts">
+              <div><dt>Description</dt><dd>{facts.description || "Add description"}</dd></div>
               <div><dt>Category</dt><dd>{facts.category}</dd></div>
               <div><dt>Colour</dt><dd>{facts.colour || "Add colour"}</dd></div>
               <div><dt>Size</dt><dd>{facts.sizeLabel}</dd></div>
@@ -925,6 +927,7 @@ export function GarmentIntakeSheet({
           <h3>Keep only what is true.</h3>
           <div className="studio-fact-fields">
             <label className="studio-field"><span>Name</span><input value={facts.title} onChange={(event) => setFacts((current) => ({ ...current, title: event.target.value }))} /></label>
+            <label className="studio-field studio-field-wide"><span>Description</span><textarea maxLength={2000} required rows={3} value={facts.description ?? ""} onChange={(event) => setFacts((current) => ({ ...current, description: event.target.value }))} /></label>
             <label className="studio-field"><span>Colour</span><input value={facts.colour} onChange={(event) => setFacts((current) => ({ ...current, colour: event.target.value }))} /></label>
             <label className="studio-field"><span>Size</span><input value={facts.sizeLabel} onChange={(event) => setFacts((current) => ({ ...current, sizeLabel: event.target.value }))} /></label>
             <label className="studio-field"><span>Price</span><input inputMode="numeric" min="0" type="number" value={facts.price || ""} onChange={(event) => setFacts((current) => ({ ...current, price: Math.max(0, Number(event.target.value)) }))} /></label>

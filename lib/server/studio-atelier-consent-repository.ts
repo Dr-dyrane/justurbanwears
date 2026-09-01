@@ -18,7 +18,7 @@ import type {
   ResolveStudioAtelierProviderRetentionConsent,
   StudioAtelierAdultLikenessAuthorityReceipt,
 } from "./studio-atelier-production-ports";
-import { STUDIO_ATELIER_PRIVATE_MANIFEST_SHA256 } from "./studio-atelier-production-runtime";
+import { STUDIO_ATELIER_PRIVATE_MANIFEST_SHA256 } from "./studio-atelier-authority-constants";
 import {
   LULU_V4_AUTHORITY_REVISION,
 } from "./studio-lulu-v4-authority";
@@ -32,6 +32,8 @@ export const STUDIO_ATELIER_PROVIDER_NOTICE_VERSION =
   "juw.atelier-provider-retention-notice.v1" as const;
 export const STUDIO_ATELIER_CONSENT_STATUS_VERSION =
   "juw.atelier-consent-status.v1" as const;
+export const STUDIO_ATELIER_HUMAN_REVIEW_VERSION =
+  "juw.atelier-authorized-human-review.v1" as const;
 export const STUDIO_ATELIER_MODEL_REVISION =
   "gateway-openai-gpt-image-2-2026-04-21" as const;
 
@@ -131,6 +133,33 @@ export type StudioAtelierAdultVerificationRecord = Readonly<
     createdAt: string;
   }
 >;
+
+export const studioAtelierHumanReviewCommandSchema = z.object({
+  action: z.literal("RECORD_AUTHORIZED_HUMAN_REVIEW"),
+  expectedAuthorityRevision: z.literal(LULU_V4_AUTHORITY_REVISION),
+  expectedAuthorityManifestSha256: z.literal(STUDIO_ATELIER_PRIVATE_MANIFEST_SHA256),
+  declarationVersion: z.literal(STUDIO_ATELIER_HUMAN_REVIEW_VERSION),
+  reviewedReliableAdultIdentityEvidence: z.literal(true),
+  matchedEvidenceToLuluAuthority: z.literal(true),
+  reviewedAt: z.string().regex(ISO_TIMESTAMP_PATTERN),
+  idempotencyKey: z.string().trim().min(8).max(160),
+}).strict();
+
+export type StudioAtelierHumanReviewCommand = z.infer<
+  typeof studioAtelierHumanReviewCommandSchema
+>;
+
+export type StudioAtelierAdultVerificationStatus = Readonly<{
+  schemaVersion: typeof STUDIO_ATELIER_ADULT_VERIFICATION_VERSION;
+  status: "VERIFIED" | "REVIEW_REQUIRED";
+  canRecordReview: boolean;
+  reviewBlockedReason: "ADMIN_REQUIRED" | "INDEPENDENT_REVIEWER_REQUIRED" | null;
+  authorityRevision: typeof LULU_V4_AUTHORITY_REVISION;
+  authorityManifestSha256: typeof STUDIO_ATELIER_PRIVATE_MANIFEST_SHA256;
+  verificationMethod: StudioAtelierAdultVerificationBody["verificationMethod"] | null;
+  verifiedAt: string | null;
+  expiresAt: string | null;
+}>;
 
 export function deriveStudioAtelierAdultVerificationRecordHash(
   raw: StudioAtelierAdultVerificationBody,
@@ -374,6 +403,97 @@ export async function recordStudioAtelierAdultVerificationEvidence(
   return record;
 }
 
+export async function readStudioAtelierAdultVerificationStatus(
+  operator: StudioOperator,
+): Promise<StudioAtelierAdultVerificationStatus> {
+  const verification = await readCurrentAdultVerification(operator.subject);
+  const admin = operator.role === "admin";
+  const independentReviewer = operator.actorSubject !== operator.subject;
+  return Object.freeze({
+    schemaVersion: STUDIO_ATELIER_ADULT_VERIFICATION_VERSION,
+    status: verification ? "VERIFIED" : "REVIEW_REQUIRED",
+    canRecordReview: !verification && admin && independentReviewer,
+    reviewBlockedReason: verification
+      ? null
+      : !admin
+        ? "ADMIN_REQUIRED"
+        : !independentReviewer
+          ? "INDEPENDENT_REVIEWER_REQUIRED"
+          : null,
+    authorityRevision: LULU_V4_AUTHORITY_REVISION,
+    authorityManifestSha256: STUDIO_ATELIER_PRIVATE_MANIFEST_SHA256,
+    verificationMethod: verification?.verificationMethod ?? null,
+    verifiedAt: verification?.verifiedAt ?? null,
+    expiresAt: verification?.expiresAt ?? null,
+  });
+}
+
+export async function recordStudioAtelierAuthorizedHumanReview(input: Readonly<{
+  operator: StudioOperator;
+  command: StudioAtelierHumanReviewCommand;
+}>): Promise<StudioAtelierAdultVerificationStatus> {
+  const command = studioAtelierHumanReviewCommandSchema.parse(input.command);
+  if (input.operator.role !== "admin") {
+    throw new StudioEngineError(
+      "OPERATOR_FORBIDDEN",
+      403,
+      "Only a Studio admin can record Lulu's trusted identity review.",
+      "Ask a Studio admin who reviewed the evidence to complete this step.",
+    );
+  }
+  if (input.operator.actorSubject === input.operator.subject) {
+    throw new StudioEngineError(
+      "OPERATOR_FORBIDDEN",
+      403,
+      "Lulu's adult identity review must be recorded by a different Studio admin.",
+      "Ask another Studio admin to review the evidence and record the result.",
+    );
+  }
+  const reviewedAt = new Date(command.reviewedAt);
+  const now = Date.now();
+  if (
+    Number.isNaN(reviewedAt.getTime())
+    || Math.abs(now - reviewedAt.getTime()) > 5 * 60 * 1000
+  ) {
+    throw new StudioEngineError(
+      "INVALID_REQUEST",
+      400,
+      "The trusted identity review time is no longer current.",
+      "Review the evidence again before recording the result.",
+    );
+  }
+  const evidenceReceiptId = `studio-human-review:${sha256Text(canonicalStringify({
+    operatorSubject: input.operator.subject,
+    idempotencyKey: command.idempotencyKey,
+  }))}`;
+  const evidenceReceiptSha256 = sha256Text(canonicalStringify({
+    schemaVersion: STUDIO_ATELIER_HUMAN_REVIEW_VERSION,
+    operatorSubject: input.operator.subject,
+    reviewerSubject: input.operator.actorSubject,
+    authorityRevision: command.expectedAuthorityRevision,
+    authorityManifestSha256: command.expectedAuthorityManifestSha256,
+    reviewedReliableAdultIdentityEvidence: command.reviewedReliableAdultIdentityEvidence,
+    matchedEvidenceToLuluAuthority: command.matchedEvidenceToLuluAuthority,
+    reviewedAt: command.reviewedAt,
+    idempotencyKey: command.idempotencyKey,
+  }));
+  await recordStudioAtelierAdultVerificationEvidence({
+    schemaVersion: STUDIO_ATELIER_ADULT_VERIFICATION_VERSION,
+    operatorSubject: input.operator.subject,
+    subjectAuthorityId: "lulu-v4",
+    authorityRevision: command.expectedAuthorityRevision,
+    authorityManifestSha256: command.expectedAuthorityManifestSha256,
+    subjectAge: "VERIFIED_ADULT_18_PLUS",
+    verificationMethod: "AUTHORIZED_HUMAN_REVIEW",
+    evidenceReceiptId,
+    evidenceReceiptSha256,
+    verifiedAt: command.reviewedAt,
+    expiresAt: null,
+    recordedBySubject: input.operator.actorSubject,
+  });
+  return readStudioAtelierAdultVerificationStatus(input.operator);
+}
+
 function grantBodyFromRow(row: DatabaseRow): StudioAtelierConsentGrantBody | null {
   const parsed = consentGrantBodySchema.safeParse({
     operatorSubject: String(row.operator_subject ?? ""),
@@ -435,8 +555,8 @@ async function readActiveConsentAuthority(
     select
       projection.revision as projection_revision,
       projection.last_event_hash as projection_last_event_hash,
-      grant.*,
-      grant.created_at as grant_created_at,
+      consent_grant.*,
+      consent_grant.created_at as grant_created_at,
       verification.id as verification_id,
       verification.operator_subject as verification_operator_subject,
       verification.subject_authority_id as verification_subject_authority_id,
@@ -463,10 +583,10 @@ async function readActiveConsentAuthority(
       event.event_hash as consent_event_hash,
       event.created_at as consent_event_created_at
     from studio_atelier_consent_projections projection
-    inner join studio_atelier_consent_grants grant
-      on grant.id = projection.current_grant_id
+    inner join studio_atelier_consent_grants consent_grant
+      on consent_grant.id = projection.current_grant_id
     inner join studio_atelier_adult_verification_receipts verification
-      on verification.id = grant.adult_verification_id
+      on verification.id = consent_grant.adult_verification_id
     inner join studio_atelier_consent_events event
       on event.operator_subject = projection.operator_subject
       and event.sequence = projection.revision
@@ -475,7 +595,7 @@ async function readActiveConsentAuthority(
       and event.event_type = 'GRANTED'
     where projection.operator_subject = ${operatorSubject}
       and projection.state = 'ACTIVE'
-      and grant.operator_subject = projection.operator_subject
+      and consent_grant.operator_subject = projection.operator_subject
       and verification.operator_subject = projection.operator_subject
       and verification.revoked_at is null
       and verification.verified_at <= now()
@@ -619,12 +739,13 @@ export const resolveStudioAtelierAdultLikenessAuthority:
 
 function emptyStatus(
   verificationAvailable: boolean,
+  canActAsLulu: boolean,
 ): StudioAtelierConsentStatus {
   return Object.freeze({
     schemaVersion: STUDIO_ATELIER_CONSENT_STATUS_VERSION,
     status: verificationAvailable ? "NOT_RECORDED" : "VERIFICATION_REQUIRED",
     revision: 0,
-    canGrant: verificationAvailable,
+    canGrant: verificationAvailable && canActAsLulu,
     canRevoke: false,
     recordedAt: null,
     updatedAt: null,
@@ -646,25 +767,30 @@ export async function readStudioAtelierConsentStatus(
         projection.state,
         projection.last_event_hash,
         projection.updated_at,
-        grant.*,
-        grant.created_at as grant_created_at,
+        consent_grant.*,
+        consent_grant.created_at as grant_created_at,
         verification.record_sha256 as adult_verification_record_sha256,
         verification.revoked_at as adult_verification_revoked_at,
         verification.expires_at as adult_verification_expires_at
       from studio_atelier_consent_projections projection
-      inner join studio_atelier_consent_grants grant
-        on grant.id = projection.current_grant_id
+      inner join studio_atelier_consent_grants consent_grant
+        on consent_grant.id = projection.current_grant_id
       inner join studio_atelier_adult_verification_receipts verification
-        on verification.id = grant.adult_verification_id
+        on verification.id = consent_grant.adult_verification_id
       where projection.operator_subject = ${operator.subject}
-        and grant.operator_subject = projection.operator_subject
+        and consent_grant.operator_subject = projection.operator_subject
         and verification.operator_subject = projection.operator_subject
       limit 1
     `),
     readCurrentAdultVerification(operator.subject),
   ]);
   const row = resultRows(projectionResult)[0];
-  if (!row) return emptyStatus(Boolean(verification));
+  if (!row) {
+    return emptyStatus(
+      Boolean(verification),
+      operator.actorSubject === operator.subject,
+    );
+  }
 
   const revision = Number(row.revision);
   const projectionState = String(row.state);
@@ -697,7 +823,9 @@ export async function readStudioAtelierConsentStatus(
     schemaVersion: STUDIO_ATELIER_CONSENT_STATUS_VERSION,
     status,
     revision: Number.isSafeInteger(revision) && revision > 0 ? revision : 0,
-    canGrant: Boolean(verification) && status !== "ACTIVE",
+    canGrant: Boolean(verification)
+      && operator.actorSubject === operator.subject
+      && status !== "ACTIVE",
     canRevoke: status === "ACTIVE",
     recordedAt: grantBody?.createdAt ?? null,
     updatedAt: nullableIso(row.updated_at),
@@ -814,6 +942,14 @@ export async function grantStudioAtelierConsent(input: Readonly<{
   command: StudioAtelierConsentGrantCommand;
 }>): Promise<StudioAtelierConsentCommandReceipt> {
   const command = studioAtelierConsentCommandSchema.parse(input.command) as StudioAtelierConsentGrantCommand;
+  if (input.operator.actorSubject !== input.operator.subject) {
+    throw new StudioEngineError(
+      "OPERATOR_FORBIDDEN",
+      403,
+      "Only Lulu can confirm future use of her private likeness.",
+      "Ask Lulu to sign in and confirm Atelier authorization after verification is complete.",
+    );
+  }
   const fingerprint = deriveStudioAtelierConsentCommandFingerprint(command);
   const replayed = await replayedReceipt(input.operator, command, fingerprint);
   if (replayed) return replayed;

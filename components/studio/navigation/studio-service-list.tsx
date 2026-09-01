@@ -43,9 +43,12 @@ function useServiceStatuses(): Record<StudioPrimaryServiceKey, string> {
   const privatePieces = studio.scenario
     ? actionableStudioDraftCount(studio.garments)
     : connected?.pieces.filter((piece) => piece.availability === "PRIVATE").length ?? 0;
+  const connectedActiveOrders = connected
+    ? connected.orders.filter((order) => order.lifecycleStatus === "ACTIVE").length
+    : null;
   const activeOrders = studio.scenario
-    ? connected?.orders.filter((order) => order.lifecycleStatus === "ACTIVE").length ?? 0
-    : projected?.summary.orders.value ?? null;
+    ? connectedActiveOrders ?? 0
+    : projected?.summary.orders.value ?? connectedActiveOrders;
   const available = studio.scenario
     ? studio.garments.filter((garment) => (
         garment.availability === "AVAILABLE"

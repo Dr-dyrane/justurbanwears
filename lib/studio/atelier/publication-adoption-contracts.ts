@@ -24,6 +24,20 @@ export type StudioAtelierShopMediaRole = z.infer<
   typeof studioAtelierShopMediaRoleSchema
 >;
 
+export const studioAtelierShopListingFactsSchema = z.object({
+  title: z.string().trim().min(1).max(100),
+  description: z.string().trim().min(1).max(2_000),
+  category: z.enum(["Dresses", "Rompers", "Sets", "Shirts", "Knitwear", "Skirts", "Trousers"]),
+  colour: z.string().trim().min(1).max(60),
+  sizeLabel: z.string().trim().min(1).max(60),
+  condition: z.string().trim().min(1).max(100),
+  price: z.number().int().min(1).max(10_000_000),
+}).strict();
+
+export type StudioAtelierShopListingFacts = z.infer<
+  typeof studioAtelierShopListingFactsSchema
+>;
+
 export const STUDIO_ATELIER_SHOP_MEDIA_ROLE_ORDER = Object.freeze([
   "GARMENT_FRONT",
   "GARMENT_BACK",
@@ -99,5 +113,6 @@ export type StudioAtelierShopAdoptionReview =
       wardrobeItemId: string;
       garmentId: string;
       expectedRevision: string;
+      listingFacts: StudioAtelierShopListingFacts;
       roles: readonly StudioAtelierShopMediaRole[];
     }>;

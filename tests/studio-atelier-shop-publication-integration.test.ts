@@ -15,6 +15,7 @@ import {
 const receiptId = "a".repeat(64);
 const adoptionRevision = "b".repeat(64);
 const slug = "atelier-coral-dress-0123456789ab4cde8f0123456789abcd";
+const description = "A sculpted coral dress with a softly gathered waist.";
 const modelRoles = new Set([
   "MODEL_FRONT",
   "MODEL_LEFT_PROFILE",
@@ -53,7 +54,7 @@ function adoptionRow() {
     dropLabel: "Drop 02",
     tone: "coral",
     silhouette: "dress",
-    note: "One-off wardrobe piece.",
+    note: description,
     story: "Coral · Excellent",
     details: ["Coral", "UK 10", "Excellent"],
     measurements: [],
@@ -69,6 +70,7 @@ function adoptionRow() {
     publicationBaseline: null,
     publicationFacts: {
       title: "Atelier Coral Dress",
+      description,
       category: "Dresses",
       colour: "Coral",
       sizeLabel: "UK 10",
@@ -93,6 +95,7 @@ test("exact seven-role Atelier media becomes one Shop product with the locked MO
   const modelFront = publicationMedia.find((item) => item.slot === "MODEL_FRONT");
   assert.ok(modelFront);
   assert.equal(product.modelTryout.modelAnchorId, "lulu-v4");
+  assert.equal(product.note, description);
   assert.equal(product.modelTryout.frame.src, modelFront.src);
   assert.equal(product.modelTryout.frame.width, modelFront.width);
   assert.equal(product.modelTryout.frame.height, modelFront.height);
@@ -111,6 +114,21 @@ test("exact seven-role Atelier media becomes one Shop product with the locked MO
   assert.doesNotMatch(JSON.stringify(product), /blobPathname|lockedArtifactId|provider|storage\//i);
 });
 
+test("Atelier adoption commits the exact reviewed description under the item and intake CAS", () => {
+  const repository = readFileSync(
+    `${process.cwd()}/lib/server/studio-atelier-publication-adoption-ledger-repository.ts`,
+    "utf8",
+  );
+  assert.match(repository, /join studio_intakes intake/);
+  assert.match(repository, /intake\.facts->>'description' as description/);
+  assert.match(repository, /description: target\.description/);
+  assert.match(repository, /intake\.facts->>'description' = \$\{target\.description\}/);
+  assert.match(repository, /intake\.facts->>'price' = \$\{String\(target\.price\)\}/);
+  assert.match(repository, /for update of item, intake/);
+  assert.match(repository, /\$\{target\.description\}, \$\{`\$\{target\.colour\} · \$\{target\.condition\}`\}/);
+  assert.doesNotMatch(repository, /One-off wardrobe piece\./);
+});
+
 test("Atelier app-owned media paths are exact relative receipt and role identities", () => {
   const exact = studioAtelierPublicationMediaPath(receiptId, "MODEL_FRONT");
   assert.equal(isSafeStudioAtelierPublicationMediaUrl(exact), true);
@@ -123,6 +141,13 @@ test("Atelier app-owned media paths are exact relative receipt and role identiti
 
 test("any Atelier role, hash, dimension, MIME, anchor, order or receipt drift fails closed", () => {
   const cases = [
+    {
+      label: "reviewed description",
+      row: () => ({
+        ...adoptionRow(),
+        note: "A different public description.",
+      }),
+    },
     {
       label: "role order",
       row: () => ({

@@ -76,9 +76,12 @@ export function StudioHome() {
   const garmentDrafts = scenario
     ? actionableStudioDraftCount(garments)
     : connected?.pieces.filter((piece) => piece.availability === "PRIVATE").length ?? 0;
+  const connectedActiveOrders = connected
+    ? connected.orders.filter((order) => order.lifecycleStatus === "ACTIVE").length
+    : null;
   const activeOrders = scenario
-    ? connected?.orders.filter((order) => order.lifecycleStatus === "ACTIVE").length ?? 0
-    : projected?.summary.orders.value ?? null;
+    ? connectedActiveOrders ?? 0
+    : projected?.summary.orders.value ?? connectedActiveOrders;
   const orderWork = connected
     ? connected.orders.filter((order) => (
         studioOrderHasDueWork(order) && !studioOrderHasDueReturnWork(order)
@@ -102,7 +105,15 @@ export function StudioHome() {
     const garment = garmentsById.get(listing.garmentId);
     return !garment || historicalDrop01Kind(garment) === null;
   }).length;
-  const liveListings = scenario ? localLiveListings : projected?.summary.live.value ?? null;
+  const projectedLiveListings = projected?.summary.live.value ?? null;
+  const currentPublishedListings = projected?.collectionScopes
+    .find((scope) => scope.isCurrent)?.counts.published ?? null;
+  const liveListings = scenario
+    ? localLiveListings
+    : projectedLiveListings ?? currentPublishedListings;
+  const liveListingsLabel = scenario || projectedLiveListings !== null
+    ? "Live"
+    : currentPublishedListings !== null ? "Published" : "Shop";
   const availableUnits = scenario
     ? connected?.pieces.filter((piece) => {
         if (piece.availability !== "AVAILABLE") return false;
@@ -212,7 +223,7 @@ export function StudioHome() {
           <ArrowRight aria-hidden="true" size={24} />
         </Link>
         <small>{primaryOpenCount === null
-          ? "Live state unavailable"
+          ? "Recommendation needs a refresh"
           : primaryOpenCount
             ? `${primaryOpenCount} open`
             : "Studio clear"}</small>
@@ -273,7 +284,7 @@ export function StudioHome() {
           <ul className="studio-summary-grid">
             <li><Link aria-label={needsAttention === null ? "Attention unavailable" : `Attention ${needsAttention}`} className={`studio-summary-item${needsAttention ? " is-attention" : ""}`} href="/studio/operations"><span className="studio-summary-orb"><strong>{needsAttention ?? "—"}</strong></span><small>Attention</small></Link></li>
             <li><Link aria-label={availableUnits === null ? "Available state unavailable" : `Available ${availableUnits}`} className="studio-summary-item" href="/studio/operations?view=inventory"><span className="studio-summary-orb"><strong>{availableUnits ?? "—"}</strong></span><small>Available</small></Link></li>
-            <li><Link aria-label={liveListings === null ? "Live state unavailable" : `Live ${liveListings}`} className="studio-summary-item" href="/studio/wardrobe?view=publishing"><span className="studio-summary-orb"><strong>{liveListings ?? "—"}</strong></span><small>Live</small></Link></li>
+            <li><Link aria-label={liveListings === null ? "Open Shop publishing" : `${liveListingsLabel} ${liveListings}`} className="studio-summary-item" href="/studio/wardrobe?view=publishing"><span className="studio-summary-orb"><strong>{liveListings ?? "—"}</strong></span><small>{liveListingsLabel}</small></Link></li>
             <li><Link aria-label={activeOrders === null ? "Orders unavailable" : `Orders ${activeOrders}`} className="studio-summary-item" href="/studio/orders"><span className="studio-summary-orb"><strong>{activeOrders ?? "—"}</strong></span><small>Orders</small></Link></li>
           </ul>
         </section>

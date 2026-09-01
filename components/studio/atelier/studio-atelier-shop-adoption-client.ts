@@ -1,6 +1,7 @@
 import {
   STUDIO_ATELIER_SHOP_ADOPTION_SCHEMA_VERSION,
   STUDIO_ATELIER_SHOP_MEDIA_ROLE_ORDER,
+  studioAtelierShopListingFactsSchema,
   type StudioAtelierShopAdoptionReceipt,
   type StudioAtelierShopAdoptionReview,
   type StudioAtelierShopMediaRole,
@@ -64,11 +65,14 @@ export function parseStudioAtelierAdoptionReviewEnvelope(
     && SHA256_PATTERN.test(adoption.expectedRevision)
     && exactRoleOrder(adoption.roles)
   ) {
+    const listingFacts = studioAtelierShopListingFactsSchema.safeParse(adoption.listingFacts);
+    if (!listingFacts.success) return null;
     return Object.freeze({
       state: "READY",
       wardrobeItemId,
       garmentId: adoption.garmentId,
       expectedRevision: adoption.expectedRevision,
+      listingFacts: Object.freeze(listingFacts.data),
       roles: STUDIO_ATELIER_SHOP_MEDIA_ROLE_ORDER,
     });
   }

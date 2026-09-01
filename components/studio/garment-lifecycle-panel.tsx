@@ -550,11 +550,24 @@ export function GarmentLifecyclePanel({
           title={decisionCopy.title}
         >
           {decision === "PUBLISH_REVISION" && workspace.draft?.diff.length ? (
-            <div className="studio-decision-diff" aria-label="Changes to publish">
-              {workspace.draft.diff.map((change) => (
-                <p key={change.field}><strong>{change.label}</strong><span>{change.before}</span><i aria-hidden="true">→</i><span>{change.after}</span></p>
-              ))}
-            </div>
+            <>
+              <section className="studio-publication-summary" aria-label="Final Shop listing">
+                <small>Customers will see</small>
+                <strong>{workspace.draft.facts.title}</strong>
+                <p>{workspace.draft.facts.description}</p>
+                <div className="studio-garment-facts">
+                  <span>{formatNaira(workspace.draft.facts.price)}</span>
+                  <span>{workspace.draft.facts.colour}</span>
+                  <span>{workspace.draft.facts.sizeLabel}</span>
+                  <span>{workspace.draft.facts.condition}</span>
+                </div>
+              </section>
+              <div className="studio-decision-diff" aria-label="Changes to publish">
+                {workspace.draft.diff.map((change) => (
+                  <p key={change.field}><strong>{change.label}</strong><span>{change.before}</span><i aria-hidden="true">→</i><span>{change.after}</span></p>
+                ))}
+              </div>
+            </>
           ) : null}
         </StudioDecisionSheet>
       ) : null}

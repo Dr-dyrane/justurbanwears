@@ -41,6 +41,7 @@ export type StudioAtelierShopAdoptionTarget = Readonly<{
   operatorSubject: string;
   expectedVersion: number;
   title: string;
+  description: string;
   sourceCategory: string;
   category: "Dresses" | "Rompers" | "Sets" | "Shirts" | "Knitwear" | "Skirts" | "Trousers";
   colour: string;
@@ -89,7 +90,7 @@ export type StudioAtelierPublishedMediaAuthorization = Readonly<{
 export type StudioAtelierShopAdoptionAtomicInput = Readonly<{
   commit: Readonly<Pick<
     StudioAtelierShopAdoptionCommitInput,
-    "operatorSubject" | "idempotencyKey" | "expectedRevision" | "receipt" | "expectedLocks"
+    "operatorSubject" | "idempotencyKey" | "expectedRevision" | "receipt" | "publicationAuthority" | "expectedLocks"
   >>;
   target: StudioAtelierShopAdoptionTarget;
   publicMedia: readonly StudioAtelierShopAdoptionPublicMedia[];
@@ -199,6 +200,7 @@ function targetFromRow(row: Record<string, unknown>): StudioAtelierShopAdoptionT
   const intakeId = String(row.intakeId ?? "");
   const operatorSubject = String(row.operatorSubject ?? "");
   const title = String(row.title ?? "").trim();
+  const description = String(row.description ?? "").trim();
   const sourceCategory = String(row.sourceCategory ?? "").trim();
   const category = categoryFor(sourceCategory);
   const silhouette = silhouetteFor(sourceCategory);
@@ -212,6 +214,8 @@ function targetFromRow(row: Record<string, unknown>): StudioAtelierShopAdoptionT
     || !/^[0-9a-f-]{36}$/i.test(intakeId)
     || !operatorSubject
     || !title
+    || !description
+    || description.length > 2_000
     || !category
     || !silhouette
     || !colour
@@ -228,6 +232,7 @@ function targetFromRow(row: Record<string, unknown>): StudioAtelierShopAdoptionT
     operatorSubject,
     expectedVersion,
     title,
+    description,
     sourceCategory,
     category,
     colour,
@@ -395,14 +400,25 @@ export function createStudioAtelierShopAdoptionSqlRepository(
             item.operator_subject as "operatorSubject",
             item.version as "expectedVersion",
             item.title,
+            intake.facts->>'description' as description,
             item.category as "sourceCategory",
             item.colour,
             item.size_label as "sizeLabel",
             item.condition,
             item.price
           from studio_wardrobe_items item
+          join studio_intakes intake
+            on intake.id = item.intake_id
+           and intake.operator_subject = item.operator_subject
           where item.id = ${input.wardrobeItemId}::uuid
             and item.operator_subject = ${input.operatorSubject}
+            and intake.facts->>'title' = item.title
+            and intake.facts->>'description' is not null
+            and intake.facts->>'category' = item.category
+            and intake.facts->>'colour' = item.colour
+            and intake.facts->>'sizeLabel' = item.size_label
+            and intake.facts->>'condition' = item.condition
+            and intake.facts->>'price' = item.price::text
             and item.state in ('DRAFT', 'READY')
             and item.quantity = 1
             and not exists (
@@ -443,6 +459,7 @@ export function createStudioAtelierShopAdoptionSqlRepository(
         })));
         const facts = JSON.stringify({
           title: target.title,
+          description: target.description,
           category: target.category,
           colour: target.colour,
           sizeLabel: target.sizeLabel,
@@ -519,7 +536,11 @@ export function createStudioAtelierShopAdoptionSqlRepository(
             having count(*) = 7 and count(distinct role) = 7
           ), piece_source as materialized (
             select item.*
-            from studio_wardrobe_items item, verified_set
+            from studio_wardrobe_items item
+            join studio_intakes intake
+              on intake.id = item.intake_id
+             and intake.operator_subject = item.operator_subject
+            cross join verified_set
             where item.id = ${target.wardrobeItemId}::uuid
               and item.intake_id = ${target.intakeId}::uuid
               and item.operator_subject = ${target.operatorSubject}
@@ -532,11 +553,18 @@ export function createStudioAtelierShopAdoptionSqlRepository(
               and item.size_label = ${target.sizeLabel}
               and item.condition = ${target.condition}
               and item.price = ${target.price}
+              and intake.facts->>'title' = ${target.title}
+              and intake.facts->>'description' = ${target.description}
+              and intake.facts->>'category' = ${target.sourceCategory}
+              and intake.facts->>'colour' = ${target.colour}
+              and intake.facts->>'sizeLabel' = ${target.sizeLabel}
+              and intake.facts->>'condition' = ${target.condition}
+              and intake.facts->>'price' = ${String(target.price)}
               and not exists (
                 select 1 from studio_catalogue_publications publication
                 where publication.wardrobe_item_id = item.id
               )
-            for update of item
+            for update of item, intake
           ), claim as (
             insert into studio_atelier_shop_adoption_receipts (
               receipt_id, operator_subject, idempotency_key, wardrobe_item_id,
@@ -562,7 +590,7 @@ export function createStudioAtelierShopAdoptionSqlRepository(
             select public_identity.sku, ${target.slug}, ${target.title}, ${target.category}, ${target.price},
               ${target.sizeLabel}, 'Measurements confirmed before payment', ${target.condition},
               ${target.colour}, ${CURRENT_SHOP_DROP}, ${target.tone}, ${target.silhouette},
-              'One-off wardrobe piece.', ${`${target.colour} · ${target.condition}`},
+              ${target.description}, ${`${target.colour} · ${target.condition}`},
               ${details}::jsonb, '[]'::jsonb, '{"id":"lulu-v4"}'::jsonb,
               ${catalogueMedia}::jsonb, now(), now()
             from public_identity

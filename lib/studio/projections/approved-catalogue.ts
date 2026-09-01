@@ -7,10 +7,29 @@ import {
 } from "../../wardrobe-public-view/seeds";
 import { canonicalCatalogueSku } from "../../wardrobe-public-view/sku";
 
-/** Public V3 try-on preview only. The private V3 identity master never enters the browser bundle. */
+const currentLuluV4PreviewListing = [...WARDROBE_PUBLIC_VIEW_MIGRATION_SEEDS]
+  .reverse()
+  .find((listing) => listing.modelAnchor.id === "lulu-v4"
+    && listing.media.some((frame) => frame.slot === "MODEL_FRONT" && frame.modelAnchorId === "lulu-v4"));
+const currentLuluV4PreviewFrame = currentLuluV4PreviewListing?.media.find(
+  (frame) => frame.slot === "MODEL_FRONT" && frame.modelAnchorId === "lulu-v4",
+);
+
+if (!currentLuluV4PreviewListing || !currentLuluV4PreviewFrame) {
+  throw new Error("The current Lulu V4 public preview is missing from the approved catalogue projection.");
+}
+
+/**
+ * Browser-safe current-Lulu preview derived from the approved V4 catalogue
+ * projection. Private identity and body authorities never enter the bundle.
+ */
 export const APPROVED_PUBLIC_MODEL_PREVIEW = Object.freeze({
-  id: "lulu-v3" as const,
-  src: "/shop/products/cocoa-cowl-gathered-midi-dress/07-model-left-profile.webp" as const,
+  id: "lulu-v4" as const,
+  label: "Lulu V4" as const,
+  src: currentLuluV4PreviewFrame.src,
+  width: 1120,
+  height: 1400,
+  listingSlug: currentLuluV4PreviewListing.slug,
 });
 
 export const APPROVED_PUBLIC_LISTINGS = Object.freeze(

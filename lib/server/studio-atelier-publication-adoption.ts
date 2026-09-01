@@ -8,6 +8,7 @@ import {
   type StudioAtelierShopAdoptionMediaReceipt,
   type StudioAtelierShopAdoptionReceipt,
   type StudioAtelierShopAdoptionReview,
+  type StudioAtelierShopListingFacts,
   type StudioAtelierShopMediaRole,
 } from "../studio/atelier/publication-adoption-contracts";
 import { canonicalStringify, sha256Text } from "../studio/atelier/canonical";
@@ -16,7 +17,7 @@ import {
   listLockedStudioAtelierPublicationCandidates,
   type StudioAtelierLockedPublicationCandidate,
 } from "./studio-atelier-publication-adoption-repository";
-import { readAtelierArtifactBytes } from "./studio-atelier-lock-service";
+import { readAtelierArtifactBytes } from "./studio-atelier-artifact-readback";
 import type { StudioOperator } from "./studio-operator";
 
 const SHA256_PATTERN = /^[0-9a-f]{64}$/;
@@ -32,6 +33,7 @@ type LockedPublicationSet = Readonly<{
   wardrobeItemId: string;
   garmentId: string;
   adoptionRevision: string;
+  publicationAuthority?: StudioAtelierShopPublicationAuthority;
   roles: readonly LockedRole[];
   receipt: StudioAtelierShopAdoptionReceipt;
 }>;
@@ -40,11 +42,17 @@ export type StudioAtelierShopAdoptionExactMedia = Readonly<
   StudioAtelierShopAdoptionMediaReceipt & { bytes: Uint8Array }
 >;
 
+export type StudioAtelierShopPublicationAuthority = Readonly<{
+  expectedItemVersion: number;
+  listingFacts: StudioAtelierShopListingFacts;
+}>;
+
 export type StudioAtelierShopAdoptionCommitInput = Readonly<{
   operatorSubject: string;
   idempotencyKey: string;
   expectedRevision: string;
   receipt: StudioAtelierShopAdoptionReceipt;
+  publicationAuthority?: StudioAtelierShopPublicationAuthority;
   expectedLocks: readonly Readonly<{
     role: StudioAtelierShopMediaRole;
     operationId: string;
@@ -73,7 +81,13 @@ export type StudioAtelierShopAdoptionLedgerPort = Readonly<{
 
 type ReadDependencies = Readonly<{
   listCandidates: typeof listLockedStudioAtelierPublicationCandidates;
-  readArtifact: typeof readAtelierArtifactBytes;
+  readArtifact(
+    artifact: StudioAtelierLockedPublicationCandidate["artifact"],
+  ): Promise<Uint8Array>;
+  readPublicationAuthority?(input: Readonly<{
+    operatorSubject: string;
+    wardrobeItemId: string;
+  }>): Promise<StudioAtelierShopPublicationAuthority>;
 }>;
 
 const defaultReadDependencies: ReadDependencies = Object.freeze({
@@ -271,6 +285,7 @@ function assembleLockedSet(input: Readonly<{
   operatorSubject: string;
   wardrobeItemId: string;
   candidates: readonly StudioAtelierLockedPublicationCandidate[];
+  publicationAuthority?: StudioAtelierShopPublicationAuthority;
 }>): LockedPublicationSet | null {
   const byRole = new Map<StudioAtelierShopMediaRole, LockedRole>();
   let garmentId: string | null = null;
@@ -303,6 +318,7 @@ function assembleLockedSet(input: Readonly<{
     operatorSubject: input.operatorSubject,
     wardrobeItemId: input.wardrobeItemId,
     garmentId,
+    publicationAuthority: input.publicationAuthority ?? null,
     locks: roles.map(({ role, candidate }) => ({
       role,
       stage: candidate.stage,
@@ -326,6 +342,9 @@ function assembleLockedSet(input: Readonly<{
     wardrobeItemId: input.wardrobeItemId,
     garmentId,
     adoptionRevision,
+    ...(input.publicationAuthority
+      ? { publicationAuthority: input.publicationAuthority }
+      : {}),
     roles: Object.freeze(roles),
     receipt: receiptFor({
       wardrobeItemId: input.wardrobeItemId,
@@ -350,11 +369,15 @@ async function loadLockedSet(input: Readonly<{
   operatorSubject: string;
   wardrobeItemId: string;
 }>): Promise<LockedPublicationSet | null> {
-  const candidates = await input.dependencies.listCandidates({
+  const identity = {
     operatorSubject: input.operatorSubject,
     wardrobeItemId: input.wardrobeItemId,
-  });
-  return assembleLockedSet({ ...input, candidates });
+  };
+  const [candidates, publicationAuthority] = await Promise.all([
+    input.dependencies.listCandidates(identity),
+    input.dependencies.readPublicationAuthority?.(identity),
+  ]);
+  return assembleLockedSet({ ...input, candidates, publicationAuthority });
 }
 
 function sameReceipt(
@@ -424,19 +447,26 @@ export function createStudioAtelierShopAdoptionReviewService(
       input.wardrobeItemId,
     );
     if (!parsed.success) throw invalidRequest("The Wardrobe item ID is invalid.");
-    const candidates = await dependencies.listCandidates({
-      operatorSubject,
-      wardrobeItemId: parsed.data,
-    });
+    const identity = { operatorSubject, wardrobeItemId: parsed.data };
+    const [candidates, publicationAuthority] = await Promise.all([
+      dependencies.listCandidates(identity),
+      dependencies.readPublicationAuthority?.(identity),
+    ]);
     const locked = assembleLockedSet({
       operatorSubject,
       wardrobeItemId: parsed.data,
       candidates,
+      publicationAuthority,
     });
     if (!locked) return Object.freeze({
       state: "BLOCKED",
       wardrobeItemId: parsed.data,
       blockers: missingRoleBlockers(candidates),
+    });
+    if (!locked.publicationAuthority) return Object.freeze({
+      state: "BLOCKED",
+      wardrobeItemId: parsed.data,
+      blockers: Object.freeze(["The exact Shop listing facts are unavailable"]),
     });
     return Object.freeze({
       state: "READY",
@@ -444,6 +474,7 @@ export function createStudioAtelierShopAdoptionReviewService(
       garmentId: locked.garmentId,
       expectedRevision: locked.adoptionRevision,
       roles: STUDIO_ATELIER_SHOP_MEDIA_ROLE_ORDER,
+      listingFacts: locked.publicationAuthority.listingFacts,
     });
   };
 }
@@ -531,6 +562,9 @@ export function createStudioAtelierShopAdoptionService(input: Readonly<{
       idempotencyKey: command.idempotencyKey,
       expectedRevision: command.expectedRevision,
       receipt: initial.receipt,
+      ...(initial.publicationAuthority
+        ? { publicationAuthority: initial.publicationAuthority }
+        : {}),
       expectedLocks: Object.freeze(initial.roles.map(({ role, candidate }) => Object.freeze({
         role,
         operationId: candidate.operationId,

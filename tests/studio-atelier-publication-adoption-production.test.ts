@@ -80,11 +80,24 @@ function fixture() {
     ...receiptBody,
     receiptId: digest(new TextEncoder().encode(JSON.stringify(receiptBody))),
   }) as StudioAtelierShopAdoptionReceipt;
+  const listingFacts = Object.freeze({
+    title: "Coral atelier dress",
+    description: "A coral atelier dress with a softly draped finish.",
+    category: "Dresses" as const,
+    colour: "Coral",
+    sizeLabel: "M",
+    condition: "Excellent",
+    price: 12_500,
+  });
   const commit = Object.freeze({
     operatorSubject: OPERATOR,
     idempotencyKey: "atelier-adoption:test:001",
     expectedRevision: receipt.adoptionRevision,
     receipt,
+    publicationAuthority: Object.freeze({
+      expectedItemVersion: 9,
+      listingFacts,
+    }),
     expectedLocks: Object.freeze(exactMedia.map((media, index) => Object.freeze({
       role: media.role,
       operationId: media.operationId,
@@ -99,13 +112,14 @@ function fixture() {
     intakeId: INTAKE_ID,
     operatorSubject: OPERATOR,
     expectedVersion: 9,
-    title: "Coral atelier dress",
+    title: listingFacts.title,
+    description: listingFacts.description,
     sourceCategory: "Dress",
-    category: "Dresses",
-    colour: "Coral",
-    sizeLabel: "M",
-    condition: "Excellent",
-    price: 12500,
+    category: listingFacts.category,
+    colour: listingFacts.colour,
+    sizeLabel: listingFacts.sizeLabel,
+    condition: listingFacts.condition,
+    price: listingFacts.price,
     tone: "coral",
     silhouette: "dress",
     slug: `atelier-piece-${WARDROBE_ITEM_ID.replaceAll("-", "")}`,
@@ -149,6 +163,7 @@ test("production ledger binds seven exact LOCKED tuples to safe same-origin medi
   assert.equal(readyChecks, 1);
   assert.ok(captured);
   assert.equal("exactMedia" in captured.commit, false);
+  assert.deepEqual(captured.commit.publicationAuthority, value.commit.publicationAuthority);
   assert.deepEqual(captured.publicMedia.map((item) => item.role), STUDIO_ATELIER_SHOP_MEDIA_ROLE_ORDER);
   captured.publicMedia.forEach((item, index) => {
     assert.equal(
@@ -160,6 +175,26 @@ test("production ledger binds seven exact LOCKED tuples to safe same-origin medi
   });
   const serialized = JSON.stringify(captured.publicMedia);
   assert.doesNotMatch(serialized, /blob|provider|private|pathname|"bytes"/i);
+});
+
+test("production ledger rejects a target whose facts or item version differ from the reviewed authority", async () => {
+  const value = fixture();
+  let commits = 0;
+  const ledger = createStudioAtelierShopAdoptionProductionLedger({
+    repository: repository({
+      loadPublishableTarget: async () => Object.freeze({
+        ...value.target,
+        description: "A description edited after confirmation.",
+        expectedVersion: value.target.expectedVersion + 1,
+      }),
+      commitAtomically: async () => {
+        commits += 1;
+        return value.receipt;
+      },
+    }),
+  });
+  await expectCode(() => ledger.commit(value.commit), "VERSION_CONFLICT");
+  assert.equal(commits, 0);
 });
 
 test("a concurrent exact claim is recovered by immutable receipt and a different claim fails closed", async () => {
@@ -402,6 +437,7 @@ test("authenticated adoption HTTP enforces route identity, same-origin mutation,
           garmentId: value.receipt.garmentId,
           expectedRevision: value.receipt.adoptionRevision,
           roles: STUDIO_ATELIER_SHOP_MEDIA_ROLE_ORDER,
+          listingFacts: value.commit.publicationAuthority!.listingFacts,
         };
       },
       adopt: async () => {
