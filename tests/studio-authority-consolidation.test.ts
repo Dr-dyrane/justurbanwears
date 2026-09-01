@@ -137,8 +137,8 @@ test("location mutations bind the visible revision and distinguish a determinate
   assert.match(operations, /AUTHORITY_TIMESTAMP_PATTERN = \/\^\\d\{4\}[^\n]+\\d\{6\}Z\$\//);
   assert.match(operations, /AUTHORITY_TIMESTAMP_PATTERN\.test\(candidate\.expectedAuthorityRevision\)/);
   assert.doesNotMatch(operations, /authorityTimestamp\.toISOString/);
-  assert.match(operations, /const expectedAuthorityRevision = selected\.authorityRevision;\s+const expectedVersion = selected\.locationVersion/);
-  assert.match(operations, /const expectedVersion = selected\.locationVersion/);
+  assert.match(operations, /async function recordLocation\(\s+piece: StudioAuthorityPiece/);
+  assert.match(operations, /const expectedAuthorityRevision = piece\.authorityRevision;\s+const expectedVersion = piece\.locationVersion/);
   assert.match(operations, /readLocationMutationIntent\(\)/);
   assert.match(operations, /storedIntent\.expectedAuthorityRevision/);
   assert.match(operations, /JSON\.stringify\(request\)/);

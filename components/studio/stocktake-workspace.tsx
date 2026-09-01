@@ -229,7 +229,7 @@ export function StocktakeWorkspace({
         setSelectedLocation(expectedKey);
       }
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "Stocktake is unavailable.");
+      setError(cause instanceof Error ? cause.message : "Stock count is unavailable.");
     } finally {
       setLoading(false);
     }
@@ -241,8 +241,8 @@ export function StocktakeWorkspace({
   const countSession = requestedSessionId && session?.id === requestedSessionId ? session : null;
   useStudioStackRegistration({
     backHref: mode === "scan" ? "/studio/stocktake" : "/studio",
-    backLabel: mode === "scan" ? "Stocktake" : "Studio Home",
-    title: mode === "scan" ? data?.piece?.sku ?? "Scan" : session?.locationLabel ?? "Stocktake",
+    backLabel: mode === "scan" ? "Stock count" : "Studio Home",
+    title: mode === "scan" ? data?.piece?.sku ?? "Scan" : session?.locationLabel ?? "Stock count",
   });
   const piecesByKey = useMemo(
     () => new Map((data?.pieces ?? []).map((piece) => [piece.pieceKey, piece])),
@@ -345,7 +345,7 @@ export function StocktakeWorkspace({
     window.location.assign(`/studio/scan/${encodeURIComponent(key)}${query}`);
   }
 
-  if (loading) return <StudioLoadingStage label="Opening stocktake…" />;
+  if (loading) return <StudioLoadingStage label="Opening stock count…" />;
 
   if (mode === "scan") {
     const piece = data?.piece;
@@ -355,7 +355,7 @@ export function StocktakeWorkspace({
           <CircleAlert aria-hidden="true" size={28} />
           <p className="eyebrow">Scan</p>
           <h1>{error || "Piece not found."}</h1>
-          <StudioLink className="button button-primary" href="/studio/stocktake">Open stocktake</StudioLink>
+          <StudioLink className="button button-primary" href="/studio/stocktake">Open stock count</StudioLink>
         </section>
       );
     }
@@ -457,7 +457,7 @@ export function StocktakeWorkspace({
   return (
     <div className="studio-stocktake-page">
       <header className="studio-stocktake-heading">
-        <div><p className="eyebrow">Stocktake</p><h1>{session ? session.locationLabel : "Count what is here."}</h1><p>{session ? "Scan each piece. Resolve only what differs." : "Choose a location, then scan every piece."}</p></div>
+        <div><p className="eyebrow">Stock count</p><h1>{session ? session.locationLabel : "Count what is here."}</h1><p>{session ? "Scan each piece. Resolve only what differs." : "Choose a location, then scan every piece."}</p></div>
         {session ? <span>{session.confirmedPieceKeys.length}/{session.expectedPieces.length}</span> : <ScanLine aria-hidden="true" size={30} strokeWidth={1.3} />}
       </header>
 
@@ -534,7 +534,7 @@ export function StocktakeWorkspace({
 
       <StudioTaskSheet
         className="studio-stocktake-start-sheet"
-        eyebrow="Stocktake"
+        eyebrow="Stock count"
         footer={<button className="button button-primary" disabled={pending || (locationCounts.get(selectedLocation) ?? 0) === 0} onClick={() => void startCount()} type="button">{pending ? "Starting…" : "Start count"}</button>}
         onDismiss={() => { if (pending) return false; setStartOpen(false); }}
         open={startOpen}

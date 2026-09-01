@@ -318,7 +318,7 @@ export function StudioSettingsCenter({ operator }: { operator: StudioOperatorCli
         <section className="studio-settings-section" aria-labelledby="studio-tools-title">
           <div className="studio-settings-heading"><span><ScanLine aria-hidden="true" size={18} /></span><h3 id="studio-tools-title">Studio tools</h3></div>
           <div className="studio-settings-group studio-settings-link-group">
-            <Link className="studio-settings-link" href="/studio/stocktake"><span><ScanLine aria-hidden="true" size={18} /><span><strong>Stocktake &amp; scan</strong><small>{stocktakeSummary}</small></span></span><ChevronRight aria-hidden="true" size={17} /></Link>
+            <Link className="studio-settings-link" href="/studio/stocktake"><span><ScanLine aria-hidden="true" size={18} /><span><strong>Stock count</strong><small>{stocktakeSummary}</small></span></span><ChevronRight aria-hidden="true" size={17} /></Link>
             <Link className="studio-settings-link" href="/shop"><span><Store aria-hidden="true" size={18} /><span><strong>View live Shop</strong><small>{shopSummary}</small></span></span><ChevronRight aria-hidden="true" size={17} /></Link>
           </div>
         </section>

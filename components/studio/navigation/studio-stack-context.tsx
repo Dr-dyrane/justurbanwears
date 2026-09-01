@@ -33,8 +33,8 @@ export function studioStackFallback(pathname: string, view: string | null): Stud
   if (pathname.startsWith("/studio/models")) return { backHref: "/studio", backLabel: "Studio Home", title: "Models" };
   if (pathname.startsWith("/studio/orders/")) return { backHref: "/studio/orders", backLabel: "Orders", title: "Order" };
   if (pathname.startsWith("/studio/orders")) return { backHref: "/studio", backLabel: "Studio Home", title: "Orders" };
-  if (pathname.startsWith("/studio/scan")) return { backHref: "/studio/stocktake", backLabel: "Stocktake", title: "Scan" };
-  if (pathname.startsWith("/studio/stocktake")) return { backHref: "/studio", backLabel: "Studio Home", title: "Stocktake" };
+  if (pathname.startsWith("/studio/scan")) return { backHref: "/studio/stocktake", backLabel: "Stock count", title: "Scan" };
+  if (pathname.startsWith("/studio/stocktake")) return { backHref: "/studio", backLabel: "Studio Home", title: "Stock count" };
   if (pathname.startsWith("/studio/operations") && view === "inventory") return { backHref: "/studio", backLabel: "Studio Home", title: "Inventory" };
   if (pathname.startsWith("/studio/operations") && view === "orders") return { backHref: "/studio", backLabel: "Studio Home", title: "Orders" };
   if (pathname.startsWith("/studio/operations") && view === "returns") return { backHref: "/studio", backLabel: "Studio Home", title: "Returns" };

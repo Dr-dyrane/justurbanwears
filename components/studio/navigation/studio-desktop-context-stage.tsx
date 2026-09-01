@@ -288,7 +288,7 @@ function projectedContext(
     detail: kind === "STOCKTAKE"
       ? "The workspace verifies physical stock without choosing a substitute piece."
       : "The workspace shows the current inventory projection.",
-    label: kind === "STOCKTAKE" ? "Stocktake scope" : "Inventory scope",
+    label: kind === "STOCKTAKE" ? "Stock count scope" : "Inventory scope",
     state: metricState(projection.summary.available.value, "available piece"),
     subject: kind === "STOCKTAKE" ? "Physical stock" : "Inventory",
   };
@@ -455,7 +455,7 @@ function scenarioContext(
     const available = studio.garments.filter((garment) => garment.availability === "AVAILABLE").length;
     return {
       detail: "The workspace owns the exact piece and physical-state actions.",
-      label: kind === "STOCKTAKE" ? "Stocktake scope" : "Inventory scope",
+      label: kind === "STOCKTAKE" ? "Stock count scope" : "Inventory scope",
       state: plural(available, "available piece"),
       subject: kind === "STOCKTAKE" ? "Physical stock" : "Inventory",
     };

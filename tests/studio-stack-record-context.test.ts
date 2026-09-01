@@ -22,7 +22,7 @@ test("stack fallbacks return records to their meaningful parent and services to 
   });
   assert.deepEqual(studioStackFallback("/studio/scan/JUW-001", null), {
     backHref: "/studio/stocktake",
-    backLabel: "Stocktake",
+    backLabel: "Stock count",
     title: "Scan",
   });
   assert.equal(studioStackFallback("/studio/operations", "inventory").backHref, "/studio");

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { StocktakeWorkspace } from "../../../../components/studio/stocktake-workspace";
 
 export const metadata: Metadata = {
-  title: "Stocktake · Studio",
+  title: "Stock count · Studio",
   description: "Confirm each physical piece and resolve only the exceptions.",
 };
 

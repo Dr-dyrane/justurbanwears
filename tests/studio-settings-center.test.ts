@@ -27,7 +27,7 @@ test("Studio exposes one global profile and settings centre", () => {
   assert.match(settings, /href="\/shop"/);
   assert.match(settings, /Models &amp; identity/);
   assert.match(settings, /Private Atelier use/);
-  assert.match(settings, /Stocktake &amp; scan/);
+  assert.match(settings, /Stock count/);
   assert.match(settings, /View live Shop/);
   assert.match(settings, /readyModels/);
   assert.match(settings, /studioHeldPieces/);

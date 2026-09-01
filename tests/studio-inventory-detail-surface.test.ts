@@ -34,6 +34,13 @@ test("the sheet exposes facts and only authority-backed physical actions", () =>
   assert.match(css, /\.studio-inventory-decision-grid/);
   assert.match(nativeCss, /\.studio-inventory-detail-facts > div[\s\S]*?background: transparent;/);
   assert.match(operations, /authority\.recordLocation/);
+  assert.match(operations, /confirmsExpected \? void recordLocation\(selected, location\.key, "CONFIRM"\) : openLocationMove\(selected, location, event\.currentTarget\)/);
+  assert.match(operations, /setLocationMoveReview\(\{ piece, target \}\)/);
+  assert.match(operations, /onConfirm=\{confirmLocationMove\}/);
+  assert.match(operations, /title=\{`Move to \$\{locationMoveReview\?\.target\.label/);
+  assert.match(operations, /confirmLabel="Move"/);
+  assert.match(operations, /Shop and orders stay unchanged/);
+  assert.doesNotMatch(operations, /window\.confirm/);
   assert.match(operations, /authority\.createHold/);
   assert.match(operations, /authority\.releaseHold/);
   assert.doesNotMatch(operations, /Reserve 1 unit|Mark sold|studio\.reserveOrder/);
