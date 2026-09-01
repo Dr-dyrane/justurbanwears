@@ -160,31 +160,59 @@ export async function updatePrivateGarmentFacts(input: {
 }): Promise<boolean> {
   const result = await (await getStudioDb()).execute(sql`
     with updated as (
-      update studio_wardrobe_items
+      update studio_wardrobe_items item
       set title = ${input.facts.title}, category = ${input.facts.category},
           colour = ${input.facts.colour}, size_label = ${input.facts.sizeLabel},
           condition = ${input.facts.condition}, price = ${input.facts.price},
           version = version + 1, updated_at = now()
-      where id = ${input.wardrobeItemId}::uuid
-        and operator_subject = ${input.operatorSubject}
-        and version = ${input.expectedVersion}
-        and state in ('DRAFT', 'READY')
+      from studio_intakes intake
+      where item.id = ${input.wardrobeItemId}::uuid
+        and item.operator_subject = ${input.operatorSubject}
+        and item.version = ${input.expectedVersion}
+        and item.state in ('DRAFT', 'READY')
+        and intake.id = item.intake_id
+        and intake.operator_subject = ${input.operatorSubject}
         and not exists (
           select 1 from studio_catalogue_publications publication
-          where publication.wardrobe_item_id = studio_wardrobe_items.id
+          where publication.wardrobe_item_id = item.id
         )
-      returning id
+      returning item.id, item.intake_id
+    ), intake_updated as (
+      update studio_intakes intake
+      set facts = intake.facts || ${JSON.stringify(input.facts)}::jsonb,
+          updated_at = now()
+      from updated
+      where intake.id = updated.intake_id
+        and intake.operator_subject = ${input.operatorSubject}
+      returning updated.id
     ), event as (
       insert into studio_garment_events (
         wardrobe_item_id, operator_subject, event_type, summary, details, occurred_at
       )
       select id, ${input.operatorSubject}, 'FACTS_UPDATED', 'Private garment details updated',
         ${JSON.stringify({ facts: input.facts })}::jsonb, now()
-      from updated
+      from intake_updated
     )
-    select * from updated
+    select * from intake_updated
   `);
   return resultRows(result).length === 1;
+}
+
+export async function findPrivateGarmentDescription(input: {
+  wardrobeItemId: string;
+  operatorSubject: string;
+}): Promise<string | null> {
+  const result = await (await getStudioDb()).execute(sql`
+    select intake.facts->>'description' as description
+    from studio_wardrobe_items item
+    join studio_intakes intake on intake.id = item.intake_id
+    where item.id = ${input.wardrobeItemId}::uuid
+      and item.operator_subject = ${input.operatorSubject}
+      and intake.operator_subject = ${input.operatorSubject}
+    limit 1
+  `);
+  const description = resultRows(result)[0]?.description;
+  return typeof description === "string" && description.trim() ? description.trim() : null;
 }
 
 export async function replaceWardrobeApprovedFront(input: {

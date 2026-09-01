@@ -22,6 +22,7 @@ export type CataloguePublicationRow = Omit<
 };
 export type CataloguePublicationWithDrop = CataloguePublicationRow & {
   dropLabel: string;
+  description: string;
 };
 export type CataloguePublicationWithInventory = CataloguePublicationWithDrop & {
   inventory?: {
@@ -59,6 +60,7 @@ export async function findCataloguePublication(input: {
   const [row] = await (await getStudioDb()).select({
     publication: studioCataloguePublications,
     dropLabel: shopCatalogueItems.dropLabel,
+    description: shopCatalogueItems.note,
   }).from(studioCataloguePublications).innerJoin(
     shopCatalogueItems,
     eq(shopCatalogueItems.sku, studioCataloguePublications.sku),
@@ -66,13 +68,14 @@ export async function findCataloguePublication(input: {
     eq(studioCataloguePublications.wardrobeItemId, input.wardrobeItemId),
     eq(studioCataloguePublications.operatorSubject, input.operatorSubject),
   )).limit(1);
-  return row ? { ...row.publication, dropLabel: row.dropLabel } : null;
+  return row ? { ...row.publication, dropLabel: row.dropLabel, description: row.description } : null;
 }
 
 export async function listCataloguePublications(operatorSubject: string): Promise<CataloguePublicationWithInventory[]> {
   const rows = await (await getStudioDb()).select({
     publication: studioCataloguePublications,
     dropLabel: shopCatalogueItems.dropLabel,
+    description: shopCatalogueItems.note,
     availability: shopInventory.availability,
     onHand: shopInventory.onHand,
     reserved: shopInventory.reserved,
@@ -93,6 +96,7 @@ export async function listCataloguePublications(operatorSubject: string): Promis
   return rows.map((row) => ({
     ...row.publication,
     dropLabel: row.dropLabel,
+    description: row.description,
     inventory: {
       availability: row.availability,
       onHand: row.onHand,
@@ -141,6 +145,7 @@ type AtomicPublicationInput = {
   detailCaptureSha256: string;
   slug: string;
   title: string;
+  description: string;
   sourceCategory: string;
   category: string;
   price: number;
@@ -173,6 +178,7 @@ export type AtomicAdoptedRevisionPublicationInput = {
   sku: string;
   slug: string;
   title: string;
+  description: string;
   sourceCategory: string;
   category: string;
   price: number;
@@ -292,7 +298,7 @@ export async function insertCataloguePublicationAtomically(
         public_identity.sku, ${input.slug}, ${input.title}, ${input.category}, ${input.price},
         ${input.taggedSize}, 'Measurements confirmed before payment', ${input.condition},
         ${input.colour}, ${CURRENT_SHOP_DROP}, ${input.tone}, ${input.silhouette},
-        'One-off wardrobe piece.', ${`${input.colour} · ${input.condition}`},
+        ${input.description}, ${`${input.colour} · ${input.condition}`},
         ${JSON.stringify(details)}::jsonb, '[]'::jsonb, '{}'::jsonb,
         ${JSON.stringify(catalogueMedia)}::jsonb, now(), now()
       from public_identity
@@ -358,6 +364,7 @@ export async function insertCataloguePublicationAtomically(
     publishedAt: new Date(String(raw.published_at)),
     createdAt: new Date(String(raw.created_at)),
     dropLabel: CURRENT_SHOP_DROP,
+    description: input.description,
   };
 }
 
@@ -477,7 +484,7 @@ export async function publishCatalogueRevisionAtomically(
       set name = ${input.title}, category = ${input.category}, price = ${input.price},
         tagged_size = ${input.taggedSize}, condition = ${input.condition},
         colour = ${input.colour}, tone = ${input.tone}, silhouette = ${input.silhouette},
-        story = ${`${input.colour} · ${input.condition}`},
+        note = ${input.description},
         details = ${JSON.stringify(details)}::jsonb,
         media = ${JSON.stringify(catalogueMedia)}::jsonb,
         updated_at = now()
@@ -549,8 +556,8 @@ export async function publishCatalogueRevisionAtomically(
 }
 
 /**
- * Catalogue-adopted pieces keep their authored Shop media and editorial copy.
- * A facts revision updates only the customer-facing facts that Lulu reviewed;
+ * Catalogue-adopted pieces keep their authored Shop media and long-form story.
+ * A facts revision updates only the customer-facing facts and short description that Lulu reviewed;
  * the immutable adoption baseline remains available to the release verifier.
  */
 export async function publishAdoptedCatalogueRevisionAtomically(
@@ -609,6 +616,7 @@ export async function publishAdoptedCatalogueRevisionAtomically(
       set name = ${input.title}, category = ${input.category}, price = ${input.price},
         tagged_size = ${input.taggedSize}, condition = ${input.condition},
         colour = ${input.colour}, tone = ${input.tone}, silhouette = ${input.silhouette},
+        note = ${input.description},
         updated_at = now()
       from revision_source, inventory_ready, piece
       where target.sku = revision_source.sku
@@ -757,6 +765,7 @@ export async function publishAtelierAdoptionRevisionAtomically(
       set name = ${input.title}, category = ${input.category}, price = ${input.price},
         tagged_size = ${input.taggedSize}, condition = ${input.condition},
         colour = ${input.colour}, tone = ${input.tone}, silhouette = ${input.silhouette},
+        note = ${input.description},
         updated_at = now()
       from revision_source, inventory_ready, piece
       where target.sku = revision_source.sku

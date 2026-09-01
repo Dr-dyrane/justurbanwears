@@ -53,7 +53,7 @@ export type GarmentLifecycleCommand = z.infer<typeof garmentLifecycleCommandSche
 export type GarmentRevisionMediaRole = z.infer<typeof garmentRevisionMediaRoleSchema>;
 
 export type GarmentRevisionDiff = {
-  field: "title" | "category" | "colour" | "sizeLabel" | "condition" | "price" | "media";
+  field: "title" | "description" | "category" | "colour" | "sizeLabel" | "condition" | "price" | "media";
   label: string;
   before: string;
   after: string;

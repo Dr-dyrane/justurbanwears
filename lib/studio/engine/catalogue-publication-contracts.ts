@@ -160,6 +160,7 @@ export type StudioPublicationReview =
       wardrobeItemId: string;
       expectedRevision: string;
       title: string;
+      description: string;
       category: string;
       colour: string;
       sizeLabel: string;

@@ -700,6 +700,7 @@ export function PieceWorkspaceView({ garment, initialAction, layout = "embedded"
             ) : null}
             {!atelierAdoptionOwnsShopSheet && dynamicReview?.state === "READY" ? <section className="studio-piece-shop studio-publication-review" id="piece-publication-review">
               <div className="studio-card-heading"><div><small>Preview</small><h3>{dynamicReview.title}</h3></div><strong>{formatNaira(dynamicReview.price)}</strong></div>
+              <p>{dynamicReview.description}</p>
               <div className="studio-publication-media">
                 {dynamicReview.media.map((item) => <StudioMediaButton items={[{
                   alt: `${dynamicReview.title} · ${item.label.toLowerCase()}`,

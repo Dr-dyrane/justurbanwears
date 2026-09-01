@@ -15,6 +15,7 @@ const intakeSheet = readFileSync(`${root}/components/studio/garment-intake/garme
 
 const facts = {
   title: "Coral dress",
+  description: "A coral dress with a softly draped neckline.",
   category: "Dress" as const,
   colour: "Coral",
   sizeLabel: "UK 10",
@@ -27,6 +28,12 @@ test("live garment commands require explicit, versioned intent", () => {
     command: "SAVE_FACTS",
     expectedVersion: 3,
     facts,
+  }).success, true);
+  const { description: _description, ...priceOnlyCompatibleFacts } = facts;
+  assert.equal(garmentLifecycleCommandSchema.safeParse({
+    command: "SAVE_FACTS",
+    expectedVersion: 3,
+    facts: priceOnlyCompatibleFacts,
   }).success, true);
   assert.equal(garmentLifecycleCommandSchema.safeParse({
     command: "PUBLISH_REVISION",
@@ -46,6 +53,27 @@ test("live garment commands require explicit, versioned intent", () => {
     command: "ARCHIVE",
     expectedVersion: 3,
   }).success, false);
+  assert.equal(garmentLifecycleCommandSchema.safeParse({
+    command: "SAVE_FACTS",
+    expectedVersion: 3,
+    facts: { ...facts, description: "   " },
+  }).success, false);
+});
+
+test("Shop description follows the existing private revision and public note contract", () => {
+  assert.match(lifecyclePanel, /<span>Shop description<\/span><textarea/);
+  assert.match(lifecyclePanel, /setDraftFacts\(\{ \.\.\.draftFacts, description: event\.target\.value \}\)/);
+  assert.match(lifecycleService, /\["description", "Shop description"\]/);
+  assert.match(lifecycleService, /description: requiredDescription\(facts\)/);
+  assert.match(lifecycleService, /description: requiredDescription\(currentFacts\)/);
+  assert.match(lifecycleService, /const fallbackFacts = draft\?\.facts \?\? \(publication \? liveFacts\(publication, item\) : itemFacts\(context\.item\)\)/);
+  assert.match(lifecycleService, /const facts = withDescription\(input\.facts, fallbackFacts\)/);
+  assert.match(lifecycleRepository, /facts = intake\.facts \|\| \$\{JSON\.stringify\(input\.facts\)\}::jsonb/);
+  assert.match(lifecycleRepository, /select intake\.facts->>'description' as description/);
+  assert.match(publicationRepository, /description: shopCatalogueItems\.note/);
+  assert.match(publicationRepository, /note = \$\{input\.description\}/);
+  assert.match(publicationRepository, /\$\{input\.description\}, \$\{`\$\{input\.colour\} · \$\{input\.condition\}`\}/);
+  assert.doesNotMatch(publicationRepository, /story = \$\{input\.description\}/);
 });
 
 test("a revision swaps garment truth and Shop projection only after all guards pass", () => {
@@ -70,6 +98,7 @@ test("catalogue-adopted revisions update reviewed facts while preserving the aut
   assert.match(publicationRepository, /revision\.media = publication\.media/);
   assert.match(adoptedPublication, /and item\.version = \$\{input\.expectedVersion\}[\s\S]*?inventory_ready as/);
   assert.match(publicationRepository, /set name = \$\{input\.title\}, category = \$\{input\.category\}, price = \$\{input\.price\}/);
+  assert.match(adoptedPublication, /note = \$\{input\.description\}/);
   assert.doesNotMatch(
     adoptedPublication,
     /media = \$\{JSON\.stringify/,

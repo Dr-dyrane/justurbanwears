@@ -4,6 +4,7 @@ import type { StudioPublicationReceipt } from "./catalogue-publication-contracts
 
 export const intakeFactsSchema = z.object({
   title: z.string().trim().min(1).max(100),
+  description: z.string().trim().min(1).max(2_000).optional(),
   category: z.enum(["Dress", "Shirt", "Set", "Knitwear", "Skirt", "Trousers", "Other"]),
   colour: z.string().trim().min(1).max(60),
   sizeLabel: z.string().trim().min(1).max(60).default("Size on request"),

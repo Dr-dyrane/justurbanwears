@@ -213,6 +213,7 @@ function legacyDynamicCatalogueRowToShopProduct(row: DatabaseCatalogueRow): Shop
   const ledgerFacts = row.publicationFacts;
   if (
     ledgerFacts.title !== row.name
+    || (Object.hasOwn(ledgerFacts, "description") && ledgerFacts.description !== row.note)
     || ledgerFacts.category !== row.category
     || ledgerFacts.colour !== row.colour
     || ledgerFacts.sizeLabel !== row.taggedSize
@@ -342,6 +343,7 @@ function atelierDynamicCatalogueRowToShopProduct(
   const facts = row.publicationFacts;
   if (
     facts.title !== row.name
+    || (Object.hasOwn(facts, "description") && facts.description !== row.note)
     || facts.category !== row.category
     || facts.colour !== row.colour
     || facts.sizeLabel !== row.taggedSize
@@ -465,6 +467,7 @@ export function databaseCatalogueRowToShopProduct(row: DatabaseCatalogueRow): Sh
     const facts = row.publicationFacts;
     if (
       facts.title !== row.name
+      || (Object.hasOwn(facts, "description") && facts.description !== row.note)
       || facts.category !== row.category
       || facts.colour !== row.colour
       || facts.sizeLabel !== row.taggedSize

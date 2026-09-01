@@ -1,6 +1,7 @@
 import { get } from "@vercel/blob";
 import sharp from "sharp";
 import { getOwnedAsset, getOwnedWardrobeItem } from "../../server/studio-intake-repository";
+import { findPrivateGarmentDescription } from "../../server/studio-garment-lifecycle-repository";
 import {
   cataloguePublicationReceipt,
   findCataloguePublication,
@@ -24,6 +25,7 @@ import { sha256 } from "./fingerprint";
 import { wardrobeCaptureKey } from "./pending-capture-service";
 
 type WardrobeItem = Awaited<ReturnType<typeof getOwnedWardrobeItem>>;
+type PublicationItem = WardrobeItem & { description?: string };
 type StudioAsset = Awaited<ReturnType<typeof getOwnedAsset>>;
 
 type PublicationImagePipeline = {
@@ -48,7 +50,7 @@ export type PublicationSource = {
 };
 
 export type ReadyPublicationContext = {
-  item: WardrobeItem;
+  item: PublicationItem;
   front: StudioAsset;
   back: PendingCaptureRow;
   detail: PendingCaptureRow;
@@ -89,7 +91,7 @@ function presentationTone(colour: string) {
   return "cocoa";
 }
 
-function sourceRevision(item: WardrobeItem, sources: PublicationSource[]) {
+function sourceRevision(item: PublicationItem, sources: PublicationSource[]) {
   return sha256(JSON.stringify({
     wardrobeItemId: item.id,
     intakeId: item.intakeId,
@@ -97,6 +99,7 @@ function sourceRevision(item: WardrobeItem, sources: PublicationSource[]) {
     version: item.version,
     facts: {
       title: item.title,
+      description: item.description,
       category: item.category,
       colour: item.colour,
       sizeLabel: item.sizeLabel,
@@ -108,9 +111,10 @@ function sourceRevision(item: WardrobeItem, sources: PublicationSource[]) {
   }));
 }
 
-export function studioPublicationBlockers(item: WardrobeItem, sources: PublicationSource[]) {
+export function studioPublicationBlockers(item: PublicationItem, sources: PublicationSource[]) {
   const blockers: string[] = [];
   if (!item.title.trim()) blockers.push("Title");
+  if (!item.description?.trim()) blockers.push("Shop description");
   if (!shopCategory(item.category)) blockers.push("Category");
   if (!item.colour.trim()) blockers.push("Colour");
   if (!item.sizeLabel.trim()) blockers.push("Size");
@@ -127,12 +131,21 @@ export function studioPublicationBlockers(item: WardrobeItem, sources: Publicati
 }
 
 export async function getStudioPublicationContext(wardrobeItemId: string, operator: StudioOperator): Promise<{
-  item: WardrobeItem;
+  item: PublicationItem;
   sources: PublicationSource[];
   ready?: ReadyPublicationContext;
   blockers: string[];
 }> {
-  const item = await getOwnedWardrobeItem(wardrobeItemId, operator.subject);
+  const [item, privateDescription, publication] = await Promise.all([
+    getOwnedWardrobeItem(wardrobeItemId, operator.subject),
+    findPrivateGarmentDescription({ wardrobeItemId, operatorSubject: operator.subject }),
+    findCataloguePublication({ wardrobeItemId, operatorSubject: operator.subject }),
+  ]);
+  const description = publication?.description ?? privateDescription;
+  const publicationItem: PublicationItem = {
+    ...item,
+    ...(description ? { description } : {}),
+  };
   const captureKey = wardrobeCaptureKey(item.id);
   const [front, captures] = await Promise.all([
     item.approvedAssetId
@@ -191,13 +204,13 @@ export async function getStudioPublicationContext(wardrobeItemId: string, operat
       assetUrl: `/api/studio/wardrobe/${item.id}/captures/${detail.id}`,
     }] : []),
   ];
-  const blockers = studioPublicationBlockers(item, sources);
+  const blockers = studioPublicationBlockers(publicationItem, sources);
   return {
-    item,
+    item: publicationItem,
     sources,
     blockers,
     ...(!blockers.length && front && back && detail ? {
-      ready: { item, front, back, detail, captureKey, sources, sourceRevision: sourceRevision(item, sources) },
+      ready: { item: publicationItem, front, back, detail, captureKey, sources, sourceRevision: sourceRevision(publicationItem, sources) },
     } : {}),
   };
 }
@@ -231,6 +244,7 @@ export async function getStudioPublicationReview(
     wardrobeItemId,
     expectedRevision: context.ready.sourceRevision,
     title: context.item.title,
+    description: context.item.description ?? "",
     category: shopCategory(context.item.category)!,
     colour: context.item.colour,
     sizeLabel: context.item.sizeLabel,
@@ -372,6 +386,7 @@ export async function publishStudioPiece(input: {
       detailCaptureSha256: current.ready.detail.sha256,
       slug,
       title: current.item.title,
+      description: current.item.description ?? "",
       sourceCategory: current.item.category,
       category: shopCategory(current.item.category)!,
       price: current.item.price,
@@ -382,6 +397,7 @@ export async function publishStudioPiece(input: {
       silhouette: shopSilhouette(current.item.category)!,
       facts: {
         title: current.item.title,
+        description: current.item.description,
         category: shopCategory(current.item.category),
         colour: current.item.colour,
         sizeLabel: current.item.sizeLabel,

@@ -14,6 +14,7 @@ import { publishStudioPieceSchema } from "../lib/studio/engine/catalogue-publica
 import {
   dynamicStudioSlug,
   normalizeStudioPublicationImage,
+  studioPublicationBlockers,
 } from "../lib/studio/engine/catalogue-publication-service";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
@@ -119,6 +120,25 @@ test("publication confirmation is explicit and public slugs are deterministic", 
     confirmation: "PUBLISH",
     publicMediaConfirmed: false,
   }).success, false);
+  assert.ok(studioPublicationBlockers({
+    id: wardrobeItemId,
+    intakeId: "11111111-1111-4111-8111-111111111111",
+    operatorSubject: "studio-workspace",
+    title: "Coral Evening Dress",
+    description: "",
+    category: "Dress",
+    colour: "Coral",
+    sizeLabel: "Size on request",
+    condition: "Excellent",
+    price: 24_500,
+    quantity: 1,
+    state: "READY",
+    version: 2,
+    targetCollectionId: null,
+    approvedAssetId: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  }, []).includes("Shop description"));
 });
 
 test("a ledger-backed dynamic row appends without weakening a release row", async () => {
@@ -137,6 +157,19 @@ test("a ledger-backed dynamic row appends without weakening a release row", asyn
     ...dynamicRow(),
     publicationMedia: publicationMedia.slice(0, 2),
   }), /media set/);
+});
+
+test("a reviewed Shop description is bound to the public note while legacy ledgers remain readable", () => {
+  const row = dynamicRow();
+  row.note = "A coral dress with a softly draped neckline.";
+  row.publicationFacts = { ...row.publicationFacts, description: row.note };
+  const product = databaseCatalogueRowToShopProduct(row);
+  assert.ok(product);
+  assert.equal(product.note, row.note);
+  assert.throws(() => databaseCatalogueRowToShopProduct({
+    ...row,
+    note: "Different customer copy",
+  }), /facts drifted/);
 });
 
 test("public promotion strips private image metadata and records a distinct public hash", async () => {
@@ -171,6 +204,10 @@ test("publication is one atomic guarded statement and Piece owns Review to Publi
   assert.match(repository, /insert into shop_catalogue_items/);
   assert.match(repository, /CURRENT_SHOP_DROP/);
   assert.match(repository, /dropLabel: shopCatalogueItems\.dropLabel/);
+  assert.match(repository, /description: shopCatalogueItems\.note/);
+  assert.match(repository, /\$\{input\.description\}, \$\{`\$\{input\.colour\} · \$\{input\.condition\}`\}/);
+  assert.match(repository, /note = \$\{input\.description\}/);
+  assert.doesNotMatch(repository, /story = \$\{input\.description\}/);
   assert.match(repository, /row\.dropLabel \? \{ drop: row\.dropLabel \}/);
   assert.doesNotMatch(repository, /'Studio wardrobe'/);
   assert.match(repository, /insert into shop_inventory/);
@@ -182,6 +219,8 @@ test("publication is one atomic guarded statement and Piece owns Review to Publi
   assert.match(service, /current\.ready\.sourceRevision !== input\.expectedRevision/);
   assert.match(service, /toColourspace\("srgb"\)/);
   assert.match(service, /sourceSha256: source\.sha256/);
+  assert.match(service, /description: item\.description/);
+  assert.match(service, /blockers\.push\("Shop description"\)/);
   assert.match(service, /findCataloguePublication\(\{ wardrobeItemId, operatorSubject: operator\.subject \}\)/);
   assert.match(service, /operatorSubject: input\.operator\.subject/);
   assert.doesNotMatch(service, /operator\.role/);
