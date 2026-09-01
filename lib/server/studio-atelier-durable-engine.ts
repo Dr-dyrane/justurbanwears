@@ -126,6 +126,7 @@ const defaultDependencies: DurableEngineDependencies = Object.freeze({
 type PrepareCommand = Parameters<StudioAtelierEnginePorts["prepareCompiledOperation"]>[0];
 type EngineCommand = Parameters<StudioAtelierEnginePorts["readProjection"]>[0];
 type ReviewCommand = Parameters<StudioAtelierEnginePorts["recordReviewOnce"]>[0];
+type LockCommand = Parameters<StudioAtelierEnginePorts["lockApprovedOnce"]>[0];
 
 function invalidState(message: string): StudioEngineError {
   return new StudioEngineError(
@@ -281,6 +282,7 @@ async function recordQualityEvent(input: {
 async function recordReviewEvent(input: {
   dependencies: DurableEngineDependencies;
   operatorSubject: string;
+  actorSubject?: string;
   operationId: string;
   projection: AtelierOperationProjectionRow;
   eventType: "USER_APPROVED" | "USER_REJECTED" | "CORRECTION_AUTHORIZED" | "BLOCKED_USER_DIRECTION";
@@ -293,7 +295,7 @@ async function recordReviewEvent(input: {
       operationId: input.operationId,
       expectedVersion: input.projection.version,
       eventType: input.eventType,
-      actorSubject: input.operatorSubject,
+      actorSubject: input.actorSubject ?? input.operatorSubject,
       executionId: input.projection.materializedExecutionId,
       artifactId: input.projection.materializedArtifactId,
       reasonCode: input.reasonCode,
@@ -745,7 +747,7 @@ export function createDurableStudioAtelierEnginePorts(
       if (!snapshot) throw unavailable("The reviewed Atelier projection was not readable.");
       return snapshot;
     },
-    async lockApprovedOnce(command: EngineCommand) {
+    async lockApprovedOnce(command: LockCommand) {
       await lockApprovedOnce(command);
       const snapshot = await durableSnapshot(dependencies, command);
       if (!snapshot) throw unavailable("The locked Atelier projection was not readable.");

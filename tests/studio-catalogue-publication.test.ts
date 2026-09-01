@@ -182,6 +182,9 @@ test("publication is one atomic guarded statement and Piece owns Review to Publi
   assert.match(service, /current\.ready\.sourceRevision !== input\.expectedRevision/);
   assert.match(service, /toColourspace\("srgb"\)/);
   assert.match(service, /sourceSha256: source\.sha256/);
+  assert.match(service, /findCataloguePublication\(\{ wardrobeItemId, operatorSubject: operator\.subject \}\)/);
+  assert.match(service, /operatorSubject: input\.operator\.subject/);
+  assert.doesNotMatch(service, /operator\.role/);
   assert.match(catalogue, /const cached = \(await getServerShopProducts\(\)\)\.find/);
   assert.match(catalogue, /const products = await loadServerShopProducts\(\)/);
   assert.match(route, /requireStudioOperator/);

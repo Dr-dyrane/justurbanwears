@@ -26,6 +26,7 @@ import {
 } from "./studio-atelier-candidate-visibility";
 
 const operatorSubjectSchema = z.string().trim().min(1).max(240);
+const actorSubjectSchema = z.string().trim().min(1).max(512);
 const operationIdSchema = z.string().trim().min(1).max(240)
   .regex(/^[a-zA-Z0-9._:/-]+$/);
 
@@ -221,11 +222,13 @@ export interface StudioAtelierEnginePorts {
   }>): Promise<StudioAtelierServerSnapshot>;
   recordReviewOnce(input: Readonly<{
     operatorSubject: string;
+    actorSubject?: string;
     operationId: string;
     decision: StudioAtelierReviewDecision;
   }>): Promise<StudioAtelierServerSnapshot>;
   lockApprovedOnce(input: Readonly<{
     operatorSubject: string;
+    actorSubject?: string;
     operationId: string;
   }>): Promise<StudioAtelierServerSnapshot>;
 }
@@ -251,10 +254,12 @@ export interface StudioAtelierEngineFacade {
     operatorSubject: string,
     operationId: string,
     decision: unknown,
+    actorSubject?: string,
   ): Promise<StudioAtelierCommandResult>;
   lockOrReuse(
     operatorSubject: string,
     operationId: string,
+    actorSubject?: string,
   ): Promise<StudioAtelierCommandResult>;
   /**
    * Replays only a previously stored FIX_ONE_THING review checkpoint. The
@@ -285,6 +290,17 @@ function parseOperatorSubject(value: unknown): string {
     throw invalidRequest(
       "The Studio operator identity is invalid.",
       "Use the authenticated server operator identity.",
+    );
+  }
+  return parsed.data;
+}
+
+function parseActorSubject(value: unknown): string {
+  const parsed = actorSubjectSchema.safeParse(value);
+  if (!parsed.success) {
+    throw invalidRequest(
+      "The Studio actor identity is invalid.",
+      "Use the authenticated server actor identity.",
     );
   }
   return parsed.data;
@@ -655,8 +671,12 @@ export function createStudioAtelierEngineFacade(
     rawOperatorSubject: string,
     rawOperationId: string,
     rawDecision: unknown,
+    rawActorSubject?: string,
   ): Promise<StudioAtelierCommandResult> {
     const operatorSubject = parseOperatorSubject(rawOperatorSubject);
+    const actorSubject = rawActorSubject === undefined
+      ? undefined
+      : parseActorSubject(rawActorSubject);
     const operationId = parseOperationId(rawOperationId);
     const decision = parseReviewDecision(rawDecision);
     const key = operationKey(operatorSubject, operationId);
@@ -664,7 +684,7 @@ export function createStudioAtelierEngineFacade(
     const active = reviewInFlight.get(key);
     if (active) {
       await active;
-      return review(operatorSubject, operationId, decision);
+      return review(operatorSubject, operationId, decision, actorSubject);
     }
     const task = (async () => {
       const snapshot = await projectionOrThrow(ports, operatorSubject, operationId);
@@ -683,6 +703,7 @@ export function createStudioAtelierEngineFacade(
           operatorSubject,
           operationId,
           decision,
+          ...(actorSubject === undefined ? {} : { actorSubject }),
         }),
         operationId,
       );
@@ -699,8 +720,12 @@ export function createStudioAtelierEngineFacade(
   async function lockOrReuse(
     rawOperatorSubject: string,
     rawOperationId: string,
+    rawActorSubject?: string,
   ): Promise<StudioAtelierCommandResult> {
     const operatorSubject = parseOperatorSubject(rawOperatorSubject);
+    const actorSubject = rawActorSubject === undefined
+      ? undefined
+      : parseActorSubject(rawActorSubject);
     const operationId = parseOperationId(rawOperationId);
     const key = operationKey(operatorSubject, operationId);
     const active = lockInFlight.get(key);
@@ -718,7 +743,11 @@ export function createStudioAtelierEngineFacade(
         );
       }
       const locked = parseSnapshot(
-        await ports.lockApprovedOnce({ operatorSubject, operationId }),
+        await ports.lockApprovedOnce({
+          operatorSubject,
+          operationId,
+          ...(actorSubject === undefined ? {} : { actorSubject }),
+        }),
         operationId,
       );
       if (locked.state !== "LOCKED") {

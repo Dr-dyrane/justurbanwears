@@ -19,6 +19,9 @@ import {
 import type { StudioOperator } from "../lib/server/studio-operator";
 
 const operator: StudioOperator = {
+  actorSubject: "actor-private-subject",
+  workspaceId: "workspace-juw",
+  workspaceSubject: "private-subject",
   subject: "private-subject",
   email: "lulu@example.com",
   displayName: "Lulu",
@@ -99,20 +102,20 @@ test("connected projection redacts private authority and customer details", () =
   assert.deepEqual(projection.operator, {
     displayName: "Lulu",
     role: "admin",
-    storageScope: studioOperatorStorageScope(operator.subject),
+    storageScope: studioOperatorStorageScope(operator.actorSubject),
   });
   assert.match(projection.operator.storageScope, /^[0-9a-f]{64}$/);
   assert.doesNotMatch(serialized, new RegExp(operator.subject));
 });
 
-test("operator browser storage scopes are opaque, stable and identity-specific", () => {
-  const first = studioOperatorStorageScope(operator.subject);
-  const repeated = studioOperatorStorageScope(operator.subject);
-  const other = studioOperatorStorageScope("different-private-subject");
+test("operator browser storage scopes stay actor-specific inside one shared Studio", () => {
+  const first = studioOperatorStorageScope(operator.actorSubject);
+  const repeated = studioOperatorStorageScope(operator.actorSubject);
+  const otherMemberSameWorkspace = studioOperatorStorageScope("different-actor-subject");
 
   assert.equal(first, repeated);
-  assert.notEqual(first, other);
-  assert.equal(first.includes(operator.subject), false);
+  assert.notEqual(first, otherMemberSameWorkspace);
+  assert.equal(first.includes(operator.actorSubject), false);
 });
 
 test("authority failure yields null truth instead of false zeroes", () => {

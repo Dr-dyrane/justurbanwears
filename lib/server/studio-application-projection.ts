@@ -79,7 +79,7 @@ function projectedOperator(operator: StudioOperator): StudioApplicationProjectio
   return {
     displayName: operator.displayName,
     role: operator.role,
-    storageScope: studioOperatorStorageScope(operator.subject),
+    storageScope: studioOperatorStorageScope(operator.actorSubject),
   };
 }
 

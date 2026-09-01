@@ -275,6 +275,9 @@ test("completed correction and active cancellation are optional, not due work", 
 });
 
 const operator: StudioOperator = {
+  actorSubject: "actor-private-subject",
+  workspaceId: "workspace-juw",
+  workspaceSubject: "private-subject",
   subject: "private-subject",
   email: "lulu@example.com",
   displayName: "Lulu",

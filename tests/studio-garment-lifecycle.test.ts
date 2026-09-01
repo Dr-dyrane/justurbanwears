@@ -5,6 +5,7 @@ import { garmentLifecycleCommandSchema } from "../lib/studio/engine/garment-life
 
 const root = process.cwd();
 const publicationRepository = readFileSync(`${root}/lib/server/studio-catalogue-publication-repository.ts`, "utf8");
+const intakeRepository = readFileSync(`${root}/lib/server/studio-intake-repository.ts`, "utf8");
 const lifecycleRepository = readFileSync(`${root}/lib/server/studio-garment-lifecycle-repository.ts`, "utf8");
 const lifecycleService = readFileSync(`${root}/lib/studio/engine/garment-lifecycle-service.ts`, "utf8");
 const lifecyclePanel = readFileSync(`${root}/components/studio/garment-lifecycle-panel.tsx`, "utf8");
@@ -125,4 +126,15 @@ test("unfinished durable intakes are discoverable and resumable", () => {
   assert.match(intakeSheet, /client\.getIntake/);
   assert.match(intakeSheet, /hasDurableSource/);
   assert.match(intakeSheet, /Checking unfinished work/);
+});
+
+test("garment create, read, update and archive stay in the canonical Studio scope", () => {
+  assert.match(intakeRepository, /operatorSubject: input\.operator\.subject/);
+  assert.match(lifecycleService, /getOwnedWardrobeItem\(wardrobeItemId, operator\.subject\)/);
+  assert.match(lifecycleService, /updatePrivateGarmentFacts\(\{[\s\S]*?operatorSubject: input\.operator\.subject/);
+  assert.match(lifecycleService, /updateDraftGarmentRevision\(\{[\s\S]*?operatorSubject: input\.operator\.subject/);
+  assert.match(lifecycleService, /discardDraftGarmentRevision\(\{[\s\S]*?operatorSubject: input\.operator\.subject/);
+  assert.match(lifecycleService, /changePublicationVisibility\(\{[\s\S]*?operatorSubject: input\.operator\.subject/);
+  assert.match(lifecycleService, /archiveGarment\(\{[\s\S]*?operatorSubject: input\.operator\.subject/);
+  assert.doesNotMatch(lifecycleService, /operator\.role/);
 });

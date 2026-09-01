@@ -260,6 +260,7 @@ export function createStudioAtelierLockService(
 
   return async function lockApprovedOnce(command: Readonly<{
     operatorSubject: string;
+    actorSubject?: string;
     operationId: string;
   }>): Promise<AtelierOperationProjectionRow> {
     const [operationRow, initialProjection] = await Promise.all([
@@ -424,7 +425,7 @@ export function createStudioAtelierLockService(
         ...command,
         expectedVersion: initialProjection.version,
         eventType: "LOCKED",
-        actorSubject: command.operatorSubject,
+        actorSubject: command.actorSubject ?? command.operatorSubject,
         executionId: execution.id,
         artifactId: lockArtifact.id,
         lockedAssetId: lockAssetId(operationRow.semanticHash),

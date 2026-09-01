@@ -637,7 +637,7 @@ export async function decideWearCandidate(input: {
     await appendDecisionOnce({
       intakeId: item.intakeId,
       generationId: generation.id,
-      actorSubject: input.operator.subject,
+      actorSubject: input.operator.actorSubject,
       decision: "RETRY",
       note: input.note,
     });
@@ -659,7 +659,7 @@ export async function decideWearCandidate(input: {
   await appendDecisionOnce({
     intakeId: item.intakeId,
     generationId: generation.id,
-    actorSubject: input.operator.subject,
+    actorSubject: input.operator.actorSubject,
     decision: input.decision,
     note: input.note,
   });

@@ -905,7 +905,7 @@ async function dismissedNotificationIds(operator: StudioOperator): Promise<Set<s
   const result = await (await getStudioDb()).execute<DatabaseRow>(sql`
     select notification_id
     from studio_notification_receipts
-    where operator_subject = ${operator.subject}
+    where operator_subject = ${operator.actorSubject}
   `);
   return new Set(result.rows.map((row) => String(row.notification_id)));
 }
@@ -917,7 +917,7 @@ export async function dismissNotification(operator: StudioOperator, notification
   }
   await (await getStudioDb()).execute(sql`
     insert into studio_notification_receipts (operator_subject, notification_id, dismissed_at)
-    values (${operator.subject}, ${notificationId}, now())
+    values (${operator.actorSubject}, ${notificationId}, now())
     on conflict (operator_subject, notification_id) do update set dismissed_at = excluded.dismissed_at
   `);
 }

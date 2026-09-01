@@ -21,6 +21,9 @@ const migration = readFileSync(`${root}/drizzle/shop-postgres/0013_flowery_nicol
 const css = readFileSync(`${root}/app/studio-stack-navigation.css`, "utf8");
 
 const operator = {
+  actorSubject: "actor:collection-policy-test",
+  workspaceId: "workspace-juw",
+  workspaceSubject: "operator:collection-policy-test",
   subject: "operator:collection-policy-test",
   email: "operator@example.com",
   displayName: "Collection policy test",

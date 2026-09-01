@@ -23,6 +23,9 @@ import type {
 import { StudioEngineError } from "../lib/studio/engine/errors";
 
 const OPERATOR = Object.freeze({
+  actorSubject: "actor-operator-route-service",
+  workspaceId: "workspace-juw",
+  workspaceSubject: "operator-route-service",
   subject: "operator-route-service",
   email: "operator@example.com",
   displayName: "Operator",

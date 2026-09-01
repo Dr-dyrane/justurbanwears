@@ -18,7 +18,10 @@ export async function GET(request: Request): Promise<Response> {
   return shopRoute(async () => {
     const actor = requireOperatorActor(await resolveOperatorActor(request));
     const studioOperator: StudioOperator = {
-      subject: actor.subject,
+      subject: actor.workspaceSubject,
+      actorSubject: actor.subject,
+      workspaceId: actor.workspaceId,
+      workspaceSubject: actor.workspaceSubject,
       email: actor.email ?? "",
       displayName: actor.displayName ?? actor.email ?? "Studio operator",
       role: actor.role,

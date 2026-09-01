@@ -713,8 +713,31 @@ export const shopNotificationOutbox = pgTable("shop_notification_outbox", {
   `),
 ]);
 
+export const studioWorkspaces = pgTable("studio_workspaces", {
+  id: uuid("id").primaryKey(),
+  key: varchar("key", { length: 80 }).notNull(),
+  name: varchar("name", { length: 120 }).notNull(),
+  // Existing Studio rows remain bound to their original operator subject.
+  // This is the canonical data namespace shared by every workspace member;
+  // it is not a person-level ownership or permission distinction.
+  dataSubject: text("data_subject").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("studio_workspaces_key_unique").on(table.key),
+  uniqueIndex("studio_workspaces_data_subject_unique").on(table.dataSubject),
+  check("studio_workspaces_key_known", sql`${table.key} = 'juw-studio'`),
+  check("studio_workspaces_name_present", sql`length(trim(${table.name})) > 0`),
+  check("studio_workspaces_data_subject_present", sql`
+    length(trim(${table.dataSubject})) between 1 and 255
+  `),
+]);
+
 export const studioOperatorMembership = pgTable("studio_operator_membership", {
   authSubject: text("auth_subject").primaryKey(),
+  workspaceId: uuid("workspace_id")
+    .notNull()
+    .references(() => studioWorkspaces.id, { onDelete: "restrict" }),
   email: text("email").notNull(),
   role: varchar("role", { length: 24 }).default("operator").notNull(),
   active: boolean("active").default(true).notNull(),
@@ -722,6 +745,11 @@ export const studioOperatorMembership = pgTable("studio_operator_membership", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 }, (table) => [
   uniqueIndex("studio_operator_membership_email_unique").on(sql`lower(${table.email})`),
+  index("studio_operator_membership_workspace_active_role_idx").on(
+    table.workspaceId,
+    table.active,
+    table.role,
+  ),
   check("studio_operator_membership_role", sql`${table.role} in ('operator', 'admin')`),
 ]);
 

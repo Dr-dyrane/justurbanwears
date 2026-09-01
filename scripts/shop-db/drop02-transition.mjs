@@ -258,7 +258,7 @@ export async function applyDrop02TransitionInTransaction(transaction, manifest) 
     studio_intakes, studio_wardrobe_items, studio_catalogue_publications,
     studio_garment_revisions
     in share row exclusive mode`);
-  await transaction.query("lock table studio_operator_membership in share mode");
+  await transaction.query("lock table studio_workspaces, studio_operator_membership in share mode");
 
   const catalogueState = queryRows(await transaction.query(
     `select
@@ -276,17 +276,13 @@ export async function applyDrop02TransitionInTransaction(transaction, manifest) 
   );
 
   const owners = queryRows(await transaction.query(
-    `select membership.auth_subject, membership.email
+    `select workspace.data_subject as auth_subject, membership.email
      from studio_operator_membership membership
-     where membership.active = true
-       and (
-         exists (
-           select 1 from studio_wardrobe_items item
-           where item.operator_subject = membership.auth_subject
-         )
-         or not exists (select 1 from studio_wardrobe_items)
-       )
-     order by membership.auth_subject`,
+     join studio_workspaces workspace
+       on workspace.id = membership.workspace_id
+      and workspace.data_subject = membership.auth_subject
+     where workspace.key = 'juw-studio'
+     order by workspace.data_subject`,
   ));
   invariant(owners.length === 1, "DROP02_TRANSITION_OWNER_AMBIGUOUS");
   const ownerSubject = String(owners[0].auth_subject);

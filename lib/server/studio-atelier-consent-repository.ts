@@ -89,6 +89,10 @@ function nullableIso(value: unknown): string | null {
   return value === null || value === undefined ? null : iso(value) || null;
 }
 
+function validActorSubject(value: string): boolean {
+  return value.length >= 1 && value.length <= 512 && value === value.trim();
+}
+
 const adultVerificationBodySchema = z.object({
   schemaVersion: z.literal(STUDIO_ATELIER_ADULT_VERIFICATION_VERSION),
   operatorSubject: z.string().trim().min(1),
@@ -516,7 +520,7 @@ async function readActiveConsentAuthority(
     && eventResultingRevision === revision
     && eventExpectedRevision === revision - 1
     && String(row.consent_event_type) === "GRANTED"
-    && eventActor === operatorSubject
+    && validActorSubject(eventActor)
     && SHA256_PATTERN.test(eventFingerprint)
     && (previousEventHash === null || SHA256_PATTERN.test(previousEventHash))
     && eventHash === projectionLastEventHash
@@ -757,7 +761,7 @@ async function replayedReceipt(
     && resultingRevision === expectedRevision + 1
     && sequence === resultingRevision
     && z.string().uuid().safeParse(grantId).success
-    && actorSubject === operator.subject
+    && actorSubject === operator.actorSubject
     && (previousEventHash === null || SHA256_PATTERN.test(previousEventHash))
     && SHA256_PATTERN.test(eventHash)
     && Boolean(createdAt)
@@ -871,7 +875,7 @@ export async function grantStudioAtelierConsent(input: Readonly<{
     sequence: resultingRevision,
     eventType: "GRANTED",
     grantId,
-    actorSubject: input.operator.subject,
+    actorSubject: input.operator.actorSubject,
     payload,
     previousEventHash,
     createdAt,
@@ -936,7 +940,7 @@ export async function grantStudioAtelierConsent(input: Readonly<{
           )
           select ${eventId}::uuid, ${input.operator.subject}, ${resultingRevision},
             'GRANTED', current_grant_id, ${command.expectedRevision},
-            ${resultingRevision}, ${input.operator.subject}, ${command.idempotencyKey},
+            ${resultingRevision}, ${input.operator.actorSubject}, ${command.idempotencyKey},
             ${fingerprint}, ${JSON.stringify(payload)}::jsonb, null, ${eventHash}, ${createdAt}
           from inserted_projection
           returning *
@@ -1003,7 +1007,7 @@ export async function grantStudioAtelierConsent(input: Readonly<{
           )
           select ${eventId}::uuid, ${input.operator.subject}, ${resultingRevision},
             'GRANTED', current_grant_id, ${command.expectedRevision},
-            ${resultingRevision}, ${input.operator.subject}, ${command.idempotencyKey},
+            ${resultingRevision}, ${input.operator.actorSubject}, ${command.idempotencyKey},
             ${fingerprint}, ${JSON.stringify(payload)}::jsonb,
             ${previousEventHash}, ${eventHash}, ${createdAt}
           from advanced_projection
@@ -1052,7 +1056,7 @@ export async function revokeStudioAtelierConsent(input: Readonly<{
     sequence: resultingRevision,
     eventType: "REVOKED",
     grantId,
-    actorSubject: input.operator.subject,
+    actorSubject: input.operator.actorSubject,
     payload,
     previousEventHash,
     createdAt,
@@ -1082,7 +1086,7 @@ export async function revokeStudioAtelierConsent(input: Readonly<{
       )
       select ${eventId}::uuid, ${input.operator.subject}, ${resultingRevision},
         'REVOKED', current_grant_id, ${command.expectedRevision},
-        ${resultingRevision}, ${input.operator.subject}, ${command.idempotencyKey},
+        ${resultingRevision}, ${input.operator.actorSubject}, ${command.idempotencyKey},
         ${fingerprint}, ${JSON.stringify(payload)}::jsonb,
         ${previousEventHash}, ${eventHash}, ${createdAt}
       from advanced_projection

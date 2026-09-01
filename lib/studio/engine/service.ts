@@ -720,7 +720,7 @@ export async function decideStudioCandidate(input: {
   await applyStudioIntakeDecisionAtomic({
     intakeId: input.id,
     generationId: generation.id,
-    actorSubject: input.operator.subject,
+    actorSubject: input.operator.actorSubject,
     expectedVersion: input.expectedVersion,
     expectedIntakeState: transition.expectedIntakeState,
     intakeState: transition.intakeState,

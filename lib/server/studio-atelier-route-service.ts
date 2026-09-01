@@ -121,11 +121,19 @@ export function createStudioAtelierRouteService(input: Readonly<{
 
       if (current.state === "LOCKED") {
         if (decision.decision !== "KEEP") throw decisionConflict();
-        return runtime.facade.lockOrReuse(operator.subject, operationId);
+        return runtime.facade.lockOrReuse(
+          operator.subject,
+          operationId,
+          operator.actorSubject,
+        );
       }
       if (current.state === "USER_APPROVED") {
         if (decision.decision !== "KEEP") throw decisionConflict();
-        return runtime.facade.lockOrReuse(operator.subject, operationId);
+        return runtime.facade.lockOrReuse(
+          operator.subject,
+          operationId,
+          operator.actorSubject,
+        );
       }
       if (current.state !== "SEMANTIC_PASS") throw hiddenCandidate();
 
@@ -133,6 +141,7 @@ export function createStudioAtelierRouteService(input: Readonly<{
         operator.subject,
         operationId,
         decision,
+        operator.actorSubject,
       );
       if (decision.decision !== "KEEP") return reviewed;
 
@@ -140,7 +149,11 @@ export function createStudioAtelierRouteService(input: Readonly<{
       // is deterministic/local and cannot invoke the provider. If the process
       // stops between review and lock, a repeated Keep resumes from the durable
       // USER_APPROVED projection above.
-      return runtime.facade.lockOrReuse(operator.subject, operationId);
+      return runtime.facade.lockOrReuse(
+        operator.subject,
+        operationId,
+        operator.actorSubject,
+      );
     },
   });
 }

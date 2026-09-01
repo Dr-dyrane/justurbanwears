@@ -25,6 +25,8 @@ export interface ShopCustomerActor extends ShopActorIdentity {
 
 export interface ShopOperatorActor extends ShopActorIdentity {
   kind: "OPERATOR";
+  workspaceId: string;
+  workspaceSubject: string;
   role: "operator" | "admin";
 }
 

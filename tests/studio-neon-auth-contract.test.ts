@@ -3,6 +3,7 @@ import test from "node:test";
 import { readFile } from "node:fs/promises";
 
 const operator = await readFile(new URL("../lib/server/studio-operator.ts", import.meta.url), "utf8");
+const membership = await readFile(new URL("../lib/server/studio-operator-membership.ts", import.meta.url), "utf8");
 const layout = await readFile(new URL("../app/(studio)/layout.tsx", import.meta.url), "utf8");
 const route = await readFile(new URL("../app/api/auth/[...path]/route.ts", import.meta.url), "utf8");
 const authPage = await readFile(new URL("../components/studio/auth/studio-auth-surface.tsx", import.meta.url), "utf8");
@@ -17,6 +18,12 @@ test("production Studio uses managed Neon Auth and still enforces the operator a
   assert.match(operator, /getNeonAuth\(\)\.getSession\(\)/);
   assert.match(operator, /STUDIO_OPERATOR_EMAILS/);
   assert.match(operator, /getStudioOperatorMembership/);
+  assert.match(operator, /actorSubject: user\.userId/);
+  assert.match(operator, /projectStudioOperator/);
+  assert.match(membership, /join studio_workspaces/i);
+  assert.match(membership, /workspace_id/);
+  assert.match(membership, /data_subject/);
+  assert.match(membership, /active = true/);
   assert.match(layout, /requireStudioOperator\(\)/);
   assert.match(layout, /redirect\(authSignInPath\(returnTo\)\)/);
   assert.match(route, /getNeonAuth\(\)\.handler\(\)/);

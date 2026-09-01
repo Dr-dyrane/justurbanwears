@@ -44,7 +44,9 @@ export async function resolveOperatorActor(request?: Request): Promise<ShopOpera
     const operator = await requireStudioOperator();
     return {
       kind: "OPERATOR",
-      subject: operator.subject,
+      subject: operator.actorSubject,
+      workspaceId: operator.workspaceId,
+      workspaceSubject: operator.workspaceSubject,
       email: cleanClaim(operator.email.toLowerCase(), 320),
       displayName: cleanClaim(operator.displayName, 120),
       role: operator.role,

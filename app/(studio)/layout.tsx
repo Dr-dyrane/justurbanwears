@@ -3,7 +3,11 @@ import studioAdaptiveWorkspaceCss from "../studio-adaptive-workspace.css?raw";
 import "../studio-mobile-wardrobe.css";
 import "../studio-stack-navigation.css";
 import { AppShell } from "../../components/studio/app-shell";
-import { requireStudioOperator } from "../../lib/server/studio-operator";
+import {
+  requireStudioOperator,
+  studioOperatorClientProfile,
+  type StudioOperator,
+} from "../../lib/server/studio-operator";
 import { StudioEngineError } from "../../lib/studio/engine/errors";
 import { authSignInPath } from "../../lib/auth/return-to";
 import { headers } from "next/headers";
@@ -28,7 +32,7 @@ export default async function StudioLayout({ children }: { children: React.React
     && !returnToHasControlCharacter
     ? candidateReturnTo
     : "/studio";
-  let operator = null;
+  let operator: StudioOperator | null = null;
   if (process.env.STUDIO_AI_ENGINE_AUTH_MODE) {
     try {
       operator = await requireStudioOperator();
@@ -46,7 +50,10 @@ export default async function StudioLayout({ children }: { children: React.React
     <>
       <style data-studio-atelier>{studioAtelierCss}</style>
       <style data-studio-adaptive-workspace-css>{studioAdaptiveWorkspaceCss}</style>
-      <AppShell operator={operator} scenariosEnabled={scenariosEnabled}>{children}</AppShell>
+      <AppShell
+        operator={operator ? studioOperatorClientProfile(operator) : null}
+        scenariosEnabled={scenariosEnabled}
+      >{children}</AppShell>
     </>
   );
 }

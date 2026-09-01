@@ -3,7 +3,7 @@
 import { usePathname, useSearchParams } from "next/navigation";
 import { ArrowLeft, ClipboardList, RotateCcw } from "lucide-react";
 import { useMobileChrome } from "../../hooks/use-mobile-chrome";
-import type { StudioOperator } from "../../lib/server/studio-operator";
+import type { StudioOperatorClientProfile } from "../../lib/server/studio-operator-projection";
 import {
   STUDIO_SCENARIO_LABELS,
   studioScenarioRouteSupported,
@@ -19,7 +19,7 @@ import {
 import { StudioSettingsCenter } from "./settings/studio-settings-center";
 import { StudioProvider, useStudio } from "./studio-provider";
 
-function AppShellFrame({ children, operator }: { children: React.ReactNode; operator: StudioOperator | null }) {
+function AppShellFrame({ children, operator }: { children: React.ReactNode; operator: StudioOperatorClientProfile | null }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const studio = useStudio();
@@ -101,7 +101,7 @@ function AppShellFrame({ children, operator }: { children: React.ReactNode; oper
   );
 }
 
-function AppShellContent({ children, operator }: { children: React.ReactNode; operator: StudioOperator | null }) {
+function AppShellContent({ children, operator }: { children: React.ReactNode; operator: StudioOperatorClientProfile | null }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const routeKey = `${pathname}?${searchParams.toString()}`;
@@ -115,7 +115,7 @@ function AppShellContent({ children, operator }: { children: React.ReactNode; op
 
 export function AppShell({ children, operator, scenariosEnabled }: {
   children: React.ReactNode;
-  operator: StudioOperator | null;
+  operator: StudioOperatorClientProfile | null;
   scenariosEnabled: boolean;
 }) {
   return (

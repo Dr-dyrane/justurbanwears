@@ -13,6 +13,9 @@ import { StudioEngineError } from "../lib/studio/engine/errors";
 const ORIGIN = "https://studio.example";
 const OPERATION_ID = "op-http-001";
 const OPERATOR = Object.freeze({
+  actorSubject: "actor-operator-http",
+  workspaceId: "workspace-juw",
+  workspaceSubject: "operator-http",
   subject: "operator-http",
   email: "operator@example.com",
   displayName: "Operator",

@@ -363,3 +363,12 @@ test("a server-unpublished piece keeps the durable lifecycle as its only publica
     /\{garment\.privateWardrobeItemId \? <GarmentLifecyclePanel[\s\S]*?\/> : null\}\s*\{listing \? <section/u,
   );
 });
+
+test("connected Wardrobe reads one canonical Studio scope for every authenticated member", () => {
+  const route = readFileSync(`${process.cwd()}/app/api/studio/wardrobe/route.ts`, "utf8");
+  assert.match(route, /const operator = await requireStudioOperator\(\)/);
+  assert.match(route, /listWardrobeItems\(operator\.subject\)/);
+  assert.match(route, /listCataloguePublications\(operator\.subject\)/);
+  assert.doesNotMatch(route, /listWardrobeItems\(operator\.actorSubject\)/);
+  assert.doesNotMatch(route, /listCataloguePublications\(operator\.actorSubject\)/);
+});

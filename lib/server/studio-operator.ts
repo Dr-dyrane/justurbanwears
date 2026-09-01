@@ -1,14 +1,19 @@
 import { getChatGPTUser } from "../../app/chatgpt-auth";
 import { getNeonAuth } from "../auth/neon";
 import { getStudioOperatorMembership } from "./studio-operator-membership";
+import { projectStudioOperator } from "./studio-operator-projection";
+import type { StudioOperator } from "./studio-operator-projection";
 import { StudioEngineError } from "../studio/engine/errors";
 
-export type StudioOperator = {
-  subject: string;
-  email: string;
-  displayName: string;
-  role: "operator" | "admin";
-};
+export {
+  projectStudioOperator,
+  studioOperatorClientProfile,
+} from "./studio-operator-projection";
+export type {
+  StudioOperatorClientProfile,
+  StudioOperatorRole,
+} from "./studio-operator-projection";
+export type { StudioOperator };
 
 export async function requireStudioOperator(): Promise<StudioOperator> {
   const mode = process.env.STUDIO_AI_ENGINE_AUTH_MODE;
@@ -59,7 +64,11 @@ export async function requireStudioOperator(): Promise<StudioOperator> {
   }
   const membership = mode === "neon-auth"
     ? await getStudioOperatorMembership({ subject: user.userId, email: normalizedEmail })
-    : { role: "operator" as const };
+    : {
+        role: "operator" as const,
+        workspaceId: `openai-sites:${user.userId}`,
+        dataSubject: user.userId,
+      };
   if (!membership) {
     throw new StudioEngineError(
       "OPERATOR_FORBIDDEN",
@@ -68,5 +77,10 @@ export async function requireStudioOperator(): Promise<StudioOperator> {
       "Ask an administrator to restore your Studio membership.",
     );
   }
-  return { subject: user.userId, email: user.email, displayName: user.displayName, role: membership.role };
+  return projectStudioOperator({
+    actorSubject: user.userId,
+    email: user.email,
+    displayName: user.displayName,
+    membership,
+  });
 }

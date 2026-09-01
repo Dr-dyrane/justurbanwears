@@ -13,7 +13,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { StudioOperator } from "../../../lib/server/studio-operator";
+import type { StudioOperatorClientProfile } from "../../../lib/server/studio-operator-projection";
 import { PwaInstallControl } from "../../pwa/pwa-install-control";
 import { ThemeSettings } from "../../theme/theme-settings";
 import { assignDocumentNavigation } from "../../brand/document-navigation-loading-stage";
@@ -132,7 +132,7 @@ function LuluProfileAvatar({ online = false }: { online?: boolean }) {
   );
 }
 
-export function StudioSettingsCenter({ operator }: { operator: StudioOperator | null }) {
+export function StudioSettingsCenter({ operator }: { operator: StudioOperatorClientProfile | null }) {
   const studio = useStudio();
   const [open, setOpen] = useState(false);
   const [returnFocus, setReturnFocus] = useState<HTMLButtonElement | null>(null);
