@@ -112,7 +112,7 @@ function wardrobeFilterLabel(filter: WardrobeFilter) {
 }
 
 type WardrobeDropScope = StudioCollectionScope["key"];
-type WardrobeCollectionScope = "all" | "private" | WardrobeDropScope;
+type WardrobeCollectionScope = "all" | "archived" | "private" | WardrobeDropScope;
 
 const BASELINE_COLLECTIONS: StudioCollectionScope[] = [
   {
@@ -187,7 +187,7 @@ function collectionScopeFromParam(value: string | null, currentDropKey: Wardrobe
   if (normalized === "current") return currentDropKey;
   if (normalized === "past") return currentDropKey === "drop-02" ? "drop-01" : "drop-02";
   if (normalized === "studio") return "private";
-  if (normalized === "all" || normalized === "private" || /^drop-[0-9]{2,}$/.test(normalized)) {
+  if (normalized === "all" || normalized === "archived" || normalized === "private" || /^drop-[0-9]{2,}$/.test(normalized)) {
     return normalized as WardrobeCollectionScope;
   }
   return currentDropKey;
@@ -292,7 +292,7 @@ function GarmentCard({ garment }: { garment: Garment }) {
       <div className="studio-garment-body">
         <StudioLink aria-label={`Open ${garment.title}`} className="studio-garment-disclosure" href={garmentDossierHref(garment)}>
           <span><small>{garment.sku} · {garment.sizeLabel}</small><strong>{garment.title}</strong><small>{garment.color} · {garment.price > 0 ? formatNaira(garment.price) : "Price pending"}</small></span>
-          <span className="studio-piece-stage" data-stage={pastDrop ? "PRIVATE" : workspace.stage}>{pastDrop ? "Past drop" : workspace.stageLabel}</span>
+          <span className="studio-piece-stage" data-stage={garment.state === "ARCHIVED" ? "ARCHIVED" : pastDrop ? "PRIVATE" : workspace.stage}>{garment.state === "ARCHIVED" ? "Archived" : pastDrop ? "Past drop" : workspace.stageLabel}</span>
           <ArrowRight aria-hidden="true" size={17} />
         </StudioLink>
       </div>
@@ -300,7 +300,7 @@ function GarmentCard({ garment }: { garment: Garment }) {
   );
 }
 
-export function PieceWorkspaceView({ garment, initialAction, layout = "embedded", onDismiss, onContinueMedia }: { garment: Garment; initialAction?: "drop" | "price"; layout?: "adaptive" | "embedded"; onDismiss(): void; onContinueMedia(garment: Garment): void }) {
+export function PieceWorkspaceView({ garment, initialAction, layout = "embedded", onDismiss, onPermanentDelete, onContinueMedia }: { garment: Garment; initialAction?: "drop" | "price"; layout?: "adaptive" | "embedded"; onDismiss(): void; onPermanentDelete?(): void; onContinueMedia(garment: Garment): void }) {
   const studio = useStudio();
   const projectedCollections = studio.application.snapshot?.collectionScopes ?? [];
   const [pieceCollections, setPieceCollections] = useState<StudioCollectionScope[]>([]);
@@ -853,7 +853,7 @@ export function PieceWorkspaceView({ garment, initialAction, layout = "embedded"
                 </section>
               ) : <>
                 {garment.privateWardrobeItemId
-                  ? <GarmentLifecyclePanel initialAction={initialAction === "price" ? "price" : undefined} onChangeDrop={canChangeDrop ? openDrop : undefined} onWorkspaceChange={setLifecycleWorkspace} wardrobeItemId={garment.privateWardrobeItemId} />
+                  ? <GarmentLifecyclePanel initialAction={initialAction === "price" ? "price" : undefined} onChangeDrop={canChangeDrop ? openDrop : undefined} onPermanentDelete={onPermanentDelete ?? onDismiss} onWorkspaceChange={setLifecycleWorkspace} wardrobeItemId={garment.privateWardrobeItemId} />
                   : listing ? <section className="studio-piece-shop"><ListingEditor listing={listing} />{canChangeDrop ? <div className="studio-card-actions"><button className="button button-secondary" onClick={openDrop} type="button">Change drop</button></div> : null}</section> : null}
               </>}
             </div>
@@ -1151,11 +1151,19 @@ export function WardrobeWorkbench() {
       : collectionScopeFromParam(requestedScope, currentCollectionKey);
   });
   const collectionIds = useMemo(() => {
-    if (collectionScope === "all") return new Set(studio.garments.map((garment) => garment.id));
+    if (collectionScope === "all") return new Set(studio.garments
+      .filter((garment) => garment.state !== "ARCHIVED")
+      .map((garment) => garment.id));
+    if (collectionScope === "archived") return new Set(studio.garments
+      .filter((garment) => garment.state === "ARCHIVED")
+      .map((garment) => garment.id));
     if (collectionScope === "private") {
-      return new Set(dropContext.scopes
+      const privateIds = new Set(dropContext.scopes
         .filter((scope) => scope.key === "private" || scope.key === "studio")
         .flatMap((scope) => scope.garmentIds));
+      return new Set(studio.garments
+        .filter((garment) => privateIds.has(garment.id) && garment.state !== "ARCHIVED")
+        .map((garment) => garment.id));
     }
     const label = availableCollections.find((scope) => scope.key === collectionScope)?.label
       ?? (collectionScope === "drop-01" ? "Drop 01" : "Drop 02");
@@ -1168,8 +1176,10 @@ export function WardrobeWorkbench() {
     [collectionIds, studio.garments],
   );
   const activeScopedGarments = useMemo(
-    () => scopedGarments.filter((garment) => resolvedHistoricalDrop01Kind(garment, availableCollections) === null),
-    [availableCollections, scopedGarments],
+    () => collectionScope === "archived"
+      ? scopedGarments
+      : scopedGarments.filter((garment) => resolvedHistoricalDrop01Kind(garment, availableCollections) === null),
+    [availableCollections, collectionScope, scopedGarments],
   );
   const historyOnly = scopedGarments.length > 0 && activeScopedGarments.length === 0;
   const scopedListings = useMemo(
@@ -1243,7 +1253,9 @@ export function WardrobeWorkbench() {
       studio.listings,
       dropContext.currentDrop,
     );
-    const resolvedCollectionScope: WardrobeCollectionScope = resolvedScope.key === "studio" || resolvedScope.key === "private"
+    const resolvedCollectionScope: WardrobeCollectionScope = garment.state === "ARCHIVED"
+      ? "archived"
+      : resolvedScope.key === "studio" || resolvedScope.key === "private"
       ? "private"
       : availableCollections.find((scope) => scope.label === resolvedScope.label)?.key
         ?? dropKeyFromLabel(resolvedScope.label)
@@ -1331,9 +1343,14 @@ export function WardrobeWorkbench() {
     return <StudioLoadingStage label="Opening wardrobe…" />;
   }
 
-  const privateCount = dropContext.scopes
+  const privateIds = new Set(dropContext.scopes
     .filter((scope) => scope.key === "studio" || scope.key === "private")
-    .reduce((count, scope) => count + scope.count, 0);
+    .flatMap((scope) => scope.garmentIds));
+  const privateCount = studio.garments.filter((garment) => (
+    privateIds.has(garment.id) && garment.state !== "ARCHIVED"
+  )).length;
+  const archivedCount = studio.garments.filter((garment) => garment.state === "ARCHIVED").length;
+  const activeCount = studio.garments.length - archivedCount;
   const dropChoices = [...collectionsForSheet]
     .sort((left, right) => Number(right.isCurrent) - Number(left.isCurrent) || right.ordinal - left.ordinal)
     .map((scope) => {
@@ -1347,9 +1364,10 @@ export function WardrobeWorkbench() {
       };
     });
   const collectionChoices: Array<{ key: WardrobeCollectionScope; label: string; count: number | null }> = [
-    { key: "all", label: "All", count: dropContext.totalCount },
+    { key: "all", label: "All", count: activeCount },
     ...dropChoices,
     { key: "private", label: "Private", count: privateCount },
+    { key: "archived", label: "Archived", count: archivedCount },
   ];
   const selectedCollection = collectionChoices.find((choice) => choice.key === collectionScope)
     ?? collectionChoices.find((choice) => choice.key === currentCollectionKey)
@@ -1472,7 +1490,8 @@ export function WardrobeWorkbench() {
       </StudioStackSection>
 
       <StudioDropSheet
-        allCount={dropContext.totalCount}
+        allCount={activeCount}
+        archivedCount={archivedCount}
         collections={collectionsForSheet}
         initialAction={searchParams.get("dropAction") === "create"
           ? "create"
@@ -1548,6 +1567,12 @@ export function WardrobeWorkbench() {
         {openPiece ? <PieceWorkspaceView
           garment={openPiece}
           onDismiss={() => setOpenPieceId(null)}
+          onPermanentDelete={() => {
+            setOpenPieceId(null);
+            setPieceReturnFocus(null);
+            setCollectionScope("archived");
+            void studio.application.refresh();
+          }}
           onContinueMedia={(garment) => {
             setOpenPieceId(null);
             setWearReturnFocus(pieceReturnFocus);

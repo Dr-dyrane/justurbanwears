@@ -135,7 +135,7 @@ function lifecycleState(item: OperatorSafeWardrobeItem): Garment["state"] {
     item.state === "ARCHIVED"
     || item.publication?.state === "ARCHIVED"
     || item.publication?.inventory?.availability === "ARCHIVED"
-  ) return "CANCELLED";
+  ) return "ARCHIVED";
   if (item.publication?.inventory?.availability === "SOLD") return "SOLD";
   if (item.publication?.inventory?.availability === "RESERVED") return "RESERVED";
   if (item.publication?.state === "PUBLISHED") return "PUBLISHED";

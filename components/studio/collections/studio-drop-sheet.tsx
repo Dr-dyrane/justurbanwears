@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { Check, ChevronRight, CircleDot } from "lucide-react";
+import { Archive, Check, ChevronRight, CircleDot } from "lucide-react";
 import type { StudioCollectionScope } from "../../../lib/studio/application/contracts";
 import type { StudioCollectionReceipt } from "../../../lib/studio/collections/contracts";
 import { StudioFeedback } from "../atoms/studio-feedback";
@@ -14,6 +14,7 @@ type AppliedDropChange = {
 
 export interface StudioDropSheetProps {
   allCount: number;
+  archivedCount: number;
   collections: readonly StudioCollectionScope[];
   initialAction?: "create" | "manage";
   initialCollectionId?: string | null;
@@ -36,6 +37,7 @@ function stateLabel(collection: StudioCollectionScope) {
 
 export function StudioDropSheet({
   allCount,
+  archivedCount,
   collections,
   initialAction,
   onDismiss,
@@ -90,6 +92,11 @@ export function StudioDropSheet({
           <span aria-hidden="true" className="studio-drop-ordinal">P</span>
           <span className="studio-drop-row-copy"><strong>Private</strong><small>{privateCount} pieces</small></span>
           {selectedKey === "private" ? <Check aria-label="Selected" size={17} /> : <ChevronRight aria-hidden="true" size={17} />}
+        </button>
+        <button className="studio-drop-context-row" onClick={() => onSelect("archived")} type="button">
+          <span aria-hidden="true" className="studio-drop-ordinal"><Archive size={17} strokeWidth={1.7} /></span>
+          <span className="studio-drop-row-copy"><strong>Archived</strong><small>{archivedCount} piece{archivedCount === 1 ? "" : "s"}</small></span>
+          {selectedKey === "archived" ? <Check aria-label="Selected" size={17} /> : <ChevronRight aria-hidden="true" size={17} />}
         </button>
       </div>
     </StudioTaskSheet>

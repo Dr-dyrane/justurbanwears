@@ -15,8 +15,11 @@ import {
   changePublicationVisibility,
   createDraftGarmentRevision,
   discardDraftGarmentRevision,
+  findGarmentPermanentDeleteReceipt,
   findDraftGarmentRevision,
+  getGarmentPermanentDeleteEligibility,
   listGarmentEvents,
+  permanentlyDeleteArchivedGarment,
   replaceWardrobeApprovedFront,
   updateDraftGarmentRevision,
   updatePrivateGarmentFacts,
@@ -45,6 +48,8 @@ import {
 import type {
   GarmentLifecycleCommand,
   GarmentLifecycleDraft,
+  GarmentPermanentDeleteCommand,
+  GarmentPermanentDeleteReceipt,
   GarmentLifecycleWorkspace,
   GarmentRevisionDiff,
   GarmentRevisionMediaRole,
@@ -285,12 +290,13 @@ export async function getGarmentLifecycleWorkspace(
   wardrobeItemId: string,
   operator: StudioOperator,
 ): Promise<GarmentLifecycleWorkspace> {
-  const [item, publication, context, draft, history] = await Promise.all([
+  const [item, publication, context, draft, history, permanentDelete] = await Promise.all([
     getOwnedWardrobeItem(wardrobeItemId, operator.subject),
     findCataloguePublication({ wardrobeItemId, operatorSubject: operator.subject }),
     getStudioPublicationContext(wardrobeItemId, operator),
     findDraftGarmentRevision({ wardrobeItemId, operatorSubject: operator.subject }),
     listGarmentEvents({ wardrobeItemId, operatorSubject: operator.subject }),
+    getGarmentPermanentDeleteEligibility({ wardrobeItemId, operatorSubject: operator.subject }),
   ]);
   const baseline = publication ? liveFacts(publication, item) : itemFacts(context.item);
   const draftFacts = draft ? withDescription(draft.facts, baseline) : undefined;
@@ -354,8 +360,71 @@ export async function getGarmentLifecycleWorkspace(
     } : {}),
     ...(draftView ? { draft: draftView } : {}),
     history,
+    permanentDelete,
     allowedActions: allowedActions({ item, publication, draft }),
   };
+}
+
+export async function permanentlyDeleteGarment(input: {
+  wardrobeItemId: string;
+  operator: StudioOperator;
+  command: GarmentPermanentDeleteCommand;
+}): Promise<GarmentPermanentDeleteReceipt> {
+  const requestFingerprint = sha256(JSON.stringify({
+    schemaVersion: "juw.studio-garment-permanent-delete.v1",
+    wardrobeItemId: input.wardrobeItemId,
+    expectedVersion: input.command.expectedVersion,
+    confirmation: input.command.confirmation,
+  }));
+  const result = await permanentlyDeleteArchivedGarment({
+    wardrobeItemId: input.wardrobeItemId,
+    operatorSubject: input.operator.subject,
+    actorSubject: input.operator.actorSubject,
+    expectedVersion: input.command.expectedVersion,
+    idempotencyKey: input.command.idempotencyKey,
+    requestFingerprint,
+  });
+  if (result.kind === "IDEMPOTENCY_CONFLICT") {
+    throw new StudioEngineError(
+      "VERSION_CONFLICT",
+      409,
+      "This delete request was already used for a different piece state.",
+      "Reload the archived piece and review it again.",
+    );
+  }
+  if (result.kind === "VERSION_CONFLICT") {
+    throw new StudioEngineError(
+      "VERSION_CONFLICT",
+      409,
+      "This archived piece changed in another window.",
+      "Reload it and review permanent deletion again.",
+    );
+  }
+  if (result.kind !== "DELETED" || !result.receipt) {
+    const eligibility = await getGarmentPermanentDeleteEligibility({
+      wardrobeItemId: input.wardrobeItemId,
+      operatorSubject: input.operator.subject,
+    });
+    throw new StudioEngineError(
+      "INVALID_TRANSITION",
+      409,
+      "This piece cannot be permanently deleted.",
+      eligibility.blockers.join(" ") || "Reload the archived piece and review it again.",
+    );
+  }
+  return result.receipt;
+}
+
+export async function getGarmentPermanentDeleteReceipt(input: {
+  wardrobeItemId: string;
+  operator: StudioOperator;
+  idempotencyKey: string;
+}): Promise<GarmentPermanentDeleteReceipt | null> {
+  return findGarmentPermanentDeleteReceipt({
+    wardrobeItemId: input.wardrobeItemId,
+    operatorSubject: input.operator.subject,
+    idempotencyKey: input.idempotencyKey,
+  });
 }
 
 async function saveGarmentFacts(input: {

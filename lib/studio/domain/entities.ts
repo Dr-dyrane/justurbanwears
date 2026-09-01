@@ -5,6 +5,7 @@ export type StudioLifecycleState =
   | "PUBLISHED"
   | "RESERVED"
   | "SOLD"
+  | "ARCHIVED"
   | "CANCELLED"
   | "RETURNED"
   | "ERROR";

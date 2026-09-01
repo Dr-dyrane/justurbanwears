@@ -43,6 +43,16 @@ export const garmentLifecycleCommandSchema = z.discriminatedUnion("command", [
   }),
 ]);
 
+export const garmentPermanentDeleteSchema = z.object({
+  confirmation: z.literal("DELETE_PERMANENTLY"),
+  expectedVersion: z.number().int().positive(),
+  idempotencyKey: idempotencyKeySchema,
+});
+
+export const garmentPermanentDeleteReceiptQuerySchema = z.object({
+  idempotencyKey: idempotencyKeySchema,
+});
+
 export const garmentRevisionMediaRoleSchema = z.enum([
   "GARMENT_FRONT",
   "GARMENT_BACK",
@@ -50,7 +60,15 @@ export const garmentRevisionMediaRoleSchema = z.enum([
 ]);
 
 export type GarmentLifecycleCommand = z.infer<typeof garmentLifecycleCommandSchema>;
+export type GarmentPermanentDeleteCommand = z.infer<typeof garmentPermanentDeleteSchema>;
 export type GarmentRevisionMediaRole = z.infer<typeof garmentRevisionMediaRoleSchema>;
+
+export type GarmentPermanentDeleteReceipt = {
+  wardrobeItemId: string;
+  title: string;
+  consequence: string;
+  deletedAt: string;
+};
 
 export type GarmentRevisionDiff = {
   field: "title" | "description" | "category" | "colour" | "sizeLabel" | "condition" | "price" | "media";
@@ -97,5 +115,9 @@ export type GarmentLifecycleWorkspace = {
   };
   draft?: GarmentLifecycleDraft;
   history: GarmentLifecycleEvent[];
+  permanentDelete: {
+    eligible: boolean;
+    blockers: string[];
+  };
   allowedActions: Array<"EDIT" | "PUBLISH_REVISION" | "DISCARD_REVISION" | "UNPUBLISH" | "REPUBLISH" | "ARCHIVE">;
 };

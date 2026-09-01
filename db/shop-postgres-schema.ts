@@ -1369,6 +1369,34 @@ export const studioGarmentEvents = pgTable("studio_garment_events", {
   check("studio_garment_events_details_object", sql`jsonb_typeof(${table.details}) = 'object'`),
 ]);
 
+// A hard delete removes only an archived, never-published Wardrobe record.
+// The receipt survives the record so interrupted clients can reconcile without
+// replaying a destructive command. Paid/private engine evidence remains bound
+// to the retained intake and is never silently erased by this UI operation.
+export const studioGarmentDeletions = pgTable("studio_garment_deletions", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  wardrobeItemId: uuid("wardrobe_item_id").notNull(),
+  intakeId: uuid("intake_id").notNull(),
+  operatorSubject: text("operator_subject").notNull(),
+  actorSubject: text("actor_subject").notNull(),
+  idempotencyKey: varchar("idempotency_key", { length: 160 }).notNull(),
+  requestFingerprint: varchar("request_fingerprint", { length: 64 }).notNull(),
+  expectedVersion: integer("expected_version").notNull(),
+  title: text("title").notNull(),
+  consequence: text("consequence").notNull(),
+  deletedAt: timestamp("deleted_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("studio_garment_deletions_operator_idempotency_unique").on(
+    table.operatorSubject,
+    table.idempotencyKey,
+  ),
+  uniqueIndex("studio_garment_deletions_wardrobe_unique").on(table.wardrobeItemId),
+  index("studio_garment_deletions_operator_deleted_idx").on(table.operatorSubject, table.deletedAt),
+  check("studio_garment_deletions_fingerprint", sql`${table.requestFingerprint} ~ '^[0-9a-f]{64}$'`),
+  check("studio_garment_deletions_expected_version_positive", sql`${table.expectedVersion} > 0`),
+  check("studio_garment_deletions_title_present", sql`length(trim(${table.title})) > 0`),
+]);
+
 export const studioManualHolds = pgTable("studio_manual_holds", {
   id: uuid("id").defaultRandom().primaryKey(),
   operatorSubject: text("operator_subject").notNull(),

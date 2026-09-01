@@ -79,11 +79,11 @@ async function readConsentResponse(response: Response): Promise<AtelierConsentSt
   return consent as AtelierConsentStatus;
 }
 
-function LuluProfileAvatar({ online = false }: { online?: boolean }) {
+function LuluProfileAvatar({ menuTrigger = false }: { menuTrigger?: boolean }) {
   return (
     <span
       aria-hidden="true"
-      className={online
+      className={menuTrigger
         ? "studio-profile-avatar studio-profile-orb-mobile"
         : "studio-profile-avatar studio-profile-card-avatar"}
     >
@@ -91,14 +91,13 @@ function LuluProfileAvatar({ online = false }: { online?: boolean }) {
       <img
         alt=""
         decoding="async"
-        fetchPriority={online ? "high" : "auto"}
+        fetchPriority={menuTrigger ? "high" : "auto"}
         height={1402}
-        loading={online ? "eager" : "lazy"}
+        loading={menuTrigger ? "eager" : "lazy"}
         onError={(event) => { event.currentTarget.hidden = true; }}
         src={LULU_PROFILE_AVATAR_SRC}
         width={1122}
       />
-      {online ? <i /> : null}
     </span>
   );
 }
@@ -282,7 +281,7 @@ export function StudioSettingsCenter({ operator }: { operator: StudioOperatorCli
       onClick={(event) => { setReturnFocus(event.currentTarget); setOpen(true); }}
       type="button"
     >
-      <LuluProfileAvatar online />
+      <LuluProfileAvatar menuTrigger />
     </button>
     <StudioTaskSheet
       className="studio-settings-sheet studio-profile-sheet"

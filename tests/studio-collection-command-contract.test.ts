@@ -112,6 +112,7 @@ test("the drop sheet preserves read selection and counts without collection muta
   assert.match(sheet, /\{allCount\} total/);
   assert.match(sheet, /\{collection\.counts\.pieces \?\? "—"\} pieces/);
   assert.match(sheet, /\{privateCount\} pieces/);
+  assert.match(sheet, /<strong>Archived<\/strong><small>\{archivedCount\}/);
   assert.match(sheet, /onSelect\(collection\.key\)/);
   assert.match(sheet, /data-read-only="true"/);
   assert.doesNotMatch(sheet, /studio-drop-new|beginCreate|beginRename/);

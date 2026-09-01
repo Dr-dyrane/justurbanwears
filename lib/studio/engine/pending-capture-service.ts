@@ -74,6 +74,7 @@ async function ownedWardrobeCaptureContract(wardrobeItemId: string, operator: St
 }
 
 async function saveCapture(input: {
+  wardrobeItemId?: string;
   key: string;
   storagePath: string;
   assetUrl(captureId: string): string;
@@ -119,6 +120,7 @@ async function saveCapture(input: {
     }
     await upsertPendingProductCapture({
       operatorSubject: input.operator.subject,
+      wardrobeItemId: input.wardrobeItemId,
       sku: input.key,
       role,
       blobPathname: storedPathname,
@@ -159,6 +161,7 @@ export async function saveWardrobeCapture(input: {
 }) {
   const contract = await ownedWardrobeCaptureContract(input.wardrobeItemId, input.operator);
   const captures = await saveCapture({
+    wardrobeItemId: contract.item.id,
     key: contract.key,
     storagePath: `wardrobe/${contract.item.id}`,
     assetUrl: (captureId) => `/api/studio/wardrobe/${encodeURIComponent(contract.item.id)}/captures/${captureId}`,

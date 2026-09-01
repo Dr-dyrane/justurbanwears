@@ -310,11 +310,11 @@ test("an archived adopted piece remains archived instead of resurfacing as Ready
   }]);
 
   const hydrated = await repository.read();
-  assert.equal(hydrated.garments[0].state, "CANCELLED");
+  assert.equal(hydrated.garments[0].state, "ARCHIVED");
   assert.equal(hydrated.garments[0].availability, "ARCHIVED");
   assert.equal(hydrated.garments[0].saleEligible, false);
-  assert.equal(hydrated.listings[0].state, "CANCELLED");
-  assert.equal(hydrated.inventory[0].state, "CANCELLED");
+  assert.equal(hydrated.listings[0].state, "ARCHIVED");
+  assert.equal(hydrated.inventory[0].state, "ARCHIVED");
 });
 
 test("a server-unpublished piece keeps the durable lifecycle as its only publication authority", async () => {
@@ -356,7 +356,7 @@ test("a server-unpublished piece keeps the durable lifecycle as its only publica
   const workbench = readFileSync(`${process.cwd()}/components/studio/wardrobe-workbench.tsx`, "utf8");
   assert.match(
     workbench,
-    /\{garment\.privateWardrobeItemId\s*\?\s*<GarmentLifecyclePanel[\s\S]*?: listing \? <section className="studio-piece-shop"><ListingEditor listing=\{listing\} \/><\/section> : null\}/u,
+    /\{garment\.privateWardrobeItemId\s*\?\s*<GarmentLifecyclePanel[\s\S]*?: listing \? <section className="studio-piece-shop"><ListingEditor listing=\{listing\} \/>[\s\S]*?<\/section> : null\}/u,
   );
   assert.doesNotMatch(
     workbench,

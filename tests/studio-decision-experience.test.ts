@@ -34,12 +34,14 @@ test("consequential Studio actions share review, confirmation, progress and rece
 
 test("garment public and destructive changes never use a native browser confirm", () => {
   assert.doesNotMatch(lifecycle, /window\.confirm/);
-  for (const action of ["PUBLISH_REVISION", "DISCARD_REVISION", "UNPUBLISH", "REPUBLISH", "ARCHIVE"]) {
+  for (const action of ["PUBLISH_REVISION", "DISCARD_REVISION", "UNPUBLISH", "REPUBLISH", "ARCHIVE", "DELETE_PERMANENTLY"]) {
     assert.match(lifecycle, new RegExp(`requestDecision\\(\\"${action}\\"`));
   }
   assert.match(lifecycle, /<StudioDecisionSheet/);
   assert.match(lifecycle, /getOrCreateSessionCommandKey\(\{/);
   assert.match(lifecycle, /idempotencyKey: publicationKeyRef\.current/);
+  assert.match(lifecycle, /garment-permanent-delete/);
+  assert.match(lifecycle, /\/deletion\?idempotencyKey=/);
 });
 
 test("simulator garment and listing mutations use the shared decision receipt grammar", () => {

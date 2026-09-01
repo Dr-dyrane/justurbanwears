@@ -51,7 +51,8 @@ test("Studio uses Home-owned navigation and one shell-owned stack header", () =>
   assert.equal(settings.match(/<LuluProfileAvatar/g)?.length, 2);
   assert.doesNotMatch(settings, /avatarInitial|<b>\{initial\}<\/b>|>L<\/b>/);
   assert.match(controlCss, /\.studio-profile-avatar > img \{[\s\S]*?object-fit: cover;[\s\S]*?object-position: 50% 20%;/);
-  assert.match(controlCss, /\.studio-profile-orb-mobile i \{[\s\S]*?z-index: 2;/);
+  assert.doesNotMatch(settings, /online|<i\s*\/>/);
+  assert.doesNotMatch(controlCss, /\.studio-profile-orb-mobile i/);
   assert.match(stackCss, /\.studio-command-nav\.is-stack \{[\s\S]*?grid-template-columns: 48px minmax\(0, 1fr\) 48px/);
   assert.match(stackCss, /\.studio-command-header \{[\s\S]*?z-index: var\(--z-header\)/);
   assert.doesNotMatch(stackCss, /\.studio-stack-nav/);

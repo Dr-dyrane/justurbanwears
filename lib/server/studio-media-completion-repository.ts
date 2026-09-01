@@ -12,6 +12,7 @@ import type {
 } from "../studio/engine/media-completion-contracts";
 import { StudioEngineError } from "../studio/engine/errors";
 import type { PendingCaptureRow } from "./studio-pending-capture-repository";
+import { studioWardrobeItemLockKey } from "./studio-wardrobe-item-lock";
 
 export type MediaCompletionJobRow = typeof studioMediaCompletionJobs.$inferSelect;
 
@@ -184,7 +185,54 @@ export async function createOrReuseMediaCompletionJob(
   input: typeof studioMediaCompletionJobs.$inferInsert,
 ): Promise<MediaCompletionJobRow> {
   const db = await getMediaCompletionDb();
-  await db.insert(studioMediaCompletionJobs).values(input).onConflictDoNothing();
+  if (input.targetKind === "WARDROBE_ITEM") {
+    const guarded = await db.execute<{ allowed: boolean }>(sql`
+      with command_lock as (
+        select pg_advisory_xact_lock(hashtextextended(
+          ${studioWardrobeItemLockKey(input.operatorSubject, input.targetKey)}, 0
+        ))
+      ), owned_piece as (
+        select item.id
+        from studio_wardrobe_items item cross join command_lock
+        where item.id = ${input.targetKey}::uuid
+          and item.operator_subject = ${input.operatorSubject}
+          and item.state <> 'ARCHIVED'
+        for update
+      ), inserted_job as (
+        insert into studio_media_completion_jobs (
+          operator_subject, target_kind, target_key, role, attempt, model,
+          prompt_version, prompt_hash, fingerprint, correction,
+          source_blob_pathname, source_mime_type, source_byte_size,
+          source_width, source_height, source_sha256,
+          authority_confirmed_at, source_validation
+        )
+        select
+          ${input.operatorSubject}, ${input.targetKind}, ${input.targetKey}, ${input.role},
+          ${input.attempt}, ${input.model}, ${input.promptVersion}, ${input.promptHash},
+          ${input.fingerprint}, ${input.correction ?? null}, ${input.sourceBlobPathname},
+          ${input.sourceMimeType}, ${input.sourceByteSize}, ${input.sourceWidth ?? null},
+          ${input.sourceHeight ?? null}, ${input.sourceSha256},
+          ${input.authorityConfirmedAt}, ${JSON.stringify(input.sourceValidation ?? null)}::jsonb
+        from owned_piece
+        on conflict do nothing
+        returning id
+      )
+      select exists(select 1 from owned_piece) as allowed
+      from command_lock
+    `);
+    const rows = ("rows" in guarded ? guarded.rows : guarded) as Array<{ allowed: unknown }>;
+    const allowed = rows[0]?.allowed === true || rows[0]?.allowed === "t";
+    if (!allowed) {
+      throw new StudioEngineError(
+        "INVALID_TRANSITION",
+        409,
+        "This piece is archived or no longer exists.",
+        "Return to Archived.",
+      );
+    }
+  } else {
+    await db.insert(studioMediaCompletionJobs).values(input).onConflictDoNothing();
+  }
   const [job] = await db.select().from(studioMediaCompletionJobs).where(and(
     eq(studioMediaCompletionJobs.operatorSubject, input.operatorSubject),
     eq(studioMediaCompletionJobs.targetKind, input.targetKind),

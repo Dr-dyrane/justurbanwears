@@ -119,6 +119,14 @@ test("Piece selector exposes one truthful next action and never promises arbitra
   });
   assert.equal(corruptPublished.nextAction.kind, "KEEP_PRIVATE");
   assert.equal(corruptPublished.stageLabel, "Private");
+
+  const archived = selectPieceWorkspace({
+    garment: { ...serverDraft(), state: "ARCHIVED", availability: "ARCHIVED" },
+  });
+  assert.deepEqual(
+    [archived.stage, archived.stageLabel, archived.nextAction.kind, archived.canPublish],
+    ["ARCHIVED", "Archived", "KEEP_PRIVATE", false],
+  );
 });
 
 test("lifecycle dossiers keep one truthful action across the complete scenario", () => {

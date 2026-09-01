@@ -50,8 +50,9 @@ test("Studio uses the one approved Lulu face for both profile surfaces", () => {
   assert.match(settings, /const LULU_PROFILE_AVATAR_SRC = "\/api\/studio\/profile\/avatar"/);
   assert.equal(settings.match(/<LuluProfileAvatar/g)?.length, 2);
   assert.doesNotMatch(settings, /avatarInitial|<b>\{initial\}<\/b>|>L<\/b>/);
-  assert.match(settings, /fetchPriority=\{online \? "high" : "auto"\}/);
-  assert.match(settings, /loading=\{online \? "eager" : "lazy"\}/);
+  assert.match(settings, /fetchPriority=\{menuTrigger \? "high" : "auto"\}/);
+  assert.match(settings, /loading=\{menuTrigger \? "eager" : "lazy"\}/);
+  assert.doesNotMatch(settings, /online|<i\s*\/>/);
   assert.match(settings, /onError=\{\(event\) => \{ event\.currentTarget\.hidden = true; \}\}/);
   assert.doesNotMatch(settings, /blob\.vercel-storage\.com|studio\/model-authorities|\/lulu\.png|<UserRound/);
   assert.match(avatarRoute, /await requireStudioOperator\(\)/);

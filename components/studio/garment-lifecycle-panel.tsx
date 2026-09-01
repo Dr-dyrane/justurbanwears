@@ -22,6 +22,7 @@ import type { IntakeFacts } from "../../lib/studio/engine/contracts";
 import type {
   GarmentLifecycleCommand,
   GarmentLifecycleWorkspace,
+  GarmentPermanentDeleteReceipt,
   GarmentRevisionMediaRole,
 } from "../../lib/studio/engine/garment-lifecycle-contracts";
 import { WardrobeMotion } from "../brand/wardrobe-motion";
@@ -36,7 +37,7 @@ import {
 } from "../../lib/studio/idempotency/session-command-key";
 
 type ErrorBody = { error?: { message?: string; recovery?: string } };
-type GarmentDecision = "ARCHIVE" | "DISCARD_REVISION" | "PUBLISH_REVISION" | "REPUBLISH" | "UNPUBLISH";
+type GarmentDecision = "ARCHIVE" | "DELETE_PERMANENTLY" | "DISCARD_REVISION" | "PUBLISH_REVISION" | "REPUBLISH" | "UNPUBLISH";
 type FactsEditMode = "details" | "price";
 type GarmentMilestone = "details-saved" | "media-saved" | "price-saved" | "published" | "returned";
 
@@ -80,11 +81,13 @@ async function responseJson<T>(response: Response): Promise<T> {
 export function GarmentLifecyclePanel({
   initialAction,
   onChangeDrop,
+  onPermanentDelete,
   onWorkspaceChange,
   wardrobeItemId,
 }: {
   initialAction?: "price";
   onChangeDrop?(): void;
+  onPermanentDelete?(): void;
   onWorkspaceChange?(workspace: GarmentLifecycleWorkspace): void;
   wardrobeItemId: string;
 }) {
@@ -104,7 +107,9 @@ export function GarmentLifecyclePanel({
   const initialActionHandledRef = useRef(false);
   const commandInFlightRef = useRef(false);
   const publicationKeyRef = useRef("");
+  const deletionCompletedRef = useRef(false);
   const publicationCommandScope = `revision-publication:${wardrobeItemId}`;
+  const deletionCommandScope = `garment-permanent-delete:${wardrobeItemId}`;
 
   const accept = useCallback((next: GarmentLifecycleWorkspace) => {
     if (next.draft) {
@@ -142,6 +147,7 @@ export function GarmentLifecyclePanel({
     setMilestone(null);
     setDecision(null);
     setDecisionReturnFocus(null);
+    deletionCompletedRef.current = false;
     publicationKeyRef.current = "";
     void readWorkspace(controller.signal)
       .then(accept)
@@ -232,12 +238,63 @@ export function GarmentLifecyclePanel({
   }
 
   function requestDecision(nextDecision: GarmentDecision, trigger: HTMLElement) {
+    deletionCompletedRef.current = false;
     setDecision(nextDecision);
     setDecisionReturnFocus(trigger);
     setError("");
   }
 
   async function executeDecision(nextDecision: GarmentDecision): Promise<StudioDecisionResult> {
+    if (nextDecision === "DELETE_PERMANENTLY") {
+      if (!workspace || workspace.state !== "ARCHIVED" || !workspace.permanentDelete.eligible) {
+        return { error: workspace?.permanentDelete.blockers.join(" ") || "This piece cannot be permanently deleted.", ok: false };
+      }
+      if (commandInFlightRef.current) return { error: "Another Studio change is still finishing.", ok: false };
+      const revision = String(workspace.itemVersion);
+      const idempotencyKey = getOrCreateSessionCommandKey({
+        keyPrefix: `studio-delete:${wardrobeItemId}`,
+        revision,
+        scope: deletionCommandScope,
+      });
+      commandInFlightRef.current = true;
+      setBusy(nextDecision);
+      setError("");
+      try {
+        const response = await fetch(`/api/studio/wardrobe/${encodeURIComponent(wardrobeItemId)}/deletion`, {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { accept: "application/json", "content-type": "application/json" },
+          body: JSON.stringify({
+            confirmation: "DELETE_PERMANENTLY",
+            expectedVersion: workspace.itemVersion,
+            idempotencyKey,
+          }),
+        });
+        await responseJson<{ receipt: GarmentPermanentDeleteReceipt }>(response);
+        clearSessionCommandKey({ key: idempotencyKey, revision, scope: deletionCommandScope });
+        deletionCompletedRef.current = true;
+        return { ok: true };
+      } catch (caught) {
+        const receiptResponse = await fetch(
+          `/api/studio/wardrobe/${encodeURIComponent(wardrobeItemId)}/deletion?idempotencyKey=${encodeURIComponent(idempotencyKey)}`,
+          { cache: "no-store", credentials: "same-origin", headers: { accept: "application/json" } },
+        ).catch(() => null);
+        const reconciled = receiptResponse?.ok
+          ? await receiptResponse.json().catch(() => null) as { receipt?: GarmentPermanentDeleteReceipt | null } | null
+          : null;
+        if (reconciled?.receipt) {
+          clearSessionCommandKey({ key: idempotencyKey, revision, scope: deletionCommandScope });
+          deletionCompletedRef.current = true;
+          return { ok: true };
+        }
+        const message = caught instanceof Error ? caught.message : "Permanent deletion did not finish.";
+        setError(message);
+        return { error: message, ok: false };
+      } finally {
+        commandInFlightRef.current = false;
+        setBusy("");
+      }
+    }
     if (nextDecision === "PUBLISH_REVISION") {
       if (!workspace?.draft) return { error: "This private revision is no longer available.", ok: false };
       publicationKeyRef.current ||= getOrCreateSessionCommandKey({
@@ -359,6 +416,16 @@ export function GarmentLifecyclePanel({
       receiptTitle: "Piece archived",
       summary: `Archive ${workspace.facts.title}?`,
       title: "Archive this piece?",
+    },
+    DELETE_PERMANENTLY: {
+      busyLabel: "Deleting this piece",
+      confirmLabel: "Delete permanently",
+      consequence: "It is removed from Wardrobe and cannot be restored. Private engine evidence stays retained for integrity.",
+      destructive: true,
+      receiptDetail: "The archived piece was removed from Wardrobe. This cannot be undone.",
+      receiptTitle: "Piece deleted",
+      summary: workspace.facts.title,
+      title: "Delete this piece permanently?",
     },
     DISCARD_REVISION: {
       busyLabel: "Discarding this revision",
@@ -521,7 +588,10 @@ export function GarmentLifecyclePanel({
         {workspace.state === "PUBLISHED" && workspace.live ? <><a className="button button-secondary" href={workspace.live.receipt.shopUrl}><Eye aria-hidden="true" size={15} />View in Shop</a><button className="button button-secondary" disabled={Boolean(busy)} onClick={(event) => requestDecision("UNPUBLISH", event.currentTarget)} type="button"><EyeOff aria-hidden="true" size={15} />Remove from Shop</button></> : null}
         {workspace.state === "UNPUBLISHED" && workspace.live ? <button className="button button-primary" disabled={Boolean(busy)} onClick={(event) => requestDecision("REPUBLISH", event.currentTarget)} type="button"><RotateCcw aria-hidden="true" size={15} />Return to Shop</button> : null}
         {workspace.allowedActions.includes("ARCHIVE") ? <button className="button button-secondary" disabled={Boolean(busy)} onClick={(event) => requestDecision("ARCHIVE", event.currentTarget)} type="button"><Archive aria-hidden="true" size={15} />Archive</button> : null}
+        {workspace.state === "ARCHIVED" && workspace.permanentDelete.eligible ? <button className="button button-secondary is-destructive" disabled={Boolean(busy)} onClick={(event) => requestDecision("DELETE_PERMANENTLY", event.currentTarget)} type="button"><Trash2 aria-hidden="true" size={15} />Delete permanently</button> : null}
       </div>
+
+      {workspace.state === "ARCHIVED" && !workspace.permanentDelete.eligible ? <p className="studio-inline-state">{workspace.permanentDelete.blockers.join(" ")}</p> : null}
 
       {error ? <p className="studio-engine-error" role="alert">{error}</p> : null}
       <p className="studio-inline-state" aria-live="polite">{busy ? "Working…" : workspace.draft ? "Only Lulu sees this revision." : workspace.state === "PUBLISHED" ? "Customers see the published version." : "Customers cannot see this piece."}</p>
@@ -541,8 +611,11 @@ export function GarmentLifecyclePanel({
           fallbackFocus={panelRef.current}
           onConfirm={() => executeDecision(decision)}
           onDismiss={() => {
+            const deleted = decision === "DELETE_PERMANENTLY" && deletionCompletedRef.current;
             setDecision(null);
             setDecisionReturnFocus(null);
+            deletionCompletedRef.current = false;
+            if (deleted) onPermanentDelete?.();
           }}
           open
           receiptDetail={decisionCopy.receiptDetail}

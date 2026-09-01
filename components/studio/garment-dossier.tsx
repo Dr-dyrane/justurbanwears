@@ -49,6 +49,7 @@ export function GarmentDossier() {
             : searchParams.get("action") === "drop" ? "drop" : undefined}
           layout="adaptive"
           onDismiss={() => assignDocumentNavigation(studioScenarioHref("/studio/wardrobe", studio.scenario))}
+          onPermanentDelete={() => assignDocumentNavigation(studioScenarioHref("/studio/wardrobe?collection=archived", studio.scenario))}
           onContinueMedia={(piece) => setWearWardrobeItemId(piece.privateWardrobeItemId ?? null)}
         />
         {garment.privateWardrobeItemId ? (

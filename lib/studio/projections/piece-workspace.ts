@@ -14,7 +14,7 @@ import {
   pendingWardrobeMediaLabel,
 } from "../seeds/private-wardrobe-products";
 
-export type PieceHumanStage = "NEEDS_WORK" | "PRIVATE" | "READY" | "LIVE" | "SOLD";
+export type PieceHumanStage = "NEEDS_WORK" | "PRIVATE" | "READY" | "LIVE" | "SOLD" | "ARCHIVED";
 
 export type PieceNextAction = {
   kind:
@@ -102,6 +102,20 @@ export function selectPieceWorkspace(input: {
         kind: "KEEP_PRIVATE",
         label: "Close",
         detail: "Drop 01 is closed and kept as history.",
+      },
+    };
+  }
+  if (garment.state === "ARCHIVED") {
+    return {
+      stage: "ARCHIVED",
+      stageLabel: "Archived",
+      blockers: [],
+      captureRoles: [],
+      canPublish: false,
+      nextAction: {
+        kind: "KEEP_PRIVATE",
+        label: "View history",
+        detail: "This piece is archived.",
       },
     };
   }

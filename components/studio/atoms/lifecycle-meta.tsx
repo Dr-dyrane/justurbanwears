@@ -1,4 +1,5 @@
 import {
+  Archive,
   CircleAlert,
   CircleCheck,
   CircleDashed,
@@ -23,6 +24,7 @@ export const STUDIO_LIFECYCLE_PRESENTATION: Record<StudioLifecycleState, {
   PUBLISHED: { Icon: CircleCheck, label: "Live", tone: "positive" },
   RESERVED: { Icon: CirclePause, label: "Reserved", tone: "caution" },
   SOLD: { Icon: LockKeyhole, label: "Sold", tone: "neutral" },
+  ARCHIVED: { Icon: Archive, label: "Archived", tone: "neutral" },
   CANCELLED: { Icon: CircleX, label: "Cancelled", tone: "neutral" },
   RETURNED: { Icon: RotateCcw, label: "Returned", tone: "critical" },
   ERROR: { Icon: CircleAlert, label: "Needs attention", tone: "critical" },
