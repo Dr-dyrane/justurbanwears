@@ -100,7 +100,7 @@ function oldAdoptions(archived: boolean) {
   }));
 }
 
-function newAdoptions(adoptedSkus: Set<string>) {
+function newAdoptions(adoptedSkus: Set<string>, republishedSku?: string) {
   return DROP02_TRANSITION_SKUS.map((sku) => {
     const catalogueSlug = `drop02-${sku.toLowerCase()}`;
     if (!adoptedSkus.has(sku)) {
@@ -125,8 +125,12 @@ function newAdoptions(adoptedSkus: Set<string>) {
       intake_operator_subject: owner.auth_subject,
       revision_operator_subject: owner.auth_subject,
       intake_idempotency_key: `catalogue-adoption:v2:${sku}:intake`,
-      publication_idempotency_key: `catalogue-adoption:v2:${sku}:publication`,
-      revision_idempotency_key: `catalogue-adoption:v2:${sku}:revision`,
+      publication_idempotency_key: republishedSku === sku
+        ? `studio-publication:republished:${sku}`
+        : `catalogue-adoption:v2:${sku}:publication`,
+      revision_idempotency_key: republishedSku === sku
+        ? `studio-revision:republished:${sku}`
+        : `catalogue-adoption:v2:${sku}:revision`,
     };
   });
 }
@@ -158,6 +162,7 @@ interface RelationshipCounts {
 
 function mockTransaction({
   adoptionState = "none",
+  republishedSku,
   relationshipCounts = {
     hold_count: 0,
     order_item_count: 0,
@@ -166,6 +171,7 @@ function mockTransaction({
   },
 }: {
   adoptionState?: "none" | "partial" | "all";
+  republishedSku?: string;
   relationshipCounts?: RelationshipCounts;
 } = {}) {
   const calls: Array<{ text: string; values: unknown[] }> = [];
@@ -192,7 +198,7 @@ function mockTransaction({
       }
       if (text.includes("as hold_count")) return { rows: [relationshipCounts] };
       if (text.includes("publication.state as publication_state")) return { rows: oldAdoptions(drop01Archived) };
-      if (text.includes("publication.slug as publication_slug")) return { rows: newAdoptions(adoptedSkus) };
+      if (text.includes("publication.slug as publication_slug")) return { rows: newAdoptions(adoptedSkus, republishedSku) };
       if (text.startsWith("update shop_inventory")) {
         return { rows: drop01Archived ? [] : DROP01_TRANSITION_SKUS.map((sku) => ({ sku })) };
       }
@@ -262,6 +268,11 @@ test("is a true no-op after transition while preserving later Drop 02 inventory 
   const inventoryArchive = transaction.calls.find((call) => call.text.startsWith("update shop_inventory"));
   assert.ok(inventoryArchive);
   assert.deepEqual(inventoryArchive.values, [DROP01_TRANSITION_SKUS]);
+});
+
+test("accepts a legitimately republished adopted piece without weakening immutable lineage", async () => {
+  const transaction = mockTransaction({ adoptionState: "all", republishedSku: "JUW-026" });
+  assert.equal(await applyDrop02TransitionInTransaction(transaction, manifest()), "noop");
 });
 
 test("incrementally adopts a new Drop 02 piece without rewriting existing operational inventory", async () => {

@@ -202,8 +202,9 @@ function assertExistingDrop02Adoption(rows, ownerSubject) {
     invariant(row.intake_operator_subject === ownerSubject, "DROP02_TRANSITION_DROP02_ADOPTION_CONFLICT");
     invariant(row.revision_operator_subject === ownerSubject, "DROP02_TRANSITION_DROP02_ADOPTION_CONFLICT");
     invariant(row.intake_idempotency_key === `catalogue-adoption:v2:${sku}:intake`, "DROP02_TRANSITION_DROP02_ADOPTION_CONFLICT");
-    invariant(row.publication_idempotency_key === `catalogue-adoption:v2:${sku}:publication`, "DROP02_TRANSITION_DROP02_ADOPTION_CONFLICT");
-    invariant(row.revision_idempotency_key === `catalogue-adoption:v2:${sku}:revision`, "DROP02_TRANSITION_DROP02_ADOPTION_CONFLICT");
+    // Publication and revision idempotency keys advance when an adopted piece is
+    // legitimately revised and republished. Immutable IDs, ownership, origin,
+    // SKU/slug, and the intake key remain the adoption-lineage authority.
   }
   return rows.filter((row) => row.publication_id == null).map((row) => String(row.sku));
 }
@@ -348,15 +349,13 @@ export async function applyDrop02TransitionInTransaction(transaction, manifest) 
       publication.id::text as publication_id,
       publication.wardrobe_item_id::text as wardrobe_item_id,
       publication.operator_subject as publication_operator_subject,
-      publication.idempotency_key as publication_idempotency_key,
       publication.origin as publication_origin,
       wardrobe.operator_subject as wardrobe_operator_subject,
       wardrobe.intake_id::text as intake_id,
       intake.operator_subject as intake_operator_subject,
       intake.idempotency_key as intake_idempotency_key,
       revision.id::text as revision_id,
-      revision.operator_subject as revision_operator_subject,
-      revision.idempotency_key as revision_idempotency_key
+      revision.operator_subject as revision_operator_subject
      from shop_catalogue_items catalogue
      left join studio_catalogue_publications publication
        on publication.sku = catalogue.sku or publication.slug = catalogue.slug
