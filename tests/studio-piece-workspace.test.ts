@@ -98,6 +98,18 @@ test("Piece selector exposes one truthful next action and never promises arbitra
     ["SOLD", "Sold out", "KEEP_PRIVATE", false],
   );
 
+  const movedOutOfHistoricalDrop = selectPieceWorkspace({
+    garment: approvedContract.garment,
+    historicalKind: null,
+    listing: {
+      ...stalePublicListing,
+      garmentId: approvedContract.garment.id,
+      slug: approvedContract.slug,
+    },
+  });
+  assert.equal(movedOutOfHistoricalDrop.stageLabel, "Sold");
+  assert.equal(movedOutOfHistoricalDrop.nextAction.kind, "VIEW_OPERATIONS");
+
   const corruptPublished = selectPieceWorkspace({
     garment: serverDraft(),
     listing: {
@@ -183,7 +195,10 @@ test("Piece surface uses one workspace, durable captures, and a universal access
   assert.match(workbench, /StudioMediaViewerProvider/);
   assert.match(workbench, /DraftDirectCaptures garment=\{garment\}/);
   assert.doesNotMatch(workbench, /Move to wardrobe|Clear gates|Create media/);
-  assert.match(workbench, /Approved Shop previews appear here\./);
+  assert.match(workbench, /All listings are live/);
+  assert.match(workbench, /Needs publishing/);
+  assert.match(workbench, /const pieces = localPieces > 0 \? localPieces : collection\.counts\.pieces/);
+  assert.doesNotMatch(workbench, /collection\.counts\.pieces !== null && collection\.key !== "drop-01"/);
   assert.match(workbench, /VIEW_OPERATIONS/);
   assert.match(workbench, /Approve Shop preview/);
   assert.match(workbench, /setPublicationNeedsRefresh\(true\)/);

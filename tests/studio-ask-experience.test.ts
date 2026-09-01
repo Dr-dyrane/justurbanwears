@@ -50,6 +50,7 @@ const context: StudioAssistantContext = {
     { id: "OPERATIONS_WRITE", state: "AVAILABLE" },
     { id: "COLLECTIONS_READ", state: "AVAILABLE" },
     { id: "COLLECTIONS_WRITE", state: "AVAILABLE" },
+    { id: "COLLECTION_MEMBERSHIP_WRITE", state: "UNAVAILABLE" },
   ],
   documents: [
     document({ href: "/studio/wardrobe", id: "service:wardrobe", identifiers: ["wardrobe", "garment", "piece"], kind: "Service", label: "Wardrobe" }),
@@ -72,6 +73,11 @@ const context: StudioAssistantContext = {
 };
 const connectedContext: StudioAssistantContext = {
   ...context,
+  capabilities: context.capabilities.map((capability) => (
+    capability.id === "COLLECTION_MEMBERSHIP_WRITE"
+      ? { ...capability, state: "AVAILABLE" as const }
+      : capability
+  )),
   provenance: {
     detail: "Connected Studio application snapshot",
     generatedAt: context.provenance.generatedAt,
@@ -258,11 +264,11 @@ test("workflow fallback prose is concise and deterministic", () => {
   assert.ok(first.length < 400);
 });
 
-test("collection language opens collection scope without claiming a drop mutation", () => {
+test("preview collection language stays read only without membership-write readiness", () => {
   const response = resolveStudioAssistant("Switch JUW-001 to another drop", context);
   const handoff = block(response, "handoff");
   assert.equal(handoff?.action.href, "/studio/wardrobe/g-001?scenario=lifecycle");
-  assert.match(handoff?.body ?? "", /does not expose a guarded collection-membership command/i);
+  assert.match(handoff?.body ?? "", /cannot prove collection-membership write readiness/i);
   assert.equal(response.risk, "R0");
 });
 
@@ -689,7 +695,7 @@ test("order-contained nouns never fall into garment or collection creation", () 
   }
 });
 
-test("collection membership requests fail closed until Wardrobe exposes a guarded command", () => {
+test("collection membership requests hand off to the guarded Piece change-drop flow", () => {
   for (const query of [
     "Add JUW-001 to Drop 02",
     "Add Coral Drift Dress to collection Drop 02",
@@ -697,11 +703,28 @@ test("collection membership requests fail closed until Wardrobe exposes a guarde
     "Release Coral Drift Dress from collection Drop 02",
   ]) {
     const workflow = resolveStudioAssistantWorkflow(query, connectedContext);
-    assert.equal(workflow.response.risk, "R0", query);
-    assert.equal(block(workflow.response, "handoff")?.title, "Collection move unavailable", query);
-    assert.equal(block(workflow.response, "handoff")?.action.href, "/studio/wardrobe/g-001", query);
-    assert.equal(workflow.taskDraft, null, query);
+    assert.equal(workflow.response.risk, "R3", query);
+    assert.equal(block(workflow.response, "handoff")?.title, "Change Coral Drift Dress drop", query);
+    assert.equal(block(workflow.response, "handoff")?.action.href, "/studio/wardrobe/g-001?action=drop", query);
+    assert.match(block(workflow.response, "handoff")?.consequence ?? "", /nothing moves until/i, query);
+    assert.ok(workflow.taskDraft, query);
   }
+});
+
+test("collection membership requests fail closed without exact write readiness", () => {
+  const readOnlyContext: StudioAssistantContext = {
+    ...connectedContext,
+    capabilities: connectedContext.capabilities.map((capability) => (
+      capability.id === "COLLECTION_MEMBERSHIP_WRITE"
+        ? { ...capability, state: "UNAVAILABLE" as const }
+        : capability
+    )),
+  };
+  const workflow = resolveStudioAssistantWorkflow("Move JUW-001 to Drop 02", readOnlyContext);
+  assert.equal(workflow.response.risk, "R0");
+  assert.equal(block(workflow.response, "handoff")?.title, "Collection move unavailable");
+  assert.equal(block(workflow.response, "handoff")?.action.href, "/studio/wardrobe/g-001");
+  assert.equal(workflow.taskDraft, null);
 });
 
 test("navigation containing new remains read only", () => {
@@ -981,7 +1004,7 @@ test("scenario capability truth suppresses every mutation task while keeping rea
   const scenarioReadOnly: StudioAssistantContext = {
     ...context,
     capabilities: context.capabilities.map((capability) => (
-      ["WARDROBE_WRITE", "ORDERS_CREATE", "ORDERS_WRITE", "MODELS_WRITE", "MEDIA_WRITE", "HOLDS_WRITE", "LOCATIONS_WRITE", "OPERATIONS_WRITE", "COLLECTIONS_WRITE"].includes(capability.id)
+      ["WARDROBE_WRITE", "ORDERS_CREATE", "ORDERS_WRITE", "MODELS_WRITE", "MEDIA_WRITE", "HOLDS_WRITE", "LOCATIONS_WRITE", "OPERATIONS_WRITE", "COLLECTIONS_WRITE", "COLLECTION_MEMBERSHIP_WRITE"].includes(capability.id)
         ? { ...capability, state: "UNAVAILABLE" as const }
         : capability.id === "MODELS_READ"
           ? { ...capability, state: "UNAVAILABLE" as const }
@@ -993,6 +1016,7 @@ test("scenario capability truth suppresses every mutation task while keeping rea
     "Change JUW-001 price",
     "Create a new drop",
     "Archive Drop 02",
+    "Move JUW-001 to Drop 02",
     "Publish JUW-001",
     "Prepare media for JUW-001",
     "Create a customer order for JUW-001",

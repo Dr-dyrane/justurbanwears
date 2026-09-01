@@ -38,7 +38,7 @@ function garment(id: string, readiness: Garment["nativeShopReadiness"]): Garment
   };
 }
 
-function listing(garmentId: string): StudioListing {
+function listing(garmentId: string, state: StudioListing["state"] = "PUBLISHED"): StudioListing {
   return {
     id: `listing-${garmentId}`,
     garmentId,
@@ -47,7 +47,7 @@ function listing(garmentId: string): StudioListing {
     title: `${garmentId} listing`,
     description: "Approved catalogue listing",
     price: 24_500,
-    state: "PUBLISHED",
+    state,
     createdAt: "2026-08-26T00:00:00.000Z",
   };
 }
@@ -108,14 +108,33 @@ test("only the ordinary unpublished review becomes native Shop readiness", () =>
   }), undefined);
 });
 
-test("an actual listing is authoritative and suppresses a duplicate native-ready row", () => {
+test("only actionable listings enter Publishing", () => {
+  const draftGarment = garment("draft", undefined);
+  const readyGarment = garment("listing-ready", undefined);
+  const publishedGarment = garment("published", undefined);
+  const reservedGarment = garment("reserved", undefined);
+  const soldGarment = garment("sold", undefined);
+
+  const queue = selectStudioPublishingQueue(
+    [draftGarment, readyGarment, publishedGarment, reservedGarment, soldGarment],
+    [
+      listing(draftGarment.id, "DRAFT"),
+      listing(readyGarment.id, "READY"),
+      listing(publishedGarment.id, "PUBLISHED"),
+      listing(reservedGarment.id, "RESERVED"),
+      listing(soldGarment.id, "SOLD"),
+    ],
+  );
+
+  assert.deepEqual(queue.map((entry) => entry.state), ["DRAFT", "READY"]);
+});
+
+test("a published listing suppresses duplicate native readiness without entering the queue", () => {
   const ready = garment("ready", { path: "STUDIO_NATIVE_THREE_PHOTO", state: "READY" });
   const published = listing(ready.id);
 
   const queue = selectStudioPublishingQueue([ready], [published]);
-  assert.equal(queue.length, 1);
-  assert.equal(queue[0].kind, "LISTING");
-  assert.equal(queue[0].id, published.id);
+  assert.equal(queue.length, 0);
 });
 
 test("the Wardrobe route and queue keep three-photo readiness explicit and separate from Atelier authority", async () => {
@@ -130,7 +149,10 @@ test("the Wardrobe route and queue keep three-photo readiness explicit and separ
   assert.match(projection, /STUDIO_NATIVE_THREE_PHOTO/u);
   assert.match(workbench, /selectStudioPublishingQueue/u);
   assert.match(workbench, /selectStudioPublishingQueue\(activeScopedGarments, scopedListings\)/u);
+  assert.match(workbench, /All listings are live/u);
+  assert.match(workbench, /"NEEDS_PUBLISHING"/u);
+  assert.match(workbench, /publishingQueue\.length > 0/u);
+  assert.doesNotMatch(workbench, /<StudioSegmentedView active=\{activeView\}/u);
   assert.doesNotMatch(workbench, /collectionIds\.has\(garment\.id\) \|\| garment\.nativeShopReadiness\?\.state === "READY"/u);
-  assert.match(workbench, /3-photo Shop/u);
   assert.doesNotMatch(workbench, /nativeShopReadiness[^\n]*(?:Atelier|01.?07)/u);
 });

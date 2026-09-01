@@ -4,6 +4,7 @@ import type { StudioCollectionScope } from "../application/contracts";
 const collectionLabelSchema = z.string().trim().min(1).max(120);
 const collectionIdSchema = z.string().uuid();
 const expectedVersionSchema = z.number().int().positive();
+const publishedSkuSchema = z.string().trim().regex(/^JUW-[0-9]{3,}$/);
 
 export const studioCollectionIntentSchema = z.discriminatedUnion("command", [
   z.object({ command: z.literal("CREATE_COLLECTION"), label: collectionLabelSchema }),
@@ -20,6 +21,12 @@ export const studioCollectionIntentSchema = z.discriminatedUnion("command", [
   }),
   z.object({
     command: z.literal("ARCHIVE_COLLECTION"),
+    collectionId: collectionIdSchema,
+    expectedVersion: expectedVersionSchema,
+  }),
+  z.object({
+    command: z.literal("CORRECT_PUBLISHED_COLLECTION_MEMBERSHIP"),
+    sku: publishedSkuSchema,
     collectionId: collectionIdSchema,
     expectedVersion: expectedVersionSchema,
   }),
@@ -40,6 +47,7 @@ export const studioCollectionCommandRequestSchema = z.discriminatedUnion("phase"
       "RENAME_COLLECTION",
       "ACTIVATE_COLLECTION",
       "ARCHIVE_COLLECTION",
+      "CORRECT_PUBLISHED_COLLECTION_MEMBERSHIP",
     ]),
     expectedRevision: expectedRevisionSchema,
     idempotencyKey: idempotencyKeySchema,
@@ -64,6 +72,27 @@ export type StudioCollectionChange = {
   after: string;
 };
 
+export type StudioCollectionReference = Pick<
+  StudioCollectionScope,
+  "id" | "key" | "label" | "ordinal" | "version" | "state" | "isCurrent"
+>;
+
+export type StudioPublishedCollectionMembership = {
+  sku: string;
+  publicationState: "PUBLISHED" | "ARCHIVED";
+  sourceCollection: StudioCollectionReference;
+  destinationCollection: StudioCollectionReference;
+  inventory: {
+    availability: "AVAILABLE" | "RESERVED" | "SOLD" | "ARCHIVED";
+    onHand: number;
+    reserved: number;
+    sold: number;
+    returned: number;
+    writeOff: number;
+    consequence: string;
+  };
+};
+
 export type StudioCollectionPreview = {
   intent: StudioCollectionIntent;
   collection: StudioCollectionScope;
@@ -72,6 +101,7 @@ export type StudioCollectionPreview = {
   expectedRevision: string;
   title: string;
   consequence: string;
+  membership?: StudioPublishedCollectionMembership;
 };
 
 export type StudioCollectionReceipt = {
@@ -82,6 +112,7 @@ export type StudioCollectionReceipt = {
   nextRoute: string;
   occurredAt: string;
   replayed: boolean;
+  membership?: StudioPublishedCollectionMembership;
 };
 
 export type StudioCollectionCommandResponse = {

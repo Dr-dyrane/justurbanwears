@@ -326,6 +326,7 @@ test("scenario projection is explicit and uses the sanitized collection compatib
   );
   assert.equal(projection.capabilities.find((item) => item.id === "COLLECTIONS_READ")?.state, "AVAILABLE");
   assert.equal(projection.capabilities.find((item) => item.id === "COLLECTIONS_WRITE")?.state, "UNAVAILABLE");
+  assert.equal(projection.capabilities.find((item) => item.id === "COLLECTION_MEMBERSHIP_WRITE")?.state, "UNAVAILABLE");
   assert.equal(projection.capabilities.find((item) => item.id === "WARDROBE_WRITE")?.state, "UNAVAILABLE");
   assert.equal(projection.capabilities.find((item) => item.id === "ORDERS_CREATE")?.state, "UNAVAILABLE");
   assert.equal(projection.capabilities.find((item) => item.id === "ORDERS_WRITE")?.state, "UNAVAILABLE");
@@ -373,6 +374,7 @@ test("connected projection keeps first-class reads separate from proven write ca
         state: "DRAFT",
         isCurrent: false,
         authority: "DATABASE",
+        memberSkus: [],
         counts: { pieces: 0, private: 0, ready: 0, published: 0, available: 0 },
         nextAction: "/studio/wardrobe?collection=drop-03",
         updatedAt: now,
@@ -385,6 +387,7 @@ test("connected projection keeps first-class reads separate from proven write ca
   assert.deepEqual(projection.collectionScopes.map((scope) => scope.key), ["drop-03"]);
   assert.equal(projection.capabilities.find((item) => item.id === "COLLECTIONS_READ")?.state, "AVAILABLE");
   assert.equal(projection.capabilities.find((item) => item.id === "COLLECTIONS_WRITE")?.state, "UNAVAILABLE");
+  assert.equal(projection.capabilities.find((item) => item.id === "COLLECTION_MEMBERSHIP_WRITE")?.state, "AVAILABLE");
   assert.equal(projection.capabilities.find((item) => item.id === "WARDROBE_WRITE")?.state, "AVAILABLE");
   assert.equal(projection.capabilities.find((item) => item.id === "ORDERS_CREATE")?.state, "AVAILABLE");
   assert.equal(projection.capabilities.find((item) => item.id === "ORDERS_WRITE")?.state, "AVAILABLE");
@@ -411,6 +414,79 @@ test("connected projection keeps first-class reads separate from proven write ca
   }
 });
 
+test("collection membership correction is available only to Studio admins", () => {
+  const collections = {
+    generatedAt: now,
+    scopes: [{
+      id: "4b8b9d7e-37f8-4b2e-86dc-d2d345d35d2c",
+      key: "drop-02" as const,
+      label: "Drop 02",
+      ordinal: 2,
+      version: 1,
+      state: "ACTIVE" as const,
+      isCurrent: true,
+      authority: "DATABASE" as const,
+      memberSkus: ["JUW-025"],
+      counts: { pieces: 1, private: 0, ready: 0, published: 1, available: 1 },
+      nextAction: "/studio/wardrobe?collection=drop-02",
+      updatedAt: now,
+    }],
+  };
+  const projection = projectConnectedStudioApplication({
+    operator: { ...operator, role: "operator" },
+    now,
+    authority: fixture(),
+    collections,
+  });
+  assert.equal(
+    projection.capabilities.find((item) => item.id === "COLLECTION_MEMBERSHIP_WRITE")?.state,
+    "UNAVAILABLE",
+  );
+});
+
+test("database collection membership overrides the legacy Drop 01 lifecycle in search", () => {
+  const authority = fixture();
+  authority.pieces = [{
+    ...authority.pieces[0],
+    pieceKey: "sku:JUW-001",
+    wardrobeItemId: "wardrobe-001",
+    sku: "JUW-001",
+  }];
+
+  const compatibilityProjection = projectConnectedStudioApplication({ operator, now, authority });
+  assert.equal(
+    compatibilityProjection.searchDocuments.find((item) => item.id === "piece:sku:JUW-001")?.lifecycleState,
+    "SOLD_OUT",
+  );
+
+  const databaseProjection = projectConnectedStudioApplication({
+    operator,
+    now,
+    authority,
+    collections: {
+      generatedAt: now,
+      scopes: [{
+        id: "6af83751-4782-4f84-8707-a2ba61a45f36",
+        key: "drop-02",
+        label: "Drop 02",
+        ordinal: 2,
+        version: 1,
+        state: "ACTIVE",
+        isCurrent: true,
+        authority: "DATABASE",
+        memberSkus: ["JUW-001"],
+        counts: { pieces: 1, private: 0, ready: 0, published: 0, available: 1 },
+        nextAction: "/studio/wardrobe?collection=drop-02",
+        updatedAt: now,
+      }],
+    },
+  });
+  assert.equal(
+    databaseProjection.searchDocuments.find((item) => item.id === "piece:sku:JUW-001")?.lifecycleState,
+    "AVAILABLE",
+  );
+});
+
 test("collection compatibility map exposes only exact Drop 01 and Drop 02 scopes", () => {
   const projection = projectConnectedStudioApplication({ operator, now, authority: fixture() });
   assert.deepEqual(projection.collectionScopes.map((scope) => ({
@@ -426,6 +502,10 @@ test("collection compatibility map exposes only exact Drop 01 and Drop 02 scopes
   assert.deepEqual(
     projection.collectionScopes.map((scope) => scope.counts.pieces),
     SHOP_COLLECTION_COMPATIBILITY.map((scope) => scope.skus.length),
+  );
+  assert.deepEqual(
+    projection.collectionScopes.map((scope) => scope.memberSkus),
+    SHOP_COLLECTION_COMPATIBILITY.map((scope) => [...scope.skus]),
   );
   assert.deepEqual(
     projection.collectionScopes.map((scope) => scope.counts.published),

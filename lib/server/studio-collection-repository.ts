@@ -4,13 +4,20 @@ import type { StudioCollectionScope } from "../studio/application/contracts";
 import type {
   StudioCollectionIntent,
   StudioCollectionPreview,
+  StudioCollectionReference,
   StudioCollectionReceipt,
+  StudioPublishedCollectionMembership,
 } from "../studio/collections/contracts";
 import { StudioEngineError } from "../studio/engine/errors";
 import { sha256 } from "../studio/engine/fingerprint";
 import type { StudioOperator } from "./studio-operator";
 
 type DatabaseRow = Record<string, unknown>;
+
+type PreparedPublishedMembershipCorrection = {
+  preview: StudioCollectionPreview;
+  catalogueRevision: string;
+};
 
 export type StudioCollectionReadResult = {
   scopes: StudioCollectionScope[];
@@ -35,6 +42,19 @@ function numberOrNull(value: unknown): number | null {
   return Number.isFinite(number) ? number : null;
 }
 
+function stringArray(value: unknown): string[] {
+  if (typeof value === "string") {
+    try {
+      return stringArray(JSON.parse(value) as unknown);
+    } catch {
+      return [];
+    }
+  }
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === "string")
+    : [];
+}
+
 function collectionScope(row: DatabaseRow, authority: StudioCollectionScope["authority"] = "DATABASE"): StudioCollectionScope {
   const key = String(row.key ?? row.collection_key) as StudioCollectionScope["key"];
   const state = String(row.state) as StudioCollectionScope["state"];
@@ -47,6 +67,7 @@ function collectionScope(row: DatabaseRow, authority: StudioCollectionScope["aut
     state,
     isCurrent: state === "ACTIVE",
     authority,
+    memberSkus: stringArray(row.member_skus ?? row.memberSkus),
     counts: {
       pieces: numberOrNull(row.pieces),
       private: numberOrNull(row.private_count),
@@ -72,13 +93,14 @@ function intentFingerprint(intent: StudioCollectionIntent) {
 function revisionFor(scopes: StudioCollectionScope[], intent: StudioCollectionIntent) {
   return sha256(JSON.stringify({
     intent: normalizedIntent(intent),
-    collections: scopes.map(({ id, key, label, ordinal, state, version }) => ({
+    collections: scopes.map(({ id, key, label, ordinal, state, version, memberSkus }) => ({
       id,
       key,
       label,
       ordinal,
       state,
       version,
+      memberSkus,
     })),
   }));
 }
@@ -93,6 +115,7 @@ function draftScope(input: { key: StudioCollectionScope["key"]; label: string; o
     state: "DRAFT",
     isCurrent: false,
     authority: "DATABASE",
+    memberSkus: [],
     counts: { pieces: 0, private: 0, ready: 0, published: 0, available: 0 },
     nextAction: `/studio/wardrobe?collection=${encodeURIComponent(input.key)}`,
     updatedAt: new Date().toISOString(),
@@ -124,6 +147,7 @@ function requireVersion(collection: StudioCollectionScope, expectedVersion: numb
 }
 
 function rejectFixedCollectionMutation(intent: StudioCollectionIntent): void {
+  if (intent.command === "CORRECT_PUBLISHED_COLLECTION_MEMBERSHIP") return;
   const message = intent.command === "CREATE_COLLECTION"
     ? "New drops are unavailable while Drop 02 is the fixed active collection."
     : "Drop 01 and Drop 02 are fixed collections and cannot be changed.";
@@ -132,6 +156,19 @@ function rejectFixedCollectionMutation(intent: StudioCollectionIntent): void {
     409,
     message,
     "Use Drop 02 for active work. Drop 01 remains archived history.",
+  );
+}
+
+function requireCollectionCorrectionPermission(
+  operator: StudioOperator,
+  intent: StudioCollectionIntent,
+): void {
+  if (intent.command !== "CORRECT_PUBLISHED_COLLECTION_MEMBERSHIP" || operator.role === "admin") return;
+  throw new StudioEngineError(
+    "OPERATOR_FORBIDDEN",
+    403,
+    "Only a Studio admin can change a published piece's drop.",
+    "Ask a Studio admin to review and publish this drop change.",
   );
 }
 
@@ -146,6 +183,11 @@ export async function listStudioCollections(): Promise<StudioCollectionReadResul
       collection.version,
       collection.state,
       collection.updated_at,
+      coalesce((
+        select jsonb_agg(catalogue.sku order by catalogue.sku)
+        from shop_catalogue_items catalogue
+        where catalogue.collection_id = collection.id
+      ), '[]'::jsonb) as member_skus,
       (
         select count(*)::int
         from (
@@ -193,12 +235,259 @@ export async function listStudioCollections(): Promise<StudioCollectionReadResul
   return { scopes: resultRows(result).map((row) => collectionScope(row)), generatedAt };
 }
 
+function collectionReference(collection: StudioCollectionScope): StudioCollectionReference {
+  const { id, key, label, ordinal, version, state, isCurrent } = collection;
+  return { id, key, label, ordinal, version, state, isCurrent };
+}
+
+function knownInventoryAvailability(
+  value: unknown,
+): StudioPublishedCollectionMembership["inventory"]["availability"] | null {
+  return value === "AVAILABLE" || value === "RESERVED" || value === "SOLD" || value === "ARCHIVED"
+    ? value
+    : null;
+}
+
+function nonnegativeInteger(value: unknown): number | null {
+  const number = Number(value);
+  return Number.isSafeInteger(number) && number >= 0 ? number : null;
+}
+
+function inventoryConsequence(input: {
+  sku: string;
+  destination: StudioCollectionScope;
+  publicationState: StudioPublishedCollectionMembership["publicationState"];
+  availability: StudioPublishedCollectionMembership["inventory"]["availability"];
+}) {
+  if (!input.destination.isCurrent) {
+    return `${input.sku} will leave the current Shop. Its ${input.availability.toLowerCase()} inventory record stays unchanged.`;
+  }
+  if (input.publicationState === "ARCHIVED") {
+    return `${input.sku} will join ${input.destination.label}, but its archived publication remains unavailable. Its ${input.availability.toLowerCase()} inventory record stays unchanged.`;
+  }
+  if (input.availability === "AVAILABLE") {
+    return `${input.sku} will join the current Shop and can appear because it is available. Inventory stays unchanged.`;
+  }
+  return `${input.sku} will join ${input.destination.label}, but it will not appear as available while inventory is ${input.availability.toLowerCase()}. Inventory stays unchanged.`;
+}
+
+async function readPublishedMembership(sku: string): Promise<DatabaseRow | null> {
+  const result = await (await getStudioDb()).execute<DatabaseRow>(sql`
+    select
+      catalogue.sku,
+      catalogue.drop_label,
+      catalogue.updated_at::text as catalogue_revision,
+      source.id as source_collection_id,
+      source.key as source_collection_key,
+      source.label as source_collection_label,
+      publication.state as publication_state,
+      publication.wardrobe_item_id,
+      inventory.availability,
+      inventory.on_hand,
+      inventory.reserved,
+      inventory.sold,
+      inventory.returned,
+      inventory.write_off
+    from shop_catalogue_items catalogue
+    left join shop_collections source on source.id = catalogue.collection_id
+    left join studio_catalogue_publications publication on publication.sku = catalogue.sku
+    left join shop_inventory inventory on inventory.sku = catalogue.sku
+    where catalogue.sku = ${sku}
+    limit 1
+  `);
+  return resultRows(result)[0] ?? null;
+}
+
+async function preparePublishedMembershipCorrection(
+  intent: Extract<StudioCollectionIntent, { command: "CORRECT_PUBLISHED_COLLECTION_MEMBERSHIP" }>,
+): Promise<PreparedPublishedMembershipCorrection> {
+  const { scopes } = await listStudioCollections();
+  const destination = requireCollection(scopes, intent.collectionId);
+  requireVersion(destination, intent.expectedVersion);
+
+  const canonicalKeys = new Set<StudioCollectionScope["key"]>(["drop-01", "drop-02"]);
+  if (!canonicalKeys.has(destination.key)) {
+    throw new StudioEngineError(
+      "INVALID_REQUEST",
+      409,
+      "Published pieces can only be corrected between Drop 01 and Drop 02.",
+      "Choose Drop 01 or Drop 02.",
+    );
+  }
+  const expectedDestinationState = destination.key === "drop-02" ? "ACTIVE" : "ARCHIVED";
+  if (destination.state !== expectedDestinationState) {
+    throw new StudioEngineError(
+      "INVALID_TRANSITION",
+      409,
+      `${destination.label} is no longer in its expected ${expectedDestinationState.toLowerCase()} state.`,
+      "Refresh the piece before changing its drop.",
+    );
+  }
+
+  const row = await readPublishedMembership(intent.sku);
+  if (!row) {
+    throw new StudioEngineError(
+      "INTAKE_NOT_FOUND",
+      404,
+      `${intent.sku} is not a published Studio piece.`,
+      "Return to Wardrobe and open a published piece.",
+    );
+  }
+  const publicationState = row.publication_state === "PUBLISHED" || row.publication_state === "ARCHIVED"
+    ? row.publication_state
+    : null;
+  if (!publicationState) {
+    throw new StudioEngineError(
+      "INVALID_TRANSITION",
+      409,
+      `${intent.sku} has never been published or is currently unpublished.`,
+      "Open a published or historically published piece before changing its drop.",
+    );
+  }
+
+  const sourceId = typeof row.source_collection_id === "string" ? row.source_collection_id : null;
+  const source = sourceId ? scopes.find((scope) => scope.id === sourceId) ?? null : null;
+  if (!source || !canonicalKeys.has(source.key)) {
+    throw new StudioEngineError(
+      "INVALID_TRANSITION",
+      409,
+      `${intent.sku} does not have canonical Drop 01 or Drop 02 membership.`,
+      "Reconcile its published collection before moving it.",
+    );
+  }
+  const expectedSourceState = source.key === "drop-02" ? "ACTIVE" : "ARCHIVED";
+  if (source.state !== expectedSourceState) {
+    throw new StudioEngineError(
+      "INVALID_TRANSITION",
+      409,
+      `${source.label} is no longer in its expected ${expectedSourceState.toLowerCase()} state.`,
+      "Refresh the piece before changing its drop.",
+    );
+  }
+  if (source.id === destination.id) {
+    throw new StudioEngineError(
+      "INVALID_REQUEST",
+      409,
+      `${intent.sku} is already in ${destination.label}.`,
+      "Choose the other drop.",
+    );
+  }
+  if (!source.memberSkus.includes(intent.sku) || destination.memberSkus.includes(intent.sku)) {
+    throw new StudioEngineError(
+      "INVALID_TRANSITION",
+      409,
+      `${intent.sku} has conflicting collection membership.`,
+      "Refresh Wardrobe before moving it.",
+    );
+  }
+  if (String(row.drop_label) !== source.label) {
+    throw new StudioEngineError(
+      "INVALID_TRANSITION",
+      409,
+      `${intent.sku} has conflicting published drop data.`,
+      "Reconcile its current drop before moving it.",
+    );
+  }
+
+  const availability = knownInventoryAvailability(row.availability);
+  const onHand = nonnegativeInteger(row.on_hand);
+  const reserved = nonnegativeInteger(row.reserved);
+  const sold = nonnegativeInteger(row.sold);
+  const returned = nonnegativeInteger(row.returned);
+  const writeOff = nonnegativeInteger(row.write_off);
+  if (
+    !availability
+    || onHand === null
+    || reserved === null
+    || sold === null
+    || returned === null
+    || writeOff === null
+  ) {
+    throw new StudioEngineError(
+      "INVALID_TRANSITION",
+      409,
+      `${intent.sku} does not have complete inventory truth.`,
+      "Review the piece in Operations before changing its drop.",
+    );
+  }
+  const catalogueRevision = typeof row.catalogue_revision === "string"
+    ? row.catalogue_revision.trim()
+    : "";
+  if (!catalogueRevision) {
+    throw new StudioEngineError(
+      "ENGINE_UNAVAILABLE",
+      503,
+      `${intent.sku} has no usable catalogue revision.`,
+      "Reload the piece and try again.",
+    );
+  }
+
+  const consequence = inventoryConsequence({
+    sku: intent.sku,
+    destination,
+    publicationState,
+    availability,
+  });
+  const membership: StudioPublishedCollectionMembership = {
+    sku: intent.sku,
+    publicationState,
+    sourceCollection: collectionReference(source),
+    destinationCollection: collectionReference(destination),
+    inventory: {
+      availability,
+      onHand,
+      reserved,
+      sold,
+      returned,
+      writeOff,
+      consequence,
+    },
+  };
+  const expectedRevision = sha256(JSON.stringify({
+    collectionRevision: revisionFor(scopes, intent),
+    catalogue: {
+      sku: intent.sku,
+      collectionId: source.id,
+      dropLabel: source.label,
+      updatedAt: catalogueRevision,
+      publicationState,
+    },
+    inventory: membership.inventory,
+  }));
+
+  return {
+    catalogueRevision,
+    preview: {
+      intent,
+      collection: destination,
+      previousActive: scopes.find((scope) => scope.isCurrent) ?? null,
+      changes: [
+        { label: "Drop", before: source.label, after: destination.label },
+        {
+          label: "Shop",
+          before: source.isCurrent ? "Current Shop" : "Past drop",
+          after: destination.isCurrent ? "Current Shop" : "Past drop",
+        },
+        { label: "Inventory", before: availability, after: "Unchanged" },
+      ],
+      expectedRevision,
+      title: `Move ${intent.sku} to ${destination.label}`,
+      consequence,
+      membership,
+    },
+  };
+}
+
 export async function previewStudioCollectionCommand(
-  _operator: StudioOperator,
+  operator: StudioOperator,
   rawIntent: StudioCollectionIntent,
 ): Promise<StudioCollectionPreview> {
   rejectFixedCollectionMutation(rawIntent);
+  requireCollectionCorrectionPermission(operator, rawIntent);
   const intent = normalizedIntent(rawIntent);
+  if (intent.command === "CORRECT_PUBLISHED_COLLECTION_MEMBERSHIP") {
+    return (await preparePublishedMembershipCorrection(intent)).preview;
+  }
   const { scopes } = await listStudioCollections();
   const expectedRevision = revisionFor(scopes, intent);
 
@@ -290,15 +579,48 @@ function jsonObject(value: unknown): DatabaseRow {
   return {};
 }
 
+function membershipFromState(state: DatabaseRow): StudioPublishedCollectionMembership | undefined {
+  const membership = jsonObject(state.membership);
+  const source = jsonObject(membership.sourceCollection);
+  const destination = jsonObject(membership.destinationCollection);
+  const inventory = jsonObject(membership.inventory);
+  const availability = knownInventoryAvailability(inventory.availability);
+  const onHand = nonnegativeInteger(inventory.onHand);
+  const reserved = nonnegativeInteger(inventory.reserved);
+  const sold = nonnegativeInteger(inventory.sold);
+  const returned = nonnegativeInteger(inventory.returned);
+  const writeOff = nonnegativeInteger(inventory.writeOff);
+  if (
+    typeof membership.sku !== "string"
+    || (membership.publicationState !== "PUBLISHED" && membership.publicationState !== "ARCHIVED")
+    || typeof source.id !== "string"
+    || typeof source.key !== "string"
+    || typeof source.label !== "string"
+    || typeof destination.id !== "string"
+    || typeof destination.key !== "string"
+    || typeof destination.label !== "string"
+    || !availability
+    || onHand === null
+    || reserved === null
+    || sold === null
+    || returned === null
+    || writeOff === null
+    || typeof inventory.consequence !== "string"
+  ) return undefined;
+  return membership as StudioPublishedCollectionMembership;
+}
+
 function receiptFromRow(row: DatabaseRow, replayed: boolean): StudioCollectionReceipt {
+  const afterState = jsonObject(row.after_state);
   return {
     id: String(row.id),
     command: String(row.command) as StudioCollectionReceipt["command"],
-    collection: collectionScope(jsonObject(row.after_state)),
+    collection: collectionScope(afterState),
     consequence: String(row.consequence),
     nextRoute: String(row.next_route),
     occurredAt: nullableDate(row.created_at) ?? new Date().toISOString(),
     replayed,
+    membership: membershipFromState(afterState),
   };
 }
 
@@ -321,6 +643,11 @@ function afterStateSql() {
     'ordinal', changed.ordinal,
     'version', changed.version,
     'state', changed.state,
+    'member_skus', coalesce((
+      select jsonb_agg(catalogue.sku order by catalogue.sku)
+      from shop_catalogue_items catalogue
+      where catalogue.collection_id = changed.id
+    ), '[]'::jsonb),
     'updated_at', changed.updated_at
   )`;
 }
@@ -332,6 +659,7 @@ export async function applyStudioCollectionCommand(input: {
   idempotencyKey: string;
 }): Promise<StudioCollectionReceipt> {
   rejectFixedCollectionMutation(input.intent);
+  requireCollectionCorrectionPermission(input.operator, input.intent);
   const intent = normalizedIntent(input.intent);
   const fingerprint = intentFingerprint(intent);
   const existing = await findReceipt(input.operator, input.idempotencyKey);
@@ -342,7 +670,11 @@ export async function applyStudioCollectionCommand(input: {
     return receiptFromRow(existing, true);
   }
 
-  const preview = await previewStudioCollectionCommand(input.operator, intent);
+  const preparedMembership = intent.command === "CORRECT_PUBLISHED_COLLECTION_MEMBERSHIP"
+    ? await preparePublishedMembershipCorrection(intent)
+    : null;
+  const preview = preparedMembership?.preview
+    ?? await previewStudioCollectionCommand(input.operator, intent);
   if (preview.expectedRevision !== input.expectedRevision) {
     throw new StudioEngineError("VERSION_CONFLICT", 409, "Drops changed after this preview.", "Review the updated change and confirm again.");
   }
@@ -350,7 +682,97 @@ export async function applyStudioCollectionCommand(input: {
   const database = await getStudioDb();
   let result: unknown;
 
-  if (intent.command === "CREATE_COLLECTION") {
+  if (intent.command === "CORRECT_PUBLISHED_COLLECTION_MEMBERSHIP") {
+    const membership = preview.membership;
+    if (!membership || !preparedMembership) {
+      throw new StudioEngineError(
+        "ENGINE_UNAVAILABLE",
+        503,
+        "Studio could not prepare that drop correction.",
+        "Reload the piece and try again.",
+      );
+    }
+    const source = membership.sourceCollection;
+    const destination = membership.destinationCollection;
+    const inventory = membership.inventory;
+    const destinationMemberSkus = [...new Set([
+      ...preview.collection.memberSkus,
+      intent.sku,
+    ])].sort((left, right) => left.localeCompare(right));
+    const beforeState = {
+      sku: intent.sku,
+      collection: source,
+      dropLabel: source.label,
+      inventory,
+    };
+    const afterState = {
+      id: destination.id,
+      key: destination.key,
+      label: destination.label,
+      ordinal: destination.ordinal,
+      version: destination.version,
+      state: destination.state,
+      member_skus: destinationMemberSkus,
+      updated_at: preview.collection.updatedAt,
+      membership,
+    };
+    result = await database.execute<DatabaseRow>(sql`
+      with command_lock as (
+        select pg_advisory_xact_lock(hashtext(${`studio_collection_membership:${intent.sku}`}))
+      ), destination as (
+        select collection.*
+        from shop_collections collection cross join command_lock
+        where collection.id = ${destination.id}::uuid
+          and collection.key = ${destination.key}
+          and collection.version = ${intent.expectedVersion}
+          and collection.state = ${destination.state}::shop_collection_state
+      ), before as (
+        select catalogue.sku
+        from shop_catalogue_items catalogue
+        cross join command_lock
+        join shop_collections source on source.id = catalogue.collection_id
+        join shop_inventory inventory on inventory.sku = catalogue.sku
+        join studio_catalogue_publications publication on publication.sku = catalogue.sku
+        where catalogue.sku = ${intent.sku}
+          and catalogue.collection_id = ${source.id}::uuid
+          and source.key = ${source.key}
+          and source.version = ${source.version}
+          and source.state = ${source.state}::shop_collection_state
+          and catalogue.drop_label = ${source.label}
+          and catalogue.updated_at = ${preparedMembership.catalogueRevision}::timestamptz
+          and publication.state = ${membership.publicationState}
+          and inventory.availability = ${inventory.availability}::shop_catalogue_availability
+          and inventory.on_hand = ${inventory.onHand}
+          and inventory.reserved = ${inventory.reserved}
+          and inventory.sold = ${inventory.sold}
+          and inventory.returned = ${inventory.returned}
+          and inventory.write_off = ${inventory.writeOff}
+        for update of catalogue
+      ), changed as (
+        update shop_catalogue_items catalogue
+        set collection_id = destination.id,
+            drop_label = destination.label,
+            updated_at = now()
+        from before, destination
+        where catalogue.sku = before.sku
+        returning catalogue.sku
+      ), command as (
+        insert into studio_collection_commands (
+          operator_subject, idempotency_key, request_fingerprint, command,
+          collection_id, collection_key, before_state, after_state,
+          consequence, next_route, created_at
+        )
+        select
+          ${input.operator.subject}, ${input.idempotencyKey}, ${fingerprint}, ${intent.command},
+          destination.id, destination.key, ${JSON.stringify(beforeState)}::jsonb,
+          ${JSON.stringify(afterState)}::jsonb, ${preview.consequence},
+          ${`/studio/wardrobe?collection=${encodeURIComponent(destination.key)}`}, now()
+        from changed cross join destination
+        returning *
+      )
+      select * from command
+    `);
+  } else if (intent.command === "CREATE_COLLECTION") {
     const { collection } = preview;
     result = await database.execute<DatabaseRow>(sql`
       with lifecycle_lock as (
@@ -477,6 +899,13 @@ export async function applyStudioCollectionCommand(input: {
 
   const row = resultRows(result)[0];
   if (!row) {
+    const replay = await findReceipt(input.operator, input.idempotencyKey);
+    if (replay) {
+      if (String(replay.request_fingerprint) !== fingerprint) {
+        throw new StudioEngineError("INVALID_REQUEST", 409, "That confirmation was already used.", "Review the drop again.");
+      }
+      return receiptFromRow(replay, true);
+    }
     throw new StudioEngineError(
       "VERSION_CONFLICT",
       409,

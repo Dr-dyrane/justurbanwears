@@ -79,10 +79,12 @@ async function responseJson<T>(response: Response): Promise<T> {
 
 export function GarmentLifecyclePanel({
   initialAction,
+  onChangeDrop,
   onWorkspaceChange,
   wardrobeItemId,
 }: {
   initialAction?: "price";
+  onChangeDrop?(): void;
   onWorkspaceChange?(workspace: GarmentLifecycleWorkspace): void;
   wardrobeItemId: string;
 }) {
@@ -455,10 +457,10 @@ export function GarmentLifecyclePanel({
         </div>
       ) : null}
 
-      {!editMode && editable ? (
+      {!editMode && (editable || onChangeDrop) ? (
         <div className="studio-card-actions">
-          <button className="button button-primary" onClick={() => beginEdit("price")} type="button"><Pencil aria-hidden="true" size={16} />Change price</button>
-          <button className="button button-secondary" onClick={() => beginEdit("details")} type="button">Edit details</button>
+          {editable ? <><button className="button button-primary" onClick={() => beginEdit("price")} type="button"><Pencil aria-hidden="true" size={16} />Change price</button><button className="button button-secondary" onClick={() => beginEdit("details")} type="button">Edit details</button></> : null}
+          {onChangeDrop ? <button className="button button-secondary" onClick={onChangeDrop} type="button">Change drop</button> : null}
         </div>
       ) : null}
 

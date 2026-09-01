@@ -1431,7 +1431,13 @@ export const studioCollectionCommands = pgTable("studio_collection_commands", {
   index("studio_collection_commands_collection_created_idx").on(table.collectionId, table.createdAt),
   check("studio_collection_commands_fingerprint", sql`${table.requestFingerprint} ~ '^[0-9a-f]{64}$'`),
   check("studio_collection_commands_known", sql`
-    ${table.command} in ('CREATE_COLLECTION', 'RENAME_COLLECTION', 'ACTIVATE_COLLECTION', 'ARCHIVE_COLLECTION')
+    ${table.command} in (
+      'CREATE_COLLECTION',
+      'RENAME_COLLECTION',
+      'ACTIVATE_COLLECTION',
+      'ARCHIVE_COLLECTION',
+      'CORRECT_PUBLISHED_COLLECTION_MEMBERSHIP'
+    )
   `),
   check("studio_collection_commands_before_object", sql`jsonb_typeof(${table.beforeState}) = 'object'`),
   check("studio_collection_commands_after_object", sql`jsonb_typeof(${table.afterState}) = 'object'`),

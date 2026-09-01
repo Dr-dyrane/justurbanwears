@@ -155,6 +155,7 @@ function compatibilityCollections(now: string): {
       state: definition.state,
       isCurrent: definition.isCurrent,
       authority: "COMPATIBILITY",
+      memberSkus: [...definition.skus],
       counts: {
         pieces: countsAvailable ? definition.skus.length : null,
         private: countsAvailable
@@ -233,12 +234,29 @@ function orderAvailableActions(order: StudioAuthoritySnapshot["orders"][number])
   return [...actions].sort(compareText);
 }
 
-function authorityDocuments(authority: StudioAuthoritySnapshot): StudioSearchDocument[] {
+function authoritativeHistoricalState(
+  piece: StudioAuthoritySnapshot["pieces"][number],
+  collectionScopes: readonly StudioCollectionScope[],
+) {
+  const sku = piece.sku;
+  if (!sku) return null;
+  const databaseCollection = collectionScopes.find((collection) => (
+    collection.authority === "DATABASE" && collection.memberSkus.includes(sku)
+  ));
+  if (databaseCollection?.key !== "drop-01") return databaseCollection ? null : historicalDrop01Kind({
+    id: piece.wardrobeItemId ?? piece.pieceKey,
+    sku,
+  });
+  return historicalDrop01Kind({ id: piece.wardrobeItemId ?? piece.pieceKey, sku });
+}
+
+function authorityDocuments(
+  authority: StudioAuthoritySnapshot,
+  collectionScopes: readonly StudioCollectionScope[],
+): StudioSearchDocument[] {
   const documents: StudioSearchDocument[] = [];
   for (const piece of authority.pieces) {
-    const historicalState = piece.sku
-      ? historicalDrop01Kind({ id: piece.wardrobeItemId ?? piece.pieceKey, sku: piece.sku })
-      : null;
+    const historicalState = authoritativeHistoricalState(piece, collectionScopes);
     const lifecycleState = historicalState ?? piece.availability;
     const route = piece.wardrobeItemId
       ? `/studio/wardrobe/${encodeURIComponent(piece.wardrobeItemId)}`
@@ -400,6 +418,7 @@ function connectedCapabilities(input: {
   collectionsAvailable?: boolean;
   holdWriteReady?: boolean;
   locationWriteReady?: boolean;
+  operatorRole: StudioOperator["role"];
   orderWriteReady?: boolean;
 }): StudioCapability[] {
   const state = input.authorityAvailable ? "AVAILABLE" as const : "UNAVAILABLE" as const;
@@ -423,6 +442,12 @@ function connectedCapabilities(input: {
     { id: "OPERATIONS_WRITE", state: input.authorityAvailable && input.holdWriteReady && input.locationWriteReady ? "AVAILABLE" : "UNAVAILABLE" },
     { id: "COLLECTIONS_READ", state: input.collectionsAvailable ? "AVAILABLE" : "READ_ONLY_COMPATIBILITY" },
     { id: "COLLECTIONS_WRITE", state: "UNAVAILABLE" },
+    {
+      id: "COLLECTION_MEMBERSHIP_WRITE",
+      state: input.authorityAvailable && input.collectionsAvailable && input.operatorRole === "admin"
+        ? "AVAILABLE"
+        : "UNAVAILABLE",
+    },
   ];
 }
 
@@ -446,6 +471,7 @@ function scenarioCapabilities(): StudioCapability[] {
     { id: "OPERATIONS_WRITE", state: "UNAVAILABLE" },
     { id: "COLLECTIONS_READ", state: "AVAILABLE" },
     { id: "COLLECTIONS_WRITE", state: "UNAVAILABLE" },
+    { id: "COLLECTION_MEMBERSHIP_WRITE", state: "UNAVAILABLE" },
   ];
 }
 
@@ -525,13 +551,14 @@ export function projectConnectedStudioApplication(input: {
     searchDocuments: sortDocuments([
       ...serviceDocuments(),
       ...collectionDocuments(collectionScopes),
-      ...(authority ? authorityDocuments(authority) : []),
+      ...(authority ? authorityDocuments(authority, collectionScopes) : []),
     ]),
     capabilities: connectedCapabilities({
       authorityAvailable,
       collectionsAvailable,
       holdWriteReady: input.holdWriteReady,
       locationWriteReady: input.locationWriteReady,
+      operatorRole: input.operator.role,
       orderWriteReady: input.orderWriteReady,
     }),
     degradedSources: degraded,

@@ -34,6 +34,7 @@ const assistantCapabilitySchema = z.object({
     "OPERATIONS_WRITE",
     "COLLECTIONS_READ",
     "COLLECTIONS_WRITE",
+    "COLLECTION_MEMBERSHIP_WRITE",
   ]),
   state: z.enum(["AVAILABLE", "READ_ONLY_COMPATIBILITY", "UNAVAILABLE"]),
 });

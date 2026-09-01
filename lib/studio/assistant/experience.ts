@@ -42,7 +42,8 @@ export interface StudioAssistantCapability {
     | "LOCATIONS_WRITE"
     | "OPERATIONS_WRITE"
     | "COLLECTIONS_READ"
-    | "COLLECTIONS_WRITE";
+    | "COLLECTIONS_WRITE"
+    | "COLLECTION_MEMBERSHIP_WRITE";
   state: StudioAssistantCapabilityState;
 }
 
@@ -859,13 +860,26 @@ export function resolveStudioAssistant(
     : null;
   if (collectionAssignmentPiece) {
     const collection = exactTarget(context, query, "Collection");
-    return response(context, "UNDERSTAND", "R0", [{
-      action: { href: collectionAssignmentPiece.href, label: "Review current piece" },
-      body: `${collectionAssignmentPiece.label}${collection ? ` and ${collection.label}` : ""} are resolved, but the current Studio projection does not expose a guarded collection-membership command.`,
-      consequence: "Opening the piece does not move it, create a garment, or create a drop.",
+    if (!capabilityAvailable(context, "COLLECTION_MEMBERSHIP_WRITE")) {
+      return response(context, "UNDERSTAND", "R0", [{
+        action: { href: collectionAssignmentPiece.href, label: "Review current piece" },
+        body: `${collectionAssignmentPiece.label}${collection ? ` and ${collection.label}` : ""} are resolved, but Studio cannot prove collection-membership write readiness.`,
+        consequence: "Opening the piece does not move it, create a garment, or create a drop.",
+        kind: "handoff",
+        risk: "R0",
+        title: "Collection move unavailable",
+      }]);
+    }
+    return response(context, "CHANGE", "R3", [{
+      action: {
+        href: `${collectionAssignmentPiece.href}${collectionAssignmentPiece.href.includes("?") ? "&" : "?"}action=drop`,
+        label: "Change drop",
+      },
+      body: `Open ${collectionAssignmentPiece.label}, choose the destination drop, then review its current inventory and Shop visibility impact.`,
+      consequence: "Nothing moves until the revision-bound preview is confirmed. Stock, orders, and approved media stay unchanged.",
       kind: "handoff",
-      risk: "R0",
-      title: "Collection move unavailable",
+      risk: "R3",
+      title: `Change ${collectionAssignmentPiece.label} drop`,
     }]);
   }
 

@@ -39,14 +39,15 @@ import {
   type PendingWardrobeProductContract,
 } from "../../lib/studio/seeds/private-wardrobe-products";
 import { LifecycleBadge } from "./atoms/lifecycle-badge";
-import { LifecycleMeta, STUDIO_LIFECYCLE_PRESENTATION } from "./atoms/lifecycle-meta";
+import { LifecycleMeta } from "./atoms/lifecycle-meta";
 import { ReadinessList } from "./atoms/readiness-list";
 import { StudioDecisionSheet } from "./atoms/studio-decision-sheet";
 import { StudioLoadingStage } from "./atoms/studio-loading-stage";
-import { StudioPager, StudioSegmentedView, useStudioSegment } from "./atoms/studio-segmented-view";
+import { StudioPager } from "./atoms/studio-segmented-view";
 import { StudioLink } from "./atoms/studio-link";
 import { StudioTaskSheet } from "./atoms/studio-task-sheet";
 import { StudioDropSheet } from "./collections/studio-drop-sheet";
+import { ChangeDropSheet } from "./collections/change-drop-sheet";
 import { StudioStackPage, StudioStackSection } from "./atoms/studio-stack-page";
 import { GarmentIntakeSheet } from "./garment-intake/garment-intake-sheet";
 import { WearSheet } from "./garment-intake/wear-sheet";
@@ -91,7 +92,9 @@ import {
   getOrCreateSessionCommandKey,
 } from "../../lib/studio/idempotency/session-command-key";
 
-const filters: Array<"ALL" | StudioLifecycleState> = [
+type WardrobeFilter = "ALL" | "NEEDS_PUBLISHING" | StudioLifecycleState;
+
+const lifecycleFilters: Array<"ALL" | StudioLifecycleState> = [
   "ALL",
   "DRAFT",
   "READY",
@@ -102,8 +105,11 @@ const filters: Array<"ALL" | StudioLifecycleState> = [
 ];
 
 const garmentPageSize = 9;
-const publishingPageSize = 8;
 const studioUuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function wardrobeFilterLabel(filter: WardrobeFilter) {
+  return filter === "NEEDS_PUBLISHING" ? "Needs publishing" : filter.toLowerCase();
+}
 
 type WardrobeDropScope = StudioCollectionScope["key"];
 type WardrobeCollectionScope = "all" | "private" | WardrobeDropScope;
@@ -118,6 +124,7 @@ const BASELINE_COLLECTIONS: StudioCollectionScope[] = [
     state: "ACTIVE",
     isCurrent: true,
     authority: "COMPATIBILITY",
+    memberSkus: [],
     counts: { pieces: null, private: null, ready: null, published: null, available: null },
     nextAction: "/studio/wardrobe",
     updatedAt: "",
@@ -131,6 +138,7 @@ const BASELINE_COLLECTIONS: StudioCollectionScope[] = [
     state: "ARCHIVED",
     isCurrent: false,
     authority: "COMPATIBILITY",
+    memberSkus: [],
     counts: { pieces: null, private: null, ready: null, published: null, available: null },
     nextAction: "/studio/wardrobe?collection=drop-01",
     updatedAt: "",
@@ -141,6 +149,36 @@ function dropKeyFromLabel(label: string): WardrobeDropScope | null {
   const normalized = label.trim().toLowerCase().replace(/\s+/g, "-");
   if (/^drop-[0-9]{2,}$/.test(normalized)) return normalized as WardrobeDropScope;
   return null;
+}
+
+function databaseCollectionForSku(
+  collections: readonly StudioCollectionScope[],
+  sku: string,
+) {
+  return collections.find((collection) => (
+    collection.authority === "DATABASE" && collection.memberSkus.includes(sku)
+  )) ?? null;
+}
+
+function resolvedCollectionForGarment(
+  garment: Garment,
+  collections: readonly StudioCollectionScope[],
+  listings: readonly StudioListing[],
+  currentDrop: string,
+) {
+  const databaseCollection = databaseCollectionForSku(collections, garment.sku);
+  if (databaseCollection) return { key: databaseCollection.key, label: databaseCollection.label };
+  return studioDropScopeForGarment(garment, listings, currentDrop);
+}
+
+function resolvedHistoricalDrop01Kind(
+  garment: Garment,
+  collections: readonly StudioCollectionScope[],
+) {
+  const databaseCollection = databaseCollectionForSku(collections, garment.sku);
+  if (!databaseCollection) return historicalDrop01Kind(garment);
+  if (databaseCollection.key !== "drop-01") return null;
+  return historicalDrop01Kind(garment);
 }
 
 function collectionScopeFromParam(value: string | null, currentDropKey: WardrobeDropScope): WardrobeCollectionScope {
@@ -228,8 +266,11 @@ function garmentDossierHref(garment: Garment) {
 }
 
 function GarmentCard({ garment }: { garment: Garment }) {
-  const { listings } = useStudio();
+  const { application, listings } = useStudio();
   const listing = listings.find((candidate) => candidate.garmentId === garment.id);
+  const collectionScopes = application.snapshot?.collectionScopes ?? [];
+  const historicalKind = resolvedHistoricalDrop01Kind(garment, collectionScopes);
+  const currentCollection = databaseCollectionForSku(collectionScopes, garment.sku);
   const cover = studioGarmentCover(garment, listing);
   const capturedRoles = (["GARMENT_FRONT", "GARMENT_BACK", "FABRIC_DETAIL"] as const).filter((role) =>
     garment.references.some((reference) =>
@@ -237,7 +278,8 @@ function GarmentCard({ garment }: { garment: Garment }) {
       && reference.view === pendingCaptureView(role)
     )
   );
-  const workspace = selectPieceWorkspace({ garment, listing, capturedRoles });
+  const workspace = selectPieceWorkspace({ garment, listing, capturedRoles, historicalKind });
+  const pastDrop = currentCollection?.state === "ARCHIVED" && historicalKind === null;
   const coverItems: StudioMediaItem[] = cover ? [{ alt: cover.alt, label: "Garment front", src: cover.src }] : [];
   return (
     <article className="studio-garment-card" id={`studio-garment-${garment.id}`} tabIndex={-1}>
@@ -250,7 +292,7 @@ function GarmentCard({ garment }: { garment: Garment }) {
       <div className="studio-garment-body">
         <StudioLink aria-label={`Open ${garment.title}`} className="studio-garment-disclosure" href={garmentDossierHref(garment)}>
           <span><small>{garment.sku} · {garment.sizeLabel}</small><strong>{garment.title}</strong><small>{garment.color} · {garment.price > 0 ? formatNaira(garment.price) : "Price pending"}</small></span>
-          <span className="studio-piece-stage" data-stage={workspace.stage}>{workspace.stageLabel}</span>
+          <span className="studio-piece-stage" data-stage={pastDrop ? "PRIVATE" : workspace.stage}>{pastDrop ? "Past drop" : workspace.stageLabel}</span>
           <ArrowRight aria-hidden="true" size={17} />
         </StudioLink>
       </div>
@@ -258,9 +300,12 @@ function GarmentCard({ garment }: { garment: Garment }) {
   );
 }
 
-export function PieceWorkspaceView({ garment, initialAction, layout = "embedded", onDismiss, onContinueMedia }: { garment: Garment; initialAction?: "price"; layout?: "adaptive" | "embedded"; onDismiss(): void; onContinueMedia(garment: Garment): void }) {
+export function PieceWorkspaceView({ garment, initialAction, layout = "embedded", onDismiss, onContinueMedia }: { garment: Garment; initialAction?: "drop" | "price"; layout?: "adaptive" | "embedded"; onDismiss(): void; onContinueMedia(garment: Garment): void }) {
   const studio = useStudio();
-  const historicalKind = historicalDrop01Kind(garment);
+  const projectedCollections = studio.application.snapshot?.collectionScopes ?? [];
+  const [pieceCollections, setPieceCollections] = useState<StudioCollectionScope[]>([]);
+  const availablePieceCollections = pieceCollections.length ? pieceCollections : projectedCollections;
+  const historicalKind = resolvedHistoricalDrop01Kind(garment, availablePieceCollections);
   const completedDrop01Product = historicalKind === "SOLD_OUT";
   const incompleteDrop01Archive = historicalKind === "ARCHIVED_DRAFT";
   const historicalDrop01 = historicalKind !== null;
@@ -286,15 +331,36 @@ export function PieceWorkspaceView({ garment, initialAction, layout = "embedded"
   const [photosOpen, setPhotosOpen] = useState(false);
   const [photosReturnFocus, setPhotosReturnFocus] = useState<HTMLElement | null>(null);
   const [secondaryOpen, setSecondaryOpen] = useState(initialAction === "price");
+  const [dropOpen, setDropOpen] = useState(false);
+  const [dropReturnFocus, setDropReturnFocus] = useState<HTMLElement | null>(null);
   const [detailsReturnFocus, setDetailsReturnFocus] = useState<HTMLElement | null>(null);
   const [shopReturnFocus, setShopReturnFocus] = useState<HTMLElement | null>(null);
   const publicationConfirmationId = useId();
   const publicationCommandRef = useRef(false);
+  const initialDropHandledRef = useRef(false);
+  const primaryActionRef = useRef<HTMLButtonElement>(null);
   const photosTriggerRef = useRef<HTMLButtonElement>(null);
   const detailsTriggerRef = useRef<HTMLButtonElement>(null);
   const shopTriggerRef = useRef<HTMLButtonElement>(null);
   const publicationCommandScope = `piece-publication:${garment.privateWardrobeItemId ?? garment.id}`;
   const listing = studio.listings.find((candidate) => candidate.garmentId === garment.id);
+  const fallbackCollection = studioDropScopeForGarment(garment, studio.listings);
+  const hasDatabaseCollectionProjection = availablePieceCollections.some((collection) => collection.authority === "DATABASE");
+  const currentPieceCollection = databaseCollectionForSku(availablePieceCollections, garment.sku)
+    ?? (!hasDatabaseCollectionProjection
+      ? availablePieceCollections.find((collection) => collection.label === fallbackCollection.label) ?? null
+      : null);
+  const pastDrop = currentPieceCollection?.state === "ARCHIVED" && historicalKind === null;
+  const collectionMembershipWriteAvailable = Boolean(studio.application.snapshot?.capabilities.some((capability) => (
+    String(capability.id) === "COLLECTION_MEMBERSHIP_WRITE" && capability.state === "AVAILABLE"
+  )));
+  const canChangeDrop = Boolean(
+    collectionMembershipWriteAvailable
+    && currentPieceCollection?.authority === "DATABASE"
+    && availablePieceCollections.some((collection) => (
+      collection.authority === "DATABASE" && collection.id !== currentPieceCollection.id
+    )),
+  );
   const pendingContract = getPendingWardrobeProductContract(garment.sku);
   const cover = studioGarmentCover(garment, listing);
   const capturedRoles = (["GARMENT_FRONT", "GARMENT_BACK", "FABRIC_DETAIL"] as const).filter((role) =>
@@ -304,7 +370,7 @@ export function PieceWorkspaceView({ garment, initialAction, layout = "embedded"
       && reference.view === pendingCaptureView(role)
     )
   );
-  const workspace = selectPieceWorkspace({ garment, listing, capturedRoles });
+  const workspace = selectPieceWorkspace({ garment, listing, capturedRoles, historicalKind });
   const captureTarget: DirectCaptureTarget | null = historicalDrop01 ? null : pendingContract ? {
     completionEndpoint: `/api/studio/pending-products/${encodeURIComponent(pendingContract.sku)}/completions`,
     endpoint: `/api/studio/pending-products/${encodeURIComponent(pendingContract.sku)}/captures`,
@@ -338,7 +404,9 @@ export function PieceWorkspaceView({ garment, initialAction, layout = "embedded"
   const lifecycleOwnsMedia = authoritativePublicationState === "PUBLISHED"
     || authoritativePublicationState === "UNPUBLISHED";
   const nextAction = historicalDrop01
-    ? workspace.nextAction
+    ? canChangeDrop
+      ? { kind: "DYNAMIC_MANAGE" as const, label: "Manage listing", detail: "Move it to another drop." }
+      : workspace.nextAction
     : authoritativePublicationState === "ARCHIVED"
     ? { kind: "DYNAMIC_MANAGE", label: "View history", detail: "This piece is archived." }
     : authoritativePublicationState === "UNPUBLISHED"
@@ -362,6 +430,8 @@ export function PieceWorkspaceView({ garment, initialAction, layout = "embedded"
     ? { stage: "PRIVATE", label: "Archived draft" }
     : completedDrop01Product
       ? { stage: "SOLD", label: "Sold out" }
+      : pastDrop
+        ? { stage: "PRIVATE", label: "Past drop" }
       : authoritativePublicationState === "ARCHIVED"
     ? { stage: "ARCHIVED", label: "Archived" }
     : authoritativePublicationState === "UNPUBLISHED"
@@ -388,6 +458,8 @@ export function PieceWorkspaceView({ garment, initialAction, layout = "embedded"
     ? "Archived draft"
     : completedDrop01Product
       ? "Sold out · archived"
+      : pastDrop
+        ? "Past drop · off current Shop"
       : authoritativePublicationState === "ARCHIVED"
     ? "Archived"
     : authoritativePublicationState === "UNPUBLISHED"
@@ -409,6 +481,17 @@ export function PieceWorkspaceView({ garment, initialAction, layout = "embedded"
           : dynamicReview?.state === "BLOCKED"
             ? `${dynamicReview.blockers.length} step${dynamicReview.blockers.length === 1 ? "" : "s"} left`
             : "Private";
+
+  useEffect(() => {
+    if (initialAction !== "drop" || initialDropHandledRef.current) return;
+    initialDropHandledRef.current = true;
+    const frame = window.requestAnimationFrame(() => {
+      setDropReturnFocus(primaryActionRef.current);
+      setDropOpen(true);
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [initialAction]);
+
   const readPublicationReview = useCallback(async (signal?: AbortSignal) => {
     if (!garment.privateWardrobeItemId) return null;
     const response = await fetch(`/api/studio/wardrobe/${encodeURIComponent(garment.privateWardrobeItemId)}/publication`, {
@@ -547,6 +630,12 @@ export function PieceWorkspaceView({ garment, initialAction, layout = "embedded"
     setSecondaryOpen(true);
   }
 
+  function openDrop() {
+    setDropReturnFocus(primaryActionRef.current);
+    setSecondaryOpen(false);
+    window.setTimeout(() => setDropOpen(true), 180);
+  }
+
   function openShop(returnFocus = activeTrigger(shopTriggerRef.current)) {
     setShopReturnFocus(returnFocus);
     setReviewOpen(true);
@@ -617,6 +706,7 @@ export function PieceWorkspaceView({ garment, initialAction, layout = "embedded"
           disabled={nextAction.kind === "DYNAMIC_LOADING"}
           id="piece-primary-action"
           onClick={runNextAction}
+          ref={primaryActionRef}
           type="button"
         >
           <span><small>Next</small><strong>{nextAction.label}</strong><span>{nextAction.detail}</span></span>
@@ -752,22 +842,40 @@ export function PieceWorkspaceView({ garment, initialAction, layout = "embedded"
                     <LockKeyhole aria-hidden="true" size={18} />
                   </div>
                   <p>{completedDrop01Product
-                    ? "This completed Drop 01 piece is closed and cannot return to active Shop work."
+                    ? "Its Drop 01 listing and approved media remain preserved."
                     : "This unfinished test piece is kept as an archived draft and is not active work."}</p>
                   <div className="studio-garment-facts">
                     <span>{garment.sku}</span>
                     <span>{garment.sizeLabel}</span>
                     <span>{garment.price > 0 ? formatNaira(garment.price) : "Price not set"}</span>
                   </div>
+                  {canChangeDrop ? <div className="studio-card-actions"><button className="button button-secondary" onClick={openDrop} type="button">Change drop</button></div> : null}
                 </section>
               ) : <>
                 {garment.privateWardrobeItemId
-                  ? <GarmentLifecyclePanel initialAction={initialAction} onWorkspaceChange={setLifecycleWorkspace} wardrobeItemId={garment.privateWardrobeItemId} />
-                  : listing ? <section className="studio-piece-shop"><ListingEditor listing={listing} /></section> : null}
+                  ? <GarmentLifecyclePanel initialAction={initialAction === "price" ? "price" : undefined} onChangeDrop={canChangeDrop ? openDrop : undefined} onWorkspaceChange={setLifecycleWorkspace} wardrobeItemId={garment.privateWardrobeItemId} />
+                  : listing ? <section className="studio-piece-shop"><ListingEditor listing={listing} />{canChangeDrop ? <div className="studio-card-actions"><button className="button button-secondary" onClick={openDrop} type="button">Change drop</button></div> : null}</section> : null}
               </>}
             </div>
           </StudioTaskSheet>
         </> : null}
+
+        <ChangeDropSheet
+          collections={availablePieceCollections}
+          currentCollectionId={currentPieceCollection?.id ?? null}
+          onApplied={(change) => {
+            setPieceCollections(change.collections);
+            void studio.application.refresh();
+          }}
+          onDismiss={() => {
+            setDropOpen(false);
+            setDropReturnFocus(null);
+          }}
+          open={dropOpen}
+          returnFocus={dropReturnFocus}
+          sku={garment.sku}
+          title={garment.title}
+        />
       </div>
   );
   if (adaptive) {
@@ -1009,13 +1117,10 @@ export function WardrobeWorkbench() {
       : BASELINE_COLLECTIONS;
   const collectionsForSheet = useMemo(
     () => availableCollections.map((collection) => {
-      if (collection.counts.pieces !== null && collection.key !== "drop-01") return collection;
       const localPieces = new Set(studio.garments.filter((garment) => (
-        studioDropScopeForGarment(garment, studio.listings, dropContext.currentDrop).label === collection.label
+        resolvedCollectionForGarment(garment, availableCollections, studio.listings, dropContext.currentDrop).label === collection.label
       )).map((garment) => garment.sku)).size;
-      const pieces = collection.key === "drop-01"
-        ? Math.max(collection.counts.pieces ?? 0, localPieces)
-        : localPieces;
+      const pieces = localPieces > 0 ? localPieces : collection.counts.pieces;
       return { ...collection, counts: { ...collection.counts, pieces } };
     }),
     [availableCollections, dropContext.currentDrop, studio.garments, studio.listings],
@@ -1027,11 +1132,10 @@ export function WardrobeWorkbench() {
   const garmentQueryHandledRef = useRef<string | null>(null);
   const [intakeReturnFocus, setIntakeReturnFocus] = useState<HTMLElement | null>(null);
   const [intakeOpen, setIntakeOpen] = useState(false);
-  const [filter, setFilter] = useState<(typeof filters)[number]>("ALL");
+  const [filter, setFilter] = useState<WardrobeFilter>("ALL");
   const [openPieceId, setOpenPieceId] = useState<string | null>(null);
   const [pieceReturnFocus, setPieceReturnFocus] = useState<HTMLElement | null>(null);
   const [garmentPage, setGarmentPage] = useState(0);
-  const [publishingPage, setPublishingPage] = useState(0);
   const [wearWardrobeItemId, setWearWardrobeItemId] = useState<string | null>(null);
   const [wearReturnFocus, setWearReturnFocus] = useState<HTMLElement | null>(null);
   const [guideOpen, setGuideOpen] = useState(false);
@@ -1056,7 +1160,7 @@ export function WardrobeWorkbench() {
     const label = availableCollections.find((scope) => scope.key === collectionScope)?.label
       ?? (collectionScope === "drop-01" ? "Drop 01" : "Drop 02");
     return new Set(studio.garments
-      .filter((garment) => studioDropScopeForGarment(garment, studio.listings, dropContext.currentDrop).label === label)
+      .filter((garment) => resolvedCollectionForGarment(garment, availableCollections, studio.listings, dropContext.currentDrop).label === label)
       .map((garment) => garment.id));
   }, [availableCollections, collectionScope, dropContext.currentDrop, dropContext.scopes, studio.garments, studio.listings]);
   const scopedGarments = useMemo(
@@ -1064,8 +1168,8 @@ export function WardrobeWorkbench() {
     [collectionIds, studio.garments],
   );
   const activeScopedGarments = useMemo(
-    () => scopedGarments.filter((garment) => historicalDrop01Kind(garment) === null),
-    [scopedGarments],
+    () => scopedGarments.filter((garment) => resolvedHistoricalDrop01Kind(garment, availableCollections) === null),
+    [availableCollections, scopedGarments],
   );
   const historyOnly = scopedGarments.length > 0 && activeScopedGarments.length === 0;
   const scopedListings = useMemo(
@@ -1076,13 +1180,21 @@ export function WardrobeWorkbench() {
     () => selectStudioPublishingQueue(activeScopedGarments, scopedListings),
     [activeScopedGarments, scopedListings],
   );
-  const segments = useMemo(() => historyOnly ? [
-    { key: "garments", label: "Garments", count: scopedGarments.length },
-  ] : [
-    { key: "garments", label: "Garments", count: scopedGarments.length },
-    { key: "publishing", label: "Publishing", count: publishingQueue.length },
-  ], [historyOnly, publishingQueue.length, scopedGarments.length]);
-  const { active: activeView, isPending: viewPending, select: selectView } = useStudioSegment(segments, "garments");
+  const publishedListingCount = useMemo(
+    () => scopedListings.filter((listing) => ["PUBLISHED", "RESERVED", "SOLD"].includes(listing.state)).length,
+    [scopedListings],
+  );
+  const publishingGarmentIds = useMemo(
+    () => new Set(publishingQueue.map((entry) => entry.garment.id)),
+    [publishingQueue],
+  );
+  const availableFilters = useMemo<WardrobeFilter[]>(
+    () => publishingQueue.length > 0
+      ? ["ALL", "NEEDS_PUBLISHING", ...lifecycleFilters.slice(1)]
+      : lifecycleFilters,
+    [publishingQueue.length],
+  );
+  const requestedPublishingView = searchParams.get("view") === "publishing";
 
   useEffect(() => {
     if (searchParams.get("guide") !== "1" || guideOpen) return;
@@ -1103,6 +1215,14 @@ export function WardrobeWorkbench() {
   }, [collectionOpen, searchParams, studio.application.status, studio.scenario]);
 
   useEffect(() => {
+    if (!requestedPublishingView || historyOnly) return;
+    window.setTimeout(() => {
+      setFilter(publishingQueue.length > 0 ? "NEEDS_PUBLISHING" : "ALL");
+      setGarmentPage(0);
+    }, 0);
+  }, [historyOnly, publishingQueue.length, requestedPublishingView]);
+
+  useEffect(() => {
     if (!collectionOpen || collectionReturnFocus || !collectionTriggerRef.current) return;
     setCollectionReturnFocus(collectionTriggerRef.current);
   }, [collectionOpen, collectionReturnFocus]);
@@ -1117,7 +1237,12 @@ export function WardrobeWorkbench() {
     const garmentIndex = studio.garments.findIndex((garment) => garment.id === garmentId);
     if (garmentIndex < 0) return;
     const garment = studio.garments[garmentIndex];
-    const resolvedScope = studioDropScopeForGarment(garment, studio.listings, dropContext.currentDrop);
+    const resolvedScope = resolvedCollectionForGarment(
+      garment,
+      availableCollections,
+      studio.listings,
+      dropContext.currentDrop,
+    );
     const resolvedCollectionScope: WardrobeCollectionScope = resolvedScope.key === "studio" || resolvedScope.key === "private"
       ? "private"
       : availableCollections.find((scope) => scope.label === resolvedScope.label)?.key
@@ -1139,7 +1264,6 @@ export function WardrobeWorkbench() {
         ? "all"
         : collectionScopeFromParam(requestedScope, currentCollectionKey));
       setGarmentPage(0);
-      setPublishingPage(0);
     }
 
     window.addEventListener("popstate", syncCollectionScope);
@@ -1192,16 +1316,16 @@ export function WardrobeWorkbench() {
 
   const visibleGarments = useMemo(() => scopedGarments.filter((garment) => {
     if (filter === "ALL") return true;
+    if (filter === "NEEDS_PUBLISHING") return publishingGarmentIds.has(garment.id);
     const listing = studio.listings.find((candidate) => candidate.garmentId === garment.id);
     return (listing?.state ?? garment.state) === filter;
-  }), [filter, scopedGarments, studio.listings]);
+  }), [filter, publishingGarmentIds, scopedGarments, studio.listings]);
   const safeGarmentPage = Math.min(garmentPage, Math.max(0, Math.ceil(visibleGarments.length / garmentPageSize) - 1));
   const pagedGarments = visibleGarments.slice(safeGarmentPage * garmentPageSize, (safeGarmentPage + 1) * garmentPageSize);
-  const safePublishingPage = Math.min(publishingPage, Math.max(0, Math.ceil(publishingQueue.length / publishingPageSize) - 1));
-  const pagedPublishingQueue = publishingQueue.slice(safePublishingPage * publishingPageSize, (safePublishingPage + 1) * publishingPageSize);
   const openPiece = studio.garments.find((garment) => garment.id === openPieceId);
   const nextGarment = activeScopedGarments.find((garment) => garment.state === "DRAFT") ?? activeScopedGarments[0];
-  const nextPublishingEntry = publishingQueue.find((entry) => ["DRAFT", "READY"].includes(entry.state)) ?? publishingQueue[0];
+  const nextPublishingEntry = publishingQueue[0];
+  const publicationFocused = !historyOnly && (requestedPublishingView || filter === "NEEDS_PUBLISHING");
 
   if (studio.hydration === "idle" || studio.hydration === "restoring") {
     return <StudioLoadingStage label="Opening wardrobe…" />;
@@ -1214,7 +1338,7 @@ export function WardrobeWorkbench() {
     .sort((left, right) => Number(right.isCurrent) - Number(left.isCurrent) || right.ordinal - left.ordinal)
     .map((scope) => {
       const localCount = studio.garments.filter((garment) => (
-        studioDropScopeForGarment(garment, studio.listings, dropContext.currentDrop).label === scope.label
+        resolvedCollectionForGarment(garment, availableCollections, studio.listings, dropContext.currentDrop).label === scope.label
       )).length;
       return {
         key: scope.key as WardrobeCollectionScope,
@@ -1236,7 +1360,6 @@ export function WardrobeWorkbench() {
     setCollectionScope(resolvedKey);
     setFilter("ALL");
     setGarmentPage(0);
-    setPublishingPage(0);
     const url = new URL(window.location.href);
     if (resolvedKey === currentCollectionKey) url.searchParams.delete("collection");
     else url.searchParams.set("collection", resolvedKey);
@@ -1294,7 +1417,7 @@ export function WardrobeWorkbench() {
         </button>
       </div>
 
-      {activeView === "garments" ? (
+      {!publicationFocused ? (
         nextGarment ? (
           <StudioLink className="studio-stack-current" href={garmentDossierHref(nextGarment)}>
             <span><small>Continue</small><strong>{nextGarment.title}</strong><LifecycleMeta state={nextGarment.state} /></span>
@@ -1316,6 +1439,11 @@ export function WardrobeWorkbench() {
           <span><small>Continue</small><strong>{nextPublishingEntry.title}</strong><LifecycleMeta state={nextPublishingEntry.state} /></span>
           <ArrowRight aria-hidden="true" size={18} />
         </StudioLink>
+      ) : publishedListingCount > 0 ? (
+        <div className="studio-stack-current" data-complete="true">
+          <span><small>Shop</small><strong>All listings are live</strong><span>{publishedListingCount} current piece{publishedListingCount === 1 ? "" : "s"}</span></span>
+          <Check aria-hidden="true" size={18} />
+        </div>
       ) : (
         <StudioLink className="studio-stack-current" href="/studio/wardrobe">
           <span><small>Next</small><strong>Prepare a garment for Shop</strong></span>
@@ -1323,44 +1451,25 @@ export function WardrobeWorkbench() {
         </StudioLink>
       )}
 
-      <StudioSegmentedView active={activeView} label="Wardrobe workspace" onSelect={selectView} pending={viewPending} segments={segments} />
-
-      {activeView === "garments" ? (
-        <StudioStackSection aria-labelledby="studio-tab-garments" id="studio-view-garments" role="tabpanel">
+      <StudioStackSection aria-labelledby="garments-view-title" id="studio-view-garments">
           {historyOnly ? null : <details className="studio-stack-filter">
             <summary>
-              <span className="studio-stack-filter-label"><SlidersHorizontal aria-hidden="true" size={15} strokeWidth={1.8} />Filter · {filter.toLowerCase()}</span>
+              <span className="studio-stack-filter-label"><SlidersHorizontal aria-hidden="true" size={15} strokeWidth={1.8} />Filter · {wardrobeFilterLabel(filter)}</span>
               <span>{visibleGarments.length}</span>
             </summary>
             <div className="studio-filter-bar" role="group" aria-label="Filter wardrobe">
-              {filters.map((item) => <button aria-pressed={filter === item} className={filter === item ? "is-active" : undefined} onClick={() => { setFilter(item); setGarmentPage(0); }} key={item} type="button">{item.toLowerCase()}</button>)}
+              {availableFilters.map((item) => <button aria-pressed={filter === item} className={filter === item ? "is-active" : undefined} onClick={() => { setFilter(item); setGarmentPage(0); }} key={item} type="button">{wardrobeFilterLabel(item)}{item === "NEEDS_PUBLISHING" ? ` · ${publishingQueue.length}` : ""}</button>)}
             </div>
           </details>}
           <h2 className="sr-only" id="garments-view-title">Garments</h2>
           {visibleGarments.length ? <><div className="studio-garment-grid">{pagedGarments.map((garment) => <GarmentCard garment={garment} key={garment.id} />)}</div><StudioPager label="Garment pages" onPageChange={setGarmentPage} page={safeGarmentPage} pageSize={garmentPageSize} total={visibleGarments.length} /></> : (
             <div className="studio-quiet-empty studio-wardrobe-empty"><PackageOpen aria-hidden="true" size={26} strokeWidth={1.5} /><div><strong>{studio.garments.length
-              ? filter === "ALL" ? `${selectedCollection.label} is empty` : "No garments in this state"
+              ? filter === "ALL" ? `${selectedCollection.label} is empty` : filter === "NEEDS_PUBLISHING" ? "Nothing needs publishing" : "No garments in this state"
               : "Your wardrobe is empty"}</strong><p>{studio.garments.length
-              ? filter === "ALL" ? "Choose another drop." : "Choose another filter."
+              ? filter === "ALL" ? "Choose another drop." : filter === "NEEDS_PUBLISHING" ? "All listings are live." : "Choose another filter."
             : "Add your first garment."}</p></div></div>
           )}
-        </StudioStackSection>
-      ) : (
-        <section className="studio-publishing-section studio-stack-panel" id="studio-view-publishing" aria-labelledby="studio-tab-publishing" role="tabpanel">
-          <div className="studio-section-title"><div><p className="eyebrow">Publishing</p><h2 id="publishing-title">Listing review</h2></div><span>{publishingQueue.length} piece{publishingQueue.length === 1 ? "" : "s"}</span></div>
-          {publishingQueue.length ? <><div className="studio-publishing-queue">{pagedPublishingQueue.map((entry) => {
-            const status = STUDIO_LIFECYCLE_PRESENTATION[entry.state];
-            const cover = studioGarmentCover(entry.garment, entry.kind === "LISTING" ? entry.listing : undefined);
-            return <StudioLink className="studio-publishing-row studio-compact-row" data-publication-path={entry.kind === "STUDIO_NATIVE_THREE_PHOTO" ? "native-three-photo" : "listing"} data-state-tone={status.tone} href={garmentDossierHref(entry.garment)} key={entry.id}>
-              <span aria-hidden="true" className={`studio-publishing-media${cover ? " is-photo" : ""}`} data-variant={entry.garment.visual}>
-                {cover ? <img alt="" height={cover.height} loading="lazy" src={cover.src} width={cover.width} /> : <Shirt size={22} strokeWidth={1.4} />}
-              </span>
-              <span className="studio-publishing-copy"><small>{entry.garment.sku}{entry.kind === "STUDIO_NATIVE_THREE_PHOTO" ? " · 3-photo Shop" : ""}</small><strong>{entry.title}</strong><LifecycleMeta state={entry.state} /></span>
-              <ArrowRight aria-hidden="true" size={17} />
-            </StudioLink>;
-          })}</div><StudioPager label="Publishing pages" onPageChange={setPublishingPage} page={safePublishingPage} pageSize={publishingPageSize} total={publishingQueue.length} /></> : <div className="studio-quiet-empty"><Send aria-hidden="true" size={24} strokeWidth={1.5} /><div><strong>No Shop previews</strong><p>Approved Shop previews appear here.</p></div></div>}
-        </section>
-      )}
+      </StudioStackSection>
 
       <StudioDropSheet
         allCount={dropContext.totalCount}

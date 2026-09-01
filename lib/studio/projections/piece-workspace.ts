@@ -71,9 +71,12 @@ export function selectPieceWorkspace(input: {
   garment: Garment;
   listing?: StudioListing;
   capturedRoles?: readonly PendingDirectCaptureRole[];
+  historicalKind?: "SOLD_OUT" | "ARCHIVED_DRAFT" | null;
 }): PieceWorkspace {
   const { garment, listing } = input;
-  const historicalKind = historicalDrop01Kind(garment);
+  const historicalKind = input.historicalKind === undefined
+    ? historicalDrop01Kind(garment)
+    : input.historicalKind;
   if (historicalKind === "ARCHIVED_DRAFT") {
     return {
       stage: "PRIVATE",

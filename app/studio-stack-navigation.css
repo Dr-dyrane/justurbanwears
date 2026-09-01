@@ -4966,6 +4966,7 @@ body .studio-shell.studio-stack-shell[data-studio-page="stack"] main.page-canvas
    modal geometry. */
 @media (min-width: 761px) {
   body .studio-decision-sheet.studio-decision-sheet {
+    background: var(--studio-panel-strong);
     border-radius: 28px;
     height: auto;
     inset: 0;
@@ -4973,18 +4974,21 @@ body .studio-shell.studio-stack-shell[data-studio-page="stack"] main.page-canvas
     max-height: min(680px, calc(100dvh - 48px));
     max-width: 520px;
     min-height: 0;
+    overflow: hidden;
     position: fixed;
     width: calc(100% - 48px);
   }
 
   body .studio-decision-sheet.studio-decision-sheet .studio-task-sheet-frame {
-    height: auto;
+    border-radius: inherit;
+    height: 100%;
     max-height: inherit;
-    min-height: 0;
+    min-height: 100%;
+    overflow: hidden;
   }
 
   body .studio-decision-sheet.studio-decision-sheet .studio-task-sheet-body {
-    flex: 0 1 auto;
+    flex: 1 1 auto;
     min-height: 0;
   }
 }

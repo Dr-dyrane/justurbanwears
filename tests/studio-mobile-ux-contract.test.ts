@@ -112,13 +112,11 @@ test("Home presents four primary destinations while search retains all seven dom
   assert.ok(home.indexOf("studio-home-recent") < home.indexOf("<ArrangeStudioHomeControl"));
 });
 
-test("Wardrobe mobile tabs and filters target the rendered workspace structure", () => {
+test("Wardrobe keeps one garment list and progressively discloses publishing work", () => {
   assert.match(wardrobe, /className="studio-ops-page studio-premium-surface studio-wardrobe-page"/);
-  assert.match(wardrobe, /<StudioSegmentedView active=\{activeView\}/);
-  assert.match(
-    wardrobeMobileCss,
-    /\.studio-wardrobe-page > \.studio-segmented-view \{[\s\S]*?grid-template-columns: repeat\(2, minmax\(0, 1fr\)\);/,
-  );
+  assert.doesNotMatch(wardrobe, /<StudioSegmentedView active=\{activeView\}/);
+  assert.match(wardrobe, /publishingQueue\.length > 0[\s\S]*?"NEEDS_PUBLISHING"/);
+  assert.match(wardrobe, /Needs publishing/);
   assert.doesNotMatch(wardrobeMobileCss, /#garments \+ \.studio-segmented-view/);
   assert.match(
     wardrobeMobileCss,

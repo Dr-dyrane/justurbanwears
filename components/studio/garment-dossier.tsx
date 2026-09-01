@@ -44,7 +44,9 @@ export function GarmentDossier() {
       <StudioStackPage className="studio-dossier-page" kind="record">
         <PieceWorkspaceView
           garment={garment}
-          initialAction={searchParams.get("action") === "price" ? "price" : undefined}
+          initialAction={searchParams.get("action") === "price"
+            ? "price"
+            : searchParams.get("action") === "drop" ? "drop" : undefined}
           layout="adaptive"
           onDismiss={() => assignDocumentNavigation(studioScenarioHref("/studio/wardrobe", studio.scenario))}
           onContinueMedia={(piece) => setWearWardrobeItemId(piece.privateWardrobeItemId ?? null)}

@@ -62,6 +62,7 @@ export function selectStudioPublishingQueue(
       : []
   ));
   const listingEntries = listings.flatMap<StudioPublishingQueueEntry>((listing) => {
+    if (listing.state !== "DRAFT" && listing.state !== "READY") return [];
     const garment = garmentsById.get(listing.garmentId);
     return garment ? [{
       id: listing.id,

@@ -108,6 +108,7 @@ const SCENARIO_CAPABILITIES: StudioAssistantContext["capabilities"] = [
   { id: "OPERATIONS_WRITE", state: "UNAVAILABLE" },
   { id: "COLLECTIONS_READ", state: "AVAILABLE" },
   { id: "COLLECTIONS_WRITE", state: "UNAVAILABLE" },
+  { id: "COLLECTION_MEMBERSHIP_WRITE", state: "UNAVAILABLE" },
 ];
 
 function assistantTokens(values: Array<string | null | undefined>) {
@@ -300,10 +301,10 @@ function projectedAssistantDocument(
         || Boolean(candidate.sku && document.aliases.includes(candidate.sku))
       ))
     : undefined;
-  const historicalState = piece?.sku
-    ? assistantHistoryState({ id: piece.wardrobeItemId ?? piece.pieceKey, sku: piece.sku })
+  const projectedState = document.lifecycleState;
+  const historicalState = projectedState === "SOLD_OUT" || projectedState === "ARCHIVED_DRAFT"
+    ? projectedState
     : null;
-  const projectedState = historicalState ?? document.lifecycleState;
   return {
     availableActions: document.availableActions ? [...document.availableActions] : undefined,
     detail: document.secondaryLabel,

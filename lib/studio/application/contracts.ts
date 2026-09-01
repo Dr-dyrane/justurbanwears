@@ -73,7 +73,8 @@ export type StudioCapability = {
     | "LOCATIONS_WRITE"
     | "OPERATIONS_WRITE"
     | "COLLECTIONS_READ"
-    | "COLLECTIONS_WRITE";
+    | "COLLECTIONS_WRITE"
+    | "COLLECTION_MEMBERSHIP_WRITE";
   state: StudioCapabilityState;
 };
 
@@ -86,6 +87,7 @@ export type StudioCollectionScope = {
   state: "DRAFT" | "ACTIVE" | "ARCHIVED";
   isCurrent: boolean;
   authority: "DATABASE" | "COMPATIBILITY" | "SCENARIO";
+  memberSkus: string[];
   counts: {
     pieces: number | null;
     private: number | null;
