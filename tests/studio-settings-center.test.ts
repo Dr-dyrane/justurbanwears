@@ -17,13 +17,27 @@ test("Studio exposes one global profile and settings centre", () => {
   assert.match(settings, /PwaInstallControl/);
   assert.match(settings, /authClient\.signOut\(\)/);
   assert.match(settings, /assignDocumentNavigation\("\/auth\/sign-in\?returnTo=\/studio"\)/);
-  assert.match(settings, /AI intake/);
-  assert.match(settings, /Preferences stay on this device/);
   assert.match(settings, />Appearance<\/h3>/);
-  assert.match(settings, />Workspace<\/h3>/);
+  assert.match(settings, />Identity &amp; privacy<\/h3>/);
+  assert.match(settings, />Studio tools<\/h3>/);
   assert.match(settings, />Help<\/h3>/);
+  assert.match(settings, /href="\/studio\/models"/);
+  assert.match(settings, /href="\/studio\/stocktake"/);
+  assert.match(settings, /href="\/shop"/);
+  assert.match(settings, /Models &amp; identity/);
+  assert.match(settings, /Private Atelier use/);
+  assert.match(settings, /Stocktake &amp; scan/);
+  assert.match(settings, /View live Shop/);
+  assert.match(settings, /readyModels/);
+  assert.match(settings, /studioHeldPieces/);
+  assert.match(settings, /liveListings/);
+  assert.match(settings, /intakeDrafts/);
+  assert.match(settings, /consentSummary/);
+  assert.doesNotMatch(settings, /Lulu, body canon and styling|Control likeness and provider access|Check pieces against physical stock|See the customer-facing store|Five visual steps/);
+  assert.doesNotMatch(settings, /AI intake|Private server drafts|Connected Studio record|workspaceAvailable/);
   assert.doesNotMatch(settings, /Choose the light|Data & access|Keep the steps close/);
-  assert.match(operator, /role: membership\.role/);
+  assert.match(operator, /return projectStudioOperator\(/);
+  assert.match(operator, /membership,/);
 });
 
 test("Studio uses the one approved Lulu face for both profile surfaces", () => {
@@ -48,9 +62,17 @@ test("settings stays focused after Home absorbs attention state", () => {
 });
 
 test("settings links directly to the visual guide", () => {
+  assert.match(settings, /href="\/studio\/models"/);
   assert.match(settings, /wardrobe\?guide=1/);
   assert.match(wardrobe, /searchParams\.get\("guide"\) !== "1"/);
   assert.match(wardrobe, /url\.searchParams\.delete\("guide"\)/);
+});
+
+test("Atelier authorization loads on demand and exposes a recoverable failure", () => {
+  assert.match(settings, /if \(open && operator\) void loadConsent\(\)/);
+  assert.match(settings, /if \(!consent && !consentLoading\) void loadConsent\(\)/);
+  assert.match(settings, /Authorization couldn’t load/);
+  assert.match(settings, />Try again<\/button>/);
 });
 
 test("navbar sheets share one guarded state-first dismissal path", () => {
@@ -60,8 +82,8 @@ test("navbar sheets share one guarded state-first dismissal path", () => {
   assert.match(taskSheet, /useDocumentScrollLock/);
   assert.match(taskSheet, /const acceptDismiss = useCallback/);
   assert.match(taskSheet, /dialog\.addEventListener\("click", closeFromBackdrop\)/);
-  assert.match(taskSheet, /onCancel=\{\(event\) => \{[\s\S]*requestClose\(\)/);
-  assert.match(taskSheet, /onClick=\{requestClose\}/);
+  assert.match(taskSheet, /onCancel=\{\(event\) => \{[\s\S]*requestGuardedClose\(\)/);
+  assert.match(taskSheet, /onClick=\{requestGuardedClose\}/);
   assert.match(taskSheet, /onClose=\{restoreFocus\}/);
   assert.match(taskSheet, /data-studio-sheet-safety="guarded"/);
   assert.doesNotMatch(taskSheet, /dismissedRef/);

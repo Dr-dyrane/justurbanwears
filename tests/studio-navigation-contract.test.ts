@@ -13,6 +13,7 @@ const routeLinkConsumers = [
   "components/garment/garment-detail.tsx",
   "components/shoot/shoot-gallery.tsx",
   "components/shoot/shoot-detail.tsx",
+  "components/studio/settings/studio-settings-center.tsx",
 ] as const;
 
 function source(path: string) {

@@ -3,20 +3,23 @@
 import { createAuthClient } from "@neondatabase/auth/next";
 import {
   BookOpen,
-  Check,
   ChevronRight,
-  Cloud,
-  Database,
   LogOut,
-  Settings,
+  ScanLine,
   ShieldCheck,
   Sparkles,
+  Store,
+  UsersRound,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { StudioOperatorClientProfile } from "../../../lib/server/studio-operator-projection";
 import { PwaInstallControl } from "../../pwa/pwa-install-control";
 import { ThemeSettings } from "../../theme/theme-settings";
 import { assignDocumentNavigation } from "../../brand/document-navigation-loading-stage";
+import {
+  actionableStudioDraftCount,
+  historicalDrop01Kind,
+} from "../../../lib/studio/projections/piece-workspace";
 import { StudioLink as Link } from "../atoms/studio-link";
 import { StudioTaskSheet } from "../atoms/studio-task-sheet";
 import { useStudio } from "../studio-provider";
@@ -76,38 +79,6 @@ async function readConsentResponse(response: Response): Promise<AtelierConsentSt
   return consent as AtelierConsentStatus;
 }
 
-const consentPresentation = Object.freeze({
-  VERIFICATION_REQUIRED: {
-    label: "Verification required",
-    detail: "No provider authorization is recorded.",
-    tone: "critical",
-  },
-  NOT_RECORDED: {
-    label: "Not confirmed",
-    detail: "Review once before subject generation.",
-    tone: "attention",
-  },
-  ACTIVE: {
-    label: "Active",
-    detail: "Future private Atelier use is authorized.",
-    tone: "positive",
-  },
-  REVOKED: {
-    label: "Revoked",
-    detail: "New provider use is blocked.",
-    tone: "critical",
-  },
-  RECONFIRMATION_REQUIRED: {
-    label: "Review",
-    detail: "Authority or provider policy changed.",
-    tone: "attention",
-  },
-} as const satisfies Record<AtelierConsentStatus["status"], Readonly<{
-  label: string;
-  detail: string;
-  tone: string;
-}>>);
-
 function LuluProfileAvatar({ online = false }: { online?: boolean }) {
   return (
     <span
@@ -152,13 +123,28 @@ export function StudioSettingsCenter({ operator }: { operator: StudioOperatorCli
   const displayName = operator?.displayName && operator.displayName !== operator.email
     ? operator.displayName
     : "Lulu";
-  const workspaceAvailable = studio.scenario ? true : studio.authority.status === "ready";
+  const authority = studio.authority.snapshot;
+  const readyModels = authority?.models.filter((model) => model.state === "READY").length ?? null;
+  const studioHeldPieces = authority?.pieces.filter((piece) => piece.expectedCustody === "STUDIO").length ?? null;
+  const garmentsById = new Map(studio.garments.map((garment) => [garment.id, garment]));
+  const scenarioLiveListings = studio.listings.filter((listing) => {
+    if (listing.state !== "PUBLISHED" && listing.state !== "RESERVED") return false;
+    const garment = garmentsById.get(listing.garmentId);
+    return !garment || historicalDrop01Kind(garment) === null;
+  }).length;
+  const liveListings = studio.scenario
+    ? scenarioLiveListings
+    : studio.application.snapshot?.summary.live.value ?? null;
+  const intakeDrafts = studio.scenario
+    ? actionableStudioDraftCount(studio.garments)
+    : authority?.pieces.filter((piece) => piece.availability === "PRIVATE").length ?? null;
 
   const loadConsent = useCallback(async (): Promise<AtelierConsentStatus | null> => {
     consentReadControllerRef.current?.abort();
     const controller = new AbortController();
     consentReadControllerRef.current = controller;
     setConsentLoading(true);
+    setConsentMessage(null);
     try {
       const response = await fetch(ATELIER_CONSENT_ENDPOINT, {
         cache: "no-store",
@@ -248,13 +234,41 @@ export function StudioSettingsCenter({ operator }: { operator: StudioOperatorCli
     }
   }, [consent, loadConsent]);
 
-  const consentUi = consent ? consentPresentation[consent.status] : null;
   const canConfirmConsent = Boolean(
     consent?.canGrant
     && adultSelfAttested
     && likenessAuthorized
     && retentionAcknowledged,
   );
+  const modelsSummary = readyModels === null
+    ? "Model state unavailable"
+    : `${readyModels} model${readyModels === 1 ? "" : "s"} ready`;
+  const consentSummary = consentLoading && !consent
+    ? "Checking authorization…"
+    : consentMessage && !consent
+      ? "Authorization unavailable"
+      : consent?.status === "ACTIVE"
+        ? "Authorization active"
+        : consent?.status === "REVOKED"
+          ? "Future use revoked"
+          : consent?.status === "RECONFIRMATION_REQUIRED"
+            ? "Review required"
+            : consent?.status === "VERIFICATION_REQUIRED"
+              ? "Verification required"
+              : consent?.status === "NOT_RECORDED"
+                ? "Not recorded"
+                : operator ? "Authorization not checked" : "Local preview only";
+  const stocktakeSummary = studioHeldPieces === null
+    ? "Physical state unavailable"
+    : `${studioHeldPieces} Studio-held piece${studioHeldPieces === 1 ? "" : "s"}`;
+  const shopSummary = liveListings === null
+    ? "Live state unavailable"
+    : `${liveListings} live listing${liveListings === 1 ? "" : "s"}`;
+  const intakeSummary = intakeDrafts === null
+    ? "Draft state unavailable"
+    : intakeDrafts
+      ? `${intakeDrafts} draft${intakeDrafts === 1 ? " needs" : "s need"} intake`
+      : "No intake drafts open";
 
   return <>
     <button
@@ -286,21 +300,30 @@ export function StudioSettingsCenter({ operator }: { operator: StudioOperatorCli
           <div className="studio-settings-group"><ThemeSettings /></div>
         </section>
 
-        <section className="studio-settings-section" aria-labelledby="studio-workspace-title">
-          <div className="studio-settings-heading"><span><Database aria-hidden="true" size={18} /></span><h3 id="studio-workspace-title">Workspace</h3></div>
-          <div className="studio-settings-group">
-            <div className="studio-settings-status-list">
-              <div><span><Cloud aria-hidden="true" size={17} /><span><strong>AI intake</strong><small>Private server drafts</small></span></span><Check aria-label="Available" size={17} /></div>
-              <div><span><Database aria-hidden="true" size={17} /><span><strong>Workspace</strong><small>{studio.scenario ? "Read-only scenario" : workspaceAvailable ? "Connected Studio record" : "Live state unavailable"}</small></span></span><b data-tone={workspaceAvailable ? "positive" : "critical"}>{workspaceAvailable ? "Ready" : "Check"}</b></div>
-              <div><span><ShieldCheck aria-hidden="true" size={17} /><span><strong>Atelier authorization</strong><small>{consentLoading && !consent ? "Checking durable authority…" : consentMessage && !consent ? "Authorization unavailable" : consentUi?.detail ?? "Open once to check"}</small></span></span><button className="button button-secondary" data-tone={consentUi?.tone ?? "neutral"} disabled={consentLoading && !consent} onClick={(event) => { setConsentReturnFocus(event.currentTarget); setConsentOpen(true); }} type="button">{consentLoading && !consent ? "Checking…" : consentUi?.label ?? "Review"}</button></div>
-            </div>
+        <section className="studio-settings-section" aria-labelledby="studio-identity-title">
+          <div className="studio-settings-heading"><span><UsersRound aria-hidden="true" size={18} /></span><h3 id="studio-identity-title">Identity &amp; privacy</h3></div>
+          <div className="studio-settings-group studio-settings-link-group">
+            <Link className="studio-settings-link" href="/studio/models"><span><UsersRound aria-hidden="true" size={18} /><span><strong>Models &amp; identity</strong><small>{modelsSummary}</small></span></span><ChevronRight aria-hidden="true" size={17} /></Link>
+            <button className="studio-settings-link" onClick={(event) => {
+              setConsentReturnFocus(event.currentTarget);
+              setConsentOpen(true);
+              if (!consent && !consentLoading) void loadConsent();
+            }} type="button"><span><ShieldCheck aria-hidden="true" size={18} /><span><strong>Private Atelier use</strong><small>{consentSummary}</small></span></span><ChevronRight aria-hidden="true" size={17} /></button>
+          </div>
+        </section>
+
+        <section className="studio-settings-section" aria-labelledby="studio-tools-title">
+          <div className="studio-settings-heading"><span><ScanLine aria-hidden="true" size={18} /></span><h3 id="studio-tools-title">Studio tools</h3></div>
+          <div className="studio-settings-group studio-settings-link-group">
+            <Link className="studio-settings-link" href="/studio/stocktake"><span><ScanLine aria-hidden="true" size={18} /><span><strong>Stocktake &amp; scan</strong><small>{stocktakeSummary}</small></span></span><ChevronRight aria-hidden="true" size={17} /></Link>
+            <Link className="studio-settings-link" href="/shop"><span><Store aria-hidden="true" size={18} /><span><strong>View live Shop</strong><small>{shopSummary}</small></span></span><ChevronRight aria-hidden="true" size={17} /></Link>
           </div>
         </section>
 
         <section className="studio-settings-section" aria-labelledby="studio-help-title">
           <div className="studio-settings-heading"><span><BookOpen aria-hidden="true" size={18} /></span><h3 id="studio-help-title">Help</h3></div>
-          <div className="studio-settings-group studio-settings-help-group">
-            <Link className="studio-settings-link" href="/studio/wardrobe?guide=1"><span><BookOpen aria-hidden="true" size={18} /><span><strong>Garment intake guide</strong><small>Five visual steps</small></span></span><ChevronRight aria-hidden="true" size={17} /></Link>
+          <div className="studio-settings-group studio-settings-link-group">
+            <Link className="studio-settings-link" href="/studio/wardrobe?guide=1"><span><BookOpen aria-hidden="true" size={18} /><span><strong>Garment intake guide</strong><small>{intakeSummary}</small></span></span><ChevronRight aria-hidden="true" size={17} /></Link>
             <PwaInstallControl />
           </div>
         </section>
@@ -315,7 +338,6 @@ export function StudioSettingsCenter({ operator }: { operator: StudioOperatorCli
           }}
           type="button"
         ><LogOut aria-hidden="true" size={17} />{signingOut ? "Signing out…" : "Sign out"}</button> : null}
-        <p className="studio-settings-boundary"><Settings aria-hidden="true" size={13} />Preferences stay on this device. Atelier authorization is a durable server record.</p>
       </div>
     </StudioTaskSheet>
     <StudioTaskSheet
@@ -348,10 +370,12 @@ export function StudioSettingsCenter({ operator }: { operator: StudioOperatorCli
           <p><small>{consent.providerNotice}</small></p>
         </> : null}
         {consent?.status === "REVOKED" && !consent.canGrant ? <><h3>Future provider use is revoked</h3><p>A new trusted verification record is required before authorization can be recorded again.</p></> : null}
-        {consentMessage ? <p className="studio-engine-error" role="status">{consentMessage}</p> : null}
+        {consentMessage && !consent && !consentLoading ? <><h3>Authorization couldn’t load</h3><p className="studio-engine-error" role="status">{consentMessage}</p></> : null}
+        {consentMessage && consent ? <p className="studio-engine-error" role="status">{consentMessage}</p> : null}
       </section>
       <footer className="studio-task-sheet-footer">
         <button className="button button-secondary" disabled={Boolean(consentPending)} onClick={() => setConsentOpen(false)} type="button">{consent?.canGrant || consent?.canRevoke ? "Cancel" : "Done"}</button>
+        {!consent && consentMessage && !consentLoading ? <button className="button button-primary" onClick={() => void loadConsent()} type="button">Try again</button> : null}
         {consent?.canRevoke ? <button className="button button-primary is-destructive" disabled={Boolean(consentPending)} type="submit">{consentPending === "REVOKE" ? "Revoking…" : "Revoke future use"}</button> : null}
         {consent?.canGrant ? <button className="button button-primary" disabled={!canConfirmConsent || Boolean(consentPending)} type="submit">{consentPending === "GRANT" ? "Saving…" : "Confirm authorization"}</button> : null}
       </footer>

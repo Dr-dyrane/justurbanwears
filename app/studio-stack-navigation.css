@@ -3345,11 +3345,13 @@ html:not([data-theme="dark"]) .studio-task-sheet.studio-task-sheet .studio-task-
   padding-inline: 14px;
 }
 
-.studio-settings-help-group .studio-settings-link {
+.studio-settings-link-group .studio-settings-link {
   position: relative;
+  text-align: left;
+  width: 100%;
 }
 
-.studio-settings-help-group .studio-settings-link::after {
+.studio-settings-link-group .studio-settings-link::after {
   background: var(--studio-line);
   bottom: 0;
   content: "";
