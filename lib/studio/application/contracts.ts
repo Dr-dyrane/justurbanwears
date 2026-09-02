@@ -121,6 +121,8 @@ export type StudioSearchAvailableAction =
 
 export type StudioSearchDocument = {
   availableActions?: readonly StudioSearchAvailableAction[];
+  /** Operator-safe long-form copy for exact-record answers; never used as the compact list label. */
+  description?: string;
   id: string;
   kind: StudioSearchDocumentKind;
   primaryLabel: string;

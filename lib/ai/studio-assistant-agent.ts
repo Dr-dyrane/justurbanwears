@@ -49,7 +49,7 @@ const assistantDocumentSchema = z.object({
     "ADVANCE_ORDER",
     "UPDATE_LOCATION",
   ])).max(7).optional(),
-  detail: z.string().max(1_000),
+  detail: z.string().max(2_000),
   entityId: z.string().max(200).optional(),
   href: z.string().max(500),
   id: z.string().max(240),

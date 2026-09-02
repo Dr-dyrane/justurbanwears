@@ -17,6 +17,7 @@ import { studioAssistantContextFromProjection } from "../../../../lib/studio/ass
 import { StudioEngineError, engineErrorResponse } from "../../../../lib/studio/engine/errors";
 import { noStoreJsonHeaders, parseEngineJson } from "../../../../lib/studio/engine/http";
 import { isStudioScenario } from "../../../../lib/studio/simulator";
+import { contextualizeStudioAssistantQuery } from "../../../../lib/studio/assistant/experience";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30;
@@ -107,8 +108,11 @@ export async function POST(request: Request): Promise<Response> {
     }
 
     const uiMessages = boundedTextConversation(input.messages);
-    const query = uiMessages[uiMessages.length - 1].parts[0].text;
     const context = studioAssistantContextFromProjection(projection);
+    const query = contextualizeStudioAssistantQuery(
+      uiMessages.map((message) => ({ role: message.role, text: message.parts[0].text })),
+      context,
+    );
     if (!studioAssistantModelConnected()) {
       return createUIMessageStreamResponse({
         headers: noStoreJsonHeaders,

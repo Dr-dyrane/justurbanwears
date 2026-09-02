@@ -92,6 +92,11 @@ export interface StudioAssistantContext {
   summary: StudioAssistantSummary;
 }
 
+export interface StudioAssistantConversationTurn {
+  role: "assistant" | "user";
+  text: string;
+}
+
 export interface StudioAssistantAction {
   href: string;
   label: string;
@@ -240,6 +245,9 @@ const ORDER_REVERSAL_PATTERN = /(?:\b(cancel|refund|reverse|void)\b[\s\S]*\borde
 const ORDER_ADVANCE_PATTERN = /\b(advance|approve|confirm|correct|dispatch|fulfil|fulfill|mark|prepare|process|progress|receive|reschedule|resolve|schedule|send)\b/i;
 const LOCATION_MUTATION_PATTERN = /(?:\b(confirm|move|record|set|update)\b[\s\S]*\b(location|rail|shelf|return inspection)\b|\b(location|rail|shelf|return inspection)\b[\s\S]*\b(confirm|move|record|set|update)\b)/i;
 const WARDROBE_FIELD_PATTERN = /\b(category|colour|color|copy|description|measurement|measurements|price|pricing|size|title)\b/i;
+const PIECE_DESCRIPTION_PATTERN = /\b(copy|description)\b/i;
+const PIECE_FACT_FOLLOW_UP_PATTERN = /\b(it|its|that|this|the (?:garment|item|piece|product|record))\b/i;
+const MUTATING_FOLLOW_UP_PATTERN = /\b(add|archive|cancel|change|create|delete|edit|generate|move|publish|refund|release|remove|rename|replace|set|update|withdraw)\b/i;
 const NAVIGATE_PATTERN = /\b(find|go to|open|resume|review|show|take me|view|where)\b/i;
 const UNDERSTAND_PATTERN = /\b(explain|how|why|what does|what is)\b/i;
 const ASK_MEDIA_MUTATION_BOUNDARY = "Ask only opens Media. The current flow keeps new model generation unavailable until private-identity provider-retention consent is verified; no generation starts from this handoff.";
@@ -252,7 +260,34 @@ const ASSISTANT_SEARCH_STOP_WORDS = new Set([
 ]);
 
 export function normalizeStudioAssistantText(value: string) {
-  return value.trim().toLocaleLowerCase("en-NG").replace(/\s+/g, " ");
+  return value
+    .trim()
+    .toLocaleLowerCase("en-NG")
+    .replace(/\bjuw[\s_-]*([0-9][a-z0-9-]*)\b/g, "juw-$1")
+    .replace(/\s+/g, " ");
+}
+
+/**
+ * Resolves entry context only from an exact projected identifier. Page labels
+ * and fuzzy tokens are deliberately excluded so a route cannot guess which
+ * piece the operator meant.
+ */
+export function resolveStudioAssistantEntryPiece(
+  documents: StudioAssistantDocument[],
+  rawTarget: string | null | undefined,
+) {
+  const target = normalizeStudioAssistantText(rawTarget ?? "");
+  if (!target) return null;
+
+  const matches = new Map<string, StudioAssistantDocument>();
+  for (const document of documents) {
+    if (document.kind !== "Piece") continue;
+    const identifiers = [document.id, document.entityId, ...document.identifiers].filter(Boolean) as string[];
+    if (!identifiers.some((identifier) => normalizeStudioAssistantText(identifier) === target)) continue;
+    matches.set(document.href, document);
+  }
+
+  return matches.size === 1 ? matches.values().next().value ?? null : null;
 }
 
 function includesIdentifier(query: string, identifier: string) {
@@ -380,6 +415,54 @@ function preferredPromptIdentifier(document: StudioAssistantDocument) {
     ))
     ?? document.entityId
     ?? document.label;
+}
+
+function explicitlyNamedPieceTargets(context: StudioAssistantContext, rawQuery: string) {
+  const query = normalizeStudioAssistantText(rawQuery);
+  return context.documents.filter((document) => document.kind === "Piece" && [
+    document.label,
+    ...document.identifiers,
+  ].some((identifier) => includesIdentifier(query, identifier)));
+}
+
+function unambiguousPieceTarget(context: StudioAssistantContext, rawQuery: string) {
+  const query = normalizeStudioAssistantText(rawQuery);
+  const explicit = explicitlyNamedPieceTargets(context, query);
+  if (explicit.length === 1) return explicit[0];
+  if (explicit.length > 1) return null;
+
+  const ranked = rankedDocuments(context, query, "Piece");
+  if (!ranked.length) return null;
+  const topScore = ranked[0].score;
+  const closeMatches = ranked.filter(({ score }) => score >= Math.max(12, topScore - 12));
+  return closeMatches.length === 1 ? closeMatches[0].document : null;
+}
+
+/**
+ * Carries one freshly revalidated piece target into a read-only fact follow-up.
+ * The prior turn contributes only the canonical identifier, never its old intent.
+ */
+export function contextualizeStudioAssistantQuery(
+  turns: readonly StudioAssistantConversationTurn[],
+  context: StudioAssistantContext,
+): string {
+  const userTurns = turns.filter((turn) => turn.role === "user" && turn.text.trim());
+  const current = userTurns.at(-1)?.text.trim() ?? "";
+  if (
+    !current
+    || current.length > 1_200
+    || !PIECE_DESCRIPTION_PATTERN.test(current)
+    || !PIECE_FACT_FOLLOW_UP_PATTERN.test(current)
+    || MUTATING_FOLLOW_UP_PATTERN.test(current)
+    || explicitlyNamedPieceTargets(context, current).length > 0
+  ) return current;
+
+  const previous = userTurns.at(-2);
+  if (!previous) return current;
+  const target = unambiguousPieceTarget(context, previous.text);
+  if (!target) return current;
+  const contextualized = `${current} ${preferredPromptIdentifier(target)}`;
+  return contextualized.length <= 1_200 ? contextualized : current;
 }
 
 function pieceOptions(

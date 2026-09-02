@@ -34,6 +34,7 @@ const projection: StudioApplicationProjection = {
   searchDocuments: [{
     availableActions: ["CREATE_ORDER"],
     aliases: ["JUW-001"],
+    description: "A coral dress with a softly draped neckline.",
     id: "piece:piece-001",
     kind: "PIECE",
     lifecycleState: "PRIVATE",
@@ -57,6 +58,7 @@ test("the assistant context is a sanitized projection with canonical media targe
   assert.equal(context.documents[0].mediaTargetId, "private-001");
   assert.deepEqual(context.documents[0].availableActions, ["CREATE_ORDER"]);
   assert.equal(context.documents[0].identifiers.includes("JUW-001"), true);
+  assert.equal(context.documents[0].detail, "A coral dress with a softly draped neckline.");
   assert.equal("operator" in context, false);
   assert.equal("sourceRevisions" in context, false);
   assert.equal("degradedSources" in context, false);
@@ -67,6 +69,16 @@ test("the per-request agent exposes only the read-only Studio resolver", () => {
   const agent = createStudioAssistantAgent({ context, query: "What needs attention?" });
   const settings = agent as unknown as { tools: Record<string, unknown> };
   assert.deepEqual(Object.keys(settings.tools), ["resolveStudioRequest"]);
+});
+
+test("the agent accepts the complete bounded Shop description contract", () => {
+  const longDescription = "a".repeat(2_000);
+  const context = studioAssistantContextFromProjection({
+    ...projection,
+    searchDocuments: projection.searchDocuments.map((document) => ({ ...document, description: longDescription })),
+  });
+  assert.doesNotThrow(() => createStudioAssistantAgent({ context, query: "Describe JUW-001" }));
+  assert.equal(context.documents[0].detail.length, 2_000);
 });
 
 test("the server Ask projection keeps Drop 01 history read-only", () => {
@@ -108,6 +120,7 @@ test("the Ask route owns auth, projection, sanitization and stream bounds", () =
   assert.match(route, /safeTextMessage/);
   assert.match(route, /\.slice\(-8\)/);
   assert.match(route, /\.slice\(0, 1_200\)/);
+  assert.match(route, /contextualizeStudioAssistantQuery/);
   assert.match(route, /sendReasoning: false/);
   assert.match(route, /totalMs: 30_000/);
   assert.doesNotMatch(route, /input\.context|body\.context/);

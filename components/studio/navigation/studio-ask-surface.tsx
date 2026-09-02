@@ -2,6 +2,7 @@
 
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
+import { useSearchParams } from "next/navigation";
 import { Fragment, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import {
   ArrowRight,
@@ -42,7 +43,9 @@ import type { StudioAssistantUIMessage } from "../../../lib/ai/studio-assistant-
 import { SHOP_COLLECTION_COMPATIBILITY } from "../../../lib/shop/collection-compatibility";
 import { studioOrderHasDueWork } from "../../../lib/shop/order-presentation";
 import {
+  contextualizeStudioAssistantQuery,
   normalizeStudioAssistantText,
+  resolveStudioAssistantEntryPiece,
   resolveStudioAssistantWorkflow,
   studioAssistantSuggestionFamily,
   type StudioAssistantBlock,
@@ -307,7 +310,7 @@ function projectedAssistantDocument(
     : null;
   return {
     availableActions: document.availableActions ? [...document.availableActions] : undefined,
-    detail: document.secondaryLabel,
+    detail: document.description?.trim() || document.secondaryLabel,
     entityId,
     href: document.route,
     id: document.id,
@@ -319,6 +322,7 @@ function projectedAssistantDocument(
     tokens: assistantTokens([
       document.id,
       document.primaryLabel,
+      document.description,
       document.secondaryLabel,
       projectedState,
       ...document.aliases,
@@ -374,7 +378,8 @@ function buildContext(studio: ReturnType<typeof useStudio>): StudioAssistantCont
       availableActions: garment.availability === "AVAILABLE"
         ? ["CREATE_HOLD", "CREATE_ORDER"]
         : undefined,
-      detail: pieceDetail({ availability: garment.availability, category: garment.category, colour: garment.color }),
+      detail: garment.publicDescription?.trim()
+        || pieceDetail({ availability: garment.availability, category: garment.category, colour: garment.color }),
       entityId: garment.id,
       href: `/studio/wardrobe/${encodeURIComponent(garment.id)}`,
       id: `piece:${garment.id}`,
@@ -387,6 +392,7 @@ function buildContext(studio: ReturnType<typeof useStudio>): StudioAssistantCont
         garment.id,
         garment.sku,
         garment.title,
+        garment.publicDescription,
         garment.category,
         garment.color,
         garment.condition,
@@ -409,7 +415,8 @@ function buildContext(studio: ReturnType<typeof useStudio>): StudioAssistantCont
         : piece.availability === "AVAILABLE" && piece.sku
           ? ["CREATE_HOLD", "CREATE_ORDER"]
           : undefined,
-      detail: pieceDetail({ availability: piece.availability, category: piece.category, colour: piece.colour }),
+      detail: piece.description?.trim()
+        || pieceDetail({ availability: piece.availability, category: piece.category, colour: piece.colour }),
       entityId,
       href: piece.wardrobeItemId
         ? `/studio/wardrobe/${encodeURIComponent(piece.wardrobeItemId)}`
@@ -423,6 +430,7 @@ function buildContext(studio: ReturnType<typeof useStudio>): StudioAssistantCont
       tokens: assistantTokens([
         ...keys,
         piece.title,
+        piece.description,
         piece.category,
         piece.colour,
         piece.condition,
@@ -937,11 +945,22 @@ function AssistantFallbackMessage({
 }
 
 export function StudioAskSurface() {
+  const searchParams = useSearchParams();
   const studio = useStudio();
   const askCapability = studio.scenario
     ? "AVAILABLE"
     : studio.application.snapshot?.capabilities.find((capability) => capability.id === "ASK_READ")?.state ?? "UNAVAILABLE";
   const context = useMemo(() => buildContext(studio), [studio]);
+  const entryPieceTarget = searchParams.get("piece");
+  const entryPiece = useMemo(
+    () => resolveStudioAssistantEntryPiece(context.documents, entryPieceTarget),
+    [context.documents, entryPieceTarget],
+  );
+  const entryPieceReference = entryPiece
+    ? entryPiece.identifiers.find((identifier) => /^JUW-[0-9]/i.test(identifier.trim()))
+      ?? entryPiece.entityId
+      ?? entryPiece.id.replace(/^piece:/, "")
+    : null;
   const starters = useMemo(() => {
     const available = (id: StudioAssistantContext["capabilities"][number]["id"]) => (
       context.capabilities.some((capability) => capability.id === id && capability.state === "AVAILABLE")
@@ -995,14 +1014,27 @@ export function StudioAskSurface() {
       part.type === "tool-resolveStudioRequest" && part.state === "output-available"
     )));
     if (alreadyHasWorkflow) return;
+    const conversation = [
+      ...restoredTurns.filter((turn) => turn.state === "complete").map((turn) => turn.query),
+      ...fallbackTurns.map((turn) => turn.query),
+      ...messagesRef.current
+        .filter((message) => message.role === "user")
+        .map(messageText)
+        .filter(Boolean),
+    ];
+    if (conversation.at(-1) !== active.query) conversation.push(active.query);
+    const contextualQuery = contextualizeStudioAssistantQuery(
+      conversation.map((text) => ({ role: "user" as const, text })),
+      context,
+    );
     setFallbackTurns((current) => current.some((turn) => turn.id === active.id)
       ? current
       : [...current, {
           id: active.id,
           query: active.query,
-          workflow: resolveStudioAssistantWorkflow(active.query, context),
+          workflow: resolveStudioAssistantWorkflow(contextualQuery, context),
         }].slice(-12));
-  }, [context]);
+  }, [context, fallbackTurns, restoredTurns]);
 
   const {
     clearError,
@@ -1149,6 +1181,20 @@ export function StudioAskSurface() {
     });
   }, [addFallback, clearError, sendMessage, status, studio.scenario]);
 
+  const entryPieceAction = entryPiece && entryPieceReference ? (
+    <button
+      aria-label={`Ask about ${entryPiece.label}`}
+      className={hasConversation ? "studio-ask-entry-context is-thread" : "studio-ask-entry-context"}
+      disabled={busy}
+      onClick={() => submit(`What can you help with for ${entryPieceReference}?`)}
+      type="button"
+    >
+      <Shirt aria-hidden="true" size={18} />
+      <span><small>Current piece · {entryPieceReference}</small><strong>{entryPiece.label}</strong></span>
+      <ArrowRight aria-hidden="true" size={17} />
+    </button>
+  ) : null;
+
   function resetConversation() {
     if (busy) void stop();
     flightRef.current = false;
@@ -1239,6 +1285,8 @@ export function StudioAskSurface() {
           ) : null}
         </div>
 
+        {hasConversation ? entryPieceAction : null}
+
         {!hasConversation ? (
           <div className="studio-ask-welcome">
             <Sparkles aria-hidden="true" size={24} />
@@ -1251,6 +1299,7 @@ export function StudioAskSurface() {
                 <ArrowRight aria-hidden="true" size={17} />
               </Link>
             ) : null}
+            {entryPieceAction}
             <div>{starters.map((starter) => <button disabled={busy} key={starter} onClick={() => submit(starter)} type="button">{starter}</button>)}</div>
           </div>
         ) : (

@@ -37,7 +37,7 @@ function assistantDocument(document: StudioSearchDocument): StudioAssistantDocum
     || document.lifecycleState === "ARCHIVED_DRAFT";
   return {
     availableActions: document.availableActions ? [...document.availableActions] : undefined,
-    detail: document.secondaryLabel,
+    detail: document.description?.trim() || document.secondaryLabel,
     entityId,
     href: document.route,
     id: document.id,
@@ -50,6 +50,7 @@ function assistantDocument(document: StudioSearchDocument): StudioAssistantDocum
       ...identifiers,
       document.primaryLabel,
       document.secondaryLabel,
+      document.description ?? "",
       document.lifecycleState,
     ].join(" ")),
   };

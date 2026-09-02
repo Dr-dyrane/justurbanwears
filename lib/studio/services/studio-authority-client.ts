@@ -21,6 +21,7 @@ export type StudioAuthorityPiece = {
   wardrobeItemId: string | null;
   sku: string | null;
   title: string;
+  description?: string | null;
   category: string;
   colour: string;
   condition: string;

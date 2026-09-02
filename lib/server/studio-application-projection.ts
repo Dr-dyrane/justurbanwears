@@ -266,6 +266,7 @@ function authorityDocuments(
       .join(" · ");
     documents.push({
       availableActions: pieceAvailableActions(piece),
+      ...(piece.description?.trim() ? { description: piece.description.trim() } : {}),
       id: `piece:${piece.pieceKey}`,
       kind: "PIECE",
       // A single route-bound result keeps the exact SKU as the strongest search key
@@ -583,6 +584,7 @@ export function projectScenarioStudioApplication(input: {
     const route = `/studio/wardrobe/${encodeURIComponent(garment.id)}?scenario=${encodeURIComponent(input.scenario)}`;
     const lifecycleState = historicalDrop01Kind(garment) ?? garment.state;
     return {
+      description: garment.publicDescription,
       id: `piece:${garment.id}`,
       kind: "PIECE" as const,
       primaryLabel: garment.sku,

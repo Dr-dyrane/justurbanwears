@@ -37,6 +37,7 @@ function fixture(): StudioAuthoritySnapshot {
       wardrobeItemId: "wardrobe-025",
       sku: "JUW-025",
       title: "Teal Draped Mini Set",
+      description: "A teal draped mini set with a softly gathered finish.",
       category: "Sets",
       colour: "Teal",
       condition: "Excellent",
@@ -174,12 +175,19 @@ test("search documents are bounded, canonical and deterministic", () => {
   assert.equal(pieceResult?.route, "/studio/wardrobe/wardrobe-025");
   assert.equal(pieceResult?.primaryLabel, "JUW-025");
   assert.equal(pieceResult?.secondaryLabel, "Teal Draped Mini Set · Sets · Teal · M");
+  assert.equal(pieceResult?.description, "A teal draped mini set with a softly gathered finish.");
   assert.deepEqual(pieceResult?.aliases, ["sku:JUW-025", "JUW-025", "Teal Draped Mini Set"]);
   assert.deepEqual(pieceResult?.availableActions, ["CREATE_HOLD", "CREATE_ORDER", "UPDATE_LOCATION"]);
   assert.equal(first.searchDocuments.filter((item) => item.route === "/studio/wardrobe/wardrobe-025").length, 1);
   const assistantPiece = studioAssistantContextFromProjection(first).documents.find((item) => item.id === pieceResult?.id);
   assert.ok(assistantPiece);
+  assert.equal(assistantPiece.detail, "A teal draped mini set with a softly gathered finish.");
   assert.equal(scoreStudioAssistantDocument(assistantPiece, "JUW-025"), 180);
+  assert.equal(
+    resolveStudioAssistantWorkflow("What is the description of JUW025?", studioAssistantContextFromProjection(first))
+      .response.blocks.find((block) => block.kind === "answer")?.body,
+    "A teal draped mini set with a softly gathered finish.",
+  );
   assert.equal(first.summary.orders.value, null);
   assert.ok(first.degradedSources.some((item) => item.source === "ORDERS"));
   assert.equal(first.summary.live.value, null);

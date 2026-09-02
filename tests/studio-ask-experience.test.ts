@@ -2,7 +2,9 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import {
+  contextualizeStudioAssistantQuery,
   resolveStudioAssistant,
+  resolveStudioAssistantEntryPiece,
   resolveStudioAssistantWorkflow,
   studioAssistantFallbackText,
   studioAssistantSuggestionFamily,
@@ -106,11 +108,84 @@ test("status resolves into current metrics with visible provenance", () => {
   ]);
 });
 
+test("entry context accepts one exact projected piece and rejects guesses", () => {
+  const byEntity = resolveStudioAssistantEntryPiece(context.documents, "g-001");
+  const bySku = resolveStudioAssistantEntryPiece(context.documents, "juw001");
+
+  assert.equal(byEntity?.id, "piece:g-001");
+  assert.equal(bySku?.id, "piece:g-001");
+  assert.equal(resolveStudioAssistantEntryPiece(context.documents, "Coral Drift Dress"), null);
+  assert.equal(resolveStudioAssistantEntryPiece(context.documents, "missing-piece"), null);
+});
+
 test("an exact record status outranks the global summary", () => {
   const response = resolveStudioAssistant("What is the status of JUW-001?", context);
   assert.equal(block(response, "metrics"), undefined);
   assert.equal(block(response, "answer")?.title, "Coral Drift Dress");
   assert.equal(block(response, "results")?.items[0].href, "/studio/wardrobe/g-001?scenario=lifecycle");
+});
+
+test("piece search accepts the common JUW separator variants", () => {
+  for (const query of ["JUW-001", "juw001", "juw 001"]) {
+    const response = resolveStudioAssistant(query, context);
+    assert.equal(block(response, "results")?.items[0]?.href, "/studio/wardrobe/g-001?scenario=lifecycle", query);
+  }
+});
+
+test("a description follow-up carries only one freshly revalidated piece target", () => {
+  const followUp = contextualizeStudioAssistantQuery([
+    { role: "user", text: "Publish JUW-001" },
+    { role: "assistant", text: "Open the owning workflow." },
+    { role: "user", text: "What's its description?" },
+  ], context);
+
+  assert.equal(followUp, "What's its description? JUW-001");
+  assert.doesNotMatch(followUp, /publish/i);
+  assert.equal(block(resolveStudioAssistant(followUp, context), "answer")?.body, "Coral Drift Dress detail");
+});
+
+test("description follow-ups fail closed for ambiguity, stale targets and mutations", () => {
+  const current = { role: "user" as const, text: "What's its description?" };
+  assert.equal(contextualizeStudioAssistantQuery([
+    { role: "user", text: "JUW-001 and JUW-002" },
+    current,
+  ], context), current.text);
+  assert.equal(contextualizeStudioAssistantQuery([
+    { role: "user", text: "JUW-999" },
+    current,
+  ], context), current.text);
+  assert.equal(contextualizeStudioAssistantQuery([
+    { role: "user", text: "JUW-001" },
+    { role: "user", text: "Delete its description" },
+  ], context), "Delete its description");
+
+  const explicitOverride = contextualizeStudioAssistantQuery([
+    { role: "user", text: "JUW-001" },
+    { role: "user", text: "What's JUW-002's description?" },
+  ], context);
+  assert.equal(explicitOverride, "What's JUW-002's description?");
+});
+
+test("description words in another product cannot steal the carried SKU", () => {
+  const misleadingContext: StudioAssistantContext = {
+    ...context,
+    documents: [
+      ...context.documents,
+      document({
+        detail: "Its description is intentionally token-heavy.",
+        entityId: "g-003",
+        id: "piece:g-003",
+        identifiers: ["g-003", "JUW-003"],
+        kind: "Piece",
+        label: "Token Trap Dress",
+        tokens: "g-003 juw-003 token trap dress its description",
+      }),
+    ],
+  };
+  assert.equal(contextualizeStudioAssistantQuery([
+    { role: "user", text: "JUW-002" },
+    { role: "user", text: "What is its description?" },
+  ], misleadingContext), "What is its description? JUW-002");
 });
 
 test("an attention summary outranks a matching service alias", () => {
@@ -1094,7 +1169,9 @@ test("the durable route replaces the fake modal modes and preserves keyboard and
   const stack = readFileSync(`${root}/components/studio/navigation/studio-stack-context.tsx`, "utf8");
   const page = readFileSync(`${root}/app/(studio)/studio/ask/page.tsx`, "utf8");
 
-  assert.match(commandCenter, /href="\/studio\/ask"/);
+  assert.match(commandCenter, /currentWardrobePieceId\(pathname\)/);
+  assert.match(commandCenter, /`\/studio\/ask\?piece=\$\{encodeURIComponent\(currentPieceId\)\}`/);
+  assert.match(commandCenter, /href=\{askHref\}/);
   assert.doesNotMatch(commandCenter, /askMode|aria-label="Ask Studio mode"|Read-only agent/);
   assert.match(surface, /window\.sessionStorage/);
   assert.match(surface, /map\(\(turn\) => turn\.query\)/);
@@ -1104,6 +1181,10 @@ test("the durable route replaces the fake modal modes and preserves keyboard and
   assert.match(surface, /sendMessage\(\{[\s\S]*?id: active\.id,[\s\S]*?parts: \[\{ text: cleanQuery, type: "text" \}\],[\s\S]*?role: "user"/);
   assert.doesNotMatch(surface, /sendMessage\(\{ messageId: active\.id/);
   assert.match(surface, /if \(studio\.scenario\) \{[\s\S]*?addFallback\(active\)/);
+  assert.match(surface, /contextualizeStudioAssistantQuery\([\s\S]*?conversation\.map\([\s\S]*?resolveStudioAssistantWorkflow\(contextualQuery, context\)/);
+  assert.match(surface, /detail: document\.description\?\.trim\(\) \|\| document\.secondaryLabel/);
+  assert.match(surface, /detail: garment\.publicDescription\?\.trim\(\)/);
+  assert.match(surface, /detail: piece\.description\?\.trim\(\)/);
   assert.match(surface, /MessageResponse/);
   assert.match(surface, /StudioDecisionSheet/);
   assert.match(surface, /flightRef\.current/);
@@ -1114,6 +1195,12 @@ test("the durable route replaces the fake modal modes and preserves keyboard and
   assert.match(surface, /placeholder="Ask about Studio or find a record"/);
   assert.doesNotMatch(surface, /Change JUW-001 price|Prepare media for JUW-003/);
   assert.match(surface, /context\.continueAction/);
+  assert.match(surface, /resolveStudioAssistantEntryPiece\(context\.documents, entryPieceTarget\)/);
+  assert.match(surface, /const entryPieceAction = entryPiece && entryPieceReference/);
+  assert.match(surface, /className=\{hasConversation \? "studio-ask-entry-context is-thread" : "studio-ask-entry-context"\}/);
+  assert.match(surface, /\{hasConversation \? entryPieceAction : null\}/);
+  assert.match(surface, /\{entryPieceAction\}/);
+  assert.match(surface, /What can you help with for \$\{entryPieceReference\}\?/);
   assert.match(surface, /option\.prompt/);
   assert.match(orders, /searchParams\.get\("action"\) !== "create"/);
   assert.match(orders, /searchParams\.get\("piece"\)/);

@@ -51,6 +51,7 @@ export type PhysicalObservation = {
 
 export type PhysicalPiece = StocktakeExpectedPiece & {
   authorityRevision: string;
+  description?: string | null;
   category: string;
   colour: string;
   condition: string;
@@ -248,6 +249,7 @@ function physicalPieceAuthorityCtes(operatorSubject: string) {
         publication.wardrobe_item_id,
         inventory.sku,
         catalogue.name as title,
+        catalogue.note as description,
         catalogue.category,
         catalogue.colour,
         catalogue.condition,
@@ -305,6 +307,7 @@ function physicalPieceAuthorityCtes(operatorSubject: string) {
         wardrobe.id as wardrobe_item_id,
         null::varchar(40) as sku,
         wardrobe.title,
+        nullif(btrim(intake.facts->>'description'), '') as description,
         wardrobe.category,
         wardrobe.colour,
         wardrobe.condition,
@@ -324,6 +327,9 @@ function physicalPieceAuthorityCtes(operatorSubject: string) {
         null::text as order_fulfillment_status,
         null::text as order_return_status
       from studio_wardrobe_items as wardrobe
+      inner join studio_intakes as intake
+        on intake.id = wardrobe.intake_id
+        and intake.operator_subject = ${operatorSubject}
       where wardrobe.operator_subject = ${operatorSubject}
         and not exists (
           select 1
@@ -342,6 +348,7 @@ function physicalPieceAuthorityCtes(operatorSubject: string) {
         piece.wardrobe_item_id,
         piece.sku,
         piece.title,
+        piece.description,
         piece.category,
         piece.colour,
         piece.condition,
@@ -412,6 +419,7 @@ function mapPiece(row: DatabaseRow): PhysicalPiece {
     wardrobeItemId: nullableString(row.wardrobe_item_id),
     sku: nullableString(row.sku),
     title: String(row.title),
+    description: nullableString(row.description)?.trim() ?? null,
     category: String(row.category),
     colour: String(row.colour),
     condition: String(row.condition),

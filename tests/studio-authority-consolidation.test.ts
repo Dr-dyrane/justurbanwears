@@ -106,6 +106,13 @@ test("authority projections finish lazy expiry before reads and expose an exact 
   assert.match(repository, /actionLabel: expiryBlocked \? "Review blocker" : "Review hold"/);
 });
 
+test("the physical-piece authority carries the canonical public or private Shop description", async () => {
+  const stocktake = await read("lib/server/studio-stocktake-repository.ts");
+  assert.match(stocktake, /catalogue\.note as description/);
+  assert.match(stocktake, /intake\.facts->>'description'/);
+  assert.match(stocktake, /description: nullableString\(row\.description\)\?\.trim\(\) \?\? null/);
+});
+
 test("hold release validates its UUID before invoking persistence", async () => {
   const route = await read("app/api/studio/authority/holds/[id]/route.ts");
   const validation = route.indexOf("releaseParamsSchema.safeParse");

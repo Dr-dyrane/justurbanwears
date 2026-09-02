@@ -1,5 +1,6 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowRight,
@@ -42,6 +43,16 @@ function documentKind(value: string) {
   return value.toLocaleLowerCase("en-NG").replaceAll("_", " ").replace(/^./, (letter) => letter.toUpperCase());
 }
 
+function currentWardrobePieceId(pathname: string) {
+  const match = /^\/studio\/wardrobe\/([^/]+)\/?$/.exec(pathname);
+  if (!match) return null;
+  try {
+    return decodeURIComponent(match[1]);
+  } catch {
+    return null;
+  }
+}
+
 export function StudioCommandCenter({
   showAsk = true,
   showSearch = true,
@@ -49,6 +60,7 @@ export function StudioCommandCenter({
   showAsk?: boolean;
   showSearch?: boolean;
 }) {
+  const pathname = usePathname();
   const studio = useStudio();
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -62,6 +74,10 @@ export function StudioCommandCenter({
     : studio.application.snapshot?.capabilities.find((capability) => capability.id === "ASK_READ")?.state ?? "UNAVAILABLE";
   const canSearch = searchCapability !== "UNAVAILABLE";
   const canAsk = askCapability !== "UNAVAILABLE";
+  const currentPieceId = currentWardrobePieceId(pathname);
+  const askHref = currentPieceId
+    ? `/studio/ask?piece=${encodeURIComponent(currentPieceId)}`
+    : "/studio/ask";
 
   const documents = useMemo<CommandDocument[]>(() => {
     if (!studio.scenario && studio.application.snapshot) {
@@ -138,7 +154,7 @@ export function StudioCommandCenter({
         <Link
           aria-label="Ask Studio"
           className="studio-command-ask-trigger"
-          href="/studio/ask"
+          href={askHref}
         >
           <MessageCircleMore aria-hidden="true" size={18} />
           <span>Ask Studio</span>

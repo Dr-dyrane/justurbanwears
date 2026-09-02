@@ -727,6 +727,7 @@ function pieceWithHold(
     wardrobeItemId: piece.wardrobeItemId,
     sku: piece.sku,
     title: piece.title,
+    description: piece.description ?? null,
     category: piece.category,
     colour: piece.colour,
     condition: piece.condition,

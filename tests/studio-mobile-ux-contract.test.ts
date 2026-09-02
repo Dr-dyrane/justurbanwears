@@ -39,7 +39,8 @@ test("Studio uses Home-owned navigation and one shell-owned stack header", () =>
   assert.match(commandCenter, /aria-label="Find a Studio service or piece"/);
   assert.match(commandCenter, /aria-label="Ask Studio"/);
   assert.match(commandCenter, /showSearch \? <button/);
-  assert.match(commandCenter, /href="\/studio\/ask"/);
+  assert.match(commandCenter, /href=\{askHref\}/);
+  assert.match(commandCenter, /`\/studio\/ask\?piece=\$\{encodeURIComponent\(currentPieceId\)\}`/);
   assert.doesNotMatch(commandCenter, /aria-label="Ask Studio mode"|Read-only agent/);
   assert.match(stackContext, /pathname\.startsWith\("\/studio\/ask"\).*title: "Ask Studio"/);
   assert.doesNotMatch(shell, /studio-stack-nav-wrap|studio-stack-nav|registeredAction/);
