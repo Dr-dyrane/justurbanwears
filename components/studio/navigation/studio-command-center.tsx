@@ -74,7 +74,12 @@ export function StudioCommandCenter({
     : studio.application.snapshot?.capabilities.find((capability) => capability.id === "ASK_READ")?.state ?? "UNAVAILABLE";
   const canSearch = searchCapability !== "UNAVAILABLE";
   const canAsk = askCapability !== "UNAVAILABLE";
-  const currentPieceId = currentWardrobePieceId(pathname);
+  const routePieceId = currentWardrobePieceId(pathname);
+  const currentPieceId = routePieceId
+    ? studio.garments.find((garment) => (
+        garment.id === routePieceId || garment.privateWardrobeItemId === routePieceId
+      ))?.sku ?? routePieceId
+    : null;
   const askHref = currentPieceId
     ? `/studio/ask?piece=${encodeURIComponent(currentPieceId)}`
     : "/studio/ask";

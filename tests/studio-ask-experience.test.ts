@@ -1170,6 +1170,8 @@ test("the durable route replaces the fake modal modes and preserves keyboard and
   const page = readFileSync(`${root}/app/(studio)/studio/ask/page.tsx`, "utf8");
 
   assert.match(commandCenter, /currentWardrobePieceId\(pathname\)/);
+  assert.match(commandCenter, /garment\.id === routePieceId \|\| garment\.privateWardrobeItemId === routePieceId/);
+  assert.match(commandCenter, /\)\)\?\.sku \?\? routePieceId/);
   assert.match(commandCenter, /`\/studio\/ask\?piece=\$\{encodeURIComponent\(currentPieceId\)\}`/);
   assert.match(commandCenter, /href=\{askHref\}/);
   assert.doesNotMatch(commandCenter, /askMode|aria-label="Ask Studio mode"|Read-only agent/);
