@@ -58,16 +58,20 @@ function serviceContextKind(pathname: string, view: string | null): StudioServic
   if (pathname === "/studio/ask") return "ASK";
   if (pathname === "/studio/wardrobe" && view === "publishing") return "PUBLISHING";
   if (pathname === "/studio/wardrobe") return "WARDROBE";
-  if (pathname === "/studio/media") return "MEDIA";
+  if (pathname === "/studio/media" || pathname === "/studio/media/new") return "MEDIA";
   if (pathname === "/studio/models") return "MODELS";
   if (pathname === "/studio/orders") return "ORDERS";
-  if (pathname === "/studio/stocktake" || pathname === "/studio/scan") return "STOCKTAKE";
+  if (pathname === "/studio/stocktake" || pathname === "/studio/scan" || scanPieceSelector(pathname)) return "STOCKTAKE";
   if (pathname === "/studio/operations" && view === "inventory") return "INVENTORY";
   if (pathname === "/studio/operations" && view === "orders") return "ORDERS";
   if (pathname === "/studio/operations" && view === "holds") return "HOLDS";
   if (pathname === "/studio/operations" && view === "returns") return "RETURNS";
   if (pathname === "/studio/operations") return "OPERATIONS";
   return null;
+}
+
+function scanPieceSelector(pathname: string) {
+  return pathname.match(/^\/studio\/scan\/([^/]+)$/)?.[1] ?? null;
 }
 
 function readableState(value: string) {
@@ -187,7 +191,7 @@ function projectedSelection(
   }
 
   const requestedPiece = selectors.piece ?? selectors.garment;
-  if (requestedPiece && ["HOLDS", "INVENTORY", "OPERATIONS", "ORDERS", "PUBLISHING", "STOCKTAKE", "WARDROBE"].includes(kind)) {
+  if (requestedPiece && ["HOLDS", "INVENTORY", "MEDIA", "OPERATIONS", "ORDERS", "PUBLISHING", "STOCKTAKE", "WARDROBE"].includes(kind)) {
     const document = exactDocument(documents, ["PIECE", "SKU"], requestedPiece);
     return document ? documentContext(document, kind === "ORDERS" ? "Requested piece" : "Selected piece") : missingSelection("Selected piece", requestedPiece);
   }
@@ -521,7 +525,7 @@ export function StudioDesktopContextStage({ title }: { title: string }) {
     model: searchParams.get("model"),
     operation: searchParams.get("operation"),
     order: searchParams.get("order"),
-    piece: searchParams.get("piece"),
+    piece: searchParams.get("piece") ?? scanPieceSelector(pathname),
     view: searchParams.get("view"),
   };
   const kind = serviceContextKind(pathname, selectors.view);

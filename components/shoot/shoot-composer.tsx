@@ -294,7 +294,7 @@ export function ShootComposer() {
   ) : null;
 
   return (
-    <StudioStackPage kind="workflow">
+    <StudioStackPage className="studio-create-media-page" kind="workflow">
       <h1 className="sr-only">Create media</h1>
       {recoveryFeedback}
       {pieces.length ? (

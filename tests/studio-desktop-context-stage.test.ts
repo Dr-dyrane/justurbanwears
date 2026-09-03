@@ -16,14 +16,35 @@ test("plain Studio services receive one shell-owned desktop context stage", asyn
   assert.match(stage, /serviceContextKind\(pathname, selectors\.view\)/);
   assert.match(stage, /pathname === "\/studio\/wardrobe"/);
   assert.match(stage, /pathname === "\/studio\/media"/);
+  assert.match(stage, /pathname === "\/studio\/media\/new"/);
   assert.match(stage, /pathname === "\/studio\/models"/);
   assert.match(stage, /pathname === "\/studio\/orders"/);
   assert.match(stage, /pathname === "\/studio\/stocktake"/);
+  assert.match(stage, /scanPieceSelector\(pathname\)/);
   assert.match(stage, /pathname === "\/studio\/operations"/);
   assert.match(stage, /pathname === "\/studio\/ask"/);
   assert.doesNotMatch(stage, /pathname\.startsWith\("\/studio\/wardrobe\/"\)/);
   assert.doesNotMatch(stage, /pathname\.startsWith\("\/studio\/orders\/"\)/);
   assert.doesNotMatch(stage, /pathname\.startsWith\("\/studio\/media\/"\)/);
+});
+
+test("Create media and Scan receive exact record-aware desktop context", async () => {
+  const stage = await readFile(stagePath, "utf8");
+
+  assert.match(stage, /pathname\.match\(\/\^\\\/studio\\\/scan\\\/\(\[\^\/\]\+\)\$\/\)/);
+  assert.match(stage, /piece: searchParams\.get\("piece"\) \?\? scanPieceSelector\(pathname\)/);
+  assert.match(stage, /"INVENTORY", "MEDIA", "OPERATIONS"/);
+});
+
+test("Create media and Scan compact against the native island rather than the browser", async () => {
+  const css = await readFile(cssPath, "utf8");
+
+  assert.match(css, /container-name: studio-native-canvas/);
+  assert.match(css, /@container studio-native-canvas \(max-width: 36rem\)/);
+  assert.match(css, /\.studio-create-media-page \.composer-layout[\s\S]*?grid-template-columns: minmax\(0, 1fr\)/);
+  assert.match(css, /\.studio-create-media-page \.brief-panel[\s\S]*?order: -1/);
+  assert.match(css, /\.studio-scan-page \.studio-scan-piece-hero[\s\S]*?display: block/);
+  assert.match(css, /\.studio-scan-page \.studio-scan-truth dl[\s\S]*?grid-template-columns: minmax\(0, 1fr\)/);
 });
 
 test("context is selector-aware and never substitutes a primary record action", async () => {
