@@ -2581,6 +2581,57 @@ html body .studio-stack-shell .workspace > main.page-canvas:has(> .studio-home-c
   margin-bottom: 6px;
 }
 
+.studio-projection-freshness {
+  align-items: center;
+  background: color-mix(in srgb, var(--studio-accent) 8%, var(--studio-panel-strong));
+  border: 1px solid color-mix(in srgb, var(--studio-accent) 24%, var(--studio-line));
+  border-radius: 18px;
+  color: var(--studio-ink);
+  display: flex;
+  gap: 14px;
+  justify-content: space-between;
+  max-width: 42rem;
+  padding: 11px 12px 11px 14px;
+}
+
+.studio-projection-freshness > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.studio-projection-freshness strong {
+  font-size: 11px;
+}
+
+.studio-projection-freshness span {
+  color: var(--studio-muted);
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+.studio-projection-freshness button {
+  align-items: center;
+  appearance: none;
+  background: var(--studio-selection);
+  border: 0;
+  border-radius: 999px;
+  color: var(--studio-ink);
+  cursor: pointer;
+  display: inline-flex;
+  flex: 0 0 auto;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 720;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 13px;
+}
+
+.studio-home-recommendation > .studio-projection-freshness {
+  margin-top: 2px;
+}
+
 .studio-home-recommendation-actions {
   display: flex;
   gap: 8px;
@@ -5347,6 +5398,11 @@ body .studio-shell.studio-stack-shell[data-studio-page="stack"] main.page-canvas
     font-weight: 720;
     letter-spacing: .04em;
     text-transform: uppercase;
+  }
+
+  .studio-desktop-context-stage[data-context-state="stale"] .studio-desktop-context-copy > span,
+  .studio-desktop-context-stage[data-context-state="stale"] .studio-desktop-context-state {
+    color: var(--studio-accent-display, var(--studio-accent));
   }
 
   .studio-desktop-context-copy h2 {

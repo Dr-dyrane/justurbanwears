@@ -37,6 +37,7 @@ export type StudioSummaryMetric = {
 export type StudioSummary = {
   attention: StudioSummaryMetric;
   available: StudioSummaryMetric;
+  drafts: StudioSummaryMetric;
   live: StudioSummaryMetric;
   orders: StudioSummaryMetric;
 };

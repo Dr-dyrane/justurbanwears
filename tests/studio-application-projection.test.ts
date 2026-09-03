@@ -128,6 +128,7 @@ test("authority failure yields null truth instead of false zeroes", () => {
   const projection = projectConnectedStudioApplication({ operator, now, authority: null });
   assert.equal(projection.summary.attention.value, null);
   assert.equal(projection.summary.available.value, null);
+  assert.equal(projection.summary.drafts.value, null);
   assert.equal(projection.summary.live.value, null);
   assert.equal(projection.summary.orders.value, null);
   assert.equal(projection.capabilities.find((item) => item.id === "SEARCH")?.state, "READ_ONLY_COMPATIBILITY");
@@ -153,6 +154,8 @@ test("connected draft continuation opens the exact private garment", () => {
     openCount: 2,
     source: "CONNECTED",
   });
+  assert.equal(projection.summary.attention.value, 0);
+  assert.equal(projection.summary.drafts.value, 2);
 });
 
 test("connected draft continuation falls back to the private collection when no dossier exists", () => {
@@ -192,11 +195,13 @@ test("search documents are bounded, canonical and deterministic", () => {
   assert.ok(first.degradedSources.some((item) => item.source === "ORDERS"));
   assert.equal(first.summary.live.value, null);
   assert.ok(first.degradedSources.some((item) => item.source === "PUBLICATION"));
+  assert.equal(first.summary.attention.value, 0);
+  assert.equal(first.summary.drafts.value, 0);
   assert.deepEqual(first.continueAction, {
-    id: "update:hold:private-reason",
-    label: "Review hold",
-    href: "/studio/operations?view=holds",
-    openCount: 1,
+    id: "add-piece",
+    label: "Add the next piece",
+    href: "/studio/wardrobe?intake=1",
+    openCount: 0,
     source: "CONNECTED",
   });
 });
@@ -353,6 +358,7 @@ test("scenario projection is explicit and uses the sanitized collection compatib
     source: "SCENARIO",
   });
   assert.equal(projection.summary.attention.value, 1);
+  assert.equal(projection.summary.drafts.value, 1);
   assert.equal(projection.summary.available.value, 37);
   assert.equal(projection.summary.live.value, 36);
   assert.ok(projection.searchDocuments.some((document) => document.kind === "ORDER" && document.route.includes("order=scenario-order-reserved")));

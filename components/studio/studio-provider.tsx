@@ -264,12 +264,12 @@ function StudioMachineProvider({ children, scenario }: {
       const controller = new AbortController();
       applicationControllerRef.current = controller;
       setApplicationStatus((current) => current === "ready" ? current : "loading");
-      setApplicationError("");
       try {
         const snapshot = await readStudioApplication({ signal: controller.signal });
         if (controller.signal.aborted) return;
         setApplicationSnapshot(snapshot);
         applicationLoadedAtRef.current = Date.now();
+        setApplicationError("");
         setApplicationStatus("ready");
       } catch (cause) {
         if (controller.signal.aborted) return;
@@ -288,12 +288,12 @@ function StudioMachineProvider({ children, scenario }: {
       const controller = new AbortController();
       authorityControllerRef.current = controller;
       setAuthorityStatus((current) => current === "ready" ? current : "loading");
-      setAuthorityError("");
       try {
         const snapshot = await readStudioAuthority(controller.signal);
         if (controller.signal.aborted) return null;
         setAuthoritySnapshot(snapshot);
         authorityLoadedAtRef.current = Date.now();
+        setAuthorityError("");
         setAuthorityStatus("ready");
         return snapshot;
       } catch (cause) {

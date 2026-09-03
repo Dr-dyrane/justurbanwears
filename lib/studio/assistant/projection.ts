@@ -85,7 +85,7 @@ export function studioAssistantContextFromProjection(
     summary: {
       attention: projection.summary.attention.value,
       available: projection.summary.available.value,
-      drafts: null,
+      drafts: projection.summary.drafts.value,
       live: projection.summary.live.value,
       orders: projection.summary.orders.value,
       review: null,

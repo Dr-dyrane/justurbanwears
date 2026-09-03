@@ -19,9 +19,10 @@ import { formatNaira } from "../../lib/shop/catalog";
 import {
   orderStateLabel,
   studioOrderHasDueReturnWork,
-  studioOrderHasDueWork,
 } from "../../lib/shop/order-presentation";
 import type { StudioLifecycleState } from "../../lib/studio/domain/entities";
+import { selectStudioWorkProjection } from "../../lib/studio/application/work-projection";
+import { selectStudioProjectionFreshness } from "../../lib/studio/application/projection-freshness";
 import {
   StudioAuthorityClientError,
   type StudioAuthorityPiece,
@@ -30,6 +31,7 @@ import { LifecycleMeta, STUDIO_LIFECYCLE_PRESENTATION } from "./atoms/lifecycle-
 import { StudioDecisionSheet, type StudioDecisionResult } from "./atoms/studio-decision-sheet";
 import { StudioFeedback } from "./atoms/studio-feedback";
 import { StudioLoadingStage } from "./atoms/studio-loading-stage";
+import { StudioProjectionFreshnessNotice } from "./atoms/studio-projection-freshness";
 import { StudioLink as Link } from "./atoms/studio-link";
 import { StudioSegmentedView, useStudioSegment } from "./atoms/studio-segmented-view";
 import { StudioStackPage, StudioStackSection } from "./atoms/studio-stack-page";
@@ -58,6 +60,7 @@ const HOLD_IDEMPOTENCY_KEY_PATTERN = /^hold:[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f
 const LOCATION_IDEMPOTENCY_KEY_PATTERN = /^location:[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const SHA256_FINGERPRINT_PATTERN = /^[0-9a-f]{64}$/;
 const AUTHORITY_TIMESTAMP_PATTERN = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}Z$/;
+const AUTHORITY_REFRESH_BLOCKER = "Couldn’t verify current Studio state. Nothing changed. Try again.";
 
 interface MutationIntent {
   expiresAt: number;
@@ -197,14 +200,20 @@ export function OperationsDesk() {
   const searchParams = useSearchParams();
   const { authority, scenario } = useStudio();
   const snapshot = authority.snapshot;
+  const authorityFreshness = selectStudioProjectionFreshness({
+    error: authority.error,
+    generatedAt: snapshot?.generatedAt ?? null,
+    status: authority.status,
+  });
   const pieces = snapshot?.pieces ?? EMPTY_PIECES;
   const holds = snapshot?.holds ?? [];
   const orders = snapshot?.orders ?? [];
   const activeHolds = holds.filter((hold) => hold.status === "ACTIVE");
-  const actionOrders = orders.filter(studioOrderHasDueWork);
-  const mismatches = pieces.filter((piece) => piece.hasLocationMismatch);
+  const work = snapshot ? selectStudioWorkProjection(snapshot) : null;
+  const actionOrders = work ? [...work.dueReturns, ...work.dueOrders] : [];
+  const mismatches = work?.locationMismatches ?? EMPTY_PIECES;
   const segments = [
-    { key: "attention", label: "Attention", count: mismatches.length + actionOrders.length },
+    { key: "attention", label: "Attention", count: work?.attentionCount ?? 0 },
     { key: "inventory", label: "Inventory", count: pieces.length },
     { key: "holds", label: "Holds", count: activeHolds.length },
   ];
@@ -387,6 +396,30 @@ export function OperationsDesk() {
     setError("");
   }
 
+  async function refreshReviewedPiece(
+    reviewed: StudioAuthorityPiece,
+  ): Promise<{ error: string; piece: null } | { error: null; piece: StudioAuthorityPiece }> {
+    const refreshed = await authority.refresh().catch(() => null);
+    if (!refreshed) return { error: AUTHORITY_REFRESH_BLOCKER, piece: null };
+    const current = refreshed.pieces.find((piece) => piece.pieceKey === reviewed.pieceKey);
+    if (!current) {
+      return {
+        error: `${reviewed.title} is no longer in current Studio inventory. Nothing changed.`,
+        piece: null,
+      };
+    }
+    if (
+      current.authorityRevision !== reviewed.authorityRevision
+      || current.locationVersion !== reviewed.locationVersion
+    ) {
+      return {
+        error: `${reviewed.title} changed since this sheet opened. Review the refreshed details before confirming. Nothing changed.`,
+        piece: null,
+      };
+    }
+    return { error: null, piece: current };
+  }
+
   async function saveHold(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!holdPiece?.sku || holdPendingRef.current) return;
@@ -406,6 +439,14 @@ export function OperationsDesk() {
         sku: holdPiece.sku,
       }));
       let intent = holdIntentRef.current ?? readMutationIntent(HOLD_INTENT_STORAGE_KEY, HOLD_IDEMPOTENCY_KEY_PATTERN);
+      const replaying = Boolean(intent && intent.fingerprint === fingerprint);
+      if (!replaying) {
+        const fresh = await refreshReviewedPiece(holdPiece);
+        if (!fresh.piece) {
+          setError(fresh.error);
+          return;
+        }
+      }
       if (!intent || intent.fingerprint !== fingerprint) {
         intent = {
           expiresAt: Date.now() + MUTATION_INTENT_TTL_MS,
@@ -484,6 +525,17 @@ export function OperationsDesk() {
     const holdId = selected.activeHold.id;
     const releaseStartedAt = Date.now();
     try {
+      const fresh = await refreshReviewedPiece(selected);
+      if (!fresh.piece) {
+        setError(fresh.error);
+        return { error: fresh.error, ok: false };
+      }
+      const freshHold = fresh.piece.activeHold;
+      if (!freshHold || freshHold.id !== holdId || freshHold.status !== "ACTIVE") {
+        const message = `${selected.title} no longer has the reviewed active hold. Nothing changed.`;
+        setError(message);
+        return { error: message, ok: false };
+      }
       const consequence = await authority.releaseHold(holdId);
       setNotice(consequence);
       return { ok: true };
@@ -525,10 +577,13 @@ export function OperationsDesk() {
     let submittedIntent: LocationMutationIntent | null = null;
     try {
       const storedIntent = locationIntentRef.current ?? readLocationMutationIntent();
-      const request = storedIntent
+      const storedTargetsReview = Boolean(
+        storedIntent
         && storedIntent.command === command
         && storedIntent.locationKey === locationKey
-        && storedIntent.pieceKey === pieceKey
+        && storedIntent.pieceKey === pieceKey,
+      );
+      const storedRequest = storedTargetsReview && storedIntent
         ? {
             command: storedIntent.command,
             expectedAuthorityRevision: storedIntent.expectedAuthorityRevision,
@@ -536,10 +591,24 @@ export function OperationsDesk() {
             locationKey: storedIntent.locationKey,
             pieceKey: storedIntent.pieceKey,
           }
-        : { command, expectedAuthorityRevision, expectedVersion, locationKey, pieceKey };
-      const fingerprint = await mutationFingerprint(JSON.stringify(request));
-      let intent = storedIntent;
-      if (!intent || intent.fingerprint !== fingerprint) {
+        : null;
+      const storedFingerprint = storedRequest
+        ? await mutationFingerprint(JSON.stringify(storedRequest))
+        : null;
+      const replaying = Boolean(
+        storedIntent
+        && storedRequest
+        && storedIntent.fingerprint === storedFingerprint,
+      );
+      let intent = replaying ? storedIntent : null;
+      if (!intent) {
+        const fresh = await refreshReviewedPiece(piece);
+        if (!fresh.piece) {
+          setError(fresh.error);
+          return { error: fresh.error, ok: false };
+        }
+        const request = { command, expectedAuthorityRevision, expectedVersion, locationKey, pieceKey };
+        const fingerprint = await mutationFingerprint(JSON.stringify(request));
         intent = {
           ...request,
           expiresAt: Date.now() + MUTATION_INTENT_TTL_MS,
@@ -618,7 +687,7 @@ export function OperationsDesk() {
     return <StudioLoadingStage label="Opening Operations…" />;
   }
 
-  if (authority.status === "error" || !snapshot) {
+  if (!snapshot) {
     return (
       <StudioStackPage className="studio-ops-page studio-premium-surface" kind="service">
         <h1 className="sr-only">Operations</h1>
@@ -630,6 +699,14 @@ export function OperationsDesk() {
   return (
     <StudioStackPage className="studio-ops-page studio-premium-surface" kind="service">
       <h1 className="sr-only">Operations</h1>
+
+      {authorityFreshness.state === "STALE" ? (
+        <StudioProjectionFreshnessNotice
+          asOf={authorityFreshness.asOf}
+          error={authority.error}
+          onRetry={() => void authority.refresh()}
+        />
+      ) : null}
 
       {requestedPieceError ? <StudioFeedback detail={requestedPieceError} state="error" title="Piece unavailable" /> : null}
 

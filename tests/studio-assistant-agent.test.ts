@@ -46,6 +46,7 @@ const projection: StudioApplicationProjection = {
   summary: {
     attention: { asOf: null, source: "CONNECTED", value: 1 },
     available: { asOf: null, source: "CONNECTED", value: 0 },
+    drafts: { asOf: null, source: "CONNECTED", value: 1 },
     live: { asOf: null, source: "CONNECTED", value: 0 },
     orders: { asOf: null, source: "CONNECTED", value: 0 },
   },

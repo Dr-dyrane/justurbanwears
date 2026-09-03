@@ -7,6 +7,11 @@ import type {
   StudioCollectionScope,
   StudioSearchDocument,
 } from "../../../lib/studio/application/contracts";
+import {
+  selectStudioProjectionFreshness,
+  studioProjectionAsOfLabel,
+} from "../../../lib/studio/application/projection-freshness";
+import { selectStudioWorkProjection } from "../../../lib/studio/application/work-projection";
 import { StudioLink as Link } from "../atoms/studio-link";
 import { useStudio } from "../studio-provider";
 
@@ -483,7 +488,9 @@ function scenarioContext(
   };
 
   if (kind === "OPERATIONS") {
-    const attention = studio.returns.filter((entry) => entry.disposition === "PENDING").length;
+    const attention = studio.authority.snapshot
+      ? selectStudioWorkProjection(studio.authority.snapshot).attentionCount
+      : studio.returns.filter((entry) => entry.disposition === "PENDING").length;
     return {
       detail: "The workspace resolves the current simulated operational state.",
       label: "Operations service",
@@ -522,6 +529,12 @@ export function StudioDesktopContextStage({ title }: { title: string }) {
 
   const context = scenarioContext(kind, studio, selectors)
     ?? (studio.application.snapshot ? projectedContext(kind, studio.application.snapshot, selectors) : null);
+  const freshness = selectStudioProjectionFreshness({
+    error: studio.application.error,
+    generatedAt: studio.application.snapshot?.generatedAt ?? null,
+    status: studio.application.status,
+  });
+  const stale = !studio.scenario && freshness.state === "STALE";
   const loading = !studio.scenario && studio.application.status === "loading";
   const unavailable = !context && !loading;
 
@@ -529,22 +542,24 @@ export function StudioDesktopContextStage({ title }: { title: string }) {
     <aside
       aria-labelledby="studio-desktop-context-title"
       className="studio-desktop-context-stage"
-      data-context-state={loading ? "loading" : unavailable ? "unavailable" : "ready"}
+      data-context-state={loading ? "loading" : unavailable ? "unavailable" : stale ? "stale" : "ready"}
     >
       <div className="studio-desktop-context-copy">
-        <span>{context?.label ?? (loading ? "Current context" : `${title} context`)}</span>
+        <span>{stale ? "Last-known Studio" : context?.label ?? (loading ? "Current context" : `${title} context`)}</span>
         <h2 id="studio-desktop-context-title">
           {context?.subject ?? (loading ? "Reading Studio state" : "Live state unavailable")}
         </h2>
         <p className="studio-desktop-context-state">
-          {context?.state ?? (loading ? "Connecting" : "Unavailable")}
+          {stale ? studioProjectionAsOfLabel(freshness.asOf) : context?.state ?? (loading ? "Connecting" : "Unavailable")}
         </p>
         <p className="studio-desktop-context-detail">
-          {context?.detail
+          {stale
+            ? studio.application.error || "Refresh failed. Verify current Studio state before making a change."
+            : context?.detail
             ?? studio.application.error
             ?? (loading ? "The current operator-safe projection is loading." : "Retry the current Studio projection before acting.")}
         </p>
-        {context ? (
+        {context && !stale ? (
           <Link className="studio-desktop-context-action" href={ORIENTING_ACTION.href}>
             <span>{ORIENTING_ACTION.label}</span>
             <ArrowRight aria-hidden="true" size={20} />

@@ -20,6 +20,7 @@ const projection: StudioApplicationProjection = {
   summary: {
     attention: { value: 0, asOf: generatedAt, source: "CONNECTED" },
     available: { value: 1, asOf: generatedAt, source: "CONNECTED" },
+    drafts: { value: 0, asOf: generatedAt, source: "CONNECTED" },
     live: { value: 1, asOf: generatedAt, source: "CONNECTED" },
     orders: { value: 0, asOf: generatedAt, source: "CONNECTED" },
   },

@@ -29,7 +29,10 @@ import {
   historicalDrop01Kind,
 } from "../../lib/studio/projections/piece-workspace";
 import { selectStudioHomeGate } from "../../lib/studio/application/home-gate";
+import { selectStudioProjectionFreshness } from "../../lib/studio/application/projection-freshness";
+import { selectStudioWorkProjection } from "../../lib/studio/application/work-projection";
 import { useStudio } from "./studio-provider";
+import { StudioProjectionFreshnessNotice } from "./atoms/studio-projection-freshness";
 
 export function StudioHome() {
   const {
@@ -51,6 +54,11 @@ export function StudioHome() {
 
   const connected = authority.snapshot;
   const projected = scenario ? null : application.snapshot;
+  const applicationFreshness = selectStudioProjectionFreshness({
+    error: application.error,
+    generatedAt: projected?.generatedAt ?? null,
+    status: application.status,
+  });
 
   useEffect(() => {
     const stage = sheetStageRef.current;
@@ -75,7 +83,9 @@ export function StudioHome() {
 
   const garmentDrafts = scenario
     ? actionableStudioDraftCount(garments)
-    : connected?.pieces.filter((piece) => piece.availability === "PRIVATE").length ?? 0;
+    : projected?.summary.drafts.value
+      ?? connected?.pieces.filter((piece) => piece.availability === "PRIVATE").length
+      ?? 0;
   const connectedActiveOrders = connected
     ? connected.orders.filter((order) => order.lifecycleStatus === "ACTIVE").length
     : null;
@@ -94,9 +104,9 @@ export function StudioHome() {
     : scenario
       ? 0
       : null;
-  const workCount = garmentDrafts + (orderWork ?? 0) + (returnWork ?? 0);
+  const scenarioWork = scenario && connected ? selectStudioWorkProjection(connected) : null;
   const needsAttention = scenario
-    ? Math.max(workCount, connected?.notifications.length ?? 0)
+    ? scenarioWork?.attentionCount ?? 0
     : projected?.summary.attention.value ?? null;
   const garmentsById = new Map(garments.map((garment) => [garment.id, garment]));
   const garmentsBySku = new Map(garments.map((garment) => [garment.sku, garment]));
@@ -157,6 +167,12 @@ export function StudioHome() {
 
   const scenarioTasks = [
     {
+      count: scenarioWork?.locationMismatches.length ?? 0,
+      href: "/studio/operations?view=inventory",
+      key: "locations",
+      label: `Review ${scenarioWork?.locationMismatches.length ?? 0} location${scenarioWork?.locationMismatches.length === 1 ? "" : "s"}`,
+    },
+    {
       count: returnWork,
       href: "/studio/orders?filter=RETURNS",
       key: "returns",
@@ -201,6 +217,8 @@ export function StudioHome() {
   ].slice(0, 5);
   const truthLabel = scenario
     ? "Scenario preview"
+    : applicationFreshness.state === "STALE"
+      ? "Last-known Studio"
     : projected
       ? projected.degradedSources.length ? "Studio snapshot" : "Live Studio"
       : "Connecting Studio";
@@ -227,6 +245,13 @@ export function StudioHome() {
           : primaryOpenCount
             ? `${primaryOpenCount} open`
             : "Studio clear"}</small>
+        {applicationFreshness.state === "STALE" ? (
+          <StudioProjectionFreshnessNotice
+            asOf={applicationFreshness.asOf}
+            error={application.error}
+            onRetry={() => void application.refresh()}
+          />
+        ) : null}
       </section>
 
       <div

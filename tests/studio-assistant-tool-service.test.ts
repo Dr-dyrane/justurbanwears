@@ -179,6 +179,7 @@ if (!moduleMockingAvailable) {
     summary: {
       attention: { asOf: NOW, source: "CONNECTED", value: 1 },
       available: { asOf: NOW, source: "CONNECTED", value: 16 },
+      drafts: { asOf: NOW, source: "CONNECTED", value: 0 },
       live: { asOf: NOW, source: "CONNECTED", value: 17 },
       orders: { asOf: NOW, source: "CONNECTED", value: 1 },
     },

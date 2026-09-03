@@ -1,8 +1,5 @@
 import { shopProducts } from "../shop/catalog";
-import {
-  studioOrderHasDueReturnWork,
-  studioOrderHasDueWork,
-} from "../shop/order-presentation";
+import { studioOrderHasDueWork } from "../shop/order-presentation";
 import { CURRENT_SHOP_DROP } from "../shop/current-drop";
 import { getShopCommerceGuidance } from "../shop/server-order/commerce-guidance";
 import {
@@ -33,6 +30,10 @@ import {
   type StudioSummary,
   type StudioSummaryMetric,
 } from "../studio/application/contracts";
+import {
+  selectStudioWorkProjection,
+  type StudioWorkProjection,
+} from "../studio/application/work-projection";
 import {
   getStudioAuthority,
   getStudioAuthorityWriteReadiness,
@@ -321,15 +322,10 @@ function authorityDocuments(
 }
 
 function connectedSummary(authority: StudioAuthoritySnapshot): StudioSummary {
-  const actionablePieces = authority.pieces.filter((piece) => (
-    piece.availability === "PRIVATE" || piece.hasLocationMismatch
-  )).length;
-  const actionableOrders = authority.orders.filter((order) => (
-    studioOrderHasDueWork(order)
-  )).length;
+  const work = selectStudioWorkProjection(authority);
   return {
     attention: metric(
-      Math.max(authority.notifications.length, actionablePieces + actionableOrders),
+      work.attentionCount,
       authority.generatedAt,
       "CONNECTED",
     ),
@@ -342,6 +338,7 @@ function connectedSummary(authority: StudioAuthoritySnapshot): StudioSummary {
       authority.generatedAt,
       "CONNECTED",
     ),
+    drafts: metric(work.drafts.length, authority.generatedAt, "CONNECTED"),
     // Physical-piece authority does not prove a public listing is live.
     live: unavailableMetric(),
     // The current order authority is a bounded operator list, not a total aggregate.
@@ -349,59 +346,39 @@ function connectedSummary(authority: StudioAuthoritySnapshot): StudioSummary {
   };
 }
 
-function connectedContinueAction(
-  authority: StudioAuthoritySnapshot,
-  openCount: number,
-): StudioContinueAction {
-  const returns = authority.orders.filter((order) => (
-    studioOrderHasDueReturnWork(order)
-  ));
-  if (returns.length) return {
+function connectedContinueAction(work: StudioWorkProjection): StudioContinueAction {
+  if (work.locationMismatches.length) return {
+    id: "locations",
+    label: `Review ${work.locationMismatches.length} location${work.locationMismatches.length === 1 ? "" : "s"}`,
+    href: "/studio/operations?view=inventory",
+    openCount: work.locationMismatches.length,
+    source: "CONNECTED",
+  };
+
+  if (work.dueReturns.length) return {
     id: "returns",
-    label: `Review ${returns.length} return${returns.length === 1 ? "" : "s"}`,
+    label: `Review ${work.dueReturns.length} return${work.dueReturns.length === 1 ? "" : "s"}`,
     href: "/studio/orders?filter=RETURNS",
-    openCount,
+    openCount: work.dueReturns.length,
     source: "CONNECTED",
   };
 
-  const orders = authority.orders.filter((order) => (
-    studioOrderHasDueWork(order) && !studioOrderHasDueReturnWork(order)
-  ));
-  if (orders.length) return {
+  if (work.dueOrders.length) return {
     id: "orders",
-    label: `Prepare ${orders.length} order${orders.length === 1 ? "" : "s"}`,
+    label: `Prepare ${work.dueOrders.length} order${work.dueOrders.length === 1 ? "" : "s"}`,
     href: "/studio/orders",
-    openCount,
+    openCount: work.dueOrders.length,
     source: "CONNECTED",
   };
 
-  const notification = authority.notifications[0];
-  if (notification) return {
-    id: `update:${notification.id}`,
-    label: notification.actionLabel || notification.title,
-    href: notification.href,
-    openCount,
-    source: "CONNECTED",
-  };
-
-  const drafts = authority.pieces.filter((piece) => piece.availability === "PRIVATE");
-  const exactDraft = drafts.find((piece) => piece.wardrobeItemId);
-  if (drafts.length) return {
+  const exactDraft = work.drafts.find((piece) => piece.wardrobeItemId);
+  if (work.drafts.length) return {
     id: "drafts",
-    label: `Finish ${drafts.length} draft${drafts.length === 1 ? "" : "s"}`,
+    label: `Finish ${work.drafts.length} draft${work.drafts.length === 1 ? "" : "s"}`,
     href: exactDraft?.wardrobeItemId
       ? `/studio/wardrobe/${encodeURIComponent(exactDraft.wardrobeItemId)}`
       : "/studio/wardrobe?collection=private",
-    openCount,
-    source: "CONNECTED",
-  };
-
-  const mismatches = authority.pieces.filter((piece) => piece.hasLocationMismatch);
-  if (mismatches.length) return {
-    id: "locations",
-    label: `Review ${mismatches.length} location${mismatches.length === 1 ? "" : "s"}`,
-    href: "/studio/operations?view=inventory",
-    openCount,
+    openCount: work.drafts.length,
     source: "CONNECTED",
   };
 
@@ -409,7 +386,7 @@ function connectedContinueAction(
     id: "add-piece",
     label: "Add the next piece",
     href: "/studio/wardrobe?intake=1",
-    openCount,
+    openCount: 0,
     source: "CONNECTED",
   };
 }
@@ -517,9 +494,11 @@ export function projectConnectedStudioApplication(input: {
   const summary = authority ? connectedSummary(authority) : {
     attention: unavailableMetric(),
     available: unavailableMetric(),
+    drafts: unavailableMetric(),
     live: unavailableMetric(),
     orders: unavailableMetric(),
   };
+  const work = authority ? selectStudioWorkProjection(authority) : null;
   return {
     projectionVersion: STUDIO_APPLICATION_PROJECTION_VERSION,
     generatedAt: input.now,
@@ -545,8 +524,8 @@ export function projectConnectedStudioApplication(input: {
       }]),
     ],
     summary,
-    continueAction: authority
-      ? connectedContinueAction(authority, summary.attention.value ?? 0)
+    continueAction: work
+      ? connectedContinueAction(work)
       : null,
     collectionScopes,
     searchDocuments: sortDocuments([
@@ -651,6 +630,7 @@ export function projectScenarioStudioApplication(input: {
     summary: {
       attention: metric(snapshot.returns.length, input.now, "SCENARIO"),
       available: metric(scenarioAvailable, input.now, "SCENARIO"),
+      drafts: metric(scenarioDrafts, input.now, "SCENARIO"),
       live: metric(scenarioLive, input.now, "SCENARIO"),
       orders: metric(snapshot.orders.length, input.now, "SCENARIO"),
     },

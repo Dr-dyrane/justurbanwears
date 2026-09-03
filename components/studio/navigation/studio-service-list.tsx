@@ -14,10 +14,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useStudioServiceOrder } from "../../../hooks/studio/use-studio-service-order";
-import {
-  studioOrderHasDueReturnWork,
-  studioOrderHasDueWork,
-} from "../../../lib/shop/order-presentation";
+import { selectStudioWorkProjection } from "../../../lib/studio/application/work-projection";
 import { projectStudioDropScopes } from "../../../lib/studio/projections/drop-context";
 import {
   actionableStudioDraftCount,
@@ -40,9 +37,10 @@ function useServiceStatuses(): Record<StudioPrimaryServiceKey, string> {
   const studio = useStudio();
   const connected = studio.authority.snapshot;
   const projected = studio.scenario ? null : studio.application.snapshot;
+  const work = connected ? selectStudioWorkProjection(connected) : null;
   const privatePieces = studio.scenario
     ? actionableStudioDraftCount(studio.garments)
-    : connected?.pieces.filter((piece) => piece.availability === "PRIVATE").length ?? 0;
+    : projected?.summary.drafts.value ?? work?.drafts.length ?? 0;
   const connectedActiveOrders = connected
     ? connected.orders.filter((order) => order.lifecycleStatus === "ACTIVE").length
     : null;
@@ -56,21 +54,21 @@ function useServiceStatuses(): Record<StudioPrimaryServiceKey, string> {
       )).length
     : projected?.summary.available.value ?? null;
   const readyModels = connected?.models.filter((model) => model.state === "READY").length ?? 0;
-  const actionableOrders = connected?.orders.filter((order) => (
-    studioOrderHasDueWork(order) && !studioOrderHasDueReturnWork(order)
-  )).length ?? 0;
-  const actionableReturns = connected?.orders.filter(studioOrderHasDueReturnWork).length ?? 0;
-  const localAttention = Math.max(privatePieces + actionableOrders + actionableReturns, connected?.notifications.length ?? 0);
-  const attention = studio.scenario ? localAttention : projected?.summary.attention.value ?? null;
+  const attention = studio.scenario
+    ? work?.attentionCount ?? 0
+    : projected?.summary.attention.value ?? null;
   const media = connected?.media.length ?? studio.shoots.length;
   const dropContext = projectStudioDropScopes(studio.garments, studio.listings);
   const currentDropCount = dropContext.scopes.find((scope) => scope.key === "current")?.count ?? 0;
   const currentCollection = projected?.collectionScopes.find((scope) => scope.isCurrent);
-  const wardrobeStatus = studio.scenario
+  const wardrobeScope = studio.scenario
     ? `Scenario · ${dropContext.currentDrop} · ${currentDropCount} active`
     : currentCollection
       ? `${currentCollection.label} · ${currentCollection.counts.pieces ?? "—"} pieces`
       : `${dropContext.currentDrop} · ${currentDropCount} local`;
+  const wardrobeStatus = privatePieces
+    ? `${wardrobeScope} · ${privatePieces} private`
+    : wardrobeScope;
 
   return {
     wardrobe: wardrobeStatus,

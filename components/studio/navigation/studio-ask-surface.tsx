@@ -80,6 +80,8 @@ import {
   type StudioAssistantWorkflowResponse,
 } from "../../../lib/studio/assistant/experience";
 import type { StudioSearchDocument } from "../../../lib/studio/application/contracts";
+import { selectStudioProjectionFreshness } from "../../../lib/studio/application/projection-freshness";
+import { selectStudioWorkProjection } from "../../../lib/studio/application/work-projection";
 import { STUDIO_SERVICES } from "../../../lib/studio/service-registry";
 import { studioScenarioHref } from "../../../lib/studio/simulator";
 import {
@@ -391,6 +393,11 @@ function projectedAssistantDocument(
 function buildContext(studio: ReturnType<typeof useStudio>): StudioAssistantContext {
   const connected = studio.authority.snapshot;
   const projected = studio.scenario ? null : studio.application.snapshot;
+  const applicationFreshness = selectStudioProjectionFreshness({
+    error: studio.application.error,
+    generatedAt: projected?.generatedAt ?? null,
+    status: studio.application.status,
+  });
   const localGarmentsById = new Map(studio.garments.map((garment) => [garment.id, garment]));
   const localGarmentsBySku = new Map(studio.garments.map((garment) => [garment.sku, garment]));
   const documents: StudioAssistantDocument[] = projected
@@ -570,20 +577,11 @@ function buildContext(studio: ReturnType<typeof useStudio>): StudioAssistantCont
   }
 
   const projectedAttention = studio.scenario
-    ? Math.max(
-        connected?.notifications.length ?? 0,
-        actionableStudioDraftCount(studio.garments)
-          + studio.garments.filter((garment) => (
-            garment.state === "ERROR" && historicalDrop01Kind(garment) === null
-          )).length
-          + (connected?.orders.filter(studioOrderHasDueWork).length ?? 0),
-      )
+    ? studio.garments.filter((garment) => (
+        garment.state === "ERROR" && historicalDrop01Kind(garment) === null
+      )).length + (connected?.orders.filter(studioOrderHasDueWork).length ?? 0)
     : connected
-      ? Math.max(
-        connected.notifications.length,
-        connected.pieces.filter((piece) => piece.availability === "PRIVATE" || piece.hasLocationMismatch).length
-          + connected.orders.filter(studioOrderHasDueWork).length,
-      )
+      ? selectStudioWorkProjection(connected).attentionCount
       : null;
   const localLive = studio.garments.filter((garment) => (
     garment.dynamicPublication?.state === "PUBLISHED"
@@ -625,12 +623,18 @@ function buildContext(studio: ReturnType<typeof useStudio>): StudioAssistantCont
     documents,
     provenance: projected
       ? {
-          detail: projected.degradedSources.length
+          detail: applicationFreshness.state === "STALE"
+            ? studio.application.error || "Refresh failed. Read answers will verify current Studio truth again."
+            : projected.degradedSources.length
             ? `${projected.degradedSources.length} source${projected.degradedSources.length === 1 ? "" : "s"} limited`
             : "Connected Studio application snapshot",
           generatedAt: projected.generatedAt,
-          label: projected.degradedSources.length ? "Studio snapshot" : "Live Studio",
-          status: projected.degradedSources.length ? "degraded" : "connected",
+          label: applicationFreshness.state === "STALE"
+            ? "Last-known Studio"
+            : projected.degradedSources.length ? "Studio snapshot" : "Live Studio",
+          status: applicationFreshness.state === "STALE" || projected.degradedSources.length
+            ? "degraded"
+            : "connected",
         }
       : studio.scenario
       ? {
@@ -669,7 +673,7 @@ function buildContext(studio: ReturnType<typeof useStudio>): StudioAssistantCont
               )).length
             : null),
       drafts: projected
-        ? null
+        ? projected.summary.drafts.value
         : studio.scenario
           ? actionableStudioDraftCount(studio.garments)
           : connected?.pieces.filter((piece) => piece.availability === "PRIVATE").length ?? null,
