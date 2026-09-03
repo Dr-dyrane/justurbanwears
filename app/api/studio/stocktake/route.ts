@@ -4,10 +4,12 @@ import {
   getPhysicalPiece,
   getStocktakeWorkspace,
   observePhysicalPiece,
+  readStocktakeCommandReceipt,
   startStocktake,
   stocktakeCommandSchema,
+  stocktakeCommandReceiptQuerySchema,
 } from "../../../../lib/server/studio-stocktake-repository";
-import { engineErrorResponse } from "../../../../lib/studio/engine/errors";
+import { engineErrorResponse, StudioEngineError } from "../../../../lib/studio/engine/errors";
 import { engineJson, parseEngineJson } from "../../../../lib/studio/engine/http";
 
 export const dynamic = "force-dynamic";
@@ -15,7 +17,22 @@ export const dynamic = "force-dynamic";
 export async function GET(request: Request): Promise<Response> {
   try {
     const operator = await requireStudioOperator();
-    const key = new URL(request.url).searchParams.get("key")?.trim();
+    const searchParams = new URL(request.url).searchParams;
+    const receiptKey = searchParams.get("idempotencyKey");
+    if (receiptKey) {
+      const query = stocktakeCommandReceiptQuerySchema.safeParse({ idempotencyKey: receiptKey });
+      if (!query.success) {
+        throw new StudioEngineError("INVALID_REQUEST", 400, "That stock count receipt request is incomplete.", "Reload Stock count.");
+      }
+      const result = await readStocktakeCommandReceipt(operator, query.data.idempotencyKey);
+      return engineJson(result ? {
+        commandReceipt: result.receipt,
+        observation: result.observation,
+        piece: result.piece,
+        session: result.session,
+      } : null);
+    }
+    const key = searchParams.get("key")?.trim();
     const [workspace, piece] = await Promise.all([
       getStocktakeWorkspace(operator),
       key ? getPhysicalPiece(operator, key) : Promise.resolve(null),
@@ -31,17 +48,17 @@ export async function POST(request: Request): Promise<Response> {
     const operator = await requireStudioOperator();
     const input = await parseEngineJson(request, stocktakeCommandSchema);
     if (input.command === "START_COUNT") {
-      const session = await startStocktake({ operator, ...input });
-      return engineJson({ receipt: {
-        consequence: `${session.expectedPieces.length} pieces are expected here.`,
+      const result = await startStocktake({ operator, ...input });
+      return engineJson({ commandReceipt: result.receipt, receipt: {
+        consequence: `${result.session.expectedPieces.length} pieces are expected here.`,
         customerVisible: false,
         kind: "COUNT_STARTED",
         next: "Scan each piece.",
-      }, session }, { status: 201 });
+      }, session: result.session }, { status: 201 });
     }
     if (input.command === "OBSERVE") {
       const result = await observePhysicalPiece({ operator, ...input });
-      return engineJson({ ...result, receipt: {
+      return engineJson({ ...result, commandReceipt: result.receipt, receipt: {
         consequence: result.observation.result === "MATCH"
           ? `${result.observation.observedLocationLabel} is now physically confirmed.`
           : `Expected ${result.observation.expectedLocationLabel}; observed ${result.observation.observedLocationLabel}.`,
@@ -52,13 +69,13 @@ export async function POST(request: Request): Promise<Response> {
           : result.observation.orderReference ? "Review the linked order." : "Review this piece in Wardrobe.",
       } }, { status: 201 });
     }
-    const session = await closeStocktake({ operator, ...input });
-    return engineJson({ receipt: {
-      consequence: `${session.expectedPieces.length} pieces confirmed at ${session.locationLabel.toLowerCase()}.`,
+    const result = await closeStocktake({ operator, ...input });
+    return engineJson({ commandReceipt: result.receipt, receipt: {
+      consequence: `${result.session.expectedPieces.length} pieces confirmed at ${result.session.locationLabel.toLowerCase()}.`,
       customerVisible: false,
       kind: "COUNT_CLOSED",
       next: "Start another location when ready.",
-    }, session });
+    }, session: result.session });
   } catch (error) {
     return engineErrorResponse(error);
   }

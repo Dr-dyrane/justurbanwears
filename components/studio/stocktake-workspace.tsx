@@ -25,10 +25,15 @@ import {
 import type {
   PhysicalObservation,
   PhysicalPiece,
+  StocktakeCommandReceipt,
   StocktakeLocationKey,
   StocktakeSession,
   StocktakeWorkspace as StocktakeWorkspaceData,
 } from "../../lib/server/studio-stocktake-repository";
+import {
+  clearSessionCommandKey,
+  getOrCreateSessionCommandKey,
+} from "../../lib/studio/idempotency/session-command-key";
 import { StudioLoadingStage } from "./atoms/studio-loading-stage";
 import { StudioLink } from "./atoms/studio-link";
 import { StudioTaskSheet } from "./atoms/studio-task-sheet";
@@ -52,11 +57,25 @@ type StocktakeApiPayload = StocktakeWorkspaceData & {
 };
 
 type MutationPayload = {
+  commandReceipt: StocktakeCommandReceipt;
   observation?: PhysicalObservation;
   piece?: PhysicalPiece;
   receipt: Receipt;
   session: StocktakeSession | null;
 };
+
+type CommandIdentity = {
+  command: StocktakeCommandReceipt["command"];
+  expectedVersion: number | null;
+  idempotencyKey: string;
+  locationKey: StocktakeLocationKey;
+  pieceKey: string | null;
+  revision: string;
+  scope: string;
+  stocktakeId: string | null;
+};
+
+type ReconciliationPayload = Omit<MutationPayload, "receipt"> | null;
 
 type ApiFailure = {
   error?: { message?: string; recovery?: string };
@@ -85,10 +104,6 @@ function pieceRouteKey(piece: PhysicalPiece) {
   return piece.sku ?? piece.wardrobeItemId ?? piece.pieceKey;
 }
 
-function requestKey(prefix: string) {
-  return `${prefix}:${crypto.randomUUID()}`;
-}
-
 async function responseBody<T>(response: Response): Promise<T> {
   const body = await response.json() as T | ApiFailure;
   if (response.ok) return body as T;
@@ -97,6 +112,29 @@ async function responseBody<T>(response: Response): Promise<T> {
     failure.error?.message,
     failure.error?.recovery,
   ].filter(Boolean).join(" ") || "Studio could not complete that action.");
+}
+
+function commandReceiptMatches(
+  result: ReconciliationPayload | MutationPayload,
+  identity: CommandIdentity,
+) {
+  const receipt = result?.commandReceipt;
+  return Boolean(receipt
+    && receipt.command === identity.command
+    && receipt.idempotencyKey === identity.idempotencyKey
+    && receipt.expectedVersion === identity.expectedVersion
+    && receipt.locationKey === identity.locationKey
+    && receipt.pieceKey === identity.pieceKey
+    && receipt.stocktakeId === identity.stocktakeId);
+}
+
+async function reconcileStocktakeCommand(identity: CommandIdentity) {
+  const response = await fetch(`/api/studio/stocktake?idempotencyKey=${encodeURIComponent(identity.idempotencyKey)}`, {
+    cache: "no-store",
+    credentials: "same-origin",
+    headers: { accept: "application/json" },
+  });
+  return responseBody<ReconciliationPayload>(response);
 }
 
 function PieceMark({ piece }: { piece: PhysicalPiece }) {
@@ -205,6 +243,7 @@ export function StocktakeWorkspace({
   const [selectedLocation, setSelectedLocation] = useState<StocktakeLocationKey>("WARDROBE_RAIL");
   const [scanValue, setScanValue] = useState("");
   const [note, setNote] = useState("");
+  const pendingRef = useRef(false);
   const startButtonRef = useRef<HTMLButtonElement>(null);
 
   const load = useCallback(async () => {
@@ -270,38 +309,105 @@ export function StocktakeWorkspace({
   }
 
   async function startCount() {
+    if (pendingRef.current) return;
+    pendingRef.current = true;
     setPending(true);
     setError("");
+    const scope = `studio-stocktake:start:${selectedLocation}`;
+    const revision = `location:${selectedLocation}`;
+    const idempotencyKey = getOrCreateSessionCommandKey({
+      keyPrefix: "studio-stocktake:start",
+      revision,
+      scope,
+    });
+    const identity: CommandIdentity = {
+      command: "START_COUNT",
+      expectedVersion: null,
+      idempotencyKey,
+      locationKey: selectedLocation,
+      pieceKey: null,
+      revision,
+      scope,
+      stocktakeId: null,
+    };
     try {
       const result = await sendCommand({
         command: "START_COUNT",
-        idempotencyKey: requestKey("stocktake:start"),
+        idempotencyKey,
         locationKey: selectedLocation,
       });
+      const completedIdentity = { ...identity, stocktakeId: result.session?.id ?? null };
+      if (!commandReceiptMatches(result, completedIdentity)) {
+        throw new Error("Studio returned a receipt for a different stock count. Reload Stock count before trying again.");
+      }
+      clearSessionCommandKey(identity);
       setReceipt(result.receipt);
       setData((current) => current ? { ...current, session: result.session } : current);
       setStartOpen(false);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "The count could not start.");
+      const reconciled = await reconcileStocktakeCommand(identity).catch(() => null);
+      if (reconciled?.session && commandReceiptMatches(reconciled, { ...identity, stocktakeId: reconciled.session.id })) {
+        clearSessionCommandKey(identity);
+        setReceipt({
+          consequence: `${reconciled.session.expectedPieces.length} pieces are expected here.`,
+          customerVisible: false,
+          kind: "COUNT_STARTED",
+          next: "Scan each piece.",
+        });
+        setData((current) => current ? { ...current, session: reconciled.session } : current);
+        setStartOpen(false);
+      } else {
+        setError(cause instanceof Error ? cause.message : "The count could not start.");
+      }
     } finally {
+      pendingRef.current = false;
       setPending(false);
     }
   }
 
   async function observePiece() {
-    if (!data?.piece) return;
+    if (!data?.piece || pendingRef.current) return;
+    pendingRef.current = true;
     setPending(true);
     setError("");
+    const payload = {
+      command: "OBSERVE" as const,
+      expectedVersion: countSession?.version ?? null,
+      locationKey: selectedLocation,
+      note: note.trim() || undefined,
+      pieceKey: data.piece.pieceKey,
+      stocktakeId: countSession?.id ?? null,
+    };
+    const scope = `studio-stocktake:observe:${data.piece.pieceKey}`;
+    const revision = JSON.stringify({
+      authorityRevision: data.piece.authorityRevision,
+      locationVersion: data.piece.locationVersion,
+      ...payload,
+    });
+    const idempotencyKey = getOrCreateSessionCommandKey({
+      keyPrefix: "studio-stocktake:observe",
+      revision,
+      scope,
+    });
+    const identity: CommandIdentity = {
+      command: "OBSERVE",
+      expectedVersion: payload.expectedVersion,
+      idempotencyKey,
+      locationKey: selectedLocation,
+      pieceKey: data.piece.pieceKey,
+      revision,
+      scope,
+      stocktakeId: payload.stocktakeId,
+    };
     try {
       const result = await sendCommand({
-        command: "OBSERVE",
-        expectedVersion: countSession?.version ?? null,
-        idempotencyKey: requestKey("stocktake:observe"),
-        locationKey: selectedLocation,
-        note: note.trim() || undefined,
-        pieceKey: data.piece.pieceKey,
-        stocktakeId: countSession?.id ?? null,
+        ...payload,
+        idempotencyKey,
       });
+      if (!commandReceiptMatches(result, identity)) {
+        throw new Error("Studio returned a receipt for a different location check. Reload Stock count before trying again.");
+      }
+      clearSessionCommandKey(identity);
       setReceipt(result.receipt);
       setData((current) => current ? {
         ...current,
@@ -311,28 +417,82 @@ export function StocktakeWorkspace({
         session: result.session ?? current.session,
       } : current);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "The check could not be saved.");
+      const reconciled = await reconcileStocktakeCommand(identity).catch(() => null);
+      if (reconciled?.observation && commandReceiptMatches(reconciled, identity)) {
+        clearSessionCommandKey(identity);
+        setReceipt({
+          consequence: reconciled.observation.result === "MATCH"
+            ? `${reconciled.observation.observedLocationLabel} is now physically confirmed.`
+            : `Expected ${reconciled.observation.expectedLocationLabel}; observed ${reconciled.observation.observedLocationLabel}.`,
+          customerVisible: false,
+          kind: reconciled.observation.result === "MATCH" ? "PIECE_CONFIRMED" : "MISMATCH_RECORDED",
+          next: reconciled.observation.result === "MATCH" ? "Continue the count." : "Review this piece in Wardrobe.",
+        });
+        setData((current) => current ? {
+          ...current,
+          piece: reconciled.piece ?? current.piece,
+          session: reconciled.session ?? current.session,
+        } : current);
+      } else {
+        setError(cause instanceof Error ? cause.message : "The check could not be saved.");
+      }
     } finally {
+      pendingRef.current = false;
       setPending(false);
     }
   }
 
   async function closeCount() {
-    if (!session) return;
+    if (!session || pendingRef.current) return;
+    pendingRef.current = true;
     setPending(true);
     setError("");
+    const scope = `studio-stocktake:close:${session.id}`;
+    const revision = `version:${session.version}`;
+    const idempotencyKey = getOrCreateSessionCommandKey({
+      keyPrefix: "studio-stocktake:close",
+      revision,
+      scope,
+    });
+    const identity: CommandIdentity = {
+      command: "CLOSE_COUNT",
+      expectedVersion: session.version,
+      idempotencyKey,
+      locationKey: session.locationKey,
+      pieceKey: null,
+      revision,
+      scope,
+      stocktakeId: session.id,
+    };
     try {
       const result = await sendCommand({
         command: "CLOSE_COUNT",
         expectedVersion: session.version,
-        idempotencyKey: requestKey("stocktake:close"),
+        idempotencyKey,
         stocktakeId: session.id,
       });
+      if (!commandReceiptMatches(result, identity)) {
+        throw new Error("Studio returned a receipt for a different count close. Reload Stock count before trying again.");
+      }
+      clearSessionCommandKey(identity);
       setReceipt(result.receipt);
       setData((current) => current ? { ...current, session: null } : current);
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : "The count could not close.");
+      const reconciled = await reconcileStocktakeCommand(identity).catch(() => null);
+      if (reconciled?.session && commandReceiptMatches(reconciled, identity)) {
+        clearSessionCommandKey(identity);
+        setReceipt({
+          consequence: `${reconciled.session.expectedPieces.length} pieces confirmed at ${reconciled.session.locationLabel.toLowerCase()}.`,
+          customerVisible: false,
+          kind: "COUNT_CLOSED",
+          next: "Start another location when ready.",
+        });
+        setData((current) => current ? { ...current, session: null } : current);
+      } else {
+        setError(cause instanceof Error ? cause.message : "The count could not close.");
+      }
     } finally {
+      pendingRef.current = false;
       setPending(false);
     }
   }

@@ -83,6 +83,10 @@ export type StocktakeWorkspace = {
 const locationKeySchema = z.enum(["WARDROBE_RAIL", "PACKING_SHELF", "RETURN_INSPECTION"]);
 const idempotencyKeySchema = z.string().trim().min(8).max(160);
 
+export const stocktakeCommandReceiptQuerySchema = z.object({
+  idempotencyKey: idempotencyKeySchema,
+}).strict();
+
 export const stocktakeCommandSchema = z.discriminatedUnion("command", [
   z.object({
     command: z.literal("START_COUNT"),
@@ -105,6 +109,37 @@ export const stocktakeCommandSchema = z.discriminatedUnion("command", [
     stocktakeId: z.string().uuid(),
   }),
 ]);
+
+export const stocktakeCommandReceiptSchema = z.object({
+  schemaVersion: z.literal("juw.studio-stocktake-command-receipt.v1"),
+  receiptId: z.string().uuid(),
+  actorSubject: z.string().min(1),
+  command: z.enum(["START_COUNT", "OBSERVE", "CLOSE_COUNT"]),
+  stocktakeId: z.string().uuid().nullable(),
+  expectedVersion: z.number().int().positive().nullable(),
+  resultingVersion: z.number().int().positive().nullable(),
+  idempotencyKey: idempotencyKeySchema,
+  requestFingerprint: z.string().regex(/^[0-9a-f]{64}$/),
+  locationKey: locationKeySchema,
+  pieceKey: z.string().min(1).max(96).nullable(),
+  occurredAt: z.string().min(1),
+}).strict();
+
+export type StocktakeCommandReceipt = z.infer<typeof stocktakeCommandReceiptSchema>;
+
+type StocktakeCommand = z.infer<typeof stocktakeCommandSchema>;
+
+export function stocktakeCommandRequestFingerprint(command: StocktakeCommand): string {
+  return sha256(JSON.stringify({
+    command: command.command,
+    contract: "juw.studio-stocktake-command.v1",
+    expectedVersion: "expectedVersion" in command ? command.expectedVersion ?? null : null,
+    locationKey: "locationKey" in command ? command.locationKey : null,
+    note: "note" in command ? command.note ?? null : null,
+    pieceKey: "pieceKey" in command ? command.pieceKey : null,
+    stocktakeId: "stocktakeId" in command ? command.stocktakeId ?? null : null,
+  }));
+}
 
 type PhysicalTruthInput = {
   availability: PhysicalAvailability;
@@ -591,6 +626,39 @@ async function mapSession(operator: StudioOperator, row: DatabaseRow): Promise<S
   };
 }
 
+function mapStocktakeCommandReceipt(row: DatabaseRow): StocktakeCommandReceipt {
+  return stocktakeCommandReceiptSchema.parse({
+    schemaVersion: "juw.studio-stocktake-command-receipt.v1",
+    receiptId: String(row.receipt_id),
+    actorSubject: String(row.receipt_actor_subject),
+    command: String(row.receipt_command),
+    stocktakeId: nullableString(row.receipt_stocktake_id),
+    expectedVersion: nullableNonnegativeInteger(row.receipt_expected_version),
+    resultingVersion: nullableNonnegativeInteger(row.receipt_resulting_version),
+    idempotencyKey: String(row.receipt_idempotency_key),
+    requestFingerprint: String(row.receipt_request_fingerprint),
+    locationKey: String(row.receipt_location_key),
+    pieceKey: nullableString(row.receipt_piece_key),
+    occurredAt: iso(row.receipt_occurred_at),
+  });
+}
+
+function receiptSelect() {
+  return sql`
+    receipt.id as receipt_id,
+    receipt.actor_subject as receipt_actor_subject,
+    receipt.command as receipt_command,
+    receipt.stocktake_id as receipt_stocktake_id,
+    receipt.expected_version as receipt_expected_version,
+    receipt.resulting_version as receipt_resulting_version,
+    receipt.idempotency_key as receipt_idempotency_key,
+    receipt.request_fingerprint as receipt_request_fingerprint,
+    receipt.location_key as receipt_location_key,
+    null::text as receipt_piece_key,
+    receipt.occurred_at as receipt_occurred_at
+  `;
+}
+
 export async function getActiveStocktake(operator: StudioOperator): Promise<StocktakeSession | null> {
   const result = await (await getStudioDb()).execute<DatabaseRow>(sql`
     select *
@@ -601,6 +669,84 @@ export async function getActiveStocktake(operator: StudioOperator): Promise<Stoc
     limit 1
   `);
   return result.rows[0] ? mapSession(operator, result.rows[0]) : null;
+}
+
+async function getStocktakeById(operator: StudioOperator, stocktakeId: string): Promise<StocktakeSession | null> {
+  const result = await (await getStudioDb()).execute<DatabaseRow>(sql`
+    select * from studio_stocktakes
+    where id = ${stocktakeId}::uuid
+      and operator_subject = ${operator.subject}
+    limit 1
+  `);
+  return result.rows[0] ? mapSession(operator, result.rows[0]) : null;
+}
+
+export async function readStocktakeCommandReceipt(
+  operator: StudioOperator,
+  idempotencyKey: string,
+): Promise<{
+  observation?: PhysicalObservation;
+  piece?: PhysicalPiece;
+  receipt: StocktakeCommandReceipt;
+  session: StocktakeSession | null;
+} | null> {
+  const database = await getStudioDb();
+  const durable = await database.execute<DatabaseRow>(sql`
+    select ${receiptSelect()}
+    from studio_stocktake_command_receipts as receipt
+    where receipt.operator_subject = ${operator.subject}
+      and receipt.actor_subject = ${operator.actorSubject}
+      and receipt.idempotency_key = ${idempotencyKey}
+    limit 1
+  `);
+  if (durable.rows[0]) {
+    const receipt = mapStocktakeCommandReceipt(durable.rows[0]);
+    return { receipt, session: receipt.stocktakeId ? await getStocktakeById(operator, receipt.stocktakeId) : null };
+  }
+
+  const observation = await database.execute<DatabaseRow>(sql`
+    select
+      observation.id as receipt_id,
+      ${operator.actorSubject}::text as receipt_actor_subject,
+      'OBSERVE'::text as receipt_command,
+      observation.stocktake_id as receipt_stocktake_id,
+      case when observation.stocktake_id is null then null else 1 + (
+        select count(*)::integer
+        from studio_physical_observations as prior
+        where prior.stocktake_id = observation.stocktake_id
+          and prior.operator_subject = observation.operator_subject
+          and (prior.occurred_at, prior.id) < (observation.occurred_at, observation.id)
+      ) end as receipt_expected_version,
+      case when observation.stocktake_id is null then null else 2 + (
+        select count(*)::integer
+        from studio_physical_observations as prior
+        where prior.stocktake_id = observation.stocktake_id
+          and prior.operator_subject = observation.operator_subject
+          and (prior.occurred_at, prior.id) < (observation.occurred_at, observation.id)
+      ) end as receipt_resulting_version,
+      receipt.idempotency_key as receipt_idempotency_key,
+      receipt.request_fingerprint as receipt_request_fingerprint,
+      observation.observed_location_key as receipt_location_key,
+      observation.piece_key as receipt_piece_key,
+      observation.occurred_at as receipt_occurred_at,
+      observation.*
+    from studio_piece_custody_commands as receipt
+    inner join studio_physical_observations as observation
+      on observation.operator_subject = receipt.operator_subject
+      and observation.idempotency_key = receipt.idempotency_key
+    where receipt.operator_subject = ${operator.subject}
+      and receipt.idempotency_key = ${idempotencyKey}
+      and receipt.command = 'CONFIRM'
+    limit 1
+  `);
+  if (!observation.rows[0]) return null;
+  const receipt = mapStocktakeCommandReceipt(observation.rows[0]);
+  return {
+    observation: mapInsertedObservation(observation.rows[0]),
+    piece: await getPhysicalPiece(operator, String(observation.rows[0].piece_key)),
+    receipt,
+    session: receipt.stocktakeId ? await getStocktakeById(operator, receipt.stocktakeId) : null,
+  };
 }
 
 export async function getStocktakeWorkspace(operator: StudioOperator): Promise<StocktakeWorkspace> {
@@ -615,12 +761,29 @@ export async function startStocktake(input: {
   idempotencyKey: string;
   locationKey: StocktakeLocationKey;
   operator: StudioOperator;
-}): Promise<StocktakeSession> {
+}): Promise<{ receipt: StocktakeCommandReceipt; session: StocktakeSession }> {
   const database = await getStudioDb();
   const authority = physicalPieceAuthorityCtes(input.operator.subject);
   const label = locationLabel(input.locationKey);
+  const requestFingerprint = stocktakeCommandRequestFingerprint({
+    command: "START_COUNT",
+    idempotencyKey: input.idempotencyKey,
+    locationKey: input.locationKey,
+  });
   const result = await database.execute<DatabaseRow>(sql`
-    with ${authority},
+    with command_lock as materialized (
+      select pg_advisory_xact_lock(hashtextextended(
+        'juw:studio:stocktake:' || ${input.operator.actorSubject} || ':' || ${input.idempotencyKey}, 0
+      ))
+    ),
+    existing_receipt as materialized (
+      select receipt.*
+      from studio_stocktake_command_receipts as receipt, command_lock
+      where receipt.operator_subject = ${input.operator.subject}
+        and receipt.actor_subject = ${input.operator.actorSubject}
+        and receipt.idempotency_key = ${input.idempotencyKey}
+    ),
+    ${authority},
     expected as (
       select coalesce(jsonb_agg(jsonb_build_object(
         'authorityUpdatedAt', piece.authority_updated_at,
@@ -651,17 +814,32 @@ export async function startStocktake(input: {
       select
         ${input.operator.subject}, ${input.idempotencyKey}, ${input.locationKey}, ${label},
         'OPEN', expected.pieces, 1, now(), now()
-      from expected
+      from expected, command_lock
       where jsonb_array_length(expected.pieces) > 0
+        and not exists (select 1 from existing_receipt)
       on conflict do nothing
       returning *
+    ),
+    created_receipt as (
+      insert into studio_stocktake_command_receipts (
+        operator_subject, actor_subject, idempotency_key, request_fingerprint,
+        command, stocktake_id, expected_version, resulting_version, location_key, occurred_at
+      )
+      select
+        ${input.operator.subject}, ${input.operator.actorSubject}, ${input.idempotencyKey},
+        ${requestFingerprint}, 'START_COUNT', inserted.id, null, inserted.version,
+        inserted.location_key, inserted.started_at
+      from inserted
+      returning *
+    ),
+    resolved_receipt as (
+      select * from created_receipt
+      union all
+      select * from existing_receipt
     )
-    select * from inserted
-    union all
-    select *
-    from studio_stocktakes
-    where operator_subject = ${input.operator.subject}
-      and idempotency_key = ${input.idempotencyKey}
+    select ${receiptSelect()}, stocktake.*
+    from resolved_receipt as receipt
+    inner join studio_stocktakes as stocktake on stocktake.id = receipt.stocktake_id
     limit 1
   `);
   const row = result.rows[0];
@@ -682,7 +860,8 @@ export async function startStocktake(input: {
       "Choose another location.",
     );
   }
-  if (String(row.location_key) !== input.locationKey) {
+  const receipt = mapStocktakeCommandReceipt(row);
+  if (receipt.requestFingerprint !== requestFingerprint || receipt.command !== "START_COUNT") {
     throw new StudioEngineError(
       "INVALID_REQUEST",
       409,
@@ -690,7 +869,7 @@ export async function startStocktake(input: {
       "Start again.",
     );
   }
-  return mapSession(input.operator, row);
+  return { receipt, session: await mapSession(input.operator, row) };
 }
 
 function mapInsertedObservation(row: DatabaseRow): PhysicalObservation {
@@ -719,7 +898,7 @@ export async function observePhysicalPiece(input: {
   operator: StudioOperator;
   pieceKey: string;
   stocktakeId?: string | null;
-}): Promise<{ observation: PhysicalObservation; piece: PhysicalPiece; session: StocktakeSession | null }> {
+}): Promise<{ observation: PhysicalObservation; piece: PhysicalPiece; receipt: StocktakeCommandReceipt; session: StocktakeSession | null }> {
   const database = await getStudioDb();
   const requestFingerprint = sha256(JSON.stringify({
     command: "CONFIRM",
@@ -766,10 +945,25 @@ export async function observePhysicalPiece(input: {
       );
     }
     const piece = await getPhysicalPiece(input.operator, String(replayRow.piece_key));
+    const session = input.stocktakeId ? await getActiveStocktake(input.operator) : null;
     return {
       observation: mapInsertedObservation(replayRow),
       piece,
-      session: input.stocktakeId ? await getActiveStocktake(input.operator) : null,
+      receipt: stocktakeCommandReceiptSchema.parse({
+        schemaVersion: "juw.studio-stocktake-command-receipt.v1",
+        receiptId: String(replayRow.id),
+        actorSubject: input.operator.actorSubject,
+        command: "OBSERVE",
+        stocktakeId: input.stocktakeId ?? null,
+        expectedVersion: input.expectedVersion ?? null,
+        resultingVersion: input.expectedVersion == null ? null : input.expectedVersion + 1,
+        idempotencyKey: input.idempotencyKey,
+        requestFingerprint,
+        locationKey: input.locationKey,
+        pieceKey: String(replayRow.piece_key),
+        occurredAt: iso(replayRow.occurred_at),
+      }),
+      session,
     };
   }
 
@@ -806,10 +1000,26 @@ export async function observePhysicalPiece(input: {
       "Try again after reloading Stocktake.",
     );
   }
+  const observation = mapInsertedObservation(row);
+  const session = input.stocktakeId ? await getActiveStocktake(input.operator) : null;
   return {
-    observation: mapInsertedObservation(row),
+    observation,
     piece,
-    session: input.stocktakeId ? await getActiveStocktake(input.operator) : null,
+    receipt: stocktakeCommandReceiptSchema.parse({
+      schemaVersion: "juw.studio-stocktake-command-receipt.v1",
+      receiptId: observation.id,
+      actorSubject: input.operator.actorSubject,
+      command: "OBSERVE",
+      stocktakeId: input.stocktakeId ?? null,
+      expectedVersion: input.expectedVersion ?? null,
+      resultingVersion: input.expectedVersion == null ? null : input.expectedVersion + 1,
+      idempotencyKey: input.idempotencyKey,
+      requestFingerprint,
+      locationKey: input.locationKey,
+      pieceKey: piece.pieceKey,
+      occurredAt: observation.occurredAt,
+    }),
+    session,
   };
 }
 
@@ -818,15 +1028,34 @@ export async function closeStocktake(input: {
   idempotencyKey: string;
   operator: StudioOperator;
   stocktakeId: string;
-}): Promise<StocktakeSession> {
+}): Promise<{ receipt: StocktakeCommandReceipt; session: StocktakeSession }> {
   const database = await getStudioDb();
+  const requestFingerprint = stocktakeCommandRequestFingerprint({
+    command: "CLOSE_COUNT",
+    expectedVersion: input.expectedVersion,
+    idempotencyKey: input.idempotencyKey,
+    stocktakeId: input.stocktakeId,
+  });
   const result = await database.execute<DatabaseRow>(sql`
-    with locked as (
-      select *
+    with command_lock as materialized (
+      select pg_advisory_xact_lock(hashtextextended(
+        'juw:studio:stocktake:' || ${input.operator.actorSubject} || ':' || ${input.idempotencyKey}, 0
+      ))
+    ),
+    existing_receipt as materialized (
+      select receipt.*
+      from studio_stocktake_command_receipts as receipt, command_lock
+      where receipt.operator_subject = ${input.operator.subject}
+        and receipt.actor_subject = ${input.operator.actorSubject}
+        and receipt.idempotency_key = ${input.idempotencyKey}
+    ),
+    locked as materialized (
+      select stocktake.*
       from studio_stocktakes
+      as stocktake, command_lock
       where id = ${input.stocktakeId}::uuid
         and operator_subject = ${input.operator.subject}
-      for update
+      for update of stocktake
     ),
     expected as (
       select expected_piece
@@ -857,6 +1086,7 @@ export async function closeStocktake(input: {
         and stocktake.operator_subject = ${input.operator.subject}
         and stocktake.state = 'OPEN'
         and stocktake.version = ${input.expectedVersion}
+        and not exists (select 1 from existing_receipt)
         and (select count from blockers) = 0
         and not exists (
           select 1
@@ -866,18 +1096,46 @@ export async function closeStocktake(input: {
           )
         )
       returning stocktake.*
+    ),
+    created_receipt as (
+      insert into studio_stocktake_command_receipts (
+        operator_subject, actor_subject, idempotency_key, request_fingerprint,
+        command, stocktake_id, expected_version, resulting_version, location_key, occurred_at
+      )
+      select
+        ${input.operator.subject}, ${input.operator.actorSubject}, ${input.idempotencyKey},
+        ${requestFingerprint}, 'CLOSE_COUNT', closed.id, ${input.expectedVersion}, closed.version,
+        closed.location_key, closed.closed_at
+      from closed
+      returning *
+    ),
+    resolved_receipt as (
+      select * from created_receipt
+      union all
+      select * from existing_receipt
     )
-    select * from closed
-    union all
-    select * from locked where state = 'CLOSED'
+    select ${receiptSelect()}, stocktake.*
+    from resolved_receipt as receipt
+    inner join studio_stocktakes as stocktake on stocktake.id = receipt.stocktake_id
     limit 1
   `);
-  if (result.rows[0]) return mapSession(input.operator, result.rows[0]);
-  const active = await getActiveStocktake(input.operator);
-  if (!active || active.id !== input.stocktakeId) {
+  if (result.rows[0]) {
+    const receipt = mapStocktakeCommandReceipt(result.rows[0]);
+    if (receipt.requestFingerprint !== requestFingerprint || receipt.command !== "CLOSE_COUNT") {
+      throw new StudioEngineError(
+        "INVALID_REQUEST",
+        409,
+        "That count request key was already used.",
+        "Reload Stock count and close it again.",
+      );
+    }
+    return { receipt, session: await mapSession(input.operator, result.rows[0]) };
+  }
+  const current = await getStocktakeById(input.operator, input.stocktakeId);
+  if (!current) {
     throw new StudioEngineError("INTAKE_NOT_FOUND", 404, "That count was not found.", "Open Stocktake.");
   }
-  if (active.version !== input.expectedVersion) {
+  if (current.version !== input.expectedVersion || current.state === "CLOSED") {
     throw new StudioEngineError(
       "VERSION_CONFLICT",
       409,

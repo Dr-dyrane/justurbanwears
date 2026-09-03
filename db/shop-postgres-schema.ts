@@ -1823,6 +1823,46 @@ export const studioStocktakes = pgTable("studio_stocktakes", {
   `),
 ]);
 
+export const studioStocktakeCommandReceipts = pgTable("studio_stocktake_command_receipts", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  operatorSubject: text("operator_subject").notNull(),
+  actorSubject: text("actor_subject").notNull(),
+  idempotencyKey: varchar("idempotency_key", { length: 160 }).notNull(),
+  requestFingerprint: varchar("request_fingerprint", { length: 64 }).notNull(),
+  command: varchar("command", { length: 24 }).notNull(),
+  stocktakeId: uuid("stocktake_id")
+    .notNull()
+    .references(() => studioStocktakes.id, { onDelete: "restrict" }),
+  expectedVersion: integer("expected_version"),
+  resultingVersion: integer("resulting_version").notNull(),
+  locationKey: varchar("location_key", { length: 40 }).notNull(),
+  occurredAt: timestamp("occurred_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("studio_stocktake_command_receipts_actor_idempotency_unique").on(
+    table.actorSubject,
+    table.idempotencyKey,
+  ),
+  index("studio_stocktake_command_receipts_stocktake_idx").on(table.stocktakeId, table.occurredAt),
+  check("studio_stocktake_command_receipts_fingerprint", sql`${table.requestFingerprint} ~ '^[0-9a-f]{64}$'`),
+  check("studio_stocktake_command_receipts_command_known", sql`${table.command} in ('START_COUNT', 'CLOSE_COUNT')`),
+  check("studio_stocktake_command_receipts_location_known", sql`
+    ${table.locationKey} in ('WARDROBE_RAIL', 'PACKING_SHELF', 'RETURN_INSPECTION')
+  `),
+  check("studio_stocktake_command_receipts_versions", sql`
+    (
+      ${table.command} = 'START_COUNT'
+      and ${table.expectedVersion} is null
+      and ${table.resultingVersion} = 1
+    )
+    or (
+      ${table.command} = 'CLOSE_COUNT'
+      and ${table.expectedVersion} is not null
+      and ${table.expectedVersion} > 0
+      and ${table.resultingVersion} = ${table.expectedVersion} + 1
+    )
+  `),
+]);
+
 export const studioPhysicalObservations = pgTable("studio_physical_observations", {
   id: uuid("id").defaultRandom().primaryKey(),
   stocktakeId: uuid("stocktake_id").references(() => studioStocktakes.id, { onDelete: "restrict" }),
