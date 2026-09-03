@@ -36,6 +36,17 @@ test("Create media and Scan receive exact record-aware desktop context", async (
   assert.match(stage, /"INVENTORY", "MEDIA", "OPERATIONS"/);
 });
 
+test("Archived Wardrobe receives explicit projection-owned desktop context", async () => {
+  const stage = await readFile(stagePath, "utf8");
+
+  assert.match(stage, /function archivedWardrobeContext/);
+  assert.match(stage, /subject: "Archived pieces"/);
+  assert.match(stage, /state: plural\(count, "archived piece"\)/);
+  assert.match(stage, /studio\.garments\.filter\(\(garment\) => garment\.state === "ARCHIVED"\)/);
+  assert.match(stage, /projectedContext\(kind, studio\.application\.snapshot, selectors, archivedPieceCount\)/);
+  assert.match(stage, /permanently delete it when eligible/);
+});
+
 test("Create media and Scan compact against the native island rather than the browser", async () => {
   const css = await readFile(cssPath, "utf8");
 

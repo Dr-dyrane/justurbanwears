@@ -178,6 +178,15 @@ function collectionContext(scope: StudioCollectionScope): StudioDesktopContext {
   };
 }
 
+function archivedWardrobeContext(count: number): StudioDesktopContext {
+  return {
+    detail: "Archived pieces stay out of active Wardrobe and Shop. Open one to review its history or permanently delete it when eligible.",
+    label: "Wardrobe archive",
+    state: plural(count, "archived piece"),
+    subject: "Archived pieces",
+  };
+}
+
 function projectedSelection(
   kind: StudioServiceContextKind,
   projection: StudioApplicationProjection,
@@ -214,6 +223,7 @@ function projectedContext(
   kind: StudioServiceContextKind,
   projection: StudioApplicationProjection,
   selectors: StudioRouteSelectors,
+  archivedPieceCount: number,
 ): StudioDesktopContext | null {
   const selected = projectedSelection(kind, projection, selectors);
   if (selected) return selected;
@@ -221,6 +231,11 @@ function projectedContext(
   const documents = projection.searchDocuments;
   const pieces = documents.filter((document) => document.kind === "PIECE");
   const orders = documents.filter((document) => document.kind === "ORDER");
+
+  if (kind === "WARDROBE" && selectors.collection === "archived") {
+    return archivedWardrobeContext(archivedPieceCount);
+  }
+
   const collection = selectors.collection
     ? exactCollection(projection.collectionScopes, selectors.collection)
     : currentCollection(projection);
@@ -424,6 +439,11 @@ function scenarioContext(
 
   if (kind === "WARDROBE" || kind === "PUBLISHING") {
     const collection = selectors.collection;
+    if (kind === "WARDROBE" && collection === "archived") {
+      return archivedWardrobeContext(
+        studio.garments.filter((garment) => garment.state === "ARCHIVED").length,
+      );
+    }
     const subject = collection === "all"
       ? "All drops"
       : collection === "private"
@@ -531,8 +551,11 @@ export function StudioDesktopContextStage({ title }: { title: string }) {
   const kind = serviceContextKind(pathname, selectors.view);
   if (!kind) return null;
 
+  const archivedPieceCount = studio.garments.filter((garment) => garment.state === "ARCHIVED").length;
   const context = scenarioContext(kind, studio, selectors)
-    ?? (studio.application.snapshot ? projectedContext(kind, studio.application.snapshot, selectors) : null);
+    ?? (studio.application.snapshot
+      ? projectedContext(kind, studio.application.snapshot, selectors, archivedPieceCount)
+      : null);
   const freshness = selectStudioProjectionFreshness({
     error: studio.application.error,
     generatedAt: studio.application.snapshot?.generatedAt ?? null,
