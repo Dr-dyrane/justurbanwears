@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
+import { projectScenarioStudioApplication } from "../lib/server/studio-application-projection";
 import {
   contextualizeStudioAssistantQuery,
   resolveStudioAssistant,
@@ -12,6 +13,7 @@ import {
   type StudioAssistantContext,
   type StudioAssistantDocument,
 } from "../lib/studio/assistant/experience";
+import { studioAssistantContextFromProjection } from "../lib/studio/assistant/projection";
 
 const root = process.cwd();
 
@@ -132,7 +134,7 @@ test("piece search accepts the common JUW separator variants", () => {
   }
 });
 
-test("a description follow-up carries only one freshly revalidated piece target", () => {
+test("a read-only fact follow-up carries only one freshly revalidated piece target", () => {
   const followUp = contextualizeStudioAssistantQuery([
     { role: "user", text: "Publish JUW-001" },
     { role: "assistant", text: "Open the owning workflow." },
@@ -142,6 +144,40 @@ test("a description follow-up carries only one freshly revalidated piece target"
   assert.equal(followUp, "What's its description? JUW-001");
   assert.doesNotMatch(followUp, /publish/i);
   assert.equal(block(resolveStudioAssistant(followUp, context), "answer")?.body, "Coral Drift Dress detail");
+
+  for (const query of ["What's its price?", "What is its status?", "Which drop is it in?", "Show its media"]) {
+    assert.equal(contextualizeStudioAssistantQuery([
+      { role: "user", text: "JUW-001" },
+      { role: "user", text: query },
+    ], context), `${query} JUW-001`);
+  }
+});
+
+test("JUW-026 remains the focused record for its description follow-up", () => {
+  const application = projectScenarioStudioApplication({
+    now: "2026-09-01T12:00:00.000Z",
+    operator: {
+      displayName: "Lulu",
+      email: "lulu@example.com",
+      role: "admin",
+      subject: "studio-operator",
+    },
+    scenario: "lifecycle",
+  });
+  const liveContext = studioAssistantContextFromProjection(application);
+  const contextualized = contextualizeStudioAssistantQuery([
+    { role: "user", text: "JUW-026" },
+    { role: "assistant", text: "JUW-026 is the current piece." },
+    { role: "user", text: "What's its description?" },
+  ], liveContext);
+  const answer = block(resolveStudioAssistant(contextualized, liveContext), "answer");
+
+  assert.equal(contextualized, "What's its description? JUW-026");
+  assert.equal(answer?.title, "JUW-026");
+  assert.equal(
+    answer?.body,
+    "A deep-violet beaded romper framed by soft flounces and an asymmetric ruffled hem.",
+  );
 });
 
 test("description follow-ups fail closed for ambiguity, stale targets and mutations", () => {
@@ -1158,7 +1194,7 @@ test("follow-up suggestions preserve the workflow target and resolve usefully", 
   assert.equal(status.suggestions.find((suggestion) => suggestion.label === "Choose the next task")?.prompt, "What needs attention?");
 });
 
-test("the durable route replaces the fake modal modes and preserves keyboard and session recovery", () => {
+test("the durable route replaces fake modal modes with shared conversation recovery", () => {
   const commandCenter = readFileSync(`${root}/components/studio/navigation/studio-command-center.tsx`, "utf8");
   const surface = readFileSync(`${root}/components/studio/navigation/studio-ask-surface.tsx`, "utf8");
   const orders = readFileSync(`${root}/components/studio/connected-order-inbox.tsx`, "utf8");
@@ -1175,14 +1211,17 @@ test("the durable route replaces the fake modal modes and preserves keyboard and
   assert.match(commandCenter, /`\/studio\/ask\?piece=\$\{encodeURIComponent\(currentPieceId\)\}`/);
   assert.match(commandCenter, /href=\{askHref\}/);
   assert.doesNotMatch(commandCenter, /askMode|aria-label="Ask Studio mode"|Read-only agent/);
-  assert.match(surface, /window\.sessionStorage/);
-  assert.match(surface, /map\(\(turn\) => turn\.query\)/);
-  assert.match(surface, /resolveStudioAssistantWorkflow\(stored, context\)/);
+  assert.doesNotMatch(surface, /window\.sessionStorage/);
+  assert.match(surface, /listStudioAssistantThreads/);
+  assert.match(surface, /createStudioAssistantThread/);
+  assert.match(surface, /readStudioAssistantThread/);
+  assert.match(surface, /updateStudioAssistantThread/);
+  assert.match(surface, /detail\.messages\.map\(\(stored\) => stored\.message\)/);
   assert.match(surface, /useChat<StudioAssistantUIMessage>/);
   assert.match(surface, /new DefaultChatTransport<StudioAssistantUIMessage>/);
   assert.match(surface, /sendMessage\(\{[\s\S]*?id: active\.id,[\s\S]*?parts: \[\{ text: cleanQuery, type: "text" \}\],[\s\S]*?role: "user"/);
   assert.doesNotMatch(surface, /sendMessage\(\{ messageId: active\.id/);
-  assert.match(surface, /if \(studio\.scenario\) \{[\s\S]*?addFallback\(active\)/);
+  assert.match(surface, /if \(studio\.scenario && pendingRef\.current\) addFallback\(pendingRef\.current\)/);
   assert.match(surface, /contextualizeStudioAssistantQuery\([\s\S]*?conversation\.map\([\s\S]*?resolveStudioAssistantWorkflow\(contextualQuery, context\)/);
   assert.match(surface, /detail: document\.description\?\.trim\(\) \|\| document\.secondaryLabel/);
   assert.match(surface, /detail: garment\.publicDescription\?\.trim\(\)/);
@@ -1190,7 +1229,8 @@ test("the durable route replaces the fake modal modes and preserves keyboard and
   assert.match(surface, /MessageResponse/);
   assert.match(surface, /StudioDecisionSheet/);
   assert.match(surface, /flightRef\.current/);
-  assert.match(surface, /TASKS_STORAGE_KEY/);
+  assert.match(surface, /if \(!studio\.scenario && activeThread\)/);
+  assert.match(surface, /action: "SAVE_TASK"/);
   assert.doesNotMatch(surface, /window\.setTimeout/);
   assert.match(surface, /event\.key !== "Enter" \|\| event\.shiftKey/);
   assert.doesNotMatch(surface, /Changes finish in their owning stack/);

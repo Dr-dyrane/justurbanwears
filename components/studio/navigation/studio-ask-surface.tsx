@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { Fragment, useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import {
   ArrowRight,
+  Archive,
   Bell,
   Boxes,
   Check,
@@ -23,6 +24,8 @@ import {
   LoaderCircle,
   MapPin,
   PackageCheck,
+  Pencil,
+  Plus,
   RotateCcw,
   Route,
   Save,
@@ -40,6 +43,26 @@ import { Message, MessageContent, MessageResponse } from "../../ai-elements/mess
 import { Suggestion, Suggestions } from "../../ai-elements/suggestion";
 import { Task, TaskContent, TaskItem, TaskTrigger } from "../../ai-elements/task";
 import type { StudioAssistantUIMessage } from "../../../lib/ai/studio-assistant-agent";
+import {
+  createStudioAssistantThread,
+  listStudioAssistantOperations,
+  listStudioAssistantThreads,
+  readStudioAssistantThread,
+  reconcileStudioAssistantReply,
+  updateStudioAssistantOperation,
+  updateStudioAssistantThread,
+} from "../../../lib/studio/services/studio-assistant-client";
+import type {
+  StudioAssistantThreadDetail,
+  StudioAssistantThreadSummary,
+  StudioAssistantThreadTask,
+} from "../../../lib/studio/assistant/threads";
+import {
+  STUDIO_ASSISTANT_TOOL_NAMES,
+  studioAssistantToolOutputSchema,
+  type StudioAssistantConfirmOperationCommand,
+  type StudioAssistantOperation,
+} from "../../../lib/studio/assistant/tool-contracts";
 import { SHOP_COLLECTION_COMPATIBILITY } from "../../../lib/shop/collection-compatibility";
 import { studioOrderHasDueWork } from "../../../lib/shop/order-presentation";
 import {
@@ -68,13 +91,10 @@ import { StudioLoadingStage } from "../atoms/studio-loading-stage";
 import { StudioLink as Link } from "../atoms/studio-link";
 import { StudioTaskSheet } from "../atoms/studio-task-sheet";
 import { useStudio } from "../studio-provider";
-
-type RestoredTurn = {
-  id: string;
-  query: string;
-  workflow?: StudioAssistantWorkflowResponse;
-  state: "complete" | "error";
-};
+import {
+  StudioAssistantToolPending,
+  StudioAssistantToolResult,
+} from "./studio-assistant-tool-result";
 
 type FallbackTurn = {
   id: string;
@@ -88,9 +108,35 @@ type StoredStudioAssistantTask = Omit<StudioAssistantTaskDraft, "sourceQuery"> &
   status: "DONE" | "OPEN";
 };
 
+type DisplayStudioAssistantTask = StoredStudioAssistantTask | StudioAssistantThreadTask;
+type WithoutExpectedVersion<T> = T extends unknown ? Omit<T, "expectedVersion"> : never;
+type StudioAssistantThreadMutation = WithoutExpectedVersion<Parameters<typeof updateStudioAssistantThread>[1]>;
+
+function confirmationForOperation(
+  operation: StudioAssistantOperation,
+): StudioAssistantConfirmOperationCommand {
+  if (operation.kind === "PIECE_EDIT") {
+    return { action: "CONFIRM", confirmation: "SAVE_PRIVATE_REVISION", expectedVersion: operation.version };
+  }
+  if (operation.kind === "PUBLISH_REVISION") {
+    return {
+      action: "CONFIRM",
+      confirmation: "PUBLISH_REVISION",
+      expectedVersion: operation.version,
+      publicMediaConfirmed: true,
+    };
+  }
+  if (operation.kind === "DROP_MOVE") {
+    return { action: "CONFIRM", confirmation: "MOVE_DROP", expectedVersion: operation.version };
+  }
+  if (operation.kind === "ARCHIVE") {
+    return { action: "CONFIRM", confirmation: "ARCHIVE", expectedVersion: operation.version };
+  }
+  return { action: "CONFIRM", confirmation: "DELETE_PERMANENTLY", expectedVersion: operation.version };
+}
+
 const MAX_QUERY_LENGTH = 1_200;
 const TASK_RETENTION_MS = 30 * 24 * 60 * 60 * 1_000;
-const STORAGE_KEY = "juw.studio.ask.v2";
 const TASKS_STORAGE_KEY = "juw.studio.ask.tasks.v2";
 const SCENARIO_CAPABILITIES: StudioAssistantContext["capabilities"] = [
   { id: "PROJECTION", state: "AVAILABLE" },
@@ -114,26 +160,34 @@ const SCENARIO_CAPABILITIES: StudioAssistantContext["capabilities"] = [
   { id: "COLLECTION_MEMBERSHIP_WRITE", state: "UNAVAILABLE" },
 ];
 
+const STUDIO_ASSISTANT_TOOL_PART_TYPES = new Set(
+  STUDIO_ASSISTANT_TOOL_NAMES.map((name) => `tool-${name}`),
+);
+
+type StudioAssistantToolPart = {
+  output?: unknown;
+  state: "input-available" | "input-streaming" | "output-available" | "output-error" | "output-denied";
+  type: string;
+};
+
+function assistantToolPart(value: StudioAssistantUIMessage["parts"][number]): StudioAssistantToolPart | null {
+  if (!STUDIO_ASSISTANT_TOOL_PART_TYPES.has(value.type)) return null;
+  return value as unknown as StudioAssistantToolPart;
+}
+
+function formatMessageTime(value: string) {
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return "";
+  return new Intl.DateTimeFormat("en-NG", {
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    month: "short",
+  }).format(date);
+}
+
 function assistantTokens(values: Array<string | null | undefined>) {
   return normalizeStudioAssistantText(values.filter(Boolean).join(" "));
-}
-
-function storedQuery(value: unknown) {
-  if (typeof value === "string") return value.trim().slice(0, MAX_QUERY_LENGTH);
-  if (!value || typeof value !== "object") return "";
-  const candidate = value as { query?: unknown };
-  return typeof candidate.query === "string" ? candidate.query.trim().slice(0, MAX_QUERY_LENGTH) : "";
-}
-
-function restoreQueries(storageKey: string) {
-  try {
-    const stored = window.sessionStorage.getItem(storageKey);
-    if (!stored) return [];
-    const value = JSON.parse(stored) as unknown;
-    return Array.isArray(value) ? value.map(storedQuery).filter(Boolean).slice(-12) : [];
-  } catch {
-    return [];
-  }
 }
 
 function messageText(message: StudioAssistantUIMessage) {
@@ -158,6 +212,10 @@ function requestTextMessages(messages: StudioAssistantUIMessage[]) {
     .slice(-8);
 }
 
+function latestUserMessage(messages: StudioAssistantUIMessage[]) {
+  return [...messages].reverse().find((message) => message.role === "user") ?? null;
+}
+
 function isSafeStudioHref(href: string) {
   try {
     const origin = "https://studio.invalid";
@@ -175,7 +233,7 @@ function isStudioAssistantTaskDraft(value: unknown): value is StudioAssistantTas
   const candidate = value as Partial<StudioAssistantTaskDraft>;
   return candidate.schemaVersion === "studio-assistant-task/v1"
     && candidate.state === "PROPOSED"
-    && candidate.storage === "DEVICE_PRIVATE"
+    && (candidate.storage === "DEVICE_PRIVATE" || candidate.storage === "SHARED_CONVERSATION")
     && candidate.requiresOwningWorkflowConfirmation === true
     && typeof candidate.id === "string" && candidate.id.length <= 160
     && typeof candidate.title === "string" && candidate.title.length <= 240
@@ -977,45 +1035,63 @@ export function StudioAskSurface() {
     ? `scenario:${studio.scenario}:${operator?.storageScope ?? "unavailable"}`
     : `connected:${operator?.storageScope ?? "unavailable"}`
   ));
-  const sessionStorageKey = `${STORAGE_KEY}:${storageScope}`;
   const tasksStorageKey = `${TASKS_STORAGE_KEY}:${storageScope}`;
   const [query, setQuery] = useState("");
   const [queryError, setQueryError] = useState("");
-  const [restoredTurns, setRestoredTurns] = useState<RestoredTurn[]>([]);
   const [fallbackTurns, setFallbackTurns] = useState<FallbackTurn[]>([]);
-  const [tasks, setTasks] = useState<StoredStudioAssistantTask[]>([]);
+  const [tasks, setTasks] = useState<DisplayStudioAssistantTask[]>([]);
   const [taskStorageError, setTaskStorageError] = useState("");
   const [selectedTask, setSelectedTask] = useState<StudioAssistantTaskDraft | null>(null);
   const [taskReturnFocus, setTaskReturnFocus] = useState<HTMLElement | null>(null);
   const [tasksOpen, setTasksOpen] = useState(false);
-  const [restored, setRestored] = useState(false);
-  const [restoreQueue, setRestoreQueue] = useState<string[] | null>(null);
+  const [threads, setThreads] = useState<StudioAssistantThreadSummary[]>([]);
+  const [activeThread, setActiveThread] = useState<StudioAssistantThreadDetail | null>(null);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [threadBusy, setThreadBusy] = useState(false);
+  const [threadError, setThreadError] = useState("");
+  const [threadRefreshToken, setThreadRefreshToken] = useState(0);
+  const [renameTarget, setRenameTarget] = useState<StudioAssistantThreadSummary | null>(null);
+  const [renameTitle, setRenameTitle] = useState("");
+  const [archiveTarget, setArchiveTarget] = useState<StudioAssistantThreadSummary | null>(null);
+  const [threadActionReturnFocus, setThreadActionReturnFocus] = useState<HTMLElement | null>(null);
+  const [operationsById, setOperationsById] = useState<Record<string, StudioAssistantOperation>>({});
+  const [selectedOperation, setSelectedOperation] = useState<StudioAssistantOperation | null>(null);
+  const [publicMediaReviewed, setPublicMediaReviewed] = useState(false);
+  const [operationReturnFocus, setOperationReturnFocus] = useState<HTMLElement | null>(null);
   const flightRef = useRef(false);
+  const operationFlightRef = useRef(false);
+  const replyFlightRef = useRef(false);
   const pendingRef = useRef<{ id: string; query: string } | null>(null);
+  const initializedScopeRef = useRef("");
   const messagesRef = useRef<StudioAssistantUIMessage[]>([]);
   const endRef = useRef<HTMLDivElement>(null);
   const [inputElement, setInputElement] = useState<HTMLTextAreaElement | null>(null);
   const [tasksButtonElement, setTasksButtonElement] = useState<HTMLButtonElement | null>(null);
+  const [historyButtonElement, setHistoryButtonElement] = useState<HTMLButtonElement | null>(null);
+  const [replyCheckingId, setReplyCheckingId] = useState<string | null>(null);
+  const [replyNotices, setReplyNotices] = useState<Record<string, string>>({});
 
   const transport = useMemo(() => new DefaultChatTransport<StudioAssistantUIMessage>({
     api: "/api/studio/ask",
-    prepareSendMessagesRequest: ({ messages }) => ({
-      body: {
-        messages: requestTextMessages(messages),
-        ...(studio.scenario ? { scenario: studio.scenario } : {}),
-      },
-    }),
-  }), [studio.scenario]);
+    prepareSendMessagesRequest: ({ messages }) => {
+      const message = latestUserMessage(requestTextMessages(messages) as StudioAssistantUIMessage[]);
+      return {
+        body: {
+          message,
+          ...(studio.scenario ? { scenario: studio.scenario } : { threadId: activeThread?.id }),
+        },
+      };
+    },
+  }), [activeThread?.id, studio.scenario]);
 
   const addFallback = useCallback((active: { id: string; query: string }) => {
     const lastUserIndex = messagesRef.current.findLastIndex((message) => message.role === "user");
     const freshAssistantMessages = messagesRef.current.slice(lastUserIndex + 1);
     const alreadyHasWorkflow = freshAssistantMessages.some((message) => message.parts.some((part) => (
-      part.type === "tool-resolveStudioRequest" && part.state === "output-available"
+      assistantToolPart(part)?.state === "output-available"
     )));
     if (alreadyHasWorkflow) return;
     const conversation = [
-      ...restoredTurns.filter((turn) => turn.state === "complete").map((turn) => turn.query),
       ...fallbackTurns.map((turn) => turn.query),
       ...messagesRef.current
         .filter((message) => message.role === "user")
@@ -1034,7 +1110,7 @@ export function StudioAskSurface() {
           query: active.query,
           workflow: resolveStudioAssistantWorkflow(contextualQuery, context),
         }].slice(-12));
-  }, [context, fallbackTurns, restoredTurns]);
+  }, [context, fallbackTurns]);
 
   const {
     clearError,
@@ -1045,93 +1121,117 @@ export function StudioAskSurface() {
     status,
     stop,
   } = useChat<StudioAssistantUIMessage>({
-    id: `studio-ask-${studio.scenario ?? "connected"}`,
+    id: studio.scenario ? `studio-ask-scenario-${studio.scenario}` : activeThread?.id ?? "studio-ask-opening",
+    messages: studio.scenario ? [] : activeThread?.messages.map((stored) => stored.message) ?? [],
     onError: () => {
-      if (pendingRef.current) addFallback(pendingRef.current);
+      if (studio.scenario && pendingRef.current) addFallback(pendingRef.current);
+      if (!studio.scenario) setThreadError("Ask Studio could not finish that reply. Your question remains in this shared conversation.");
       pendingRef.current = null;
       flightRef.current = false;
     },
     onFinish: ({ isAbort, isError }) => {
-      if (isError && pendingRef.current) addFallback(pendingRef.current);
+      if (studio.scenario && isError && pendingRef.current) addFallback(pendingRef.current);
       if (!isAbort || pendingRef.current) pendingRef.current = null;
       flightRef.current = false;
+      if (!studio.scenario) setThreadRefreshToken((value) => value + 1);
     },
     transport,
   });
   const busy = status === "submitted" || status === "streaming";
   const savedTaskIds = useMemo(() => new Set(tasks.map((task) => task.id)), [tasks]);
-  const openTaskCount = tasks.filter((task) => task.status === "OPEN").length;
-  const hasConversation = restoredTurns.length > 0 || messages.length > 0 || fallbackTurns.length > 0;
+  const pendingOperations = Object.values(operationsById).filter((operation) => (
+    operation.state === "PREPARED" || operation.state === "EXECUTING"
+  ));
+  const openTaskCount = tasks.filter((task) => task.status === "OPEN").length + pendingOperations.length;
+  const hasConversation = messages.length > 0 || fallbackTurns.length > 0;
+  const storedMessageById = useMemo(() => new Map(
+    (activeThread?.messages ?? []).map((stored) => [stored.message.id, stored]),
+  ), [activeThread?.messages]);
 
   useEffect(() => {
+    if (!studio.scenario) return;
     const frame = window.requestAnimationFrame(() => {
       setFallbackTurns([]);
       setMessages([]);
-      setRestored(false);
-      setRestoredTurns([]);
-      setRestoreQueue(restoreQueries(sessionStorageKey));
       setTasks(restoreTasks(tasksStorageKey));
       setTaskStorageError("");
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [sessionStorageKey, setMessages, tasksStorageKey]);
+  }, [setMessages, studio.scenario, tasksStorageKey]);
 
   useEffect(() => {
     messagesRef.current = messages;
   }, [messages]);
 
   useEffect(() => {
-    if (restored || restoreQueue === null) return;
-    if (!restoreQueue.length) {
-      const frame = window.requestAnimationFrame(() => {
-        setRestored(true);
-        setRestoreQueue(null);
-      });
-      return () => window.cancelAnimationFrame(frame);
-    }
-    const applicationSettled = Boolean(studio.scenario)
-      || studio.application.status === "ready"
-      || studio.application.status === "error";
-    if (!applicationSettled) return;
-    const nextTurns = restoreQueue.map((stored, index) => {
+    if (studio.scenario || studio.application.status !== "ready") return;
+    const scope = operator?.storageScope ?? "unavailable";
+    if (initializedScopeRef.current === scope) return;
+    initializedScopeRef.current = scope;
+    const controller = new AbortController();
+    setThreadBusy(true);
+    setThreadError("");
+    void (async () => {
       try {
-        return {
-          id: `restored-${index}`,
-          query: stored,
-          workflow: resolveStudioAssistantWorkflow(stored, context),
-          state: "complete" as const,
-        };
-      } catch {
-        return { id: `restored-${index}`, query: stored, state: "error" as const };
+        const available = await listStudioAssistantThreads(controller.signal);
+        if (controller.signal.aborted) return;
+        setThreads(available);
+        const requestedId = searchParams.get("thread");
+        const chosen = (requestedId ? available.find((thread) => thread.id === requestedId) : null)
+          ?? available.find((thread) => thread.state === "OPEN");
+        const detail = chosen
+          ? await readStudioAssistantThread(chosen.id, controller.signal)
+          : await createStudioAssistantThread({ ...(entryPieceReference ? { pieceReference: entryPieceReference } : {}) });
+        if (controller.signal.aborted) return;
+        setActiveThread(detail);
+        setTasks(detail.pendingWork);
+        setMessages(detail.messages.map((stored) => stored.message));
+        setThreads((current) => current.some((thread) => thread.id === detail.id)
+          ? current.map((thread) => thread.id === detail.id ? detail : thread)
+          : [detail, ...current]);
+      } catch (threadLoadError) {
+        if (!controller.signal.aborted) {
+          setThreadError(threadLoadError instanceof Error ? threadLoadError.message : "Conversation history is unavailable.");
+        }
+      } finally {
+        if (!controller.signal.aborted) setThreadBusy(false);
+      }
+    })();
+    return () => controller.abort();
+  }, [entryPieceReference, operator?.storageScope, searchParams, setMessages, studio.application.status, studio.scenario]);
+
+  const activeThreadId = activeThread?.id;
+  useEffect(() => {
+    if (studio.scenario || !activeThreadId) {
+      setOperationsById({});
+      return;
+    }
+    const controller = new AbortController();
+    void listStudioAssistantOperations(activeThreadId, controller.signal).then((operations) => {
+      if (controller.signal.aborted) return;
+      setOperationsById(Object.fromEntries(operations.map((operation) => [operation.id, operation])));
+    }).catch((operationError) => {
+      if (!controller.signal.aborted) {
+        setThreadError(operationError instanceof Error ? operationError.message : "Prepared changes could not refresh.");
       }
     });
-    const frame = window.requestAnimationFrame(() => {
-      setRestoredTurns(nextTurns);
-      setRestored(true);
-      setRestoreQueue(null);
-    });
-    return () => window.cancelAnimationFrame(frame);
-  }, [context, restoreQueue, restored, studio.application.status, studio.scenario]);
+    return () => controller.abort();
+  }, [activeThreadId, studio.scenario, threadRefreshToken]);
 
   useEffect(() => {
-    if (!restored) return;
-    const liveQueries = messages
-      .filter((message) => message.role === "user")
-      .map(messageText)
-      .filter(Boolean);
-    const localQueries = fallbackTurns.map((turn) => turn.query);
-    try {
-      window.sessionStorage.setItem(sessionStorageKey, JSON.stringify(
-        [
-          ...restoredTurns.filter((turn) => turn.state === "complete").map((turn) => turn.query),
-          ...liveQueries,
-          ...localQueries,
-        ].slice(-12),
-      ));
-    } catch {
-      // A private browsing policy may disable session storage; chat remains usable.
-    }
-  }, [fallbackTurns, messages, restored, restoredTurns, sessionStorageKey]);
+    if (studio.scenario || !activeThreadId || !threadRefreshToken) return;
+    let cancelled = false;
+    void readStudioAssistantThread(activeThreadId).then((detail) => {
+      if (cancelled) return;
+      setActiveThread(detail);
+      setTasks(detail.pendingWork);
+      setMessages(detail.messages.map((stored) => stored.message));
+      setThreads((current) => current.map((thread) => thread.id === detail.id ? detail : thread));
+    }).catch((threadLoadError) => {
+      if (!cancelled) setThreadError(threadLoadError instanceof Error ? threadLoadError.message : "Conversation history could not refresh.");
+    });
+    return () => { cancelled = true; };
+  }, [activeThreadId, setMessages, studio.scenario, threadRefreshToken]);
 
   useEffect(() => {
     if (!hasConversation) return;
@@ -1164,10 +1264,10 @@ export function StudioAskSurface() {
     if (status === "error") clearError();
     setQueryError("");
     setQuery("");
-    if (studio.scenario) {
-      addFallback(active);
-      pendingRef.current = null;
+    if (!studio.scenario && !activeThread) {
       flightRef.current = false;
+      pendingRef.current = null;
+      setThreadError("Ask Studio is still opening this shared conversation.");
       return;
     }
     void sendMessage({
@@ -1175,11 +1275,54 @@ export function StudioAskSurface() {
       parts: [{ text: cleanQuery, type: "text" }],
       role: "user",
     }).catch(() => {
-      addFallback(active);
+      setThreadError("Ask Studio could not send that question. No Studio record changed.");
       pendingRef.current = null;
       flightRef.current = false;
     });
-  }, [addFallback, clearError, sendMessage, status, studio.scenario]);
+  }, [activeThread, addFallback, clearError, sendMessage, status, studio.scenario]);
+
+  function reuseQuestion(question: string) {
+    if (!question.trim() || busy) return;
+    setQuery(question);
+    setQueryError("");
+    window.requestAnimationFrame(() => inputElement?.focus({ preventScroll: true }));
+  }
+
+  async function reconcileReply(messageId: string) {
+    if (studio.scenario || !activeThread || replyFlightRef.current) return;
+    replyFlightRef.current = true;
+    setReplyCheckingId(messageId);
+    setReplyNotices((current) => ({ ...current, [messageId]: "" }));
+    try {
+      const result = await reconcileStudioAssistantReply(
+        activeThread.id,
+        messageId,
+        activeThread.version,
+      );
+      setActiveThread(result.thread);
+      setTasks(result.thread.pendingWork);
+      setMessages(result.thread.messages.map((stored) => stored.message));
+      setThreads((current) => current.map((thread) => (
+        thread.id === result.thread.id ? result.thread : thread
+      )));
+      setReplyNotices((current) => ({
+        ...current,
+        [messageId]: result.outcome === "RUNNING"
+          ? "The original reply is still running. Check again shortly; Ask Studio will not start it twice."
+          : result.outcome === "RECOVERED"
+            ? "No saved reply was recovered. The question remains above; use it again only when you are ready."
+            : "The saved reply is already reconciled.",
+      }));
+    } catch (replyError) {
+      setReplyNotices((current) => ({
+        ...current,
+        [messageId]: replyError instanceof Error ? replyError.message : "That reply could not be checked.",
+      }));
+    } finally {
+      replyFlightRef.current = false;
+      setReplyCheckingId(null);
+    }
+  }
 
   const entryPieceAction = entryPiece && entryPieceReference ? (
     <button
@@ -1195,18 +1338,133 @@ export function StudioAskSurface() {
     </button>
   ) : null;
 
-  function resetConversation() {
+  async function resetConversation() {
     if (busy) void stop();
     flightRef.current = false;
     pendingRef.current = null;
     setMessages([]);
-    setRestoredTurns([]);
     setFallbackTurns([]);
     setQuery("");
     setQueryError("");
     clearError();
-    try { window.sessionStorage.removeItem(sessionStorageKey); } catch { /* Keep the UI usable. */ }
+    if (!studio.scenario) {
+      if (activeThread && activeThread.messages.length === 0 && messages.length === 0) {
+        setHistoryOpen(false);
+        window.requestAnimationFrame(() => inputElement?.focus({ preventScroll: true }));
+        return;
+      }
+      setThreadBusy(true);
+      try {
+        const detail = await createStudioAssistantThread({ ...(entryPieceReference ? { pieceReference: entryPieceReference } : {}) });
+        setActiveThread(detail);
+        setTasks(detail.pendingWork);
+        setThreads((current) => [detail, ...current]);
+        setThreadError("");
+      } catch (threadCreateError) {
+        setThreadError(threadCreateError instanceof Error ? threadCreateError.message : "Ask Studio could not create a conversation.");
+      } finally {
+        setThreadBusy(false);
+      }
+    }
     window.requestAnimationFrame(() => inputElement?.focus({ preventScroll: true }));
+  }
+
+  async function openConversation(threadId: string) {
+    if (busy || threadBusy) return;
+    setThreadBusy(true);
+    setThreadError("");
+    try {
+      const detail = await readStudioAssistantThread(threadId);
+      setActiveThread(detail);
+      setTasks(detail.pendingWork);
+      setMessages(detail.messages.map((stored) => stored.message));
+      setFallbackTurns([]);
+      setHistoryOpen(false);
+    } catch (threadLoadError) {
+      setThreadError(threadLoadError instanceof Error ? threadLoadError.message : "That conversation could not open.");
+    } finally {
+      setThreadBusy(false);
+    }
+  }
+
+  function reviewOperation(operation: StudioAssistantOperation, returnFocus: HTMLElement) {
+    setThreadError("");
+    setTasksOpen(false);
+    setPublicMediaReviewed(false);
+    setOperationReturnFocus(returnFocus.closest(".studio-ask-tasks-sheet") ? tasksButtonElement : returnFocus);
+    setSelectedOperation(operationsById[operation.id] ?? operation);
+  }
+
+  async function cancelOperation(operation: StudioAssistantOperation) {
+    const current = operationsById[operation.id] ?? operation;
+    if (operationFlightRef.current || current.state !== "PREPARED") return;
+    operationFlightRef.current = true;
+    try {
+      const updated = await updateStudioAssistantOperation(current.id, {
+        action: "CANCEL",
+        expectedVersion: current.version,
+      });
+      setOperationsById((existing) => ({ ...existing, [updated.id]: updated }));
+      if (selectedOperation?.id === updated.id) setSelectedOperation(updated);
+    } catch (operationError) {
+      setThreadError(operationError instanceof Error ? operationError.message : "That prepared change could not be cancelled.");
+    } finally {
+      operationFlightRef.current = false;
+    }
+  }
+
+  async function confirmOperation() {
+    if (!selectedOperation) return { error: "Choose a prepared change.", ok: false as const };
+    const current = operationsById[selectedOperation.id] ?? selectedOperation;
+    if (operationFlightRef.current) return { error: "This change is already being handled.", ok: false as const };
+    if (current.state === "SUCCEEDED") return { ok: true as const };
+    if (current.state !== "PREPARED" && current.state !== "EXECUTING") {
+      return { error: "This prepared change is no longer available to confirm.", ok: false as const };
+    }
+    operationFlightRef.current = true;
+    try {
+      if (current.state === "PREPARED" && current.kind === "PUBLISH_REVISION" && !publicMediaReviewed) {
+        return { error: "Review and confirm the exact public media set before publishing.", ok: false as const };
+      }
+      const updated = current.state === "EXECUTING"
+        ? await updateStudioAssistantOperation(current.id, {
+            action: "RECONCILE",
+            expectedVersion: current.version,
+          })
+        : await updateStudioAssistantOperation(current.id, confirmationForOperation(current));
+      setOperationsById((existing) => ({ ...existing, [updated.id]: updated }));
+      setSelectedOperation(updated);
+      setThreadRefreshToken((value) => value + 1);
+      if (updated.state === "SUCCEEDED") return { ok: true as const };
+      if (updated.state === "FAILED") {
+        return { error: updated.lastError?.message ?? "The owning Studio workflow rejected that change.", ok: false as const };
+      }
+      return {
+        error: "Studio has not proved the final outcome yet. Keep this conversation and use Reconcile rather than confirming again.",
+        ok: false as const,
+      };
+    } catch (operationError) {
+      return {
+        error: operationError instanceof Error ? operationError.message : "Studio could not prove whether that change finished.",
+        ok: false as const,
+      };
+    } finally {
+      operationFlightRef.current = false;
+    }
+  }
+
+  async function mutateThread(
+    target: StudioAssistantThreadSummary,
+    action: StudioAssistantThreadMutation,
+  ) {
+    const fresh = await readStudioAssistantThread(target.id);
+    const detail = await updateStudioAssistantThread(target.id, { ...action, expectedVersion: fresh.version });
+    setThreads((current) => current.map((thread) => thread.id === detail.id ? detail : thread));
+    if (activeThread?.id === detail.id) {
+      setActiveThread(detail);
+      setTasks(detail.pendingWork);
+    }
+    return detail;
   }
 
   function prepareTaskSave(task: StudioAssistantTaskDraft, returnFocus: HTMLElement) {
@@ -1222,12 +1480,31 @@ export function StudioAskSurface() {
 
   async function confirmTaskSave() {
     if (!selectedTask) return { error: "Choose a task to save.", ok: false as const };
+    if (!studio.scenario && activeThread) {
+      try {
+        const task: StudioAssistantThreadTask = {
+          action: { href: selectedTask.action.href, label: selectedTask.action.label },
+          consequence: selectedTask.consequence,
+          createdAt: new Date().toISOString(),
+          id: selectedTask.id,
+          objective: selectedTask.objective,
+          risk: selectedTask.risk,
+          status: "OPEN",
+          steps: selectedTask.steps,
+          title: selectedTask.title,
+        };
+        const detail = await mutateThread(activeThread, { action: "SAVE_TASK", task });
+        setTasks(detail.pendingWork);
+        setTaskStorageError("");
+        return { ok: true as const };
+      } catch (taskError) {
+        return { error: taskError instanceof Error ? taskError.message : "That task could not be saved.", ok: false as const };
+      }
+    }
     const existing = tasks.find((task) => task.id === selectedTask.id);
-    const next = existing
-      ? tasks
-      : [...tasks, storedTaskFromDraft(selectedTask)].slice(-24);
-    if (!persistTasks(tasksStorageKey, next)) {
-      return { error: "This browser did not allow device storage. The Studio workflow was not changed.", ok: false as const };
+    const next = existing ? tasks : [...tasks, storedTaskFromDraft(selectedTask)].slice(-24);
+    if (!persistTasks(tasksStorageKey, next as StoredStudioAssistantTask[])) {
+      return { error: "This browser did not allow scenario storage. The Studio workflow was not changed.", ok: false as const };
     }
     setTaskStorageError("");
     setTasks(next);
@@ -1235,8 +1512,14 @@ export function StudioAskSurface() {
   }
 
   function setTaskStatus(taskId: string, taskStatus: StoredStudioAssistantTask["status"]) {
+    if (!studio.scenario && activeThread) {
+      void mutateThread(activeThread, { action: "SET_TASK_STATUS", status: taskStatus, taskId })
+        .then((detail) => setTasks(detail.pendingWork))
+        .catch((taskError) => setTaskStorageError(taskError instanceof Error ? taskError.message : "That task could not update."));
+      return;
+    }
     const next = tasks.map((task) => task.id === taskId ? { ...task, status: taskStatus } : task);
-    if (persistTasks(tasksStorageKey, next)) {
+    if (persistTasks(tasksStorageKey, next as StoredStudioAssistantTask[])) {
       setTaskStorageError("");
       setTasks(next);
       return;
@@ -1245,13 +1528,60 @@ export function StudioAskSurface() {
   }
 
   function deleteTask(taskId: string) {
+    if (!studio.scenario && activeThread) {
+      void mutateThread(activeThread, { action: "DELETE_TASK", taskId })
+        .then((detail) => setTasks(detail.pendingWork))
+        .catch((taskError) => setTaskStorageError(taskError instanceof Error ? taskError.message : "That task could not be removed."));
+      return;
+    }
     const next = tasks.filter((task) => task.id !== taskId);
-    if (persistTasks(tasksStorageKey, next)) {
+    if (persistTasks(tasksStorageKey, next as StoredStudioAssistantTask[])) {
       setTaskStorageError("");
       setTasks(next);
       return;
     }
     setTaskStorageError("This browser could not remove the saved task. No Studio record changed.");
+  }
+
+  async function confirmRenameThread() {
+    if (!renameTarget || !renameTitle.trim()) {
+      return { error: "Enter a conversation name.", ok: false as const };
+    }
+    try {
+      await mutateThread(renameTarget, { action: "RENAME", title: renameTitle.trim() });
+      setRenameTarget(null);
+      setRenameTitle("");
+      return { ok: true as const };
+    } catch (renameError) {
+      return { error: renameError instanceof Error ? renameError.message : "That conversation could not be renamed.", ok: false as const };
+    }
+  }
+
+  async function confirmArchiveThread() {
+    if (!archiveTarget) return { error: "Choose a conversation.", ok: false as const };
+    try {
+      const detail = await mutateThread(archiveTarget, { action: "ARCHIVE" });
+      setArchiveTarget(null);
+      if (activeThread?.id === detail.id) await resetConversation();
+      return { ok: true as const };
+    } catch (archiveError) {
+      return { error: archiveError instanceof Error ? archiveError.message : "That conversation could not be archived.", ok: false as const };
+    }
+  }
+
+  function restoreConversation(target: StudioAssistantThreadSummary) {
+    setThreadBusy(true);
+    void mutateThread(target, { action: "RESTORE" })
+      .then((detail) => {
+        setActiveThread(detail);
+        setTasks(detail.pendingWork);
+        setMessages(detail.messages.map((stored) => stored.message));
+        setFallbackTurns([]);
+        setHistoryOpen(false);
+        setThreadError("");
+      })
+      .catch((restoreError) => setThreadError(restoreError instanceof Error ? restoreError.message : "That conversation could not be restored."))
+      .finally(() => setThreadBusy(false));
   }
 
   if (!studio.scenario && (studio.application.status === "idle" || studio.application.status === "loading")) {
@@ -1272,10 +1602,16 @@ export function StudioAskSurface() {
 
   return (
     <section className="studio-ask-page">
-      <div aria-live="polite" className="studio-ask-thread">
+      <div className="studio-ask-thread">
+        <span aria-live="polite" className="sr-only" role="status">
+          {busy ? "Ask Studio is reading current Studio truth." : threadBusy ? "Shared conversation is updating." : ""}
+        </span>
         <div className="studio-ask-session-tools">
-          {hasConversation ? (
-            <button onClick={resetConversation} type="button"><RotateCcw aria-hidden="true" size={15} />New</button>
+          <button disabled={threadBusy} onClick={() => void resetConversation()} type="button"><Plus aria-hidden="true" size={15} />New</button>
+          {!studio.scenario ? (
+            <button disabled={threadBusy} onClick={() => setHistoryOpen(true)} ref={setHistoryButtonElement} type="button">
+              <Clock3 aria-hidden="true" size={15} />History{threads.length ? <span>{threads.length}</span> : null}
+            </button>
           ) : null}
           <button onClick={() => setTasksOpen(true)} ref={setTasksButtonElement} type="button">
             <ListTodo aria-hidden="true" size={15} />Tasks{openTaskCount ? <span>{openTaskCount}</span> : null}
@@ -1284,6 +1620,23 @@ export function StudioAskSurface() {
             <button onClick={() => void stop()} type="button"><Square aria-hidden="true" size={13} />Stop</button>
           ) : null}
         </div>
+
+        {!studio.scenario && activeThread ? (
+          <header className="studio-ask-thread-heading">
+            <span>{activeThread.title}</span>
+            {activeThread.focus?.reference ? <small>Focused on {activeThread.focus.reference}</small> : <small>Shared Studio worklane</small>}
+          </header>
+        ) : null}
+
+        {threadError ? (
+          <div className="studio-ask-error" role="alert">
+            <CircleAlert aria-hidden="true" size={18} />
+            <span><strong>Conversation update paused.</strong><small>{threadError}</small></span>
+            <button onClick={() => setThreadError("")} type="button">Dismiss</button>
+          </div>
+        ) : null}
+
+        {threadBusy && !activeThread ? <div className="studio-ask-resolving" role="status"><LoaderCircle aria-hidden="true" size={17} />Opening shared history</div> : null}
 
         {hasConversation ? entryPieceAction : null}
 
@@ -1304,31 +1657,13 @@ export function StudioAskSurface() {
           </div>
         ) : (
           <>
-            {restoredTurns.map((turn) => (
-              <article className="studio-ask-turn" key={turn.id}>
-                <p className="studio-ask-operator">{turn.query}</p>
-                {turn.state === "error" ? (
-                  <div className="studio-ask-error" role="alert">
-                    <CircleAlert aria-hidden="true" size={18} />
-                    <span><strong>Studio could not restore that request.</strong><small>No Studio change was applied.</small></span>
-                    <button onClick={() => submit(turn.query)} type="button">Try again</button>
-                  </div>
-                ) : turn.workflow ? (
-                  <>
-                    <small className="studio-ask-restored">Refreshed against current Studio truth</small>
-                    <AssistantWorkflowCard
-                      busy={busy}
-                      onPrompt={submit}
-                      onSaveTask={prepareTaskSave}
-                      savedTaskIds={savedTaskIds}
-                      workflow={turn.workflow}
-                    />
-                  </>
-                ) : null}
-              </article>
-            ))}
-
-            {messages.map((message) => (
+            {messages.map((message, messageIndex) => {
+              const stored = storedMessageById.get(message.id);
+              const preservedQuestion = message.role === "assistant"
+                ? messages.slice(0, messageIndex).findLast((candidate) => candidate.role === "user")
+                : null;
+              const preservedQuestionText = preservedQuestion ? messageText(preservedQuestion) : "";
+              return (
               <Fragment key={message.id}>
               <Message className="studio-ask-message" from={message.role}>
                 <MessageContent className="studio-ask-message-content">
@@ -1347,27 +1682,37 @@ export function StudioAskSurface() {
                         </MessageResponse>
                       );
                     }
-                    if (part.type !== "tool-resolveStudioRequest") return null;
-                    if (part.state === "input-streaming" || part.state === "input-available") {
-                      return (
-                        <div className="studio-ask-resolving" key={`${message.id}:tool:${partIndex}`} role="status">
-                          <LoaderCircle aria-hidden="true" size={17} />Reading Studio
-                        </div>
-                      );
+                    const toolPart = assistantToolPart(part);
+                    if (!toolPart) return null;
+                    if (toolPart.state === "input-streaming" || toolPart.state === "input-available") {
+                      return <StudioAssistantToolPending key={`${message.id}:tool:${partIndex}`} />;
                     }
-                    if (part.state === "output-available") {
+                    if (toolPart.state === "output-available") {
+                      const parsed = studioAssistantToolOutputSchema.safeParse(toolPart.output);
+                      if (!parsed.success) {
+                        return (
+                          <div className="studio-ask-error" key={`${message.id}:tool:${partIndex}`} role="alert">
+                            <CircleAlert aria-hidden="true" size={18} />
+                            <span><strong>Studio returned an incomplete result.</strong><small>No Studio change was applied.</small></span>
+                          </div>
+                        );
+                      }
+                      const operation = parsed.data.operation
+                        ? operationsById[parsed.data.operation.id] ?? parsed.data.operation
+                        : null;
                       return (
-                        <AssistantWorkflowCard
-                          busy={busy}
+                        <StudioAssistantToolResult
+                          busy={busy || operationFlightRef.current}
                           key={`${message.id}:tool:${partIndex}`}
+                          onCancel={(candidate) => void cancelOperation(candidate)}
                           onPrompt={submit}
-                          onSaveTask={prepareTaskSave}
-                          savedTaskIds={savedTaskIds}
-                          workflow={part.output}
+                          onReview={reviewOperation}
+                          operation={operation}
+                          output={parsed.data}
                         />
                       );
                     }
-                    if (part.state === "output-error") {
+                    if (toolPart.state === "output-error" || toolPart.state === "output-denied") {
                       return (
                         <div className="studio-ask-error" key={`${message.id}:tool:${partIndex}`} role="alert">
                           <CircleAlert aria-hidden="true" size={18} />
@@ -1377,6 +1722,36 @@ export function StudioAskSurface() {
                     }
                     return null;
                   })}
+                  {stored && stored.status !== "COMPLETE" && message.parts.length === 0 ? (
+                    <div className="studio-ask-error" role="status">
+                      <CircleAlert aria-hidden="true" size={18} />
+                      <span>
+                        <strong>{stored.status === "PENDING" ? "Reply interrupted" : "Reply paused"}</strong>
+                        <small>
+                          {replyNotices[message.id] || (stored.status === "PENDING"
+                            ? "Your question is preserved. Check the original reply before deciding whether to ask again."
+                            : "No complete reply was saved. Review the preserved question before using it again.")}
+                        </small>
+                      </span>
+                      {stored.status === "PENDING" ? (
+                        <button
+                          disabled={replyCheckingId === message.id}
+                          onClick={() => void reconcileReply(message.id)}
+                          type="button"
+                        >{replyCheckingId === message.id ? "Checking…" : "Check reply"}</button>
+                      ) : preservedQuestionText ? (
+                        <button onClick={() => reuseQuestion(preservedQuestionText)} type="button">Use question again</button>
+                      ) : null}
+                    </div>
+                  ) : null}
+                  {stored ? (
+                    <small className="studio-ask-message-meta">
+                      {message.role === "assistant" ? "Ask Studio" : stored.author.displayName}
+                      {formatMessageTime(stored.createdAt) ? ` · ${formatMessageTime(stored.createdAt)}` : ""}
+                      {stored.status === "PENDING" ? " · Interrupted, ready to reconcile" : ""}
+                      {stored.status === "ERROR" || stored.status === "ABORTED" ? " · Reply paused" : ""}
+                    </small>
+                  ) : null}
                 </MessageContent>
               </Message>
               {message.role === "user" ? fallbackTurns
@@ -1393,7 +1768,8 @@ export function StudioAskSurface() {
                   />
                 )) : null}
               </Fragment>
-            ))}
+              );
+            })}
             {fallbackTurns.filter((turn) => !messages.some((message) => message.id === turn.id)).map((turn) => (
               <Fragment key={`unmatched-fallback:${turn.id}`}>
                 <Message className="studio-ask-message" from="user">
@@ -1436,7 +1812,7 @@ export function StudioAskSurface() {
             <textarea
               aria-describedby={queryError ? "studio-ask-query-error" : undefined}
               aria-invalid={queryError ? true : undefined}
-              disabled={busy}
+              disabled={busy || (!studio.scenario && (!activeThread || threadBusy))}
               maxLength={MAX_QUERY_LENGTH}
               onChange={(event) => {
                 setQuery(event.target.value);
@@ -1457,7 +1833,7 @@ export function StudioAskSurface() {
             aria-label="Send to Ask Studio"
             className="studio-ai-send"
             data-busy={busy || undefined}
-            disabled={!query.trim() || busy}
+            disabled={!query.trim() || busy || (!studio.scenario && (!activeThread || threadBusy))}
             type="submit"
           >
             {busy ? <LoaderCircle aria-hidden="true" size={18} /> : <ArrowRight aria-hidden="true" size={18} />}
@@ -1470,15 +1846,71 @@ export function StudioAskSurface() {
       </div>
 
       <StudioDecisionSheet
-        busyLabel="Saving task on this device"
+        busyLabel={selectedOperation?.state === "EXECUTING" ? "Reconciling this change" : "Applying this change"}
+        confirmDisabled={selectedOperation?.state === "PREPARED" && selectedOperation.kind === "PUBLISH_REVISION" && !publicMediaReviewed}
+        confirmLabel={selectedOperation?.state === "EXECUTING" ? "Reconcile" : selectedOperation?.preview.confirmationLabel ?? "Confirm change"}
+        consequence={selectedOperation?.preview.consequence ?? "Studio will use the owning workflow and return a durable receipt."}
+        destructive={selectedOperation?.preview.destructive}
+        eyebrow={selectedOperation ? `${selectedOperation.target.reference} · ${selectedOperation.preview.risk}` : "Review"}
+        fallbackFocus={inputElement}
+        onConfirm={confirmOperation}
+        onDismiss={() => {
+          setSelectedOperation(null);
+          setPublicMediaReviewed(false);
+        }}
+        open={Boolean(selectedOperation)}
+        receiptDetail={selectedOperation?.receipt?.detail ?? "The owning Studio workflow finished and reconciled current truth."}
+        receiptTitle={selectedOperation?.receipt?.title ?? "Studio change complete"}
+        returnFocus={operationReturnFocus}
+        summary={selectedOperation?.preview.summary ?? "Review the exact change before confirmation."}
+        title={selectedOperation?.kind === "PERMANENT_DELETE" ? "Permanently delete" : "Review change"}
+      >
+        {selectedOperation?.kind === "PUBLISH_REVISION" && selectedOperation.preview.media?.length ? (
+          <section className="studio-ask-public-media-review">
+            <header><strong>Approved public photos</strong><small>{selectedOperation.preview.media.length} exact view{selectedOperation.preview.media.length === 1 ? "" : "s"}</small></header>
+            <div>
+              {selectedOperation.preview.media.map((media) => (
+                <figure key={media.id}>
+                  <img alt={media.label} src={media.src} />
+                  <figcaption>{media.label}</figcaption>
+                </figure>
+              ))}
+            </div>
+            <label>
+              <input
+                checked={publicMediaReviewed}
+                onChange={(event) => setPublicMediaReviewed(event.currentTarget.checked)}
+                type="checkbox"
+              />
+              <span>I checked these exact public photos.</span>
+            </label>
+          </section>
+        ) : null}
+        {selectedOperation?.preview.changes.length ? (
+          <dl className="studio-decision-diff">
+            {selectedOperation.preview.changes.map((change) => (
+              <div key={`${change.field}:${change.after}`}>
+                <dt>{change.label}</dt><dd>{change.before}</dd><span aria-hidden="true">→</span><dd>{change.after}</dd>
+              </div>
+            ))}
+          </dl>
+        ) : null}
+      </StudioDecisionSheet>
+
+      <StudioDecisionSheet
+        busyLabel={studio.scenario ? "Saving scenario task" : "Saving shared task"}
         confirmLabel="Save task"
-        consequence="This saves a private task plan on this device. It does not run the workflow or change any Studio record."
+        consequence={studio.scenario
+          ? "This saves a private scenario task on this device. It does not run the workflow or change any Studio record."
+          : "This saves the proposed task in this shared conversation. It does not run the workflow or change a garment."}
         fallbackFocus={inputElement}
         onConfirm={confirmTaskSave}
         onDismiss={() => setSelectedTask(null)}
         open={Boolean(selectedTask)}
-        receiptDetail="The task is available under My tasks for 30 days on this device. No Wardrobe, Shop, Order, stock, media, or approval state changed."
-        receiptTitle="Task saved privately"
+        receiptDetail={studio.scenario
+          ? "The scenario task is available on this device for 30 days."
+          : "The task is available to both Studio admins in this conversation. No garment, Shop, Order, stock, media, or approval state changed."}
+        receiptTitle={studio.scenario ? "Scenario task saved" : "Shared task saved"}
         returnFocus={taskReturnFocus}
         summary={selectedTask ? `${selectedTask.title}: ${selectedTask.objective}` : "Review this task before saving it."}
         title={selectedTask?.title ?? "Save task"}
@@ -1493,14 +1925,118 @@ export function StudioAskSurface() {
         ) : null}
       </StudioDecisionSheet>
 
+      {!studio.scenario ? (
+        <StudioTaskSheet
+          busy={threadBusy}
+          busyLabel="Opening conversation"
+          className="studio-ask-history-sheet"
+          eyebrow="JUW Studio · shared"
+          fallbackFocus={inputElement}
+          footer={(requestClose) => (
+            <button className="button button-primary" onClick={() => { requestClose(); void resetConversation(); }} type="button">
+              <Plus aria-hidden="true" size={16} />New conversation
+            </button>
+          )}
+          onDismiss={() => setHistoryOpen(false)}
+          open={historyOpen}
+          returnFocus={historyButtonElement}
+          title="Conversation history"
+        >
+          <div className="studio-ask-history-list">
+            {threads.length ? threads.map((thread) => (
+              <article className={thread.id === activeThread?.id ? "is-current" : ""} key={thread.id}>
+                <button
+                  aria-current={thread.id === activeThread?.id ? "page" : undefined}
+                  className="studio-ask-history-main"
+                  disabled={threadBusy}
+                  onClick={() => void openConversation(thread.id)}
+                  type="button"
+                >
+                  <span>
+                    <strong>{thread.title}</strong>
+                    <small>{thread.focus?.reference ? `${thread.focus.reference} · ` : ""}{thread.state === "ARCHIVED" ? "Archived" : `Updated by ${thread.updatedBy.displayName}`}</small>
+                  </span>
+                  <ArrowRight aria-hidden="true" size={17} />
+                </button>
+                <div className="studio-ask-history-actions">
+                  {thread.state === "ARCHIVED" ? (
+                    <button disabled={threadBusy} onClick={() => restoreConversation(thread)} type="button"><RotateCcw aria-hidden="true" size={15} />Restore</button>
+                  ) : (
+                    <>
+                      <button
+                        aria-label={`Rename ${thread.title}`}
+                        disabled={threadBusy}
+                        onClick={(event) => {
+                          setThreadActionReturnFocus(event.currentTarget);
+                          setRenameTarget(thread);
+                          setRenameTitle(thread.title);
+                        }}
+                        type="button"
+                      ><Pencil aria-hidden="true" size={15} />Rename</button>
+                      <button
+                        aria-label={`Archive ${thread.title}`}
+                        disabled={threadBusy}
+                        onClick={(event) => {
+                          setThreadActionReturnFocus(event.currentTarget);
+                          setArchiveTarget(thread);
+                        }}
+                        type="button"
+                      ><Archive aria-hidden="true" size={15} />Archive</button>
+                    </>
+                  )}
+                </div>
+              </article>
+            )) : (
+              <div className="studio-quiet-empty"><Clock3 aria-hidden="true" size={21} /><div><strong>No conversations yet</strong><p>Start a worklane and it will appear here for both Studio admins.</p></div></div>
+            )}
+          </div>
+        </StudioTaskSheet>
+      ) : null}
+
+      <StudioDecisionSheet
+        busyLabel="Renaming conversation"
+        confirmLabel="Save name"
+        consequence="The new name will appear in shared History for both Studio admins. Messages and garment focus stay unchanged."
+        fallbackFocus={historyButtonElement}
+        onConfirm={confirmRenameThread}
+        onDismiss={() => { setRenameTarget(null); setRenameTitle(""); }}
+        open={Boolean(renameTarget)}
+        receiptDetail="The shared conversation name is updated."
+        receiptTitle="Conversation renamed"
+        returnFocus={threadActionReturnFocus}
+        summary="Use a short name that makes this worklane easy to resume."
+        title="Rename conversation"
+      >
+        <label className="studio-field">
+          <span>Conversation name</span>
+          <input maxLength={120} onChange={(event) => setRenameTitle(event.target.value)} value={renameTitle} />
+        </label>
+      </StudioDecisionSheet>
+
+      <StudioDecisionSheet
+        busyLabel="Archiving conversation"
+        confirmLabel="Archive"
+        consequence="The conversation leaves active History but remains available to restore. No garment or task is deleted."
+        destructive
+        fallbackFocus={historyButtonElement}
+        onConfirm={confirmArchiveThread}
+        onDismiss={() => setArchiveTarget(null)}
+        open={Boolean(archiveTarget)}
+        receiptDetail="The conversation is archived and can be restored from History."
+        receiptTitle="Conversation archived"
+        returnFocus={threadActionReturnFocus}
+        summary={archiveTarget ? `Archive “${archiveTarget.title}”?` : "Archive this conversation?"}
+        title="Archive conversation"
+      />
+
       <StudioTaskSheet
         className="studio-ask-tasks-sheet"
-        eyebrow="Device private · 30 days"
+        eyebrow={studio.scenario ? "Scenario · this device" : "Current conversation · shared"}
         fallbackFocus={inputElement}
         onDismiss={() => setTasksOpen(false)}
         open={tasksOpen}
         returnFocus={tasksButtonElement}
-        title="My tasks"
+        title={studio.scenario ? "Scenario tasks" : "Conversation tasks"}
       >
         {taskStorageError ? (
           <div className="studio-ask-error" role="alert">
@@ -1509,8 +2045,26 @@ export function StudioAskSurface() {
             <button onClick={() => setTaskStorageError("")} type="button">Dismiss</button>
           </div>
         ) : null}
-        {tasks.length ? (
+        {tasks.length || pendingOperations.length ? (
           <div className="studio-ask-task-list">
+            {pendingOperations.map((operation) => (
+              <article className="studio-ask-operation-task" key={operation.id}>
+                <header>
+                  <strong>{operation.preview.confirmationLabel}</strong>
+                  <small>{operation.state === "EXECUTING" ? "Reconcile" : operation.preview.risk}</small>
+                </header>
+                <p>{operation.preview.summary}</p>
+                <div>
+                  <button
+                    className="button button-primary"
+                    onClick={(event) => reviewOperation(operation, event.currentTarget)}
+                    type="button"
+                  >
+                    {operation.state === "EXECUTING" ? "Reconcile" : "Review"}<ArrowRight aria-hidden="true" size={15} />
+                  </button>
+                </div>
+              </article>
+            ))}
             {tasks.map((task) => (
               <article className={task.status === "DONE" ? "is-done" : ""} key={task.id}>
                 <header><strong>{task.title}</strong><small>{task.status === "DONE" ? "Done" : riskLabel(task.risk)}</small></header>

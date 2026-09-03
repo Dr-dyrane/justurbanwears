@@ -635,6 +635,24 @@ async function findReceipt(operator: StudioOperator, idempotencyKey: string) {
   return resultRows(result)[0] ?? null;
 }
 
+/** Read-only reconciliation lookup. Ownership must already be established by
+ * the caller before it supplies the actor that originally crossed the command
+ * fence. This function never creates or reapplies a collection command. */
+export async function getStudioCollectionCommandReceipt(input: {
+  idempotencyKey: string;
+  operatorSubject: string;
+}): Promise<StudioCollectionReceipt | null> {
+  const result = await (await getStudioDb()).execute<DatabaseRow>(sql`
+    select *
+    from studio_collection_commands
+    where operator_subject = ${input.operatorSubject}
+      and idempotency_key = ${input.idempotencyKey}
+    limit 1
+  `);
+  const row = resultRows(result)[0];
+  return row ? receiptFromRow(row, true) : null;
+}
+
 function afterStateSql() {
   return sql`jsonb_build_object(
     'id', changed.id,

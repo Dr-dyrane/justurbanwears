@@ -12,9 +12,12 @@ import {
 import {
   appendGarmentEvent,
   archiveGarment,
+  archiveGarmentIdempotently,
   changePublicationVisibility,
   createDraftGarmentRevision,
+  createDraftGarmentRevisionIdempotently,
   discardDraftGarmentRevision,
+  findGarmentLifecycleCommandReceipt,
   findGarmentPermanentDeleteReceipt,
   findDraftGarmentRevision,
   getGarmentPermanentDeleteEligibility,
@@ -22,7 +25,11 @@ import {
   permanentlyDeleteArchivedGarment,
   replaceWardrobeApprovedFront,
   updateDraftGarmentRevision,
+  updateDraftGarmentRevisionIdempotently,
   updatePrivateGarmentFacts,
+  updatePrivateGarmentFactsIdempotently,
+  type GarmentLifecycleCommandIdentity,
+  type GarmentLifecycleCommandWriteResult,
   type GarmentRevisionRow,
 } from "../../server/studio-garment-lifecycle-repository";
 import type { StudioOperator } from "../../server/studio-operator";
@@ -45,14 +52,17 @@ import {
   type StudioAtelierPublicationMedia,
   type StudioPublishedMediaSlot,
 } from "./catalogue-publication-contracts";
-import type {
-  GarmentLifecycleCommand,
-  GarmentLifecycleDraft,
-  GarmentPermanentDeleteCommand,
-  GarmentPermanentDeleteReceipt,
-  GarmentLifecycleWorkspace,
-  GarmentRevisionDiff,
-  GarmentRevisionMediaRole,
+import {
+  garmentLifecycleCommandReceiptQuerySchema,
+  type GarmentLifecycleCommand,
+  type GarmentLifecycleCommandReceipt,
+  type GarmentLifecycleDraft,
+  type GarmentPermanentDeleteCommand,
+  type GarmentPermanentDeleteReceipt,
+  type GarmentPublishRevisionReceipt,
+  type GarmentLifecycleWorkspace,
+  type GarmentRevisionDiff,
+  type GarmentRevisionMediaRole,
 } from "./garment-lifecycle-contracts";
 
 type WardrobeItem = Awaited<ReturnType<typeof getOwnedWardrobeItem>>;
@@ -67,6 +77,89 @@ const labels: Record<StudioPublishedMediaSlot, string> = {
   MODEL_LEFT_PROFILE: "On Lulu · left profile",
   MODEL_REAR_THREE_QUARTER: "On Lulu · right rear three-quarter",
 };
+
+type IdempotentGarmentLifecycleCommand =
+  | Extract<GarmentLifecycleCommand, { command: "SAVE_FACTS" }>
+  | Extract<GarmentLifecycleCommand, { command: "ARCHIVE" }>;
+
+export function garmentLifecycleCommandRequestFingerprint(input: {
+  wardrobeItemId: string;
+  command: IdempotentGarmentLifecycleCommand;
+}) {
+  return sha256(JSON.stringify({
+    schemaVersion: "juw.studio-garment-lifecycle-command.v1",
+    wardrobeItemId: input.wardrobeItemId,
+    command: input.command.command,
+    expectedVersion: input.command.expectedVersion,
+    ...(input.command.command === "SAVE_FACTS"
+      ? { facts: input.command.facts }
+      : { confirmation: input.command.confirmation }),
+  }));
+}
+
+function lifecycleCommandIdentity(input: {
+  wardrobeItemId: string;
+  operator: StudioOperator;
+  command: IdempotentGarmentLifecycleCommand;
+}): GarmentLifecycleCommandIdentity | null {
+  if (!input.command.idempotencyKey) return null;
+  return {
+    actorSubject: input.operator.actorSubject,
+    command: input.command.command,
+    idempotencyKey: input.command.idempotencyKey,
+    requestFingerprint: garmentLifecycleCommandRequestFingerprint({
+      wardrobeItemId: input.wardrobeItemId,
+      command: input.command,
+    }),
+  };
+}
+
+function idempotentWriteApplied(result: GarmentLifecycleCommandWriteResult) {
+  if (result.kind === "IDEMPOTENCY_CONFLICT") {
+    throw new StudioEngineError(
+      "VERSION_CONFLICT",
+      409,
+      "That garment change key was already used for different facts or state.",
+      "Reload the piece and prepare the change again.",
+    );
+  }
+  return result.kind !== "NOT_APPLIED";
+}
+
+export async function getGarmentLifecycleCommandReceipt(input: {
+  wardrobeItemId: string;
+  operator: StudioOperator;
+  idempotencyKey: string;
+}): Promise<GarmentLifecycleCommandReceipt | null> {
+  const query = garmentLifecycleCommandReceiptQuerySchema.parse({ idempotencyKey: input.idempotencyKey });
+  return findGarmentLifecycleCommandReceipt({
+    wardrobeItemId: input.wardrobeItemId,
+    operatorSubject: input.operator.subject,
+    idempotencyKey: query.idempotencyKey,
+  });
+}
+
+export async function getGarmentPublishRevisionReceipt(input: {
+  wardrobeItemId: string;
+  operator: StudioOperator;
+  idempotencyKey: string;
+}): Promise<GarmentPublishRevisionReceipt | null> {
+  const query = garmentLifecycleCommandReceiptQuerySchema.parse({ idempotencyKey: input.idempotencyKey });
+  const publication = await findCataloguePublication({
+    wardrobeItemId: input.wardrobeItemId,
+    operatorSubject: input.operator.subject,
+  });
+  if (!publication || publication.idempotencyKey !== query.idempotencyKey) return null;
+  return {
+    wardrobeItemId: publication.wardrobeItemId,
+    publicationId: publication.id,
+    idempotencyKey: publication.idempotencyKey,
+    sourceRevision: publication.sourceRevision,
+    sku: publication.sku,
+    slug: publication.slug,
+    publishedAt: publication.publishedAt.toISOString(),
+  };
+}
 
 function itemFacts(item: WardrobeItem): IntakeFacts {
   const description = typeof (item as WardrobeItem & { description?: unknown }).description === "string"
@@ -432,6 +525,7 @@ async function saveGarmentFacts(input: {
   operator: StudioOperator;
   expectedVersion: number;
   facts: IntakeFacts;
+  identity?: GarmentLifecycleCommandIdentity & { command: "SAVE_FACTS" };
 }) {
   const [item, publication, context, draft] = await Promise.all([
     getOwnedWardrobeItem(input.wardrobeItemId, input.operator.subject),
@@ -445,6 +539,19 @@ async function saveGarmentFacts(input: {
   const fallbackFacts = draft?.facts ?? (publication ? liveFacts(publication, item) : itemFacts(context.item));
   const facts = withDescription(input.facts, fallbackFacts);
   if (!publication) {
+    if (input.identity) {
+      const saved = await updatePrivateGarmentFactsIdempotently({
+        wardrobeItemId: item.id,
+        operatorSubject: input.operator.subject,
+        expectedVersion: input.expectedVersion,
+        facts,
+        identity: input.identity,
+      });
+      if (!idempotentWriteApplied(saved)) {
+        throw new StudioEngineError("VERSION_CONFLICT", 409, "This piece changed in another window.", "Reload the piece.");
+      }
+      return;
+    }
     const saved = await updatePrivateGarmentFacts({
       wardrobeItemId: item.id,
       operatorSubject: input.operator.subject,
@@ -458,15 +565,46 @@ async function saveGarmentFacts(input: {
     if (input.expectedVersion !== item.version) {
       throw new StudioEngineError("VERSION_CONFLICT", 409, "This piece changed in another window.", "Reload the piece.");
     }
+    const media = revisionMedia(publication, context.sources);
+    if (input.identity) {
+      const created = await createDraftGarmentRevisionIdempotently({
+        wardrobeItemId: item.id,
+        operatorSubject: input.operator.subject,
+        expectedVersion: input.expectedVersion,
+        baseSourceRevision: publication.sourceRevision,
+        facts,
+        media,
+        identity: input.identity,
+      });
+      if (!idempotentWriteApplied(created)) {
+        throw new StudioEngineError("VERSION_CONFLICT", 409, "A private revision already exists.", "Reload the piece.");
+      }
+      return;
+    }
     const created = await ensureDraft({
       item,
       publication,
       operator: input.operator,
       facts,
-      media: revisionMedia(publication, context.sources),
+      media,
     });
     if (created.facts.title !== facts.title || created.version !== 1) {
       throw new StudioEngineError("VERSION_CONFLICT", 409, "A private revision already exists.", "Reload the piece.");
+    }
+    return;
+  }
+  if (input.identity) {
+    const updated = await updateDraftGarmentRevisionIdempotently({
+      id: draft.id,
+      wardrobeItemId: item.id,
+      operatorSubject: input.operator.subject,
+      expectedVersion: input.expectedVersion,
+      facts,
+      media: revisionMedia(publication, context.sources),
+      identity: input.identity,
+    });
+    if (!idempotentWriteApplied(updated)) {
+      throw new StudioEngineError("VERSION_CONFLICT", 409, "This revision changed in another window.", "Reload the piece.");
     }
     return;
   }
@@ -487,11 +625,30 @@ export async function runGarmentLifecycleCommand(input: {
   command: GarmentLifecycleCommand;
 }): Promise<GarmentLifecycleWorkspace> {
   if (input.command.command === "SAVE_FACTS") {
+    const identity = lifecycleCommandIdentity({
+      wardrobeItemId: input.wardrobeItemId,
+      operator: input.operator,
+      command: input.command,
+    });
+    if (identity) {
+      const existing = await getGarmentLifecycleCommandReceipt({
+        wardrobeItemId: input.wardrobeItemId,
+        operator: input.operator,
+        idempotencyKey: identity.idempotencyKey,
+      });
+      if (existing) {
+        if (existing.requestFingerprint !== identity.requestFingerprint) {
+          idempotentWriteApplied({ kind: "IDEMPOTENCY_CONFLICT" });
+        }
+        return getGarmentLifecycleWorkspace(input.wardrobeItemId, input.operator);
+      }
+    }
     await saveGarmentFacts({
       wardrobeItemId: input.wardrobeItemId,
       operator: input.operator,
       expectedVersion: input.command.expectedVersion,
       facts: input.command.facts,
+      ...(identity ? { identity: { ...identity, command: "SAVE_FACTS" } } : {}),
     });
   } else if (input.command.command === "DISCARD_REVISION") {
     const workspace = await getGarmentLifecycleWorkspace(input.wardrobeItemId, input.operator);
@@ -523,15 +680,50 @@ export async function runGarmentLifecycleCommand(input: {
     }
     invalidateServerShopCatalogue();
   } else {
-    const archived = await archiveGarment({
+    const identity = lifecycleCommandIdentity({
       wardrobeItemId: input.wardrobeItemId,
-      operatorSubject: input.operator.subject,
-      expectedVersion: input.command.expectedVersion,
+      operator: input.operator,
+      command: input.command,
     });
-    if (!archived) {
+    if (identity) {
+      const existing = await getGarmentLifecycleCommandReceipt({
+        wardrobeItemId: input.wardrobeItemId,
+        operator: input.operator,
+        idempotencyKey: identity.idempotencyKey,
+      });
+      if (existing) {
+        if (existing.requestFingerprint !== identity.requestFingerprint) {
+          idempotentWriteApplied({ kind: "IDEMPOTENCY_CONFLICT" });
+        }
+        return getGarmentLifecycleWorkspace(input.wardrobeItemId, input.operator);
+      }
+    }
+    const archived = identity
+      ? await archiveGarmentIdempotently({
+          wardrobeItemId: input.wardrobeItemId,
+          operatorSubject: input.operator.subject,
+          expectedVersion: input.command.expectedVersion,
+          identity: { ...identity, command: "ARCHIVE" },
+        })
+      : await archiveGarment({
+          wardrobeItemId: input.wardrobeItemId,
+          operatorSubject: input.operator.subject,
+          expectedVersion: input.command.expectedVersion,
+        });
+    const archiveApplied = typeof archived === "boolean" ? archived : idempotentWriteApplied(archived);
+    if (!archiveApplied) {
+      const currentWorkspace = await getGarmentLifecycleWorkspace(input.wardrobeItemId, input.operator);
+      if (currentWorkspace.itemVersion !== input.command.expectedVersion) {
+        throw new StudioEngineError(
+          "VERSION_CONFLICT",
+          409,
+          "This piece changed in another window.",
+          "Reload the piece and review archive again.",
+        );
+      }
       throw new StudioEngineError("INVALID_TRANSITION", 409, "This piece cannot be archived now.", "Check that it is not reserved or sold.");
     }
-    invalidateServerShopCatalogue();
+    if (typeof archived === "boolean" || archived.kind === "APPLIED") invalidateServerShopCatalogue();
   }
   return getGarmentLifecycleWorkspace(input.wardrobeItemId, input.operator);
 }

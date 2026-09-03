@@ -753,6 +753,188 @@ export const studioOperatorMembership = pgTable("studio_operator_membership", {
   check("studio_operator_membership_role", sql`${table.role} in ('operator', 'admin')`),
 ]);
 
+export const studioAssistantThreadState = pgEnum("studio_assistant_thread_state", [
+  "OPEN",
+  "ARCHIVED",
+]);
+export const studioAssistantMessageRole = pgEnum("studio_assistant_message_role", [
+  "user",
+  "assistant",
+]);
+export const studioAssistantMessageState = pgEnum("studio_assistant_message_state", [
+  "PENDING",
+  "COMPLETE",
+  "ERROR",
+  "ABORTED",
+]);
+export const studioAssistantOperationKind = pgEnum("studio_assistant_operation_kind", [
+  "PIECE_EDIT",
+  "PUBLISH_REVISION",
+  "DROP_MOVE",
+  "ARCHIVE",
+  "PERMANENT_DELETE",
+]);
+export const studioAssistantOperationState = pgEnum("studio_assistant_operation_state", [
+  "PREPARED",
+  "EXECUTING",
+  "SUCCEEDED",
+  "FAILED",
+  "CANCELLED",
+]);
+
+export const studioAssistantThreads = pgTable("studio_assistant_threads", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  workspaceId: uuid("workspace_id")
+    .notNull()
+    .references(() => studioWorkspaces.id, { onDelete: "restrict" }),
+  title: varchar("title", { length: 120 }).default("New conversation").notNull(),
+  state: studioAssistantThreadState("state").default("OPEN").notNull(),
+  focus: jsonb("focus").$type<{
+    canonicalId: string | null;
+    entityType: "PIECE" | "DROP" | "ORDER" | "INVENTORY" | "MEDIA" | "MODEL" | "SERVICE";
+    label: string | null;
+    lastKnownRevision: string | null;
+    reference: string | null;
+    route: string | null;
+    unresolvedCandidates: Array<{
+      canonicalId: string;
+      entityType: "PIECE" | "DROP" | "ORDER" | "INVENTORY" | "MEDIA" | "MODEL" | "SERVICE";
+      label: string;
+      reference: string;
+      route: string | null;
+    }>;
+  }>(),
+  pendingWork: jsonb("pending_work").$type<Array<Record<string, unknown>>>().default([]).notNull(),
+  createdBySubject: text("created_by_subject").notNull(),
+  createdByEmail: text("created_by_email").notNull(),
+  createdByDisplayName: text("created_by_display_name").notNull(),
+  updatedBySubject: text("updated_by_subject").notNull(),
+  updatedByEmail: text("updated_by_email").notNull(),
+  updatedByDisplayName: text("updated_by_display_name").notNull(),
+  version: integer("version").default(1).notNull(),
+  archivedAt: timestamp("archived_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  index("studio_assistant_threads_workspace_state_updated_idx").on(
+    table.workspaceId,
+    table.state,
+    table.updatedAt,
+  ),
+  check("studio_assistant_threads_title_present", sql`length(trim(${table.title})) > 0`),
+  check("studio_assistant_threads_version_positive", sql`${table.version} > 0`),
+  check("studio_assistant_threads_focus_object", sql`${table.focus} is null or jsonb_typeof(${table.focus}) = 'object'`),
+  check("studio_assistant_threads_pending_work_array", sql`jsonb_typeof(${table.pendingWork}) = 'array'`),
+  check("studio_assistant_threads_archive_pair", sql`
+    (${table.state} = 'OPEN' and ${table.archivedAt} is null)
+    or (${table.state} = 'ARCHIVED' and ${table.archivedAt} is not null)
+  `),
+]);
+
+export const studioAssistantMessages = pgTable("studio_assistant_messages", {
+  threadId: uuid("thread_id")
+    .notNull()
+    .references(() => studioAssistantThreads.id, { onDelete: "cascade" }),
+  id: varchar("id", { length: 160 }).notNull(),
+  role: studioAssistantMessageRole("role").notNull(),
+  parts: jsonb("parts").$type<Array<Record<string, unknown>>>().notNull(),
+  status: studioAssistantMessageState("status").default("COMPLETE").notNull(),
+  authorSubject: text("author_subject"),
+  authorEmail: text("author_email"),
+  authorDisplayName: text("author_display_name").notNull(),
+  model: varchar("model", { length: 160 }),
+  tokenUsage: jsonb("token_usage").$type<Record<string, number>>(),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  primaryKey({ columns: [table.threadId, table.id], name: "studio_assistant_messages_thread_id_pk" }),
+  index("studio_assistant_messages_thread_created_idx").on(table.threadId, table.createdAt),
+  check("studio_assistant_messages_parts_array", sql`jsonb_typeof(${table.parts}) = 'array'`),
+  check("studio_assistant_messages_author_present", sql`length(trim(${table.authorDisplayName})) > 0`),
+]);
+
+export const studioAssistantOperations = pgTable("studio_assistant_operations", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  threadId: uuid("thread_id")
+    .notNull()
+    .references(() => studioAssistantThreads.id, { onDelete: "cascade" }),
+  workspaceId: uuid("workspace_id")
+    .notNull()
+    .references(() => studioWorkspaces.id, { onDelete: "restrict" }),
+  kind: studioAssistantOperationKind("kind").notNull(),
+  state: studioAssistantOperationState("state").default("PREPARED").notNull(),
+  targetType: varchar("target_type", { length: 40 }).notNull(),
+  targetId: text("target_id").notNull(),
+  targetReference: varchar("target_reference", { length: 120 }).notNull(),
+  targetLabel: text("target_label").notNull(),
+  targetHref: text("target_href").notNull(),
+  expectedVersion: integer("expected_version"),
+  expectedRevision: varchar("expected_revision", { length: 64 }),
+  idempotencyKey: varchar("idempotency_key", { length: 160 }).notNull(),
+  requestFingerprint: varchar("request_fingerprint", { length: 64 }).notNull(),
+  payload: jsonb("payload").$type<Record<string, unknown>>().notNull(),
+  preview: jsonb("preview").$type<Record<string, unknown>>().notNull(),
+  receipt: jsonb("receipt").$type<Record<string, unknown>>(),
+  lastError: jsonb("last_error").$type<Record<string, unknown>>(),
+  createdBySubject: text("created_by_subject").notNull(),
+  createdByEmail: text("created_by_email").notNull(),
+  createdByDisplayName: text("created_by_display_name").notNull(),
+  executedBySubject: text("executed_by_subject"),
+  executedByEmail: text("executed_by_email"),
+  executedByDisplayName: text("executed_by_display_name"),
+  version: integer("version").default(1).notNull(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  executedAt: timestamp("executed_at", { withTimezone: true }),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("studio_assistant_operations_workspace_idempotency_unique").on(
+    table.workspaceId,
+    table.idempotencyKey,
+  ),
+  index("studio_assistant_operations_thread_updated_idx").on(table.threadId, table.updatedAt),
+  index("studio_assistant_operations_workspace_state_idx").on(table.workspaceId, table.state),
+  check("studio_assistant_operations_version_positive", sql`${table.version} > 0`),
+  check("studio_assistant_operations_target_present", sql`
+    length(trim(${table.targetType})) > 0
+    and length(trim(${table.targetId})) > 0
+    and length(trim(${table.targetReference})) > 0
+    and length(trim(${table.targetLabel})) > 0
+    and length(trim(${table.targetHref})) > 0
+  `),
+  check("studio_assistant_operations_expected_version_positive", sql`
+    ${table.expectedVersion} is null or ${table.expectedVersion} > 0
+  `),
+  check("studio_assistant_operations_expected_revision_hash", sql`
+    ${table.expectedRevision} is null or ${table.expectedRevision} ~ '^[0-9a-f]{64}$'
+  `),
+  check("studio_assistant_operations_request_fingerprint_hash", sql`
+    ${table.requestFingerprint} ~ '^[0-9a-f]{64}$'
+  `),
+  check("studio_assistant_operations_payload_object", sql`jsonb_typeof(${table.payload}) = 'object'`),
+  check("studio_assistant_operations_preview_object", sql`jsonb_typeof(${table.preview}) = 'object'`),
+  check("studio_assistant_operations_receipt_object", sql`
+    ${table.receipt} is null or jsonb_typeof(${table.receipt}) = 'object'
+  `),
+  check("studio_assistant_operations_error_object", sql`
+    ${table.lastError} is null or jsonb_typeof(${table.lastError}) = 'object'
+  `),
+  check("studio_assistant_operations_execution_pair", sql`
+    (${table.executedAt} is null
+      and ${table.executedBySubject} is null
+      and ${table.executedByEmail} is null
+      and ${table.executedByDisplayName} is null)
+    or (${table.executedAt} is not null
+      and ${table.executedBySubject} is not null
+      and ${table.executedByEmail} is not null
+      and ${table.executedByDisplayName} is not null)
+  `),
+  check("studio_assistant_operations_terminal_receipt", sql`
+    (${table.state} = 'SUCCEEDED' and ${table.receipt} is not null and ${table.executedAt} is not null)
+    or (${table.state} <> 'SUCCEEDED')
+  `),
+]);
+
 // Private Studio AI intake. These records are deliberately separate from the
 // public catalogue: committing an intake creates a Wardrobe draft, never a
 // Shop listing.

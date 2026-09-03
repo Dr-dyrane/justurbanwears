@@ -169,6 +169,20 @@
       "when": 1788299871452,
       "tag": "0023_whole_timeslip",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1788322044832,
+      "tag": "0024_amazing_shiver_man",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1788328232373,
+      "tag": "0025_remarkable_captain_stacy",
+      "breakpoints": true
     }
   ]
 }

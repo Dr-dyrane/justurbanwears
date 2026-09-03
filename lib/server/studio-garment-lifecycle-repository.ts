@@ -1,10 +1,12 @@
 import { sql } from "drizzle-orm";
 import { getStudioDb } from "../../db/shop-postgres";
 import type { IntakeFacts } from "../studio/engine/contracts";
-import type {
-  GarmentLifecycleEvent,
-  GarmentPermanentDeleteReceipt,
-  GarmentRevisionMediaRole,
+import {
+  garmentLifecycleCommandReceiptSchema,
+  type GarmentLifecycleCommandReceipt,
+  type GarmentLifecycleEvent,
+  type GarmentPermanentDeleteReceipt,
+  type GarmentRevisionMediaRole,
 } from "../studio/engine/garment-lifecycle-contracts";
 import { studioWardrobeItemLockKey } from "./studio-wardrobe-item-lock";
 
@@ -28,6 +30,19 @@ export type GarmentRevisionRow = {
   updatedAt: Date;
   publishedAt: Date | null;
 };
+
+export type GarmentLifecycleCommandIdentity = {
+  actorSubject: string;
+  command: "SAVE_FACTS" | "ARCHIVE";
+  idempotencyKey: string;
+  requestFingerprint: string;
+};
+
+export type GarmentLifecycleCommandWriteResult =
+  | { kind: "APPLIED" | "REPLAYED"; receipt: GarmentLifecycleCommandReceipt }
+  | { kind: "IDEMPOTENCY_CONFLICT" | "NOT_APPLIED" };
+
+const GARMENT_LIFECYCLE_COMMAND_RECEIPT_SCHEMA_VERSION = "juw.studio-garment-lifecycle-command-receipt.v1";
 
 function resultRows(result: unknown): Record<string, unknown>[] {
   if (!result || typeof result !== "object") return [];
@@ -60,6 +75,54 @@ function deletionReceipt(raw: Record<string, unknown>): GarmentPermanentDeleteRe
     consequence: String(raw.consequence),
     deletedAt: new Date(String(raw.deleted_at)).toISOString(),
   };
+}
+
+function lifecycleCommandReceipt(raw: unknown): GarmentLifecycleCommandReceipt {
+  if (!raw || typeof raw !== "object") {
+    throw new Error("The garment lifecycle command receipt is unavailable.");
+  }
+  const candidate = raw as Record<string, unknown>;
+  return garmentLifecycleCommandReceiptSchema.parse({
+    ...candidate,
+    occurredAt: new Date(String(candidate.occurredAt)).toISOString(),
+  });
+}
+
+function lifecycleCommandWriteResult(
+  result: unknown,
+  requestFingerprint: string,
+): GarmentLifecycleCommandWriteResult {
+  const row = resultRows(result)[0];
+  if (!row) return { kind: "NOT_APPLIED" };
+  const receipt = lifecycleCommandReceipt(row.receipt);
+  if (receipt.requestFingerprint !== requestFingerprint) {
+    return { kind: "IDEMPOTENCY_CONFLICT" };
+  }
+  if (row.result_kind === "APPLIED") return { kind: "APPLIED", receipt };
+  if (row.result_kind === "EXISTING") return { kind: "REPLAYED", receipt };
+  throw new Error("The garment lifecycle command result is invalid.");
+}
+
+function lifecycleCommandLockKey(operatorSubject: string, idempotencyKey: string) {
+  return `studio_garment_lifecycle:${operatorSubject}:${idempotencyKey}`;
+}
+
+export async function findGarmentLifecycleCommandReceipt(input: {
+  wardrobeItemId: string;
+  operatorSubject: string;
+  idempotencyKey: string;
+}): Promise<GarmentLifecycleCommandReceipt | null> {
+  const result = await (await getStudioDb()).execute(sql`
+    select details->'commandReceipt' as receipt
+    from studio_garment_events
+    where wardrobe_item_id = ${input.wardrobeItemId}::uuid
+      and operator_subject = ${input.operatorSubject}
+      and details->'commandReceipt'->>'idempotencyKey' = ${input.idempotencyKey}
+    order by occurred_at desc, id desc
+    limit 1
+  `);
+  const receipt = resultRows(result)[0]?.receipt;
+  return receipt ? lifecycleCommandReceipt(receipt) : null;
 }
 
 function databaseBoolean(value: unknown) {
@@ -402,6 +465,92 @@ export async function createDraftGarmentRevision(input: {
   return row ? revisionRow(row) : null;
 }
 
+export async function createDraftGarmentRevisionIdempotently(input: {
+  wardrobeItemId: string;
+  operatorSubject: string;
+  expectedVersion: number;
+  baseSourceRevision: string;
+  facts: IntakeFacts;
+  media: Array<Record<string, unknown>>;
+  identity: GarmentLifecycleCommandIdentity & { command: "SAVE_FACTS" };
+}): Promise<GarmentLifecycleCommandWriteResult> {
+  const consequence = "The private garment revision is saved. The current Shop listing is unchanged until the revision is separately published.";
+  const result = await (await getStudioDb()).execute(sql`
+    with command_lock as (
+      select pg_advisory_xact_lock(hashtextextended(
+        ${lifecycleCommandLockKey(input.operatorSubject, input.identity.idempotencyKey)}, 0
+      ))
+    ), existing_command as materialized (
+      select event.details->'commandReceipt' as receipt
+      from studio_garment_events event cross join command_lock
+      where event.operator_subject = ${input.operatorSubject}
+        and event.details->'commandReceipt'->>'idempotencyKey' = ${input.identity.idempotencyKey}
+      order by event.occurred_at desc, event.id desc
+      limit 1
+    ), owned_piece as (
+      select item.id
+      from studio_wardrobe_items item cross join command_lock
+      where item.id = ${input.wardrobeItemId}::uuid
+        and item.operator_subject = ${input.operatorSubject}
+        and item.version = ${input.expectedVersion}
+        and item.state <> 'ARCHIVED'
+        and not exists (select 1 from existing_command)
+      for update of item
+    ), next_revision as (
+      select coalesce(max(revision_number), 0) + 1 as revision_number
+      from studio_garment_revisions
+      where wardrobe_item_id = ${input.wardrobeItemId}::uuid
+    ), created as (
+      insert into studio_garment_revisions (
+        wardrobe_item_id, operator_subject, revision_number, version, state,
+        base_source_revision, facts, media, created_at, updated_at
+      )
+      select
+        owned_piece.id, ${input.operatorSubject}, next_revision.revision_number, 1, 'DRAFT',
+        ${input.baseSourceRevision}, ${JSON.stringify(input.facts)}::jsonb,
+        ${JSON.stringify(input.media)}::jsonb, now(), now()
+      from owned_piece cross join next_revision
+      where not exists (
+        select 1 from studio_garment_revisions
+        where wardrobe_item_id = owned_piece.id and state = 'DRAFT'
+      )
+      returning *
+    ), event_seed as (
+      select gen_random_uuid() as id, now() as occurred_at from created
+    ), event as (
+      insert into studio_garment_events (
+        id, wardrobe_item_id, operator_subject, event_type, summary, details, occurred_at
+      )
+      select event_seed.id, created.wardrobe_item_id, created.operator_subject,
+        'REVISION_STARTED', 'Private revision started',
+        jsonb_build_object(
+          'revisionNumber', created.revision_number,
+          'commandReceipt', jsonb_build_object(
+            'actorSubject', ${input.identity.actorSubject}::text,
+            'command', ${input.identity.command}::text,
+            'consequence', ${consequence}::text,
+            'expectedVersion', ${input.expectedVersion}::integer,
+            'idempotencyKey', ${input.identity.idempotencyKey}::text,
+            'occurredAt', event_seed.occurred_at,
+            'receiptId', event_seed.id,
+            'requestFingerprint', ${input.identity.requestFingerprint}::text,
+            'result', 'PRIVATE_REVISION_SAVED',
+            'resultingVersion', created.version,
+            'schemaVersion', ${GARMENT_LIFECYCLE_COMMAND_RECEIPT_SCHEMA_VERSION}::text,
+            'summary', 'Private revision saved',
+            'wardrobeItemId', created.wardrobe_item_id
+          )
+        ), event_seed.occurred_at
+      from created cross join event_seed
+      returning details->'commandReceipt' as receipt
+    )
+    select 'APPLIED' as result_kind, receipt from event
+    union all
+    select 'EXISTING' as result_kind, receipt from existing_command
+  `);
+  return lifecycleCommandWriteResult(result, input.identity.requestFingerprint);
+}
+
 export async function updateDraftGarmentRevision(input: {
   id: string;
   wardrobeItemId: string;
@@ -435,7 +584,7 @@ export async function updateDraftGarmentRevision(input: {
       select wardrobe_item_id, operator_subject, ${eventType}, ${eventSummary},
         jsonb_build_object(
           'revisionNumber', revision_number,
-          'mediaRole', ${input.mediaRole ?? null}
+          'mediaRole', ${input.mediaRole ?? null}::text
         ), now()
       from updated
     )
@@ -443,6 +592,78 @@ export async function updateDraftGarmentRevision(input: {
   `);
   const row = resultRows(result)[0];
   return row ? revisionRow(row) : null;
+}
+
+export async function updateDraftGarmentRevisionIdempotently(input: {
+  id: string;
+  wardrobeItemId: string;
+  operatorSubject: string;
+  expectedVersion: number;
+  facts: IntakeFacts;
+  media: Array<Record<string, unknown>>;
+  identity: GarmentLifecycleCommandIdentity & { command: "SAVE_FACTS" };
+}): Promise<GarmentLifecycleCommandWriteResult> {
+  const consequence = "The private garment revision is saved. The current Shop listing is unchanged until the revision is separately published.";
+  const result = await (await getStudioDb()).execute(sql`
+    with command_lock as (
+      select pg_advisory_xact_lock(hashtextextended(
+        ${lifecycleCommandLockKey(input.operatorSubject, input.identity.idempotencyKey)}, 0
+      ))
+    ), existing_command as materialized (
+      select event.details->'commandReceipt' as receipt
+      from studio_garment_events event cross join command_lock
+      where event.operator_subject = ${input.operatorSubject}
+        and event.details->'commandReceipt'->>'idempotencyKey' = ${input.identity.idempotencyKey}
+      order by event.occurred_at desc, event.id desc
+      limit 1
+    ), updated as (
+      update studio_garment_revisions revision
+      set facts = ${JSON.stringify(input.facts)}::jsonb,
+          media = ${JSON.stringify(input.media)}::jsonb,
+          version = revision.version + 1,
+          updated_at = now()
+      from command_lock
+      where revision.id = ${input.id}::uuid
+        and revision.wardrobe_item_id = ${input.wardrobeItemId}::uuid
+        and revision.operator_subject = ${input.operatorSubject}
+        and revision.state = 'DRAFT'
+        and revision.version = ${input.expectedVersion}
+        and not exists (select 1 from existing_command)
+      returning revision.*
+    ), event_seed as (
+      select gen_random_uuid() as id, now() as occurred_at from updated
+    ), event as (
+      insert into studio_garment_events (
+        id, wardrobe_item_id, operator_subject, event_type, summary, details, occurred_at
+      )
+      select event_seed.id, updated.wardrobe_item_id, updated.operator_subject,
+        'FACTS_UPDATED', 'Private garment details updated',
+        jsonb_build_object(
+          'revisionNumber', updated.revision_number,
+          'commandReceipt', jsonb_build_object(
+            'actorSubject', ${input.identity.actorSubject}::text,
+            'command', ${input.identity.command}::text,
+            'consequence', ${consequence}::text,
+            'expectedVersion', ${input.expectedVersion}::integer,
+            'idempotencyKey', ${input.identity.idempotencyKey}::text,
+            'occurredAt', event_seed.occurred_at,
+            'receiptId', event_seed.id,
+            'requestFingerprint', ${input.identity.requestFingerprint}::text,
+            'result', 'PRIVATE_REVISION_SAVED',
+            'resultingVersion', updated.version,
+            'schemaVersion', ${GARMENT_LIFECYCLE_COMMAND_RECEIPT_SCHEMA_VERSION}::text,
+            'summary', 'Private revision saved',
+            'wardrobeItemId', updated.wardrobe_item_id
+          )
+        ), event_seed.occurred_at
+      from updated cross join event_seed
+      returning details->'commandReceipt' as receipt
+    )
+    select 'APPLIED' as result_kind, receipt from event
+    union all
+    select 'EXISTING' as result_kind, receipt from existing_command
+  `);
+  return lifecycleCommandWriteResult(result, input.identity.requestFingerprint);
 }
 
 export async function updatePrivateGarmentFacts(input: {
@@ -489,6 +710,89 @@ export async function updatePrivateGarmentFacts(input: {
     select * from intake_updated
   `);
   return resultRows(result).length === 1;
+}
+
+export async function updatePrivateGarmentFactsIdempotently(input: {
+  wardrobeItemId: string;
+  operatorSubject: string;
+  expectedVersion: number;
+  facts: IntakeFacts;
+  identity: GarmentLifecycleCommandIdentity & { command: "SAVE_FACTS" };
+}): Promise<GarmentLifecycleCommandWriteResult> {
+  const consequence = "The private garment facts are saved. No Shop listing was created.";
+  const result = await (await getStudioDb()).execute(sql`
+    with command_lock as (
+      select pg_advisory_xact_lock(hashtextextended(
+        ${lifecycleCommandLockKey(input.operatorSubject, input.identity.idempotencyKey)}, 0
+      ))
+    ), existing_command as materialized (
+      select event.details->'commandReceipt' as receipt
+      from studio_garment_events event cross join command_lock
+      where event.operator_subject = ${input.operatorSubject}
+        and event.details->'commandReceipt'->>'idempotencyKey' = ${input.identity.idempotencyKey}
+      order by event.occurred_at desc, event.id desc
+      limit 1
+    ), updated as (
+      update studio_wardrobe_items item
+      set title = ${input.facts.title}, category = ${input.facts.category},
+          colour = ${input.facts.colour}, size_label = ${input.facts.sizeLabel},
+          condition = ${input.facts.condition}, price = ${input.facts.price},
+          version = item.version + 1, updated_at = now()
+      from studio_intakes intake, command_lock
+      where item.id = ${input.wardrobeItemId}::uuid
+        and item.operator_subject = ${input.operatorSubject}
+        and item.version = ${input.expectedVersion}
+        and item.state in ('DRAFT', 'READY')
+        and intake.id = item.intake_id
+        and intake.operator_subject = ${input.operatorSubject}
+        and not exists (
+          select 1 from studio_catalogue_publications publication
+          where publication.wardrobe_item_id = item.id
+        )
+        and not exists (select 1 from existing_command)
+      returning item.id, item.intake_id, item.operator_subject, item.title, item.version
+    ), intake_updated as (
+      update studio_intakes intake
+      set facts = intake.facts || ${JSON.stringify(input.facts)}::jsonb,
+          updated_at = now()
+      from updated
+      where intake.id = updated.intake_id
+        and intake.operator_subject = ${input.operatorSubject}
+      returning updated.id, updated.operator_subject, updated.title, updated.version
+    ), event_seed as (
+      select gen_random_uuid() as id, now() as occurred_at from intake_updated
+    ), event as (
+      insert into studio_garment_events (
+        id, wardrobe_item_id, operator_subject, event_type, summary, details, occurred_at
+      )
+      select event_seed.id, intake_updated.id, intake_updated.operator_subject,
+        'FACTS_UPDATED', 'Private garment details updated',
+        jsonb_build_object(
+          'facts', ${JSON.stringify(input.facts)}::jsonb,
+          'commandReceipt', jsonb_build_object(
+            'actorSubject', ${input.identity.actorSubject}::text,
+            'command', ${input.identity.command}::text,
+            'consequence', ${consequence}::text,
+            'expectedVersion', ${input.expectedVersion}::integer,
+            'idempotencyKey', ${input.identity.idempotencyKey}::text,
+            'occurredAt', event_seed.occurred_at,
+            'receiptId', event_seed.id,
+            'requestFingerprint', ${input.identity.requestFingerprint}::text,
+            'result', 'PRIVATE_FACTS_SAVED',
+            'resultingVersion', intake_updated.version,
+            'schemaVersion', ${GARMENT_LIFECYCLE_COMMAND_RECEIPT_SCHEMA_VERSION}::text,
+            'summary', 'Private garment facts saved',
+            'wardrobeItemId', intake_updated.id
+          )
+        ), event_seed.occurred_at
+      from intake_updated cross join event_seed
+      returning details->'commandReceipt' as receipt
+    )
+    select 'APPLIED' as result_kind, receipt from event
+    union all
+    select 'EXISTING' as result_kind, receipt from existing_command
+  `);
+  return lifecycleCommandWriteResult(result, input.identity.requestFingerprint);
 }
 
 export async function findPrivateGarmentDescription(input: {
@@ -673,6 +977,106 @@ export async function archiveGarment(input: {
     select * from archived
   `);
   return resultRows(result).length === 1;
+}
+
+export async function archiveGarmentIdempotently(input: {
+  wardrobeItemId: string;
+  operatorSubject: string;
+  expectedVersion: number;
+  identity: GarmentLifecycleCommandIdentity & { command: "ARCHIVE" };
+}): Promise<GarmentLifecycleCommandWriteResult> {
+  const consequence = "The garment is in Archived Wardrobe. It remains recoverable unless an eligible permanent deletion is separately confirmed.";
+  const result = await (await getStudioDb()).execute(sql`
+    with command_lock as (
+      select pg_advisory_xact_lock(hashtextextended(
+        ${lifecycleCommandLockKey(input.operatorSubject, input.identity.idempotencyKey)}, 0
+      ))
+    ), existing_command as materialized (
+      select event.details->'commandReceipt' as receipt
+      from studio_garment_events event cross join command_lock
+      where event.operator_subject = ${input.operatorSubject}
+        and event.details->'commandReceipt'->>'idempotencyKey' = ${input.identity.idempotencyKey}
+      order by event.occurred_at desc, event.id desc
+      limit 1
+    ), piece as (
+      select item.id, item.operator_subject, item.title,
+        publication.id as publication_id, publication.sku,
+        publication.state as publication_state
+      from studio_wardrobe_items item
+      left join studio_catalogue_publications publication on publication.wardrobe_item_id = item.id
+      cross join command_lock
+      where item.id = ${input.wardrobeItemId}::uuid
+        and item.operator_subject = ${input.operatorSubject}
+        and item.version = ${input.expectedVersion}
+        and item.state in ('DRAFT', 'READY')
+        and not exists (select 1 from existing_command)
+      for update of item
+    ), inventory as (
+      update shop_inventory inventory
+      set availability = 'ARCHIVED', updated_at = now()
+      from piece
+      where piece.publication_id is not null
+        and inventory.sku = piece.sku
+        and inventory.availability in ('AVAILABLE', 'ARCHIVED')
+        and inventory.on_hand = 1
+        and inventory.reserved = 0
+        and inventory.sold = inventory.returned
+        and inventory.write_off = 0
+      returning inventory.sku
+    ), eligible as (
+      select piece.* from piece
+      where piece.publication_id is null
+        or exists (select 1 from inventory where inventory.sku = piece.sku)
+    ), publication as (
+      update studio_catalogue_publications target
+      set state = 'ARCHIVED'
+      from eligible
+      where target.id = eligible.publication_id
+      returning target.id
+    ), archived as (
+      update studio_wardrobe_items target
+      set state = 'ARCHIVED', version = target.version + 1, updated_at = now()
+      from eligible
+      where target.id = eligible.id
+      returning target.id, target.operator_subject, target.title, target.version
+    ), revisions as (
+      update studio_garment_revisions revision
+      set state = 'DISCARDED', version = revision.version + 1, updated_at = now()
+      from archived
+      where revision.wardrobe_item_id = archived.id and revision.state = 'DRAFT'
+    ), event_seed as (
+      select gen_random_uuid() as id, now() as occurred_at from archived
+    ), event as (
+      insert into studio_garment_events (
+        id, wardrobe_item_id, operator_subject, event_type, summary, details, occurred_at
+      )
+      select event_seed.id, archived.id, archived.operator_subject,
+        'ARCHIVED', 'Piece archived',
+        jsonb_build_object(
+          'commandReceipt', jsonb_build_object(
+            'actorSubject', ${input.identity.actorSubject}::text,
+            'command', ${input.identity.command}::text,
+            'consequence', ${consequence}::text,
+            'expectedVersion', ${input.expectedVersion}::integer,
+            'idempotencyKey', ${input.identity.idempotencyKey}::text,
+            'occurredAt', event_seed.occurred_at,
+            'receiptId', event_seed.id,
+            'requestFingerprint', ${input.identity.requestFingerprint}::text,
+            'result', 'ARCHIVED',
+            'resultingVersion', archived.version,
+            'schemaVersion', ${GARMENT_LIFECYCLE_COMMAND_RECEIPT_SCHEMA_VERSION}::text,
+            'summary', 'Garment archived',
+            'wardrobeItemId', archived.id
+          )
+        ), event_seed.occurred_at
+      from archived cross join event_seed
+      returning details->'commandReceipt' as receipt
+    )
+    select 'APPLIED' as result_kind, receipt from event
+    union all
+    select 'EXISTING' as result_kind, receipt from existing_command
+  `);
+  return lifecycleCommandWriteResult(result, input.identity.requestFingerprint);
 }
 
 export async function listGarmentEvents(input: {

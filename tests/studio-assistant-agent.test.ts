@@ -64,11 +64,26 @@ test("the assistant context is a sanitized projection with canonical media targe
   assert.equal("degradedSources" in context, false);
 });
 
-test("the per-request agent exposes only the read-only Studio resolver", () => {
-  const context = studioAssistantContextFromProjection(projection);
-  const agent = createStudioAssistantAgent({ context, query: "What needs attention?" });
+test("the per-request agent exposes only the bounded typed Studio tools", () => {
+  const agent = createStudioAssistantAgent(
+    { focusEntityType: null, focusReference: null, query: "What needs attention?" },
+    { executeTool: async () => { throw new Error("Tool execution is outside this registry test."); } },
+  );
   const settings = agent as unknown as { tools: Record<string, unknown> };
-  assert.deepEqual(Object.keys(settings.tools), ["resolveStudioRequest"]);
+  assert.deepEqual(Object.keys(settings.tools), [
+    "searchStudio",
+    "getPiece",
+    "getDrop",
+    "getOrder",
+    "getInventory",
+    "getMedia",
+    "getModel",
+    "preparePieceEdit",
+    "preparePublishRevision",
+    "prepareDropMove",
+    "prepareArchive",
+    "preparePermanentDelete",
+  ]);
 });
 
 test("the agent accepts the complete bounded Shop description contract", () => {
@@ -77,7 +92,10 @@ test("the agent accepts the complete bounded Shop description contract", () => {
     ...projection,
     searchDocuments: projection.searchDocuments.map((document) => ({ ...document, description: longDescription })),
   });
-  assert.doesNotThrow(() => createStudioAssistantAgent({ context, query: "Describe JUW-001" }));
+  assert.doesNotThrow(() => createStudioAssistantAgent(
+    { focusEntityType: "PIECE", focusReference: "JUW-001", query: "Describe it" },
+    { executeTool: async () => { throw new Error("Tool execution is outside this contract test."); } },
+  ));
   assert.equal(context.documents[0].detail.length, 2_000);
 });
 
@@ -112,28 +130,42 @@ test("the Ask route owns auth, projection, sanitization and stream bounds", () =
   const route = readFileSync(`${root}/app/api/studio/ask/route.ts`, "utf8");
   const agent = readFileSync(`${root}/lib/ai/studio-assistant-agent.ts`, "utf8");
   const surface = readFileSync(`${root}/components/studio/navigation/studio-ask-surface.tsx`, "utf8");
+  const contracts = readFileSync(`${root}/lib/studio/assistant/threads.ts`, "utf8");
 
   assert.match(route, /requireStudioOperator\(\)/);
   assert.match(route, /getStudioApplicationProjection\(operator\)/);
   assert.match(route, /projectScenarioStudioApplication/);
-  assert.match(route, /\.strict\(\)/);
-  assert.match(route, /safeTextMessage/);
-  assert.match(route, /\.slice\(-8\)/);
+  assert.match(contracts, /sendStudioAssistantMessageSchema[\s\S]*?\.strict\(\)/);
+  assert.match(route, /safeUserMessage/);
+  assert.match(route, /\.slice\(-20\)/);
   assert.match(route, /\.slice\(0, 1_200\)/);
-  assert.match(route, /contextualizeStudioAssistantQuery/);
+  assert.match(route, /getStudioAssistantThread/);
+  assert.match(route, /beginStudioAssistantTurn/);
+  assert.match(route, /saveStudioAssistantResponse/);
+  assert.match(route, /sanitizeStudioAssistantHistoryForModel/);
+  assert.match(route, /originalMessages/);
+  assert.match(route, /consumeSseStream: consumeStream/);
+  assert.match(route, /onEnd:/);
   assert.match(route, /sendReasoning: false/);
-  assert.match(route, /totalMs: 30_000/);
+  assert.match(route, /totalMs: 20_000/);
   assert.doesNotMatch(route, /input\.context|body\.context/);
 
   assert.match(agent, /process\.env\.STUDIO_ASK_MODEL \|\| "openai\/gpt-5\.4"/);
   assert.match(agent, /stepNumber === 0/);
-  assert.match(agent, /toolName: "resolveStudioRequest"/);
+  assert.match(agent, /toolOrder: \[\.\.\.STUDIO_ASSISTANT_TOOL_NAMES\]/);
+  assert.match(agent, /toolChoice: stepNumber === 0 \? "required" : "none"/);
   assert.match(agent, /stopWhen: isStepCount\(3\)/);
   assert.doesNotMatch(agent, /\bgenerateImage\s*\(|\bgenerateText\s*\(|\bcommitIntake\s*\(|\bapplyCommand\s*\(/);
 
   assert.match(surface, /requestTextMessages\(messages\)/);
+  assert.match(surface, /listStudioAssistantThreads/);
+  assert.match(surface, /createStudioAssistantThread/);
+  assert.match(surface, /readStudioAssistantThread/);
+  assert.match(surface, /updateStudioAssistantThread/);
+  assert.doesNotMatch(surface, /sessionStorage/);
   assert.match(surface, /part\.type === "text"/);
-  assert.match(surface, /part\.type !== "tool-resolveStudioRequest"/);
+  assert.match(surface, /STUDIO_ASSISTANT_TOOL_PART_TYPES/);
+  assert.match(surface, /studioAssistantToolOutputSchema\.safeParse/);
   assert.match(surface, /pendingRef/);
   assert.match(surface, /flightRef/);
 });

@@ -8,12 +8,16 @@ import type {
 
 const expectedRevisionSchema = z.string().regex(/^[0-9a-f]{64}$/);
 const idempotencyKeySchema = z.string().trim().min(8).max(160).regex(/^[a-zA-Z0-9._:-]+$/);
+const postgresUuidSchema = z.string().regex(
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+);
 
 export const garmentLifecycleCommandSchema = z.discriminatedUnion("command", [
   z.object({
     command: z.literal("SAVE_FACTS"),
     expectedVersion: z.number().int().positive(),
     facts: intakeFactsSchema,
+    idempotencyKey: idempotencyKeySchema.optional(),
   }),
   z.object({
     command: z.literal("DISCARD_REVISION"),
@@ -40,8 +44,31 @@ export const garmentLifecycleCommandSchema = z.discriminatedUnion("command", [
     command: z.literal("ARCHIVE"),
     expectedVersion: z.number().int().positive(),
     confirmation: z.literal("ARCHIVE"),
+    idempotencyKey: idempotencyKeySchema.optional(),
   }),
 ]);
+
+export const garmentLifecycleCommandReceiptSchema = z.object({
+  actorSubject: z.string().trim().min(1),
+  command: z.enum(["SAVE_FACTS", "ARCHIVE"]),
+  consequence: z.string().trim().min(1),
+  expectedVersion: z.number().int().positive(),
+  idempotencyKey: idempotencyKeySchema,
+  occurredAt: z.string().datetime({ offset: true }),
+  receiptId: z.string().uuid(),
+  requestFingerprint: expectedRevisionSchema,
+  result: z.enum(["PRIVATE_FACTS_SAVED", "PRIVATE_REVISION_SAVED", "ARCHIVED"]),
+  resultingVersion: z.number().int().positive(),
+  schemaVersion: z.literal("juw.studio-garment-lifecycle-command-receipt.v1"),
+  summary: z.string().trim().min(1),
+  // Legacy deterministic wardrobe IDs are valid PostgreSQL UUID values but do
+  // not encode an RFC version/variant nibble, which Zod's uuid() rejects.
+  wardrobeItemId: postgresUuidSchema,
+}).strict();
+
+export const garmentLifecycleCommandReceiptQuerySchema = z.object({
+  idempotencyKey: idempotencyKeySchema,
+}).strict();
 
 export const garmentPermanentDeleteSchema = z.object({
   confirmation: z.literal("DELETE_PERMANENTLY"),
@@ -60,6 +87,7 @@ export const garmentRevisionMediaRoleSchema = z.enum([
 ]);
 
 export type GarmentLifecycleCommand = z.infer<typeof garmentLifecycleCommandSchema>;
+export type GarmentLifecycleCommandReceipt = z.infer<typeof garmentLifecycleCommandReceiptSchema>;
 export type GarmentPermanentDeleteCommand = z.infer<typeof garmentPermanentDeleteSchema>;
 export type GarmentRevisionMediaRole = z.infer<typeof garmentRevisionMediaRoleSchema>;
 
@@ -68,6 +96,16 @@ export type GarmentPermanentDeleteReceipt = {
   title: string;
   consequence: string;
   deletedAt: string;
+};
+
+export type GarmentPublishRevisionReceipt = {
+  wardrobeItemId: string;
+  publicationId: string;
+  idempotencyKey: string;
+  sourceRevision: string;
+  sku: string;
+  slug: string;
+  publishedAt: string;
 };
 
 export type GarmentRevisionDiff = {

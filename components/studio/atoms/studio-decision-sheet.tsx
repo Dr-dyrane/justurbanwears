@@ -11,6 +11,7 @@ export type StudioDecisionResult =
 interface StudioDecisionSheetProps {
   busyLabel?: string;
   children?: ReactNode;
+  confirmDisabled?: boolean;
   confirmLabel: string;
   consequence: ReactNode;
   destructive?: boolean;
@@ -35,6 +36,7 @@ type DecisionPhase = "review" | "loading" | "success" | "error";
 export function StudioDecisionSheet({
   busyLabel = "Applying this change",
   children,
+  confirmDisabled = false,
   confirmLabel,
   consequence,
   destructive = false,
@@ -68,7 +70,7 @@ export function StudioDecisionSheet({
   const footer = (requestClose: () => void) => phase === "review" ? (
     <>
       <button className="button button-secondary" onClick={requestClose} type="button">Cancel</button>
-      <button className={`button button-primary${destructive ? " is-destructive" : ""}`} onClick={() => void confirm()} type="button">{confirmLabel}</button>
+      <button className={`button button-primary${destructive ? " is-destructive" : ""}`} disabled={confirmDisabled} onClick={() => void confirm()} type="button">{confirmLabel}</button>
     </>
   ) : phase === "error" ? (
     <>

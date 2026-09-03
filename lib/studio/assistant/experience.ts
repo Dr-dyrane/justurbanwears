@@ -188,7 +188,9 @@ export interface StudioAssistantTaskStep {
 }
 
 /**
- * A task draft is a device-private plan, never an executable Studio command.
+ * A task draft is a plan, never an executable Studio command. Connected
+ * conversations persist it in the shared Studio workspace; scenarios keep it
+ * on the current device.
  * The action always hands the operator to the owning domain workflow where
  * current truth, preview, confirmation and receipts remain authoritative.
  */
@@ -203,7 +205,7 @@ export interface StudioAssistantTaskDraft {
   sourceQuery: string;
   state: "PROPOSED";
   steps: StudioAssistantTaskStep[];
-  storage: "DEVICE_PRIVATE";
+  storage: "DEVICE_PRIVATE" | "SHARED_CONVERSATION";
   title: string;
 }
 
@@ -245,7 +247,7 @@ const ORDER_REVERSAL_PATTERN = /(?:\b(cancel|refund|reverse|void)\b[\s\S]*\borde
 const ORDER_ADVANCE_PATTERN = /\b(advance|approve|confirm|correct|dispatch|fulfil|fulfill|mark|prepare|process|progress|receive|reschedule|resolve|schedule|send)\b/i;
 const LOCATION_MUTATION_PATTERN = /(?:\b(confirm|move|record|set|update)\b[\s\S]*\b(location|rail|shelf|return inspection)\b|\b(location|rail|shelf|return inspection)\b[\s\S]*\b(confirm|move|record|set|update)\b)/i;
 const WARDROBE_FIELD_PATTERN = /\b(category|colour|color|copy|description|measurement|measurements|price|pricing|size|title)\b/i;
-const PIECE_DESCRIPTION_PATTERN = /\b(copy|description)\b/i;
+const PIECE_READ_FACT_PATTERN = /\b(collection|copy|description|drop|image|images|media|photo|photos|price|pricing|state|status)\b/i;
 const PIECE_FACT_FOLLOW_UP_PATTERN = /\b(it|its|that|this|the (?:garment|item|piece|product|record))\b/i;
 const MUTATING_FOLLOW_UP_PATTERN = /\b(add|archive|cancel|change|create|delete|edit|generate|move|publish|refund|release|remove|rename|replace|set|update|withdraw)\b/i;
 const NAVIGATE_PATTERN = /\b(find|go to|open|resume|review|show|take me|view|where)\b/i;
@@ -451,7 +453,7 @@ export function contextualizeStudioAssistantQuery(
   if (
     !current
     || current.length > 1_200
-    || !PIECE_DESCRIPTION_PATTERN.test(current)
+    || !PIECE_READ_FACT_PATTERN.test(current)
     || !PIECE_FACT_FOLLOW_UP_PATTERN.test(current)
     || MUTATING_FOLLOW_UP_PATTERN.test(current)
     || explicitlyNamedPieceTargets(context, current).length > 0
@@ -1779,7 +1781,11 @@ function safeStudioAction(action: StudioAssistantAction) {
   }
 }
 
-function taskDraftForResponse(rawQuery: string, assistantResponse: StudioAssistantResponse) {
+function taskDraftForResponse(
+  rawQuery: string,
+  assistantResponse: StudioAssistantResponse,
+  storage: StudioAssistantTaskDraft["storage"],
+) {
   const handoff = assistantResponse.blocks.find((block) => block.kind === "handoff");
   if (!handoff || handoff.risk === "R0" || !safeStudioAction(handoff.action)) return null;
 
@@ -1802,7 +1808,7 @@ function taskDraftForResponse(rawQuery: string, assistantResponse: StudioAssista
       { id: "verify", label: "Verify the exact record and current Studio state" },
       { id: "confirm", label: confirmationStep },
     ],
-    storage: "DEVICE_PRIVATE",
+    storage,
     title: handoff.title,
   } satisfies StudioAssistantTaskDraft;
 }
@@ -1852,7 +1858,11 @@ export function resolveStudioAssistantWorkflow(
   context: StudioAssistantContext,
 ): StudioAssistantWorkflowResponse {
   const assistantResponse = resolveStudioAssistant(rawQuery, context);
-  const taskDraft = taskDraftForResponse(rawQuery, assistantResponse);
+  const taskDraft = taskDraftForResponse(
+    rawQuery,
+    assistantResponse,
+    context.provenance.status === "preview" ? "DEVICE_PRIVATE" : "SHARED_CONVERSATION",
+  );
   return {
     response: assistantResponse,
     schemaVersion: "studio-assistant-workflow/v1",
