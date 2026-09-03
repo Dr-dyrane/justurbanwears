@@ -13,6 +13,7 @@ import type {
   ShopOrderListQuery,
   ShopOrderPage,
   ShopOrderStore,
+  ShopOperatorTransitionReceipt,
   ShopServerOrder,
   TransitionShopReturnCommand,
   TransitionShopOrderCommand,
@@ -44,6 +45,52 @@ interface ReferenceRow extends Record<string, unknown> {
 interface ExpiringOrderRow extends Record<string, unknown> {
   reference: unknown;
   version: unknown;
+}
+
+interface OperatorTransitionReceiptRow extends Record<string, unknown> {
+  receipt_id: unknown;
+  order_id: unknown;
+  reference: unknown;
+  actor_subject: unknown;
+  metadata: unknown;
+  occurred_at: unknown;
+}
+
+function parseOperatorTransitionReceipt(
+  row: OperatorTransitionReceiptRow | undefined,
+): ShopOperatorTransitionReceipt | null {
+  if (!row || !row.metadata || typeof row.metadata !== "object" || Array.isArray(row.metadata)) return null;
+  const metadata = row.metadata as Record<string, unknown>;
+  if (
+    typeof row.receipt_id !== "string"
+    || typeof row.order_id !== "string"
+    || typeof row.reference !== "string"
+    || typeof row.actor_subject !== "string"
+    || typeof row.occurred_at !== "string"
+    || metadata.studioCommandVersion !== 1
+    || (metadata.studioCommandKind !== "ORDER" && metadata.studioCommandKind !== "RETURN")
+    || !Number.isInteger(metadata.studioCommandExpectedVersion)
+    || !Number.isInteger(metadata.studioCommandResultingVersion)
+    || typeof metadata.studioCommandDimension !== "string"
+    || typeof metadata.studioCommandTarget !== "string"
+    || typeof metadata.studioCommandIdempotencyKey !== "string"
+    || typeof metadata.studioCommandRequestFingerprint !== "string"
+  ) return null;
+  return {
+    version: 1,
+    receiptId: row.receipt_id,
+    commandKind: metadata.studioCommandKind,
+    orderId: row.order_id,
+    reference: row.reference,
+    actorSubject: row.actor_subject,
+    expectedVersion: metadata.studioCommandExpectedVersion as number,
+    resultingVersion: metadata.studioCommandResultingVersion as number,
+    dimension: metadata.studioCommandDimension as ShopOperatorTransitionReceipt["dimension"],
+    target: metadata.studioCommandTarget as ShopOperatorTransitionReceipt["target"],
+    idempotencyKey: metadata.studioCommandIdempotencyKey,
+    requestFingerprint: metadata.studioCommandRequestFingerprint,
+    occurredAt: row.occurred_at,
+  };
 }
 
 function persistenceError(error: unknown): ShopOrderError {
@@ -574,18 +621,53 @@ export class PostgresShopOrderStore implements ShopOrderStore {
     }
   }
 
+  async getOperatorTransitionReceipt(
+    actorSubject: string,
+    reference: string,
+    idempotencyKey: string,
+  ): Promise<ShopOperatorTransitionReceipt | null> {
+    try {
+      const result = await getShopDb().execute<OperatorTransitionReceiptRow>(sql`
+        select
+          events.id::text as receipt_id,
+          orders.id::text as order_id,
+          orders.reference,
+          events.actor_subject,
+          events.metadata,
+          events.occurred_at::text as occurred_at
+        from shop_order_events as events
+        inner join shop_orders as orders on orders.id = events.order_id
+        where orders.reference = ${reference}
+          and events.actor_kind = 'OPERATOR'
+          and events.actor_subject = ${actorSubject}
+          and events.metadata->>'studioCommandIdempotencyKey' = ${idempotencyKey}
+        order by events.occurred_at desc, events.id desc
+        limit 1
+      `);
+      return parseOperatorTransitionReceipt(result.rows[0]);
+    } catch (error) {
+      throw persistenceError(error);
+    }
+  }
+
   async transitionOrder(command: TransitionShopOrderCommand): Promise<ShopServerOrder> {
     if (command.transition.dimension === "PICKUP") {
       if (command.details?.kind !== "PICKUP_SCHEDULE") {
         throw new ShopOrderError("INVALID_REQUEST", "A pickup time is required.");
       }
       return executeDocument(sql`
-        select shop_schedule_pickup_v3(
+        select shop_transition_order_command_v4(
           ${command.reference},
           ${command.actor.subject},
+          ${command.actor.displayName ?? command.actor.email ?? "Studio operator"},
           ${command.expectedVersion},
-          ${command.details.pickupAppointment}::timestamptz,
+          ${command.idempotencyKey},
+          ${command.requestFingerprint},
+          ${command.transition.dimension},
+          ${command.transition.target},
+          ${JSON.stringify(command.details)}::jsonb,
           ${command.note},
+          ${command.returnEligibleUntil?.toISOString() ?? null}::timestamptz,
           ${command.now.toISOString()}::timestamptz
         ) as document
       `, true);
@@ -594,15 +676,18 @@ export class PostgresShopOrderStore implements ShopOrderStore {
     if (command.transition.dimension === "CANCELLATION_REFUND") {
       const details = command.details?.kind === "CANCELLATION_REFUND" ? command.details : null;
       return executeDocument(sql`
-        select shop_transition_pre_handoff_recovery_v3(
+        select shop_transition_order_command_v4(
           ${command.reference},
           ${command.actor.subject},
+          ${command.actor.displayName ?? command.actor.email ?? "Studio operator"},
           ${command.expectedVersion},
+          ${command.idempotencyKey},
+          ${command.requestFingerprint},
+          ${command.transition.dimension},
           ${command.transition.target},
-          ${details?.refundReference ?? null},
-          ${details?.refundAmount ?? null},
-          ${details?.refundCurrency ?? null},
+          ${details ? JSON.stringify(details) : null}::jsonb,
           ${command.note},
+          ${command.returnEligibleUntil?.toISOString() ?? null}::timestamptz,
           ${command.now.toISOString()}::timestamptz
         ) as document
       `, true);
@@ -610,11 +695,13 @@ export class PostgresShopOrderStore implements ShopOrderStore {
 
     if (command.transition.dimension !== "FUNDS_CONFIRMATION") {
       return executeDocument(sql`
-        select shop_transition_order_v3(
+        select shop_transition_order_command_v4(
           ${command.reference},
           ${command.actor.subject},
           ${command.actor.displayName ?? command.actor.email ?? "Studio operator"},
           ${command.expectedVersion},
+          ${command.idempotencyKey},
+          ${command.requestFingerprint},
           ${command.transition.dimension},
           ${command.transition.target},
           ${command.details ? JSON.stringify(command.details) : null}::jsonb,
@@ -653,6 +740,14 @@ export class PostgresShopOrderStore implements ShopOrderStore {
           from shop_orders as orders
           where orders.reference = ${command.reference}
           for update
+        ), existing_receipt as (
+          select events.id
+          from shop_order_events as events
+          inner join candidate on candidate.id = events.order_id
+          where events.actor_kind = 'OPERATOR'
+            and events.actor_subject = ${command.actor.subject}
+            and events.metadata->>'studioCommandIdempotencyKey' = ${command.idempotencyKey}
+          limit 1
         ), updated as (
           update shop_orders as orders
           set
@@ -670,6 +765,7 @@ export class PostgresShopOrderStore implements ShopOrderStore {
             updated_at = ${now}::timestamptz
           from candidate
           where orders.id = candidate.id
+            and not exists (select 1 from existing_receipt)
             and candidate.version = ${command.expectedVersion}
             and (
               (${target} = 'CONFIRMED'
@@ -724,7 +820,15 @@ export class PostgresShopOrderStore implements ShopOrderStore {
               'transferReference', ${command.details.transferReference}::text,
               'receivingAccountLabel', ${command.details.receivingAccountLabel}::text,
               'paidAmount', ${command.details.paidAmount}::integer,
-              'paidCurrency', ${command.details.paidCurrency}::text
+              'paidCurrency', ${command.details.paidCurrency}::text,
+              'studioCommandVersion', 1,
+              'studioCommandKind', 'ORDER',
+              'studioCommandIdempotencyKey', ${command.idempotencyKey}::text,
+              'studioCommandRequestFingerprint', ${command.requestFingerprint}::text,
+              'studioCommandExpectedVersion', ${command.expectedVersion}::integer,
+              'studioCommandResultingVersion', updated.version,
+              'studioCommandDimension', ${command.transition.dimension}::text,
+              'studioCommandTarget', ${command.transition.target}::text
             )),
             ${now}::timestamptz
           from updated
@@ -749,8 +853,10 @@ export class PostgresShopOrderStore implements ShopOrderStore {
           on conflict (dedupe_key) do nothing
           returning order_id
         )
-        select updated.reference
-        from updated
+        select updated.reference from updated
+        union all
+        select candidate.reference from candidate
+        where exists (select 1 from existing_receipt)
       `);
 
       if (result.rows.length !== 1) {
@@ -789,10 +895,12 @@ export class PostgresShopOrderStore implements ShopOrderStore {
 
   transitionReturn(command: TransitionShopReturnCommand): Promise<ShopServerOrder> {
     return executeDocument(sql`
-      select shop_transition_return_v3(
+      select shop_transition_return_command_v4(
         ${command.reference},
         ${command.actor.subject},
         ${command.expectedVersion},
+        ${command.idempotencyKey},
+        ${command.requestFingerprint},
         ${command.transition.dimension},
         ${command.transition.target},
         ${command.refundReference},

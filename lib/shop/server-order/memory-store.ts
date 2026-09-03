@@ -18,6 +18,7 @@ import {
   type ShopOrderAuditEvent,
   type ShopOrderListQuery,
   type ShopOrderPage,
+  type ShopOperatorTransitionReceipt,
   type ShopOperatorReturnTransition,
   type ShopOperatorTransition,
   type ShopOrderStore,
@@ -73,6 +74,79 @@ interface InternalOutbox extends ShopNotificationOutboxMessage {
 
 function copy<T>(value: T): T {
   return structuredClone(value);
+}
+
+function operatorTransitionReceipt(
+  order: InternalOrder,
+  actorSubject: string,
+  idempotencyKey: string,
+): ShopOperatorTransitionReceipt | null {
+  const event = order.events.find((candidate) => (
+    candidate.actorSubject === actorSubject
+    && candidate.metadata?.studioCommandIdempotencyKey === idempotencyKey
+  ));
+  const metadata = event?.metadata;
+  if (
+    !event
+    || !metadata
+    || metadata.studioCommandVersion !== 1
+    || (metadata.studioCommandKind !== "ORDER" && metadata.studioCommandKind !== "RETURN")
+    || typeof metadata.studioCommandExpectedVersion !== "number"
+    || typeof metadata.studioCommandResultingVersion !== "number"
+    || typeof metadata.studioCommandDimension !== "string"
+    || typeof metadata.studioCommandTarget !== "string"
+    || typeof metadata.studioCommandRequestFingerprint !== "string"
+  ) return null;
+  return {
+    version: 1,
+    receiptId: event.id,
+    commandKind: metadata.studioCommandKind,
+    orderId: order.databaseId,
+    reference: order.reference,
+    actorSubject,
+    expectedVersion: metadata.studioCommandExpectedVersion,
+    resultingVersion: metadata.studioCommandResultingVersion,
+    dimension: metadata.studioCommandDimension as ShopOperatorTransitionReceipt["dimension"],
+    target: metadata.studioCommandTarget as ShopOperatorTransitionReceipt["target"],
+    idempotencyKey,
+    requestFingerprint: metadata.studioCommandRequestFingerprint,
+    occurredAt: event.occurredAt,
+  };
+}
+
+function operatorTransitionMetadata(
+  commandKind: "ORDER" | "RETURN",
+  command: TransitionShopOrderCommand | TransitionShopReturnCommand,
+  resultingVersion: number,
+) {
+  return {
+    studioCommandVersion: 1,
+    studioCommandKind: commandKind,
+    studioCommandIdempotencyKey: command.idempotencyKey,
+    studioCommandRequestFingerprint: command.requestFingerprint,
+    studioCommandExpectedVersion: command.expectedVersion,
+    studioCommandResultingVersion: resultingVersion,
+    studioCommandDimension: command.transition.dimension,
+    studioCommandTarget: command.transition.target,
+  };
+}
+
+function assertOperatorTransitionReplay(
+  receipt: ShopOperatorTransitionReceipt,
+  commandKind: "ORDER" | "RETURN",
+  command: TransitionShopOrderCommand | TransitionShopReturnCommand,
+) {
+  if (
+    receipt.commandKind !== commandKind
+    || receipt.reference !== command.reference
+    || receipt.actorSubject !== command.actor.subject
+    || receipt.expectedVersion !== command.expectedVersion
+    || receipt.dimension !== command.transition.dimension
+    || receipt.target !== command.transition.target
+    || receipt.requestFingerprint !== command.requestFingerprint
+  ) {
+    throw new ShopOrderError("IDEMPOTENCY_MISMATCH", "The transition idempotency key was reused.");
+  }
 }
 
 function referenceFor(now: Date, id: string): string {
@@ -820,9 +894,29 @@ export class MemoryShopOrderStore implements ShopOrderStore {
     return order ? this.project(order, true) : null;
   }
 
+  getOperatorTransitionReceipt(
+    actorSubject: string,
+    reference: string,
+    idempotencyKey: string,
+  ): Promise<ShopOperatorTransitionReceipt | null> {
+    return this.transact(() => {
+      const order = this.ordersByReference.get(reference);
+      return order ? operatorTransitionReceipt(order, actorSubject, idempotencyKey) : null;
+    });
+  }
+
   transitionOrder(command: TransitionShopOrderCommand): Promise<ShopServerOrder> {
     return this.transact(() => {
       const order = this.order(command.reference);
+      const replay = operatorTransitionReceipt(
+        order,
+        command.actor.subject,
+        command.idempotencyKey,
+      );
+      if (replay) {
+        assertOperatorTransitionReplay(replay, "ORDER", command);
+        return this.project(order, true, command.now);
+      }
       this.assertVersion(order, command.expectedVersion);
       const allowed = allowedTransitionsFor(order, command.now).some((transition) => (
         transition.dimension === command.transition.dimension
@@ -1005,6 +1099,7 @@ export class MemoryShopOrderStore implements ShopOrderStore {
         note,
         metadata: {
           previous,
+          ...operatorTransitionMetadata("ORDER", command, order.version),
           ...(command.details ? { details: command.details } : {}),
           ...(command.details?.kind === "FUNDS_CONFIRMATION" ? {
             paidAmount: command.details.paidAmount,
@@ -1147,6 +1242,15 @@ export class MemoryShopOrderStore implements ShopOrderStore {
   transitionReturn(command: TransitionShopReturnCommand): Promise<ShopServerOrder> {
     return this.transact(() => {
       const order = this.order(command.reference);
+      const replay = operatorTransitionReceipt(
+        order,
+        command.actor.subject,
+        command.idempotencyKey,
+      );
+      if (replay) {
+        assertOperatorTransitionReplay(replay, "RETURN", command);
+        return this.project(order, true, command.now);
+      }
       this.assertVersion(order, command.expectedVersion);
       const currentReturn = order.return;
       if (!currentReturn) throw new ShopOrderError("NOT_FOUND", "The return request was not found.");
@@ -1229,6 +1333,7 @@ export class MemoryShopOrderStore implements ShopOrderStore {
         fulfillmentStatus: order.fulfillmentStatus,
         note,
         metadata: {
+          ...operatorTransitionMetadata("RETURN", command, order.version),
           returnId: currentReturn.id,
           returnStatus: currentReturn.status,
           refundStatus: currentReturn.refundStatus,

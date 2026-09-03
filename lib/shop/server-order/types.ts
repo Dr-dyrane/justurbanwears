@@ -147,6 +147,29 @@ export interface ShopOrderAuditEvent {
   occurredAt: string;
 }
 
+export type ShopOperatorTransitionCommandKind = "ORDER" | "RETURN";
+
+export interface ShopOperatorTransitionReceipt {
+  version: 1;
+  receiptId: string;
+  commandKind: ShopOperatorTransitionCommandKind;
+  orderId: string;
+  reference: string;
+  actorSubject: string;
+  expectedVersion: number;
+  resultingVersion: number;
+  dimension: ShopOperatorTransition["dimension"] | ShopOperatorReturnTransition["dimension"];
+  target: ShopOperatorTransition["target"] | ShopOperatorReturnTransition["target"];
+  idempotencyKey: string;
+  requestFingerprint: string;
+  occurredAt: string;
+}
+
+export interface ShopOperatorTransitionResult {
+  order: ShopServerOrder;
+  receipt: ShopOperatorTransitionReceipt;
+}
+
 export type ShopPaymentEvidenceStatus = "AUTHORIZED" | "RECEIVED" | "SUPERSEDED";
 
 export interface ShopPaymentEvidenceView {
@@ -283,6 +306,8 @@ export interface TransitionShopOrderCommand {
   actor: ShopOperatorActor;
   reference: string;
   expectedVersion: number;
+  idempotencyKey: string;
+  requestFingerprint: string;
   transition: ShopOperatorTransition;
   details: ShopOrderTransitionDetails | null;
   note: string | null;
@@ -317,6 +342,8 @@ export interface TransitionShopReturnCommand {
   actor: ShopOperatorActor;
   reference: string;
   expectedVersion: number;
+  idempotencyKey: string;
+  requestFingerprint: string;
   transition: ShopOperatorReturnTransition;
   refundReference: string | null;
   refundAmount: number | null;
@@ -423,6 +450,11 @@ export interface ShopOrderStore {
   listOperatorOrders(limit: number): Promise<ShopServerOrder[]>;
   pageOperatorOrders(query: ShopOrderListQuery): Promise<ShopOrderPage>;
   getOperatorOrder(reference: string): Promise<ShopServerOrder | null>;
+  getOperatorTransitionReceipt(
+    actorSubject: string,
+    reference: string,
+    idempotencyKey: string,
+  ): Promise<ShopOperatorTransitionReceipt | null>;
   transitionOrder(command: TransitionShopOrderCommand): Promise<ShopServerOrder>;
   requestReturn(command: RequestShopReturnCommand): Promise<ShopServerOrder>;
   transitionReturn(command: TransitionShopReturnCommand): Promise<ShopServerOrder>;

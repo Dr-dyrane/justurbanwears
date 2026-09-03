@@ -21,9 +21,14 @@ import {
 import type {
   ShopOperatorReturnTransition,
   ShopOperatorTransition,
+  ShopOperatorTransitionReceipt,
   ShopOrderTransitionDetails,
   ShopServerOrder,
 } from "../../lib/shop/server-order/types";
+import {
+  clearSessionCommandKey,
+  getOrCreateSessionCommandKey,
+} from "../../lib/studio/idempotency/session-command-key";
 import { StudioFeedback } from "./atoms/studio-feedback";
 import { StudioLink as Link } from "./atoms/studio-link";
 import { StudioLoadingStage } from "./atoms/studio-loading-stage";
@@ -42,6 +47,31 @@ function isReturnTransition(transition: StudioTransition): transition is ShopOpe
 
 function transitionKey(transition: StudioTransition): string {
   return `${transition.dimension}:${transition.target}`;
+}
+
+async function sha256Text(value: string): Promise<string> {
+  const digest = await globalThis.crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
+  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function receiptMatches(
+  receipt: ShopOperatorTransitionReceipt | undefined,
+  input: {
+    commandKind: "ORDER" | "RETURN";
+    expectedVersion: number;
+    idempotencyKey: string;
+    reference: string;
+    transition: StudioTransition;
+  },
+): receipt is ShopOperatorTransitionReceipt {
+  return receipt?.version === 1
+    && receipt.commandKind === input.commandKind
+    && receipt.reference === input.reference
+    && receipt.expectedVersion === input.expectedVersion
+    && receipt.resultingVersion === input.expectedVersion + 1
+    && receipt.dimension === input.transition.dimension
+    && receipt.target === input.transition.target
+    && receipt.idempotencyKey === input.idempotencyKey;
 }
 
 function confirmationCopy(transition: StudioTransition, fulfillmentKind: "DELIVERY" | "PICKUP"): string {
@@ -115,7 +145,6 @@ function MutationAction({
   onApplied,
   onMutationEnd,
   onMutationStart,
-  onReconcile,
   onVersionConflict,
 }: {
   mutationBlocked: boolean;
@@ -126,7 +155,6 @@ function MutationAction({
   onApplied(order: ShopServerOrder, notice: string): void;
   onMutationEnd(key: string): void;
   onMutationStart(key: string): boolean;
-  onReconcile(expectedVersion: number): Promise<ShopServerOrder | null>;
   onVersionConflict(): void;
 }) {
   const [pending, setPending] = useState(false);
@@ -283,66 +311,101 @@ function MutationAction({
     setError("");
     const returnMutation = isReturnTransition(transition);
     let authoritativeClientFailure = false;
+    const commandKind = returnMutation ? "RETURN" : "ORDER";
+    const endpoint = `/api/studio/orders/${encodeURIComponent(order.reference)}/${returnMutation ? "returns/transitions" : "transitions"}`;
+    const commandPayload = returnMutation
+      ? {
+          expectedVersion: order.version,
+          transition,
+          refundReference: transition.dimension === "REFUND" && transition.target === "COMPLETED"
+            ? refundReference.trim()
+            : null,
+          refundAmount: transition.dimension === "REFUND" && transition.target === "COMPLETED"
+            ? Number(refundAmount)
+            : null,
+          refundCurrency: transition.dimension === "REFUND" && transition.target === "COMPLETED"
+            ? "NGN"
+            : null,
+          lineDispositions: transition.dimension === "RETURN_RESOLUTION"
+            ? order.return?.items.map((item) => ({
+                sku: item.sku,
+                disposition: lineDispositions[item.sku],
+              }))
+            : null,
+          note: note.trim() || null,
+        }
+      : {
+          expectedVersion: order.version,
+          transition,
+          details: orderDetails(),
+          note: note.trim() || null,
+        };
+    const commandScope = `studio-order-transition:${order.reference}:${transitionKey(transition)}`;
+    let payloadRevision: string | null = null;
+    let idempotencyKey: string | null = null;
+    let expectedReceipt: Parameters<typeof receiptMatches>[1] | null = null;
     try {
-      const response = await fetch(
-        `/api/studio/orders/${encodeURIComponent(order.reference)}/${returnMutation ? "returns/transitions" : "transitions"}`,
-        {
+      payloadRevision = await sha256Text(JSON.stringify(commandPayload));
+      idempotencyKey = getOrCreateSessionCommandKey({
+        keyPrefix: returnMutation ? "studio-return" : "studio-order",
+        revision: payloadRevision,
+        scope: commandScope,
+      });
+      expectedReceipt = {
+        commandKind,
+        expectedVersion: order.version,
+        idempotencyKey,
+        reference: order.reference,
+        transition,
+      };
+      const response = await fetch(endpoint, {
           method: "POST",
           credentials: "same-origin",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify(returnMutation
-            ? {
-                expectedVersion: order.version,
-                transition,
-                refundReference: transition.dimension === "REFUND" && transition.target === "COMPLETED"
-                  ? refundReference.trim()
-                  : null,
-                refundAmount: transition.dimension === "REFUND" && transition.target === "COMPLETED"
-                  ? Number(refundAmount)
-                  : null,
-                refundCurrency: transition.dimension === "REFUND" && transition.target === "COMPLETED"
-                  ? "NGN"
-                  : null,
-                lineDispositions: transition.dimension === "RETURN_RESOLUTION"
-                  ? order.return?.items.map((item) => ({
-                      sku: item.sku,
-                      disposition: lineDispositions[item.sku],
-                    }))
-                  : null,
-                note: note.trim() || null,
-              }
-            : {
-                expectedVersion: order.version,
-                transition,
-                details: orderDetails(),
-                note: note.trim() || null,
-              }),
-        },
-      );
+          body: JSON.stringify({ ...commandPayload, idempotencyKey }),
+        });
       const body = await response.json().catch(() => ({})) as {
         ok?: boolean;
         order?: ShopServerOrder;
+        receipt?: ShopOperatorTransitionReceipt;
         error?: { code?: string; message?: string };
       };
       authoritativeClientFailure = response.status >= 400 && response.status < 500;
-      if (!response.ok || !body.ok || !body.order) {
+      if (!response.ok || !body.ok || !body.order || !receiptMatches(body.receipt, expectedReceipt)) {
         if (body.error?.code === "VERSION_CONFLICT") onVersionConflict();
         const mapped = mapConnectedOrderFailure(response.status, body.error?.code);
-        throw new Error(body.error?.message || mapped.message);
+        throw new Error(body.error?.message || (response.ok ? "The order update receipt did not match this action." : mapped.message));
       }
+      clearSessionCommandKey({ key: idempotencyKey, revision: payloadRevision, scope: commandScope });
       const nextTransition = nextStudioOrderTransition(body.order);
       onApplied(
         body.order,
         `${label} saved. Order is ${orderStateLabel(body.order.lifecycleStatus).toLowerCase()}. Next: ${nextTransition ? studioOrderNextActionLabel(body.order) : "return to Orders"}.`,
       );
     } catch (cause) {
-      if (!authoritativeClientFailure) {
-        const reconciled = await onReconcile(order.version).catch(() => null);
-        if (reconciled && reconciled.version > order.version) {
-          const nextTransition = nextStudioOrderTransition(reconciled);
+      if (!authoritativeClientFailure && idempotencyKey && expectedReceipt && payloadRevision) {
+        const response = await fetch(`${endpoint}?idempotencyKey=${encodeURIComponent(idempotencyKey)}`, {
+          cache: "no-store",
+          credentials: "same-origin",
+        }).catch(() => null);
+        const reconciled = response
+          ? await response.json().catch(() => ({})) as {
+              ok?: boolean;
+              order?: ShopServerOrder;
+              receipt?: ShopOperatorTransitionReceipt | null;
+            }
+          : null;
+        if (
+          response?.ok
+          && reconciled?.ok
+          && reconciled.order
+          && receiptMatches(reconciled.receipt ?? undefined, expectedReceipt)
+        ) {
+          clearSessionCommandKey({ key: idempotencyKey, revision: payloadRevision, scope: commandScope });
+          const nextTransition = nextStudioOrderTransition(reconciled.order);
           onApplied(
-            reconciled,
-            `Latest order state recovered after the connection dropped. Next: ${nextTransition ? studioOrderNextActionLabel(reconciled) : "return to Orders"}.`,
+            reconciled.order,
+            `Order update recovered after the connection dropped. Next: ${nextTransition ? studioOrderNextActionLabel(reconciled.order) : "return to Orders"}.`,
           );
           return;
         }
@@ -609,9 +672,6 @@ export function ConnectedOrderDetail() {
       onApplied={applyOrderUpdate}
       onMutationEnd={endMutation}
       onMutationStart={startMutation}
-      onReconcile={(expectedVersion) => loadOrder(undefined, true).then((latest) => (
-        latest && latest.version >= expectedVersion ? latest : null
-      ))}
       onVersionConflict={() => void loadOrder(undefined, true)}
       operatorRole={operatorRole}
       order={order}

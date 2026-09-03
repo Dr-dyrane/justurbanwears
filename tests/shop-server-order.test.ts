@@ -1114,11 +1114,9 @@ test("migration and routes pin the executable Neon one-shot contract", () => {
     "shop_complete_outbox_v2",
     "shop_create_assisted_order_v4",
     "shop_mutate_customer_order_v3",
-    "shop_transition_order_v3",
-    "shop_schedule_pickup_v3",
-    "shop_transition_pre_handoff_recovery_v3",
+    "shop_transition_order_command_v4",
     "shop_request_return_v3",
-    "shop_transition_return_v3",
+    "shop_transition_return_command_v4",
     "shop_order_document_v3",
   ]) assert.match(store, new RegExp(functionName));
   assert.match(assistedMutation, /getShopOrderService\(\)\.createAssistedOrder\(actor, body\)/);

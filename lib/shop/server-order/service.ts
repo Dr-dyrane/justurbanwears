@@ -4,8 +4,12 @@ import type {
   PaymentEvidenceAuthorization,
   ShopCustomerActor,
   ShopOperatorActor,
+  ShopOperatorTransitionReceipt,
+  ShopOperatorTransitionResult,
   ShopOrderStore,
   ShopServerOrder,
+  TransitionShopOrderCommand,
+  TransitionShopReturnCommand,
 } from "./types";
 import { ShopOrderError } from "./types";
 import {
@@ -15,6 +19,7 @@ import {
   parseCustomerOrderMutation,
   parseEvidenceMetadata,
   parseExpectedVersion,
+  parseIdempotencyKey,
   parseOperatorTransition,
   parseOrderTransitionDetails,
   parseOptionalNote,
@@ -173,12 +178,14 @@ export class ShopOrderService {
     return order;
   }
 
-  transitionOrder(
+  private prepareOrderTransition(
     actor: ShopOperatorActor,
     rawReference: unknown,
     value: unknown,
-  ): Promise<ShopServerOrder> {
-    const body = commandBody(value, ["expectedVersion", "transition", "details", "note"]);
+  ): TransitionShopOrderCommand {
+    const body = commandBody(value, ["expectedVersion", "idempotencyKey", "transition", "details", "note"]);
+    const reference = parseOrderReference(rawReference);
+    const expectedVersion = parseExpectedVersion(body.expectedVersion);
     const transition = parseOperatorTransition(body.transition);
     if (
       (transition.dimension === "FUNDS_CONFIRMATION"
@@ -206,16 +213,150 @@ export class ShopOrderService {
         throw new ShopOrderError("INVALID_REQUEST", "Choose a future pickup time.");
       }
     }
-    return this.store.transitionOrder({
+    const requestFingerprint = sha256Fingerprint({
+      commandKind: "ORDER",
+      details,
+      expectedVersion,
+      note,
+      reference,
+      transition,
+      version: 1,
+    });
+    return {
       actor,
-      reference: parseOrderReference(rawReference),
-      expectedVersion: parseExpectedVersion(body.expectedVersion),
+      reference,
+      expectedVersion,
+      idempotencyKey: parseIdempotencyKey(
+        body.idempotencyKey ?? `studio-order-legacy:${requestFingerprint}`,
+      ),
+      requestFingerprint,
       transition,
       details,
       note,
       returnEligibleUntil,
       now,
+    };
+  }
+
+  private prepareReturnTransition(
+    actor: ShopOperatorActor,
+    rawReference: unknown,
+    value: unknown,
+  ): TransitionShopReturnCommand {
+    const body = commandBody(value, [
+      "expectedVersion",
+      "idempotencyKey",
+      "transition",
+      "refundReference",
+      "refundAmount",
+      "refundCurrency",
+      "lineDispositions",
+      "note",
+    ]);
+    const reference = parseOrderReference(rawReference);
+    const expectedVersion = parseExpectedVersion(body.expectedVersion);
+    const transition = parseReturnTransition(body.transition);
+    const completedRefund = transition.dimension === "REFUND" && transition.target === "COMPLETED";
+    if (completedRefund && actor.role !== "admin") {
+      throw new ShopOrderError("FORBIDDEN", "Admin access is required to record a completed refund.");
+    }
+    const refundReference = parseRefundReference(body.refundReference, completedRefund);
+    const refundAmount = parseRefundAmount(body.refundAmount, completedRefund);
+    const refundCurrency = parseRefundCurrency(body.refundCurrency, completedRefund);
+    const lineDispositions = parseReturnLineDispositions(
+      body.lineDispositions,
+      transition.dimension === "RETURN_RESOLUTION",
+    ).sort((left, right) => left.sku.localeCompare(right.sku));
+    const note = parseOptionalNote(body.note);
+    const requestFingerprint = sha256Fingerprint({
+      commandKind: "RETURN",
+      expectedVersion,
+      lineDispositions,
+      note,
+      reference,
+      refundAmount,
+      refundCurrency,
+      refundReference,
+      transition,
+      version: 1,
     });
+    return {
+      actor,
+      reference,
+      expectedVersion,
+      idempotencyKey: parseIdempotencyKey(
+        body.idempotencyKey ?? `studio-return-legacy:${requestFingerprint}`,
+      ),
+      requestFingerprint,
+      transition,
+      refundReference,
+      refundAmount,
+      refundCurrency,
+      lineDispositions,
+      note,
+      now: this.now(),
+    };
+  }
+
+  private assertTransitionReceipt(
+    receipt: ShopOperatorTransitionReceipt | null,
+    command: TransitionShopOrderCommand | TransitionShopReturnCommand,
+    commandKind: "ORDER" | "RETURN",
+  ): ShopOperatorTransitionReceipt {
+    if (
+      !receipt
+      || receipt.version !== 1
+      || receipt.commandKind !== commandKind
+      || receipt.reference !== command.reference
+      || receipt.actorSubject !== command.actor.subject
+      || receipt.expectedVersion !== command.expectedVersion
+      || receipt.dimension !== command.transition.dimension
+      || receipt.target !== command.transition.target
+      || receipt.idempotencyKey !== command.idempotencyKey
+      || receipt.requestFingerprint !== command.requestFingerprint
+    ) {
+      throw new ShopOrderError(
+        receipt ? "IDEMPOTENCY_MISMATCH" : "PERSISTENCE_UNAVAILABLE",
+        receipt
+          ? "The idempotency key was reused for a different order transition."
+          : "The order transition receipt could not be read.",
+      );
+    }
+    return receipt;
+  }
+
+  private async executeOrderTransition(
+    command: TransitionShopOrderCommand,
+  ): Promise<ShopOperatorTransitionResult> {
+    const order = await this.store.transitionOrder(command);
+    const receipt = this.assertTransitionReceipt(
+      await this.store.getOperatorTransitionReceipt(
+        command.actor.subject,
+        command.reference,
+        command.idempotencyKey,
+      ),
+      command,
+      "ORDER",
+    );
+    return { order, receipt };
+  }
+
+  transitionOrderWithReceipt(
+    actor: ShopOperatorActor,
+    rawReference: unknown,
+    value: unknown,
+  ): Promise<ShopOperatorTransitionResult> {
+    const command = this.prepareOrderTransition(actor, rawReference, value);
+    return this.executeOrderTransition(command);
+  }
+
+  transitionOrder(
+    actor: ShopOperatorActor,
+    rawReference: unknown,
+    value: unknown,
+  ): Promise<ShopServerOrder> {
+    const command = this.prepareOrderTransition(actor, rawReference, value);
+    return this.executeOrderTransition(command).then((result) => result.order);
   }
 
   async requestReturn(
@@ -234,43 +375,56 @@ export class ShopOrderService {
     });
   }
 
+  private async executeReturnTransition(
+    command: TransitionShopReturnCommand,
+  ): Promise<ShopOperatorTransitionResult> {
+    const order = await this.store.transitionReturn(command);
+    const receipt = this.assertTransitionReceipt(
+      await this.store.getOperatorTransitionReceipt(
+        command.actor.subject,
+        command.reference,
+        command.idempotencyKey,
+      ),
+      command,
+      "RETURN",
+    );
+    return { order, receipt };
+  }
+
+  transitionReturnWithReceipt(
+    actor: ShopOperatorActor,
+    rawReference: unknown,
+    value: unknown,
+  ): Promise<ShopOperatorTransitionResult> {
+    const command = this.prepareReturnTransition(actor, rawReference, value);
+    return this.executeReturnTransition(command);
+  }
+
   transitionReturn(
     actor: ShopOperatorActor,
     rawReference: unknown,
     value: unknown,
   ): Promise<ShopServerOrder> {
-    const body = commandBody(value, [
-      "expectedVersion",
-      "transition",
-      "refundReference",
-      "refundAmount",
-      "refundCurrency",
-      "lineDispositions",
-      "note",
-    ]);
-    const transition = parseReturnTransition(body.transition);
-    const completedRefund = transition.dimension === "REFUND" && transition.target === "COMPLETED";
-    if (completedRefund && actor.role !== "admin") {
-      throw new ShopOrderError("FORBIDDEN", "Admin access is required to record a completed refund.");
-    }
-    return this.store.transitionReturn({
-      actor,
-      reference: parseOrderReference(rawReference),
-      expectedVersion: parseExpectedVersion(body.expectedVersion),
-      transition,
-      refundReference: parseRefundReference(
-        body.refundReference,
-        completedRefund,
-      ),
-      refundAmount: parseRefundAmount(body.refundAmount, completedRefund),
-      refundCurrency: parseRefundCurrency(body.refundCurrency, completedRefund),
-      lineDispositions: parseReturnLineDispositions(
-        body.lineDispositions,
-        transition.dimension === "RETURN_RESOLUTION",
-      ),
-      note: parseOptionalNote(body.note),
-      now: this.now(),
-    });
+    const command = this.prepareReturnTransition(actor, rawReference, value);
+    return this.executeReturnTransition(command).then((result) => result.order);
+  }
+
+  async getOperatorTransitionResult(
+    actor: ShopOperatorActor,
+    rawReference: unknown,
+    rawIdempotencyKey: unknown,
+  ): Promise<ShopOperatorTransitionResult | null> {
+    const reference = parseOrderReference(rawReference);
+    const idempotencyKey = parseIdempotencyKey(rawIdempotencyKey);
+    const receipt = await this.store.getOperatorTransitionReceipt(
+      actor.subject,
+      reference,
+      idempotencyKey,
+    );
+    if (!receipt) return null;
+    const order = await this.store.getOperatorOrder(reference);
+    if (!order) throw new ShopOrderError("NOT_FOUND", "The order was not found.");
+    return { order, receipt };
   }
 
   async authorizePaymentEvidence(

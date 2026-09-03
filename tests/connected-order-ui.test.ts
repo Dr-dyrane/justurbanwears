@@ -164,8 +164,9 @@ test("Studio posts structured facts, role-gates finance UX, and covers return re
   assert.match(detail, /commandPendingRef\.current = true;[\s\S]*?finally \{[\s\S]*?commandPendingRef\.current = false/);
   assert.match(detail, /const activeMutationRef = useRef<string \| null>\(null\)/);
   assert.match(detail, /!onMutationStart\(commandKey\)/);
-  assert.match(detail, /onReconcile\(order\.version\)/);
-  assert.match(detail, /reconciled\.version > order\.version/);
+  assert.match(detail, /receiptMatches\(body\.receipt, expectedReceipt\)/);
+  assert.match(detail, /\?idempotencyKey=\$\{encodeURIComponent\(idempotencyKey\)\}/);
+  assert.doesNotMatch(detail, /reconciled\.version > order\.version/);
   assert.match(route, /requireOperatorActor/);
   assert.match(route, /getShopBlob\("private", evidence\.blobPathname/);
   assert.doesNotMatch(route, /blobUrl|downloadUrl/);

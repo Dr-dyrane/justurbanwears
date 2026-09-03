@@ -14,15 +14,29 @@ import { flushOrderNotificationsAfterMutation } from "@/lib/shop/server-order/em
 
 export const dynamic = "force-dynamic";
 
+export async function GET(request: Request, context: ShopRouteContext): Promise<Response> {
+  return shopRoute(async () => {
+    const actor = requireOperatorActor(await resolveOperatorActor(request));
+    const result = await getShopOrderService().getOperatorTransitionResult(
+      actor,
+      await routeParam(context, "reference"),
+      new URL(request.url).searchParams.get("idempotencyKey"),
+    );
+    return shopJson(result
+      ? { ok: true, ...result, timeline: result.order.events }
+      : { ok: true, receipt: null });
+  });
+}
+
 export async function POST(request: Request, context: ShopRouteContext): Promise<Response> {
   return shopRoute(async () => {
     const actor = requireOperatorActor(await resolveOperatorActor(request));
-    const order = await getShopOrderService().transitionReturn(
+    const result = await getShopOrderService().transitionReturnWithReceipt(
       actor,
       await routeParam(context, "reference"),
       await readShopJson(request),
     );
     await flushOrderNotificationsAfterMutation();
-    return shopJson({ ok: true, order, timeline: order.events });
+    return shopJson({ ok: true, ...result, timeline: result.order.events });
   });
 }

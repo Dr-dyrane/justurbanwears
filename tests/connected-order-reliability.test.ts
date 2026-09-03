@@ -5,9 +5,14 @@ import test from "node:test";
 const inbox = readFileSync("components/studio/connected-order-inbox.tsx", "utf8");
 const detail = readFileSync("components/studio/connected-order-detail.tsx", "utf8");
 
-test("ambiguous and server-side order mutation failures reconcile through reads", () => {
+test("ambiguous order mutation failures reconcile only through exact receipts", () => {
   assert.match(detail, /authoritativeClientFailure = response\.status >= 400 && response\.status < 500/);
-  assert.match(detail, /if \(!authoritativeClientFailure\) \{[\s\S]*?await onReconcile\(order\.version\)/);
+  assert.match(detail, /getOrCreateSessionCommandKey/);
+  assert.match(detail, /receiptMatches\(body\.receipt, expectedReceipt\)/);
+  assert.match(detail, /\?idempotencyKey=\$\{encodeURIComponent\(idempotencyKey\)\}/);
+  assert.match(detail, /receiptMatches\(reconciled\.receipt \?\? undefined, expectedReceipt\)/);
+  assert.doesNotMatch(detail, /reconciled\.version > order\.version/);
+  assert.doesNotMatch(detail, /await onReconcile\(order\.version\)/);
   assert.doesNotMatch(detail, /authoritativeResponseReceived = !response\.ok/);
 
   assert.match(inbox, /authoritativeClientFailure = response\.status >= 400 && response\.status < 500/);
