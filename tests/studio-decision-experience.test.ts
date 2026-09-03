@@ -17,6 +17,9 @@ test("consequential Studio actions share review, confirmation, progress and rece
   assert.match(decision, /"review" \| "loading" \| "success" \| "error"/);
   assert.match(decision, /After confirmation/);
   assert.match(decision, /await onConfirm\(\)/);
+  assert.match(decision, /const confirmInFlightRef = useRef\(false\)/);
+  assert.match(decision, /if \(confirmInFlightRef\.current\) return;[\s\S]*confirmInFlightRef\.current = true;[\s\S]*await onConfirm\(\)/);
+  assert.match(decision, /finally \{[\s\S]*confirmInFlightRef\.current = false;/);
   assert.match(decision, /state="loading"/);
   assert.match(decision, /state="success"/);
   assert.match(decision, /state="error"/);

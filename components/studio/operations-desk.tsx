@@ -42,8 +42,10 @@ const locations = [
   { key: "RETURN_INSPECTION", label: "Return inspection" },
 ] as const;
 type StudioLocation = (typeof locations)[number];
+type LocationCommand = "CONFIRM" | "MOVE";
 
-interface LocationMoveReview {
+interface LocationReview {
+  command: LocationCommand;
   piece: StudioAuthorityPiece;
   target: StudioLocation;
 }
@@ -222,8 +224,8 @@ export function OperationsDesk() {
   const [requestedPieceError, setRequestedPieceError] = useState("");
   const [requestedStateNotice, setRequestedStateNotice] = useState("");
   const [pendingAction, setPendingAction] = useState<"location" | "release" | null>(null);
-  const [locationMoveReview, setLocationMoveReview] = useState<LocationMoveReview | null>(null);
-  const [locationMoveReturnFocus, setLocationMoveReturnFocus] = useState<HTMLElement | null>(null);
+  const [locationReview, setLocationReview] = useState<LocationReview | null>(null);
+  const [locationReturnFocus, setLocationReturnFocus] = useState<HTMLElement | null>(null);
   const [releaseOpen, setReleaseOpen] = useState(false);
   const [releaseReturnFocus, setReleaseReturnFocus] = useState<HTMLElement | null>(null);
   const [scenarioOrderOpen, setScenarioOrderOpen] = useState(false);
@@ -338,18 +340,19 @@ export function OperationsDesk() {
     setRequestedStateNotice("");
   }
 
-  function openLocationMove(
+  function openLocationReview(
     piece: StudioAuthorityPiece,
     target: StudioLocation,
+    command: LocationCommand,
     trigger: HTMLElement,
   ) {
-    setLocationMoveReview({ piece, target });
-    setLocationMoveReturnFocus(trigger);
+    setLocationReview({ command, piece, target });
+    setLocationReturnFocus(trigger);
     setError("");
   }
 
-  function closeLocationMove() {
-    setLocationMoveReview(null);
+  function closeLocationReview() {
+    setLocationReview(null);
   }
 
   function clearScenarioOrderRoute() {
@@ -509,7 +512,7 @@ export function OperationsDesk() {
   async function recordLocation(
     piece: StudioAuthorityPiece,
     locationKey: typeof locations[number]["key"],
-    command: "CONFIRM" | "MOVE",
+    command: LocationCommand,
   ): Promise<StudioDecisionResult> {
     if (detailMutationPendingRef.current) return { error: "Another inventory change is already in progress.", ok: false };
     const expectedAuthorityRevision = piece.authorityRevision;
@@ -604,11 +607,11 @@ export function OperationsDesk() {
     }
   }
 
-  function confirmLocationMove(): Promise<StudioDecisionResult> {
-    if (!locationMoveReview) {
-      return Promise.resolve({ error: "Choose a destination again.", ok: false });
+  function confirmLocationReview(): Promise<StudioDecisionResult> {
+    if (!locationReview) {
+      return Promise.resolve({ error: "Choose a location again.", ok: false });
     }
-    return recordLocation(locationMoveReview.piece, locationMoveReview.target.key, "MOVE");
+    return recordLocation(locationReview.piece, locationReview.target.key, locationReview.command);
   }
 
   if (authority.status === "idle" || authority.status === "loading") {
@@ -774,7 +777,7 @@ export function OperationsDesk() {
             {selected.expectedCustody === "STUDIO" ? <div className="studio-inventory-decision-grid">{locations.map((location) => {
               const confirmsExpected = selected.expectedLocationKey === location.key;
               const savingLocation = pendingAction === "location";
-              return <button aria-busy={savingLocation} aria-haspopup={confirmsExpected ? undefined : "dialog"} className="studio-inventory-decision" disabled={Boolean(pendingAction) || Boolean(scenario)} key={location.key} onClick={(event) => confirmsExpected ? void recordLocation(selected, location.key, "CONFIRM") : openLocationMove(selected, location, event.currentTarget)} type="button"><MapPin aria-hidden="true" size={20} /><span><strong>{savingLocation ? "Saving location…" : confirmsExpected ? `Confirm at ${location.label}` : `Move to ${location.label}`}</strong><small>{scenario ? "Read-only scenario" : savingLocation ? "Keeping other inventory actions paused." : confirmsExpected ? "Check the piece is here." : `Expected location becomes ${location.label.toLowerCase()}.`}</small></span><ChevronRight aria-hidden="true" size={17} /></button>;
+              return <button aria-busy={savingLocation} aria-haspopup="dialog" className="studio-inventory-decision" disabled={Boolean(pendingAction) || Boolean(scenario)} key={location.key} onClick={(event) => openLocationReview(selected, location, confirmsExpected ? "CONFIRM" : "MOVE", event.currentTarget)} type="button"><MapPin aria-hidden="true" size={20} /><span><strong>{savingLocation ? "Saving location…" : confirmsExpected ? `Confirm at ${location.label}` : `Move to ${location.label}`}</strong><small>{scenario ? "Read-only scenario" : savingLocation ? "Keeping other inventory actions paused." : confirmsExpected ? "Check the piece is here." : `Expected location becomes ${location.label.toLowerCase()}.`}</small></span><ChevronRight aria-hidden="true" size={17} /></button>;
             })}</div> : <div className="studio-quiet-empty"><MapPin aria-hidden="true" size={22} /><div><strong>{selected.expectedLocationLabel}</strong><p>{selected.orderReference ? "Continue with the connected order." : "Confirm the handoff before moving this piece."}</p></div>{selected.orderReference ? <Link className="button button-secondary" href={`/studio/orders/${selected.orderReference}`}>Open order</Link> : null}</div>}
           </section>
 
@@ -791,24 +794,26 @@ export function OperationsDesk() {
       </StudioTaskSheet>
 
       <StudioDecisionSheet
-        busyLabel="Moving this piece"
-        confirmLabel="Move"
-        consequence={locationMoveReview
-          ? `Expected location changes from ${locationMoveReview.piece.expectedLocationLabel} to ${locationMoveReview.target.label}. Shop and orders stay unchanged.`
-          : "The expected location changes. Shop and orders stay unchanged."}
+        busyLabel={locationReview?.command === "CONFIRM" ? "Saving this location check" : "Moving this piece"}
+        confirmLabel={locationReview?.command === "CONFIRM" ? "Confirm location" : "Move"}
+        consequence={locationReview?.command === "CONFIRM"
+          ? `${locationReview.piece.title} will be recorded as seen at ${locationReview.target.label.toLowerCase()}. Expected location, Shop and orders stay unchanged.`
+          : locationReview
+            ? `Expected location changes from ${locationReview.piece.expectedLocationLabel} to ${locationReview.target.label}. Shop and orders stay unchanged.`
+            : "The location record changes. Shop and orders stay unchanged."}
         eyebrow="Inventory"
-        onConfirm={confirmLocationMove}
-        onDismiss={closeLocationMove}
-        open={Boolean(locationMoveReview)}
-        receiptDetail={locationMoveReview
-          ? `${locationMoveReview.piece.title} is now expected at ${locationMoveReview.target.label.toLowerCase()}.`
+        onConfirm={confirmLocationReview}
+        onDismiss={closeLocationReview}
+        open={Boolean(locationReview)}
+        receiptDetail={locationReview?.command === "CONFIRM"
+          ? `${locationReview.piece.title} was confirmed at ${locationReview.target.label.toLowerCase()}.`
+          : locationReview
+            ? `${locationReview.piece.title} is now expected at ${locationReview.target.label.toLowerCase()}.`
           : "The expected location is current."}
-        receiptTitle="Location moved"
-        returnFocus={locationMoveReturnFocus}
-        summary={locationMoveReview
-          ? locationMoveReview.piece.title
-          : "Review this location move."}
-        title={`Move to ${locationMoveReview?.target.label ?? "another location"}?`}
+        receiptTitle={locationReview?.command === "CONFIRM" ? "Location confirmed" : "Location moved"}
+        returnFocus={locationReturnFocus}
+        summary={locationReview?.piece.title ?? "Review this location change."}
+        title={locationReview?.command === "CONFIRM" ? "Confirm location" : "Review move"}
       />
 
       <StudioDecisionSheet

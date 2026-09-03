@@ -20,6 +20,16 @@ test("inventory rows open one named detail sheet instead of mutating stock inlin
 });
 
 test("the sheet exposes facts and only authority-backed physical actions", () => {
+  const locationActionsStart = operations.indexOf("<h3>Confirm location</h3>");
+  const locationActionsEnd = operations.indexOf("<h3>Actions</h3>", locationActionsStart);
+  const locationActions = operations.slice(locationActionsStart, locationActionsEnd);
+  const openReviewStart = operations.indexOf("function openLocationReview(");
+  const openReviewEnd = operations.indexOf("function clearScenarioOrderRoute", openReviewStart);
+  const openReview = operations.slice(openReviewStart, openReviewEnd);
+  const recordLocationStart = operations.indexOf("async function recordLocation(");
+  const recordLocationEnd = operations.indexOf("function confirmLocationReview", recordLocationStart);
+  const recordLocation = operations.slice(recordLocationStart, recordLocationEnd);
+
   assert.match(operations, /studio-inventory-detail-facts/);
   assert.match(operations, /Confirm at \$\{location\.label\}/);
   assert.match(operations, /Move to \$\{location\.label\}/);
@@ -34,11 +44,17 @@ test("the sheet exposes facts and only authority-backed physical actions", () =>
   assert.match(css, /\.studio-inventory-decision-grid/);
   assert.match(nativeCss, /\.studio-inventory-detail-facts > div[\s\S]*?background: transparent;/);
   assert.match(operations, /authority\.recordLocation/);
-  assert.match(operations, /confirmsExpected \? void recordLocation\(selected, location\.key, "CONFIRM"\) : openLocationMove\(selected, location, event\.currentTarget\)/);
-  assert.match(operations, /setLocationMoveReview\(\{ piece, target \}\)/);
-  assert.match(operations, /onConfirm=\{confirmLocationMove\}/);
-  assert.match(operations, /title=\{`Move to \$\{locationMoveReview\?\.target\.label/);
-  assert.match(operations, /confirmLabel="Move"/);
+  assert.match(locationActions, /aria-haspopup="dialog"/);
+  assert.match(locationActions, /openLocationReview\(selected, location, confirmsExpected \? "CONFIRM" : "MOVE", event\.currentTarget\)/);
+  assert.doesNotMatch(locationActions, /recordLocation/);
+  assert.match(openReview, /setLocationReview\(\{ command, piece, target \}\)/);
+  assert.doesNotMatch(openReview, /authority\.recordLocation|persistMutationIntent/);
+  assert.match(operations, /onConfirm=\{confirmLocationReview\}/);
+  assert.match(operations, /confirmLabel=\{locationReview\?\.command === "CONFIRM" \? "Confirm location" : "Move"\}/);
+  assert.match(operations, /title=\{locationReview\?\.command === "CONFIRM" \? "Confirm location" : "Review move"\}/);
+  assert.match(operations, /return recordLocation\(locationReview\.piece, locationReview\.target\.key, locationReview\.command\)/);
+  assert.ok(recordLocation.indexOf("detailMutationPendingRef.current = true") < recordLocation.indexOf("await authority.recordLocation"));
+  assert.equal((recordLocation.match(/authority\.recordLocation\(/gu) ?? []).length, 1);
   assert.match(operations, /Shop and orders stay unchanged/);
   assert.doesNotMatch(operations, /window\.confirm/);
   assert.match(operations, /authority\.createHold/);

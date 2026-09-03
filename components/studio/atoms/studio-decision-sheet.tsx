@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { StudioFeedback } from "./studio-feedback";
 import { StudioTaskSheet } from "./studio-task-sheet";
 
@@ -53,18 +53,24 @@ export function StudioDecisionSheet({
 }: StudioDecisionSheetProps) {
   const [phase, setPhase] = useState<DecisionPhase>("review");
   const [error, setError] = useState("");
+  const confirmInFlightRef = useRef(false);
 
   async function confirm() {
-    if (phase === "loading") return;
+    if (confirmInFlightRef.current) return;
+    confirmInFlightRef.current = true;
     setPhase("loading");
     setError("");
-    const result = await onConfirm();
-    if (result.ok) {
-      setPhase("success");
-      return;
+    try {
+      const result = await onConfirm();
+      if (result.ok) {
+        setPhase("success");
+        return;
+      }
+      setError(result.error);
+      setPhase("error");
+    } finally {
+      confirmInFlightRef.current = false;
     }
-    setError(result.error);
-    setPhase("error");
   }
 
   const footer = (requestClose: () => void) => phase === "review" ? (
