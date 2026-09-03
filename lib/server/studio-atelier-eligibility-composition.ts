@@ -17,18 +17,16 @@ import {
   createStudioAtelierEligibilityService,
   STUDIO_ATELIER_ELIGIBILITY_STAGE_ORDER,
 } from "./studio-atelier-eligibility-service";
-import { readDurableStudioAtelierProjection } from "./studio-atelier-durable-engine";
+import { readDurableStudioAtelierProjection } from "./studio-atelier-durable-projection-reader";
 import type { StudioAtelierCommandResult } from "./studio-atelier-engine-facade";
 import { StudioEngineError } from "../studio/engine/errors";
 import {
   createStudioAtelierProductionSourceRepository,
   type StudioAtelierProductionSourceRepository,
 } from "./studio-atelier-production-source-repository";
-import {
-  isStudioAtelierStageDispatchReady,
-  type StudioAtelierProductionRuntime,
-} from "./studio-atelier-production-runtime";
-import { resolveStudioAtelierQualifiedEvaluatorBundle } from "./studio-atelier-qualified-evaluator";
+import type { StudioAtelierProductionRuntime } from "./studio-atelier-production-runtime";
+import { isStudioAtelierStageDispatchReady } from "./studio-atelier-production-scope";
+import { resolveStudioAtelierQualifiedEvaluatorBundle } from "./studio-atelier-qualified-evaluator-resolver";
 import { loadStudioAtelierRouteRuntime } from "./studio-atelier-route-runtime";
 import {
   createStudioAtelierStageDeclarationFactory,

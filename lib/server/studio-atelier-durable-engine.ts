@@ -1,6 +1,5 @@
 import {
   createStudioAtelierEngineFacade,
-  createStudioAtelierProjectionReader,
   studioAtelierReviewDecisionSchema,
   type StudioAtelierEngineFacade,
   type StudioAtelierEnginePorts,
@@ -20,10 +19,18 @@ import {
   recordAtelierLifecycleEvent,
   type AtelierArtifactRow,
   type AtelierExecutionRow,
-  type AtelierLifecycleEventRow,
   type AtelierOperationProjectionRow,
   type AtelierOperationRow,
 } from "./studio-atelier-repository";
+import {
+  readDurableStudioAtelierSnapshot as durableSnapshot,
+  studioAtelierReviewDecisionFromEvents as reviewDecisionFromEvents,
+} from "./studio-atelier-durable-projection-reader";
+
+export {
+  createDurableStudioAtelierProjectionReader,
+  readDurableStudioAtelierProjection,
+} from "./studio-atelier-durable-projection-reader";
 import {
   createStudioAtelierLockService,
   readAtelierArtifactBytes,
@@ -103,11 +110,6 @@ type DurableEngineDependencies = Readonly<{
   readArtifact: typeof readAtelierArtifactBytes;
 }>;
 
-type DurableProjectionDependencies = Pick<
-  DurableEngineDependencies,
-  "getOperation" | "getCorrectionOperation" | "getProjection" | "listEvents"
->;
-
 const defaultDependencies: DurableEngineDependencies = Object.freeze({
   getOperation: getAtelierOperation,
   getOperationByKey: getAtelierOperationByKey,
@@ -145,75 +147,6 @@ function unavailable(message: string): StudioEngineError {
     "Inspect the private operation ledger before continuing.",
   );
 }
-
-function reviewDecisionFromEvents(
-  events: readonly AtelierLifecycleEventRow[],
-): StudioAtelierReviewDecision | null {
-  for (let index = events.length - 1; index >= 0; index -= 1) {
-    const event = events[index];
-    if (!event || ![
-      "USER_APPROVED",
-      "USER_REJECTED",
-      "CORRECTION_AUTHORIZED",
-      "BLOCKED_USER_DIRECTION",
-    ].includes(event.eventType)) continue;
-    const payload = event.payload;
-    if (!payload || typeof payload !== "object" || Array.isArray(payload)) continue;
-    const evidence = (payload as Record<string, unknown>).evidence;
-    if (!evidence || typeof evidence !== "object" || Array.isArray(evidence)) continue;
-    const parsed = studioAtelierReviewDecisionSchema.safeParse(
-      (evidence as Record<string, unknown>).reviewDecision,
-    );
-    if (parsed.success) return parsed.data;
-  }
-  return null;
-}
-
-async function durableSnapshot(
-  dependencies: DurableProjectionDependencies,
-  input: Readonly<{ operatorSubject: string; operationId: string }>,
-): Promise<StudioAtelierServerSnapshot | null> {
-  const [operation, projection, correction, events] = await Promise.all([
-    dependencies.getOperation(input),
-    dependencies.getProjection(input),
-    dependencies.getCorrectionOperation(input),
-    dependencies.listEvents(input),
-  ]);
-  if (!operation || !projection) return null;
-  return {
-    operationId: operation.id,
-    stage: operation.stage as StudioAtelierServerSnapshot["stage"],
-    view: operation.view as StudioAtelierServerSnapshot["view"],
-    state: projection.state as StudioAtelierServerSnapshot["state"],
-    version: projection.version,
-    correctionAuthorized: projection.correctionAuthorized,
-    correctionOperationId: correction?.id ?? null,
-    reviewDecision: reviewDecisionFromEvents(events),
-  };
-}
-
-/**
- * Repository-backed projection recovery with no mutation, evaluator or
- * provider port in its public shape. Every lookup remains scoped by the
- * authenticated operator subject supplied by the route layer.
- */
-export function createDurableStudioAtelierProjectionReader(
-  overrides: Partial<DurableProjectionDependencies> = {},
-): StudioAtelierEngineFacade["readProjection"] {
-  const dependencies: DurableProjectionDependencies = Object.freeze({
-    getOperation: defaultDependencies.getOperation,
-    getCorrectionOperation: defaultDependencies.getCorrectionOperation,
-    getProjection: defaultDependencies.getProjection,
-    listEvents: defaultDependencies.listEvents,
-    ...overrides,
-  });
-  return createStudioAtelierProjectionReader({
-    readProjection: (command) => durableSnapshot(dependencies, command),
-  });
-}
-
-export const readDurableStudioAtelierProjection =
-  createDurableStudioAtelierProjectionReader();
 
 async function qualityContext(
   dependencies: DurableEngineDependencies,

@@ -52,11 +52,21 @@ import {
   verifyStudioAtelierQualifiedEvaluatorBundle,
   type StudioAtelierQualificationReadiness,
 } from "./studio-atelier-qualified-evaluator";
+import {
+  isStudioAtelierStageDispatchReady,
+  studioAtelierProductionScopeForStage,
+  type StudioAtelierProductionScope,
+} from "./studio-atelier-production-scope";
 
 export {
   STUDIO_ATELIER_QUALIFICATION_SUITE_VERSION,
   type StudioAtelierQualificationReadiness,
 } from "./studio-atelier-qualified-evaluator";
+export {
+  isStudioAtelierStageDispatchReady,
+  studioAtelierProductionScopeForStage,
+  type StudioAtelierProductionScope,
+} from "./studio-atelier-production-scope";
 
 export const STUDIO_ATELIER_LEDGER_SCHEMA_VERSION =
   "juw.studio-atelier-ledger.v1" as const;
@@ -85,12 +95,6 @@ export {
   STUDIO_ATELIER_PRIVATE_MANIFEST_SHA256,
 };
 const SHA256_PATTERN = /^[a-f0-9]{64}$/;
-const FINAL_SCENE_STAGES = new Set<AtelierStage>([
-  "ROOM_FINAL_05",
-  "SIBLING_06",
-  "SIBLING_07_CORE",
-  "SIBLING_07_RECOVERY",
-]);
 const REQUIRED_LEDGER_TABLES = Object.freeze([
   "studio_atelier_adult_verification_receipts",
   "studio_atelier_artifacts",
@@ -104,8 +108,6 @@ const REQUIRED_LEDGER_TABLES = Object.freeze([
   "studio_atelier_styling_advisories",
   "studio_engine_work_ownership",
 ] as const);
-
-export type StudioAtelierProductionScope = "ROOT_SUBJECT" | "FINAL_SCENE";
 
 export type StudioAtelierProductionPorts = Readonly<{
   resolveFileVerification: CreateDurableStudioAtelierEngineInput["resolveFileVerification"];
@@ -522,21 +524,6 @@ export function inspectStudioAtelierProductionReadiness(
     constructionAllowed: rootSubject === "READY",
     blockers: Object.freeze(blockers),
   });
-}
-
-export function studioAtelierProductionScopeForStage(
-  stage: AtelierStage,
-): StudioAtelierProductionScope {
-  return FINAL_SCENE_STAGES.has(stage) ? "FINAL_SCENE" : "ROOT_SUBJECT";
-}
-
-export function isStudioAtelierStageDispatchReady(
-  report: StudioAtelierProductionReadinessReport,
-  stage: AtelierStage,
-): boolean {
-  return studioAtelierProductionScopeForStage(stage) === "FINAL_SCENE"
-    ? report.finalScene === "READY"
-    : report.rootSubject === "READY";
 }
 
 function unavailableRuntime(report: StudioAtelierProductionReadinessReport): StudioEngineError {

@@ -34,6 +34,8 @@ import type {
 } from "./studio-atelier-durable-engine";
 import { STUDIO_ATELIER_SUBJECT_COMPOSITE_REVISION } from "./studio-atelier-subject-compositor";
 
+export { resolveStudioAtelierQualifiedEvaluatorBundle } from "./studio-atelier-qualified-evaluator-resolver";
+
 export const STUDIO_ATELIER_QUALIFICATION_SUITE_VERSION =
   "juw.atelier-qualification.g004-g005-g009-g017-g023-g024.v3" as const;
 export const STUDIO_ATELIER_QUALIFICATION_RECEIPT_SCHEMA_VERSION =
@@ -301,16 +303,4 @@ export function verifyStudioAtelierQualifiedEvaluatorBundle(
     return null;
   }
   return value;
-}
-
-/**
- * No canonical all-case PASS receipt and independently reviewed production
- * evaluator implementation are checked in yet. Production therefore remains
- * deliberately disabled instead of accepting caller evaluators or inventing a
- * qualification result. Installing a bundle here requires a separately
- * audited immutable receipt plus the exact server-owned evaluator functions.
- */
-export function resolveStudioAtelierQualifiedEvaluatorBundle():
-  StudioAtelierQualifiedEvaluatorBundle | null {
-  return null;
 }

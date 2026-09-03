@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import test from "node:test";
 
 import {
@@ -15,6 +16,36 @@ import { StudioEngineError } from "../lib/studio/engine/errors";
 const WARDROBE_ITEM_ID = "638e744d-2639-4e0d-8775-35d09f027dd3";
 const OPERATION_ID = "5a76103b-9d57-4fe9-97b1-7a45b67af562";
 const OPERATOR = "operator-eligibility-composition";
+
+test("read-only eligibility excludes paid runtime and image composition imports", async () => {
+  const [composition, projectionReader, productionScope, qualificationResolver] = await Promise.all([
+    readFile(
+      new URL("../lib/server/studio-atelier-eligibility-composition.ts", import.meta.url),
+      "utf8",
+    ),
+    readFile(
+      new URL("../lib/server/studio-atelier-durable-projection-reader.ts", import.meta.url),
+      "utf8",
+    ),
+    readFile(
+      new URL("../lib/server/studio-atelier-production-scope.ts", import.meta.url),
+      "utf8",
+    ),
+    readFile(
+      new URL("../lib/server/studio-atelier-qualified-evaluator-resolver.ts", import.meta.url),
+      "utf8",
+    ),
+  ]);
+
+  assert.doesNotMatch(composition, /from "\.\/studio-atelier-durable-engine"/);
+  assert.match(composition, /import type \{ StudioAtelierProductionRuntime \}/);
+  assert.match(composition, /from "\.\/studio-atelier-durable-projection-reader"/);
+  assert.match(composition, /from "\.\/studio-atelier-production-scope"/);
+  assert.match(composition, /from "\.\/studio-atelier-qualified-evaluator-resolver"/);
+  assert.doesNotMatch(projectionReader, /sharp|lock-service|execution-service|production-runtime/);
+  assert.doesNotMatch(productionScope, /sharp|lock-service|execution-service|production-runtime/);
+  assert.doesNotMatch(qualificationResolver, /sharp|lock-service|execution-service|production-runtime/);
+});
 
 function runtimeEvidence() {
   return Object.fromEntries(STUDIO_ATELIER_ELIGIBILITY_STAGE_ORDER.map((stage) => [
