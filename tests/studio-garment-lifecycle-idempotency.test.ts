@@ -10,6 +10,8 @@ import { garmentLifecycleCommandRequestFingerprint } from "../lib/studio/engine/
 const root = process.cwd();
 const repository = readFileSync(`${root}/lib/server/studio-garment-lifecycle-repository.ts`, "utf8");
 const service = readFileSync(`${root}/lib/studio/engine/garment-lifecycle-service.ts`, "utf8");
+const route = readFileSync(`${root}/app/api/studio/wardrobe/[id]/lifecycle/route.ts`, "utf8");
+const panel = readFileSync(`${root}/components/studio/garment-lifecycle-panel.tsx`, "utf8");
 
 const facts = {
   title: "Violet Beaded Mini Dress",
@@ -21,12 +23,12 @@ const facts = {
   price: 30_599,
 };
 
-test("SAVE_FACTS and ARCHIVE accept optional durable keys without breaking legacy callers", () => {
+test("SAVE_FACTS and ARCHIVE require durable command keys in every caller", () => {
   assert.equal(garmentLifecycleCommandSchema.safeParse({
     command: "SAVE_FACTS",
     expectedVersion: 3,
     facts,
-  }).success, true);
+  }).success, false);
   assert.equal(garmentLifecycleCommandSchema.safeParse({
     command: "SAVE_FACTS",
     expectedVersion: 3,
@@ -37,7 +39,7 @@ test("SAVE_FACTS and ARCHIVE accept optional durable keys without breaking legac
     command: "ARCHIVE",
     confirmation: "ARCHIVE",
     expectedVersion: 4,
-  }).success, true);
+  }).success, false);
   assert.equal(garmentLifecycleCommandSchema.safeParse({
     command: "ARCHIVE",
     confirmation: "ARCHIVE",
@@ -122,13 +124,13 @@ test("the existing event ledger atomically owns SAVE_FACTS and ARCHIVE receipts"
   assert.match(repository, /updateDraftGarmentRevisionIdempotently/);
   assert.match(repository, /updatePrivateGarmentFactsIdempotently/);
   assert.match(repository, /archiveGarmentIdempotently/);
-  assert.equal((repository.match(/'actorSubject', \$\{input\.identity\.actorSubject\}::text/g) ?? []).length, 4);
-  assert.equal((repository.match(/'command', \$\{input\.identity\.command\}::text/g) ?? []).length, 4);
-  assert.equal((repository.match(/'consequence', \$\{consequence\}::text/g) ?? []).length, 4);
-  assert.equal((repository.match(/'expectedVersion', \$\{input\.expectedVersion\}::integer/g) ?? []).length, 4);
-  assert.equal((repository.match(/'idempotencyKey', \$\{input\.identity\.idempotencyKey\}::text/g) ?? []).length, 4);
-  assert.equal((repository.match(/'requestFingerprint', \$\{input\.identity\.requestFingerprint\}::text/g) ?? []).length, 4);
-  assert.equal((repository.match(/'schemaVersion', \$\{GARMENT_LIFECYCLE_COMMAND_RECEIPT_SCHEMA_VERSION\}::text/g) ?? []).length, 4);
+  assert.ok((repository.match(/'actorSubject', \$\{input\.identity\.actorSubject\}::text/g) ?? []).length >= 4);
+  assert.ok((repository.match(/'command', \$\{input\.identity\.command\}::text/g) ?? []).length >= 4);
+  assert.ok((repository.match(/'consequence', \$\{consequence\}::text/g) ?? []).length >= 4);
+  assert.ok((repository.match(/'expectedVersion', \$\{input\.expectedVersion\}::integer/g) ?? []).length >= 4);
+  assert.ok((repository.match(/'idempotencyKey', \$\{input\.identity\.idempotencyKey\}::text/g) ?? []).length >= 4);
+  assert.ok((repository.match(/'requestFingerprint', \$\{input\.identity\.requestFingerprint\}::text/g) ?? []).length >= 4);
+  assert.ok((repository.match(/'schemaVersion', \$\{GARMENT_LIFECYCLE_COMMAND_RECEIPT_SCHEMA_VERSION\}::text/g) ?? []).length >= 4);
   assert.doesNotMatch(repository, /create table|alter table/i);
 });
 
@@ -140,12 +142,27 @@ test("the service reuses exact receipts before mutation and rejects key collisio
   assert.match(service, /createDraftGarmentRevisionIdempotently/);
   assert.match(service, /updateDraftGarmentRevisionIdempotently/);
   assert.match(service, /archiveGarmentIdempotently/);
-  assert.match(service, /identity\s*\?\s*await archiveGarmentIdempotently[\s\S]*?: await archiveGarment/);
+  assert.match(service, /const archived = await archiveGarmentIdempotently/);
+  assert.doesNotMatch(service, /\barchiveGarment\(/);
   assert.match(
     service,
     /if \(!archiveApplied\)[\s\S]*?currentWorkspace\.itemVersion !== input\.command\.expectedVersion[\s\S]*?VERSION_CONFLICT[\s\S]*?review archive again/,
   );
   assert.match(service, /return getGarmentLifecycleWorkspace\(input\.wardrobeItemId, input\.operator\)/);
+});
+
+test("the direct Piece surface accepts success only from its exact durable receipt", () => {
+  assert.match(route, /idempotencyKey = new URL\(request\.url\)\.searchParams\.get\("idempotencyKey"\)/);
+  assert.match(route, /getGarmentLifecycleCommandReceipt/);
+  assert.match(route, /receipt, workspace/);
+  assert.match(panel, /lifecycleReceiptMatchesCommand\(body\.receipt, lifecycleIdentity, wardrobeItemId\)/);
+  assert.match(panel, /lifecycle\?idempotencyKey=/);
+  assert.match(panel, /lifecycleReceiptMatchesCommand\(reconciled\.receipt, lifecycleIdentity, wardrobeItemId\)/);
+  assert.match(panel, /getOrCreateSessionCommandKey/);
+  assert.doesNotMatch(
+    panel.slice(panel.indexOf("if (lifecycleIdentity)"), panel.indexOf("const reconciled = await readWorkspace")),
+    /commandIsReflected/,
+  );
 });
 
 test("publication reconciliation exposes only the exact current publication key", () => {

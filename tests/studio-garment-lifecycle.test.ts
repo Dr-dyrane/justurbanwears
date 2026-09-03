@@ -28,6 +28,7 @@ test("live garment commands require explicit, versioned intent", () => {
     command: "SAVE_FACTS",
     expectedVersion: 3,
     facts,
+    idempotencyKey: "piece:save-facts:coral",
   }).success, true);
   const priceOnlyCompatibleFacts = {
     title: facts.title,
@@ -41,6 +42,7 @@ test("live garment commands require explicit, versioned intent", () => {
     command: "SAVE_FACTS",
     expectedVersion: 3,
     facts: priceOnlyCompatibleFacts,
+    idempotencyKey: "piece:save-price:coral",
   }).success, true);
   assert.equal(garmentLifecycleCommandSchema.safeParse({
     command: "PUBLISH_REVISION",
@@ -64,6 +66,7 @@ test("live garment commands require explicit, versioned intent", () => {
     command: "SAVE_FACTS",
     expectedVersion: 3,
     facts: { ...facts, description: "   " },
+    idempotencyKey: "piece:bad-description:coral",
   }).success, false);
 });
 
@@ -172,10 +175,10 @@ test("unfinished durable intakes are discoverable and resumable", () => {
 test("garment create, read, update and archive stay in the canonical Studio scope", () => {
   assert.match(intakeRepository, /operatorSubject: input\.operator\.subject/);
   assert.match(lifecycleService, /getOwnedWardrobeItem\(wardrobeItemId, operator\.subject\)/);
-  assert.match(lifecycleService, /updatePrivateGarmentFacts\(\{[\s\S]*?operatorSubject: input\.operator\.subject/);
-  assert.match(lifecycleService, /updateDraftGarmentRevision\(\{[\s\S]*?operatorSubject: input\.operator\.subject/);
+  assert.match(lifecycleService, /updatePrivateGarmentFactsIdempotently\(\{[\s\S]*?operatorSubject: input\.operator\.subject/);
+  assert.match(lifecycleService, /updateDraftGarmentRevisionIdempotently\(\{[\s\S]*?operatorSubject: input\.operator\.subject/);
   assert.match(lifecycleService, /discardDraftGarmentRevision\(\{[\s\S]*?operatorSubject: input\.operator\.subject/);
   assert.match(lifecycleService, /changePublicationVisibility\(\{[\s\S]*?operatorSubject: input\.operator\.subject/);
-  assert.match(lifecycleService, /archiveGarment\(\{[\s\S]*?operatorSubject: input\.operator\.subject/);
+  assert.match(lifecycleService, /archiveGarmentIdempotently\(\{[\s\S]*?operatorSubject: input\.operator\.subject/);
   assert.doesNotMatch(lifecycleService, /operator\.role/);
 });

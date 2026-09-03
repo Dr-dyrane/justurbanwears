@@ -21,6 +21,7 @@ import {
 import type { IntakeFacts } from "../../lib/studio/engine/contracts";
 import type {
   GarmentLifecycleCommand,
+  GarmentLifecycleCommandReceipt,
   GarmentLifecycleWorkspace,
   GarmentPermanentDeleteReceipt,
   GarmentRevisionMediaReceipt,
@@ -51,6 +52,16 @@ type GarmentMediaCommandIdentity = {
   revision: string;
   scope: string;
 };
+type GarmentLifecycleRecoveryIdentity = {
+  command: "SAVE_FACTS" | "ARCHIVE";
+  expectedVersion: number;
+  idempotencyKey: string;
+  revision: string;
+  scope: string;
+};
+type GarmentLifecycleRecoveryCommand =
+  | Omit<Extract<GarmentLifecycleCommand, { command: "SAVE_FACTS" }>, "idempotencyKey">
+  | Omit<Extract<GarmentLifecycleCommand, { command: "ARCHIVE" }>, "idempotencyKey">;
 
 function formatNaira(value: number) {
   return new Intl.NumberFormat("en-NG", {
@@ -99,6 +110,23 @@ function commandIsReflected(
   if (command.command === "UNPUBLISH") return workspace.state === "UNPUBLISHED";
   if (command.command === "ARCHIVE") return workspace.state === "ARCHIVED";
   return !workspace.draft;
+}
+
+function lifecycleCommandRevision(command: GarmentLifecycleRecoveryCommand) {
+  return command.command === "SAVE_FACTS"
+    ? `${command.expectedVersion}:${JSON.stringify(command.facts)}`
+    : String(command.expectedVersion);
+}
+
+function lifecycleReceiptMatchesCommand(
+  receipt: GarmentLifecycleCommandReceipt | null | undefined,
+  command: GarmentLifecycleRecoveryIdentity,
+  wardrobeItemId: string,
+) {
+  return receipt?.wardrobeItemId === wardrobeItemId
+    && receipt.command === command.command
+    && receipt.expectedVersion === command.expectedVersion
+    && receipt.idempotencyKey === command.idempotencyKey;
 }
 
 async function responseJson<T>(response: Response): Promise<T> {
@@ -217,6 +245,23 @@ export function GarmentLifecyclePanel({
     const publicationIdentity = value.command === "PUBLISH_REVISION"
       ? { key: value.idempotencyKey, revision: value.expectedRevision }
       : null;
+    const lifecycleIdentity: GarmentLifecycleRecoveryIdentity | null = value.command === "SAVE_FACTS" || value.command === "ARCHIVE"
+      ? {
+          command: value.command,
+          expectedVersion: value.expectedVersion,
+          idempotencyKey: value.idempotencyKey,
+          revision: lifecycleCommandRevision(value),
+          scope: `garment-lifecycle:${wardrobeItemId}:${value.command.toLowerCase()}`,
+        }
+      : null;
+    const markSuccess = () => {
+      if (value.command === "SAVE_FACTS") {
+        setMilestone(editMode === "price" ? "price-saved" : "details-saved");
+        setEditMode(null);
+      }
+      if (value.command === "PUBLISH_REVISION") setMilestone("published");
+      if (value.command === "REPUBLISH") setMilestone("returned");
+    };
     try {
       const response = await fetch(`/api/studio/wardrobe/${encodeURIComponent(wardrobeItemId)}/lifecycle`, {
         method: "POST",
@@ -224,23 +269,54 @@ export function GarmentLifecyclePanel({
         headers: { accept: "application/json", "content-type": "application/json" },
         body: JSON.stringify(value),
       });
-      const body = await responseJson<{ workspace: GarmentLifecycleWorkspace }>(response);
+      const body = await responseJson<{
+        receipt?: GarmentLifecycleCommandReceipt | null;
+        workspace: GarmentLifecycleWorkspace;
+      }>(response);
+      if (lifecycleIdentity && !lifecycleReceiptMatchesCommand(body.receipt, lifecycleIdentity, wardrobeItemId)) {
+        throw new Error("Studio could not verify that garment change receipt.");
+      }
       if (publicationIdentity) clearSessionCommandKey({
         ...publicationIdentity,
         scope: publicationCommandScope,
       });
+      if (lifecycleIdentity) clearSessionCommandKey({
+        key: lifecycleIdentity.idempotencyKey,
+        revision: lifecycleIdentity.revision,
+        scope: lifecycleIdentity.scope,
+      });
       accept(body.workspace);
-      if (value.command === "SAVE_FACTS") {
-        setMilestone(editMode === "price" ? "price-saved" : "details-saved");
-        setEditMode(null);
-      }
-      if (value.command === "PUBLISH_REVISION") {
-        setMilestone("published");
-      }
-      if (value.command === "REPUBLISH") setMilestone("returned");
+      markSuccess();
       return { ok: true };
     } catch (caught) {
       const message = caught instanceof Error ? caught.message : "That action did not finish.";
+      if (lifecycleIdentity) {
+        const receiptResponse = await fetch(
+          `/api/studio/wardrobe/${encodeURIComponent(wardrobeItemId)}/lifecycle?idempotencyKey=${encodeURIComponent(lifecycleIdentity.idempotencyKey)}`,
+          { cache: "no-store", credentials: "same-origin", headers: { accept: "application/json" } },
+        ).catch(() => null);
+        const reconciled = receiptResponse?.ok
+          ? await receiptResponse.json().catch(() => null) as {
+              receipt?: GarmentLifecycleCommandReceipt | null;
+              workspace?: GarmentLifecycleWorkspace;
+            } | null
+          : null;
+        if (reconciled?.workspace) accept(reconciled.workspace);
+        if (
+          reconciled?.workspace
+          && lifecycleReceiptMatchesCommand(reconciled.receipt, lifecycleIdentity, wardrobeItemId)
+        ) {
+          clearSessionCommandKey({
+            key: lifecycleIdentity.idempotencyKey,
+            revision: lifecycleIdentity.revision,
+            scope: lifecycleIdentity.scope,
+          });
+          markSuccess();
+          return { ok: true };
+        }
+        setError(message);
+        return { error: message, ok: false };
+      }
       const reconciled = await readWorkspace().catch(() => null);
       if (reconciled) {
         accept(reconciled);
@@ -249,14 +325,7 @@ export function GarmentLifecyclePanel({
             ...publicationIdentity,
             scope: publicationCommandScope,
           });
-          if (value.command === "SAVE_FACTS") {
-            setMilestone(editMode === "price" ? "price-saved" : "details-saved");
-            setEditMode(null);
-          }
-          if (value.command === "PUBLISH_REVISION") {
-            setMilestone("published");
-          }
-          if (value.command === "REPUBLISH") setMilestone("returned");
+          markSuccess();
           return { ok: true };
         }
       }
@@ -350,10 +419,20 @@ export function GarmentLifecyclePanel({
     }
     if (nextDecision === "ARCHIVE") {
       if (!workspace) return { error: "Piece controls are no longer available.", ok: false };
-      return command({
+      const draft = {
         command: "ARCHIVE",
         confirmation: "ARCHIVE",
         expectedVersion: workspace.itemVersion,
+      } as const;
+      const revision = lifecycleCommandRevision(draft);
+      const scope = `garment-lifecycle:${wardrobeItemId}:archive`;
+      return command({
+        ...draft,
+        idempotencyKey: getOrCreateSessionCommandKey({
+          keyPrefix: `studio-piece:${wardrobeItemId}:archive`,
+          revision,
+          scope,
+        }),
       }, nextDecision);
     }
     if (!workspace?.live) return { error: "The Shop revision changed. Review the piece again.", ok: false };
@@ -474,10 +553,20 @@ export function GarmentLifecyclePanel({
   function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!workspace || !draftFacts) return;
-    void command({
+    const draft = {
       command: "SAVE_FACTS",
       expectedVersion: workspace.draft?.version ?? workspace.itemVersion,
       facts: draftFacts,
+    } as const;
+    const revision = lifecycleCommandRevision(draft);
+    const scope = `garment-lifecycle:${wardrobeItemId}:save_facts`;
+    void command({
+      ...draft,
+      idempotencyKey: getOrCreateSessionCommandKey({
+        keyPrefix: `studio-piece:${wardrobeItemId}:save`,
+        revision,
+        scope,
+      }),
     }, "SAVE_FACTS");
   }
 

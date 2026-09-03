@@ -23,7 +23,7 @@ export const garmentLifecycleCommandSchema = z.discriminatedUnion("command", [
     command: z.literal("SAVE_FACTS"),
     expectedVersion: z.number().int().positive(),
     facts: intakeFactsSchema,
-    idempotencyKey: idempotencyKeySchema.optional(),
+    idempotencyKey: idempotencyKeySchema,
   }),
   z.object({
     command: z.literal("DISCARD_REVISION"),
@@ -50,7 +50,7 @@ export const garmentLifecycleCommandSchema = z.discriminatedUnion("command", [
     command: z.literal("ARCHIVE"),
     expectedVersion: z.number().int().positive(),
     confirmation: z.literal("ARCHIVE"),
-    idempotencyKey: idempotencyKeySchema.optional(),
+    idempotencyKey: idempotencyKeySchema,
   }),
 ]);
 

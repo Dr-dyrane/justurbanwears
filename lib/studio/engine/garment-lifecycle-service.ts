@@ -9,10 +9,8 @@ import {
   publishCatalogueRevisionAtomically,
 } from "../../server/studio-catalogue-publication-repository";
 import {
-  archiveGarment,
   archiveGarmentIdempotently,
   changePublicationVisibility,
-  createDraftGarmentRevision,
   createDraftGarmentRevisionIdempotently,
   discardDraftGarmentRevision,
   findGarmentLifecycleCommandReceipt,
@@ -23,9 +21,7 @@ import {
   listGarmentEvents,
   permanentlyDeleteArchivedGarment,
   replaceGarmentRevisionMediaAtomically,
-  updateDraftGarmentRevision,
   updateDraftGarmentRevisionIdempotently,
-  updatePrivateGarmentFacts,
   updatePrivateGarmentFactsIdempotently,
   type GarmentLifecycleCommandIdentity,
   type GarmentLifecycleCommandWriteResult,
@@ -103,8 +99,7 @@ function lifecycleCommandIdentity(input: {
   wardrobeItemId: string;
   operator: StudioOperator;
   command: IdempotentGarmentLifecycleCommand;
-}): GarmentLifecycleCommandIdentity | null {
-  if (!input.command.idempotencyKey) return null;
+}): GarmentLifecycleCommandIdentity {
   return {
     actorSubject: input.operator.actorSubject,
     command: input.command.command,
@@ -321,34 +316,6 @@ function liveFacts(publication: Publication, item: WardrobeItem): IntakeFacts {
   };
 }
 
-async function ensureDraft(input: {
-  item: WardrobeItem;
-  publication: Publication;
-  operator: StudioOperator;
-  facts?: IntakeFacts;
-  media: Array<Record<string, unknown>>;
-}) {
-  const existing = await findDraftGarmentRevision({
-    wardrobeItemId: input.item.id,
-    operatorSubject: input.operator.subject,
-  });
-  if (existing) return existing;
-  const created = await createDraftGarmentRevision({
-    wardrobeItemId: input.item.id,
-    operatorSubject: input.operator.subject,
-    baseSourceRevision: input.publication.sourceRevision,
-    facts: input.facts ?? liveFacts(input.publication, input.item),
-    media: input.media,
-  });
-  if (created) return created;
-  const concurrent = await findDraftGarmentRevision({
-    wardrobeItemId: input.item.id,
-    operatorSubject: input.operator.subject,
-  });
-  if (concurrent) return concurrent;
-  throw new StudioEngineError("VERSION_CONFLICT", 409, "This piece changed in another window.", "Reload the piece.");
-}
-
 function isCatalogueAdopted(publication: Publication | null | undefined) {
   return publication?.origin === "CATALOGUE_ADOPTED";
 }
@@ -557,7 +524,7 @@ async function saveGarmentFacts(input: {
   operator: StudioOperator;
   expectedVersion: number;
   facts: IntakeFacts;
-  identity?: GarmentLifecycleCommandIdentity & { command: "SAVE_FACTS" };
+  identity: GarmentLifecycleCommandIdentity & { command: "SAVE_FACTS" };
 }) {
   const [item, publication, context, draft] = await Promise.all([
     getOwnedWardrobeItem(input.wardrobeItemId, input.operator.subject),
@@ -571,26 +538,16 @@ async function saveGarmentFacts(input: {
   const fallbackFacts = draft?.facts ?? (publication ? liveFacts(publication, item) : itemFacts(context.item));
   const facts = withDescription(input.facts, fallbackFacts);
   if (!publication) {
-    if (input.identity) {
-      const saved = await updatePrivateGarmentFactsIdempotently({
-        wardrobeItemId: item.id,
-        operatorSubject: input.operator.subject,
-        expectedVersion: input.expectedVersion,
-        facts,
-        identity: input.identity,
-      });
-      if (!idempotentWriteApplied(saved)) {
-        throw new StudioEngineError("VERSION_CONFLICT", 409, "This piece changed in another window.", "Reload the piece.");
-      }
-      return;
-    }
-    const saved = await updatePrivateGarmentFacts({
+    const saved = await updatePrivateGarmentFactsIdempotently({
       wardrobeItemId: item.id,
       operatorSubject: input.operator.subject,
       expectedVersion: input.expectedVersion,
       facts,
+      identity: input.identity,
     });
-    if (!saved) throw new StudioEngineError("VERSION_CONFLICT", 409, "This piece changed in another window.", "Reload the piece.");
+    if (!idempotentWriteApplied(saved)) {
+      throw new StudioEngineError("VERSION_CONFLICT", 409, "This piece changed in another window.", "Reload the piece.");
+    }
     return;
   }
   if (!draft) {
@@ -598,57 +555,32 @@ async function saveGarmentFacts(input: {
       throw new StudioEngineError("VERSION_CONFLICT", 409, "This piece changed in another window.", "Reload the piece.");
     }
     const media = revisionMedia(publication, context.sources);
-    if (input.identity) {
-      const created = await createDraftGarmentRevisionIdempotently({
-        wardrobeItemId: item.id,
-        operatorSubject: input.operator.subject,
-        expectedVersion: input.expectedVersion,
-        baseSourceRevision: publication.sourceRevision,
-        facts,
-        media,
-        identity: input.identity,
-      });
-      if (!idempotentWriteApplied(created)) {
-        throw new StudioEngineError("VERSION_CONFLICT", 409, "A private revision already exists.", "Reload the piece.");
-      }
-      return;
-    }
-    const created = await ensureDraft({
-      item,
-      publication,
-      operator: input.operator,
+    const created = await createDraftGarmentRevisionIdempotently({
+      wardrobeItemId: item.id,
+      operatorSubject: input.operator.subject,
+      expectedVersion: input.expectedVersion,
+      baseSourceRevision: publication.sourceRevision,
       facts,
       media,
+      identity: input.identity,
     });
-    if (created.facts.title !== facts.title || created.version !== 1) {
+    if (!idempotentWriteApplied(created)) {
       throw new StudioEngineError("VERSION_CONFLICT", 409, "A private revision already exists.", "Reload the piece.");
     }
     return;
   }
-  if (input.identity) {
-    const updated = await updateDraftGarmentRevisionIdempotently({
-      id: draft.id,
-      wardrobeItemId: item.id,
-      operatorSubject: input.operator.subject,
-      expectedVersion: input.expectedVersion,
-      facts,
-      media: revisionMedia(publication, context.sources),
-      identity: input.identity,
-    });
-    if (!idempotentWriteApplied(updated)) {
-      throw new StudioEngineError("VERSION_CONFLICT", 409, "This revision changed in another window.", "Reload the piece.");
-    }
-    return;
-  }
-  const updated = await updateDraftGarmentRevision({
+  const updated = await updateDraftGarmentRevisionIdempotently({
     id: draft.id,
     wardrobeItemId: item.id,
     operatorSubject: input.operator.subject,
     expectedVersion: input.expectedVersion,
     facts,
     media: revisionMedia(publication, context.sources),
+    identity: input.identity,
   });
-  if (!updated) throw new StudioEngineError("VERSION_CONFLICT", 409, "This revision changed in another window.", "Reload the piece.");
+  if (!idempotentWriteApplied(updated)) {
+    throw new StudioEngineError("VERSION_CONFLICT", 409, "This revision changed in another window.", "Reload the piece.");
+  }
 }
 
 export async function runGarmentLifecycleCommand(input: {
@@ -662,25 +594,23 @@ export async function runGarmentLifecycleCommand(input: {
       operator: input.operator,
       command: input.command,
     });
-    if (identity) {
-      const existing = await getGarmentLifecycleCommandReceipt({
-        wardrobeItemId: input.wardrobeItemId,
-        operator: input.operator,
-        idempotencyKey: identity.idempotencyKey,
-      });
-      if (existing) {
-        if (existing.requestFingerprint !== identity.requestFingerprint) {
-          idempotentWriteApplied({ kind: "IDEMPOTENCY_CONFLICT" });
-        }
-        return getGarmentLifecycleWorkspace(input.wardrobeItemId, input.operator);
+    const existing = await getGarmentLifecycleCommandReceipt({
+      wardrobeItemId: input.wardrobeItemId,
+      operator: input.operator,
+      idempotencyKey: identity.idempotencyKey,
+    });
+    if (existing) {
+      if (existing.requestFingerprint !== identity.requestFingerprint) {
+        idempotentWriteApplied({ kind: "IDEMPOTENCY_CONFLICT" });
       }
+      return getGarmentLifecycleWorkspace(input.wardrobeItemId, input.operator);
     }
     await saveGarmentFacts({
       wardrobeItemId: input.wardrobeItemId,
       operator: input.operator,
       expectedVersion: input.command.expectedVersion,
       facts: input.command.facts,
-      ...(identity ? { identity: { ...identity, command: "SAVE_FACTS" } } : {}),
+      identity: { ...identity, command: "SAVE_FACTS" },
     });
   } else if (input.command.command === "DISCARD_REVISION") {
     const workspace = await getGarmentLifecycleWorkspace(input.wardrobeItemId, input.operator);
@@ -717,32 +647,24 @@ export async function runGarmentLifecycleCommand(input: {
       operator: input.operator,
       command: input.command,
     });
-    if (identity) {
-      const existing = await getGarmentLifecycleCommandReceipt({
-        wardrobeItemId: input.wardrobeItemId,
-        operator: input.operator,
-        idempotencyKey: identity.idempotencyKey,
-      });
-      if (existing) {
-        if (existing.requestFingerprint !== identity.requestFingerprint) {
-          idempotentWriteApplied({ kind: "IDEMPOTENCY_CONFLICT" });
-        }
-        return getGarmentLifecycleWorkspace(input.wardrobeItemId, input.operator);
+    const existing = await getGarmentLifecycleCommandReceipt({
+      wardrobeItemId: input.wardrobeItemId,
+      operator: input.operator,
+      idempotencyKey: identity.idempotencyKey,
+    });
+    if (existing) {
+      if (existing.requestFingerprint !== identity.requestFingerprint) {
+        idempotentWriteApplied({ kind: "IDEMPOTENCY_CONFLICT" });
       }
+      return getGarmentLifecycleWorkspace(input.wardrobeItemId, input.operator);
     }
-    const archived = identity
-      ? await archiveGarmentIdempotently({
-          wardrobeItemId: input.wardrobeItemId,
-          operatorSubject: input.operator.subject,
-          expectedVersion: input.command.expectedVersion,
-          identity: { ...identity, command: "ARCHIVE" },
-        })
-      : await archiveGarment({
-          wardrobeItemId: input.wardrobeItemId,
-          operatorSubject: input.operator.subject,
-          expectedVersion: input.command.expectedVersion,
-        });
-    const archiveApplied = typeof archived === "boolean" ? archived : idempotentWriteApplied(archived);
+    const archived = await archiveGarmentIdempotently({
+      wardrobeItemId: input.wardrobeItemId,
+      operatorSubject: input.operator.subject,
+      expectedVersion: input.command.expectedVersion,
+      identity: { ...identity, command: "ARCHIVE" },
+    });
+    const archiveApplied = idempotentWriteApplied(archived);
     if (!archiveApplied) {
       const currentWorkspace = await getGarmentLifecycleWorkspace(input.wardrobeItemId, input.operator);
       if (currentWorkspace.itemVersion !== input.command.expectedVersion) {
@@ -755,7 +677,7 @@ export async function runGarmentLifecycleCommand(input: {
       }
       throw new StudioEngineError("INVALID_TRANSITION", 409, "This piece cannot be archived now.", "Check that it is not reserved or sold.");
     }
-    if (typeof archived === "boolean" || archived.kind === "APPLIED") invalidateServerShopCatalogue();
+    if (archived.kind === "APPLIED") invalidateServerShopCatalogue();
   }
   return getGarmentLifecycleWorkspace(input.wardrobeItemId, input.operator);
 }
