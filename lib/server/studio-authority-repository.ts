@@ -31,6 +31,7 @@ import type {
   StudioAuthorityNotification,
   StudioAuthorityPiece,
   StudioAuthoritySnapshot,
+  StudioModelCommandReceipt,
 } from "../studio/services/studio-authority-client";
 
 type DatabaseRow = Record<string, unknown>;
@@ -173,6 +174,8 @@ export const createModelAuthoritySchema = z.object({
 export const updateModelAuthoritySchema = z.discriminatedUnion("action", [
   z.object({
     action: z.literal("UPDATE"),
+    expectedRevision: z.string().datetime(),
+    idempotencyKey: z.string().trim().min(8).max(160).regex(/^[a-zA-Z0-9._:-]+$/),
     name: z.string().trim().min(2).max(80),
     styling: z.object({
       direction: z.string().trim().max(240),
@@ -182,9 +185,30 @@ export const updateModelAuthoritySchema = z.discriminatedUnion("action", [
   }),
   z.object({
     action: z.literal("ARCHIVE"),
+    expectedRevision: z.string().datetime(),
+    idempotencyKey: z.string().trim().min(8).max(160).regex(/^[a-zA-Z0-9._:-]+$/),
     reason: z.string().trim().min(3).max(240),
   }),
 ]);
+
+export const modelCommandReceiptQuerySchema = z.object({
+  idempotencyKey: z.string().trim().min(8).max(160).regex(/^[a-zA-Z0-9._:-]+$/),
+});
+
+export const studioModelCommandReceiptSchema = z.object({
+  schemaVersion: z.literal("juw.studio-model-command-receipt.v1"),
+  receiptId: z.string().uuid(),
+  actorSubject: z.string().min(1),
+  modelId: z.string().uuid(),
+  action: z.enum(["UPDATE", "ARCHIVE"]),
+  expectedRevision: z.string().datetime(),
+  resultingRevision: z.string().datetime(),
+  idempotencyKey: z.string().min(8).max(160),
+  requestFingerprint: z.string().regex(/^[0-9a-f]{64}$/),
+  summary: z.string().min(1),
+  consequence: z.string().min(1),
+  occurredAt: z.string().datetime(),
+}).strict();
 
 function iso(value: unknown): string {
   const date = value instanceof Date ? value : new Date(String(value));
@@ -552,46 +576,194 @@ export async function createStudioModelAuthority(input: {
   return mapModel(profile);
 }
 
+function mapModelCommandReceipt(row: DatabaseRow): StudioModelCommandReceipt {
+  return studioModelCommandReceiptSchema.parse({
+    schemaVersion: "juw.studio-model-command-receipt.v1",
+    receiptId: String(row.id),
+    actorSubject: String(row.actor_subject),
+    modelId: String(row.model_id),
+    action: String(row.action),
+    expectedRevision: String(row.expected_revision),
+    resultingRevision: String(row.resulting_revision),
+    idempotencyKey: String(row.idempotency_key),
+    requestFingerprint: String(row.request_fingerprint),
+    summary: String(row.summary),
+    consequence: String(row.consequence),
+    occurredAt: iso(row.occurred_at),
+  });
+}
+
+export function studioModelCommandRequestFingerprint(input: {
+  modelId: string;
+  command: z.infer<typeof updateModelAuthoritySchema>;
+}) {
+  return sha256(JSON.stringify({
+    schemaVersion: "juw.studio-model-command.v1",
+    modelId: input.modelId,
+    action: input.command.action,
+    expectedRevision: input.command.expectedRevision,
+    ...(input.command.action === "UPDATE"
+      ? { name: input.command.name, styling: input.command.styling }
+      : { reason: input.command.reason }),
+  }));
+}
+
+function studioModelPersistenceError(error: unknown): StudioEngineError {
+  if (error instanceof StudioEngineError) return error;
+  return new StudioEngineError(
+    "ENGINE_UNAVAILABLE",
+    503,
+    "Studio could not save that model authority change.",
+    "Reload Models and try again.",
+  );
+}
+
+export async function readStudioModelCommandReceipt(
+  operator: StudioOperator,
+  modelId: string,
+  idempotencyKey: string,
+): Promise<{ model: StudioAuthorityModel; receipt: StudioModelCommandReceipt } | null> {
+  const database = await getStudioDb();
+  try {
+    const result = await database.execute<DatabaseRow>(sql`
+      select *
+      from studio_model_command_receipts
+      where workspace_subject = ${operator.subject}
+        and actor_subject = ${operator.actorSubject}
+        and model_id = ${modelId}::uuid
+        and idempotency_key = ${idempotencyKey}
+      limit 1
+    `);
+    if (!result.rows[0]) return null;
+    const receipt = mapModelCommandReceipt(result.rows[0]);
+    const profile = (await listOwnedModelProfiles(operator.subject)).find((candidate) => candidate.id === modelId);
+    if (!profile) {
+      throw new StudioEngineError("INTAKE_NOT_FOUND", 404, "That model was not found.", "Reload Models.");
+    }
+    return { model: mapModel(profile), receipt };
+  } catch (error) {
+    throw studioModelPersistenceError(error);
+  }
+}
+
 export async function updateStudioModelAuthority(
   operator: StudioOperator,
   modelId: string,
   input: z.infer<typeof updateModelAuthoritySchema>,
-): Promise<StudioAuthorityModel> {
-  const current = await getOwnedModelProfile(modelId, operator.subject);
-  if (current.kind === "LULU_V3") {
-    throw new StudioEngineError("INVALID_TRANSITION", 409, "Lulu is the approved default.", "Add another model for different authority.");
-  }
+): Promise<{ model: StudioAuthorityModel; receipt: StudioModelCommandReceipt }> {
+  const requestFingerprint = studioModelCommandRequestFingerprint({ modelId, command: input });
+  const summary = input.action === "UPDATE" ? "Model styling saved" : "Model authority withdrawn";
+  const consequence = input.action === "UPDATE"
+    ? "The model name and styling are updated for future Studio work."
+    : "The model is unavailable for new Studio work; existing media remains in history.";
+  const nextName = input.action === "UPDATE" ? input.name : null;
+  const nextStyling = input.action === "UPDATE" ? JSON.stringify(input.styling) : null;
+  const reason = input.action === "ARCHIVE" ? input.reason : null;
   const database = await getStudioDb();
-  const result = input.action === "UPDATE"
-    ? await database.execute<DatabaseRow>(sql`
-        update studio_model_profiles
-        set name = ${input.name},
-            authority = authority || jsonb_build_object('styling', ${JSON.stringify(input.styling)}::jsonb),
-            updated_at = now()
-        where id = ${modelId}::uuid
-          and operator_subject = ${operator.subject}
-          and state = 'READY'
+  try {
+    const result = await database.execute<DatabaseRow>(sql`
+      with guard as materialized (
+        select pg_advisory_xact_lock(hashtextextended(${`${operator.actorSubject}:${input.idempotencyKey}`}, 0))
+      ), existing_command as materialized (
+        select receipt.*
+        from studio_model_command_receipts as receipt
+        cross join guard
+        where receipt.actor_subject = ${operator.actorSubject}
+          and receipt.idempotency_key = ${input.idempotencyKey}
+        limit 1
+      ), target as materialized (
+        select profile.*
+        from studio_model_profiles as profile
+        cross join guard
+        where profile.id = ${modelId}::uuid
+          and profile.operator_subject = ${operator.subject}
+        for update of profile
+      ), mutation as (
+        update studio_model_profiles as profile
+        set name = case when ${input.action}::text = 'UPDATE' then ${nextName}::text else profile.name end,
+            state = case when ${input.action}::text = 'ARCHIVE' then 'ARCHIVED' else profile.state end,
+            authority = case
+              when ${input.action}::text = 'UPDATE'
+                then profile.authority || jsonb_build_object('styling', ${nextStyling}::jsonb)
+              else profile.authority || jsonb_build_object(
+                'revokedAt', clock_timestamp()::text,
+                'revocationReason', ${reason}::text
+              )
+            end,
+            updated_at = date_trunc(
+              'milliseconds',
+              greatest(clock_timestamp(), profile.updated_at + interval '1 millisecond')
+            )
+        from target
+        where profile.id = target.id
+          and target.kind <> 'LULU_V3'
+          and target.state = 'READY'
+          and to_char(target.updated_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') = ${input.expectedRevision}
+          and not exists (select 1 from existing_command)
+        returning profile.*
+      ), created_receipt as (
+        insert into studio_model_command_receipts (
+          workspace_subject,
+          actor_subject,
+          model_id,
+          action,
+          expected_revision,
+          resulting_revision,
+          idempotency_key,
+          request_fingerprint,
+          summary,
+          consequence
+        )
+        select
+          ${operator.subject},
+          ${operator.actorSubject},
+          mutation.id,
+          ${input.action},
+          ${input.expectedRevision},
+          to_char(mutation.updated_at at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"'),
+          ${input.idempotencyKey},
+          ${requestFingerprint},
+          ${summary},
+          ${consequence}
+        from mutation
         returning *
-      `)
-    : await database.execute<DatabaseRow>(sql`
-        update studio_model_profiles
-        set state = 'ARCHIVED',
-            authority = authority || jsonb_build_object(
-              'revokedAt', now()::text,
-              'revocationReason', ${input.reason}::text
-            ),
-            updated_at = now()
-        where id = ${modelId}::uuid
-          and operator_subject = ${operator.subject}
-          and state = 'READY'
-        returning *
-      `);
-  if (!result.rows[0]) {
+      )
+      select created_receipt.* from created_receipt
+      union all
+      select existing_command.* from existing_command
+      limit 1
+    `);
+    const row = result.rows[0];
+    if (row) {
+      const receipt = mapModelCommandReceipt(row);
+      if (
+        receipt.modelId !== modelId
+        || receipt.action !== input.action
+        || receipt.expectedRevision !== input.expectedRevision
+        || receipt.idempotencyKey !== input.idempotencyKey
+        || receipt.requestFingerprint !== requestFingerprint
+      ) {
+        throw new StudioEngineError(
+          "VERSION_CONFLICT",
+          409,
+          "That model action key was already used for a different change.",
+          "Reload Models and prepare the change again.",
+        );
+      }
+      const refreshed = (await listOwnedModelProfiles(operator.subject)).find((profile) => profile.id === modelId);
+      if (!refreshed) throw new StudioEngineError("INTAKE_NOT_FOUND", 404, "That model was not found.", "Reload Models.");
+      return { model: mapModel(refreshed), receipt };
+    }
+
+    const current = (await listOwnedModelProfiles(operator.subject)).find((profile) => profile.id === modelId);
+    if (!current) throw new StudioEngineError("INTAKE_NOT_FOUND", 404, "That model was not found.", "Reload Models.");
+    if (current.kind === "LULU_V3") {
+      throw new StudioEngineError("INVALID_TRANSITION", 409, "Lulu is the approved default.", "Add another model for different authority.");
+    }
     throw new StudioEngineError("VERSION_CONFLICT", 409, "That model changed in another window.", "Reload Models.");
+  } catch (error) {
+    throw studioModelPersistenceError(error);
   }
-  const refreshed = (await listOwnedModelProfiles(operator.subject)).find((profile) => profile.id === modelId);
-  if (!refreshed) throw new StudioEngineError("INTAKE_NOT_FOUND", 404, "That model was not found.", "Reload Models.");
-  return mapModel(refreshed);
 }
 
 export async function readStudioModelAsset(operator: StudioOperator, modelId: string) {

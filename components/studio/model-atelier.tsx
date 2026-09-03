@@ -14,7 +14,14 @@ import {
   Plus,
   UserRound,
 } from "lucide-react";
-import type { StudioAuthorityModel } from "../../lib/studio/services/studio-authority-client";
+import type {
+  StudioAuthorityModel,
+  StudioModelCommandReceipt,
+} from "../../lib/studio/services/studio-authority-client";
+import {
+  clearSessionCommandKey,
+  getOrCreateSessionCommandKey,
+} from "../../lib/studio/idempotency/session-command-key";
 import { LifecycleMeta } from "./atoms/lifecycle-meta";
 import { StudioFeedback } from "./atoms/studio-feedback";
 import { StudioLoadingStage } from "./atoms/studio-loading-stage";
@@ -25,6 +32,20 @@ import { StudioTaskSheet } from "./atoms/studio-task-sheet";
 import { useStudio } from "./studio-provider";
 
 type ApiFailure = { error?: { message?: string; recovery?: string } };
+
+type ModelCommandIdentity = {
+  action: "UPDATE" | "ARCHIVE";
+  expectedRevision: string;
+  idempotencyKey: string;
+  modelId: string;
+  revision: string;
+  scope: string;
+};
+
+type ModelCommandResult = {
+  model: StudioAuthorityModel;
+  receipt: StudioModelCommandReceipt;
+};
 
 type LuluVerification = {
   schemaVersion: "juw.atelier-adult-verification-evidence.v1";
@@ -54,6 +75,27 @@ async function responseBody<T>(response: Response): Promise<T> {
   if (response.ok) return body as T;
   const failure = body as ApiFailure;
   throw new Error([failure.error?.message, failure.error?.recovery].filter(Boolean).join(" ") || "Studio could not save that model.");
+}
+
+function modelReceiptMatchesCommand(
+  result: ModelCommandResult | null | undefined,
+  command: ModelCommandIdentity,
+) {
+  return result?.receipt.schemaVersion === "juw.studio-model-command-receipt.v1"
+    && result.receipt.modelId === command.modelId
+    && result.receipt.action === command.action
+    && result.receipt.expectedRevision === command.expectedRevision
+    && result.receipt.idempotencyKey === command.idempotencyKey;
+}
+
+async function reconcileModelCommand(command: ModelCommandIdentity): Promise<ModelCommandResult | null> {
+  const response = await fetch(
+    `/api/studio/models/${encodeURIComponent(command.modelId)}?idempotencyKey=${encodeURIComponent(command.idempotencyKey)}`,
+    { cache: "no-store", credentials: "same-origin", headers: { accept: "application/json" } },
+  );
+  if (!response.ok) return null;
+  const result = await responseBody<{ model: StudioAuthorityModel | null; receipt: StudioModelCommandReceipt | null }>(response);
+  return result.model && result.receipt ? { model: result.model, receipt: result.receipt } : null;
 }
 
 function styling(model: StudioAuthorityModel) {
@@ -245,6 +287,7 @@ function ModelTask({
     pendingRef.current = true;
     setPending(true);
     setError("");
+    let commandIdentity: ModelCommandIdentity | null = null;
     try {
       if (mode === "create") {
         if (!file || !authorityConfirmed) throw new Error("Choose one adult model photo and confirm its usage authority.");
@@ -257,16 +300,49 @@ function ModelTask({
         const result = await responseBody<{ model: StudioAuthorityModel }>(response);
         onSaved(result.model);
       } else if (model) {
+        if (!model.authorityRevision) throw new Error("Reload Models before saving this change.");
+        const payload = { action: "UPDATE" as const, name, styling: { hair, makeup, direction } };
+        const scope = `studio-model:update:${model.id}`;
+        const revision = `${model.authorityRevision}:${JSON.stringify(payload)}`;
+        const idempotencyKey = getOrCreateSessionCommandKey({
+          keyPrefix: "studio-model:update",
+          revision,
+          scope,
+        });
+        commandIdentity = {
+          action: "UPDATE",
+          expectedRevision: model.authorityRevision,
+          idempotencyKey,
+          modelId: model.id,
+          revision,
+          scope,
+        };
         const response = await fetch(`/api/studio/models/${model.id}`, {
-          body: JSON.stringify({ action: "UPDATE", name, styling: { hair, makeup, direction } }),
+          body: JSON.stringify({
+            ...payload,
+            expectedRevision: model.authorityRevision,
+            idempotencyKey,
+          }),
           credentials: "same-origin",
           headers: { accept: "application/json", "content-type": "application/json" },
           method: "PATCH",
         });
-        const result = await responseBody<{ model: StudioAuthorityModel }>(response);
+        const result = await responseBody<ModelCommandResult>(response);
+        if (!modelReceiptMatchesCommand(result, commandIdentity)) {
+          throw new Error("Studio returned a receipt for a different model change. Reload Models before trying again.");
+        }
+        clearSessionCommandKey(commandIdentity);
         onSaved(result.model);
       }
     } catch (cause) {
+      if (commandIdentity) {
+        const reconciled = await reconcileModelCommand(commandIdentity).catch(() => null);
+        if (modelReceiptMatchesCommand(reconciled, commandIdentity)) {
+          clearSessionCommandKey(commandIdentity);
+          onSaved(reconciled!.model);
+          return;
+        }
+      }
       setError(cause instanceof Error ? cause.message : "The model could not be saved.");
     } finally {
       pendingRef.current = false;
@@ -371,19 +447,56 @@ export function ModelAtelier() {
     archivePendingRef.current = true;
     setPending(true);
     setError("");
+    let commandIdentity: ModelCommandIdentity | null = null;
     try {
+      if (!selected.authorityRevision) throw new Error("Reload Models before withdrawing this authority.");
+      const payload = { action: "ARCHIVE" as const, reason: archiveReason };
+      const scope = `studio-model:archive:${selected.id}`;
+      const revision = `${selected.authorityRevision}:${JSON.stringify(payload)}`;
+      const idempotencyKey = getOrCreateSessionCommandKey({
+        keyPrefix: "studio-model:archive",
+        revision,
+        scope,
+      });
+      commandIdentity = {
+        action: "ARCHIVE",
+        expectedRevision: selected.authorityRevision,
+        idempotencyKey,
+        modelId: selected.id,
+        revision,
+        scope,
+      };
       const response = await fetch(`/api/studio/models/${selected.id}`, {
-        body: JSON.stringify({ action: "ARCHIVE", reason: archiveReason }),
+        body: JSON.stringify({
+          ...payload,
+          expectedRevision: selected.authorityRevision,
+          idempotencyKey,
+        }),
         credentials: "same-origin",
         headers: { accept: "application/json", "content-type": "application/json" },
         method: "PATCH",
       });
-      await responseBody<{ model: StudioAuthorityModel }>(response);
+      const result = await responseBody<ModelCommandResult>(response);
+      if (!modelReceiptMatchesCommand(result, commandIdentity)) {
+        throw new Error("Studio returned a receipt for a different model withdrawal. Reload Models before trying again.");
+      }
+      clearSessionCommandKey(commandIdentity);
       setArchiveOpen(false);
       setArchiveReason("");
       setSelectedId("");
       await authority.refresh();
     } catch (cause) {
+      if (commandIdentity) {
+        const reconciled = await reconcileModelCommand(commandIdentity).catch(() => null);
+        if (modelReceiptMatchesCommand(reconciled, commandIdentity)) {
+          clearSessionCommandKey(commandIdentity);
+          setArchiveOpen(false);
+          setArchiveReason("");
+          setSelectedId("");
+          await authority.refresh();
+          return;
+        }
+      }
       setError(cause instanceof Error ? cause.message : "The model could not be archived.");
     } finally {
       archivePendingRef.current = false;

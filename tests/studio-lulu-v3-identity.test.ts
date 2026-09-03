@@ -152,5 +152,5 @@ test("Lulu cannot review her own authority and is directed to another admin", as
 
 test("stock-model withdrawal gives PostgreSQL a typed JSONB reason", async () => {
   const source = await read("lib/server/studio-authority-repository.ts");
-  assert.match(source, /'revocationReason', \$\{input\.reason\}::text/);
+  assert.match(source, /'revocationReason', \$\{reason\}::text/);
 });

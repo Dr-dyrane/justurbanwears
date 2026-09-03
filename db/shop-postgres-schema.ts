@@ -1059,6 +1059,30 @@ export const studioModelProfiles = pgTable("studio_model_profiles", {
   check("studio_model_profiles_authority_object", sql`jsonb_typeof(${table.authority}) = 'object'`),
 ]);
 
+export const studioModelCommandReceipts = pgTable("studio_model_command_receipts", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  workspaceSubject: text("workspace_subject").notNull(),
+  actorSubject: text("actor_subject").notNull(),
+  modelId: uuid("model_id")
+    .notNull()
+    .references(() => studioModelProfiles.id, { onDelete: "restrict" }),
+  action: varchar("action", { length: 24 }).notNull(),
+  expectedRevision: text("expected_revision").notNull(),
+  resultingRevision: text("resulting_revision").notNull(),
+  idempotencyKey: varchar("idempotency_key", { length: 160 }).notNull(),
+  requestFingerprint: varchar("request_fingerprint", { length: 64 }).notNull(),
+  summary: text("summary").notNull(),
+  consequence: text("consequence").notNull(),
+  occurredAt: timestamp("occurred_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("studio_model_command_receipts_actor_idempotency_unique")
+    .on(table.actorSubject, table.idempotencyKey),
+  index("studio_model_command_receipts_model_idx")
+    .on(table.workspaceSubject, table.modelId, table.occurredAt),
+  check("studio_model_command_receipts_action_known", sql`${table.action} in ('UPDATE', 'ARCHIVE')`),
+  check("studio_model_command_receipts_fingerprint", sql`${table.requestFingerprint} ~ '^[0-9a-f]{64}$'`),
+]);
+
 export const studioGenerations = pgTable("studio_generations", {
   id: uuid("id").defaultRandom().primaryKey(),
   intakeId: uuid("intake_id")

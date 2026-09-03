@@ -69,6 +69,21 @@ export type StudioAuthorityModel = {
   updatedAt: string;
 };
 
+export type StudioModelCommandReceipt = {
+  schemaVersion: "juw.studio-model-command-receipt.v1";
+  receiptId: string;
+  actorSubject: string;
+  modelId: string;
+  action: "UPDATE" | "ARCHIVE";
+  expectedRevision: string;
+  resultingRevision: string;
+  idempotencyKey: string;
+  requestFingerprint: string;
+  summary: string;
+  consequence: string;
+  occurredAt: string;
+};
+
 export type StudioAuthorityMedia = {
   id: string;
   wardrobeItemId: string;
