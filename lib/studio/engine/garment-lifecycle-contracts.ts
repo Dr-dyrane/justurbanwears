@@ -12,6 +12,12 @@ const postgresUuidSchema = z.string().regex(
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
 );
 
+export const garmentRevisionMediaRoleSchema = z.enum([
+  "GARMENT_FRONT",
+  "GARMENT_BACK",
+  "FABRIC_DETAIL",
+]);
+
 export const garmentLifecycleCommandSchema = z.discriminatedUnion("command", [
   z.object({
     command: z.literal("SAVE_FACTS"),
@@ -66,6 +72,39 @@ export const garmentLifecycleCommandReceiptSchema = z.object({
   wardrobeItemId: postgresUuidSchema,
 }).strict();
 
+export const garmentRevisionMediaCommandSchema = z.object({
+  expectedDraftVersion: z.number().int().positive().nullable(),
+  expectedItemVersion: z.number().int().positive(),
+  expectedPublicationRevision: expectedRevisionSchema.nullable(),
+  idempotencyKey: idempotencyKeySchema,
+  role: garmentRevisionMediaRoleSchema,
+}).strict();
+
+export const garmentRevisionMediaReceiptSchema = z.object({
+  actorSubject: z.string().trim().min(1),
+  command: z.literal("REPLACE_MEDIA"),
+  consequence: z.string().trim().min(1),
+  expectedDraftVersion: z.number().int().positive().nullable(),
+  expectedItemVersion: z.number().int().positive(),
+  expectedPublicationRevision: expectedRevisionSchema.nullable(),
+  idempotencyKey: idempotencyKeySchema,
+  mediaRole: garmentRevisionMediaRoleSchema,
+  mediaSha256: expectedRevisionSchema,
+  occurredAt: z.string().datetime({ offset: true }),
+  receiptId: z.string().uuid(),
+  requestFingerprint: expectedRevisionSchema,
+  result: z.literal("PRIVATE_MEDIA_REPLACED"),
+  resultingDraftVersion: z.number().int().positive().nullable(),
+  resultingItemVersion: z.number().int().positive(),
+  schemaVersion: z.literal("juw.studio-garment-media-command-receipt.v1"),
+  summary: z.string().trim().min(1),
+  wardrobeItemId: postgresUuidSchema,
+}).strict();
+
+export const garmentRevisionMediaReceiptQuerySchema = z.object({
+  idempotencyKey: idempotencyKeySchema,
+}).strict();
+
 export const garmentLifecycleCommandReceiptQuerySchema = z.object({
   idempotencyKey: idempotencyKeySchema,
 }).strict();
@@ -80,15 +119,11 @@ export const garmentPermanentDeleteReceiptQuerySchema = z.object({
   idempotencyKey: idempotencyKeySchema,
 });
 
-export const garmentRevisionMediaRoleSchema = z.enum([
-  "GARMENT_FRONT",
-  "GARMENT_BACK",
-  "FABRIC_DETAIL",
-]);
-
 export type GarmentLifecycleCommand = z.infer<typeof garmentLifecycleCommandSchema>;
 export type GarmentLifecycleCommandReceipt = z.infer<typeof garmentLifecycleCommandReceiptSchema>;
 export type GarmentPermanentDeleteCommand = z.infer<typeof garmentPermanentDeleteSchema>;
+export type GarmentRevisionMediaCommand = z.infer<typeof garmentRevisionMediaCommandSchema>;
+export type GarmentRevisionMediaReceipt = z.infer<typeof garmentRevisionMediaReceiptSchema>;
 export type GarmentRevisionMediaRole = z.infer<typeof garmentRevisionMediaRoleSchema>;
 
 export type GarmentPermanentDeleteReceipt = {

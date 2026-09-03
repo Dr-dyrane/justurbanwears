@@ -3,9 +3,11 @@ import { getStudioDb } from "../../db/shop-postgres";
 import type { IntakeFacts } from "../studio/engine/contracts";
 import {
   garmentLifecycleCommandReceiptSchema,
+  garmentRevisionMediaReceiptSchema,
   type GarmentLifecycleCommandReceipt,
   type GarmentLifecycleEvent,
   type GarmentPermanentDeleteReceipt,
+  type GarmentRevisionMediaReceipt,
   type GarmentRevisionMediaRole,
 } from "../studio/engine/garment-lifecycle-contracts";
 import { studioWardrobeItemLockKey } from "./studio-wardrobe-item-lock";
@@ -42,7 +44,20 @@ export type GarmentLifecycleCommandWriteResult =
   | { kind: "APPLIED" | "REPLAYED"; receipt: GarmentLifecycleCommandReceipt }
   | { kind: "IDEMPOTENCY_CONFLICT" | "NOT_APPLIED" };
 
+export type GarmentRevisionMediaCommandIdentity = {
+  actorSubject: string;
+  idempotencyKey: string;
+  requestFingerprint: string;
+};
+
+export type GarmentRevisionMediaWriteResult =
+  | { kind: "APPLIED"; receipt: GarmentRevisionMediaReceipt }
+  | { kind: "REPLAYED"; receipt: GarmentRevisionMediaReceipt }
+  | { kind: "IDEMPOTENCY_CONFLICT" }
+  | { kind: "NOT_APPLIED" };
+
 const GARMENT_LIFECYCLE_COMMAND_RECEIPT_SCHEMA_VERSION = "juw.studio-garment-lifecycle-command-receipt.v1";
+const GARMENT_MEDIA_COMMAND_RECEIPT_SCHEMA_VERSION = "juw.studio-garment-media-command-receipt.v1";
 
 function resultRows(result: unknown): Record<string, unknown>[] {
   if (!result || typeof result !== "object") return [];
@@ -88,6 +103,17 @@ function lifecycleCommandReceipt(raw: unknown): GarmentLifecycleCommandReceipt {
   });
 }
 
+function garmentRevisionMediaReceipt(raw: unknown): GarmentRevisionMediaReceipt {
+  if (!raw || typeof raw !== "object") {
+    throw new Error("The garment media command receipt is unavailable.");
+  }
+  const candidate = raw as Record<string, unknown>;
+  return garmentRevisionMediaReceiptSchema.parse({
+    ...candidate,
+    occurredAt: new Date(String(candidate.occurredAt)).toISOString(),
+  });
+}
+
 function lifecycleCommandWriteResult(
   result: unknown,
   requestFingerprint: string,
@@ -103,8 +129,31 @@ function lifecycleCommandWriteResult(
   throw new Error("The garment lifecycle command result is invalid.");
 }
 
+function garmentRevisionMediaWriteResult(
+  result: unknown,
+  requestFingerprint: string,
+): GarmentRevisionMediaWriteResult {
+  const row = resultRows(result)[0];
+  if (!row) return { kind: "NOT_APPLIED" };
+  const rawReceipt = row.receipt;
+  if (!rawReceipt || typeof rawReceipt !== "object" || (rawReceipt as Record<string, unknown>).command !== "REPLACE_MEDIA") {
+    return { kind: "IDEMPOTENCY_CONFLICT" };
+  }
+  const receipt = garmentRevisionMediaReceipt(rawReceipt);
+  if (receipt.requestFingerprint !== requestFingerprint) {
+    return { kind: "IDEMPOTENCY_CONFLICT" };
+  }
+  if (row.result_kind === "APPLIED") return { kind: "APPLIED", receipt };
+  if (row.result_kind === "EXISTING") return { kind: "REPLAYED", receipt };
+  throw new Error("The garment media command result is invalid.");
+}
+
 function lifecycleCommandLockKey(operatorSubject: string, idempotencyKey: string) {
   return `studio_garment_lifecycle:${operatorSubject}:${idempotencyKey}`;
+}
+
+function mediaCommandLockKey(operatorSubject: string, idempotencyKey: string) {
+  return `studio_garment_media:${operatorSubject}:${idempotencyKey}`;
 }
 
 export async function findGarmentLifecycleCommandReceipt(input: {
@@ -123,6 +172,25 @@ export async function findGarmentLifecycleCommandReceipt(input: {
   `);
   const receipt = resultRows(result)[0]?.receipt;
   return receipt ? lifecycleCommandReceipt(receipt) : null;
+}
+
+export async function findGarmentRevisionMediaReceipt(input: {
+  wardrobeItemId: string;
+  operatorSubject: string;
+  idempotencyKey: string;
+}): Promise<GarmentRevisionMediaReceipt | null> {
+  const result = await (await getStudioDb()).execute(sql`
+    select details->'commandReceipt' as receipt
+    from studio_garment_events
+    where wardrobe_item_id = ${input.wardrobeItemId}::uuid
+      and operator_subject = ${input.operatorSubject}
+      and details->'commandReceipt'->>'idempotencyKey' = ${input.idempotencyKey}
+      and details->'commandReceipt'->>'command' = 'REPLACE_MEDIA'
+    order by occurred_at desc, id desc
+    limit 1
+  `);
+  const receipt = resultRows(result)[0]?.receipt;
+  return receipt ? garmentRevisionMediaReceipt(receipt) : null;
 }
 
 function databaseBoolean(value: unknown) {
@@ -592,6 +660,318 @@ export async function updateDraftGarmentRevision(input: {
   `);
   const row = resultRows(result)[0];
   return row ? revisionRow(row) : null;
+}
+
+export type ReplaceGarmentRevisionMediaAtomicInput = {
+  wardrobeItemId: string;
+  operatorSubject: string;
+  expectedItemVersion: number;
+  expectedDraftVersion: number | null;
+  expectedPublicationRevision: string | null;
+  facts: IntakeFacts;
+  media: Array<Record<string, unknown>>;
+  captureKey: string;
+  role: GarmentRevisionMediaRole;
+  blobPathname: string;
+  mimeType: string;
+  byteSize: number;
+  width: number | null;
+  height: number | null;
+  sha256: string;
+  operatorApprovedAt: Date;
+  identity: GarmentRevisionMediaCommandIdentity;
+};
+
+export function buildGarmentRevisionMediaAtomicQuery(
+  input: ReplaceGarmentRevisionMediaAtomicInput,
+) {
+  const consequence = "The private garment photo is saved. The current Shop listing is unchanged until its revision is separately published.";
+  const summary = `${input.role === "GARMENT_FRONT" ? "Garment front" : input.role === "GARMENT_BACK" ? "Garment back" : "Fabric detail"} replaced privately`;
+  return sql`
+    with command_lock as (
+      select pg_advisory_xact_lock(hashtextextended(
+        ${mediaCommandLockKey(input.operatorSubject, input.identity.idempotencyKey)}, 0
+      ))
+    ), piece_lock as (
+      select pg_advisory_xact_lock(hashtextextended(
+        ${studioWardrobeItemLockKey(input.operatorSubject, input.wardrobeItemId)}, 0
+      ))
+      from command_lock
+    ), existing_command as materialized (
+      select event.details->'commandReceipt' as receipt
+      from studio_garment_events event cross join piece_lock
+      where event.operator_subject = ${input.operatorSubject}
+        and event.details->'commandReceipt'->>'idempotencyKey' = ${input.identity.idempotencyKey}
+      order by event.occurred_at desc, event.id desc
+      limit 1
+    ), piece as materialized (
+      select
+        item.id,
+        item.intake_id,
+        item.operator_subject,
+        item.version as item_version,
+        item.state as item_state,
+        publication.id as publication_id,
+        publication.state as publication_state,
+        publication.source_revision
+      from studio_wardrobe_items item
+      cross join piece_lock
+      left join studio_catalogue_publications publication
+        on publication.wardrobe_item_id = item.id
+      where item.id = ${input.wardrobeItemId}::uuid
+        and item.operator_subject = ${input.operatorSubject}
+      for update of item
+    ), draft as materialized (
+      select
+        revision.id,
+        revision.revision_number,
+        revision.version,
+        revision.base_source_revision,
+        revision.facts,
+        revision.media
+      from studio_garment_revisions revision
+      join piece on piece.id = revision.wardrobe_item_id
+      where revision.operator_subject = ${input.operatorSubject}
+        and revision.state = 'DRAFT'
+      for update of revision
+    ), eligible as materialized (
+      select
+        piece.*,
+        draft.id as draft_id,
+        draft.revision_number as draft_revision_number,
+        draft.version as draft_version,
+        coalesce(draft.facts, ${JSON.stringify(input.facts)}::jsonb) as next_facts,
+        ${JSON.stringify(input.media)}::jsonb as base_media
+      from piece
+      left join draft on true
+      where not exists (select 1 from existing_command)
+        and piece.item_version = ${input.expectedItemVersion}
+        and piece.item_state <> 'ARCHIVED'
+        and coalesce(piece.publication_state, '') <> 'ARCHIVED'
+        and (
+          (${input.expectedPublicationRevision}::text is null and piece.publication_id is null)
+          or (
+            ${input.expectedPublicationRevision}::text is not null
+            and piece.source_revision = ${input.expectedPublicationRevision}::text
+          )
+        )
+        and (
+          (${input.expectedDraftVersion}::integer is null and draft.id is null)
+          or draft.version = ${input.expectedDraftVersion}::integer
+        )
+    ), front_asset_inserted as (
+      insert into studio_assets (
+        intake_id, role, blob_pathname, blob_url, mime_type, byte_size,
+        width, height, sha256, privacy, created_at
+      )
+      select
+        eligible.intake_id, 'GARMENT_FRONT', ${input.blobPathname}, ${input.blobPathname},
+        ${input.mimeType}, ${input.byteSize}, ${input.width}, ${input.height},
+        ${input.sha256}, 'PRIVATE', now()
+      from eligible
+      where ${input.role}::text = 'GARMENT_FRONT'
+      on conflict (intake_id, sha256, role) do nothing
+      returning id, role::text as role, sha256, width, height
+    ), front_asset as (
+      select id, role, sha256, width, height from front_asset_inserted
+      union all
+      select asset.id, asset.role::text, asset.sha256, asset.width, asset.height
+      from studio_assets asset
+      join eligible on eligible.intake_id = asset.intake_id
+      where ${input.role}::text = 'GARMENT_FRONT'
+        and asset.role = 'GARMENT_FRONT'
+        and asset.sha256 = ${input.sha256}
+        and not exists (select 1 from front_asset_inserted)
+      limit 1
+    ), capture as (
+      insert into studio_pending_product_captures (
+        operator_subject, sku, role, blob_pathname, mime_type, byte_size,
+        width, height, sha256, privacy, origin, completion_job_id,
+        operator_approved_at, created_at, updated_at
+      )
+      select
+        eligible.operator_subject, ${input.captureKey}, ${input.role}, ${input.blobPathname},
+        ${input.mimeType}, ${input.byteSize}, ${input.width}, ${input.height}, ${input.sha256},
+        'PRIVATE', 'DIRECT', null, ${input.operatorApprovedAt.toISOString()}::timestamptz, now(), now()
+      from eligible
+      where ${input.role}::text <> 'GARMENT_FRONT'
+      on conflict (operator_subject, sku, role) do update set
+        blob_pathname = excluded.blob_pathname,
+        mime_type = excluded.mime_type,
+        byte_size = excluded.byte_size,
+        width = excluded.width,
+        height = excluded.height,
+        sha256 = excluded.sha256,
+        privacy = 'PRIVATE',
+        origin = 'DIRECT',
+        completion_job_id = null,
+        operator_approved_at = excluded.operator_approved_at,
+        updated_at = now()
+      returning id, role, sha256, width, height
+    ), media_source as (
+      select id, role, sha256, width, height from front_asset
+      union all
+      select id, role, sha256, width, height from capture
+    ), media_replacement as (
+      select
+        eligible.*,
+        media_source.id as media_id,
+        jsonb_build_object(
+          'id', media_source.id::text,
+          'slot', ${input.role}::text,
+          'sourceSha256', media_source.sha256,
+          'width', media_source.width,
+          'height', media_source.height
+        ) as replacement
+      from eligible
+      join media_source on true
+    ), prepared as (
+      select
+        media_replacement.*,
+        (
+          select coalesce(jsonb_agg(
+            case
+              when entry.value->>'slot' = ${input.role}::text then media_replacement.replacement
+              else entry.value
+            end
+            order by entry.ordinality
+          ), '[]'::jsonb)
+          from jsonb_array_elements(media_replacement.base_media) with ordinality as entry(value, ordinality)
+        ) || case
+          when exists (
+            select 1
+            from jsonb_array_elements(media_replacement.base_media) as existing(value)
+            where existing.value->>'slot' = ${input.role}::text
+          ) then '[]'::jsonb
+          else jsonb_build_array(media_replacement.replacement)
+        end as next_media
+      from media_replacement
+    ), item_updated as (
+      update studio_wardrobe_items item
+      set approved_asset_id = case
+            when ${input.role}::text = 'GARMENT_FRONT' then prepared.media_id
+            else item.approved_asset_id
+          end,
+          version = item.version + 1,
+          updated_at = now()
+      from prepared
+      where item.id = prepared.id
+        and item.version = ${input.expectedItemVersion}
+        and (${input.role}::text = 'GARMENT_FRONT' or prepared.publication_id is null)
+      returning item.id, item.version
+    ), item_result as (
+      select id, version from item_updated
+      union all
+      select prepared.id, prepared.item_version
+      from prepared
+      where ${input.role}::text <> 'GARMENT_FRONT'
+        and prepared.publication_id is not null
+    ), updated_revision as (
+      update studio_garment_revisions revision
+      set media = prepared.next_media,
+          version = revision.version + 1,
+          updated_at = now()
+      from prepared
+      where prepared.draft_id is not null
+        and revision.id = prepared.draft_id
+        and revision.wardrobe_item_id = prepared.id
+        and revision.operator_subject = ${input.operatorSubject}
+        and revision.state = 'DRAFT'
+        and revision.version = ${input.expectedDraftVersion}::integer
+      returning revision.id, revision.revision_number, revision.version
+    ), created_revision as (
+      insert into studio_garment_revisions (
+        wardrobe_item_id, operator_subject, revision_number, version, state,
+        base_source_revision, facts, media, created_at, updated_at
+      )
+      select
+        prepared.id,
+        prepared.operator_subject,
+        coalesce((
+          select max(revision.revision_number) + 1
+          from studio_garment_revisions revision
+          where revision.wardrobe_item_id = prepared.id
+        ), 1),
+        1,
+        'DRAFT',
+        prepared.source_revision,
+        prepared.next_facts,
+        prepared.next_media,
+        now(),
+        now()
+      from prepared
+      where prepared.publication_id is not null
+        and prepared.draft_id is null
+      returning id, revision_number, version
+    ), revision_result as (
+      select id, revision_number, version from updated_revision
+      union all
+      select id, revision_number, version from created_revision
+    ), mutation_result as (
+      select
+        prepared.id as wardrobe_item_id,
+        prepared.operator_subject,
+        item_result.version as resulting_item_version,
+        revision_result.revision_number,
+        revision_result.version as resulting_draft_version
+      from prepared
+      join item_result on item_result.id = prepared.id
+      left join revision_result on true
+      where prepared.publication_id is null or revision_result.id is not null
+    ), event_seed as (
+      select gen_random_uuid() as id, now() as occurred_at from mutation_result
+    ), event as (
+      insert into studio_garment_events (
+        id, wardrobe_item_id, operator_subject, event_type, summary, details, occurred_at
+      )
+      select
+        event_seed.id,
+        mutation_result.wardrobe_item_id,
+        mutation_result.operator_subject,
+        'MEDIA_REPLACED',
+        ${summary},
+        jsonb_build_object(
+          'mediaRole', ${input.role}::text,
+          'revisionNumber', mutation_result.revision_number,
+          'commandReceipt', jsonb_build_object(
+            'actorSubject', ${input.identity.actorSubject}::text,
+            'command', 'REPLACE_MEDIA',
+            'consequence', ${consequence}::text,
+            'expectedDraftVersion', ${input.expectedDraftVersion}::integer,
+            'expectedItemVersion', ${input.expectedItemVersion}::integer,
+            'expectedPublicationRevision', ${input.expectedPublicationRevision}::text,
+            'idempotencyKey', ${input.identity.idempotencyKey}::text,
+            'mediaRole', ${input.role}::text,
+            'mediaSha256', ${input.sha256}::text,
+            'occurredAt', event_seed.occurred_at,
+            'receiptId', event_seed.id,
+            'requestFingerprint', ${input.identity.requestFingerprint}::text,
+            'result', 'PRIVATE_MEDIA_REPLACED',
+            'resultingDraftVersion', mutation_result.resulting_draft_version,
+            'resultingItemVersion', mutation_result.resulting_item_version,
+            'schemaVersion', ${GARMENT_MEDIA_COMMAND_RECEIPT_SCHEMA_VERSION}::text,
+            'summary', ${summary}::text,
+            'wardrobeItemId', mutation_result.wardrobe_item_id
+          )
+        ),
+        event_seed.occurred_at
+      from mutation_result
+      cross join event_seed
+      returning details->'commandReceipt' as receipt
+    )
+    select 'APPLIED' as result_kind, receipt from event
+    union all
+    select 'EXISTING' as result_kind, receipt from existing_command
+  `;
+}
+
+export async function replaceGarmentRevisionMediaAtomically(
+  input: ReplaceGarmentRevisionMediaAtomicInput,
+): Promise<GarmentRevisionMediaWriteResult> {
+  const result = await (await getStudioDb()).execute(
+    buildGarmentRevisionMediaAtomicQuery(input),
+  );
+  return garmentRevisionMediaWriteResult(result, input.identity.requestFingerprint);
 }
 
 export async function updateDraftGarmentRevisionIdempotently(input: {

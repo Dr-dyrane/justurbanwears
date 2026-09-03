@@ -1,6 +1,5 @@
 import { get } from "@vercel/blob";
 import {
-  addStudioAsset,
   getOwnedWardrobeItem,
 } from "../../server/studio-intake-repository";
 import {
@@ -10,7 +9,6 @@ import {
   publishCatalogueRevisionAtomically,
 } from "../../server/studio-catalogue-publication-repository";
 import {
-  appendGarmentEvent,
   archiveGarment,
   archiveGarmentIdempotently,
   changePublicationVisibility,
@@ -18,24 +16,26 @@ import {
   createDraftGarmentRevisionIdempotently,
   discardDraftGarmentRevision,
   findGarmentLifecycleCommandReceipt,
+  findGarmentRevisionMediaReceipt,
   findGarmentPermanentDeleteReceipt,
   findDraftGarmentRevision,
   getGarmentPermanentDeleteEligibility,
   listGarmentEvents,
   permanentlyDeleteArchivedGarment,
-  replaceWardrobeApprovedFront,
+  replaceGarmentRevisionMediaAtomically,
   updateDraftGarmentRevision,
   updateDraftGarmentRevisionIdempotently,
   updatePrivateGarmentFacts,
   updatePrivateGarmentFactsIdempotently,
   type GarmentLifecycleCommandIdentity,
   type GarmentLifecycleCommandWriteResult,
+  type GarmentRevisionMediaCommandIdentity,
   type GarmentRevisionRow,
 } from "../../server/studio-garment-lifecycle-repository";
 import type { StudioOperator } from "../../server/studio-operator";
 import { getShopBlobToken, putShopBlob } from "../../server/vercel-blob";
 import { invalidateServerShopCatalogue } from "../../shop/server-catalog";
-import { saveWardrobeCapture } from "./pending-capture-service";
+import { wardrobeCaptureKey } from "./pending-capture-service";
 import { verifyStudioImage } from "./assets";
 import {
   getStudioPublicationContext,
@@ -54,6 +54,7 @@ import {
 } from "./catalogue-publication-contracts";
 import {
   garmentLifecycleCommandReceiptQuerySchema,
+  garmentRevisionMediaReceiptQuerySchema,
   type GarmentLifecycleCommand,
   type GarmentLifecycleCommandReceipt,
   type GarmentLifecycleDraft,
@@ -62,7 +63,8 @@ import {
   type GarmentPublishRevisionReceipt,
   type GarmentLifecycleWorkspace,
   type GarmentRevisionDiff,
-  type GarmentRevisionMediaRole,
+  type GarmentRevisionMediaCommand,
+  type GarmentRevisionMediaReceipt,
 } from "./garment-lifecycle-contracts";
 
 type WardrobeItem = Awaited<ReturnType<typeof getOwnedWardrobeItem>>;
@@ -133,6 +135,35 @@ export async function getGarmentLifecycleCommandReceipt(input: {
 }): Promise<GarmentLifecycleCommandReceipt | null> {
   const query = garmentLifecycleCommandReceiptQuerySchema.parse({ idempotencyKey: input.idempotencyKey });
   return findGarmentLifecycleCommandReceipt({
+    wardrobeItemId: input.wardrobeItemId,
+    operatorSubject: input.operator.subject,
+    idempotencyKey: query.idempotencyKey,
+  });
+}
+
+export function garmentRevisionMediaRequestFingerprint(input: {
+  wardrobeItemId: string;
+  command: GarmentRevisionMediaCommand;
+  mediaSha256: string;
+}) {
+  return sha256(JSON.stringify({
+    schemaVersion: "juw.studio-garment-media-command.v1",
+    wardrobeItemId: input.wardrobeItemId,
+    expectedDraftVersion: input.command.expectedDraftVersion,
+    expectedItemVersion: input.command.expectedItemVersion,
+    expectedPublicationRevision: input.command.expectedPublicationRevision,
+    role: input.command.role,
+    mediaSha256: input.mediaSha256,
+  }));
+}
+
+export async function getGarmentRevisionMediaReceipt(input: {
+  wardrobeItemId: string;
+  operator: StudioOperator;
+  idempotencyKey: string;
+}): Promise<GarmentRevisionMediaReceipt | null> {
+  const query = garmentRevisionMediaReceiptQuerySchema.parse({ idempotencyKey: input.idempotencyKey });
+  return findGarmentRevisionMediaReceipt({
     wardrobeItemId: input.wardrobeItemId,
     operatorSubject: input.operator.subject,
     idempotencyKey: query.idempotencyKey,
@@ -211,7 +242,8 @@ function formatValue(value: string | number | undefined) {
 }
 
 function withDescription(facts: IntakeFacts, fallback: IntakeFacts): IntakeFacts {
-  const { description: _description, ...factsWithoutDescription } = facts;
+  const factsWithoutDescription = { ...facts };
+  delete factsWithoutDescription.description;
   const description = typeof facts.description === "string" && facts.description.trim()
     ? facts.description.trim()
     : typeof fallback.description === "string" && fallback.description.trim()
@@ -900,15 +932,47 @@ async function publishGarmentRevision(input: {
 export async function replaceGarmentRevisionMedia(input: {
   wardrobeItemId: string;
   operator: StudioOperator;
-  expectedVersion: number;
-  role: GarmentRevisionMediaRole;
+  command: GarmentRevisionMediaCommand;
   bytes: Uint8Array;
   declaredType?: string;
-}): Promise<GarmentLifecycleWorkspace> {
-  const [item, publication, context] = await Promise.all([
+}): Promise<{ receipt: GarmentRevisionMediaReceipt; workspace: GarmentLifecycleWorkspace }> {
+  const verified = verifyStudioImage(input.bytes, input.declaredType);
+  const mediaSha256 = sha256(verified.bytes);
+  const requestFingerprint = garmentRevisionMediaRequestFingerprint({
+    wardrobeItemId: input.wardrobeItemId,
+    command: input.command,
+    mediaSha256,
+  });
+  const identity: GarmentRevisionMediaCommandIdentity = {
+    actorSubject: input.operator.actorSubject,
+    idempotencyKey: input.command.idempotencyKey,
+    requestFingerprint,
+  };
+  const existing = await getGarmentRevisionMediaReceipt({
+    wardrobeItemId: input.wardrobeItemId,
+    operator: input.operator,
+    idempotencyKey: identity.idempotencyKey,
+  });
+  if (existing) {
+    if (existing.requestFingerprint !== requestFingerprint) {
+      throw new StudioEngineError(
+        "VERSION_CONFLICT",
+        409,
+        "That photo change key was already used for different media or state.",
+        "Reload the piece and choose the photo again.",
+      );
+    }
+    return {
+      receipt: existing,
+      workspace: await getGarmentLifecycleWorkspace(input.wardrobeItemId, input.operator),
+    };
+  }
+
+  const [item, publication, context, draft] = await Promise.all([
     getOwnedWardrobeItem(input.wardrobeItemId, input.operator.subject),
     findCataloguePublication({ wardrobeItemId: input.wardrobeItemId, operatorSubject: input.operator.subject }),
     getStudioPublicationContext(input.wardrobeItemId, input.operator),
+    findDraftGarmentRevision({ wardrobeItemId: input.wardrobeItemId, operatorSubject: input.operator.subject }),
   ]);
   if (hasImmutablePublicationMedia(publication)) {
     throw new StudioEngineError(
@@ -918,90 +982,76 @@ export async function replaceGarmentRevisionMedia(input: {
       "Create a new verified media adoption before replacing it.",
     );
   }
-  if (item.version !== input.expectedVersion || item.state === "ARCHIVED" || publication?.state === "ARCHIVED") {
+  if (
+    item.version !== input.command.expectedItemVersion
+    || (draft?.version ?? null) !== input.command.expectedDraftVersion
+    || (publication?.sourceRevision ?? null) !== input.command.expectedPublicationRevision
+    || item.state === "ARCHIVED"
+    || publication?.state === "ARCHIVED"
+  ) {
     throw new StudioEngineError("VERSION_CONFLICT", 409, "This piece changed in another window.", "Reload the piece.");
   }
-  const draft = publication ? await ensureDraft({
-    item,
-    publication,
-    operator: input.operator,
-    facts: liveFacts(publication, item),
-    media: sourceRecords(context.sources),
-  }) : null;
-  if (input.role === "GARMENT_FRONT") {
-    const verified = verifyStudioImage(input.bytes, input.declaredType);
-    const hash = sha256(verified.bytes);
-    const operatorKey = sha256(input.operator.subject).slice(0, 20);
-    const pathname = `studio/operators/${operatorKey}/wardrobe/${item.id}/garment_front/${hash}.${verified.extension}`;
-    const prior = await get(pathname, {
-      access: "private",
-      token: getShopBlobToken("private"),
-      useCache: false,
-    });
-    if (prior) {
-      const priorBytes = new Uint8Array(await new Response(prior.stream).arrayBuffer());
-      if (sha256(verifyStudioImage(priorBytes, prior.blob.contentType ?? undefined).bytes) !== hash) {
-        throw new StudioEngineError("INVALID_ASSET", 503, "That private photo did not verify.", "Choose the photo again.");
-      }
-    } else {
-      await putShopBlob("private", pathname, Buffer.from(verified.bytes), {
-        addRandomSuffix: false,
-        allowOverwrite: false,
-        contentType: verified.mimeType,
-        cacheControlMaxAge: 31_536_000,
-      });
+
+  const operatorKey = sha256(input.operator.subject).slice(0, 20);
+  const pathname = `studio/operators/${operatorKey}/wardrobe/${item.id}/${input.command.role.toLowerCase()}/${mediaSha256}.${verified.extension}`;
+  const prior = await get(pathname, {
+    access: "private",
+    token: getShopBlobToken("private"),
+    useCache: false,
+  });
+  if (prior) {
+    const priorBytes = new Uint8Array(await new Response(prior.stream).arrayBuffer());
+    if (sha256(verifyStudioImage(priorBytes, prior.blob.contentType ?? undefined).bytes) !== mediaSha256) {
+      throw new StudioEngineError("INVALID_ASSET", 503, "That private photo did not verify.", "Choose the photo again.");
     }
-    const asset = await addStudioAsset({
-      intakeId: item.intakeId,
-      role: "GARMENT_FRONT",
-      blobPathname: pathname,
-      blobUrl: pathname,
-      mimeType: verified.mimeType,
-      byteSize: verified.bytes.byteLength,
-      width: verified.width,
-      height: verified.height,
-      sha256: hash,
-    });
-    const replaced = await replaceWardrobeApprovedFront({
-      wardrobeItemId: item.id,
-      operatorSubject: input.operator.subject,
-      expectedVersion: input.expectedVersion,
-      approvedAssetId: asset.id,
-    });
-    if (!replaced) throw new StudioEngineError("VERSION_CONFLICT", 409, "This piece changed while the photo was saving.", "Reload the piece.");
   } else {
-    await saveWardrobeCapture({
-      wardrobeItemId: item.id,
-      role: input.role,
-      operator: input.operator,
-      bytes: input.bytes,
-      declaredType: input.declaredType,
+    await putShopBlob("private", pathname, Buffer.from(verified.bytes), {
+      addRandomSuffix: false,
+      allowOverwrite: false,
+      contentType: verified.mimeType,
+      cacheControlMaxAge: 31_536_000,
     });
   }
-  const nextContext = await getStudioPublicationContext(item.id, input.operator);
-  if (draft) {
-    const touched = await updateDraftGarmentRevision({
-      id: draft.id,
-      wardrobeItemId: item.id,
-      operatorSubject: input.operator.subject,
-      expectedVersion: draft.version,
-      facts: draft.facts,
-      media: sourceRecords(nextContext.sources),
-      eventType: "MEDIA_REPLACED",
-      eventSummary: `${labels[input.role]} replaced privately`,
-      mediaRole: input.role,
-    });
-    if (!touched) throw new StudioEngineError("VERSION_CONFLICT", 409, "The private revision changed while the photo was saving.", "Reload the piece.");
-  } else {
-    await appendGarmentEvent({
-      wardrobeItemId: item.id,
-      operatorSubject: input.operator.subject,
-      eventType: "MEDIA_REPLACED",
-      summary: `${labels[input.role]} replaced privately`,
-      details: { mediaRole: input.role },
-    });
+
+  const promoted = await replaceGarmentRevisionMediaAtomically({
+    wardrobeItemId: item.id,
+    operatorSubject: input.operator.subject,
+    expectedItemVersion: input.command.expectedItemVersion,
+    expectedDraftVersion: input.command.expectedDraftVersion,
+    expectedPublicationRevision: input.command.expectedPublicationRevision,
+    facts: draft?.facts ?? (publication ? liveFacts(publication, item) : itemFacts(context.item)),
+    media: sourceRecords(context.sources),
+    captureKey: wardrobeCaptureKey(item.id),
+    role: input.command.role,
+    blobPathname: pathname,
+    mimeType: verified.mimeType,
+    byteSize: verified.bytes.byteLength,
+    width: verified.width,
+    height: verified.height,
+    sha256: mediaSha256,
+    operatorApprovedAt: new Date(),
+    identity,
+  });
+  if (promoted.kind === "IDEMPOTENCY_CONFLICT") {
+    throw new StudioEngineError(
+      "VERSION_CONFLICT",
+      409,
+      "That photo change key was already used for different media or state.",
+      "Reload the piece and choose the photo again.",
+    );
   }
-  return getGarmentLifecycleWorkspace(item.id, input.operator);
+  if (promoted.kind === "NOT_APPLIED") {
+    throw new StudioEngineError(
+      "VERSION_CONFLICT",
+      409,
+      "This piece changed while the photo was saving.",
+      "Reload the piece and choose the photo again.",
+    );
+  }
+  return {
+    receipt: promoted.receipt,
+    workspace: await getGarmentLifecycleWorkspace(item.id, input.operator),
+  };
 }
 
 function shopCategory(category: IntakeFacts["category"]) {

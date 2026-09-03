@@ -23,6 +23,7 @@ import type {
   GarmentLifecycleCommand,
   GarmentLifecycleWorkspace,
   GarmentPermanentDeleteReceipt,
+  GarmentRevisionMediaReceipt,
   GarmentRevisionMediaRole,
 } from "../../lib/studio/engine/garment-lifecycle-contracts";
 import { WardrobeMotion } from "../brand/wardrobe-motion";
@@ -40,6 +41,16 @@ type ErrorBody = { error?: { message?: string; recovery?: string } };
 type GarmentDecision = "ARCHIVE" | "DELETE_PERMANENTLY" | "DISCARD_REVISION" | "PUBLISH_REVISION" | "REPUBLISH" | "UNPUBLISH";
 type FactsEditMode = "details" | "price";
 type GarmentMilestone = "details-saved" | "media-saved" | "price-saved" | "published" | "returned";
+type GarmentMediaCommandIdentity = {
+  expectedDraftVersion: number | null;
+  expectedItemVersion: number;
+  expectedPublicationRevision: string | null;
+  idempotencyKey: string;
+  mediaRole: GarmentRevisionMediaRole;
+  mediaSha256: string;
+  revision: string;
+  scope: string;
+};
 
 function formatNaira(value: number) {
   return new Intl.NumberFormat("en-NG", {
@@ -57,6 +68,26 @@ function stateLabel(state: GarmentLifecycleWorkspace["state"]) {
 
 function sameFacts(left: IntakeFacts, right: IntakeFacts) {
   return JSON.stringify(left) === JSON.stringify(right);
+}
+
+async function fileSha256(file: File) {
+  const digest = await crypto.subtle.digest("SHA-256", await file.arrayBuffer());
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function mediaReceiptMatchesCommand(
+  receipt: GarmentRevisionMediaReceipt | null | undefined,
+  command: GarmentMediaCommandIdentity,
+  wardrobeItemId: string,
+) {
+  return receipt?.command === "REPLACE_MEDIA"
+    && receipt.wardrobeItemId === wardrobeItemId
+    && receipt.idempotencyKey === command.idempotencyKey
+    && receipt.mediaRole === command.mediaRole
+    && receipt.mediaSha256 === command.mediaSha256
+    && receipt.expectedItemVersion === command.expectedItemVersion
+    && receipt.expectedDraftVersion === command.expectedDraftVersion
+    && receipt.expectedPublicationRevision === command.expectedPublicationRevision;
 }
 
 function commandIsReflected(
@@ -343,29 +374,87 @@ export function GarmentLifecyclePanel({
   async function replaceMedia(role: GarmentRevisionMediaRole, file?: File) {
     if (!file || !workspace || commandInFlightRef.current) return;
     commandInFlightRef.current = true;
-    const expectedVersion = workspace.itemVersion;
     setBusy(role);
     setError("");
     setMilestone(null);
-    const body = new FormData();
-    body.set("file", file);
-    body.set("role", role);
-    body.set("expectedVersion", String(workspace.itemVersion));
+    let commandIdentity: GarmentMediaCommandIdentity | undefined;
     try {
+      const mediaSha256 = await fileSha256(file);
+      // Keep the recovery key stable across a lost-response reload. The server
+      // fingerprint still binds the exact item, draft and publication versions.
+      const revision = `${role}:${mediaSha256}`;
+      const scope = `garment-media:${wardrobeItemId}:${role}`;
+      const idempotencyKey = getOrCreateSessionCommandKey({
+        keyPrefix: `studio-media:${wardrobeItemId}:${role.toLowerCase()}`,
+        revision,
+        scope,
+      });
+      commandIdentity = {
+        expectedDraftVersion: workspace.draft?.version ?? null,
+        expectedItemVersion: workspace.itemVersion,
+        expectedPublicationRevision: workspace.live?.sourceRevision ?? null,
+        idempotencyKey,
+        mediaRole: role,
+        mediaSha256,
+        revision,
+        scope,
+      };
+      const body = new FormData();
+      body.set("file", file);
+      body.set("role", role);
+      body.set("expectedDraftVersion", commandIdentity.expectedDraftVersion === null ? "" : String(commandIdentity.expectedDraftVersion));
+      body.set("expectedItemVersion", String(commandIdentity.expectedItemVersion));
+      body.set("expectedPublicationRevision", commandIdentity.expectedPublicationRevision ?? "");
+      body.set("idempotencyKey", idempotencyKey);
       const response = await fetch(`/api/studio/wardrobe/${encodeURIComponent(wardrobeItemId)}/lifecycle/media`, {
         method: "POST",
         credentials: "same-origin",
         body,
       });
-      const result = await responseJson<{ workspace: GarmentLifecycleWorkspace }>(response);
+      const result = await responseJson<{
+        receipt: GarmentRevisionMediaReceipt;
+        workspace: GarmentLifecycleWorkspace;
+      }>(response);
+      if (!mediaReceiptMatchesCommand(result.receipt, commandIdentity, wardrobeItemId)) {
+        throw new Error("Studio could not verify that photo receipt.");
+      }
+      clearSessionCommandKey({ key: idempotencyKey, revision, scope });
       accept(result.workspace);
       setMilestone("media-saved");
     } catch (caught) {
-      const reconciled = await readWorkspace().catch(() => null);
-      if (reconciled && reconciled.itemVersion > expectedVersion) {
-        accept(reconciled);
+      const receiptResponse = commandIdentity
+        ? await fetch(
+            `/api/studio/wardrobe/${encodeURIComponent(wardrobeItemId)}/lifecycle/media?idempotencyKey=${encodeURIComponent(commandIdentity.idempotencyKey)}`,
+            { cache: "no-store", credentials: "same-origin", headers: { accept: "application/json" } },
+          ).catch(() => null)
+        : null;
+      const reconciled = receiptResponse?.ok
+        ? await receiptResponse.json().catch(() => null) as {
+            receipt?: GarmentRevisionMediaReceipt | null;
+            workspace?: GarmentLifecycleWorkspace;
+          } | null
+        : null;
+      if (
+        commandIdentity
+        && reconciled
+        && mediaReceiptMatchesCommand(reconciled.receipt, commandIdentity, wardrobeItemId)
+        && reconciled.workspace
+      ) {
+        clearSessionCommandKey({
+          key: commandIdentity.idempotencyKey,
+          revision: commandIdentity.revision,
+          scope: commandIdentity.scope,
+        });
+        accept(reconciled.workspace);
         setMilestone("media-saved");
       } else {
+        if (commandIdentity && reconciled?.receipt?.idempotencyKey === commandIdentity.idempotencyKey) {
+          clearSessionCommandKey({
+            key: commandIdentity.idempotencyKey,
+            revision: commandIdentity.revision,
+            scope: commandIdentity.scope,
+          });
+        }
         setError(caught instanceof Error ? caught.message : "That photo did not save.");
       }
     } finally {
