@@ -35,11 +35,11 @@ async function verifiedTargets() {
 test("the provider visual-denial policy is bound to the derivative-only G004 calibration", () => {
   assert.equal(
     STUDIO_ATELIER_G004_VISUAL_DENIAL_REVISION,
-    "g004-provider-visual-denial-2026-08-26.1",
+    "g004-provider-visual-denial-2026-09-04.1",
   );
   assert.equal(
     STUDIO_ATELIER_G004_VISUAL_DENIAL_MANIFEST_SHA256,
-    "360cbf8ab42d7ca344c4296d87d28f112f809ce6952069ab664731044c0ad1d3",
+    "8580031af94e7008a1a441b98c3868d0754f7a656484221c701923a50756a907",
   );
   assert.equal(
     STUDIO_ATELIER_G004_VISUAL_DENIAL_MANIFEST.sourceCalibrationRevision,
@@ -80,6 +80,28 @@ test("normalized denial targets bind all three exact verified G004 derivatives",
   }
 });
 
+test("the current public catalogue has no G004 visual-denial false positives", async () => {
+  const sourceManifest = JSON.parse(await readFile(
+    new URL("../lib/shop/public-media-source-manifest.json", import.meta.url),
+    "utf8",
+  )) as { assets: Array<{ sourcePath: string }> };
+  const sourcePaths = [...new Set(sourceManifest.assets.map((asset) => asset.sourcePath))];
+  const targetPaths = new Set(
+    STUDIO_ATELIER_G004_CALIBRATION_MANIFEST.assets.map((asset) => asset.sourcePath),
+  );
+  assert.equal(sourcePaths.length, 338);
+
+  const targets = await verifiedTargets();
+  for (const sourcePath of sourcePaths) {
+    if (targetPaths.has(sourcePath)) continue;
+    assert.equal(
+      await studioAtelierG004VisualDuplicate(await assetBytes(sourcePath), targets),
+      null,
+      `${sourcePath} must not be denied as a G004 derivative`,
+    );
+  }
+});
+
 test("an incomplete or substituted target set cannot activate visual denial", async () => {
   const calibration = await verifyStudioAtelierG004Calibration(
     await resolveStudioAtelierG004Calibration(),
@@ -101,19 +123,19 @@ test("an incomplete or substituted target set cannot activate visual denial", as
   );
 });
 
-test("lossy codecs and small full-frame transforms cannot launder G004", async (t) => {
-  const target = STUDIO_ATELIER_G004_CALIBRATION_MANIFEST.assets[0]!;
-  const original = await assetBytes(target.sourcePath);
-  const decoded = await sharp(original)
+test("lossy codecs and small full-frame transforms cannot launder any G004 target", async (t) => {
+  for (const target of STUDIO_ATELIER_G004_CALIBRATION_MANIFEST.assets) {
+    const original = await assetBytes(target.sourcePath);
+    const decoded = await sharp(original)
     .toColorspace("srgb")
     .ensureAlpha()
     .raw()
     .toBuffer({ resolveWithObject: true });
-  decoded.data[0] = (decoded.data[0]! + 1) % 256;
-  const cropX = Math.floor(target.width * 0.03);
-  const cropY = Math.floor(target.height * 0.03);
+    decoded.data[0] = (decoded.data[0]! + 1) % 256;
+    const cropX = Math.floor(target.width * 0.03);
+    const cropY = Math.floor(target.height * 0.03);
 
-  const variants = [
+    const variants = [
     {
       name: "JPEG quality 100",
       bytes: await sharp(original).jpeg({ quality: 100 }).toBuffer(),
@@ -189,19 +211,20 @@ test("lossy codecs and small full-frame transforms cannot launder G004", async (
       name: "tint",
       bytes: await sharp(original).tint({ r: 242, g: 225, b: 210 }).png().toBuffer(),
     },
-  ] as const;
+    ] as const;
 
-  const targets = await verifiedTargets();
-  for (const variant of variants) {
-    await t.test(variant.name, async () => {
-      const duplicate = await studioAtelierG004VisualDuplicate(variant.bytes, targets);
-      assert.equal(duplicate?.view, "05");
-      assert.equal(duplicate?.revision, STUDIO_ATELIER_G004_VISUAL_DENIAL_REVISION);
-      assert.equal(
-        duplicate?.manifestSha256,
-        STUDIO_ATELIER_G004_VISUAL_DENIAL_MANIFEST_SHA256,
-      );
-    });
+    const targets = await verifiedTargets();
+    for (const variant of variants) {
+      await t.test(`${target.view} ${variant.name}`, async () => {
+        const duplicate = await studioAtelierG004VisualDuplicate(variant.bytes, targets);
+        assert.equal(duplicate?.view, target.view);
+        assert.equal(duplicate?.revision, STUDIO_ATELIER_G004_VISUAL_DENIAL_REVISION);
+        assert.equal(
+          duplicate?.manifestSha256,
+          STUDIO_ATELIER_G004_VISUAL_DENIAL_MANIFEST_SHA256,
+        );
+      });
+    }
   }
 });
 

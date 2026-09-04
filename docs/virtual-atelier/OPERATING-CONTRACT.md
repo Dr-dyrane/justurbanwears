@@ -277,8 +277,8 @@ truth or sources of garment colour, construction, jewellery, footwear or
 styling. Known canonical/derivative IDs and hashes plus exact derivative decoded
 pixels are denied before provider transport. The normalized full-frame visual
 denial policy is separately locked as
-`g004-provider-visual-denial-2026-08-26.1`, manifest SHA-256
-`360cbf8ab42d7ca344c4296d87d28f112f809ce6952069ab664731044c0ad1d3`;
+`g004-provider-visual-denial-2026-09-04.1`, manifest SHA-256
+`8580031af94e7008a1a441b98c3868d0754f7a656484221c701923a50756a907`;
 it also denies calibrated lossy-codec, colour, mirror, tiny-alignment and small
 geometric duplicates before provider intent or dispatch. V1 does not claim
 arbitrary-subimage, large-warp or untrusted-mosaic detection, so every raw

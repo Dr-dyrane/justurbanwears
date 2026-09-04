@@ -282,8 +282,8 @@ them for semantic QA. These pixels never enter generation, parenting, direct
 truth or cross-garment styling/garment transfer.
 
 Provider denial is independently versioned as
-`g004-provider-visual-denial-2026-08-26.1`, manifest SHA-256
-`360cbf8ab42d7ca344c4296d87d28f112f809ce6952069ab664731044c0ad1d3`.
+`g004-provider-visual-denial-2026-09-04.1`, manifest SHA-256
+`8580031af94e7008a1a441b98c3868d0754f7a656484221c701923a50756a907`.
 Its normalized RGB NCC/MAE gate denies calibrated full-frame derivatives after
 lossy codec, colour, mirror, tiny alignment and small geometric changes before
 provider transport. V1 deliberately does not claim arbitrary-subimage,

@@ -15,8 +15,8 @@
       "calibrationManifestSha256": "451368db5dd7845fc716dbb661d7bd9153297a99802f6f8f1c441babda8aa635",
       "expectedReadbackReceiptSha256": "516438224ef2117c328baffde236fb7d8e3565ea6d8477147754b6de77773dc0",
       "providerVisualDenialManifest": "docs/virtual-atelier/g004-provider-visual-denial.v1.json",
-      "providerVisualDenialRevision": "g004-provider-visual-denial-2026-08-26.1",
-      "providerVisualDenialManifestSha256": "360cbf8ab42d7ca344c4296d87d28f112f809ce6952069ab664731044c0ad1d3",
+      "providerVisualDenialRevision": "g004-provider-visual-denial-2026-09-04.1",
+      "providerVisualDenialManifestSha256": "8580031af94e7008a1a441b98c3868d0754f7a656484221c701923a50756a907",
       "providerVisualDenialRole": "PROVIDER_DENIAL_ONLY",
       "providerVisualDenialNonClaims": [
         "ARBITRARY_SUBIMAGE_DETECTION",

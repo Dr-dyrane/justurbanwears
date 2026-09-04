@@ -175,8 +175,8 @@ Use this only when the intended output is a new garment-specific full-frame subj
    dispatch. Select G004/05 for subject/front work, G004/06 for 06, and G004/07
    for 07. Never put a G004 calibration frame in the provider reference stack.
    Before provider packing or intent, apply
-   `g004-provider-visual-denial-2026-08-26.1` at manifest SHA-256
-   `360cbf8ab42d7ca344c4296d87d28f112f809ce6952069ab664731044c0ad1d3`
+   `g004-provider-visual-denial-2026-09-04.1` at manifest SHA-256
+   `8580031af94e7008a1a441b98c3868d0754f7a656484221c701923a50756a907`
    to every raw constituent. It denies calibrated full-frame lossless and lossy
    duplicates after the declared normalization, mirror/alignment and small-
    geometry checks. V1 does not claim arbitrary-subimage, large-warp or

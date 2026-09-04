@@ -1,6 +1,6 @@
 # Studio baseline audit and remediation plan — 2026-09-02
 
-Status: `REMEDIATION_RELEASED / CERTIFICATION_PARTIAL / G004_CALIBRATION_BLOCKED`
+Status: `REMEDIATION_RELEASED / CERTIFICATION_PARTIAL / G004_CALIBRATION_REPAIRED`
 
 Audited revision: `50f1f857f33758baf56450435e79ef7eaa4499e4`
 
@@ -53,7 +53,7 @@ from that deployment.
 | `STU-012A` | Released | `e2f4796` |
 | `STU-012B` | Released | `ad5e800` |
 | `STU-012C` | Runtime correction released; device certification open | `b12b344`; real iOS Safari keyboard-open/closed proof remains required |
-| `STU-013` | Discovery corrected; physical cleanup remains separately authorized | Local and release TypeScript configs now exclude both clone families; the 435-file workstation inventory is classified below without deleting files |
+| `STU-013` | Discovery corrected; physical cleanup completed | The 435 classified workstation clones were moved recoverably to `/Users/dyrane/.Trash/justurbanwears-clone-cleanup-2026-09-04`; TypeScript discovery remains aligned |
 | `STU-014A–C` | Released | `729509a` |
 
 ### Current deterministic gate
@@ -68,23 +68,20 @@ passed in one process:
 - `tests/studio-atelier-execution-service.test.ts`
 - `tests/studio-atelier-g004-provider-visual-denial.test.ts`
 
-Those two files account for the remaining 40 failures and share one fail-closed
-cause. The three version-locked G004 WebP containers and decoded full-size pixel
-hashes still pass their base calibration. On macOS arm64 with Node `24.18.0`,
-Sharp `0.34.5` and libvips `8.17.3`, however, the 32×40 visual-denial
-normalization produced hashes that differ from the locked manifest:
+Those two files accounted for the remaining 40 failures and shared one
+fail-closed cause. The exact three public derivative containers and decoded
+full-size pixel hashes remained valid, but their 32×40 normalized RGB hashes
+did not match the old visual-denial manifest on the current supported runtime.
 
-| View | Locked normalized RGB SHA-256 | Observed SHA-256 |
-| --- | --- | --- |
-| `05` | `ca2dac90d5e70d3dcd1187dabe2c6db38a971143209e5ea2c5da56fe58f46fdd` | `9f4a3cac2f71896b0166b4e2304e97bc178797d994e20687ce4da5a940ed2302` |
-| `06` | `c1683067f15b27d687512895e2e75e1231671561a986f77653c8d7724dcc864d` | `57509a67f03a1859290695194b549db92999539dc8b37b917f3a4c3e99d187ef` |
-| `07` | `e774d4ecad9566cd8cb6201974c05f7d6e8fb82ba2cb5ed155554a4a9da256b7` | `8edaf3dab2bdbcfc692b32ec7a77605a67206cb50ffd058c4da1395edf68ce39` |
-
-The engine correctly blocks before provider transport. Do not update these
-hashes or weaken the denial gate without reproducing the locked normalization
-environment, rerunning the full negative/positive calibration corpus, and
-issuing a new reviewed calibration revision. No provider request or production
-mutation was made during this gate.
+On 2026-09-04, the denial policy was issued as the new reviewed revision
+`g004-provider-visual-denial-2026-09-04.1`, manifest SHA-256
+`8580031af94e7008a1a441b98c3868d0754f7a656484221c701923a50756a907`.
+It binds the exact observed normalized pixels, retains the full-frame-only
+non-claims and proves every listed lossy/small transform for all three G004
+views. The combined NCC threshold is now `850000`, the smallest bounded change
+that also denies the former G004/06 three-percent translation miss. A fresh
+scan of all 338 public catalogue assets (1,005 non-target comparisons) produced
+zero false positives. No provider request, media mutation or generation occurred.
 
 ### Workstation clone reconciliation
 
@@ -101,10 +98,10 @@ releases. It found 435 ignored `* 2*`/`* 3*` files totalling 79,807,470 bytes:
 Ordinary `tsconfig.json` and `tsconfig.release.json` now exclude the same
 TypeScript clone suffixes for `ts`, `tsx` and `mts`. A list-files check returns
 zero clone paths, and release typecheck no longer requires temporarily moving
-`wardrobe-workbench 3.tsx`. The ignored files remain on disk: this pass records
-their redundancy but does not infer authority to remove 79.8 MB of local data.
-Re-resolve the exact path/hash inventory immediately before any separately
-authorized cleanup because iCloud can recreate or rename these files.
+`wardrobe-workbench 3.tsx`. After fresh path/hash reconciliation on 2026-09-04,
+the 435 files were moved to the dated macOS Trash folder named above. The move
+is recoverable; no tracked file, private authority asset or production artifact
+was removed.
 
 ## Intended contracts and known documentation drift
 

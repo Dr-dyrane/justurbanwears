@@ -492,8 +492,8 @@ only one stage-selected frame and checks that frame again after evaluation.
 Those bytes may not become provider references, parents, direct truth or
 cross-garment transfer authority; identifiers, hashes and exact decoded pixels
 are denied again before provider transport. The separate full-frame visual gate
-is revision `g004-provider-visual-denial-2026-08-26.1`, manifest SHA-256
-`360cbf8ab42d7ca344c4296d87d28f112f809ce6952069ab664731044c0ad1d3`.
+is revision `g004-provider-visual-denial-2026-09-04.1`, manifest SHA-256
+`8580031af94e7008a1a441b98c3868d0754f7a656484221c701923a50756a907`.
 Its normalized RGB NCC/MAE policy also denies calibrated duplicates after lossy
 codec, colour, mirror, tiny alignment and small geometric changes before intent
 or dispatch. V1 does not claim arbitrary-subimage, large-warp or untrusted-

@@ -206,7 +206,7 @@ test("portable authority and provider calibration manifests cover the required e
     alignmentOffsets: [-1, 0, 1],
     luminanceWeights: [54, 183, 19],
     denyNccPpm: 970000,
-    combinedNccPpm: 880000,
+    combinedNccPpm: 850000,
     combinedRgbMaePpm: 55000,
   });
   assert.equal(g004VisualDenial.calibrationEvidence.falsePositiveCount, 0);

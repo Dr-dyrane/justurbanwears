@@ -502,8 +502,8 @@ The operation schema and execution service deny every locked derivative and
 recorded-original ID/hash, then compare decoded raw provider-input pixels to
 the derivative pixel deny set before any packing, intent or dispatch. The
 additional normalized RGB NCC/MAE policy is revision
-`g004-provider-visual-denial-2026-08-26.1`, bound by manifest SHA-256
-`360cbf8ab42d7ca344c4296d87d28f112f809ce6952069ab664731044c0ad1d3`.
+`g004-provider-visual-denial-2026-09-04.1`, bound by manifest SHA-256
+`8580031af94e7008a1a441b98c3868d0754f7a656484221c701923a50756a907`.
 It denies calibrated full-frame copies across lossy codec, colour, mirror, tiny
 alignment and small geometric changes, rather than only byte-renamed or
 losslessly re-encoded frames. V1 does not claim arbitrary-subimage, large-warp

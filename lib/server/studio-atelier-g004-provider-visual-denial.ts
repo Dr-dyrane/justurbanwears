@@ -14,15 +14,15 @@ import type {
 export const STUDIO_ATELIER_G004_VISUAL_DENIAL_SCHEMA_VERSION =
   "juw.atelier-g004-provider-visual-denial.v1" as const;
 export const STUDIO_ATELIER_G004_VISUAL_DENIAL_REVISION =
-  "g004-provider-visual-denial-2026-08-26.1" as const;
+  "g004-provider-visual-denial-2026-09-04.1" as const;
 export const STUDIO_ATELIER_G004_VISUAL_DENIAL_MANIFEST_SHA256 =
-  "360cbf8ab42d7ca344c4296d87d28f112f809ce6952069ab664731044c0ad1d3" as const;
+  "8580031af94e7008a1a441b98c3868d0754f7a656484221c701923a50756a907" as const;
 
 const GRID_WIDTH = 32;
 const GRID_HEIGHT = 40;
 const GRID_CHANNELS = 3;
 const DENY_NCC_PPM = 970_000;
-const COMBINED_NCC_PPM = 880_000;
+const COMBINED_NCC_PPM = 850_000;
 const COMBINED_RGB_MAE_PPM = 55_000;
 const SCORE_SCALE = 1_000_000;
 const SHA256_PATTERN = /^[a-f0-9]{64}$/;

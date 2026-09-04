@@ -1,6 +1,6 @@
 {
   "schemaVersion": "juw.atelier-g004-provider-visual-denial.v1",
-  "revision": "g004-provider-visual-denial-2026-08-26.1",
+  "revision": "g004-provider-visual-denial-2026-09-04.1",
   "sourceCalibrationRevision": "g004-positive-target-shop-derivatives-2026-08-26.1",
   "sourceCalibrationManifestSha256": "451368db5dd7845fc716dbb661d7bd9153297a99802f6f8f1c441babda8aa635",
   "canonicalOriginalsStatus": "UNAVAILABLE",
@@ -22,15 +22,17 @@
     "alignmentOffsets": [-1, 0, 1],
     "luminanceWeights": [54, 183, 19],
     "denyNccPpm": 970000,
-    "combinedNccPpm": 880000,
+    "combinedNccPpm": 850000,
     "combinedRgbMaePpm": 55000
   },
   "calibrationEvidence": {
-    "catalogueImagesScanned": 279,
-    "nonTargetComparisonsPerReference": 276,
+    "catalogueImagesScanned": 338,
+    "nonTargetComparisonsPerReference": 335,
     "falsePositiveCount": 0,
-    "closestNegativeNccPpm": 890144,
-    "lowestAlignedNegativeRgbMaePpm": 59937,
+    "closestNegativeNccPpm": 890155,
+    "lowestAlignedNegativeRgbMaePpm": 59935,
+    "revalidatedOn": "2026-09-04",
+    "revalidationScope": "338_PUBLIC_SHOP_DERIVATIVES_1005_COMPARISONS_ZERO_FALSE_POSITIVES",
     "positiveTransforms": [
       "JPEG_QUALITY_1_TO_100",
       "LOSSY_WEBP",
@@ -51,17 +53,17 @@
     {
       "id": "g004.calibration.view.05.shop-derivative.v1",
       "view": "05",
-      "normalizedRgbSha256": "ca2dac90d5e70d3dcd1187dabe2c6db38a971143209e5ea2c5da56fe58f46fdd"
+      "normalizedRgbSha256": "9f4a3cac2f71896b0166b4e2304e97bc178797d994e20687ce4da5a940ed2302"
     },
     {
       "id": "g004.calibration.view.06.shop-derivative.v1",
       "view": "06",
-      "normalizedRgbSha256": "c1683067f15b27d687512895e2e75e1231671561a986f77653c8d7724dcc864d"
+      "normalizedRgbSha256": "57509a67f03a1859290695194b549db92999539dc8b37b917f3a4c3e99d187ef"
     },
     {
       "id": "g004.calibration.view.07.shop-derivative.v1",
       "view": "07",
-      "normalizedRgbSha256": "e774d4ecad9566cd8cb6201974c05f7d6e8fb82ba2cb5ed155554a4a9da256b7"
+      "normalizedRgbSha256": "8edaf3dab2bdbcfc692b32ec7a77605a67206cb50ffd058c4da1395edf68ce39"
     }
   ],
   "nonClaim": "This v1 full-frame duplicate gate does not claim arbitrary subimage, large-warp, or untrusted-mosaic detection. Raw constituents are checked before app-owned boards are composed."
