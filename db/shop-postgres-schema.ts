@@ -852,6 +852,41 @@ export const studioAssistantThreads = pgTable("studio_assistant_threads", {
   `),
 ]);
 
+export const studioAssistantThreadCommands = pgTable("studio_assistant_thread_commands", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  workspaceId: uuid("workspace_id")
+    .notNull()
+    .references(() => studioWorkspaces.id, { onDelete: "restrict" }),
+  threadId: uuid("thread_id")
+    .notNull()
+    .references(() => studioAssistantThreads.id, { onDelete: "cascade" }),
+  actorSubject: text("actor_subject").notNull(),
+  action: varchar("action", { length: 24 }).notNull(),
+  expectedVersion: integer("expected_version"),
+  resultingVersion: integer("resulting_version").notNull(),
+  idempotencyKey: varchar("idempotency_key", { length: 160 }).notNull(),
+  requestFingerprint: varchar("request_fingerprint", { length: 64 }).notNull(),
+  occurredAt: timestamp("occurred_at", { withTimezone: true }).defaultNow().notNull(),
+}, (table) => [
+  uniqueIndex("studio_assistant_thread_commands_workspace_idempotency_unique")
+    .on(table.workspaceId, table.idempotencyKey),
+  index("studio_assistant_thread_commands_thread_idx")
+    .on(table.threadId, table.occurredAt),
+  check("studio_assistant_thread_commands_action_known", sql`${table.action} in ('CREATE', 'RENAME', 'ARCHIVE', 'RESTORE')`),
+  check("studio_assistant_thread_commands_idempotency_key", sql`
+    length(${table.idempotencyKey}) between 8 and 160
+    and ${table.idempotencyKey} ~ '^[a-zA-Z0-9._:-]+$'
+  `),
+  check("studio_assistant_thread_commands_fingerprint", sql`${table.requestFingerprint} ~ '^[0-9a-f]{64}$'`),
+  check("studio_assistant_thread_commands_versions", sql`
+    ${table.resultingVersion} > 0
+    and (
+      (${table.action} = 'CREATE' and ${table.expectedVersion} is null)
+      or (${table.action} <> 'CREATE' and ${table.expectedVersion} > 0)
+    )
+  `),
+]);
+
 export const studioAssistantMessages = pgTable("studio_assistant_messages", {
   threadId: uuid("thread_id")
     .notNull()

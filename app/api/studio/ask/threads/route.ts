@@ -45,6 +45,7 @@ export async function POST(request: Request): Promise<Response> {
     }
     const thread = await createStudioAssistantThread({
       focus,
+      idempotencyKey: input.idempotencyKey,
       operator,
       title: input.title,
     });

@@ -56,6 +56,7 @@ export async function listStudioAssistantThreads(signal?: AbortSignal) {
 }
 
 export async function createStudioAssistantThread(input: {
+  idempotencyKey: string;
   pieceReference?: string;
   title?: string;
 }) {

@@ -50,6 +50,15 @@ type ReconcileReplyDatabaseRow = {
   thread_exists: boolean | number | string | null;
   thread_version: number | string | null;
 };
+type ThreadCommandDatabaseRow = {
+  action: string | null;
+  actor_subject: string | null;
+  expected_version: number | string | null;
+  idempotency_key: string | null;
+  request_fingerprint: string | null;
+  resulting_version: number | string | null;
+  thread_id: string | null;
+};
 
 const STUDIO_ASSISTANT_REPLY_LEASE_SECONDS = 60;
 
@@ -178,24 +187,85 @@ async function threadRow(operator: StudioOperator, threadId: string): Promise<Th
 
 export async function createStudioAssistantThread(input: {
   focus?: StudioAssistantFocus | null;
+  idempotencyKey: string;
   operator: StudioOperator;
   title?: string;
 }): Promise<StudioAssistantThreadDetail> {
   const title = input.title?.trim() || "New conversation";
-  const rows = await (await getStudioDb()).insert(studioAssistantThreads).values({
-    createdByDisplayName: input.operator.displayName,
-    createdByEmail: input.operator.email,
-    createdBySubject: input.operator.actorSubject,
+  const serializedFocus = input.focus ? JSON.stringify(input.focus) : null;
+  const requestFingerprint = sha256(JSON.stringify({
+    action: "CREATE",
     focus: input.focus ?? null,
     title,
-    updatedByDisplayName: input.operator.displayName,
-    updatedByEmail: input.operator.email,
-    updatedBySubject: input.operator.actorSubject,
-    workspaceId: input.operator.workspaceId,
-  }).returning();
-  const row = rows[0];
-  if (!row) throw new Error("Ask Studio did not create the conversation.");
-  return { ...summary(row), messages: [], pendingWork: [] };
+  }));
+  const result = await (await getStudioDb()).execute<ThreadCommandDatabaseRow>(sql`
+    with command_lock as materialized (
+      select pg_advisory_xact_lock(hashtextextended(
+        ${`juw:studio:assistant-thread:${input.operator.workspaceId}:${input.idempotencyKey}`}::text,
+        0
+      ))
+    ), existing_command as materialized (
+      select command.*
+      from studio_assistant_thread_commands as command, command_lock
+      where command.workspace_id = ${input.operator.workspaceId}::uuid
+        and command.idempotency_key = ${input.idempotencyKey}
+      limit 1
+    ), created_thread as (
+      insert into studio_assistant_threads (
+        workspace_id, title, state, focus, pending_work,
+        created_by_subject, created_by_email, created_by_display_name,
+        updated_by_subject, updated_by_email, updated_by_display_name,
+        version, created_at, updated_at
+      )
+      select
+        ${input.operator.workspaceId}::uuid, ${title}, 'OPEN', ${serializedFocus}::jsonb, '[]'::jsonb,
+        ${input.operator.actorSubject}, ${input.operator.email}, ${input.operator.displayName},
+        ${input.operator.actorSubject}, ${input.operator.email}, ${input.operator.displayName},
+        1, clock_timestamp(), clock_timestamp()
+      from command_lock
+      where not exists (select 1 from existing_command)
+      returning *
+    ), created_command as (
+      insert into studio_assistant_thread_commands (
+        workspace_id, thread_id, actor_subject, action,
+        expected_version, resulting_version, idempotency_key, request_fingerprint
+      )
+      select
+        ${input.operator.workspaceId}::uuid, created_thread.id, ${input.operator.actorSubject}, 'CREATE',
+        null, created_thread.version, ${input.idempotencyKey}, ${requestFingerprint}
+      from created_thread
+      returning *
+    ), resolved_command as (
+      select * from created_command
+      union all
+      select * from existing_command
+    )
+    select
+      action,
+      actor_subject,
+      expected_version,
+      idempotency_key,
+      request_fingerprint,
+      resulting_version,
+      thread_id
+    from resolved_command
+    limit 1
+  `);
+  const command = result.rows[0];
+  if (
+    !command?.thread_id
+    || command.action !== "CREATE"
+    || command.idempotency_key !== input.idempotencyKey
+    || command.request_fingerprint !== requestFingerprint
+  ) {
+    throw new StudioEngineError(
+      "VERSION_CONFLICT",
+      409,
+      "That conversation action key was already used for a different request.",
+      "Start a new conversation again.",
+    );
+  }
+  return getStudioAssistantThread(input.operator, command.thread_id);
 }
 
 export async function listStudioAssistantThreads(
@@ -788,9 +858,147 @@ export async function updateStudioAssistantThread(input: {
     | { kind: "SET_TASK_STATUS"; status: "DONE" | "OPEN"; taskId: string }
     | { kind: "DELETE_TASK"; taskId: string };
   expectedVersion: number;
+  idempotencyKey?: string;
   operator: StudioOperator;
   threadId: string;
 }): Promise<StudioAssistantThreadDetail> {
+  if (
+    input.action.kind === "RENAME"
+    || input.action.kind === "ARCHIVE"
+    || input.action.kind === "RESTORE"
+  ) {
+    if (!input.idempotencyKey) {
+      throw new StudioEngineError(
+        "INVALID_REQUEST",
+        400,
+        "That conversation action has no durable command identity.",
+        "Reload History and try again.",
+      );
+    }
+    const action = input.action;
+    const title = action.kind === "RENAME" ? action.title.trim() : null;
+    const requestFingerprint = sha256(JSON.stringify({
+      action: action.kind,
+      expectedVersion: input.expectedVersion,
+      threadId: input.threadId,
+      ...(title ? { title } : {}),
+    }));
+    const result = await (await getStudioDb()).execute<ThreadCommandDatabaseRow>(sql`
+      with command_lock as materialized (
+        select pg_advisory_xact_lock(hashtextextended(
+          ${`juw:studio:assistant-thread:${input.operator.workspaceId}:${input.idempotencyKey}`}::text,
+          0
+        ))
+      ), existing_command as materialized (
+        select command.*
+        from studio_assistant_thread_commands as command, command_lock
+        where command.workspace_id = ${input.operator.workspaceId}::uuid
+          and command.idempotency_key = ${input.idempotencyKey}
+        limit 1
+      ), target as materialized (
+        select thread.*
+        from studio_assistant_threads as thread, command_lock
+        where thread.id = ${input.threadId}::uuid
+          and thread.workspace_id = ${input.operator.workspaceId}::uuid
+        for update of thread
+      ), mutation as (
+        update studio_assistant_threads as thread
+        set
+          title = case when ${action.kind}::text = 'RENAME' then ${title}::text else thread.title end,
+          state = case
+            when ${action.kind}::text = 'ARCHIVE' then 'ARCHIVED'::studio_assistant_thread_state
+            when ${action.kind}::text = 'RESTORE' then 'OPEN'::studio_assistant_thread_state
+            else thread.state
+          end,
+          archived_at = case
+            when ${action.kind}::text = 'ARCHIVE' then clock_timestamp()
+            when ${action.kind}::text = 'RESTORE' then null
+            else thread.archived_at
+          end,
+          updated_at = clock_timestamp(),
+          updated_by_subject = ${input.operator.actorSubject},
+          updated_by_email = ${input.operator.email},
+          updated_by_display_name = ${input.operator.displayName},
+          version = thread.version + 1
+        from target
+        where thread.id = target.id
+          and target.version = ${input.expectedVersion}
+          and not exists (select 1 from existing_command)
+          and (
+            ${action.kind}::text = 'RENAME'
+            or (${action.kind}::text = 'ARCHIVE' and target.state = 'OPEN' and target.active_turn_response_id is null)
+            or (${action.kind}::text = 'RESTORE' and target.state = 'ARCHIVED')
+          )
+        returning thread.*
+      ), created_command as (
+        insert into studio_assistant_thread_commands (
+          workspace_id, thread_id, actor_subject, action,
+          expected_version, resulting_version, idempotency_key, request_fingerprint
+        )
+        select
+          ${input.operator.workspaceId}::uuid, mutation.id, ${input.operator.actorSubject}, ${action.kind},
+          ${input.expectedVersion}, mutation.version, ${input.idempotencyKey}, ${requestFingerprint}
+        from mutation
+        returning *
+      ), resolved_command as (
+        select * from created_command
+        union all
+        select * from existing_command
+      )
+      select
+        action,
+        actor_subject,
+        expected_version,
+        idempotency_key,
+        request_fingerprint,
+        resulting_version,
+        thread_id
+      from resolved_command
+      limit 1
+    `);
+    const command = result.rows[0];
+    if (command) {
+      if (
+        command.thread_id !== input.threadId
+        || command.action !== action.kind
+        || command.idempotency_key !== input.idempotencyKey
+        || command.request_fingerprint !== requestFingerprint
+      ) {
+        throw new StudioEngineError(
+          "VERSION_CONFLICT",
+          409,
+          "That conversation action key was already used for a different request.",
+          "Refresh History and prepare the action again.",
+        );
+      }
+      return getStudioAssistantThread(input.operator, input.threadId);
+    }
+
+    const current = await threadRow(input.operator, input.threadId);
+    if (current.version !== input.expectedVersion) {
+      throw new StudioEngineError(
+        "VERSION_CONFLICT",
+        409,
+        "This conversation changed in another session.",
+        "Refresh History and try that action again.",
+      );
+    }
+    if (action.kind === "ARCHIVE" && current.activeTurnResponseId) {
+      throw new StudioEngineError(
+        "THREAD_BUSY",
+        409,
+        "This conversation is still answering a question.",
+        "Wait for the reply to finish before archiving it.",
+      );
+    }
+    throw new StudioEngineError(
+      "INVALID_TRANSITION",
+      409,
+      action.kind === "RESTORE" ? "That conversation is already active." : "That conversation is already archived.",
+      "Refresh History to see its current state.",
+    );
+  }
+
   const current = await threadRow(input.operator, input.threadId);
   if (current.version !== input.expectedVersion) {
     throw new StudioEngineError(
@@ -816,16 +1024,8 @@ export async function updateStudioAssistantThread(input: {
     nextWork = work.filter((task) => task.id !== action.taskId);
   }
 
-  const state = action.kind === "ARCHIVE"
-    ? "ARCHIVED" as const
-    : action.kind === "RESTORE"
-      ? "OPEN" as const
-      : current.state;
   const rows = await (await getStudioDb()).update(studioAssistantThreads).set({
-    archivedAt: state === "ARCHIVED" ? new Date() : null,
     pendingWork: nextWork,
-    state,
-    ...(action.kind === "RENAME" ? { title: action.title.trim() } : {}),
     updatedAt: new Date(),
     updatedByDisplayName: input.operator.displayName,
     updatedByEmail: input.operator.email,

@@ -82,6 +82,10 @@ import {
 import type { StudioSearchDocument } from "../../../lib/studio/application/contracts";
 import { selectStudioProjectionFreshness } from "../../../lib/studio/application/projection-freshness";
 import { selectStudioWorkProjection } from "../../../lib/studio/application/work-projection";
+import {
+  clearSessionCommandKey,
+  getOrCreateSessionCommandKey,
+} from "../../../lib/studio/idempotency/session-command-key";
 import { STUDIO_SERVICES } from "../../../lib/studio/service-registry";
 import { studioScenarioHref } from "../../../lib/studio/simulator";
 import {
@@ -111,8 +115,8 @@ type StoredStudioAssistantTask = Omit<StudioAssistantTaskDraft, "sourceQuery"> &
 };
 
 type DisplayStudioAssistantTask = StoredStudioAssistantTask | StudioAssistantThreadTask;
-type WithoutExpectedVersion<T> = T extends unknown ? Omit<T, "expectedVersion"> : never;
-type StudioAssistantThreadMutation = WithoutExpectedVersion<Parameters<typeof updateStudioAssistantThread>[1]>;
+type WithoutThreadCommandFields<T> = T extends unknown ? Omit<T, "expectedVersion" | "idempotencyKey"> : never;
+type StudioAssistantThreadMutation = WithoutThreadCommandFields<Parameters<typeof updateStudioAssistantThread>[1]>;
 type StudioAskTransportFailure = Readonly<{
   code: string | null;
   message: string;
@@ -1086,6 +1090,7 @@ export function StudioAskSurface() {
   const flightRef = useRef(false);
   const operationFlightRef = useRef(false);
   const replyFlightRef = useRef(false);
+  const threadActionFlightRef = useRef(false);
   const pendingRef = useRef<{ id: string; query: string } | null>(null);
   const initializedScopeRef = useRef("");
   const messagesRef = useRef<StudioAssistantUIMessage[]>([]);
@@ -1220,9 +1225,23 @@ export function StudioAskSurface() {
         const requestedId = searchParams.get("thread");
         const chosen = (requestedId ? available.find((thread) => thread.id === requestedId) : null)
           ?? available.find((thread) => thread.state === "OPEN");
-        const detail = chosen
-          ? await readStudioAssistantThread(chosen.id, controller.signal)
-          : await createStudioAssistantThread({ ...(entryPieceReference ? { pieceReference: entryPieceReference } : {}) });
+        let detail: StudioAssistantThreadDetail;
+        if (chosen) {
+          detail = await readStudioAssistantThread(chosen.id, controller.signal);
+        } else {
+          const commandScope = `ask-thread-bootstrap:${scope}`;
+          const commandRevision = entryPieceReference ?? "no-piece";
+          const idempotencyKey = getOrCreateSessionCommandKey({
+            keyPrefix: "ask.thread.create",
+            revision: commandRevision,
+            scope: commandScope,
+          });
+          detail = await createStudioAssistantThread({
+            idempotencyKey,
+            ...(entryPieceReference ? { pieceReference: entryPieceReference } : {}),
+          });
+          clearSessionCommandKey({ key: idempotencyKey, revision: commandRevision, scope: commandScope });
+        }
         if (controller.signal.aborted) return;
         setActiveThread(detail);
         setTasks(detail.pendingWork);
@@ -1380,39 +1399,64 @@ export function StudioAskSurface() {
     </button>
   ) : null;
 
-  async function resetConversation() {
+  async function resetConversation(forceCreate = false) {
     if (busy) void stop();
     flightRef.current = false;
     pendingRef.current = null;
-    setMessages([]);
-    setFallbackTurns([]);
-    setQuery("");
-    setQueryError("");
-    clearError();
-    if (!studio.scenario) {
-      if (activeThread && activeThread.messages.length === 0 && messages.length === 0) {
-        setHistoryOpen(false);
-        window.requestAnimationFrame(() => inputElement?.focus({ preventScroll: true }));
-        return;
-      }
-      setThreadBusy(true);
-      try {
-        const detail = await createStudioAssistantThread({ ...(entryPieceReference ? { pieceReference: entryPieceReference } : {}) });
-        setActiveThread(detail);
-        setTasks(detail.pendingWork);
-        setThreads((current) => [detail, ...current]);
-        setThreadError("");
-      } catch (threadCreateError) {
-        setThreadError(threadCreateError instanceof Error ? threadCreateError.message : "Ask Studio could not create a conversation.");
-      } finally {
-        setThreadBusy(false);
-      }
+    if (studio.scenario) {
+      setMessages([]);
+      setFallbackTurns([]);
+      setQuery("");
+      setQueryError("");
+      clearError();
+      window.requestAnimationFrame(() => inputElement?.focus({ preventScroll: true }));
+      return;
+    }
+    if (!forceCreate && activeThread && activeThread.messages.length === 0 && messages.length === 0) {
+      setHistoryOpen(false);
+      window.requestAnimationFrame(() => inputElement?.focus({ preventScroll: true }));
+      return;
+    }
+    if (threadActionFlightRef.current) return;
+    threadActionFlightRef.current = true;
+    setThreadBusy(true);
+    const commandScope = `ask-thread-new:${storageScope}`;
+    const commandRevision = `${activeThread?.id ?? "none"}:${entryPieceReference ?? "no-piece"}`;
+    const idempotencyKey = getOrCreateSessionCommandKey({
+      keyPrefix: "ask.thread.create",
+      revision: commandRevision,
+      scope: commandScope,
+    });
+    try {
+      const detail = await createStudioAssistantThread({
+        idempotencyKey,
+        ...(entryPieceReference ? { pieceReference: entryPieceReference } : {}),
+      });
+      clearSessionCommandKey({ key: idempotencyKey, revision: commandRevision, scope: commandScope });
+      setActiveThread(detail);
+      setTasks(detail.pendingWork);
+      setMessages([]);
+      setFallbackTurns([]);
+      setQuery("");
+      setQueryError("");
+      clearError();
+      setThreads((current) => current.some((thread) => thread.id === detail.id)
+        ? current.map((thread) => thread.id === detail.id ? detail : thread)
+        : [detail, ...current]);
+      setThreadError("");
+      setHistoryOpen(false);
+    } catch (threadCreateError) {
+      setThreadError(threadCreateError instanceof Error ? threadCreateError.message : "Ask Studio could not create a conversation. Your current conversation is unchanged.");
+    } finally {
+      threadActionFlightRef.current = false;
+      setThreadBusy(false);
     }
     window.requestAnimationFrame(() => inputElement?.focus({ preventScroll: true }));
   }
 
   async function openConversation(threadId: string) {
-    if (busy || threadBusy) return;
+    if (busy || threadActionFlightRef.current) return;
+    threadActionFlightRef.current = true;
     setThreadBusy(true);
     setThreadError("");
     try {
@@ -1425,6 +1469,7 @@ export function StudioAskSurface() {
     } catch (threadLoadError) {
       setThreadError(threadLoadError instanceof Error ? threadLoadError.message : "That conversation could not open.");
     } finally {
+      threadActionFlightRef.current = false;
       setThreadBusy(false);
     }
   }
@@ -1499,14 +1544,48 @@ export function StudioAskSurface() {
     target: StudioAssistantThreadSummary,
     action: StudioAssistantThreadMutation,
   ) {
-    const fresh = await readStudioAssistantThread(target.id);
-    const detail = await updateStudioAssistantThread(target.id, { ...action, expectedVersion: fresh.version });
-    setThreads((current) => current.map((thread) => thread.id === detail.id ? detail : thread));
-    if (activeThread?.id === detail.id) {
-      setActiveThread(detail);
-      setTasks(detail.pendingWork);
+    const lifecycle = action.action === "RENAME" || action.action === "ARCHIVE" || action.action === "RESTORE";
+    if (lifecycle && threadActionFlightRef.current) {
+      throw new Error("That conversation action is already being handled.");
     }
-    return detail;
+    if (lifecycle) {
+      threadActionFlightRef.current = true;
+      setThreadBusy(true);
+    }
+    try {
+      const detail = lifecycle
+        ? await (async () => {
+            const commandScope = `ask-thread-${action.action.toLowerCase()}:${target.id}`;
+            const commandRevision = JSON.stringify({ action, version: target.version });
+            const idempotencyKey = getOrCreateSessionCommandKey({
+              keyPrefix: `ask.thread.${action.action.toLowerCase()}`,
+              revision: commandRevision,
+              scope: commandScope,
+            });
+            const updated = await updateStudioAssistantThread(target.id, {
+              ...action,
+              expectedVersion: target.version,
+              idempotencyKey,
+            });
+            clearSessionCommandKey({ key: idempotencyKey, revision: commandRevision, scope: commandScope });
+            return updated;
+          })()
+        : await (async () => {
+            const fresh = await readStudioAssistantThread(target.id);
+            return updateStudioAssistantThread(target.id, { ...action, expectedVersion: fresh.version });
+          })();
+      setThreads((current) => current.map((thread) => thread.id === detail.id ? detail : thread));
+      if (activeThread?.id === detail.id) {
+        setActiveThread(detail);
+        setTasks(detail.pendingWork);
+      }
+      return detail;
+    } finally {
+      if (lifecycle) {
+        threadActionFlightRef.current = false;
+        setThreadBusy(false);
+      }
+    }
   }
 
   function prepareTaskSave(task: StudioAssistantTaskDraft, returnFocus: HTMLElement) {
@@ -1604,7 +1683,7 @@ export function StudioAskSurface() {
     try {
       const detail = await mutateThread(archiveTarget, { action: "ARCHIVE" });
       setArchiveTarget(null);
-      if (activeThread?.id === detail.id) await resetConversation();
+      if (activeThread?.id === detail.id) await resetConversation(true);
       return { ok: true as const };
     } catch (archiveError) {
       return { error: archiveError instanceof Error ? archiveError.message : "That conversation could not be archived.", ok: false as const };
@@ -1612,7 +1691,6 @@ export function StudioAskSurface() {
   }
 
   function restoreConversation(target: StudioAssistantThreadSummary) {
-    setThreadBusy(true);
     void mutateThread(target, { action: "RESTORE" })
       .then((detail) => {
         setActiveThread(detail);
@@ -1622,8 +1700,7 @@ export function StudioAskSurface() {
         setHistoryOpen(false);
         setThreadError("");
       })
-      .catch((restoreError) => setThreadError(restoreError instanceof Error ? restoreError.message : "That conversation could not be restored."))
-      .finally(() => setThreadBusy(false));
+      .catch((restoreError) => setThreadError(restoreError instanceof Error ? restoreError.message : "That conversation could not be restored."));
   }
 
   if (!studio.scenario && (studio.application.status === "idle" || studio.application.status === "loading")) {
@@ -1978,8 +2055,8 @@ export function StudioAskSurface() {
           className="studio-ask-history-sheet"
           eyebrow="JUW Studio · shared"
           fallbackFocus={inputElement}
-          footer={(requestClose) => (
-            <button className="button button-primary" onClick={() => { requestClose(); void resetConversation(); }} type="button">
+          footer={() => (
+            <button className="button button-primary" disabled={threadBusy} onClick={() => void resetConversation()} type="button">
               <Plus aria-hidden="true" size={16} />New conversation
             </button>
           )}

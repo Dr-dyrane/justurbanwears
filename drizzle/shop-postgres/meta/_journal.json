@@ -218,6 +218,13 @@
       "when": 1788488239715,
       "tag": "0030_align_drop_02_membership",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1788490740084,
+      "tag": "0031_studio_assistant_thread_commands",
+      "breakpoints": true
     }
   ]
 }

@@ -75,6 +75,7 @@ export type StudioAssistantThreadDetail = StudioAssistantThreadSummary & Readonl
 }>;
 
 export const createStudioAssistantThreadSchema = z.object({
+  idempotencyKey: z.string().trim().min(8).max(160).regex(/^[a-zA-Z0-9._:-]+$/),
   pieceReference: z.string().trim().min(1).max(240).optional(),
   title: z.string().trim().min(1).max(120).optional(),
 }).strict();
@@ -83,15 +84,18 @@ export const updateStudioAssistantThreadSchema = z.discriminatedUnion("action", 
   z.object({
     action: z.literal("RENAME"),
     expectedVersion: z.number().int().positive(),
+    idempotencyKey: z.string().trim().min(8).max(160).regex(/^[a-zA-Z0-9._:-]+$/),
     title: z.string().trim().min(1).max(120),
   }).strict(),
   z.object({
     action: z.literal("ARCHIVE"),
     expectedVersion: z.number().int().positive(),
+    idempotencyKey: z.string().trim().min(8).max(160).regex(/^[a-zA-Z0-9._:-]+$/),
   }).strict(),
   z.object({
     action: z.literal("RESTORE"),
     expectedVersion: z.number().int().positive(),
+    idempotencyKey: z.string().trim().min(8).max(160).regex(/^[a-zA-Z0-9._:-]+$/),
   }).strict(),
   z.object({
     action: z.literal("SAVE_TASK"),

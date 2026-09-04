@@ -56,10 +56,15 @@ test("thread contracts require a durable conversation outside the simulator", ()
     message: { id: "message-1", parts: [{ text: "JUW-026", type: "text" }], role: "user" },
     scenario: "lifecycle",
   }).success, true);
-  assert.equal(createStudioAssistantThreadSchema.safeParse({ pieceReference: "Violet Beaded Ruffle Romper" }).success, true);
+  assert.equal(createStudioAssistantThreadSchema.safeParse({ pieceReference: "Violet Beaded Ruffle Romper" }).success, false);
+  assert.equal(createStudioAssistantThreadSchema.safeParse({
+    idempotencyKey: "ask.thread.create:00000000-0000-4000-8000-000000000001",
+    pieceReference: "Violet Beaded Ruffle Romper",
+  }).success, true);
   assert.equal(updateStudioAssistantThreadSchema.safeParse({
     action: "ARCHIVE",
     expectedVersion: 2,
+    idempotencyKey: "ask.thread.archive:00000000-0000-4000-8000-000000000001",
   }).success, true);
   assert.equal(updateStudioAssistantThreadSchema.safeParse({ action: "ARCHIVE" }).success, false);
 });

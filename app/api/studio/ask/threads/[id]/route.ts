@@ -45,6 +45,7 @@ export async function PATCH(request: Request, context: RouteContext): Promise<Re
     const thread = await updateStudioAssistantThread({
       action,
       expectedVersion: input.expectedVersion,
+      idempotencyKey: "idempotencyKey" in input ? input.idempotencyKey : undefined,
       operator,
       threadId: id,
     });
