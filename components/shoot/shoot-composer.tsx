@@ -1,9 +1,12 @@
 "use client";
 
 import { type FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { Camera, Shirt, UserRound } from "lucide-react";
+import { assignDocumentNavigation } from "../brand/document-navigation-loading-stage";
+import { studioScenarioHref } from "../../lib/studio/simulator";
 import { StudioFeedback } from "../studio/atoms/studio-feedback";
+import { StudioLink } from "../studio/atoms/studio-link";
 import { StudioLoadingStage } from "../studio/atoms/studio-loading-stage";
 import { StudioStackPage, StudioStackSection } from "../studio/atoms/studio-stack-page";
 import { useStudio } from "../studio/studio-provider";
@@ -27,9 +30,8 @@ const MODEL_TRY_ON_ZERO_SPEND_BLOCKER = "Model authority is approved, but on-mod
 const CREATE_MEDIA_RECOVERY_ATTEMPTS = 3;
 
 export function ShootComposer() {
-  const router = useRouter();
   const searchParams = useSearchParams();
-  const { application, authority } = useStudio();
+  const { application, authority, scenario } = useStudio();
   const commandInFlightRef = useRef(false);
   const operatorScope = application.snapshot?.operator.storageScope ?? "";
   const pieces = useMemo(
@@ -83,8 +85,8 @@ export function ShootComposer() {
     setRecoveryMessage("");
     setRecoveryResolution("UNKNOWN");
     await authority.refresh().catch(() => undefined);
-    router.push(`/studio/media/${generation.id}`);
-  }, [authority, operatorScope, router]);
+    assignDocumentNavigation(studioScenarioHref(`/studio/media/${generation.id}`, scenario));
+  }, [authority, operatorScope, scenario]);
 
   const checkExistingIntent = useCallback(async (intent: CreateMediaIntent) => {
     await runCreateMediaSingleFlight(commandInFlightRef, async () => {
@@ -395,7 +397,7 @@ export function ShootComposer() {
               )}
               {invalidRequestedModel ? (
                 <StudioFeedback
-                  action={<button className="button button-secondary" onClick={() => router.push("/studio/models")} type="button">Choose a model</button>}
+                  action={<StudioLink className="button button-secondary" href="/studio/models">Choose a model</StudioLink>}
                   detail="This model link is missing, archived, or not eligible for Wear. Studio did not substitute another model."
                   state="error"
                   title="Model unavailable"
@@ -410,7 +412,7 @@ export function ShootComposer() {
         </form>
       ) : pendingIntent ? null : (
         <StudioFeedback
-          action={<button className="button button-primary" onClick={() => router.push("/studio/wardrobe?intake=1")} type="button">Intake garment</button>}
+          action={<StudioLink className="button button-primary" href="/studio/wardrobe?intake=1">Intake garment</StudioLink>}
           detail="Add a private garment before creating media."
           state="empty"
           title="No garment yet"

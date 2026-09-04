@@ -203,7 +203,9 @@ test("the simulator wiring preserves the authority boundary", () => {
     /localStorage|createBrowserStudioService|createServerWardrobeOverlayRepository|selectWardrobePublicView|\/api\/studio\//,
   );
   assert.match(layout, /const scenariosEnabled = process\.env\.NODE_ENV === "development"/);
-  assert.match(layout, /<AppShell operator=\{operator\} scenariosEnabled=\{scenariosEnabled\}>/);
+  assert.match(layout, /<AppShell\b/);
+  assert.match(layout, /operator=\{operator \? studioOperatorClientProfile\(operator\) : null\}/);
+  assert.match(layout, /scenariosEnabled=\{scenariosEnabled\}/);
   assert.match(provider, /parseStudioScenario\(searchParams\.get\("scenario"\), scenariosEnabled\)/);
   assert.match(provider, /scenario \? createStudioScenarioService\(scenario\) : createBrowserStudioService\(\)/);
   assert.match(shell, /Simulator · \{STUDIO_SCENARIO_LABELS\[studio\.scenario\]\} · Resets on reload/);
@@ -214,4 +216,17 @@ test("the simulator wiring preserves the authority boundary", () => {
   assert.doesNotMatch(intake, /onClick=\{finishDismiss\}>Open garment/);
   assert.match(wardrobe, /studioScenarioHref\("\/studio\/operations", studio\.scenario\)/);
   assert.match(dossier, /studioScenarioHref\("\/studio\/wardrobe", studio\.scenario\)/);
+});
+
+test("the simulator compatibility grammar aliases real order routes without weakening production routes", () => {
+  assert.equal(studioScenarioHref("/studio/orders", "lifecycle"), "/studio/operations?view=orders&scenario=lifecycle");
+  assert.equal(
+    studioScenarioHref("/studio/orders/JUW-ORDER", "lifecycle"),
+    "/studio/operations?view=orders&order=JUW-ORDER&scenario=lifecycle#studio-scenario-order",
+  );
+  assert.equal(studioScenarioHref("/studio/orders/JUW-ORDER", null), "/studio/orders/JUW-ORDER");
+  assert.equal(
+    studioScenarioHref("/studio/operations?view=returns", "lifecycle"),
+    "/studio/operations?view=returns&scenario=lifecycle",
+  );
 });

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { StudioAskSurface } from "../../../../components/studio/navigation/studio-ask-surface";
 
 export const metadata: Metadata = {
-  title: "Ask Studio · justurban wears",
+  title: "Ask Studio · Studio",
   description: "Resolve Studio state and open safely prepared operator actions.",
 };
 

@@ -13,6 +13,7 @@ const routeLinkConsumers = [
   "components/garment/garment-detail.tsx",
   "components/shoot/shoot-gallery.tsx",
   "components/shoot/shoot-detail.tsx",
+  "components/shoot/shoot-composer.tsx",
   "components/studio/settings/studio-settings-center.tsx",
 ] as const;
 
@@ -24,7 +25,7 @@ test("Studio route links use the reliable native document boundary", () => {
   for (const path of routeLinkConsumers) {
     const contents = source(path);
     assert.doesNotMatch(contents, /next\/link/u, `${path} must not use intercepted client links`);
-    assert.match(contents, /StudioLink as Link/u, `${path} must use StudioLink`);
+    assert.match(contents, /StudioLink(?: as Link)?/u, `${path} must use StudioLink`);
   }
 
   const link = source("components/studio/atoms/studio-link.tsx");
@@ -47,8 +48,28 @@ test("Wardrobe filter exposes its trigger with a leading filter icon", () => {
   const styles = source("app/studio-stack-navigation.css");
 
   assert.match(wardrobe, /className="studio-stack-filter-label"><SlidersHorizontal aria-hidden="true"/u);
-  assert.match(wardrobe, /Filter · \{filter\.toLowerCase\(\)\}/u);
+  assert.match(wardrobe, /Filter · \{wardrobeFilterLabel\(filter\)\}/u);
+  assert.match(wardrobe, /filter === "NEEDS_PUBLISHING" \? "Needs publishing" : filter\.toLowerCase\(\)/u);
   assert.match(styles, /\.studio-stack-filter-label \{[\s\S]*?display: inline-flex;[\s\S]*?gap: 7px;/u);
+});
+
+test("representative Studio routes publish intentional metadata", () => {
+  const expected = [
+    ["app/(studio)/studio/page.tsx", "Studio"],
+    ["app/(studio)/studio/wardrobe/page.tsx", "Wardrobe · Studio"],
+    ["app/(studio)/studio/media/page.tsx", "Media · Studio"],
+    ["app/(studio)/studio/models/page.tsx", "Models · Studio"],
+    ["app/(studio)/studio/operations/page.tsx", "Operations · Studio"],
+    ["app/(studio)/studio/orders/page.tsx", "Orders · Studio"],
+    ["app/(studio)/studio/ask/page.tsx", "Ask Studio · Studio"],
+  ] as const;
+
+  for (const [path, title] of expected) {
+    const contents = source(path);
+    assert.match(contents, /export const metadata: Metadata/u, `${path} must export metadata`);
+    assert.match(contents, new RegExp(`title: ${JSON.stringify(title)}`), `${path} must own its Studio title`);
+    assert.match(contents, /description: /u, `${path} must describe its Studio purpose`);
+  }
 });
 
 test("Studio desktop shell uses the full canvas while compact navigation keeps its safe inset", () => {

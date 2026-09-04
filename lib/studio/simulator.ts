@@ -249,6 +249,10 @@ export function studioScenarioHref(href: string, scenario: StudioScenario | null
     || (!href.startsWith("/studio") && !href.startsWith("/shoots"))
   ) return href;
   const destination = new URL(href, "https://studio.invalid");
+  // Compatibility grammar: the development simulator owns order and return
+  // fixtures inside Operations. Canonical order links therefore alias to the
+  // matching Operations view while production keeps the real /studio/orders
+  // routes. Preserve this translation until simulator routes gain parity.
   if (destination.pathname === "/studio/orders" || destination.pathname.startsWith("/studio/orders/")) {
     const orderReference = destination.pathname.startsWith("/studio/orders/")
       ? decodeURIComponent(destination.pathname.slice("/studio/orders/".length))

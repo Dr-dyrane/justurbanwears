@@ -9,6 +9,17 @@ database, upload media, publish, deploy, mint a persistent credential or change
 a provider configuration. Those actions still require their normal release or
 operation authority.
 
+## Development lifecycle simulator
+
+`?scenario=lifecycle` is a development-only, in-memory compatibility fixture.
+It never reads or writes connected Studio state and resets on reload. Wardrobe,
+Media and Operations are its supported surfaces. Because the fixture does not
+mount the connected Orders routes, Studio links translate `/studio/orders` to
+`/studio/operations?view=orders`; a specific order also carries its reference
+and `#studio-scenario-order`. Return fixtures use
+`/studio/operations?view=returns`. Without an active scenario, canonical
+`/studio/orders` links remain unchanged.
+
 ## Secret boundary
 
 - Use the provider's authenticated CLI, connector, SSO or dashboard. Never copy
