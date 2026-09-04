@@ -127,6 +127,7 @@ async function focusRecord(
     focus: focusFromRecord(record, lastKnownRevision),
     operator: base.operator,
     threadId: base.thread.id,
+    turnMessageId: base.requestMessageId,
   });
 }
 
@@ -152,6 +153,7 @@ async function focusCandidates(
     },
     operator: base.operator,
     threadId: base.thread.id,
+    turnMessageId: base.requestMessageId,
   });
 }
 
@@ -317,6 +319,7 @@ async function resolvedPiece(input: {
         },
         operator: input.base.operator,
         threadId: input.base.thread.id,
+        turnMessageId: input.base.requestMessageId,
       });
     }
     return { output: null, piece: { document: resolved.document, target } };
@@ -344,6 +347,7 @@ async function resolvedPiece(input: {
         },
         operator: input.base.operator,
         threadId: input.base.thread.id,
+        turnMessageId: input.base.requestMessageId,
       });
     }
     return {

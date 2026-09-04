@@ -50,20 +50,49 @@ test("prior tool results retain bounded facts but remove actor and hold PII befo
   assert.match(route, /export function sanitizeStudioAssistantHistoryForModel/);
 });
 
-test("beginTurn atomically claims the user and one pending assistant response", () => {
+test("beginTurn leases the thread before storing one ordered turn", () => {
   const repository = source("lib/server/studio-assistant-thread-repository.ts");
+  const schema = source("db/shop-postgres-schema.ts");
+  const migration = source("drizzle/shop-postgres/0029_studio_assistant_turn_lease.sql");
 
   assert.match(repository, /export async function beginStudioAssistantTurn/);
-  assert.match(repository, /with owned_thread as \([\s\S]*?claimed_user as \([\s\S]*?claimed_response as \(/);
+  assert.match(repository, /with owned_thread as \([\s\S]*?lease_gate as \([\s\S]*?claimed_user as \([\s\S]*?claimed_response as \(/);
+  assert.match(repository, /thread\.active_turn_response_id is null[\s\S]*?thread\.active_turn_lease_expires_at <= clock_timestamp\(\)/);
+  assert.match(repository, /when \$\{input\.focus === undefined\}[\s\S]*?then thread\.focus/);
   assert.match(repository, /parts = \$\{parts\}::jsonb/);
   assert.match(repository, /on conflict \(thread_id, id\) do update[\s\S]*?updated_at = studio_assistant_messages\.updated_at/);
-  assert.match(repository, /returning id, role, status, \(xmax = 0\) as acquired/);
+  assert.match(repository, /returning id, role, status, sequence, \(xmax = 0\) as acquired/);
   assert.match(repository, /databaseBoolean\(row\.response_acquired\) \? "ACQUIRED" : row\.response_status/);
-  assert.match(repository, /eq\(studioAssistantMessages\.status, "PENDING"\)/);
-  assert.doesNotMatch(
-    repository.slice(repository.indexOf("export async function saveStudioAssistantResponse"), repository.indexOf("export async function updateStudioAssistantThreadFocus")),
-    /insert\(studioAssistantMessages\)/,
-  );
+  assert.match(repository, /"THREAD_BUSY"[\s\S]*?Your question is preserved/);
+  assert.match(repository, /active_turn_response_id = \$\{input\.message\.id\}[\s\S]*?active_turn_message_id = null[\s\S]*?active_turn_response_id = null/);
+  assert.match(repository, /eq\(studioAssistantThreads\.activeTurnMessageId, input\.turnMessageId\)/);
+  assert.match(repository, /eq\(studioAssistantThreads\.activeTurnResponseId, responseId\)/);
+
+  assert.match(schema, /studioAssistantMessageSequence = pgSequence/);
+  assert.match(schema, /activeTurnLeaseExpiresAt: timestamp/);
+  assert.match(schema, /studio_assistant_messages_thread_sequence_unique/);
+  assert.match(migration, /row_number\(\) OVER \([\s\S]*?ORDER BY message\.created_at, message\.thread_id, message\.id/);
+  assert.match(migration, /latest_pending[\s\S]*?active_turn_lease_expires_at/);
+  assert.match(migration, /response\.status = 'PENDING'[\s\S]*?NOT EXISTS \([\s\S]*?thread\.active_turn_response_id = response\.id/);
+});
+
+test("the client restores a question rejected by the shared-thread lease", () => {
+  const surface = source("components/studio/navigation/studio-ask-surface.tsx");
+
+  assert.match(surface, /function studioAskTransportFailure/);
+  assert.match(surface, /failure\?\.code === "THREAD_BUSY" && pending/);
+  assert.match(surface, /setQuery\(pending\.query\)/);
+  assert.match(surface, /setThreadRefreshToken\(\(value\) => value \+ 1\)/);
+});
+
+test("the route distinguishes explicit focus from inherited post-lease focus", () => {
+  const route = source("app/api/studio/ask/route.ts");
+
+  assert.match(route, /const explicitFocus = resolveStudioAssistantFocusReference\(context, query\)/);
+  assert.match(route, /focus: explicitFocus \?\? undefined/);
+  assert.match(route, /focusEntityType: executionThread\.focus\?\.entityType/);
+  assert.match(route, /focusReference: executionThread\.focus\?\.reference/);
+  assert.doesNotMatch(route, /resolveStudioAssistantFocusReference\(context, query\) \?\? thread\.focus/);
 });
 
 test("the route replays or joins an existing turn before any paid model call", () => {

@@ -204,6 +204,13 @@
       "when": 1788475203282,
       "tag": "0028_stocktake-command-receipts",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1788485099123,
+      "tag": "0029_studio_assistant_turn_lease",
+      "breakpoints": true
     }
   ]
 }

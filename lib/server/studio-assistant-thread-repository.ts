@@ -22,13 +22,24 @@ import type { StudioOperator } from "./studio-operator";
 type ThreadRow = typeof studioAssistantThreads.$inferSelect;
 type MessageRow = typeof studioAssistantMessages.$inferSelect;
 type BeginTurnDatabaseRow = {
+  lease_acquired: boolean | number | string | null;
   response_acquired: boolean | number | string | null;
   response_id: string | null;
   response_role: string | null;
+  response_sequence: number | string | null;
   response_status: string | null;
   thread_state: string | null;
   user_parts: unknown;
   user_role: string | null;
+};
+
+type SaveResponseDatabaseRow = {
+  lease_released: boolean | number | string | null;
+  response_exists: boolean | number | string | null;
+  response_role: string | null;
+  response_status: string | null;
+  response_updated: boolean | number | string | null;
+  thread_exists: boolean | number | string | null;
 };
 
 type ReconcileReplyDatabaseRow = {
@@ -46,6 +57,7 @@ export type StudioAssistantTurnBeginResult = Readonly<{
   contentFingerprint: string;
   kind: "ABORTED" | "ACQUIRED" | "COMPLETE" | "ERROR" | "PENDING";
   responseId: string;
+  responseSequence: number;
 }>;
 
 function iso(value: Date | string) {
@@ -78,6 +90,10 @@ function textFromParts(value: unknown) {
 
 export function studioAssistantTurnContentFingerprint(message: StudioAssistantUIMessage) {
   return sha256(textFromParts(message.parts));
+}
+
+export function studioAssistantResponseId(threadId: string, messageId: string) {
+  return `assistant-${sha256(`${threadId}:${messageId}`).slice(0, 48)}`;
 }
 
 function databaseBoolean(value: BeginTurnDatabaseRow["response_acquired"]) {
@@ -134,6 +150,7 @@ function storedMessage(row: MessageRow): StudioAssistantStoredMessage {
       role: row.role,
     } as StudioAssistantUIMessage,
     model: row.model,
+    sequence: row.sequence,
     status: row.status,
     tokenUsage: row.tokenUsage,
   };
@@ -200,7 +217,7 @@ export async function getStudioAssistantThread(
   const messageRows = await (await getStudioDb()).select()
     .from(studioAssistantMessages)
     .where(eq(studioAssistantMessages.threadId, threadId))
-    .orderBy(desc(studioAssistantMessages.createdAt), desc(studioAssistantMessages.id))
+    .orderBy(desc(studioAssistantMessages.sequence))
     .limit(120);
   return {
     ...summary(row),
@@ -221,13 +238,13 @@ function titleFromMessage(message: StudioAssistantUIMessage) {
 }
 
 /**
- * Claims one shared conversation turn in a single PostgreSQL statement.
- * The no-op conflict updates make a concurrent winner visible without changing
- * its immutable user content or resetting an existing assistant terminal state.
+ * Claims one shared conversation turn in a single PostgreSQL statement. The
+ * thread-row compare-and-swap is the server-owned lease: one different message
+ * wins, while the same message can join or replay its deterministic response.
  */
 export async function beginStudioAssistantTurn(input: {
   contentFingerprint: string;
-  focus: StudioAssistantFocus | null;
+  focus?: StudioAssistantFocus | null;
   message: StudioAssistantUIMessage;
   model: string;
   operator: StudioOperator;
@@ -248,11 +265,129 @@ export async function beginStudioAssistantTurn(input: {
   const serializedFocus = input.focus ? JSON.stringify(input.focus) : null;
   const result = await (await getStudioDb()).execute<BeginTurnDatabaseRow>(sql`
     with owned_thread as (
-      select id, state, title
+      select
+        id,
+        state,
+        title,
+        active_turn_message_id,
+        active_turn_response_id,
+        active_turn_lease_expires_at
       from studio_assistant_threads
       where id = ${input.threadId}::uuid
         and workspace_id = ${input.operator.workspaceId}::uuid
       limit 1
+    ), existing_user as (
+      select message.role, message.parts, message.sequence
+      from studio_assistant_messages as message
+      inner join owned_thread on owned_thread.id = message.thread_id
+      where message.id = ${input.message.id}
+      limit 1
+    ), existing_response as (
+      select message.id, message.role, message.status, message.sequence
+      from studio_assistant_messages as message
+      inner join owned_thread on owned_thread.id = message.thread_id
+      where message.id = ${input.responseId}
+      limit 1
+    ), lease_gate as (
+      update studio_assistant_threads as thread
+      set
+        active_turn_message_id = case
+          when thread.active_turn_message_id = ${input.message.id}
+            and thread.active_turn_response_id = ${input.responseId}
+          then thread.active_turn_message_id
+          else ${input.message.id}
+        end,
+        active_turn_response_id = case
+          when thread.active_turn_message_id = ${input.message.id}
+            and thread.active_turn_response_id = ${input.responseId}
+          then thread.active_turn_response_id
+          else ${input.responseId}
+        end,
+        active_turn_lease_expires_at = case
+          when thread.active_turn_message_id = ${input.message.id}
+            and thread.active_turn_response_id = ${input.responseId}
+          then thread.active_turn_lease_expires_at
+          else clock_timestamp() + interval '${sql.raw(String(STUDIO_ASSISTANT_REPLY_LEASE_SECONDS))} seconds'
+        end,
+        focus = case
+          when thread.active_turn_message_id = ${input.message.id}
+            and thread.active_turn_response_id = ${input.responseId}
+          then thread.focus
+          when ${input.focus === undefined}
+          then thread.focus
+          else ${serializedFocus}::jsonb
+        end,
+        title = case
+          when thread.active_turn_message_id = ${input.message.id}
+            and thread.active_turn_response_id = ${input.responseId}
+          then thread.title
+          when thread.title = 'New conversation' then ${titleFromMessage(input.message)}
+          else thread.title
+        end,
+        updated_at = case
+          when thread.active_turn_message_id = ${input.message.id}
+            and thread.active_turn_response_id = ${input.responseId}
+          then thread.updated_at
+          else clock_timestamp()
+        end,
+        updated_by_subject = case
+          when thread.active_turn_message_id = ${input.message.id}
+            and thread.active_turn_response_id = ${input.responseId}
+          then thread.updated_by_subject
+          else ${input.operator.actorSubject}
+        end,
+        updated_by_email = case
+          when thread.active_turn_message_id = ${input.message.id}
+            and thread.active_turn_response_id = ${input.responseId}
+          then thread.updated_by_email
+          else ${input.operator.email}
+        end,
+        updated_by_display_name = case
+          when thread.active_turn_message_id = ${input.message.id}
+            and thread.active_turn_response_id = ${input.responseId}
+          then thread.updated_by_display_name
+          else ${input.operator.displayName}
+        end,
+        version = case
+          when thread.active_turn_message_id = ${input.message.id}
+            and thread.active_turn_response_id = ${input.responseId}
+          then thread.version
+          else thread.version + 1
+        end
+      from owned_thread
+      where thread.id = owned_thread.id
+        and thread.state = 'OPEN'
+        and not exists (select 1 from existing_response)
+        and (
+          not exists (select 1 from existing_user)
+          or exists (
+            select 1 from existing_user
+            where existing_user.role = 'user'
+              and existing_user.parts = ${parts}::jsonb
+          )
+        )
+        and (
+          thread.active_turn_response_id is null
+          or (
+            thread.active_turn_message_id = ${input.message.id}
+            and thread.active_turn_response_id = ${input.responseId}
+          )
+          or thread.active_turn_lease_expires_at <= clock_timestamp()
+        )
+      returning thread.id
+    ), expired_response as (
+      update studio_assistant_messages as message
+      set
+        status = 'ERROR',
+        updated_at = clock_timestamp()
+      from owned_thread, lease_gate
+      where message.thread_id = owned_thread.id
+        and message.id = owned_thread.active_turn_response_id
+        and message.role = 'assistant'
+        and message.status = 'PENDING'
+        and owned_thread.active_turn_response_id is distinct from ${input.responseId}
+        and owned_thread.active_turn_lease_expires_at <= clock_timestamp()
+      returning message.id
     ), claimed_user as (
       insert into studio_assistant_messages (
         thread_id, id, role, parts, status,
@@ -263,13 +398,12 @@ export async function beginStudioAssistantTurn(input: {
         owned_thread.id, ${input.message.id}, 'user', ${parts}::jsonb, 'COMPLETE',
         ${input.operator.actorSubject}, ${input.operator.email}, ${input.operator.displayName},
         clock_timestamp(), clock_timestamp()
-      from owned_thread
-      where owned_thread.state = 'OPEN'
+      from owned_thread cross join lease_gate
       on conflict (thread_id, id) do update
         set updated_at = studio_assistant_messages.updated_at
-      returning role, parts
+      returning role, parts, sequence
     ), matching_user as (
-      select role, parts
+      select role, parts, sequence
       from claimed_user
       where role = 'user'
         and parts = ${parts}::jsonb
@@ -287,38 +421,29 @@ export async function beginStudioAssistantTurn(input: {
       from owned_thread cross join matching_user
       on conflict (thread_id, id) do update
         set updated_at = studio_assistant_messages.updated_at
-      returning id, role, status, (xmax = 0) as acquired
-    ), touched_thread as (
-      update studio_assistant_threads as thread
-      set
-        focus = ${serializedFocus}::jsonb,
-        title = case
-          when thread.title = 'New conversation' then ${titleFromMessage(input.message)}
-          else thread.title
-        end,
-        updated_at = clock_timestamp(),
-        updated_by_subject = ${input.operator.actorSubject},
-        updated_by_email = ${input.operator.email},
-        updated_by_display_name = ${input.operator.displayName},
-        version = thread.version + 1
-      where thread.id = ${input.threadId}::uuid
-        and exists (
-          select 1 from claimed_response
-          where claimed_response.acquired
-            and claimed_response.role = 'assistant'
-            and claimed_response.status = 'PENDING'
-        )
-      returning thread.id
+      returning id, role, status, sequence, (xmax = 0) as acquired
+    ), user_view as (
+      select role, parts, sequence from existing_user
+      union all
+      select role, parts, sequence from claimed_user
+      limit 1
+    ), response_view as (
+      select id, role, status, sequence, false as acquired from existing_response
+      union all
+      select id, role, status, sequence, acquired from claimed_response
+      limit 1
     )
     select
       (select state from owned_thread) as thread_state,
-      (select role from claimed_user) as user_role,
-      (select parts from claimed_user) as user_parts,
-      (select id from claimed_response) as response_id,
-      (select role from claimed_response) as response_role,
-      (select status from claimed_response) as response_status,
-      (select acquired from claimed_response) as response_acquired,
-      exists (select 1 from touched_thread) as thread_touched
+      (select role from user_view) as user_role,
+      (select parts from user_view) as user_parts,
+      (select id from response_view) as response_id,
+      (select role from response_view) as response_role,
+      (select status from response_view) as response_status,
+      (select sequence from response_view) as response_sequence,
+      (select acquired from response_view) as response_acquired,
+      exists (select 1 from lease_gate) as lease_acquired,
+      (select count(*) from expired_response) as expired_response_count
   `);
   const row = result.rows[0];
   if (!row?.thread_state) notFound();
@@ -328,6 +453,15 @@ export async function beginStudioAssistantTurn(input: {
       409,
       "That conversation is archived.",
       "Restore it from History before continuing the worklane.",
+    );
+  }
+
+  if (!databaseBoolean(row.lease_acquired) && !row.response_id && !row.user_role) {
+    throw new StudioEngineError(
+      "THREAD_BUSY",
+      409,
+      "This conversation is answering another question.",
+      "Your question is preserved. Send it when the current reply finishes.",
     );
   }
 
@@ -361,87 +495,22 @@ export async function beginStudioAssistantTurn(input: {
       "Reload the conversation before continuing.",
     );
   }
+  const responseSequence = Number(row.response_sequence);
+  if (!Number.isSafeInteger(responseSequence) || responseSequence <= 0) {
+    throw new StudioEngineError(
+      "VERSION_CONFLICT",
+      409,
+      "That assistant response has no valid conversation order.",
+      "Reload the conversation before continuing.",
+    );
+  }
 
   return {
     contentFingerprint: input.contentFingerprint,
     kind: databaseBoolean(row.response_acquired) ? "ACQUIRED" : row.response_status,
     responseId: input.responseId,
+    responseSequence,
   };
-}
-
-async function touchThread(input: {
-  focus?: StudioAssistantFocus | null;
-  operator: StudioOperator;
-  threadId: string;
-  title?: string;
-}) {
-  await (await getStudioDb()).update(studioAssistantThreads).set({
-    ...(input.focus !== undefined ? { focus: input.focus } : {}),
-    ...(input.title ? { title: input.title } : {}),
-    updatedAt: new Date(),
-    updatedByDisplayName: input.operator.displayName,
-    updatedByEmail: input.operator.email,
-    updatedBySubject: input.operator.actorSubject,
-    version: sql`${studioAssistantThreads.version} + 1`,
-  }).where(and(
-    eq(studioAssistantThreads.id, input.threadId),
-    eq(studioAssistantThreads.workspaceId, input.operator.workspaceId),
-  ));
-}
-
-export async function appendStudioAssistantUserMessage(input: {
-  focus?: StudioAssistantFocus | null;
-  message: StudioAssistantUIMessage;
-  operator: StudioOperator;
-  threadId: string;
-}) {
-  const thread = await threadRow(input.operator, input.threadId);
-  if (thread.state !== "OPEN") {
-    throw new StudioEngineError(
-      "INVALID_TRANSITION",
-      409,
-      "That conversation is archived.",
-      "Restore it from History before continuing the worklane.",
-    );
-  }
-  const inserted = await (await getStudioDb()).insert(studioAssistantMessages).values({
-    authorDisplayName: input.operator.displayName,
-    authorEmail: input.operator.email,
-    authorSubject: input.operator.actorSubject,
-    id: input.message.id,
-    parts: input.message.parts as Array<Record<string, unknown>>,
-    role: "user",
-    status: "COMPLETE",
-    threadId: input.threadId,
-  }).onConflictDoNothing().returning({ id: studioAssistantMessages.id });
-
-  if (!inserted.length) {
-    const existing = await (await getStudioDb()).select()
-      .from(studioAssistantMessages)
-      .where(and(
-        eq(studioAssistantMessages.threadId, input.threadId),
-        eq(studioAssistantMessages.id, input.message.id),
-      ))
-      .limit(1);
-    if (!existing[0]
-      || existing[0].role !== "user"
-      || JSON.stringify(existing[0].parts) !== JSON.stringify(input.message.parts)) {
-      throw new StudioEngineError(
-        "VERSION_CONFLICT",
-        409,
-        "That message no longer matches this conversation.",
-        "Refresh the conversation before sending it again.",
-      );
-    }
-    return;
-  }
-
-  await touchThread({
-    focus: input.focus,
-    operator: input.operator,
-    threadId: input.threadId,
-    ...(thread.title === "New conversation" ? { title: titleFromMessage(input.message) } : {}),
-  });
 }
 
 export async function saveStudioAssistantResponse(input: {
@@ -452,42 +521,97 @@ export async function saveStudioAssistantResponse(input: {
   threadId: string;
   tokenUsage?: Record<string, number> | null;
 }) {
-  await threadRow(input.operator, input.threadId);
+  const parts = JSON.stringify(input.message.parts);
+  const tokenUsage = input.tokenUsage ? JSON.stringify(input.tokenUsage) : null;
   const database = await getStudioDb();
-  const [updated] = await database.update(studioAssistantMessages).set({
-    model: input.model,
-    parts: input.message.parts as Array<Record<string, unknown>>,
-    status: input.status,
-    tokenUsage: input.tokenUsage ?? null,
-    updatedAt: new Date(),
-  }).where(and(
-    eq(studioAssistantMessages.threadId, input.threadId),
-    eq(studioAssistantMessages.id, input.message.id),
-    eq(studioAssistantMessages.role, "assistant"),
-    eq(studioAssistantMessages.status, "PENDING"),
-  )).returning({ id: studioAssistantMessages.id });
-  if (!updated) {
-    const [saved] = await database.select({
+  const result = await database.execute<SaveResponseDatabaseRow>(sql`
+    with owned_thread as (
+      select id, active_turn_message_id, active_turn_response_id
+      from studio_assistant_threads
+      where id = ${input.threadId}::uuid
+        and workspace_id = ${input.operator.workspaceId}::uuid
+      limit 1
+    ), candidate as (
+      select message.role, message.status
+      from studio_assistant_messages as message
+      inner join owned_thread on owned_thread.id = message.thread_id
+      where message.id = ${input.message.id}
+      limit 1
+    ), updated_response as (
+      update studio_assistant_messages as message
+      set
+        model = ${input.model},
+        parts = ${parts}::jsonb,
+        status = ${input.status}::studio_assistant_message_state,
+        token_usage = ${tokenUsage}::jsonb,
+        updated_at = clock_timestamp()
+      from owned_thread, candidate
+      where message.thread_id = owned_thread.id
+        and message.id = ${input.message.id}
+        and message.role = 'assistant'
+        and message.status = 'PENDING'
+        and candidate.role = 'assistant'
+        and candidate.status = 'PENDING'
+        and owned_thread.active_turn_message_id is not null
+        and owned_thread.active_turn_response_id = ${input.message.id}
+      returning message.status
+    ), released_thread as (
+      update studio_assistant_threads as thread
+      set
+        active_turn_message_id = null,
+        active_turn_response_id = null,
+        active_turn_lease_expires_at = null,
+        updated_at = clock_timestamp(),
+        updated_by_subject = ${input.operator.actorSubject},
+        updated_by_email = ${input.operator.email},
+        updated_by_display_name = ${input.operator.displayName},
+        version = thread.version + 1
+      where thread.id = (select id from owned_thread)
+        and thread.active_turn_response_id = ${input.message.id}
+        and exists (select 1 from updated_response)
+      returning thread.id
+    )
+    select
+      exists (select 1 from owned_thread) as thread_exists,
+      exists (select 1 from candidate) as response_exists,
+      (select role from candidate) as response_role,
+      coalesce(
+        (select status::text from updated_response),
+        (select status::text from candidate)
+      ) as response_status,
+      exists (select 1 from updated_response) as response_updated,
+      exists (select 1 from released_thread) as lease_released
+  `);
+  const row = result.rows[0];
+  if (!databaseBoolean(row?.thread_exists ?? null)) notFound();
+  if (
+    databaseBoolean(row?.response_exists ?? null)
+    && row?.response_role === "assistant"
+    && !databaseBoolean(row.response_updated)
+    && row.response_status !== input.status
+  ) {
+    const [fresh] = await database.select({
       role: studioAssistantMessages.role,
       status: studioAssistantMessages.status,
-    })
-      .from(studioAssistantMessages)
-      .where(and(
-        eq(studioAssistantMessages.threadId, input.threadId),
-        eq(studioAssistantMessages.id, input.message.id),
-      ))
-      .limit(1);
-    if (!saved || saved.role !== "assistant" || saved.status !== input.status) {
-      throw new StudioEngineError(
-        "VERSION_CONFLICT",
-        409,
-        "That assistant response is already in a different terminal state.",
-        "Reload the conversation before continuing.",
-      );
-    }
-    return;
+    }).from(studioAssistantMessages).where(and(
+      eq(studioAssistantMessages.threadId, input.threadId),
+      eq(studioAssistantMessages.id, input.message.id),
+    )).limit(1);
+    if (fresh?.role === "assistant" && fresh.status === input.status) return;
   }
-  await touchThread({ operator: input.operator, threadId: input.threadId });
+  if (
+    !databaseBoolean(row?.response_exists ?? null)
+    || row?.response_role !== "assistant"
+    || row.response_status !== input.status
+    || (databaseBoolean(row.response_updated) && !databaseBoolean(row.lease_released))
+  ) {
+    throw new StudioEngineError(
+      "VERSION_CONFLICT",
+      409,
+      "That assistant response is already in a different terminal state.",
+      "Reload the conversation before continuing.",
+    );
+  }
 }
 
 /**
@@ -506,7 +630,11 @@ export async function reconcileStudioAssistantReply(input: {
 }>> {
   const result = await (await getStudioDb()).execute<ReconcileReplyDatabaseRow>(sql`
     with owned_thread as (
-      select id, version
+      select
+        id,
+        version,
+        active_turn_response_id,
+        active_turn_lease_expires_at
       from studio_assistant_threads
       where id = ${input.threadId}::uuid
         and workspace_id = ${input.operator.workspaceId}::uuid
@@ -529,12 +657,33 @@ export async function reconcileStudioAssistantReply(input: {
         and message.status = 'PENDING'
         and candidate.role = 'assistant'
         and candidate.status = 'PENDING'
-        and candidate.updated_at <= clock_timestamp() - interval '${sql.raw(String(STUDIO_ASSISTANT_REPLY_LEASE_SECONDS))} seconds'
         and owned_thread.version = ${input.expectedThreadVersion}
+        and (
+          (
+            owned_thread.active_turn_response_id = ${input.messageId}
+            and owned_thread.active_turn_lease_expires_at <= clock_timestamp()
+          )
+          or (
+            owned_thread.active_turn_response_id is null
+            and candidate.updated_at <= clock_timestamp() - interval '${sql.raw(String(STUDIO_ASSISTANT_REPLY_LEASE_SECONDS))} seconds'
+          )
+        )
       returning message.id
     ), touched_thread as (
       update studio_assistant_threads as thread
       set
+        active_turn_message_id = case
+          when thread.active_turn_response_id = ${input.messageId} then null
+          else thread.active_turn_message_id
+        end,
+        active_turn_response_id = case
+          when thread.active_turn_response_id = ${input.messageId} then null
+          else thread.active_turn_response_id
+        end,
+        active_turn_lease_expires_at = case
+          when thread.active_turn_response_id = ${input.messageId} then null
+          else thread.active_turn_lease_expires_at
+        end,
         updated_at = clock_timestamp(),
         updated_by_subject = ${input.operator.actorSubject},
         updated_by_email = ${input.operator.email},
@@ -603,9 +752,31 @@ export async function updateStudioAssistantThreadFocus(input: {
   focus: StudioAssistantFocus | null;
   operator: StudioOperator;
   threadId: string;
+  turnMessageId: string;
 }) {
-  await threadRow(input.operator, input.threadId);
-  await touchThread(input);
+  const responseId = studioAssistantResponseId(input.threadId, input.turnMessageId);
+  const [updated] = await (await getStudioDb()).update(studioAssistantThreads).set({
+    focus: input.focus,
+    updatedAt: new Date(),
+    updatedByDisplayName: input.operator.displayName,
+    updatedByEmail: input.operator.email,
+    updatedBySubject: input.operator.actorSubject,
+    version: sql`${studioAssistantThreads.version} + 1`,
+  }).where(and(
+    eq(studioAssistantThreads.id, input.threadId),
+    eq(studioAssistantThreads.workspaceId, input.operator.workspaceId),
+    eq(studioAssistantThreads.state, "OPEN"),
+    eq(studioAssistantThreads.activeTurnMessageId, input.turnMessageId),
+    eq(studioAssistantThreads.activeTurnResponseId, responseId),
+  )).returning({ id: studioAssistantThreads.id });
+  if (!updated) {
+    throw new StudioEngineError(
+      "VERSION_CONFLICT",
+      409,
+      "This Ask Studio turn no longer owns the conversation focus.",
+      "Refresh the conversation before continuing.",
+    );
+  }
 }
 
 export async function updateStudioAssistantThread(input: {

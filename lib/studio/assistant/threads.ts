@@ -50,6 +50,7 @@ export type StudioAssistantStoredMessage = Readonly<{
   createdAt: string;
   message: StudioAssistantUIMessage;
   model: string | null;
+  sequence: number;
   status: "ABORTED" | "COMPLETE" | "ERROR" | "PENDING";
   tokenUsage: Record<string, number> | null;
 }>;

@@ -782,6 +782,12 @@ export const studioAssistantOperationState = pgEnum("studio_assistant_operation_
   "CANCELLED",
 ]);
 
+// A database-owned sequence keeps message order stable across tabs, operators,
+// and processes. It may contain harmless gaps when an insert is replayed.
+export const studioAssistantMessageSequence = pgSequence("studio_assistant_message_sequence", {
+  startWith: 1,
+});
+
 export const studioAssistantThreads = pgTable("studio_assistant_threads", {
   id: uuid("id").defaultRandom().primaryKey(),
   workspaceId: uuid("workspace_id")
@@ -805,6 +811,9 @@ export const studioAssistantThreads = pgTable("studio_assistant_threads", {
     }>;
   }>(),
   pendingWork: jsonb("pending_work").$type<Array<Record<string, unknown>>>().default([]).notNull(),
+  activeTurnMessageId: varchar("active_turn_message_id", { length: 160 }),
+  activeTurnResponseId: varchar("active_turn_response_id", { length: 160 }),
+  activeTurnLeaseExpiresAt: timestamp("active_turn_lease_expires_at", { withTimezone: true }),
   createdBySubject: text("created_by_subject").notNull(),
   createdByEmail: text("created_by_email").notNull(),
   createdByDisplayName: text("created_by_display_name").notNull(),
@@ -825,6 +834,18 @@ export const studioAssistantThreads = pgTable("studio_assistant_threads", {
   check("studio_assistant_threads_version_positive", sql`${table.version} > 0`),
   check("studio_assistant_threads_focus_object", sql`${table.focus} is null or jsonb_typeof(${table.focus}) = 'object'`),
   check("studio_assistant_threads_pending_work_array", sql`jsonb_typeof(${table.pendingWork}) = 'array'`),
+  check("studio_assistant_threads_active_turn_lease", sql`
+    (
+      ${table.activeTurnMessageId} is null
+      and ${table.activeTurnResponseId} is null
+      and ${table.activeTurnLeaseExpiresAt} is null
+    )
+    or (
+      ${table.activeTurnMessageId} is not null
+      and ${table.activeTurnResponseId} is not null
+      and ${table.activeTurnLeaseExpiresAt} is not null
+    )
+  `),
   check("studio_assistant_threads_archive_pair", sql`
     (${table.state} = 'OPEN' and ${table.archivedAt} is null)
     or (${table.state} = 'ARCHIVED' and ${table.archivedAt} is not null)
@@ -836,6 +857,9 @@ export const studioAssistantMessages = pgTable("studio_assistant_messages", {
     .notNull()
     .references(() => studioAssistantThreads.id, { onDelete: "cascade" }),
   id: varchar("id", { length: 160 }).notNull(),
+  sequence: integer("sequence")
+    .default(sql`nextval('studio_assistant_message_sequence')`)
+    .notNull(),
   role: studioAssistantMessageRole("role").notNull(),
   parts: jsonb("parts").$type<Array<Record<string, unknown>>>().notNull(),
   status: studioAssistantMessageState("status").default("COMPLETE").notNull(),
@@ -848,7 +872,8 @@ export const studioAssistantMessages = pgTable("studio_assistant_messages", {
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 }, (table) => [
   primaryKey({ columns: [table.threadId, table.id], name: "studio_assistant_messages_thread_id_pk" }),
-  index("studio_assistant_messages_thread_created_idx").on(table.threadId, table.createdAt),
+  uniqueIndex("studio_assistant_messages_thread_sequence_unique").on(table.threadId, table.sequence),
+  check("studio_assistant_messages_sequence_positive", sql`${table.sequence} > 0`),
   check("studio_assistant_messages_parts_array", sql`jsonb_typeof(${table.parts}) = 'array'`),
   check("studio_assistant_messages_author_present", sql`length(trim(${table.authorDisplayName})) > 0`),
 ]);

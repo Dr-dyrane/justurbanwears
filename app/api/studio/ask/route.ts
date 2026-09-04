@@ -22,6 +22,7 @@ import {
   beginStudioAssistantTurn,
   getStudioAssistantThread,
   saveStudioAssistantResponse,
+  studioAssistantResponseId,
   studioAssistantTurnContentFingerprint,
 } from "../../../../lib/server/studio-assistant-thread-repository";
 import {
@@ -43,7 +44,6 @@ import {
   type StudioAssistantToolRecord,
 } from "../../../../lib/studio/assistant/tool-contracts";
 import { StudioEngineError, engineErrorResponse } from "../../../../lib/studio/engine/errors";
-import { sha256 } from "../../../../lib/studio/engine/fingerprint";
 import { noStoreJsonHeaders, parseEngineJson } from "../../../../lib/studio/engine/http";
 import { isStudioScenario } from "../../../../lib/studio/simulator";
 
@@ -412,13 +412,13 @@ export async function POST(request: Request): Promise<Response> {
 
     const thread = await getStudioAssistantThread(operator, input.threadId!);
     const query = messageText(incoming);
-    const nextFocus = resolveStudioAssistantFocusReference(context, query) ?? thread.focus;
-    const responseId = `assistant-${sha256(`${thread.id}:${incoming.id}`).slice(0, 48)}`;
+    const explicitFocus = resolveStudioAssistantFocusReference(context, query);
+    const responseId = studioAssistantResponseId(thread.id, incoming.id);
     const modelConnected = studioAssistantModelConnected();
     const responseModel = modelConnected ? studioAssistantModelName() : "deterministic/studio-tools";
     const turn = await beginStudioAssistantTurn({
       contentFingerprint: studioAssistantTurnContentFingerprint(incoming),
-      focus: nextFocus,
+      focus: explicitFocus ?? undefined,
       message: incoming,
       model: responseModel,
       operator,
@@ -480,8 +480,8 @@ export async function POST(request: Request): Promise<Response> {
         headers: noStoreJsonHeaders,
         stream: createDeterministicStudioAssistantStream({
           executeTool,
-          focusEntityType: nextFocus?.entityType,
-          focusReference: nextFocus?.reference,
+          focusEntityType: executionThread.focus?.entityType,
+          focusReference: executionThread.focus?.reference,
           onEnd: (event) => persistResponse(event, null, "deterministic/studio-tools"),
           originalMessages,
           query,

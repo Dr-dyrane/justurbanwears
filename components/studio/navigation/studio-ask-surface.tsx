@@ -113,6 +113,27 @@ type StoredStudioAssistantTask = Omit<StudioAssistantTaskDraft, "sourceQuery"> &
 type DisplayStudioAssistantTask = StoredStudioAssistantTask | StudioAssistantThreadTask;
 type WithoutExpectedVersion<T> = T extends unknown ? Omit<T, "expectedVersion"> : never;
 type StudioAssistantThreadMutation = WithoutExpectedVersion<Parameters<typeof updateStudioAssistantThread>[1]>;
+type StudioAskTransportFailure = Readonly<{
+  code: string | null;
+  message: string;
+  recovery: string | null;
+}>;
+
+function studioAskTransportFailure(error: Error): StudioAskTransportFailure | null {
+  try {
+    const parsed = JSON.parse(error.message) as {
+      error?: { code?: unknown; message?: unknown; recovery?: unknown };
+    };
+    if (!parsed.error || typeof parsed.error.message !== "string") return null;
+    return {
+      code: typeof parsed.error.code === "string" ? parsed.error.code : null,
+      message: parsed.error.message,
+      recovery: typeof parsed.error.recovery === "string" ? parsed.error.recovery : null,
+    };
+  } catch {
+    return null;
+  }
+}
 
 function confirmationForOperation(
   operation: StudioAssistantOperation,
@@ -1128,9 +1149,18 @@ export function StudioAskSurface() {
   } = useChat<StudioAssistantUIMessage>({
     id: studio.scenario ? `studio-ask-scenario-${studio.scenario}` : activeThread?.id ?? "studio-ask-opening",
     messages: studio.scenario ? [] : activeThread?.messages.map((stored) => stored.message) ?? [],
-    onError: () => {
+    onError: (chatError) => {
+      const failure = studioAskTransportFailure(chatError);
+      const pending = pendingRef.current;
       if (studio.scenario && pendingRef.current) addFallback(pendingRef.current);
-      if (!studio.scenario) setThreadError("Ask Studio could not finish that reply. Your question remains in this shared conversation.");
+      if (!studio.scenario && failure?.code === "THREAD_BUSY" && pending) {
+        setQuery(pending.query);
+        setThreadError([failure.message, failure.recovery].filter(Boolean).join(" "));
+        setThreadRefreshToken((value) => value + 1);
+        window.requestAnimationFrame(() => inputElement?.focus({ preventScroll: true }));
+      } else if (!studio.scenario) {
+        setThreadError("Ask Studio could not finish that reply. Your question remains in this shared conversation.");
+      }
       setReplyAnnouncement("Ask Studio could not finish the reply.");
       pendingRef.current = null;
       flightRef.current = false;

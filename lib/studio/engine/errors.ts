@@ -5,6 +5,7 @@ export type StudioEngineErrorCode =
   | "INVALID_REQUEST"
   | "INVALID_ASSET"
   | "INTAKE_NOT_FOUND"
+  | "THREAD_BUSY"
   | "VERSION_CONFLICT"
   | "INVALID_TRANSITION"
   | "GENERATION_FAILED"
