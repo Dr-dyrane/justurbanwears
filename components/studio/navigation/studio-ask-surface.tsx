@@ -1074,6 +1074,7 @@ export function StudioAskSurface() {
   const [historyButtonElement, setHistoryButtonElement] = useState<HTMLButtonElement | null>(null);
   const [replyCheckingId, setReplyCheckingId] = useState<string | null>(null);
   const [replyNotices, setReplyNotices] = useState<Record<string, string>>({});
+  const [replyAnnouncement, setReplyAnnouncement] = useState("");
 
   const transport = useMemo(() => new DefaultChatTransport<StudioAssistantUIMessage>({
     api: "/api/studio/ask",
@@ -1130,11 +1131,17 @@ export function StudioAskSurface() {
     onError: () => {
       if (studio.scenario && pendingRef.current) addFallback(pendingRef.current);
       if (!studio.scenario) setThreadError("Ask Studio could not finish that reply. Your question remains in this shared conversation.");
+      setReplyAnnouncement("Ask Studio could not finish the reply.");
       pendingRef.current = null;
       flightRef.current = false;
     },
     onFinish: ({ isAbort, isError }) => {
       if (studio.scenario && isError && pendingRef.current) addFallback(pendingRef.current);
+      setReplyAnnouncement(isAbort
+        ? "Ask Studio reply stopped."
+        : isError
+          ? "Ask Studio could not finish the reply."
+          : "Ask Studio reply ready.");
       if (!isAbort || pendingRef.current) pendingRef.current = null;
       flightRef.current = false;
       if (!studio.scenario) setThreadRefreshToken((value) => value + 1);
@@ -1265,6 +1272,7 @@ export function StudioAskSurface() {
     const active = { id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, query: cleanQuery };
     flightRef.current = true;
     pendingRef.current = active;
+    setReplyAnnouncement("");
     if (status === "error") clearError();
     setQueryError("");
     setQuery("");
@@ -1608,7 +1616,11 @@ export function StudioAskSurface() {
     <section className="studio-ask-page">
       <div className="studio-ask-thread">
         <span aria-live="polite" className="sr-only" role="status">
-          {busy ? "Ask Studio is reading current Studio truth." : threadBusy ? "Shared conversation is updating." : ""}
+          {busy
+            ? "Ask Studio is reading current Studio truth."
+            : threadBusy
+              ? "Shared conversation is updating."
+              : replyAnnouncement}
         </span>
         <div className="studio-ask-session-tools">
           <button disabled={threadBusy} onClick={() => void resetConversation()} type="button"><Plus aria-hidden="true" size={15} />New</button>

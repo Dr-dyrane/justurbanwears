@@ -7193,8 +7193,8 @@ html[data-theme="dark"] .studio-shell .button-primary { background: linear-gradi
   .studio-direct-capture-actions :is(label, button) { min-width: 0; padding-inline: 6px; width: 100%; }
   .studio-garment-body > .studio-card-next { grid-column: 1 / -1; margin: 0; }
   .studio-media-expand { opacity: 1; }
-  .studio-media-viewer-stage { grid-template-columns: 36px minmax(0, 1fr) 36px; }
-  .studio-media-viewer-stage > button { height: 36px; width: 36px; }
+  .studio-media-viewer-stage { grid-template-columns: 44px minmax(0, 1fr) 44px; }
+  .studio-media-viewer-stage > button { height: 44px; width: 44px; }
   .studio-guide-flow { grid-template-columns: repeat(5, minmax(72%, 1fr)); }
 }
 
