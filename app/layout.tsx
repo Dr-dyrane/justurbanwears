@@ -20,8 +20,10 @@ const socialImage = new URL(BRAND_ASSETS.social.runtimeOg, siteUrl).toString();
 const renderedMobileExperienceCss = mobileExperienceCss;
 
 export const viewport: Viewport = {
-  width: "device-width",
-  initialScale: 1,
+  // Vinext does not yet serialize viewport-fit. The single explicit viewport
+  // tag below owns geometry while this export continues to own colour hints.
+  width: undefined,
+  initialScale: undefined,
   colorScheme: "light dark",
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#dd6042" },
@@ -117,6 +119,7 @@ export default function RootLayout({
   return (
     <html lang="en-NG" suppressHydrationWarning>
       <head>
+        <meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport" />
         <script dangerouslySetInnerHTML={{ __html: themeBootScript }} />
         <script dangerouslySetInnerHTML={{ __html: shopFocusTransitionScript }} />
         <style data-mobile-experience>{renderedMobileExperienceCss}</style>

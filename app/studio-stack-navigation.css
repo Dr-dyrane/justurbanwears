@@ -3042,7 +3042,7 @@ html body .studio-stack-shell[data-studio-page="home"] .workspace > main.page-ca
 
   .studio-command-header {
     padding-top: max(7px, env(safe-area-inset-top, 0px));
-    top: max(7px, env(safe-area-inset-top, 0px));
+    top: 0;
   }
 
   .studio-stack-shell:has(.studio-home-control-plane) .studio-command-header {

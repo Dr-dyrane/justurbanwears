@@ -30,7 +30,7 @@ test("Studio uses Home-owned navigation and one shell-owned stack header", () =>
   assert.match(shell, /data-studio-page=\{isHome \? "home" : "stack"\}/);
   assert.match(shell, /studio-command-nav glass-surface/);
   assert.match(shell, /<StudioSettingsCenter operator=\{operator\}/);
-  assert.match(shell, /<StudioCommandCenter showAsk=\{!pathname\.startsWith\("\/studio\/ask"\)\} showSearch=\{isHome\} \/>/);
+  assert.match(shell, /<StudioCommandCenter[\s\S]*?routeSearch=\{searchParams\.toString\(\)\}[\s\S]*?showAsk=\{!pathname\.startsWith\("\/studio\/ask"\)\}[\s\S]*?showSearch=\{isHome\}/);
   assert.match(shell, /aria-label=\{`Back to \$\{stack\.backLabel\}`\}/);
   assert.match(shell, /className="studio-command-page-title"/);
   assert.match(stackContext, /view === "publishing"\) return \{ backHref: "\/studio", backLabel: "Studio Home", title: "Wardrobe" \}/);
@@ -40,8 +40,8 @@ test("Studio uses Home-owned navigation and one shell-owned stack header", () =>
   assert.match(commandCenter, /aria-label="Ask Studio"/);
   assert.match(commandCenter, /showSearch \? <button/);
   assert.match(commandCenter, /href=\{askHref\}/);
-  assert.match(commandCenter, /garment\.id === routePieceId \|\| garment\.privateWardrobeItemId === routePieceId/);
-  assert.match(commandCenter, /`\/studio\/ask\?piece=\$\{encodeURIComponent\(currentPieceId\)\}`/);
+  assert.match(commandCenter, /resolveStudioAssistantRouteEntry/);
+  assert.match(commandCenter, /`\/studio\/ask\?focus=\$\{encodeURIComponent\(entryRecord\.id\)\}`/);
   assert.doesNotMatch(commandCenter, /aria-label="Ask Studio mode"|Read-only agent/);
   assert.match(stackContext, /pathname\.startsWith\("\/studio\/ask"\).*title: "Ask Studio"/);
   assert.doesNotMatch(shell, /studio-stack-nav-wrap|studio-stack-nav|registeredAction/);
@@ -63,6 +63,8 @@ test("Studio uses Home-owned navigation and one shell-owned stack header", () =>
   assert.match(stackCss, /studio-stack-shell\[data-studio-page="stack"\] \.workspace \{[\s\S]*?display: flex;[\s\S]*?height: 100dvh;[\s\S]*?overflow: hidden;/);
   assert.match(stackCss, /main\.page-canvas\.studio-native-canvas \{[\s\S]*?flex: 1 1 auto;[\s\S]*?min-height: 0;[\s\S]*?overflow-y: auto;[\s\S]*?overscroll-behavior-y: contain;/);
   assert.match(stackCss, /@media \(max-width: 680px\)[\s\S]*?grid-template-columns: 44px minmax\(0, 1fr\) 44px/);
+  assert.match(rootLayout, /<meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport" \/>/);
+  assert.match(stackCss, /@media \(max-width: 680px\)[\s\S]*?\.studio-command-header \{[\s\S]*?padding-top: max\(7px, env\(safe-area-inset-top, 0px\)\);[\s\S]*?top: 0;/);
   assert.match(stackCss, /padding-bottom: max\(36px, env\(safe-area-inset-bottom, 0px\)\)/);
   assert.doesNotMatch(mobileCss, /\.shop-shell > main,\s*\.studio-shell \.page-canvas/);
   assert.match(studioLayout, /studio-stack-navigation\.css/);
