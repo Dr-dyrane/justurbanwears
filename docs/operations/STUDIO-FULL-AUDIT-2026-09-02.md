@@ -1,6 +1,6 @@
 # Studio baseline audit and remediation plan — 2026-09-02
 
-Status: `BASELINE_AUDIT_COMPLETE / DEEP_DISCOVERY_IN_PROGRESS / WAVE_0_IN_PROGRESS`
+Status: `BASELINE_AUDIT_COMPLETE / DEEP_DISCOVERY_IN_PROGRESS / WAVE_1A_IN_PROGRESS`
 
 Audited revision: `50f1f857f33758baf56450435e79ef7eaa4499e4`
 
@@ -185,6 +185,24 @@ passing 46 focused Ask tests do not exercise a real two-actor repository race,
 rapid failed thread creation, a conversation beyond its retrieval/model
 windows, or malicious stored/tool text. Those scenarios remain release gates,
 not inferred passes.
+
+### Discovery/remediation checkpoint — Wave 1A collection truth
+
+The operator identified the current public collection as all 34 Drop 02 pieces.
+The checked-in 52-row release manifest independently resolves that exact set as
+`JUW-025` through `JUW-058`, while retaining 18 historical Drop 01 members.
+Authenticated production readback at the start of this cell showed that the
+first-class Drop 02 row held only 17 members, even though the public catalogue
+and Wardrobe contained the full 34. The mismatch is therefore a stale
+collection backfill, not permission to infer a new SKU range.
+
+Cell `STU-001` uses one guarded forward migration to align the 34 exact released
+SKUs and their published Wardrobe targets. It rejects missing rows, conflicting
+membership, an incorrect active collection or a conflicting Wardrobe target;
+it does not rewrite inventory, orders, media, publication state or legacy drop
+labels. Once a database collection projection is present, Wardrobe and Search
+no longer fall back to compatibility membership: an unmatched published piece
+is labelled `Unassigned`.
 
 ## Findings
 

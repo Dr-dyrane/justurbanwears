@@ -112,7 +112,7 @@ function wardrobeFilterLabel(filter: WardrobeFilter) {
 }
 
 type WardrobeDropScope = StudioCollectionScope["key"];
-type WardrobeCollectionScope = "all" | "archived" | "private" | WardrobeDropScope;
+type WardrobeCollectionScope = "all" | "archived" | "private" | "unassigned" | WardrobeDropScope;
 
 const BASELINE_COLLECTIONS: StudioCollectionScope[] = [
   {
@@ -168,6 +168,10 @@ function resolvedCollectionForGarment(
 ) {
   const databaseCollection = databaseCollectionForSku(collections, garment.sku);
   if (databaseCollection) return { key: databaseCollection.key, label: databaseCollection.label };
+  if (
+    collections.some((collection) => collection.authority === "DATABASE")
+    && garment.dynamicPublication
+  ) return { key: "unassigned" as const, label: "Unassigned" };
   return studioDropScopeForGarment(garment, listings, currentDrop);
 }
 
@@ -187,7 +191,7 @@ function collectionScopeFromParam(value: string | null, currentDropKey: Wardrobe
   if (normalized === "current") return currentDropKey;
   if (normalized === "past") return currentDropKey === "drop-02" ? "drop-01" : "drop-02";
   if (normalized === "studio") return "private";
-  if (normalized === "all" || normalized === "archived" || normalized === "private" || /^drop-[0-9]{2,}$/.test(normalized)) {
+  if (normalized === "all" || normalized === "archived" || normalized === "private" || normalized === "unassigned" || /^drop-[0-9]{2,}$/.test(normalized)) {
     return normalized as WardrobeCollectionScope;
   }
   return currentDropKey;
@@ -1120,7 +1124,7 @@ export function WardrobeWorkbench() {
       const localPieces = new Set(studio.garments.filter((garment) => (
         resolvedCollectionForGarment(garment, availableCollections, studio.listings, dropContext.currentDrop).label === collection.label
       )).map((garment) => garment.sku)).size;
-      const pieces = localPieces > 0 ? localPieces : collection.counts.pieces;
+      const pieces = collection.counts.pieces ?? localPieces;
       return { ...collection, counts: { ...collection.counts, pieces } };
     }),
     [availableCollections, dropContext.currentDrop, studio.garments, studio.listings],
@@ -1156,6 +1160,17 @@ export function WardrobeWorkbench() {
       .map((garment) => garment.id));
     if (collectionScope === "archived") return new Set(studio.garments
       .filter((garment) => garment.state === "ARCHIVED")
+      .map((garment) => garment.id));
+    if (collectionScope === "unassigned") return new Set(studio.garments
+      .filter((garment) => (
+        garment.state !== "ARCHIVED"
+        && resolvedCollectionForGarment(
+          garment,
+          availableCollections,
+          studio.listings,
+          dropContext.currentDrop,
+        ).key === "unassigned"
+      ))
       .map((garment) => garment.id));
     if (collectionScope === "private") {
       const privateIds = new Set(dropContext.scopes
@@ -1257,6 +1272,8 @@ export function WardrobeWorkbench() {
       ? "archived"
       : resolvedScope.key === "studio" || resolvedScope.key === "private"
       ? "private"
+      : resolvedScope.key === "unassigned"
+      ? "unassigned"
       : availableCollections.find((scope) => scope.label === resolvedScope.label)?.key
         ?? dropKeyFromLabel(resolvedScope.label)
         ?? "private";
@@ -1351,6 +1368,15 @@ export function WardrobeWorkbench() {
   )).length;
   const archivedCount = studio.garments.filter((garment) => garment.state === "ARCHIVED").length;
   const activeCount = studio.garments.length - archivedCount;
+  const unassignedCount = studio.garments.filter((garment) => (
+    garment.state !== "ARCHIVED"
+    && resolvedCollectionForGarment(
+      garment,
+      availableCollections,
+      studio.listings,
+      dropContext.currentDrop,
+    ).key === "unassigned"
+  )).length;
   const dropChoices = [...collectionsForSheet]
     .sort((left, right) => Number(right.isCurrent) - Number(left.isCurrent) || right.ordinal - left.ordinal)
     .map((scope) => {
@@ -1366,6 +1392,7 @@ export function WardrobeWorkbench() {
   const collectionChoices: Array<{ key: WardrobeCollectionScope; label: string; count: number | null }> = [
     { key: "all", label: "All", count: activeCount },
     ...dropChoices,
+    ...(unassignedCount ? [{ key: "unassigned" as const, label: "Unassigned", count: unassignedCount }] : []),
     { key: "private", label: "Private", count: privateCount },
     { key: "archived", label: "Archived", count: archivedCount },
   ];
@@ -1508,6 +1535,7 @@ export function WardrobeWorkbench() {
         returnFocus={collectionReturnFocus}
         scenario={Boolean(studio.scenario)}
         selectedKey={collectionScope}
+        unassignedCount={unassignedCount}
       />
 
       {wearWardrobeItemId ? <WearSheet

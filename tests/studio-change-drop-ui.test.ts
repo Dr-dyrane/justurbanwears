@@ -4,6 +4,7 @@ import test from "node:test";
 
 const root = process.cwd();
 const sheet = readFileSync(`${root}/components/studio/collections/change-drop-sheet.tsx`, "utf8");
+const browseSheet = readFileSync(`${root}/components/studio/collections/studio-drop-sheet.tsx`, "utf8");
 const wardrobe = readFileSync(`${root}/components/studio/wardrobe-workbench.tsx`, "utf8");
 const lifecycle = readFileSync(`${root}/components/studio/garment-lifecycle-panel.tsx`, "utf8");
 const dossier = readFileSync(`${root}/components/studio/garment-dossier.tsx`, "utf8");
@@ -40,6 +41,11 @@ test("Piece exposes Change drop without bypassing Manage listing", () => {
 
 test("database membership outranks the legacy compatibility projection", () => {
   assert.match(wardrobe, /if \(databaseCollection\) return \{ key: databaseCollection\.key, label: databaseCollection\.label \}/);
+  assert.match(wardrobe, /collections\.some\(\(collection\) => collection\.authority === "DATABASE"\)[\s\S]*?garment\.dynamicPublication[\s\S]*?key: "unassigned"/);
+  assert.match(wardrobe, /const pieces = collection\.counts\.pieces \?\? localPieces/);
+  assert.match(wardrobe, /key: "unassigned" as const, label: "Unassigned"/);
+  assert.match(browseSheet, /onSelect\("unassigned"\)/);
+  assert.match(browseSheet, /<strong>Unassigned<\/strong>/);
   assert.match(wardrobe, /if \(databaseCollection\.key !== "drop-01"\) return null/);
   assert.doesNotMatch(wardrobe, /historicalDrop01Kind\(garment\) \?\? "SOLD_OUT"/);
   assert.match(wardrobe, /pastDrop \? "Past drop" : workspace\.stageLabel/);

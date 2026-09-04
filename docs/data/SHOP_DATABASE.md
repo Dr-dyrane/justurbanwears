@@ -128,6 +128,13 @@ Run check, then `db:release:shop`; the release performs migrate → descriptive 
 
 The 52-row manifest deliberately retains Drop 01 for recoverable operational retirement; the Drop 02 transition archives those 18 earlier rows and adopts the original eighteen Drop 02 rows into Studio in the same guarded release transaction. Garments 032-G034 are Drop 02 pieces 32-34 and are adopted incrementally without rewriting inventory truth for pieces already operating in Studio.
 
+Migration `0030_align_drop_02_membership` reconciles the first-class collection
+rows with the operator-approved 52-row release: Drop 01 retains its exact 18
+historical members and Drop 02 owns exactly the 34 current Shop pieces
+`JUW-025` through `JUW-058`. It changes only catalogue collection identity and
+the corresponding published Wardrobe target; inventory, orders, media,
+publication state and legacy presentation labels remain unchanged.
+
 Catalogue-14 remains immutable at checksum `cd7b631012c13e3bf84f001e1ebb725af01d1fddf166ce4b1d8e6123aa95a984`; it replaced only JUW-015's masked left-profile bytes with the face-corrected `lulu-v3` frame. Catalogue-13 remains immutable at checksum `7ee66d52ddf08f9c76d82cb289fd9292069fa6d3e1177f2e9fc25cdde8967f92`; Catalogue-12 remains immutable at checksum `220779647082701c63caea782d78e901591729e14b7d987c5f10535cdd6d94cf`; Catalogue-11 remains immutable at checksum `9064e58fd4e94305f3d06b9e6dbfb30d88b0c99380c7570ad1e203139a4f7677`; Catalogue-10 remains immutable at checksum `7844c8a7ccdab8b5b6a446085dc0f39c958ad9315964542ff8c78483b04291e3`; Catalogue-09 remains immutable at checksum `c7e8d47034bb8a619961a8d1302b170bcccd089b02a1c0a982094e0e68de0909`; Catalogue-08 remains immutable at checksum `909a3209574cddaccafa89c29a1770698786772c996476dafb0ff3c975673d61`.
 
 The older `db:shop:*` names remain aliases, but there is no standalone migration-only write command. Every write runs in one transaction under the shared Postgres advisory lock. The ledger treats the same namespace/revision/checksum as a no-op and rejects a reused revision with different content. Production writes additionally require a clean git worktree, so the recorded git SHA and manifest checksum identify the exact release artifact.

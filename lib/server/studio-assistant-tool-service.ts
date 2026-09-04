@@ -420,7 +420,7 @@ async function getPiece(
   const sku = canonicalReference(resolved.piece.document);
   const collection = projection.collectionScopes.find((scope) => scope.memberSkus.includes(sku));
   const record = pieceRecord({
-    collectionLabel: collection?.label ?? "Not assigned",
+    collectionLabel: collection?.label ?? "Unassigned",
     document: resolved.piece.document,
     workspace,
   });

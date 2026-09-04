@@ -241,13 +241,13 @@ function authoritativeHistoricalState(
 ) {
   const sku = piece.sku;
   if (!sku) return null;
-  const databaseCollection = collectionScopes.find((collection) => (
-    collection.authority === "DATABASE" && collection.memberSkus.includes(sku)
-  ));
-  if (databaseCollection?.key !== "drop-01") return databaseCollection ? null : historicalDrop01Kind({
-    id: piece.wardrobeItemId ?? piece.pieceKey,
-    sku,
-  });
+  const databaseCollections = collectionScopes.filter((collection) => collection.authority === "DATABASE");
+  const databaseCollection = databaseCollections.find((collection) => collection.memberSkus.includes(sku));
+  if (databaseCollections.length > 0) {
+    return databaseCollection?.key === "drop-01"
+      ? historicalDrop01Kind({ id: piece.wardrobeItemId ?? piece.pieceKey, sku })
+      : null;
+  }
   return historicalDrop01Kind({ id: piece.wardrobeItemId ?? piece.pieceKey, sku });
 }
 
@@ -256,13 +256,20 @@ function authorityDocuments(
   collectionScopes: readonly StudioCollectionScope[],
 ): StudioSearchDocument[] {
   const documents: StudioSearchDocument[] = [];
+  const databaseCollections = collectionScopes.filter((collection) => collection.authority === "DATABASE");
   for (const piece of authority.pieces) {
     const historicalState = authoritativeHistoricalState(piece, collectionScopes);
     const lifecycleState = historicalState ?? piece.availability;
     const route = piece.wardrobeItemId
       ? `/studio/wardrobe/${encodeURIComponent(piece.wardrobeItemId)}`
       : `/studio/operations?view=inventory&piece=${encodeURIComponent(piece.pieceKey)}`;
-    const pieceMetadata = [piece.title, piece.category, piece.colour, piece.sizeLabel]
+    const databaseCollection = piece.sku
+      ? databaseCollections.find((collection) => collection.memberSkus.includes(piece.sku!))
+      : null;
+    const collectionLabel = piece.sku && databaseCollections.length > 0
+      ? databaseCollection?.label ?? "Unassigned"
+      : null;
+    const pieceMetadata = [piece.title, piece.category, piece.colour, piece.sizeLabel, collectionLabel]
       .filter(Boolean)
       .join(" · ");
     documents.push({

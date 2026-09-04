@@ -211,6 +211,13 @@
       "when": 1788485099123,
       "tag": "0029_studio_assistant_turn_lease",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1788488239715,
+      "tag": "0030_align_drop_02_membership",
+      "breakpoints": true
     }
   ]
 }

@@ -501,6 +501,43 @@ test("database collection membership overrides the legacy Drop 01 lifecycle in s
   );
 });
 
+test("database collection truth exposes an unmapped published piece as Unassigned", () => {
+  const authority = fixture();
+  authority.pieces = [{
+    ...authority.pieces[0],
+    pieceKey: "sku:JUW-004",
+    wardrobeItemId: "wardrobe-004",
+    sku: "JUW-004",
+  }];
+
+  const projection = projectConnectedStudioApplication({
+    operator,
+    now,
+    authority,
+    collections: {
+      generatedAt: now,
+      scopes: [{
+        id: "6af83751-4782-4f84-8707-a2ba61a45f36",
+        key: "drop-02",
+        label: "Drop 02",
+        ordinal: 2,
+        version: 1,
+        state: "ACTIVE",
+        isCurrent: true,
+        authority: "DATABASE",
+        memberSkus: [],
+        counts: { pieces: 0, private: 0, ready: 0, published: 0, available: 0 },
+        nextAction: "/studio/wardrobe?collection=drop-02",
+        updatedAt: now,
+      }],
+    },
+  });
+  const piece = projection.searchDocuments.find((item) => item.id === "piece:sku:JUW-004");
+  assert.equal(piece?.lifecycleState, authority.pieces[0]?.availability);
+  assert.match(piece?.secondaryLabel ?? "", /Unassigned/);
+  assert.doesNotMatch(piece?.secondaryLabel ?? "", /Drop 01/);
+});
+
 test("collection compatibility map exposes only exact Drop 01 and Drop 02 scopes", () => {
   const projection = projectConnectedStudioApplication({ operator, now, authority: fixture() });
   assert.deepEqual(projection.collectionScopes.map((scope) => ({

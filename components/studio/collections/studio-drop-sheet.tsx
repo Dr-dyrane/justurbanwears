@@ -26,6 +26,7 @@ export interface StudioDropSheetProps {
   returnFocus?: HTMLElement | null;
   scenario: boolean;
   selectedKey: string;
+  unassignedCount: number;
 }
 
 function stateLabel(collection: StudioCollectionScope) {
@@ -47,6 +48,7 @@ export function StudioDropSheet({
   returnFocus,
   scenario,
   selectedKey,
+  unassignedCount,
 }: StudioDropSheetProps) {
   const ordered = useMemo(
     () => [...collections].sort((left, right) => Number(right.isCurrent) - Number(left.isCurrent) || right.ordinal - left.ordinal),
@@ -88,6 +90,13 @@ export function StudioDropSheet({
             </button>
           </div>
         ))}
+        {unassignedCount > 0 ? (
+          <button className="studio-drop-context-row" onClick={() => onSelect("unassigned")} type="button">
+            <span aria-hidden="true" className="studio-drop-ordinal">?</span>
+            <span className="studio-drop-row-copy"><strong>Unassigned</strong><small>{unassignedCount} published piece{unassignedCount === 1 ? "" : "s"}</small></span>
+            {selectedKey === "unassigned" ? <Check aria-label="Selected" size={17} /> : <ChevronRight aria-hidden="true" size={17} />}
+          </button>
+        ) : null}
         <button className="studio-drop-context-row" onClick={() => onSelect("private")} type="button">
           <span aria-hidden="true" className="studio-drop-ordinal">P</span>
           <span className="studio-drop-row-copy"><strong>Private</strong><small>{privateCount} pieces</small></span>

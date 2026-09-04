@@ -48,10 +48,9 @@ test("Studio stack lists share one near-black, metadata-first row grammar", asyn
   assert.doesNotMatch(operations, /studio-inventory-action"><LifecycleBadge/);
   assert.match(operations, /studio-operation-card studio-compact-row/);
   assert.match(orders, /studio-connected-order-card studio-compact-row/);
-  assert.match(wardrobe, /studio-publishing-row studio-compact-row/);
-  assert.match(wardrobe, /const cover = studioGarmentCover\(garment, listing\)/);
-  assert.match(wardrobe, /className=\{`studio-publishing-media\$\{cover \? " is-photo" : ""\}`\}/);
-  assert.match(wardrobe, /className="studio-publishing-copy"/);
+  assert.doesNotMatch(wardrobe, /StudioSegmentedView/);
+  assert.match(wardrobe, /requestedPublishingView/);
+  assert.match(wardrobe, /setFilter\(publishingQueue\.length > 0 \? "NEEDS_PUBLISHING" : "ALL"\)/);
   assert.match(models, /studio-model-option[\s\S]*?<LifecycleMeta state="READY"/);
 
   assert.match(styles, /html\[data-theme="dark"\] \.studio-stack-shell \{/);
