@@ -69,7 +69,20 @@ export type StudioAssistantThreadSummary = Readonly<{
   version: number;
 }>;
 
+export type StudioAssistantHistorySummary = Readonly<{
+  text: string;
+  throughSequence: number;
+  updatedAt: string;
+}>;
+
+export type StudioAssistantMessagePage = Readonly<{
+  hasOlderMessages: boolean;
+  oldestSequence: number | null;
+}>;
+
 export type StudioAssistantThreadDetail = StudioAssistantThreadSummary & Readonly<{
+  historySummary: StudioAssistantHistorySummary | null;
+  messagePage: StudioAssistantMessagePage;
   messages: StudioAssistantStoredMessage[];
   pendingWork: StudioAssistantThreadTask[];
 }>;

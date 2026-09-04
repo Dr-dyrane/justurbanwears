@@ -642,6 +642,7 @@ html[data-theme] .studio-stack-shell:has(.studio-home-control-plane) .demo-ribbo
 }
 
 .studio-ask-resolving svg,
+.studio-ask-older-messages button:disabled svg,
 .studio-ai-send[data-busy="true"] svg {
   animation: studio-ask-spin 800ms linear infinite;
 }
@@ -1069,6 +1070,38 @@ html[data-theme] .studio-stack-shell:has(.studio-home-control-plane) .demo-ribbo
 .studio-ask-message {
   max-width: 100% !important;
   width: 100%;
+}
+
+.studio-ask-older-messages {
+  display: flex;
+  justify-content: center;
+}
+
+.studio-ask-older-messages button {
+  align-items: center;
+  background: var(--studio-panel-muted);
+  border: 0;
+  border-radius: 999px;
+  color: var(--studio-muted);
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  font-size: 10px;
+  gap: 7px;
+  min-height: 44px;
+  padding: 0 16px;
+}
+
+.studio-ask-older-messages button:disabled {
+  cursor: default;
+  opacity: .72;
+}
+
+.studio-ask-history-boundary {
+  color: var(--studio-faint);
+  font-size: 9px;
+  margin: 0;
+  text-align: center;
 }
 
 .studio-ask-message-content {

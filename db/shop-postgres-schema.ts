@@ -810,6 +810,9 @@ export const studioAssistantThreads = pgTable("studio_assistant_threads", {
       route: string | null;
     }>;
   }>(),
+  historySummary: text("history_summary"),
+  historySummaryThroughSequence: integer("history_summary_through_sequence").default(0).notNull(),
+  historySummaryUpdatedAt: timestamp("history_summary_updated_at", { withTimezone: true }),
   pendingWork: jsonb("pending_work").$type<Array<Record<string, unknown>>>().default([]).notNull(),
   activeTurnMessageId: varchar("active_turn_message_id", { length: 160 }),
   activeTurnResponseId: varchar("active_turn_response_id", { length: 160 }),
@@ -833,6 +836,18 @@ export const studioAssistantThreads = pgTable("studio_assistant_threads", {
   check("studio_assistant_threads_title_present", sql`length(trim(${table.title})) > 0`),
   check("studio_assistant_threads_version_positive", sql`${table.version} > 0`),
   check("studio_assistant_threads_focus_object", sql`${table.focus} is null or jsonb_typeof(${table.focus}) = 'object'`),
+  check("studio_assistant_threads_history_summary_pair", sql`
+    (
+      ${table.historySummary} is null
+      and ${table.historySummaryThroughSequence} = 0
+      and ${table.historySummaryUpdatedAt} is null
+    )
+    or (
+      length(trim(${table.historySummary})) > 0
+      and ${table.historySummaryThroughSequence} > 0
+      and ${table.historySummaryUpdatedAt} is not null
+    )
+  `),
   check("studio_assistant_threads_pending_work_array", sql`jsonb_typeof(${table.pendingWork}) = 'array'`),
   check("studio_assistant_threads_active_turn_lease", sql`
     (

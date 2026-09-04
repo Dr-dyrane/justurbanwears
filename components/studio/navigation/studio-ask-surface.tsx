@@ -1077,6 +1077,7 @@ export function StudioAskSurface() {
   const [activeThread, setActiveThread] = useState<StudioAssistantThreadDetail | null>(null);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [threadBusy, setThreadBusy] = useState(false);
+  const [olderMessagesBusy, setOlderMessagesBusy] = useState(false);
   const [threadError, setThreadError] = useState("");
   const [threadRefreshToken, setThreadRefreshToken] = useState(0);
   const [renameTarget, setRenameTarget] = useState<StudioAssistantThreadSummary | null>(null);
@@ -1091,6 +1092,8 @@ export function StudioAskSurface() {
   const operationFlightRef = useRef(false);
   const replyFlightRef = useRef(false);
   const threadActionFlightRef = useRef(false);
+  const olderMessagesFlightRef = useRef(false);
+  const skipNextAutoScrollRef = useRef(false);
   const pendingRef = useRef<{ id: string; query: string } | null>(null);
   const initializedScopeRef = useRef("");
   const messagesRef = useRef<StudioAssistantUIMessage[]>([]);
@@ -1295,6 +1298,10 @@ export function StudioAskSurface() {
 
   useEffect(() => {
     if (!hasConversation) return;
+    if (skipNextAutoScrollRef.current) {
+      skipNextAutoScrollRef.current = false;
+      return;
+    }
     const end = endRef.current;
     const scroller = end?.closest("main");
     const composer = end?.closest(".studio-ask-page")?.querySelector(".studio-ask-composer-dock");
@@ -1471,6 +1478,44 @@ export function StudioAskSurface() {
     } finally {
       threadActionFlightRef.current = false;
       setThreadBusy(false);
+    }
+  }
+
+  async function loadEarlierMessages() {
+    const oldestSequence = activeThread?.messagePage.oldestSequence;
+    if (
+      !activeThread
+      || !activeThread.messagePage.hasOlderMessages
+      || !oldestSequence
+      || olderMessagesFlightRef.current
+      || busy
+    ) return;
+    olderMessagesFlightRef.current = true;
+    setOlderMessagesBusy(true);
+    setThreadError("");
+    const scroller = endRef.current?.closest("main");
+    const previousHeight = scroller instanceof HTMLElement ? scroller.scrollHeight : 0;
+    const previousTop = scroller instanceof HTMLElement ? scroller.scrollTop : 0;
+    try {
+      const page = await readStudioAssistantThread(activeThread.id, undefined, {
+        beforeSequence: oldestSequence,
+        limit: 60,
+      });
+      skipNextAutoScrollRef.current = true;
+      setActiveThread((current) => current?.id === page.id
+        ? { ...page, messages: [...page.messages, ...current.messages] }
+        : current);
+      setMessages((current) => [...page.messages.map((stored) => stored.message), ...current]);
+      window.requestAnimationFrame(() => {
+        if (scroller instanceof HTMLElement) {
+          scroller.scrollTop = previousTop + Math.max(0, scroller.scrollHeight - previousHeight);
+        }
+      });
+    } catch (historyError) {
+      setThreadError(historyError instanceof Error ? historyError.message : "Earlier messages could not be loaded.");
+    } finally {
+      olderMessagesFlightRef.current = false;
+      setOlderMessagesBusy(false);
     }
   }
 
@@ -1780,6 +1825,16 @@ export function StudioAskSurface() {
           </div>
         ) : (
           <>
+            {activeThread?.messagePage.hasOlderMessages ? (
+              <div className="studio-ask-older-messages">
+                <button disabled={olderMessagesBusy || busy} onClick={() => void loadEarlierMessages()} type="button">
+                  {olderMessagesBusy ? <LoaderCircle aria-hidden="true" size={15} /> : <Clock3 aria-hidden="true" size={15} />}
+                  {olderMessagesBusy ? "Loading earlier messages…" : "Load earlier messages"}
+                </button>
+              </div>
+            ) : activeThread?.historySummary ? (
+              <p className="studio-ask-history-boundary">Earlier worklane context is preserved in this conversation.</p>
+            ) : null}
             {messages.map((message, messageIndex) => {
               const stored = storedMessageById.get(message.id);
               const preservedQuestion = message.role === "assistant"

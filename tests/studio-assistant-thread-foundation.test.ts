@@ -95,7 +95,7 @@ test("the persistence boundary is workspace-owned, attributed and revision guard
   assert.match(repository, /updatedBySubject: input\.operator\.actorSubject/);
   assert.match(repository, /eq\(studioAssistantThreads\.version, input\.expectedVersion\)/);
   assert.match(repository, /orderBy\(desc\(studioAssistantMessages\.sequence\)\)/);
-  assert.match(repository, /messageRows\.reverse\(\)\.map\(storedMessage\)/);
+  assert.match(repository, /pageRows\.map\(storedMessage\)/);
   assert.match(migration, /CREATE TABLE "studio_assistant_threads"/);
   assert.match(migration, /CREATE TABLE "studio_assistant_messages"/);
   assert.doesNotMatch(migration, /DROP (?:COLUMN|TABLE)/);

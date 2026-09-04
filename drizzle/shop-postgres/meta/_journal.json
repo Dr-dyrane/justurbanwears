@@ -225,6 +225,13 @@
       "when": 1788490740084,
       "tag": "0031_studio_assistant_thread_commands",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1788493035126,
+      "tag": "0032_studio_assistant_long_history",
+      "breakpoints": true
     }
   ]
 }

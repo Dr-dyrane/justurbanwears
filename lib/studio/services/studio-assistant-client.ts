@@ -67,9 +67,17 @@ export async function createStudioAssistantThread(input: {
   return response.thread;
 }
 
-export async function readStudioAssistantThread(id: string, signal?: AbortSignal) {
+export async function readStudioAssistantThread(
+  id: string,
+  signal?: AbortSignal,
+  options: Readonly<{ beforeSequence?: number; limit?: number }> = {},
+) {
+  const parameters = new URLSearchParams();
+  if (options.beforeSequence) parameters.set("before", String(options.beforeSequence));
+  if (options.limit) parameters.set("limit", String(options.limit));
+  const query = parameters.size ? `?${parameters.toString()}` : "";
   const response = await request<{ thread: StudioAssistantThreadDetail }>(
-    `/api/studio/ask/threads/${encodeURIComponent(id)}`,
+    `/api/studio/ask/threads/${encodeURIComponent(id)}${query}`,
     { signal },
   );
   return response.thread;

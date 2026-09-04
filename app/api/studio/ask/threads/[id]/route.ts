@@ -12,15 +12,29 @@ export const dynamic = "force-dynamic";
 
 type RouteContext = { params: Promise<{ id: string }> };
 const threadIdSchema = z.string().uuid();
+const historyPageSchema = z.object({
+  before: z.coerce.number().int().positive().optional(),
+  limit: z.coerce.number().int().min(1).max(120).default(60),
+}).strict();
 
 async function threadId(context: RouteContext) {
   return threadIdSchema.parse((await context.params).id);
 }
 
-export async function GET(_request: Request, context: RouteContext): Promise<Response> {
+export async function GET(request: Request, context: RouteContext): Promise<Response> {
   try {
     const [operator, id] = await Promise.all([requireStudioOperator(), threadId(context)]);
-    return engineJson({ thread: await getStudioAssistantThread(operator, id) });
+    const url = new URL(request.url);
+    const page = historyPageSchema.parse({
+      before: url.searchParams.get("before") ?? undefined,
+      limit: url.searchParams.get("limit") ?? undefined,
+    });
+    return engineJson({
+      thread: await getStudioAssistantThread(operator, id, {
+        beforeSequence: page.before,
+        limit: page.limit,
+      }),
+    });
   } catch (error) {
     return engineErrorResponse(error);
   }

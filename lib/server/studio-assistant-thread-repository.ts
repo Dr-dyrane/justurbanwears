@@ -1,4 +1,4 @@
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, asc, desc, eq, gt, lt, lte, sql } from "drizzle-orm";
 import { getStudioDb } from "../../db/shop-postgres";
 import {
   studioAssistantMessages,
@@ -61,6 +61,10 @@ type ThreadCommandDatabaseRow = {
 };
 
 const STUDIO_ASSISTANT_REPLY_LEASE_SECONDS = 60;
+const STUDIO_ASSISTANT_DEFAULT_MESSAGE_PAGE_SIZE = 60;
+const STUDIO_ASSISTANT_MAX_MESSAGE_PAGE_SIZE = 120;
+const STUDIO_ASSISTANT_MODEL_MESSAGE_WINDOW = 20;
+const STUDIO_ASSISTANT_HISTORY_SUMMARY_MAX_CHARS = 12_000;
 
 export type StudioAssistantTurnBeginResult = Readonly<{
   contentFingerprint: string;
@@ -163,6 +167,99 @@ function storedMessage(row: MessageRow): StudioAssistantStoredMessage {
     status: row.status,
     tokenUsage: row.tokenUsage,
   };
+}
+
+function boundedHistoryData(value: string, maximum = 360) {
+  const normalized = value.replace(/\p{Cc}+/gu, " ").replace(/\s+/g, " ").trim();
+  if (!normalized) return "";
+  return normalized.length > maximum ? `${normalized.slice(0, maximum - 1).trimEnd()}…` : normalized;
+}
+
+function historyDataFromParts(value: unknown) {
+  if (!Array.isArray(value)) return "";
+  return boundedHistoryData(value.flatMap((part) => {
+    if (!part || typeof part !== "object") return [];
+    const candidate = part as {
+      output?: { summary?: unknown; title?: unknown };
+      text?: unknown;
+      type?: unknown;
+    };
+    if (candidate.type === "text" && typeof candidate.text === "string") return [candidate.text];
+    if (typeof candidate.type === "string" && candidate.type.startsWith("tool-") && candidate.output) {
+      return [candidate.output.title, candidate.output.summary].filter((item): item is string => typeof item === "string");
+    }
+    return [];
+  }).join(" "));
+}
+
+export function buildStudioAssistantHistorySummary(
+  existing: string | null,
+  rows: ReadonlyArray<Pick<MessageRow, "parts" | "role" | "sequence">>,
+) {
+  const additions = rows.flatMap((row) => {
+    const data = historyDataFromParts(row.parts);
+    return data ? [`${row.role === "user" ? "Operator" : "Ask Studio"}: ${data}`] : [];
+  });
+  const combined = [existing?.trim(), ...additions]
+    .filter(Boolean)
+    .join("\n")
+    .replace(/\p{Cc}+/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return combined.length > STUDIO_ASSISTANT_HISTORY_SUMMARY_MAX_CHARS
+    ? `…${combined.slice(-(STUDIO_ASSISTANT_HISTORY_SUMMARY_MAX_CHARS - 1)).trimStart()}`
+    : combined;
+}
+
+async function compactStudioAssistantHistory(input: {
+  operator: StudioOperator;
+  threadId: string;
+}) {
+  const database = await getStudioDb();
+  const [row] = await database.select({
+    historySummary: studioAssistantThreads.historySummary,
+    historySummaryThroughSequence: studioAssistantThreads.historySummaryThroughSequence,
+  }).from(studioAssistantThreads).where(and(
+    eq(studioAssistantThreads.id, input.threadId),
+    eq(studioAssistantThreads.workspaceId, input.operator.workspaceId),
+  )).limit(1);
+  if (!row) return;
+
+  const latest = await database.select({ sequence: studioAssistantMessages.sequence })
+    .from(studioAssistantMessages)
+    .where(and(
+      eq(studioAssistantMessages.threadId, input.threadId),
+      eq(studioAssistantMessages.status, "COMPLETE"),
+    ))
+    .orderBy(desc(studioAssistantMessages.sequence))
+    .limit(STUDIO_ASSISTANT_MODEL_MESSAGE_WINDOW + 1);
+  if (latest.length <= STUDIO_ASSISTANT_MODEL_MESSAGE_WINDOW) return;
+
+  const cutoff = latest[STUDIO_ASSISTANT_MODEL_MESSAGE_WINDOW]?.sequence;
+  if (!cutoff || cutoff <= row.historySummaryThroughSequence) return;
+  const candidates = await database.select({
+    parts: studioAssistantMessages.parts,
+    role: studioAssistantMessages.role,
+    sequence: studioAssistantMessages.sequence,
+  }).from(studioAssistantMessages).where(and(
+    eq(studioAssistantMessages.threadId, input.threadId),
+    eq(studioAssistantMessages.status, "COMPLETE"),
+    gt(studioAssistantMessages.sequence, row.historySummaryThroughSequence),
+    lte(studioAssistantMessages.sequence, cutoff),
+  )).orderBy(asc(studioAssistantMessages.sequence)).limit(240);
+  if (!candidates.length) return;
+
+  const summaryText = buildStudioAssistantHistorySummary(row.historySummary, candidates);
+  const throughSequence = candidates.at(-1)!.sequence;
+  await database.update(studioAssistantThreads).set({
+    historySummary: summaryText || "Earlier worklane messages contained no readable text.",
+    historySummaryThroughSequence: throughSequence,
+    historySummaryUpdatedAt: new Date(),
+  }).where(and(
+    eq(studioAssistantThreads.id, input.threadId),
+    eq(studioAssistantThreads.workspaceId, input.operator.workspaceId),
+    eq(studioAssistantThreads.historySummaryThroughSequence, row.historySummaryThroughSequence),
+  ));
 }
 
 function notFound(): never {
@@ -282,16 +379,36 @@ export async function listStudioAssistantThreads(
 export async function getStudioAssistantThread(
   operator: StudioOperator,
   threadId: string,
+  options: Readonly<{ beforeSequence?: number; limit?: number }> = {},
 ): Promise<StudioAssistantThreadDetail> {
   const row = await threadRow(operator, threadId);
+  const limit = Math.min(
+    STUDIO_ASSISTANT_MAX_MESSAGE_PAGE_SIZE,
+    Math.max(1, Math.floor(options.limit ?? STUDIO_ASSISTANT_DEFAULT_MESSAGE_PAGE_SIZE)),
+  );
   const messageRows = await (await getStudioDb()).select()
     .from(studioAssistantMessages)
-    .where(eq(studioAssistantMessages.threadId, threadId))
+    .where(and(
+      eq(studioAssistantMessages.threadId, threadId),
+      options.beforeSequence ? lt(studioAssistantMessages.sequence, options.beforeSequence) : undefined,
+    ))
     .orderBy(desc(studioAssistantMessages.sequence))
-    .limit(120);
+    .limit(limit + 1);
+  const pageRows = messageRows.slice(0, limit).reverse();
   return {
     ...summary(row),
-    messages: messageRows.reverse().map(storedMessage),
+    historySummary: row.historySummary && row.historySummaryUpdatedAt
+      ? {
+          text: row.historySummary,
+          throughSequence: row.historySummaryThroughSequence,
+          updatedAt: iso(row.historySummaryUpdatedAt),
+        }
+      : null,
+    messagePage: {
+      hasOlderMessages: messageRows.length > limit,
+      oldestSequence: pageRows[0]?.sequence ?? null,
+    },
+    messages: pageRows.map(storedMessage),
     pendingWork: pendingWork(row.pendingWork),
   };
 }
@@ -667,7 +784,10 @@ export async function saveStudioAssistantResponse(input: {
       eq(studioAssistantMessages.threadId, input.threadId),
       eq(studioAssistantMessages.id, input.message.id),
     )).limit(1);
-    if (fresh?.role === "assistant" && fresh.status === input.status) return;
+    if (fresh?.role === "assistant" && fresh.status === input.status) {
+      await compactStudioAssistantHistory({ operator: input.operator, threadId: input.threadId });
+      return;
+    }
   }
   if (
     !databaseBoolean(row?.response_exists ?? null)
@@ -682,6 +802,7 @@ export async function saveStudioAssistantResponse(input: {
       "Reload the conversation before continuing.",
     );
   }
+  await compactStudioAssistantHistory({ operator: input.operator, threadId: input.threadId });
 }
 
 /**
