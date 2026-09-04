@@ -25,7 +25,7 @@ const StudioStackValueContext = createContext<StudioStackDescriptor | null>(null
 export function studioStackFallback(pathname: string, view: string | null): StudioStackDescriptor {
   if (pathname.startsWith("/studio/ask")) return { backHref: "/studio", backLabel: "Studio Home", title: "Ask Studio" };
   if (pathname.startsWith("/studio/wardrobe/")) return { backHref: "/studio/wardrobe", backLabel: "Wardrobe", title: "Piece" };
-  if (pathname.startsWith("/studio/wardrobe") && view === "publishing") return { backHref: "/studio", backLabel: "Studio Home", title: "Shop" };
+  if (pathname.startsWith("/studio/wardrobe") && view === "publishing") return { backHref: "/studio", backLabel: "Studio Home", title: "Wardrobe" };
   if (pathname.startsWith("/studio/wardrobe")) return { backHref: "/studio", backLabel: "Studio Home", title: "Wardrobe" };
   if (pathname === "/studio/media/new") return { backHref: "/studio/media", backLabel: "Atelier", title: "Create media" };
   if (pathname.startsWith("/studio/media/")) return { backHref: "/studio/media", backLabel: "Atelier", title: "Atelier media" };

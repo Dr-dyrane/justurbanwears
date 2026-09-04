@@ -242,7 +242,7 @@ export function StudioSettingsCenter({ operator }: { operator: StudioOperatorCli
   );
   const modelsSummary = readyModels === null
     ? "Model state unavailable"
-    : `${readyModels} model${readyModels === 1 ? "" : "s"} ready`;
+    : `${readyModels} approved model ${readyModels === 1 ? "authority" : "authorities"}`;
   const consentSummary = consentLoading && !consent
     ? "Checking authorization…"
     : consentMessage && !consent
@@ -260,11 +260,11 @@ export function StudioSettingsCenter({ operator }: { operator: StudioOperatorCli
                 : operator ? "Authorization not checked" : "Local preview only";
   const stocktakeSummary = studioHeldPieces === null
     ? "Physical state unavailable"
-    : `${studioHeldPieces} Studio-held piece${studioHeldPieces === 1 ? "" : "s"}`;
+    : `${studioHeldPieces} expected across Studio locations`;
   const shopSummary = liveListings === null
     ? availableShopPieces === null
       ? "Shop state needs a refresh"
-      : `${availableShopPieces} piece${availableShopPieces === 1 ? "" : "s"} available`
+      : `${availableShopPieces} available now`
     : `${liveListings} live listing${liveListings === 1 ? "" : "s"}`;
   const intakeSummary = intakeDrafts === null
     ? "Draft state unavailable"

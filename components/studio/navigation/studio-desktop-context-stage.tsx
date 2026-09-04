@@ -242,15 +242,14 @@ function projectedContext(
 
   if ((kind === "WARDROBE" || kind === "PUBLISHING") && collection) {
     if (kind === "WARDROBE") return collectionContext(collection);
-    const publicationState = [
-      collection.counts.ready === null ? null : plural(collection.counts.ready, "ready piece", "ready pieces"),
-      collection.counts.published === null ? null : plural(collection.counts.published, "published piece", "published pieces"),
-    ].filter(Boolean).join(" · ");
+    const publicationState = collection.counts.ready === null
+      ? "Filter count unavailable"
+      : plural(collection.counts.ready, "piece needs publishing", "pieces need publishing");
     return {
-      detail: "The publishing workspace remains scoped to this collection.",
-      label: "Publishing scope",
-      state: publicationState || "Publication counts unavailable",
-      subject: collection.label,
+      detail: `Wardrobe is filtered to ${collection.label} pieces that still need a Shop listing action.`,
+      label: "Wardrobe filter",
+      state: publicationState,
+      subject: "Needs publishing",
     };
   }
 
@@ -280,9 +279,9 @@ function projectedContext(
     if (selector) return missingSelection("Collection scope", selector);
     return {
       detail: "No collection scope is available in the current projection.",
-      label: kind === "PUBLISHING" ? "Publishing scope" : "Wardrobe scope",
+      label: kind === "PUBLISHING" ? "Wardrobe filter" : "Wardrobe scope",
       state: plural(pieces.length, "projected piece"),
-      subject: kind === "PUBLISHING" ? "Publishing" : "Wardrobe",
+      subject: kind === "PUBLISHING" ? "Needs publishing" : "Wardrobe",
     };
   }
 
@@ -453,18 +452,18 @@ function scenarioContext(
           : collection?.startsWith("drop-")
             ? readableState(collection.replace("-", " "))
             : kind === "PUBLISHING" ? "Publishing" : "Scenario wardrobe";
-    const listingCount = studio.listings.filter((listing) => (
-      listing.state === "READY" || listing.state === "PUBLISHED"
-    )).length;
+    const listingCount = studio.listings.filter((listing) => listing.state === "READY").length;
     return {
       detail: collection === "choose"
         ? "Choose a collection in the workspace before opening its pieces."
-        : "The right workspace owns the exact collection and piece selection.",
-      label: kind === "PUBLISHING" ? "Publishing scope" : "Collection scope",
+        : kind === "PUBLISHING"
+          ? "Wardrobe is filtered to pieces that still need a Shop listing action."
+          : "The right workspace owns the exact collection and piece selection.",
+      label: kind === "PUBLISHING" ? "Wardrobe filter" : "Collection scope",
       state: collection === "choose"
         ? "Chooser open"
-        : plural(kind === "PUBLISHING" ? listingCount : studio.garments.length, kind === "PUBLISHING" ? "listing" : "piece"),
-      subject,
+        : plural(kind === "PUBLISHING" ? listingCount : studio.garments.length, kind === "PUBLISHING" ? "piece needs publishing" : "piece", kind === "PUBLISHING" ? "pieces need publishing" : undefined),
+      subject: kind === "PUBLISHING" ? "Needs publishing" : subject,
     };
   }
 
@@ -484,7 +483,7 @@ function scenarioContext(
     const available = studio.garments.filter((garment) => garment.availability === "AVAILABLE").length;
     return {
       detail: "The workspace owns the exact piece and physical-state actions.",
-      label: kind === "STOCKTAKE" ? "Stock count scope" : "Inventory scope",
+      label: kind === "STOCKTAKE" ? "Expected at this location" : "Available now",
       state: plural(available, "available piece"),
       subject: kind === "STOCKTAKE" ? "Physical stock" : "Inventory",
     };

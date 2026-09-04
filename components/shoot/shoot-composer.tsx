@@ -23,7 +23,7 @@ import {
 
 const CREATE_MEDIA_RECOVERY_MESSAGE = "Studio could not confirm whether this saved request started. It will only check existing Wear state; no new generation will be sent.";
 const CREATE_MEDIA_MISSING_MESSAGE = "Studio confirmed that this exact request has no saved Wear generation. Resume the same request key to start it at most once.";
-const MODEL_TRY_ON_ZERO_SPEND_BLOCKER = "On-model photos are not available yet. Choose On mannequin to create a garment-only view without using a private identity photo.";
+const MODEL_TRY_ON_ZERO_SPEND_BLOCKER = "Model authority is approved, but on-model generation is not enabled yet. Choose Mannequin to create a garment-only view without using a private identity photo.";
 const CREATE_MEDIA_RECOVERY_ATTEMPTS = 3;
 
 export function ShootComposer() {

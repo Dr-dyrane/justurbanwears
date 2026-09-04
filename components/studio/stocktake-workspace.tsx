@@ -190,7 +190,7 @@ function LocationPicker({
           />
           <span><MapPin aria-hidden="true" size={18} /></span>
           <strong>{location.label}</strong>
-          <small>{counts.get(location.key) ?? 0} expected</small>
+          <small>{counts.get(location.key) ?? 0} expected at this location</small>
         </label>
       ))}
     </fieldset>
@@ -666,7 +666,7 @@ export function StocktakeWorkspace({
               <button key={location.key} onClick={() => { setSelectedLocation(location.key); setStartOpen(true); }} type="button">
                 <span><MapPin aria-hidden="true" size={18} /></span>
                 <strong>{location.label}</strong>
-                <small>{locationCounts.get(location.key) ?? 0} expected</small>
+                <small>{locationCounts.get(location.key) ?? 0} expected at this location</small>
                 <ChevronRight aria-hidden="true" size={17} />
               </button>
             ))}

@@ -95,7 +95,7 @@ test("a model deep link preserves the exact authority without promising an unava
   assert.match(composer, /searchParams\.get\("model"\)/);
   assert.match(composer, /setOperation\("MODEL_TRY_ON"\)[\s\S]*setModelProfileId\(requestedModel\.model\.id\)/);
   assert.match(composer, /Model<\/span><strong>\{selectedModel\?\.name/);
-  assert.match(composer, /On-model photos are not available yet\. Choose On mannequin to create a garment-only view without using a private identity photo\./);
+  assert.match(composer, /Model authority is approved, but on-model generation is not enabled yet\. Choose Mannequin to create a garment-only view without using a private identity photo\./);
   assert.match(composer, /operation !== "MANNEQUIN_FRONT"/);
   assert.match(composer, /operation: "MANNEQUIN_FRONT"/);
   assert.match(composer, /operation === "MANNEQUIN_FRONT" \? \(/);

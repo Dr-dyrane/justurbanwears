@@ -33,7 +33,7 @@ test("Studio uses Home-owned navigation and one shell-owned stack header", () =>
   assert.match(shell, /<StudioCommandCenter showAsk=\{!pathname\.startsWith\("\/studio\/ask"\)\} showSearch=\{isHome\} \/>/);
   assert.match(shell, /aria-label=\{`Back to \$\{stack\.backLabel\}`\}/);
   assert.match(shell, /className="studio-command-page-title"/);
-  assert.match(stackContext, /view === "publishing"\) return \{ backHref: "\/studio", backLabel: "Studio Home", title: "Shop" \}/);
+  assert.match(stackContext, /view === "publishing"\) return \{ backHref: "\/studio", backLabel: "Studio Home", title: "Wardrobe" \}/);
   assert.match(stackContext, /view === "inventory"\) return \{ backHref: "\/studio", backLabel: "Studio Home", title: "Inventory" \}/);
   assert.match(stackContext, /view === "orders"\) return \{ backHref: "\/studio", backLabel: "Studio Home", title: "Orders" \}/);
   assert.match(commandCenter, /aria-label="Find a Studio service or piece"/);
@@ -99,7 +99,7 @@ test("Home presents four primary destinations while search retains all seven dom
   assert.match(home, /onPointerUp/);
   assert.match(home, /studio-home-summary/);
   assert.match(home, /Attention/);
-  assert.match(home, /Available/);
+  assert.match(home, /Available now/);
   assert.match(home, /Orders/);
   assert.match(home, /className="studio-summary-orb"><strong>/);
   assert.doesNotMatch(home, /CircleAlert aria-hidden="true" size=\{15\}|PackageCheck aria-hidden="true" size=\{15\}|ShoppingBag aria-hidden="true" size=\{15\}|Store aria-hidden="true" size=\{15\}/);

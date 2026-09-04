@@ -214,7 +214,7 @@ export function OperationsDesk() {
   const mismatches = work?.locationMismatches ?? EMPTY_PIECES;
   const segments = [
     { key: "attention", label: "Attention", count: work?.attentionCount ?? 0 },
-    { key: "inventory", label: "Inventory", count: pieces.length },
+    { key: "inventory", label: "All records", count: pieces.length },
     { key: "holds", label: "Holds", count: activeHolds.length },
   ];
   const { active: activeView, isPending: viewPending, select: selectView } = useStudioSegment(segments, "attention");

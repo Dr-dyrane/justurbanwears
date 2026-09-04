@@ -522,7 +522,7 @@ export function ModelAtelier() {
       <h1 className="sr-only" id="models">Models</h1>
       {selected ? (
         <StudioLink className="studio-stack-current" href={`/studio/media/new?model=${encodeURIComponent(selected.id)}`}>
-          <span><small>Media options</small><strong>Review media readiness</strong><LifecycleMeta state={selected.state === "READY" ? "READY" : "DRAFT"} /></span>
+          <span><small>Media options</small><strong>Review media readiness</strong><small>Authority approved · on-model generation not enabled</small><LifecycleMeta state={selected.state === "READY" ? "READY" : "DRAFT"} /></span>
           <ArrowRight aria-hidden="true" size={18} />
         </StudioLink>
       ) : (
@@ -537,7 +537,7 @@ export function ModelAtelier() {
       <StudioStackSection>
       <div className="studio-model-layout">
         <aside className="studio-model-index">
-          <div className="studio-model-list" role="group" aria-label={`${readyModels.length} ready Studio models`}>{readyModels.map((model) => <button aria-pressed={selected?.id === model.id} className={selected?.id === model.id ? "studio-model-option is-selected" : "studio-model-option"} key={model.id} onClick={() => setSelectedId(model.id)} type="button"><span className="studio-model-avatar" aria-hidden="true"><UserRound size={21} /></span><span><strong>{model.name}</strong><LifecycleMeta state="READY" /></span></button>)}</div>
+          <div className="studio-model-list" role="group" aria-label={`${readyModels.length} approved model ${readyModels.length === 1 ? "authority" : "authorities"}`}>{readyModels.map((model) => <button aria-pressed={selected?.id === model.id} className={selected?.id === model.id ? "studio-model-option is-selected" : "studio-model-option"} key={model.id} onClick={() => setSelectedId(model.id)} type="button"><span className="studio-model-avatar" aria-hidden="true"><UserRound size={21} /></span><span><strong>{model.name}</strong><LifecycleMeta state="READY" /></span></button>)}</div>
           <button className="studio-model-create" onClick={(event) => openTask("create", event.currentTarget)} type="button"><Plus aria-hidden="true" size={18} /><span><strong>Add model</strong></span><ChevronRight aria-hidden="true" size={16} /></button>
         </aside>
 
