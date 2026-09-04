@@ -4419,6 +4419,41 @@ html:not([data-theme="dark"]) .studio-task-sheet.studio-task-sheet .studio-task-
 .studio-feedback-copy > strong { font-size: 13px; }
 .studio-feedback-detail { color: var(--studio-muted); font-size: 10px; line-height: 1.45; }
 
+.studio-route-recovery {
+  align-content: center;
+  color: var(--studio-ink);
+  display: grid;
+  justify-items: start;
+  min-height: min(70dvh, 680px);
+  padding: clamp(28px, 5vw, 68px);
+}
+
+.studio-route-recovery > svg {
+  color: var(--studio-accent);
+  margin-bottom: 10px;
+}
+
+.studio-route-recovery h1 {
+  font-family: var(--font-display);
+  font-size: clamp(42px, 6vw, 72px);
+  font-weight: 450;
+  letter-spacing: -.05em;
+  line-height: .96;
+  margin: 0;
+  max-width: 12ch;
+}
+
+.studio-route-recovery > p:not(.eyebrow) {
+  color: var(--studio-muted);
+  line-height: 1.55;
+  margin: 18px 0 26px;
+  max-width: 44ch;
+}
+
+.studio-route-recovery > .button {
+  min-height: 44px;
+}
+
 .studio-native-canvas :where(
   .studio-ops-page,
   .studio-connected-orders-page,
