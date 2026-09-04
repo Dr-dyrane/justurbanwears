@@ -1,40 +1,53 @@
 import {
   normalizeStudioAssistantText,
-  resolveStudioAssistantEntryPiece,
+  resolveStudioAssistantEntryRecord,
+  resolveStudioAssistantRouteEntry,
+  scoreStudioAssistantDocument,
   type StudioAssistantContext,
   type StudioAssistantDocument,
   type StudioAssistantWorkflowResponse,
 } from "../studio/assistant/experience";
 import type { StudioAssistantFocus } from "../studio/assistant/threads";
 
-function pieceReference(document: StudioAssistantDocument) {
+function preferredReference(document: StudioAssistantDocument) {
+  if (document.kind !== "Piece") return document.entityId ?? document.id;
   return document.identifiers.find((identifier) => /^JUW-[0-9]/i.test(identifier.trim()))
     ?? document.entityId
     ?? document.id.replace(/^piece:/, "");
 }
 
+function focusEntityType(document: StudioAssistantDocument): StudioAssistantFocus["entityType"] {
+  if (document.kind === "Piece") return "PIECE";
+  if (document.kind === "Collection") return "DROP";
+  if (document.kind === "Order") return "ORDER";
+  if (document.kind === "Media") return "MEDIA";
+  if (document.kind === "Model") return "MODEL";
+  return "SERVICE";
+}
+
 function selectedFocus(document: StudioAssistantDocument): StudioAssistantFocus {
   return {
-    canonicalId: document.entityId ?? document.id.replace(/^piece:/, ""),
-    entityType: "PIECE",
+    canonicalId: document.entityId ?? document.id,
+    entityType: focusEntityType(document),
     label: document.label,
     lastKnownRevision: null,
-    reference: pieceReference(document),
+    reference: preferredReference(document),
     route: document.href,
     unresolvedCandidates: [],
   };
 }
 
 function documentByResultId(context: StudioAssistantContext, id: string) {
-  return context.documents.find((document) => document.kind === "Piece" && document.id === id);
+  return context.documents.find((document) => document.kind !== "Alert" && document.id === id);
 }
 
 function documentByRoute(context: StudioAssistantContext, href: string) {
-  const clean = href.split("?")[0]?.split("#")[0];
-  return context.documents.find((document) => (
-    document.kind === "Piece"
-    && document.href.split("?")[0]?.split("#")[0] === clean
-  ));
+  try {
+    const route = new URL(href, "https://studio.invalid");
+    return resolveStudioAssistantRouteEntry(context.documents, route.pathname, route.search);
+  } catch {
+    return null;
+  }
 }
 
 export function resolveStudioAssistantFocusReference(
@@ -42,13 +55,17 @@ export function resolveStudioAssistantFocusReference(
   reference: string | null | undefined,
 ) {
   if (!reference) return null;
-  const exact = resolveStudioAssistantEntryPiece(context.documents, reference);
+  const exact = resolveStudioAssistantEntryRecord(context.documents, reference);
   if (exact) return selectedFocus(exact);
   const normalized = normalizeStudioAssistantText(reference);
-  const byName = context.documents.filter((document) => (
-    document.kind === "Piece" && normalizeStudioAssistantText(document.label) === normalized
-  ));
-  return byName.length === 1 ? selectedFocus(byName[0]!) : null;
+  const ranked = context.documents
+    .filter((document) => document.kind !== "Alert")
+    .map((document) => ({ document, score: scoreStudioAssistantDocument(document, normalized) }))
+    .filter((candidate) => candidate.score >= 140)
+    .sort((left, right) => right.score - left.score || left.document.id.localeCompare(right.document.id));
+  return ranked[0] && ranked[0].score > (ranked[1]?.score ?? -1)
+    ? selectedFocus(ranked[0].document)
+    : null;
 }
 
 export function projectStudioAssistantFocus(input: {
@@ -62,7 +79,7 @@ export function projectStudioAssistantFocus(input: {
 
   const results = input.workflow.response.blocks.flatMap((block) => (
     block.kind === "results"
-      ? block.items.filter((item) => item.kind === "Piece")
+      ? block.items.filter((item) => item.kind !== "Alert")
       : []
   ));
   if (results.length === 1) {
@@ -82,17 +99,17 @@ export function projectStudioAssistantFocus(input: {
     const candidates = clarification.options.flatMap((option) => {
       const document = documentByRoute(input.context, option.href);
       return document ? [{
-        canonicalId: document.entityId ?? document.id.replace(/^piece:/, ""),
-        entityType: "PIECE" as const,
+        canonicalId: document.entityId ?? document.id,
+        entityType: focusEntityType(document),
         label: document.label,
-        reference: pieceReference(document),
+        reference: preferredReference(document),
         route: document.href,
       }] : [];
     }).slice(0, 6);
     if (candidates.length) {
       return {
         canonicalId: input.current?.canonicalId ?? null,
-        entityType: "PIECE",
+        entityType: input.current?.entityType ?? candidates[0]!.entityType,
         label: input.current?.label ?? null,
         lastKnownRevision: input.current?.lastKnownRevision ?? null,
         reference: input.current?.reference ?? null,

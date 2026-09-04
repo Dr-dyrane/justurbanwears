@@ -58,7 +58,11 @@ function AppShellFrame({ children, operator }: { children: React.ReactNode; oper
             </Link>
           )}
           {isHome ? null : <span className="studio-command-page-title">{stack.title}</span>}
-          <StudioCommandCenter showAsk={!pathname.startsWith("/studio/ask")} showSearch={isHome} />
+          <StudioCommandCenter
+            routeSearch={searchParams.toString()}
+            showAsk={!pathname.startsWith("/studio/ask")}
+            showSearch={isHome}
+          />
         </nav>
       </header>
 

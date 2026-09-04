@@ -6,6 +6,7 @@ import {
   resolveStudioAssistantFocusReference,
 } from "../lib/server/studio-assistant-focus";
 import {
+  resolveStudioAssistantRouteEntry,
   resolveStudioAssistantWorkflow,
   type StudioAssistantContext,
 } from "../lib/studio/assistant/experience";
@@ -34,6 +35,56 @@ const context: StudioAssistantContext = {
     mediaTargetId: "wardrobe-seed-juw-026",
     state: "PUBLISHED",
     tokens: "wardrobe-seed-juw-026 juw-026 violet beaded ruffle romper deep violet published",
+  }, {
+    detail: "34 pieces · active",
+    entityId: "11111111-1111-4111-8111-111111111111",
+    href: "/studio/wardrobe?collection=drop-02",
+    id: "collection:11111111-1111-4111-8111-111111111111",
+    identifiers: ["collection:11111111-1111-4111-8111-111111111111", "11111111-1111-4111-8111-111111111111", "drop-02"],
+    kind: "Collection",
+    label: "Drop 02",
+    state: "ACTIVE",
+    tokens: "drop-02 drop 2 current drop",
+  }, {
+    detail: "Violet Beaded Ruffle Romper",
+    entityId: "ORD-026",
+    href: "/studio/orders/ORD-026",
+    id: "order:ORD-026",
+    identifiers: ["order:ORD-026", "ORD-026", "JUW-026"],
+    kind: "Order",
+    label: "ORD-026",
+    state: "ACTIVE",
+    tokens: "ord-026 juw-026 violet beaded ruffle romper active",
+  }, {
+    detail: "model try on",
+    entityId: "media-026",
+    href: "/studio/media/media-026",
+    id: "media:media-026",
+    identifiers: ["media:media-026", "media-026", "JUW-026"],
+    kind: "Media",
+    label: "Violet model front",
+    state: "COMPLETE",
+    tokens: "media-026 juw-026 violet model front complete",
+  }, {
+    detail: "Approved model authority",
+    entityId: "lulu-v4",
+    href: "/studio/models?view=authority&model=lulu-v4",
+    id: "model:lulu-v4",
+    identifiers: ["model:lulu-v4", "lulu-v4"],
+    kind: "Model",
+    label: "Lulu V4",
+    state: "READY",
+    tokens: "lulu-v4 lulu v4 ready model",
+  }, {
+    detail: "Availability, locations, holds and stock count",
+    entityId: "inventory",
+    href: "/studio/operations?view=inventory",
+    id: "service:inventory",
+    identifiers: ["service:inventory", "inventory", "stock count"],
+    kind: "Service",
+    label: "Inventory",
+    state: "AVAILABLE",
+    tokens: "inventory availability locations holds stock count",
   }],
   provenance: {
     detail: "Connected Studio application snapshot",
@@ -61,12 +112,45 @@ test("thread contracts require a durable conversation outside the simulator", ()
     idempotencyKey: "ask.thread.create:00000000-0000-4000-8000-000000000001",
     pieceReference: "Violet Beaded Ruffle Romper",
   }).success, true);
+  assert.equal(createStudioAssistantThreadSchema.safeParse({
+    focusReference: "order:ORD-026",
+    idempotencyKey: "ask.thread.create:00000000-0000-4000-8000-000000000002",
+  }).success, true);
   assert.equal(updateStudioAssistantThreadSchema.safeParse({
     action: "ARCHIVE",
     expectedVersion: 2,
     idempotencyKey: "ask.thread.archive:00000000-0000-4000-8000-000000000001",
   }).success, true);
   assert.equal(updateStudioAssistantThreadSchema.safeParse({ action: "ARCHIVE" }).success, false);
+});
+
+test("route entry and durable focus cover every supported Studio record kind", () => {
+  const cases = [
+    ["/studio/wardrobe/wardrobe-seed-juw-026", "", "PIECE", "JUW-026"],
+    ["/studio/wardrobe", "?collection=drop-02", "DROP", "11111111-1111-4111-8111-111111111111"],
+    ["/studio/orders/ORD-026", "", "ORDER", "ORD-026"],
+    ["/studio/media/media-026", "", "MEDIA", "media-026"],
+    ["/studio/models", "?view=authority&model=lulu-v4", "MODEL", "lulu-v4"],
+    ["/studio/operations", "?view=inventory", "SERVICE", "inventory"],
+    ["/studio/stocktake", "", "SERVICE", "inventory"],
+  ] as const;
+
+  for (const [pathname, search, entityType, reference] of cases) {
+    const record = resolveStudioAssistantRouteEntry(context.documents, pathname, search);
+    assert.ok(record, `${pathname}${search} should resolve a current Studio record`);
+    const focus = resolveStudioAssistantFocusReference(context, record.id);
+    assert.equal(focus?.entityType, entityType);
+    assert.equal(focus?.reference, reference);
+  }
+
+  assert.equal(
+    resolveStudioAssistantRouteEntry(context.documents, "/studio/operations", "?view=inventory&piece=JUW-026")?.id,
+    "piece:wardrobe-seed-juw-026",
+  );
+  assert.equal(
+    resolveStudioAssistantFocusReference(context, "What can you help with for order:ORD-026?")?.entityType,
+    "ORDER",
+  );
 });
 
 test("thread focus resolves SKU or exact name and refreshes from the current projection", () => {

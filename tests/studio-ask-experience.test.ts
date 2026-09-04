@@ -1205,11 +1205,11 @@ test("the durable route replaces fake modal modes with shared conversation recov
   const stack = readFileSync(`${root}/components/studio/navigation/studio-stack-context.tsx`, "utf8");
   const page = readFileSync(`${root}/app/(studio)/studio/ask/page.tsx`, "utf8");
 
-  assert.match(commandCenter, /currentWardrobePieceId\(pathname\)/);
-  assert.match(commandCenter, /garment\.id === routePieceId \|\| garment\.privateWardrobeItemId === routePieceId/);
-  assert.match(commandCenter, /\)\)\?\.sku \?\? routePieceId/);
-  assert.match(commandCenter, /`\/studio\/ask\?piece=\$\{encodeURIComponent\(currentPieceId\)\}`/);
+  assert.match(commandCenter, /resolveStudioAssistantRouteEntry\(/);
+  assert.match(commandCenter, /`\/studio\/ask\?focus=\$\{encodeURIComponent\(entryRecord\.id\)\}`/);
+  assert.match(commandCenter, /studioScenarioHref\(/);
   assert.match(commandCenter, /href=\{askHref\}/);
+  assert.doesNotMatch(commandCenter, /currentWardrobePieceId/);
   assert.doesNotMatch(commandCenter, /askMode|aria-label="Ask Studio mode"|Read-only agent/);
   assert.doesNotMatch(surface, /window\.sessionStorage/);
   assert.match(surface, /listStudioAssistantThreads/);
@@ -1237,12 +1237,12 @@ test("the durable route replaces fake modal modes with shared conversation recov
   assert.match(surface, /placeholder="Ask about Studio or find a record"/);
   assert.doesNotMatch(surface, /Change JUW-001 price|Prepare media for JUW-003/);
   assert.match(surface, /context\.continueAction/);
-  assert.match(surface, /resolveStudioAssistantEntryPiece\(context\.documents, entryPieceTarget\)/);
-  assert.match(surface, /const entryPieceAction = entryPiece && entryPieceReference/);
+  assert.match(surface, /resolveStudioAssistantEntryRecord\(context\.documents, entryFocusTarget\)/);
+  assert.match(surface, /const entryRecordAction = entryRecord && entryFocusReference/);
   assert.match(surface, /className=\{hasConversation \? "studio-ask-entry-context is-thread" : "studio-ask-entry-context"\}/);
-  assert.match(surface, /\{hasConversation \? entryPieceAction : null\}/);
-  assert.match(surface, /\{entryPieceAction\}/);
-  assert.match(surface, /What can you help with for \$\{entryPieceReference\}\?/);
+  assert.match(surface, /\{hasConversation \? entryRecordAction : null\}/);
+  assert.match(surface, /\{entryRecordAction\}/);
+  assert.match(surface, /What can you help with for \$\{entryFocusReference\}\?/);
   assert.match(surface, /option\.prompt/);
   assert.match(orders, /searchParams\.get\("action"\) !== "create"/);
   assert.match(orders, /searchParams\.get\("piece"\)/);
@@ -1292,7 +1292,7 @@ test("the durable route replaces fake modal modes with shared conversation recov
   assert.match(commandCenter, /Find in Studio/);
   assert.match(commandCenter, /"Scenario find"/);
   assert.match(commandCenter, /"Studio index"/);
-  assert.match(commandCenter, /application\.snapshot\.searchDocuments/);
+  assert.match(commandCenter, /studioAssistantContextFromProjection\(studio\.application\.snapshot\)\.documents/);
   assert.match(commandCenter, /historicalDrop01Kind\(garment\) \?\? garment\.state/);
   assert.match(commandCenter, /READ_ONLY_COMPATIBILITY/);
   assert.match(surface, /Ask Studio is unavailable/);

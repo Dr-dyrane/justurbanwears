@@ -68,7 +68,7 @@ import { studioOrderHasDueWork } from "../../../lib/shop/order-presentation";
 import {
   contextualizeStudioAssistantQuery,
   normalizeStudioAssistantText,
-  resolveStudioAssistantEntryPiece,
+  resolveStudioAssistantEntryRecord,
   resolveStudioAssistantWorkflow,
   studioAssistantSuggestionFamily,
   type StudioAssistantBlock,
@@ -1038,15 +1038,16 @@ export function StudioAskSurface() {
     ? "AVAILABLE"
     : studio.application.snapshot?.capabilities.find((capability) => capability.id === "ASK_READ")?.state ?? "UNAVAILABLE";
   const context = useMemo(() => buildContext(studio), [studio]);
-  const entryPieceTarget = searchParams.get("piece");
-  const entryPiece = useMemo(
-    () => resolveStudioAssistantEntryPiece(context.documents, entryPieceTarget),
-    [context.documents, entryPieceTarget],
+  const entryFocusTarget = searchParams.get("focus") ?? searchParams.get("piece");
+  const entryRecord = useMemo(
+    () => resolveStudioAssistantEntryRecord(context.documents, entryFocusTarget),
+    [context.documents, entryFocusTarget],
   );
-  const entryPieceReference = entryPiece
-    ? entryPiece.identifiers.find((identifier) => /^JUW-[0-9]/i.test(identifier.trim()))
-      ?? entryPiece.entityId
-      ?? entryPiece.id.replace(/^piece:/, "")
+  const entryFocusReference = entryRecord?.id ?? null;
+  const entryDisplayReference = entryRecord?.kind === "Piece"
+    ? entryRecord.identifiers.find((identifier) => /^JUW-[0-9]/i.test(identifier.trim())) ?? null
+    : entryRecord?.kind === "Order"
+      ? entryRecord.entityId ?? null
     : null;
   const starters = useMemo(() => {
     const available = (id: StudioAssistantContext["capabilities"][number]["id"]) => (
@@ -1233,7 +1234,7 @@ export function StudioAskSurface() {
           detail = await readStudioAssistantThread(chosen.id, controller.signal);
         } else {
           const commandScope = `ask-thread-bootstrap:${scope}`;
-          const commandRevision = entryPieceReference ?? "no-piece";
+          const commandRevision = entryFocusReference ?? "no-focus";
           const idempotencyKey = getOrCreateSessionCommandKey({
             keyPrefix: "ask.thread.create",
             revision: commandRevision,
@@ -1241,7 +1242,7 @@ export function StudioAskSurface() {
           });
           detail = await createStudioAssistantThread({
             idempotencyKey,
-            ...(entryPieceReference ? { pieceReference: entryPieceReference } : {}),
+            ...(entryFocusReference ? { focusReference: entryFocusReference } : {}),
           });
           clearSessionCommandKey({ key: idempotencyKey, revision: commandRevision, scope: commandScope });
         }
@@ -1261,7 +1262,7 @@ export function StudioAskSurface() {
       }
     })();
     return () => controller.abort();
-  }, [entryPieceReference, operator?.storageScope, searchParams, setMessages, studio.application.status, studio.scenario]);
+  }, [entryFocusReference, operator?.storageScope, searchParams, setMessages, studio.application.status, studio.scenario]);
 
   const activeThreadId = activeThread?.id;
   useEffect(() => {
@@ -1392,19 +1393,31 @@ export function StudioAskSurface() {
     }
   }
 
-  const entryPieceAction = entryPiece && entryPieceReference ? (
-    <button
-      aria-label={`Ask about ${entryPiece.label}`}
-      className={hasConversation ? "studio-ask-entry-context is-thread" : "studio-ask-entry-context"}
-      disabled={busy}
-      onClick={() => submit(`What can you help with for ${entryPieceReference}?`)}
-      type="button"
-    >
-      <Shirt aria-hidden="true" size={18} />
-      <span><small>Current piece · {entryPieceReference}</small><strong>{entryPiece.label}</strong></span>
-      <ArrowRight aria-hidden="true" size={17} />
-    </button>
-  ) : null;
+  const entryRecordAction = entryRecord && entryFocusReference ? (() => {
+    const visual = resultVisual({
+      detail: entryRecord.detail,
+      href: entryRecord.href,
+      id: entryRecord.id,
+      kind: entryRecord.kind,
+      label: entryRecord.label,
+      state: entryRecord.state,
+    });
+    const Icon = visual.icon;
+    const kind = entryRecord.kind === "Collection" ? "drop" : entryRecord.kind.toLocaleLowerCase("en-NG");
+    return (
+      <button
+        aria-label={`Ask about ${entryRecord.label}`}
+        className={hasConversation ? "studio-ask-entry-context is-thread" : "studio-ask-entry-context"}
+        disabled={busy}
+        onClick={() => submit(`What can you help with for ${entryFocusReference}?`)}
+        type="button"
+      >
+        <Icon aria-hidden="true" size={18} />
+        <span><small>Current {kind}{entryDisplayReference ? ` · ${entryDisplayReference}` : ""}</small><strong>{entryRecord.label}</strong></span>
+        <ArrowRight aria-hidden="true" size={17} />
+      </button>
+    );
+  })() : null;
 
   async function resetConversation(forceCreate = false) {
     if (busy) void stop();
@@ -1428,7 +1441,7 @@ export function StudioAskSurface() {
     threadActionFlightRef.current = true;
     setThreadBusy(true);
     const commandScope = `ask-thread-new:${storageScope}`;
-    const commandRevision = `${activeThread?.id ?? "none"}:${entryPieceReference ?? "no-piece"}`;
+    const commandRevision = `${activeThread?.id ?? "none"}:${entryFocusReference ?? "no-focus"}`;
     const idempotencyKey = getOrCreateSessionCommandKey({
       keyPrefix: "ask.thread.create",
       revision: commandRevision,
@@ -1437,7 +1450,7 @@ export function StudioAskSurface() {
     try {
       const detail = await createStudioAssistantThread({
         idempotencyKey,
-        ...(entryPieceReference ? { pieceReference: entryPieceReference } : {}),
+        ...(entryFocusReference ? { focusReference: entryFocusReference } : {}),
       });
       clearSessionCommandKey({ key: idempotencyKey, revision: commandRevision, scope: commandScope });
       setActiveThread(detail);
@@ -1806,7 +1819,7 @@ export function StudioAskSurface() {
 
         {threadBusy && !activeThread ? <div className="studio-ask-resolving" role="status"><LoaderCircle aria-hidden="true" size={17} />Opening shared history</div> : null}
 
-        {hasConversation ? entryPieceAction : null}
+        {hasConversation ? entryRecordAction : null}
 
         {!hasConversation ? (
           <div className="studio-ask-welcome">
@@ -1820,7 +1833,7 @@ export function StudioAskSurface() {
                 <ArrowRight aria-hidden="true" size={17} />
               </Link>
             ) : null}
-            {entryPieceAction}
+            {entryRecordAction}
             <div>{starters.map((starter) => <button disabled={busy} key={starter} onClick={() => submit(starter)} type="button">{starter}</button>)}</div>
           </div>
         ) : (

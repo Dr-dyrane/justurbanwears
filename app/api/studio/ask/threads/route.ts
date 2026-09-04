@@ -28,18 +28,19 @@ export async function POST(request: Request): Promise<Response> {
       parseEngineJson(request, createStudioAssistantThreadSchema),
     ]);
     let focus = null;
-    if (input.pieceReference) {
+    const focusReference = input.focusReference ?? input.pieceReference;
+    if (focusReference) {
       const projection = await getStudioApplicationProjection(operator);
       focus = resolveStudioAssistantFocusReference(
         studioAssistantContextFromProjection(projection),
-        input.pieceReference,
+        focusReference,
       );
       if (!focus) {
         throw new StudioEngineError(
           "INVALID_REQUEST",
           400,
-          "That piece is not available to Ask Studio.",
-          "Open the current piece and try Ask Studio again.",
+          "That Studio record is not available to Ask Studio.",
+          "Open the current record and try Ask Studio again.",
         );
       }
     }

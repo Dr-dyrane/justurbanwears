@@ -88,7 +88,9 @@ export type StudioAssistantThreadDetail = StudioAssistantThreadSummary & Readonl
 }>;
 
 export const createStudioAssistantThreadSchema = z.object({
+  focusReference: z.string().trim().min(1).max(240).optional(),
   idempotencyKey: z.string().trim().min(8).max(160).regex(/^[a-zA-Z0-9._:-]+$/),
+  /** Compatibility for links created before route-wide focus shipped. */
   pieceReference: z.string().trim().min(1).max(240).optional(),
   title: z.string().trim().min(1).max(120).optional(),
 }).strict();

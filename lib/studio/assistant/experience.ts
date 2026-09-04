@@ -269,6 +269,108 @@ export function normalizeStudioAssistantText(value: string) {
     .replace(/\s+/g, " ");
 }
 
+function focusableStudioAssistantDocument(document: StudioAssistantDocument) {
+  return document.kind !== "Alert";
+}
+
+function routeUrl(value: string) {
+  try {
+    return new URL(value, "https://studio.invalid");
+  } catch {
+    return null;
+  }
+}
+
+/** Resolves an exact projected record without guessing from partial labels. */
+export function resolveStudioAssistantEntryRecord(
+  documents: StudioAssistantDocument[],
+  rawTarget: string | null | undefined,
+  expectedKind?: StudioAssistantDocumentKind,
+) {
+  const target = normalizeStudioAssistantText(rawTarget ?? "");
+  if (!target) return null;
+
+  const matches = new Map<string, StudioAssistantDocument>();
+  for (const document of documents) {
+    if (!focusableStudioAssistantDocument(document)) continue;
+    if (expectedKind && document.kind !== expectedKind) continue;
+    const identifiers = [document.id, document.entityId, ...document.identifiers].filter(Boolean) as string[];
+    if (!identifiers.some((identifier) => normalizeStudioAssistantText(identifier) === target)) continue;
+    matches.set(document.id, document);
+  }
+
+  if (matches.size === 1) return matches.values().next().value ?? null;
+  if (!expectedKind) {
+    const exactPieces = [...matches.values()].filter((document) => document.kind === "Piece");
+    if (exactPieces.length === 1) return exactPieces[0]!;
+  }
+  return null;
+}
+
+/**
+ * Maps the current Studio route back to one exact projected record. Document
+ * routes remain authoritative; the small special cases only cover routes that
+ * carry their subject in an established query or dynamic segment.
+ */
+export function resolveStudioAssistantRouteEntry(
+  documents: StudioAssistantDocument[],
+  pathname: string,
+  rawSearch = "",
+) {
+  const current = routeUrl(`${pathname}${rawSearch.startsWith("?") || !rawSearch ? rawSearch : `?${rawSearch}`}`);
+  if (!current) return null;
+
+  const parameterTargets: Array<[string, StudioAssistantDocumentKind]> = [
+    ["piece", "Piece"],
+    ["garment", "Piece"],
+    ["order", "Order"],
+    ["media", "Media"],
+    ["model", "Model"],
+    ["collection", "Collection"],
+  ];
+  for (const [parameter, kind] of parameterTargets) {
+    const target = current.searchParams.get(parameter);
+    const document = resolveStudioAssistantEntryRecord(documents, target, kind);
+    if (document) return document;
+  }
+
+  const scanReference = /^\/studio\/scan\/([^/]+)\/?$/.exec(current.pathname)?.[1];
+  if (scanReference) {
+    const document = resolveStudioAssistantEntryRecord(documents, decodeURIComponent(scanReference), "Piece");
+    if (document) return document;
+  }
+
+  const atelierOperation = /^\/studio\/media\/atelier\/([^/]+)\/?$/.exec(current.pathname)?.[1];
+  if (atelierOperation) {
+    const document = resolveStudioAssistantEntryRecord(documents, decodeURIComponent(atelierOperation), "Media");
+    if (document) return document;
+  }
+
+  const routeMatches = documents.flatMap((document) => {
+    if (!focusableStudioAssistantDocument(document)) return [];
+    const route = routeUrl(document.href);
+    if (!route || route.pathname !== current.pathname) return [];
+    const entries = [...route.searchParams.entries()];
+    if (!entries.every(([key, value]) => current.searchParams.get(key) === value)) return [];
+    return [{
+      document,
+      score: (entries.length * 10) + (document.kind === "Service" ? 0 : 5),
+    }];
+  }).sort((left, right) => right.score - left.score || left.document.id.localeCompare(right.document.id));
+  if (routeMatches[0] && routeMatches[0].score > (routeMatches[1]?.score ?? -1)) {
+    return routeMatches[0].document;
+  }
+
+  const fallbackService = current.pathname === "/studio/stocktake" || current.pathname.startsWith("/studio/scan/")
+    ? "service:inventory"
+    : current.pathname === "/studio/media/new" || current.pathname.startsWith("/studio/media/atelier/")
+      ? "service:atelier"
+      : null;
+  return fallbackService
+    ? resolveStudioAssistantEntryRecord(documents, fallbackService, "Service")
+    : null;
+}
+
 /**
  * Resolves entry context only from an exact projected identifier. Page labels
  * and fuzzy tokens are deliberately excluded so a route cannot guess which
@@ -278,18 +380,7 @@ export function resolveStudioAssistantEntryPiece(
   documents: StudioAssistantDocument[],
   rawTarget: string | null | undefined,
 ) {
-  const target = normalizeStudioAssistantText(rawTarget ?? "");
-  if (!target) return null;
-
-  const matches = new Map<string, StudioAssistantDocument>();
-  for (const document of documents) {
-    if (document.kind !== "Piece") continue;
-    const identifiers = [document.id, document.entityId, ...document.identifiers].filter(Boolean) as string[];
-    if (!identifiers.some((identifier) => normalizeStudioAssistantText(identifier) === target)) continue;
-    matches.set(document.href, document);
-  }
-
-  return matches.size === 1 ? matches.values().next().value ?? null : null;
+  return resolveStudioAssistantEntryRecord(documents, rawTarget, "Piece");
 }
 
 function includesIdentifier(query: string, identifier: string) {

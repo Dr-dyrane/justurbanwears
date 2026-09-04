@@ -8,7 +8,14 @@ import {
   Search,
 } from "lucide-react";
 import { STUDIO_SERVICES } from "../../../lib/studio/service-registry";
+import {
+  normalizeStudioAssistantText,
+  resolveStudioAssistantRouteEntry,
+  type StudioAssistantDocument,
+} from "../../../lib/studio/assistant/experience";
+import { studioAssistantContextFromProjection } from "../../../lib/studio/assistant/projection";
 import { historicalDrop01Kind } from "../../../lib/studio/projections/piece-workspace";
+import { studioScenarioHref } from "../../../lib/studio/simulator";
 import { StudioLink as Link } from "../atoms/studio-link";
 import { StudioTaskSheet } from "../atoms/studio-task-sheet";
 import { useStudio } from "../studio-provider";
@@ -39,24 +46,12 @@ function scoreDocument(document: CommandDocument, query: string) {
   return words.reduce((score, word) => score + (document.tokens.includes(word) || detail.includes(word) ? 10 : 0), 0);
 }
 
-function documentKind(value: string) {
-  return value.toLocaleLowerCase("en-NG").replaceAll("_", " ").replace(/^./, (letter) => letter.toUpperCase());
-}
-
-function currentWardrobePieceId(pathname: string) {
-  const match = /^\/studio\/wardrobe\/([^/]+)\/?$/.exec(pathname);
-  if (!match) return null;
-  try {
-    return decodeURIComponent(match[1]);
-  } catch {
-    return null;
-  }
-}
-
 export function StudioCommandCenter({
+  routeSearch = "",
   showAsk = true,
   showSearch = true,
 }: {
+  routeSearch?: string;
   showAsk?: boolean;
   showSearch?: boolean;
 }) {
@@ -74,55 +69,60 @@ export function StudioCommandCenter({
     : studio.application.snapshot?.capabilities.find((capability) => capability.id === "ASK_READ")?.state ?? "UNAVAILABLE";
   const canSearch = searchCapability !== "UNAVAILABLE";
   const canAsk = askCapability !== "UNAVAILABLE";
-  const routePieceId = currentWardrobePieceId(pathname);
-  const currentPieceId = routePieceId
-    ? studio.garments.find((garment) => (
-        garment.id === routePieceId || garment.privateWardrobeItemId === routePieceId
-      ))?.sku ?? routePieceId
-    : null;
-  const askHref = currentPieceId
-    ? `/studio/ask?piece=${encodeURIComponent(currentPieceId)}`
-    : "/studio/ask";
-
-  const documents = useMemo<CommandDocument[]>(() => {
-    if (!studio.scenario && studio.application.snapshot) {
-      return studio.application.snapshot.searchDocuments.map((document) => ({
-        id: document.id,
-        kind: documentKind(document.kind),
-        label: document.primaryLabel,
-        detail: [document.secondaryLabel, document.lifecycleState].filter(Boolean).join(" · "),
-        href: document.route,
-        tokens: normalize([
-          document.id,
-          document.primaryLabel,
-          document.secondaryLabel,
-          document.lifecycleState,
-          ...document.aliases,
-        ].join(" ")),
-      }));
+  const routeDocuments = useMemo<StudioAssistantDocument[]>(() => {
+    if (studio.application.snapshot) {
+      return studioAssistantContextFromProjection(studio.application.snapshot).documents;
     }
     return [
       ...STUDIO_SERVICES.map((service) => ({
-        id: `service:${service.key}`,
-        kind: "Service",
-        label: service.label,
         detail: service.description,
+        entityId: service.key,
         href: service.href,
-        tokens: normalize([service.key, service.label, service.description, ...service.aliases].join(" ")),
+        id: `service:${service.key}`,
+        identifiers: [service.key, service.label, ...service.aliases],
+        kind: "Service" as const,
+        label: service.label,
+        state: "AVAILABLE",
+        tokens: normalizeStudioAssistantText([service.key, service.label, service.description, ...service.aliases].join(" ")),
       })),
       ...studio.garments.map((garment) => {
         const state = historicalDrop01Kind(garment) ?? garment.state;
         return {
-          id: `garment:${garment.id}`,
-          kind: "Piece",
-          label: garment.title,
           detail: `${garment.sku} · ${garment.category} · ${state.toLocaleLowerCase("en-NG").replaceAll("_", " ")}`,
+          entityId: garment.id,
           href: `/studio/wardrobe/${encodeURIComponent(garment.id)}`,
-          tokens: normalize(`${garment.sku} ${garment.title} ${garment.category} ${garment.color} ${state}`),
+          id: `piece:${garment.id}`,
+          identifiers: [garment.id, garment.privateWardrobeItemId, garment.sku, garment.title].filter(Boolean) as string[],
+          kind: "Piece" as const,
+          label: garment.title,
+          mediaTargetId: garment.privateWardrobeItemId ?? garment.id,
+          state,
+          tokens: normalizeStudioAssistantText(`${garment.sku} ${garment.title} ${garment.category} ${garment.color} ${state}`),
         };
       }),
     ];
-  }, [studio.application.snapshot, studio.garments, studio.scenario]);
+  }, [studio.application.snapshot, studio.garments]);
+
+  const documents = useMemo<CommandDocument[]>(() => routeDocuments.map((document) => ({
+    id: document.id,
+    kind: document.kind,
+    label: document.label,
+    detail: document.detail,
+    href: document.href,
+    tokens: document.tokens,
+  })), [routeDocuments]);
+
+  const entryRecord = resolveStudioAssistantRouteEntry(
+    routeDocuments,
+    pathname,
+    routeSearch,
+  );
+  const askHref = studioScenarioHref(
+    entryRecord
+      ? `/studio/ask?focus=${encodeURIComponent(entryRecord.id)}`
+      : "/studio/ask",
+    studio.scenario,
+  );
 
   const searchResults = useMemo(() => documents
     .map((document) => ({ document, score: scoreDocument(document, searchQuery) }))
