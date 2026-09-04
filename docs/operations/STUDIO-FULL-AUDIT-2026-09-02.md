@@ -53,7 +53,7 @@ from that deployment.
 | `STU-012A` | Released | `e2f4796` |
 | `STU-012B` | Released | `ad5e800` |
 | `STU-012C` | Runtime correction released; device certification open | `b12b344`; real iOS Safari keyboard-open/closed proof remains required |
-| `STU-013` | Open, separately authorized workstation hygiene | Ignored clones remain outside release discovery; no destructive cleanup was inferred |
+| `STU-013` | Discovery corrected; physical cleanup remains separately authorized | Local and release TypeScript configs now exclude both clone families; the 435-file workstation inventory is classified below without deleting files |
 | `STU-014A–C` | Released | `729509a` |
 
 ### Current deterministic gate
@@ -85,6 +85,26 @@ hashes or weaken the denial gate without reproducing the locked normalization
 environment, rerunning the full negative/positive calibration corpus, and
 issuing a new reviewed calibration revision. No provider request or production
 mutation was made during this gate.
+
+### Workstation clone reconciliation
+
+The `STU-013` non-destructive inventory was refreshed after the remediation
+releases. It found 435 ignored `* 2*`/`* 3*` files totalling 79,807,470 bytes:
+
+- 260 are byte-identical to their current canonical path;
+- 172 are byte-identical to an earlier Git revision of their canonical path;
+- one is a zero-byte placeholder;
+- two are same-size order-flow PNG exports that visibly precede the current
+  branded canonical exports; and
+- zero contain an unmatched source or document revision.
+
+Ordinary `tsconfig.json` and `tsconfig.release.json` now exclude the same
+TypeScript clone suffixes for `ts`, `tsx` and `mts`. A list-files check returns
+zero clone paths, and release typecheck no longer requires temporarily moving
+`wardrobe-workbench 3.tsx`. The ignored files remain on disk: this pass records
+their redundancy but does not infer authority to remove 79.8 MB of local data.
+Re-resolve the exact path/hash inventory immediately before any separately
+authorized cleanup because iCloud can recreate or rename these files.
 
 ## Intended contracts and known documentation drift
 
