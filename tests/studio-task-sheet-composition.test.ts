@@ -11,8 +11,8 @@ test("StudioTaskSheet remains the sole owner of its scroll body", () => {
   assert.match(taskSheet, /<form className="studio-task-sheet-body" onSubmit=\{onSubmit\}>\{content\}<\/form>/u);
   assert.match(taskSheet, /<div className="studio-task-sheet-body">\{content\}<\/div>/u);
   assert.match(taskSheet, /children\(\{ requestClose, requestCloseAndThen \}\)/u);
-  assert.doesNotMatch(atelier, /<form(?:\s|>)/u);
-  assert.doesNotMatch(operations, /<form(?:\s|>)/u);
+  assert.doesNotMatch(atelier, /studio-task-sheet-body/u);
+  assert.doesNotMatch(operations, /studio-task-sheet-body/u);
   assert.match(atelier, /<StudioTaskSheet[\s\S]*?onSubmit=\{save\}/u);
   assert.match(atelier, /<StudioTaskSheet[\s\S]*?onSubmit=\{archiveModel\}/u);
   assert.match(operations, /<StudioTaskSheet[\s\S]*?onSubmit=\{saveHold\}/u);

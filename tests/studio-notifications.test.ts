@@ -47,9 +47,11 @@ test("Home attention is state-derived and documented without delivery overclaim"
   const adr = readFileSync(`${root}/docs/adr/0043-studio-notifications-and-system-readiness.md`, "utf8");
 
   assert.doesNotMatch(shell, /StudioNotificationCenter/);
-  assert.match(home, /const needsAttention = scenario[\s\S]*?Math\.max/);
+  assert.match(home, /const scenarioWork = scenario && connected \? selectStudioWorkProjection\(connected\) : null/);
+  assert.match(home, /const needsAttention = scenario[\s\S]*?scenarioWork\?\.attentionCount/);
   assert.match(home, /aria-label=\{needsAttention === null \? "Attention unavailable" : `Attention \$\{needsAttention\}`\}/);
-  assert.match(services, /connected\?\.notifications\.length/);
+  assert.match(services, /const work = connected \? selectStudioWorkProjection\(connected\) : null/);
+  assert.match(services, /work\?\.attentionCount/);
   assert.match(services, /historicalDrop01Kind\(garment\) === null/);
   assert.match(adr, /does not claim background Web Push, email, SMS, WhatsApp, or cross-device inbox delivery/);
   assert.match(adr, /Arbitrary catalogue create\/update\/delete from Studio \| Not ready/);

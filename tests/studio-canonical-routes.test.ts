@@ -25,7 +25,7 @@ test("the compatibility media archive stays inside the canonical namespace", () 
   const detail = readFileSync(`${root}/components/shoot/shoot-detail.tsx`, "utf8");
   assert.doesNotMatch(gallery + composer + detail, /href="\/shoots|push\(`\/shoots/);
   assert.match(gallery, /\/studio\/media\/new/);
-  assert.match(composer, /router\.push\(`\/studio\/media\/\$\{generation\.id\}`\)/);
+  assert.match(composer, /assignDocumentNavigation\(studioScenarioHref\(`\/studio\/media\/\$\{generation\.id\}`/);
   assert.match(detail, /Return to Media/);
 });
 
@@ -35,7 +35,7 @@ test("Studio shell treats Media as a canonical stack destination", () => {
   assert.match(stackContext, /pathname\.startsWith\("\/studio\/media"\)/);
   assert.match(stackContext, /backLabel: "Atelier"/);
   assert.match(shell, /aria-label=\{`Back to \$\{stack\.backLabel\}`\}/);
-  assert.match(shell, /<StudioCommandCenter showAsk=\{!pathname\.startsWith\("\/studio\/ask"\)\} showSearch=\{isHome\} \/>/);
+  assert.match(shell, /<StudioCommandCenter[\s\S]*?routeSearch=\{searchParams\.toString\(\)\}[\s\S]*?showAsk=\{!pathname\.startsWith\("\/studio\/ask"\)\}[\s\S]*?showSearch=\{isHome\}/);
   assert.doesNotMatch(shell, /aria-label="Media views"|studio-stack-view-nav/);
   assert.doesNotMatch(shell, /pathname\.startsWith\("\/shoots"\)|href="\/shoots"|>Shoots</);
 });

@@ -1,6 +1,6 @@
 # Studio baseline audit and remediation plan — 2026-09-02
 
-Status: `BASELINE_AUDIT_COMPLETE / DEEP_DISCOVERY_IN_PROGRESS / WAVE_1A_IN_PROGRESS`
+Status: `REMEDIATION_RELEASED / CERTIFICATION_PARTIAL / G004_CALIBRATION_BLOCKED`
 
 Audited revision: `50f1f857f33758baf56450435e79ef7eaa4499e4`
 
@@ -24,6 +24,67 @@ At every step the operator must be able to answer:
 3. What is the one useful action now?
 4. What will change before I confirm?
 5. What actually changed after the command finished?
+
+## Current remediation reconciliation — 2026-09-04
+
+The status above now follows the current `main` history instead of the original
+discovery snapshot. Runtime remediation through `b12b344` is deployed as
+`dpl_7gfr139KqDGWLwv92RaT1sQE61nK`, is `READY`, and passed the 35-request
+production smoke. The canonical deployment emits one viewport declaration with
+`viewport-fit=cover`; the authenticated Ask surface also rendered successfully
+from that deployment.
+
+| Finding | Current state | Shipped evidence |
+| --- | --- | --- |
+| `STU-001` | Released | `fa5e142` |
+| `STU-002`, `STU-004` | Released | `97bf7b5` |
+| `STU-003` | Released | `8812bac` |
+| `STU-005` | Released | `9f951ee` |
+| `STU-006` | Released | `37a33ee` |
+| `STU-007A` | Released | `f767401` |
+| `STU-007B` | Released | `fe06e05` |
+| `STU-007C` | Released in three domain cells | `87628be`, `5c26de6`, `bd15724` |
+| `STU-008` | Released | `970516b` |
+| `STU-009A` | Released | `3f4b743` |
+| `STU-009B` | Released | `421d7e4` |
+| `STU-009C` | Released | `371d264` |
+| `STU-010` | Released | `48197de` |
+| `STU-011` | Released | `93a096b` |
+| `STU-012A` | Released | `e2f4796` |
+| `STU-012B` | Released | `ad5e800` |
+| `STU-012C` | Runtime correction released; device certification open | `b12b344`; real iOS Safari keyboard-open/closed proof remains required |
+| `STU-013` | Open, separately authorized workstation hygiene | Ignored clones remain outside release discovery; no destructive cleanup was inferred |
+| `STU-014A–C` | Released | `729509a` |
+
+### Current deterministic gate
+
+The complete TypeScript contract command was run once at this checkpoint. It
+reported 1,147 tests: 1,103 passed and 44 failed. Four failures were obsolete
+source-shape assertions left behind by already-shipped navigation, projection,
+copy, sheet and migration-journal changes; the corrected focused set passes
+27/27. Every TypeScript contract except the two G004-dependent files then
+passed in one process:
+
+- `tests/studio-atelier-execution-service.test.ts`
+- `tests/studio-atelier-g004-provider-visual-denial.test.ts`
+
+Those two files account for the remaining 40 failures and share one fail-closed
+cause. The three version-locked G004 WebP containers and decoded full-size pixel
+hashes still pass their base calibration. On macOS arm64 with Node `24.18.0`,
+Sharp `0.34.5` and libvips `8.17.3`, however, the 32×40 visual-denial
+normalization produced hashes that differ from the locked manifest:
+
+| View | Locked normalized RGB SHA-256 | Observed SHA-256 |
+| --- | --- | --- |
+| `05` | `ca2dac90d5e70d3dcd1187dabe2c6db38a971143209e5ea2c5da56fe58f46fdd` | `9f4a3cac2f71896b0166b4e2304e97bc178797d994e20687ce4da5a940ed2302` |
+| `06` | `c1683067f15b27d687512895e2e75e1231671561a986f77653c8d7724dcc864d` | `57509a67f03a1859290695194b549db92999539dc8b37b917f3a4c3e99d187ef` |
+| `07` | `e774d4ecad9566cd8cb6201974c05f7d6e8fb82ba2cb5ed155554a4a9da256b7` | `8edaf3dab2bdbcfc692b32ec7a77605a67206cb50ffd058c4da1395edf68ce39` |
+
+The engine correctly blocks before provider transport. Do not update these
+hashes or weaken the denial gate without reproducing the locked normalization
+environment, rerunning the full negative/positive calibration corpus, and
+issuing a new reviewed calibration revision. No provider request or production
+mutation was made during this gate.
 
 ## Intended contracts and known documentation drift
 

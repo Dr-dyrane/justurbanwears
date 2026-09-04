@@ -205,8 +205,8 @@ test("Piece surface uses one workspace, durable captures, and a universal access
   assert.doesNotMatch(workbench, /Move to wardrobe|Clear gates|Create media/);
   assert.match(workbench, /All listings are live/);
   assert.match(workbench, /Needs publishing/);
-  assert.match(workbench, /const pieces = localPieces > 0 \? localPieces : collection\.counts\.pieces/);
-  assert.doesNotMatch(workbench, /collection\.counts\.pieces !== null && collection\.key !== "drop-01"/);
+  assert.match(workbench, /const pieces = collection\.counts\.pieces \?\? localPieces/);
+  assert.doesNotMatch(workbench, /localPieces > 0 \? localPieces : collection\.counts\.pieces/);
   assert.match(workbench, /VIEW_OPERATIONS/);
   assert.match(workbench, /Approve Shop preview/);
   assert.match(workbench, /setPublicationNeedsRefresh\(true\)/);

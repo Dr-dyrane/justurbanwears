@@ -39,7 +39,7 @@ test("the authenticated route and client expose an explicit check, never an auto
   const client = source("lib/studio/services/studio-assistant-client.ts");
   const surface = source("components/studio/navigation/studio-ask-surface.tsx");
   const start = surface.indexOf("async function reconcileReply");
-  const end = surface.indexOf("const entryPieceAction", start);
+  const end = surface.indexOf("const entryRecordAction", start);
   const reconciliation = surface.slice(start, end);
 
   assert.match(route, /requireStudioOperator\(\)/);

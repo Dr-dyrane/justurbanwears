@@ -33,7 +33,7 @@ test("Studio exposes one global profile and settings centre", () => {
   assert.match(settings, /studioHeldPieces/);
   assert.match(settings, /liveListings/);
   assert.match(settings, /summary\.available\.value/);
-  assert.match(settings, /piece\$\{availableShopPieces === 1 \? "" : "s"\} available/);
+  assert.match(settings, /\$\{availableShopPieces\} available now/);
   assert.match(settings, /intakeDrafts/);
   assert.match(settings, /consentSummary/);
   assert.match(settings, /Not authorized yet/);

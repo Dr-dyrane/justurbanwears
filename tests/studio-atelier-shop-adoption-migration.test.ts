@@ -115,14 +115,16 @@ test("0020 descends from frozen 0019 and adds only the exact fail-closed Shop ad
     tag: string;
     breakpoints: boolean;
   }> };
-  assert.deepEqual(journal.entries.at(-2), {
+  const adoptionEntryIndex = journal.entries.findIndex((entry) => entry.tag === MIGRATION_TAG);
+  assert.ok(adoptionEntryIndex > 0);
+  assert.deepEqual(journal.entries[adoptionEntryIndex - 1], {
     idx: 19,
     version: "7",
     when: 1_787_893_200_001,
     tag: "0019_studio_atelier_external_authority",
     breakpoints: true,
   });
-  assert.deepEqual(journal.entries.at(-1), {
+  assert.deepEqual(journal.entries[adoptionEntryIndex], {
     idx: 20,
     version: "7",
     when: 1_787_893_200_002,
