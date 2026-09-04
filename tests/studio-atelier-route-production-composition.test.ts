@@ -14,6 +14,7 @@ import type {
   StudioAtelierProductionRuntime,
 } from "../lib/server/studio-atelier-production-runtime";
 import type { StudioAtelierProductionReadinessProbeReport } from "../lib/server/studio-atelier-production-readiness";
+import type { PrepareStudioAtelierCanonicalDeclaration } from "../lib/server/studio-atelier-production-ports";
 import type { StudioAtelierQualifiedEvaluatorBundle } from "../lib/server/studio-atelier-qualified-evaluator";
 import {
   createStudioAtelierStageDeclarationFactory,
@@ -257,6 +258,70 @@ test("verified composition passes declarations and ports but never a caller qual
   ]);
   assert.equal("qualification" in (runtimeInput?.readiness ?? {}), false);
   assert.equal("g004Calibration" in (runtimeInput?.readiness ?? {}), false);
+});
+
+test("verified composition late-binds correction preparation to the constructed facade", async () => {
+  const qualification = {} as StudioAtelierQualifiedEvaluatorBundle;
+  const ports = {} as StudioAtelierProductionPorts;
+  const declaration = Object.freeze({ schemaVersion: "test-declaration" }) as unknown as
+    Parameters<PrepareStudioAtelierCanonicalDeclaration>[0]["declaration"];
+  const prepareCalls: unknown[] = [];
+  let prepareDeclaration: PrepareStudioAtelierCanonicalDeclaration | null = null;
+  const runtime = {
+    facade: {
+      async prepare(operatorSubject: string, rawDeclaration: unknown) {
+        prepareCalls.push({ operatorSubject, declaration: rawDeclaration });
+        return { operationId: "atelier-operation-correction" };
+      },
+    },
+  } as unknown as StudioAtelierProductionRuntime;
+  const compose = createStudioAtelierRouteProductionRuntimeComposer({
+    resolveQualifiedEvaluatorBundle: () => qualification,
+    verifyQualifiedEvaluatorBundle: () => qualification,
+    probeReadiness: async () => verifiedProbeReport(),
+    createPorts(input) {
+      prepareDeclaration = input.prepareDeclaration;
+      return ports;
+    },
+    createRuntime: async () => runtime,
+  });
+
+  assert.equal(await compose(), runtime);
+  assert.equal(typeof prepareDeclaration, "function");
+  const prepared = await prepareDeclaration!({
+    operatorSubject: OPERATOR,
+    declaration,
+  });
+  assert.deepEqual(prepared, { operationId: "atelier-operation-correction" });
+  assert.deepEqual(prepareCalls, [{ operatorSubject: OPERATOR, declaration }]);
+});
+
+test("verified composition keeps correction preparation disabled during runtime construction", async () => {
+  const qualification = {} as StudioAtelierQualifiedEvaluatorBundle;
+  const declaration = Object.freeze({ schemaVersion: "test-declaration" }) as unknown as
+    Parameters<PrepareStudioAtelierCanonicalDeclaration>[0]["declaration"];
+  let prepareDeclaration: PrepareStudioAtelierCanonicalDeclaration | null = null;
+  const compose = createStudioAtelierRouteProductionRuntimeComposer({
+    resolveQualifiedEvaluatorBundle: () => qualification,
+    verifyQualifiedEvaluatorBundle: () => qualification,
+    probeReadiness: async () => verifiedProbeReport(),
+    createPorts(input) {
+      prepareDeclaration = input.prepareDeclaration;
+      return {} as StudioAtelierProductionPorts;
+    },
+    async createRuntime() {
+      assert.equal(typeof prepareDeclaration, "function");
+      await assert.rejects(
+        prepareDeclaration!({ operatorSubject: OPERATOR, declaration }),
+        (error: unknown) => error instanceof StudioEngineError
+          && error.code === "ENGINE_DISABLED"
+          && /No paid work was started/.test(error.recovery),
+      );
+      return {} as StudioAtelierProductionRuntime;
+    },
+  });
+
+  await compose();
 });
 
 test("final-05 advisory lookup binds the exact verified source receipt and truth hash", async () => {

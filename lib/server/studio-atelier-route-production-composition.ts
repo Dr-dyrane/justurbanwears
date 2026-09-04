@@ -15,6 +15,9 @@ import type {
   StudioAtelierProductionDeclarationService,
 } from "./studio-atelier-production-declarations";
 import type {
+  PrepareStudioAtelierCanonicalDeclaration,
+} from "./studio-atelier-production-ports";
+import type {
   StudioAtelierWardrobeSourceBindingReceipt,
 } from "./studio-atelier-stage-declaration-factory";
 
@@ -24,7 +27,9 @@ export type StudioAtelierRouteProductionCompositionDependencies = Readonly<{
     value: StudioAtelierQualifiedEvaluatorBundle | null,
   ): StudioAtelierQualifiedEvaluatorBundle | null;
   probeReadiness(): Promise<StudioAtelierProductionReadinessProbeReport>;
-  createPorts(): Promise<StudioAtelierProductionPorts> | StudioAtelierProductionPorts;
+  createPorts(input: Readonly<{
+    prepareDeclaration: PrepareStudioAtelierCanonicalDeclaration;
+  }>): Promise<StudioAtelierProductionPorts> | StudioAtelierProductionPorts;
   createRuntime(
     input: CreateStudioAtelierProductionRuntimeInput,
   ): Promise<StudioAtelierProductionRuntime>;
@@ -185,8 +190,19 @@ export function createStudioAtelierRouteProductionRuntimeComposer(
       throw disabled(PREFLIGHT_RECOVERY);
     }
     const readiness = exactPrequalificationDeclarations(report);
-    const ports = await dependencies.createPorts();
-    return dependencies.createRuntime({ ports, readiness });
+    let constructedRuntime: StudioAtelierProductionRuntime | null = null;
+    const ports = await dependencies.createPorts({
+      prepareDeclaration: async ({ operatorSubject, declaration }) => {
+        if (!constructedRuntime) throw disabled(PREFLIGHT_RECOVERY);
+        const prepared = await constructedRuntime.facade.prepare(
+          operatorSubject,
+          declaration,
+        );
+        return Object.freeze({ operationId: prepared.operationId });
+      },
+    });
+    constructedRuntime = await dependencies.createRuntime({ ports, readiness });
+    return constructedRuntime;
   };
 }
 
@@ -204,7 +220,7 @@ export async function loadStudioAtelierRouteProductionRuntime(): Promise<
     probeReadiness: async () =>
       (await import("./studio-atelier-production-readiness"))
         .probeStudioAtelierProductionReadiness(),
-    createPorts: async () => {
+    createPorts: async ({ prepareDeclaration }) => {
       const [
         portsModule,
         declarationsModule,
@@ -232,6 +248,7 @@ export async function loadStudioAtelierRouteProductionRuntime(): Promise<
       });
       return portsModule.createStudioAtelierProductionPorts({
         declarations,
+        prepareDeclaration,
         resolveProviderRetentionConsent:
           consentModule.resolveStudioAtelierProviderRetentionConsent,
         resolveAdultLikenessAuthority:

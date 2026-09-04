@@ -13,12 +13,13 @@
   and five authenticated Atelier route handlers were introduced at exact
   commit `a6ef79b`; those two production migrations are applied. This release
   adds concrete production ports and route composition plus migrations
-  `0017`-`0020`; they remain unapplied until guarded database qualification and
-  release complete
+  `0017`-`0020`. The canonical production database has exact 33-migration
+  checksum/timestamp parity through `0032`, verified on 2026-09-04; applied
+  migrations do not authorize paid dispatch
 - Operational cutover status: fail-closed. The route runtime returns
   `ENGINE_DISABLED`, the canonical qualification-bundle resolver returns
   `null`, and the native-room profile has no closed qualification receipt
-- Updated: 2026-08-27
+- Updated: 2026-09-04
 
 This guide turns the manual evidence accumulated from Garments 001 through 024
 into one reusable **01–07 semantic-view engine contract**. The durable facade
@@ -26,10 +27,9 @@ scope includes independent 01–04 garment production, subject synthesis, 05 and
 the independent 06/07 siblings. It does not plan or encode the next garment.
 This is deployed fail-closed architecture, not an enabled paid-cutover claim.
 Concrete server ports and route composition are implemented in this release.
-Production dispatch remains blocked until their migrations are qualified and
-applied, the private authority/profile preflight passes and the canonical
-closed qualification bundle is installed. Applied migrations do not, by
-themselves, authorize provider work.
+Production dispatch remains blocked until the private authority/profile
+preflight passes and the canonical closed qualification bundle is installed.
+Applied migrations do not, by themselves, authorize provider work.
 `OPERATING-CONTRACT.md`, `ATELIER-CANON.md`, current state, garment truth,
 the exact asset manifest and the Runbook remain the sources of production
 truth. The engine compiles and carries that truth without weakening it.
@@ -395,10 +395,10 @@ extension or generation and no subject interpolation. Any visible alpha in a
 discarded band or guard fails instead of being silently cropped.
 
 This removes the former dimension mismatch only. Paid cutover remains blocked
-by `ENGINE_DISABLED`, unapplied release migrations, missing target-environment
-authority readback and the absent closed qualified-evaluator bundle. The new
-profile must also be included in that qualification evidence before final-scene
-dispatch is enabled.
+by `ENGINE_DISABLED` and the absent closed qualified-evaluator bundle. The
+private authority and room readbacks are already verified, but the new profile
+must also be included in qualification evidence before final-scene dispatch is
+enabled.
 
 ## Durable execution and crash checkpoints
 
