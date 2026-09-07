@@ -177,7 +177,7 @@ function ShopChrome({ children }: { children: React.ReactNode }) {
         <Link className="shop-footer-mark" href="/shop" aria-label="justurban wears shop home">
           <BrandWordmark className="shop-footer-wordmark" />
         </Link>
-        <p>Urban ladies’ wear, clearly described.</p>
+        <p>Urban ladies’ wear</p>
         <span>Curated in Lagos · 2026</span>
       </footer>
       <aside
