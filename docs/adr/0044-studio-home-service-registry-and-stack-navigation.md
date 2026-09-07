@@ -5,6 +5,27 @@
 - Owner: Studio Experience
 - Scope: authenticated Studio shell, Home information architecture and navigation; domain workflows remain governed by their existing contracts
 
+## Accepted navigation-placement amendment — 2026-09-07
+
+Only the already-shipped navigation placement is accepted here:
+
+- Home is the primary map, with Profile, Search and Ask Studio controls and the
+  Wardrobe, Atelier, Orders and Operations service list.
+- Other routes use Back, the page title and Ask Studio. Ask Studio itself omits
+  the redundant self-link. Desktop contextual stages are not a second global
+  navigation bar.
+- The old Home work-card grid, persistent navigation dock, route-level FAB and
+  permanent Updates bell are superseded. Attention remains state-derived in
+  Home and the owning service workflows.
+
+Source evidence is `components/studio/app-shell.tsx`,
+`components/studio/navigation/studio-command-center.tsx` and
+`components/studio/navigation/studio-service-list.tsx` at `ed16ea6`.
+The rest of this ADR remains Proposed, including acceptance and certification
+claims not established by this amendment. This does not ratify ADRs 0045 or
+0047 or certify real-device behavior. The original Context and migration plan
+below describe the pre-migration design, not today's runtime state.
+
 ## Context
 
 Studio has grown into a set of capable workspaces: Wardrobe, Atelier media,

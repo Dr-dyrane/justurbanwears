@@ -5,6 +5,17 @@
 - Owner: Studio
 - Scope: operator UX and reproducible visual proof; engine and security contracts stay unchanged
 
+## Navigation amendment — 2026-09-07
+
+The Home work-card layout in decision 1 and the route-level FAB in decision 3
+are superseded by the accepted navigation-placement amendment in
+[ADR 0044](0044-studio-home-service-registry-and-stack-navigation.md).
+Home owns service navigation; contextual actions stay inside their owning
+workspace. Do not restore the retired FAB or work-card grid from these notes.
+The accessibility, truthful-state and reference-privacy rules remain in force.
+The screenshots below that contract are a historical baseline, not current
+release certification; see the [evidence index](../screenshots/studio-ux/README.md).
+
 ## Decision
 
 1. Mobile is the primary Studio layout. Home work cards stay slender in a two-column grid and use one accessible open icon rather than an “Open” label.
@@ -26,4 +37,4 @@ This unit does not reopen completed infrastructure, security or CI audits. Run f
 
 - Lulu gets denser, more legible mobile workspaces with obvious actions and immediate state changes.
 - Screenshots stay reproducible without polluting the live catalogue with fake products.
-- Durable model CRUD and arbitrary catalogue publication remain future engine units; the UI does not claim they are already server-backed.
+- At the original decision date, durable model CRUD and arbitrary catalogue publication were future engine units. This is historical scope, not a current readiness claim; use the [Studio audit reconciliation](../operations/STUDIO-FULL-AUDIT-2026-09-02.md) for later release evidence.

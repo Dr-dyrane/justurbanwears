@@ -4,6 +4,15 @@
 - Date: 2026-08-13
 - Owner: Studio Operations
 
+## Navigation amendment — 2026-09-07
+
+The permanent header Updates bell in decision 1 is superseded by the accepted
+navigation-placement amendment in
+[ADR 0044](0044-studio-home-service-registry-and-stack-navigation.md).
+Attention and work destinations belong to Home and the service stack, not an
+extra header control. Decisions 2–6 retain their state-derived, non-mutating,
+accessible and opt-in boundaries; decision 4 does not require a header badge.
+
 ## Context
 
 Studio exposes garment, model, publishing, order, return, and persistence state, but it had no shared place where Lulu could see unresolved work. Individual banners and counters were easy to miss. This made the product feel like a collection of screens rather than one operating system.
@@ -17,7 +26,12 @@ Studio exposes garment, model, publishing, order, return, and persistence state,
 5. Keep language short and action-led. Each row has one destination, a 44px-or-larger target, keyboard focus, screen-reader naming, light/dark treatment, reduced-motion support, and visible unresolved state.
 6. Do not request operating-system notification permission on first use. This release does not claim background Web Push, email, SMS, WhatsApp, or cross-device inbox delivery.
 
-## Production-readiness ledger
+## Historical production-readiness ledger — 2026-08-13
+
+This table records the original decision's release boundary. It is not the
+current system status or the checklist for another release. Later evidence is
+tracked in the [Studio audit reconciliation](../operations/STUDIO-FULL-AUDIT-2026-09-02.md);
+the [release checklist](../operations/RELEASE-CHECKLIST.md) governs release gates.
 
 | Capability | State | Release truth |
 | --- | --- | --- |
@@ -44,4 +58,4 @@ Lulu gets one dependable view of work that needs attention without notification 
 - Resolving the source record removes its update.
 - Links open the matching Studio view without mutating data.
 - The sheet passes 320px and desktop, light and dark, keyboard focus/return, and screen-reader naming checks.
-- The readiness ledger remains the release checklist for later system work.
+- Preserve this dated readiness ledger as historical evidence; use the current release checklist and audit reconciliation for later system work.

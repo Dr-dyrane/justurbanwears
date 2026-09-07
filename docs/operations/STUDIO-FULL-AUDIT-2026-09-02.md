@@ -105,9 +105,10 @@ was removed.
 
 ## Intended contracts and known documentation drift
 
-ADRs 0044, 0045, 0047 and 0048 are still marked `Proposed`. They describe the
-intended Studio contract and are implemented in part, but their status must not
-be presented as a completed ratification:
+ADRs 0044, 0045 and 0047 remain `Proposed` as whole documents. ADR 0044 now has
+an accepted navigation-placement amendment only (2026-09-07); that does not
+ratify its remaining acceptance criteria or ADRs 0045/0047. ADR 0048 was accepted
+on 2026-09-03 and must not be described as still proposed:
 
 - [ADR 0044](../adr/0044-studio-home-service-registry-and-stack-navigation.md)
   owns Home, service navigation, global Search and the stack shell.
@@ -119,20 +120,33 @@ be presented as a completed ratification:
   makes collection ID/key and server membership authoritative.
 - [Release checklist](RELEASE-CHECKLIST.md) remains the release gate.
 
-The document set also contradicts the shipped navigation:
+Documentation reconciliation on 2026-09-07 resolves the known navigation
+contradictions without changing runtime behavior:
 
-- ADR 0041 still accepts route-level floating action buttons, while ADR 0044
-  removes them in favour of Home-owned service navigation.
-- ADR 0043 still requires a header Updates bell, while ADR 0044 moves updates
-  into the Home/service stack. ADR 0043's readiness ledger also predates the
-  shipped catalogue CRUD, orders, inventory, roles and recovery surfaces.
-- The Studio screenshot-proof README still depicts obsolete work cards and
-  floating action buttons.
+- ADR 0041 explicitly marks its Home work-card grid and route-level FAB as
+  superseded by Home-owned service navigation.
+- ADR 0043 marks the permanent header Updates bell as superseded. Its dated
+  readiness table is historical, not a current release checklist.
+- The screenshot index labels the old work cards and FABs as historical proof,
+  not current acceptance. No original evidence was removed or rewritten.
 
-Remediation must either accept/supersede the relevant ADRs and refresh the
-screenshots, or explicitly document why the older contract remains. Historical
-screenshots and proposed acceptance numbers are evidence, not current business
-truth.
+Wave 0 item 5 is therefore partially complete: navigation contract drift is
+reconciled, but a fresh privacy-safe screenshot set remains open. Historical
+images and proposed acceptance criteria must not be used to certify current
+business truth or real-device behavior.
+
+### Latest bounded UI release — 2026-09-07
+
+Media metadata spacing is live-verified at `ed16ea6`, deployment
+`dpl_8LV2ou7fY8djGJKmox2obmZ5MMFy` (`READY`). The authenticated production
+`/studio/media` loaded that deployment's CSS and showed a 10px gap between the
+view label and Approved/Rejected status, with 4px row spacing when wrapping.
+The status icon and label remain one group. Focused checks passed 13/13; the
+production build and CSS/font budget gate passed; production smoke passed
+35/35. The fresh browser check saw no failed requests and application,
+authority and wardrobe reads returned 200. No business data, private media,
+database configuration or paid generation changed. This release does not close
+the outstanding screenshot refresh or `STU-012C` real-iOS certification.
 
 Two observations from the audit are intentional and should not be “fixed” into
 new navigation:
