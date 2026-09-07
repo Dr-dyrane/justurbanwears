@@ -1243,10 +1243,16 @@ a {
 }
 
 .shoot-card-copy p {
+  align-items: center;
   color: var(--text-soft);
+  display: flex;
+  flex-wrap: wrap;
   font-size: 9px;
+  gap: 4px 10px;
   margin: 0 2px;
 }
+
+.shoot-card-copy .studio-lifecycle-meta { flex: none; }
 
 /* Shoot composer */
 .composer-layout {

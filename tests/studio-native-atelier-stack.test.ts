@@ -27,6 +27,15 @@ test("Atelier gallery rows keep only image, title, media state, and disclosure",
   assert.doesNotMatch(gallery, /item\.createdAt|item\.modelName|shoot-card-overlay/);
 });
 
+test("Atelier metadata separates the view from an intact, wrappable status group", () => {
+  const css = read("app/globals.css");
+  const metadataRule = css.match(/\.shoot-card-copy p\s*\{([^}]+)\}/)?.[1] ?? "";
+  for (const declaration of ["display: flex", "align-items: center", "flex-wrap: wrap", "gap: 4px 10px"]) {
+    assert.ok(metadataRule.includes(declaration), declaration);
+  }
+  assert.match(css, /\.shoot-card-copy \.studio-lifecycle-meta\s*\{\s*flex: none;/);
+});
+
 test("Atelier record keeps one adaptive review surface and the canonical decision grammar", () => {
   assert.equal(detail.match(/<StudioAdaptiveWorkspace/g)?.length, 1);
   assert.doesNotMatch(detail, /<aside className="review-panel"|<div className="review-workspace"/);
