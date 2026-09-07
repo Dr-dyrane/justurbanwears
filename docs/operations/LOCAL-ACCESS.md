@@ -14,8 +14,11 @@ operation authority.
 `?scenario=lifecycle` is a development-only, in-memory compatibility fixture.
 Its business projection resets on reload; it is not a guarantee of complete
 network isolation. The [2026-09-07 iOS Simulator check](../screenshots/studio-ux/2026-09-07-ios-simulator/README.md)
-found that Home still requests the connected profile-avatar endpoint. Do not
-use the fixture flag alone as a no-connected-access safety boundary. Wardrobe,
+initially found that Home requested the connected profile-avatar endpoint.
+The bounded follow-up gates private avatars and consent behind a connected,
+non-scenario operator and supplies a neutral preview icon. This fixes those
+specific requests; do not use the fixture flag alone as a complete
+no-connected-access safety boundary. Wardrobe,
 Media and Operations are its supported surfaces. Because the fixture does not
 mount the connected Orders routes, Studio links translate `/studio/orders` to
 `/studio/operations?view=orders`; a specific order also carries its reference

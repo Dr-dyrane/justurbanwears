@@ -163,6 +163,15 @@ request, and scrolling to garment form fields was not reliably exercised.
 mutation or provider dispatch occurred; no runtime change accompanies this
 receipt.
 
+The subsequent bounded correction fixes those two observed UI defects: Ask's
+header/composer follow Safari's visual viewport, and preview settings no longer
+load private avatars or consent. The receipt now includes two corrected native
+captures, desktop island/draft-preservation checks and focused 93/93 test
+evidence. Release typecheck, build and unchanged CSS/font budgets passed; one
+independent review and its single correction recheck passed. These changes do
+not certify garment-form touch scrolling, both authenticated roles or a
+physical iPhone, and do not close `STU-012C`.
+
 Two observations from the audit are intentional and should not be “fixed” into
 new navigation:
 

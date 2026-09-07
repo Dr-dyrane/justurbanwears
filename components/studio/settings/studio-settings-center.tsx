@@ -9,6 +9,7 @@ import {
   ShieldCheck,
   Sparkles,
   Store,
+  UserRound,
   UsersRound,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -79,7 +80,11 @@ async function readConsentResponse(response: Response): Promise<AtelierConsentSt
   return consent as AtelierConsentStatus;
 }
 
-function LuluProfileAvatar({ menuTrigger = false }: { menuTrigger?: boolean }) {
+function LuluProfileAvatar({ menuTrigger = false, privateAvatarEnabled }: {
+  menuTrigger?: boolean;
+  privateAvatarEnabled: boolean;
+}) {
+  const [imageFailed, setImageFailed] = useState(false);
   return (
     <span
       aria-hidden="true"
@@ -87,23 +92,26 @@ function LuluProfileAvatar({ menuTrigger = false }: { menuTrigger?: boolean }) {
         ? "studio-profile-avatar studio-profile-orb-mobile"
         : "studio-profile-avatar studio-profile-card-avatar"}
     >
-      {/* eslint-disable-next-line @next/next/no-img-element -- authenticated same-origin media keeps the exact private authority bytes */}
-      <img
-        alt=""
-        decoding="async"
-        fetchPriority={menuTrigger ? "high" : "auto"}
-        height={1402}
-        loading={menuTrigger ? "eager" : "lazy"}
-        onError={(event) => { event.currentTarget.hidden = true; }}
-        src={LULU_PROFILE_AVATAR_SRC}
-        width={1122}
-      />
+      {privateAvatarEnabled && !imageFailed ? (
+        // eslint-disable-next-line @next/next/no-img-element -- authenticated same-origin media keeps the exact private authority bytes
+        <img
+          alt=""
+          decoding="async"
+          fetchPriority={menuTrigger ? "high" : "auto"}
+          height={1402}
+          loading={menuTrigger ? "eager" : "lazy"}
+          onError={() => setImageFailed(true)}
+          src={LULU_PROFILE_AVATAR_SRC}
+          width={1122}
+        />
+      ) : <UserRound aria-hidden="true" size={menuTrigger ? 20 : 25} />}
     </span>
   );
 }
 
 export function StudioSettingsCenter({ operator }: { operator: StudioOperatorClientProfile | null }) {
   const studio = useStudio();
+  const connectedSettingsAllowed = Boolean(operator && !studio.scenario);
   const [open, setOpen] = useState(false);
   const [returnFocus, setReturnFocus] = useState<HTMLButtonElement | null>(null);
   const [signingOut, setSigningOut] = useState(false);
@@ -119,9 +127,11 @@ export function StudioSettingsCenter({ operator }: { operator: StudioOperatorCli
   const [adultSelfAttested, setAdultSelfAttested] = useState(false);
   const [likenessAuthorized, setLikenessAuthorized] = useState(false);
   const [retentionAcknowledged, setRetentionAcknowledged] = useState(false);
-  const displayName = operator?.displayName && operator.displayName !== operator.email
-    ? operator.displayName
-    : "Lulu";
+  const displayName = connectedSettingsAllowed
+    ? operator?.displayName && operator.displayName !== operator.email
+      ? operator.displayName
+      : "Lulu"
+    : "Studio preview";
   const authority = studio.authority.snapshot;
   const readyModels = authority?.models.filter((model) => model.state === "READY").length ?? null;
   const studioHeldPieces = authority?.pieces.filter((piece) => piece.expectedCustody === "STUDIO").length ?? null;
@@ -140,6 +150,7 @@ export function StudioSettingsCenter({ operator }: { operator: StudioOperatorCli
     : authority?.pieces.filter((piece) => piece.availability === "PRIVATE").length ?? null;
 
   const loadConsent = useCallback(async (): Promise<AtelierConsentStatus | null> => {
+    if (!connectedSettingsAllowed) return null;
     consentReadControllerRef.current?.abort();
     const controller = new AbortController();
     consentReadControllerRef.current = controller;
@@ -152,6 +163,7 @@ export function StudioSettingsCenter({ operator }: { operator: StudioOperatorCli
         signal: controller.signal,
       });
       const current = await readConsentResponse(response);
+      if (controller.signal.aborted) return null;
       setConsent(current);
       setConsentMessage(null);
       return current;
@@ -166,18 +178,18 @@ export function StudioSettingsCenter({ operator }: { operator: StudioOperatorCli
         setConsentLoading(false);
       }
     }
-  }, []);
+  }, [connectedSettingsAllowed]);
 
   useEffect(() => {
-    if (open && operator) void loadConsent();
+    if (open && connectedSettingsAllowed) void loadConsent();
     return () => {
       consentReadControllerRef.current?.abort();
       consentReadControllerRef.current = null;
     };
-  }, [loadConsent, open, operator]);
+  }, [connectedSettingsAllowed, loadConsent, open]);
 
   const runConsentCommand = useCallback(async (action: "GRANT" | "REVOKE") => {
-    if (!consent || consentCommandInFlightRef.current) return;
+    if (!connectedSettingsAllowed || !consent || consentCommandInFlightRef.current) return;
     consentCommandInFlightRef.current = true;
     setConsentPending(action);
     setConsentMessage(null);
@@ -232,10 +244,11 @@ export function StudioSettingsCenter({ operator }: { operator: StudioOperatorCli
       consentCommandInFlightRef.current = false;
       setConsentPending(null);
     }
-  }, [consent, loadConsent]);
+  }, [connectedSettingsAllowed, consent, loadConsent]);
 
   const canConfirmConsent = Boolean(
-    consent?.canGrant
+    connectedSettingsAllowed
+    && consent?.canGrant
     && adultSelfAttested
     && likenessAuthorized
     && retentionAcknowledged,
@@ -243,7 +256,9 @@ export function StudioSettingsCenter({ operator }: { operator: StudioOperatorCli
   const modelsSummary = readyModels === null
     ? "Model state unavailable"
     : `${readyModels} approved model ${readyModels === 1 ? "authority" : "authorities"}`;
-  const consentSummary = consentLoading && !consent
+  const consentSummary = !connectedSettingsAllowed
+    ? "Connected profile required"
+    : consentLoading && !consent
     ? "Checking authorization…"
     : consentMessage && !consent
       ? "Status needs a refresh"
@@ -276,25 +291,25 @@ export function StudioSettingsCenter({ operator }: { operator: StudioOperatorCli
     <button
       aria-controls="studio-settings-centre"
       aria-expanded={open}
-      aria-label="Profile & settings — Lulu’s Studio spaces"
+      aria-label={connectedSettingsAllowed ? "Profile & settings — Lulu’s Studio spaces" : "Profile & settings — Studio preview"}
       className="studio-settings-trigger studio-profile-orb"
       onClick={(event) => { setReturnFocus(event.currentTarget); setOpen(true); }}
       type="button"
     >
-      <LuluProfileAvatar menuTrigger />
+      <LuluProfileAvatar menuTrigger privateAvatarEnabled={connectedSettingsAllowed} />
     </button>
     <StudioTaskSheet
       className="studio-settings-sheet studio-profile-sheet"
       onDismiss={() => setOpen(false)}
       open={open}
       returnFocus={returnFocus}
-      title="Lulu’s Studio"
+      title={connectedSettingsAllowed ? "Lulu’s Studio" : "Studio preview"}
     >
       <div className="studio-settings-centre" id="studio-settings-centre">
         <section className="studio-settings-identity studio-profile-card" aria-labelledby="studio-profile-name">
-          <LuluProfileAvatar />
-          <div><small>{operator?.role === "admin" ? "Studio admin" : "Studio operator"}</small><h3 id="studio-profile-name">{displayName}</h3><p>{operator?.email ?? "Local Studio preview"}</p></div>
-          <ShieldCheck aria-label="Authenticated private workspace" size={19} />
+          <LuluProfileAvatar privateAvatarEnabled={connectedSettingsAllowed} />
+          <div><small>{connectedSettingsAllowed ? operator?.role === "admin" ? "Studio admin" : "Studio operator" : "Local preview"}</small><h3 id="studio-profile-name">{displayName}</h3><p>{connectedSettingsAllowed ? operator?.email : "No connected profile"}</p></div>
+          {connectedSettingsAllowed ? <ShieldCheck aria-label="Authenticated private workspace" size={19} /> : null}
         </section>
 
         <section className="studio-settings-section" aria-labelledby="studio-appearance-title">
@@ -306,7 +321,8 @@ export function StudioSettingsCenter({ operator }: { operator: StudioOperatorCli
           <div className="studio-settings-heading"><span><UsersRound aria-hidden="true" size={18} /></span><h3 id="studio-identity-title">Identity &amp; privacy</h3></div>
           <div className="studio-settings-group studio-settings-link-group">
             <Link className="studio-settings-link" href="/studio/models"><span><UsersRound aria-hidden="true" size={18} /><span><strong>Models &amp; identity</strong><small>{modelsSummary}</small></span></span><ChevronRight aria-hidden="true" size={17} /></Link>
-            <button className="studio-settings-link" onClick={(event) => {
+            <button className="studio-settings-link" disabled={!connectedSettingsAllowed} onClick={(event) => {
+              if (!connectedSettingsAllowed) return;
               setConsentReturnFocus(event.currentTarget);
               setConsentOpen(true);
               if (!consent && !consentLoading) void loadConsent();
@@ -330,7 +346,7 @@ export function StudioSettingsCenter({ operator }: { operator: StudioOperatorCli
           </div>
         </section>
 
-        {operator ? <button
+        {connectedSettingsAllowed ? <button
           className="studio-settings-signout"
           disabled={signingOut}
           onClick={async () => {
@@ -352,7 +368,7 @@ export function StudioSettingsCenter({ operator }: { operator: StudioOperatorCli
         : consent?.canGrant
           ? (event) => { event.preventDefault(); if (canConfirmConsent) void runConsentCommand("GRANT"); }
           : undefined}
-      open={consentOpen}
+      open={connectedSettingsAllowed && consentOpen}
       returnFocus={consentReturnFocus}
       title="Atelier authorization"
     >

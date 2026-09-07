@@ -1282,7 +1282,7 @@ test("the durable route replaces fake modal modes with shared conversation recov
   assert.match(styles, /\.studio-native-canvas \.studio-ask-form:focus-within/);
   assert.match(styles, /\.studio-native-canvas \.studio-ask-form textarea:focus-visible[\s\S]*?box-shadow: none;/);
   assert.match(surface, /<div className="studio-ask-end" ref=\{endRef\} \/>/);
-  assert.match(surface, /const scroller = end\?\.closest\("main"\)/);
+  assert.match(surface, /const scroller = end\?\.closest\("\.studio-ask-thread"\)/);
   assert.match(surface, /querySelector\("\.studio-ask-composer-dock"\)/);
   assert.match(surface, /const targetBottom = Math\.min\([\s\S]*?composer\.getBoundingClientRect\(\)\.top,[\s\S]*?\) - 12;/);
   assert.match(surface, /scroller\.scrollTo\(\{ behavior: "smooth", top: scroller\.scrollTop \+ delta \}\)/);

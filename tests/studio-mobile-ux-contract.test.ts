@@ -60,7 +60,7 @@ test("Studio uses Home-owned navigation and one shell-owned stack header", () =>
   assert.doesNotMatch(stackCss, /\.studio-stack-nav/);
   assert.match(shell, /id="studio-content"[\s\S]*?tabIndex=\{-1\}/);
   assert.match(stackCss, /studio-stack-shell\[data-studio-page="stack"\] \{[\s\S]*?height: 100dvh;[\s\S]*?overflow: hidden;/);
-  assert.match(stackCss, /studio-stack-shell\[data-studio-page="stack"\] \.workspace \{[\s\S]*?display: flex;[\s\S]*?height: 100dvh;[\s\S]*?overflow: hidden;/);
+  assert.match(stackCss, /studio-stack-shell\[data-studio-page="stack"\] \.workspace \{[\s\S]*?display: flex;[\s\S]*?height: var\(--studio-visual-height, 100dvh\);[\s\S]*?overflow: hidden;/);
   assert.match(stackCss, /main\.page-canvas\.studio-native-canvas \{[\s\S]*?flex: 1 1 auto;[\s\S]*?min-height: 0;[\s\S]*?overflow-y: auto;[\s\S]*?overscroll-behavior-y: contain;/);
   assert.match(stackCss, /@media \(max-width: 680px\)[\s\S]*?grid-template-columns: 44px minmax\(0, 1fr\) 44px/);
   assert.match(rootLayout, /<meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport" \/>/);

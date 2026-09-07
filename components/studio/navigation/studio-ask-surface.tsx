@@ -88,6 +88,7 @@ import {
 } from "../../../lib/studio/idempotency/session-command-key";
 import { STUDIO_SERVICES } from "../../../lib/studio/service-registry";
 import { studioScenarioHref } from "../../../lib/studio/simulator";
+import { bindStudioVisualViewport } from "../../../lib/studio/ui/visual-viewport";
 import {
   actionableStudioDraftCount,
   historicalDrop01Kind,
@@ -1106,6 +1107,12 @@ export function StudioAskSurface() {
   const [replyNotices, setReplyNotices] = useState<Record<string, string>>({});
   const [replyAnnouncement, setReplyAnnouncement] = useState("");
 
+  useEffect(() => {
+    const shell = inputElement?.closest(".studio-stack-shell");
+    if (!(shell instanceof HTMLElement)) return;
+    return bindStudioVisualViewport(shell, window.visualViewport);
+  }, [inputElement]);
+
   const transport = useMemo(() => new DefaultChatTransport<StudioAssistantUIMessage>({
     api: "/api/studio/ask",
     prepareSendMessagesRequest: ({ messages }) => {
@@ -1304,7 +1311,7 @@ export function StudioAskSurface() {
       return;
     }
     const end = endRef.current;
-    const scroller = end?.closest("main");
+    const scroller = end?.closest(".studio-ask-thread");
     const composer = end?.closest(".studio-ask-page")?.querySelector(".studio-ask-composer-dock");
     if (!end || !(scroller instanceof HTMLElement) || !(composer instanceof HTMLElement)) {
       end?.scrollIntoView({ behavior: "smooth", block: "end" });
@@ -1506,7 +1513,7 @@ export function StudioAskSurface() {
     olderMessagesFlightRef.current = true;
     setOlderMessagesBusy(true);
     setThreadError("");
-    const scroller = endRef.current?.closest("main");
+    const scroller = endRef.current?.closest(".studio-ask-thread");
     const previousHeight = scroller instanceof HTMLElement ? scroller.scrollHeight : 0;
     const previousTop = scroller instanceof HTMLElement ? scroller.scrollTop : 0;
     try {

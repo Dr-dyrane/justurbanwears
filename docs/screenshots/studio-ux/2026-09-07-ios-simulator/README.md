@@ -88,3 +88,42 @@ is claimed. `STU-012C` remains open; this bounded check supplements its evidence
 | `03-nested-media.png` | `d79d9fb17ef48b0c0d0d3fc343b32103d71aeefc7e8f7c45a7d9f4754184da0a` |
 | `04-ask-keyboard.png` | `4ed8d7620b6a4b75075b53b697313ffb2f42dddaf71b1d0cb824310c9d828344` |
 | `05-ask-keyboard-dismissed.png` | `d6be6a1f7a8fdd3b485dd9416c4d0e4f0809a6a4a5e5406916567d66792e6357` |
+
+## Bounded correction follow-up — 14:07–14:08
+
+The same native Simulator, fixture and process-only safety overrides were used
+to check the local correction based on `b184efb`. A fresh `127.0.0.1` origin
+was used after the earlier `localhost` document retained stale development
+assets during a Vinext HMR failure. No production failure is inferred.
+
+- [Keyboard open](06-ask-keyboard-corrected.png): Back and the Ask Studio header
+  remain visible; the composer containing unsent `Hi` sits above Safari's
+  keyboard controls. The conversation is the scrollable area, not the composer.
+- [Keyboard dismissed](07-ask-dismissed-corrected.png): the composer returns
+  to the bottom of the canvas, retaining `Hi`; current piece remains the exact
+  `JUW-001 / Coral Drift Dress · Ready` fixture. Back returns to Home.
+- Home and Profile now render a neutral person icon instead of a broken image.
+  Profile truthfully says `Studio preview` / `No connected profile`, and its
+  private authorization action is disabled. A fresh Codex-browser fixture
+  Home → Profile check recorded zero avatar or consent resource requests.
+- At 1440 × 900, the Codex browser retains the established right island.
+  Tasks opens and dismisses without losing an unsent composer draft. This
+  desktop check is separate from the native Simulator captures.
+
+The implementation removes inherited page-bottom padding, gives the thread
+its own scroll container (including older-message position preservation), and
+binds Ask's mobile shell to the visual viewport with cleanup and pinch-zoom
+protection. No Send, Save, Publish or consent command was clicked. No paid
+provider work or business mutation was performed. The unsent drafts were
+cleared after the check.
+
+Focused checks: 93/93; release typecheck and native Vercel build passed;
+CSS/font budget passed at 559.99 KiB raw CSS / 560 KiB. One independent review
+found the older-message scroll-owner mismatch; its bounded correction and
+recheck passed. The full authenticated/device acceptance limits above remain
+open; these two corrected observations do not close `STU-012C`.
+
+| File | SHA-256 |
+| --- | --- |
+| `06-ask-keyboard-corrected.png` | `8e3716c2c7e0c7e665d5b80bff888629f9b156763e71d59da3b8aacd515127fe` |
+| `07-ask-dismissed-corrected.png` | `a2b8235f46243f502a3ac44785f6b06972a2fe7f33bf5823fa0c464fd123f7d8` |

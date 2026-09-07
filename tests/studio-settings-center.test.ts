@@ -46,21 +46,37 @@ test("Studio exposes one global profile and settings centre", () => {
   assert.match(operator, /membership,/);
 });
 
-test("Studio uses the one approved Lulu face for both profile surfaces", () => {
+test("connected Studio uses the one approved Lulu face with an unmounted error fallback", () => {
   assert.match(settings, /const LULU_PROFILE_AVATAR_SRC = "\/api\/studio\/profile\/avatar"/);
   assert.equal(settings.match(/<LuluProfileAvatar/g)?.length, 2);
   assert.doesNotMatch(settings, /avatarInitial|<b>\{initial\}<\/b>|>L<\/b>/);
   assert.match(settings, /fetchPriority=\{menuTrigger \? "high" : "auto"\}/);
   assert.match(settings, /loading=\{menuTrigger \? "eager" : "lazy"\}/);
   assert.doesNotMatch(settings, /online|<i\s*\/>/);
-  assert.match(settings, /onError=\{\(event\) => \{ event\.currentTarget\.hidden = true; \}\}/);
-  assert.doesNotMatch(settings, /blob\.vercel-storage\.com|studio\/model-authorities|\/lulu\.png|<UserRound/);
+  assert.match(settings, /privateAvatarEnabled && !imageFailed \? \(/);
+  assert.match(settings, /onError=\{\(\) => setImageFailed\(true\)\}/);
+  assert.match(settings, /<UserRound aria-hidden="true" size=\{menuTrigger \? 20 : 25\}/);
+  assert.doesNotMatch(settings, /currentTarget\.hidden|blob\.vercel-storage\.com|studio\/model-authorities|\/lulu\.png/);
   assert.match(avatarRoute, /await requireStudioOperator\(\)/);
   assert.match(avatarRoute, /resolveLuluV4AuthorityAssets\(\[LULU_PROFILE_AVATAR_ASSET_ID\]\)/);
   assert.match(avatarRoute, /"lulu\.face\.v4\.front\.lock\.v1"/);
   assert.match(avatarRoute, /"cache-control": "private, no-store, max-age=0"/);
   assert.match(avatarRoute, /"cross-origin-resource-policy": "same-origin"/);
   assert.doesNotMatch(avatarRoute, /pathname|blobUrl|downloadUrl/);
+});
+
+test("scenario and signed-out profiles cannot load private avatars or connected consent", () => {
+  assert.match(settings, /const connectedSettingsAllowed = Boolean\(operator && !studio\.scenario\)/);
+  assert.equal(settings.match(/privateAvatarEnabled=\{connectedSettingsAllowed\}/g)?.length, 2);
+  assert.match(settings, /const loadConsent = useCallback\(async[^]*?if \(!connectedSettingsAllowed\) return null;[^]*?fetch\(ATELIER_CONSENT_ENDPOINT/);
+  assert.match(settings, /if \(!connectedSettingsAllowed \|\| !consent \|\| consentCommandInFlightRef\.current\) return;/);
+  assert.match(settings, /disabled=\{!connectedSettingsAllowed\} onClick=\{\(event\) => \{\s*if \(!connectedSettingsAllowed\) return;/);
+  assert.match(settings, /open=\{connectedSettingsAllowed && consentOpen\}/);
+  assert.match(settings, /Connected profile required/);
+  assert.match(settings, /No connected profile/);
+  assert.match(settings, /\{connectedSettingsAllowed \? <ShieldCheck aria-label="Authenticated private workspace"/);
+  assert.match(settings, /\{connectedSettingsAllowed \? <button\s+className="studio-settings-signout"/);
+  assert.match(settings, /if \(controller\.signal\.aborted\) return null;/);
 });
 
 test("settings stays focused after Home absorbs attention state", () => {
@@ -76,7 +92,7 @@ test("settings links directly to the visual guide", () => {
 });
 
 test("Atelier authorization loads on demand and exposes a recoverable failure", () => {
-  assert.match(settings, /if \(open && operator\) void loadConsent\(\)/);
+  assert.match(settings, /if \(open && connectedSettingsAllowed\) void loadConsent\(\)/);
   assert.match(settings, /if \(!consent && !consentLoading\) void loadConsent\(\)/);
   assert.match(settings, /Authorization status needs a refresh/);
   assert.match(settings, />Try again<\/button>/);

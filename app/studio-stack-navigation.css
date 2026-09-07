@@ -279,16 +279,18 @@ html[data-theme] .studio-stack-shell:has(.studio-home-control-plane) .demo-ribbo
 .studio-ask-page {
   display: grid;
   grid-template-rows: minmax(0, 1fr) auto;
-  margin: 0 auto;
-  min-height: calc(100dvh - 130px);
+  height: 100%;
+  min-height: 0;
   position: relative;
-  width: min(100%, 780px);
 }
 
 .studio-ask-thread {
   display: flex;
   flex-direction: column;
   gap: 28px;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
   padding: 20px 2px 36px;
 }
 
@@ -298,7 +300,7 @@ html[data-theme] .studio-stack-shell:has(.studio-home-control-plane) .demo-ribbo
   flex: 1 1 auto;
   flex-direction: column;
   justify-content: center;
-  min-height: 56dvh;
+  min-height: min-content;
   text-align: center;
 }
 
@@ -960,9 +962,8 @@ html[data-theme] .studio-stack-shell:has(.studio-home-control-plane) .demo-ribbo
 
 .studio-ask-composer-dock {
   background: linear-gradient(180deg, transparent, var(--studio-canvas) 26%);
-  bottom: 0;
-  padding: 34px 0 max(6px, env(safe-area-inset-bottom, 0px));
-  position: sticky;
+  padding: 12px 0 max(6px, env(safe-area-inset-bottom, 0px));
+  position: relative;
   z-index: 2;
 }
 
@@ -1635,16 +1636,8 @@ html[data-theme] .studio-stack-shell:has(.studio-home-control-plane) .demo-ribbo
     background: var(--studio-stack-field);
   }
 
-  .studio-ask-page {
-    min-height: calc(100dvh - 104px);
-  }
-
   .studio-ask-thread {
     padding-top: 8px;
-  }
-
-  .studio-ask-welcome {
-    min-height: 53dvh;
   }
 
   .studio-ask-welcome > div {
@@ -5127,7 +5120,7 @@ body .studio-shell.studio-stack-shell[data-studio-page="stack"] .workspace {
   background: var(--studio-stack-field);
   display: flex;
   flex-direction: column;
-  height: 100dvh;
+  height: var(--studio-visual-height, 100dvh);
   min-height: 0;
   overflow: hidden;
 }
@@ -5151,6 +5144,23 @@ body .studio-shell.studio-stack-shell[data-studio-page="stack"] main.page-canvas
   overscroll-behavior-y: contain;
   scrollbar-gutter: stable;
   width: 100%;
+}
+
+body .studio-shell.studio-stack-shell main.page-canvas.studio-native-canvas:has(> .studio-ask-page) {
+  overflow: hidden;
+  padding-block: 0;
+}
+
+@media (max-width: 760px) {
+  body .studio-shell.studio-stack-shell:has(.studio-ask-page) {
+    height: var(--studio-visual-height, 100dvh);
+    inset-inline: 0;
+    position: fixed;
+    top: var(--studio-visual-top, 0px);
+  }
+  body .studio-shell.studio-stack-shell:has(.studio-ask-page) .studio-command-header {
+    position: absolute;
+  }
 }
 
 /* Durable service routes remain pages, but on a wide canvas their page is the
