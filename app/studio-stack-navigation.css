@@ -241,8 +241,7 @@ html[data-theme] .studio-stack-shell:has(.studio-home-control-plane) .demo-ribbo
   margin-top: 16px;
 }
 
-.studio-command-result,
-.studio-ask-preview {
+.studio-command-result {
   align-items: center;
   background: color-mix(in srgb, var(--studio-panel-strong) 72%, transparent);
   border: 0;
@@ -255,29 +254,22 @@ html[data-theme] .studio-stack-shell:has(.studio-home-control-plane) .demo-ribbo
   padding: 12px 14px;
   text-decoration: none;
 }
-
 .studio-command-result:hover {
   background: var(--studio-panel-hover);
 }
 
-.studio-command-result > span,
-.studio-ask-preview > span {
+.studio-command-result > span {
   display: grid;
   gap: 3px;
   min-width: 0;
 }
-
-.studio-command-result strong,
-.studio-ask-preview strong {
+.studio-command-result strong {
   font-size: 13px;
 }
-
-.studio-command-result small,
-.studio-ask-preview small {
+.studio-command-result small {
   color: var(--studio-muted);
   font-size: 11px;
 }
-
 .studio-search-sheet {
   max-width: 640px;
 }
@@ -617,10 +609,6 @@ html[data-theme] .studio-stack-shell:has(.studio-home-control-plane) .demo-ribbo
   color: var(--studio-ink);
 }
 
-.studio-ask-turn {
-  display: grid;
-  gap: 16px;
-}
 
 .studio-ask-operator {
   align-self: end;
@@ -1137,14 +1125,12 @@ html[data-theme] .studio-stack-shell:has(.studio-home-control-plane) .demo-ribbo
   text-underline-offset: 3px;
 }
 
-.studio-ask-restored,
 .studio-ask-fallback-label {
   color: var(--studio-faint);
   display: block;
   font-size: 9px;
   letter-spacing: .02em;
 }
-
 .studio-ask-fallback-label {
   color: var(--studio-warning, #9b642f);
 }
@@ -1980,59 +1966,15 @@ html[data-theme] .studio-stack-shell:has(.studio-home-control-plane) .demo-ribbo
 }
 
 .studio-shell.studio-stack-shell .studio-stack-current .studio-lifecycle-meta,
-.studio-shell.studio-stack-shell .studio-publishing-row .studio-lifecycle-meta,
 .studio-shell.studio-stack-shell .studio-model-option .studio-lifecycle-meta {
   margin-top: 2px;
 }
 
-.studio-shell.studio-stack-shell .studio-publishing-row {
-  align-items: stretch;
-  gap: 14px;
-  grid-template-columns: 78px minmax(0, 1fr) 18px;
-  min-height: 96px;
-  overflow: hidden;
-  padding: 0 14px 0 0;
-}
 
-.studio-shell.studio-stack-shell .studio-publishing-copy {
-  align-content: center;
-  display: grid;
-  gap: 3px;
-  min-width: 0;
-}
 
-.studio-shell.studio-stack-shell .studio-publishing-copy > strong {
-  font-size: 14px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
 
-.studio-shell.studio-stack-shell .studio-publishing-copy > small {
-  color: var(--studio-muted);
-  font-size: 10px;
-}
 
-.studio-shell.studio-stack-shell .studio-publishing-media {
-  align-items: center;
-  align-self: stretch;
-  background: var(--studio-panel-muted);
-  color: var(--studio-muted);
-  display: flex;
-  justify-content: center;
-  min-height: 96px;
-  overflow: hidden;
-  width: 78px;
-}
 
-.studio-shell.studio-stack-shell .studio-publishing-media img {
-  height: 100%;
-  object-fit: cover;
-  object-position: center top;
-  width: 100%;
-}
-
-.studio-shell.studio-stack-shell .studio-publishing-row > svg { display: block; }
 
 .studio-shell.studio-stack-shell .studio-model-option {
   grid-template-columns: 42px minmax(0, 1fr);
@@ -2081,13 +2023,11 @@ html body .studio-stack-shell .workspace > main.page-canvas:has(> .studio-home-c
 /* Home hierarchy -------------------------------------------------------- */
 
 .studio-home-summary,
-.studio-home-continue,
 .studio-home-services,
 .studio-home-recent,
 .studio-home-arrange {
   margin-top: clamp(24px, 4vw, 48px);
 }
-
 .studio-home-summary {
   margin-top: 0;
 }
@@ -2287,17 +2227,12 @@ html body .studio-stack-shell .workspace > main.page-canvas:has(> .studio-home-c
   color: var(--studio-accent-display, var(--studio-accent));
 }
 
-.studio-stack-collection,
 .studio-stack-secondary {
   display: grid;
 }
-
-.studio-stack-collection > *,
 .studio-stack-secondary > * {
   position: relative;
 }
-
-.studio-stack-collection > :not(:last-child)::after,
 .studio-stack-secondary > :not(:last-child)::after {
   background: var(--studio-line);
   bottom: 0;
@@ -2307,7 +2242,6 @@ html body .studio-stack-shell .workspace > main.page-canvas:has(> .studio-home-c
   position: absolute;
   right: 0;
 }
-
 .studio-stack-secondary > a,
 .studio-stack-secondary > button {
   gap: 12px;
@@ -2408,54 +2342,11 @@ html body .studio-stack-shell .workspace > main.page-canvas:has(> .studio-home-c
   color: var(--studio-accent-display, var(--studio-accent));
 }
 
-.studio-drop-scope-list {
-  display: grid;
-}
 
-.studio-drop-scope-list > button {
-  align-items: center;
-  background: transparent;
-  border: 0;
-  color: var(--studio-ink);
-  cursor: pointer;
-  display: flex;
-  font: inherit;
-  font-size: 14px;
-  font-weight: 650;
-  justify-content: space-between;
-  min-height: 58px;
-  padding: 8px 4px;
-  position: relative;
-  text-align: left;
-  width: 100%;
-}
 
-.studio-drop-scope-list > button:not(:last-child)::after {
-  background: var(--studio-line);
-  bottom: 0;
-  content: "";
-  height: 1px;
-  left: 0;
-  position: absolute;
-  right: 0;
-}
 
-.studio-drop-scope-list > button > span:last-child {
-  align-items: center;
-  color: var(--studio-muted);
-  display: inline-flex;
-  font-size: 11px;
-  gap: 10px;
-}
 
-.studio-drop-scope-list > button.is-selected {
-  color: var(--studio-accent-display, var(--studio-accent));
-}
 
-.studio-drop-scope-list > button:disabled {
-  cursor: default;
-  opacity: .38;
-}
 
 .studio-service-copy {
   display: grid;
@@ -2467,12 +2358,10 @@ html body .studio-stack-shell .workspace > main.page-canvas:has(> .studio-home-c
   font-size: 14px;
 }
 
-.studio-service-copy small,
-.studio-service-status {
+.studio-service-copy small {
   color: var(--studio-muted);
   font-size: 10px;
 }
-
 .studio-arrange-trigger {
   align-items: center;
   background: transparent;
@@ -2665,34 +2554,8 @@ html body .studio-stack-shell .workspace > main.page-canvas:has(> .studio-home-c
   margin-top: 2px;
 }
 
-.studio-home-recommendation-actions {
-  display: flex;
-  gap: 8px;
-  margin-top: 2px;
-  overflow-x: auto;
-  padding-bottom: 2px;
-  scrollbar-width: none;
-}
 
-.studio-home-recommendation-actions::-webkit-scrollbar {
-  display: none;
-}
 
-.studio-home-recommendation-actions > a {
-  align-items: center;
-  background: color-mix(in srgb, var(--studio-panel-strong) 68%, transparent);
-  border: 1px solid color-mix(in srgb, var(--studio-line) 72%, transparent);
-  border-radius: 999px;
-  color: var(--studio-ink);
-  display: inline-flex;
-  flex: 0 0 auto;
-  font-size: 11px;
-  font-weight: 690;
-  gap: 8px;
-  min-height: 36px;
-  padding: 0 13px;
-  text-decoration: none;
-}
 
 .studio-home-recommendation-actions > a:hover,
 .studio-home-recommendation-actions > a:focus-visible {
@@ -3082,27 +2945,10 @@ html body .studio-stack-shell[data-studio-page="home"] .workspace > main.page-ca
     padding-inline: 13px;
   }
 
-  .studio-ask-sheet {
-    height: calc(100dvh - 8px);
-    max-height: calc(100dvh - 8px);
-  }
 
-  .studio-ask-sheet .studio-task-sheet-header {
-    padding-bottom: 10px;
-  }
 
-  .studio-ai-chat {
-    padding: 8px 14px calc(12px + env(safe-area-inset-bottom, 0px));
-  }
 
-  .studio-ai-thread {
-    min-height: 320px;
-    padding-block: 20px;
-  }
 
-  .studio-ai-message {
-    max-width: 92%;
-  }
 
   .studio-stack-shell .page-canvas,
   .studio-shell:has(.studio-premium-surface) .page-canvas {
@@ -3780,9 +3626,6 @@ html[data-theme="dark"] .studio-stack-shell {
   border: 0;
 }
 
-.studio-home-recommendation-actions > a {
-  border: 0;
-}
 
 /* Wardrobe becomes the same image-led list as Inventory and Atelier. */
 .studio-shell.studio-stack-shell .studio-native-canvas .studio-garment-grid {
@@ -3880,23 +3723,18 @@ html[data-theme="dark"] .studio-stack-shell {
 
 .studio-shell.studio-stack-shell .studio-inventory-list,
 .studio-native-canvas .shoot-gallery,
-.studio-native-canvas .studio-connected-order-list,
-.studio-native-canvas .studio-publishing-queue {
+.studio-native-canvas .studio-connected-order-list {
   gap: 0;
 }
-
 .studio-shell.studio-stack-shell .studio-inventory-list > article,
 .studio-native-canvas .shoot-gallery > .shoot-card,
-.studio-native-canvas .studio-connected-order-list > *,
-.studio-native-canvas .studio-publishing-queue > * {
+.studio-native-canvas .studio-connected-order-list > * {
   border-radius: 0;
   position: relative;
 }
-
 .studio-shell.studio-stack-shell .studio-inventory-list > article:not(:last-child)::after,
 .studio-native-canvas .shoot-gallery > .shoot-card:not(:last-child)::after,
-.studio-native-canvas .studio-connected-order-list > :not(:last-child)::after,
-.studio-native-canvas .studio-publishing-queue > :not(:last-child)::after {
+.studio-native-canvas .studio-connected-order-list > :not(:last-child)::after {
   background: var(--studio-line);
   bottom: 0;
   content: "";
@@ -3906,7 +3744,6 @@ html[data-theme="dark"] .studio-stack-shell {
   right: 0;
   z-index: 2;
 }
-
 /* Every bounded CRUD flow is one sheet canvas—not cards inside a card. */
 .studio-task-sheet.studio-task-sheet .studio-task-sheet-frame {
   background: var(--studio-panel-strong);
@@ -3943,13 +3780,11 @@ html:not([data-theme="dark"]) .studio-task-sheet.studio-task-sheet .studio-task-
 }
 
 .studio-settings-identity,
-.studio-settings-status-list,
 .studio-settings-link {
   background: transparent;
   border-radius: 0;
   box-shadow: none;
 }
-
 .studio-settings-identity,
 .studio-settings-section {
   position: relative;
@@ -3970,9 +3805,6 @@ html:not([data-theme="dark"]) .studio-task-sheet.studio-task-sheet .studio-task-
   right: 0;
 }
 
-.studio-settings-boundary {
-  display: none;
-}
 
 .studio-settings-section {
   background: transparent;
@@ -4008,42 +3840,17 @@ html:not([data-theme="dark"]) .studio-task-sheet.studio-task-sheet .studio-task-
   overflow: hidden;
 }
 
-.studio-settings-section .theme-settings,
-.studio-settings-status-list {
+.studio-settings-section .theme-settings {
   background: transparent;
   border-radius: 0;
 }
-
 .studio-settings-section .theme-settings {
   padding: 6px;
 }
 
-.studio-settings-status-list > div {
-  min-height: 66px;
-  padding-inline: 14px;
-  position: relative;
-}
 
-.studio-settings-status-list > div + div {
-  border: 0;
-}
 
-.studio-settings-status-list > div + div::before {
-  background: var(--studio-line);
-  content: "";
-  height: 1px;
-  left: 28px;
-  position: absolute;
-  right: 0;
-  top: 0;
-}
 
-.studio-settings-status-list > div > b {
-  background: transparent;
-  border-radius: 0;
-  color: var(--studio-muted);
-  padding: 0;
-}
 
 .studio-settings-link {
   min-height: 66px;
@@ -4108,31 +3915,22 @@ html:not([data-theme="dark"]) .studio-task-sheet.studio-task-sheet .studio-task-
 }
 
 /* Drop management: ordinal is the visual rail; state lives in the subline. */
-.studio-drop-list,
-.studio-drop-actions {
+.studio-drop-list {
   display: grid;
 }
-
 .studio-drop-row,
-.studio-drop-context-row,
-.studio-drop-new,
-.studio-drop-actions > button {
+.studio-drop-context-row {
   background: transparent;
   color: var(--studio-ink);
   min-height: 68px;
   position: relative;
 }
-
 .studio-drop-row,
-.studio-drop-context-row,
-.studio-drop-new {
+.studio-drop-context-row {
   border-radius: 0;
 }
-
 .studio-drop-context-row,
-.studio-drop-new,
-.studio-drop-row-main,
-.studio-drop-actions > button {
+.studio-drop-row-main {
   align-items: center;
   display: grid;
   font: inherit;
@@ -4142,7 +3940,6 @@ html:not([data-theme="dark"]) .studio-task-sheet.studio-task-sheet .studio-task-
   text-align: left;
   width: 100%;
 }
-
 .studio-drop-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 44px;
@@ -4156,17 +3953,9 @@ html:not([data-theme="dark"]) .studio-task-sheet.studio-task-sheet .studio-task-
   grid-template-columns: 42px minmax(0, 1fr) auto;
 }
 
-.studio-drop-row-more {
-  align-items: center;
-  background: transparent;
-  color: var(--studio-muted);
-  display: flex;
-  justify-content: center;
-}
 
 .studio-drop-row:not(:last-child)::after,
-.studio-drop-context-row:not(:last-child)::after,
-.studio-drop-actions > button:not(:last-child)::after {
+.studio-drop-context-row:not(:last-child)::after {
   background: var(--studio-line);
   bottom: 0;
   content: "";
@@ -4175,7 +3964,6 @@ html:not([data-theme="dark"]) .studio-task-sheet.studio-task-sheet .studio-task-
   position: absolute;
   right: 0;
 }
-
 .studio-drop-ordinal {
   align-items: center;
   background: var(--studio-panel-muted);
@@ -4194,20 +3982,15 @@ html:not([data-theme="dark"]) .studio-task-sheet.studio-task-sheet .studio-task-
   color: var(--studio-accent-display, var(--studio-accent));
 }
 
-.studio-drop-row-copy,
-.studio-drop-actions > button > span {
+.studio-drop-row-copy {
   display: grid;
   gap: 4px;
   min-width: 0;
 }
-
-.studio-drop-row-copy strong,
-.studio-drop-actions > button strong {
+.studio-drop-row-copy strong {
   font-size: 14px;
 }
-
-.studio-drop-row-copy small,
-.studio-drop-actions > button small {
+.studio-drop-row-copy small {
   align-items: center;
   color: var(--studio-muted);
   display: flex;
@@ -4215,79 +3998,14 @@ html:not([data-theme="dark"]) .studio-task-sheet.studio-task-sheet .studio-task-
   gap: 5px;
 }
 
-.studio-drop-new {
-  color: var(--studio-accent-display, var(--studio-accent));
-}
 
-.studio-drop-name,
-.studio-drop-preview,
-.studio-drop-receipt {
-  display: grid;
-  gap: 18px;
-}
 
-.studio-drop-name label,
-.studio-drop-preview > p,
-.studio-drop-receipt {
-  padding-block: 14px;
-}
 
-.studio-drop-name label {
-  display: grid;
-  gap: 8px;
-}
 
-.studio-drop-name input {
-  background: var(--studio-panel-muted);
-  border: 0;
-  border-radius: 18px;
-  color: var(--studio-ink);
-  font: inherit;
-  min-height: 56px;
-  padding: 0 16px;
-}
 
-.studio-drop-diff {
-  display: grid;
-}
 
-.studio-drop-diff > div {
-  align-items: center;
-  display: grid;
-  gap: 8px;
-  grid-template-columns: minmax(70px, .65fr) minmax(0, 1fr) auto minmax(0, 1fr);
-  min-height: 58px;
-  position: relative;
-}
 
-.studio-drop-diff > div + div::before {
-  background: var(--studio-line);
-  content: "";
-  height: 1px;
-  left: 0;
-  position: absolute;
-  right: 0;
-  top: 0;
-}
 
-.studio-drop-diff span,
-.studio-drop-diff small,
-.studio-drop-preview > p,
-.studio-drop-receipt small {
-  color: var(--studio-muted);
-  font-size: 10px;
-}
-
-.studio-drop-receipt > span {
-  align-items: center;
-  background: color-mix(in srgb, var(--studio-positive) 13%, transparent);
-  border-radius: 50%;
-  color: var(--studio-positive);
-  display: flex;
-  height: 44px;
-  justify-content: center;
-  width: 44px;
-}
 
 .studio-drop-sheet .studio-feedback {
   background: transparent;
@@ -4318,19 +4036,15 @@ html:not([data-theme="dark"]) .studio-task-sheet.studio-task-sheet .studio-task-
   .studio-shell.studio-stack-shell .studio-native-canvas .studio-garment-grid,
   .studio-shell.studio-stack-shell .studio-native-canvas .studio-inventory-list,
   .studio-native-canvas .shoot-gallery,
-  .studio-native-canvas .studio-connected-order-list,
-  .studio-native-canvas .studio-publishing-queue {
+  .studio-native-canvas .studio-connected-order-list {
     margin-inline: calc(var(--studio-page-rail) * -1);
   }
-
   .studio-shell.studio-stack-shell .studio-native-canvas .studio-garment-card,
   .studio-shell.studio-stack-shell .studio-native-canvas .studio-inventory-row-trigger,
   .studio-native-canvas .shoot-card,
-  .studio-native-canvas .studio-connected-order-list > *,
-  .studio-native-canvas .studio-publishing-queue > * {
+  .studio-native-canvas .studio-connected-order-list > * {
     padding-right: var(--studio-page-rail);
   }
-
   .studio-task-sheet.studio-task-sheet .studio-task-sheet-body {
     padding-inline: 16px;
   }
@@ -4608,22 +4322,6 @@ html:not([data-theme="dark"]) .studio-task-sheet.studio-task-sheet .studio-task-
 }
 
 /* Section titles and tabs no longer restate the page name. */
-.studio-native-canvas .studio-section-title {
-  align-items: center;
-  margin: 0 0 12px;
-}
-.studio-native-canvas .studio-section-title .eyebrow { display: none; }
-.studio-native-canvas .studio-section-title h2 {
-  font-family: var(--font-body);
-  font-size: 18px;
-  font-weight: 720;
-  letter-spacing: -.025em;
-  margin: 0;
-}
-.studio-native-canvas .studio-section-title > span {
-  color: var(--studio-muted);
-  font-size: 10px;
-}
 
 .studio-native-canvas .studio-segmented-view {
   background: transparent;
@@ -4685,12 +4383,10 @@ html:not([data-theme="dark"]) .studio-task-sheet.studio-task-sheet .studio-task-
   font-size: clamp(20px, 3vw, 30px);
 }
 
-.studio-native-canvas .studio-piece-blockers,
 .studio-native-canvas .studio-piece-shop,
 .studio-native-canvas .studio-pending-product-media {
   box-shadow: none;
 }
-
 /* Atelier now uses the same image-led row grammar as Wardrobe and Inventory. */
 .studio-native-canvas .shoot-gallery {
   display: grid;
@@ -4765,16 +4461,7 @@ html:not([data-theme="dark"]) .studio-task-sheet.studio-task-sheet .studio-task-
   min-height: 44px;
 }
 
-.studio-native-canvas .studio-connected-state-grid {
-  gap: 1px;
-  margin: 0;
-}
 
-.studio-native-canvas .studio-connected-state-grid > div {
-  background: var(--studio-panel);
-  min-height: 68px;
-  padding: 14px;
-}
 
 .studio-native-canvas .studio-order-action-section,
 .studio-native-canvas .studio-connected-order-summary,
@@ -4919,15 +4606,7 @@ html[data-theme="dark"] body .studio-task-sheet {
   padding: 0;
 }
 
-.studio-drop-new > span {
-  display: grid;
-  gap: 3px;
-  min-width: 0;
-}
 
-.studio-drop-new > span > :is(strong, small) {
-  display: block;
-}
 
 @media (max-width: 760px) {
   .studio-shell.studio-stack-shell main.page-canvas.studio-native-canvas {
@@ -4998,38 +4677,10 @@ html[data-theme="dark"] body .studio-task-sheet {
   padding-inline: 2px;
 }
 
-.studio-native-canvas .studio-piece-secondary-trigger {
-  align-items: center;
-  color: var(--studio-ink);
-  cursor: pointer;
-  display: grid;
-  font: inherit;
-  gap: 14px;
-  grid-template-columns: minmax(0, 1fr) auto;
-  min-height: 64px;
-  padding: 0 2px;
-  text-align: left;
-  width: 100%;
-}
 
-.studio-native-canvas .studio-piece-secondary-trigger > span {
-  display: grid;
-  gap: 3px;
-}
 
-.studio-native-canvas .studio-piece-secondary-trigger strong {
-  font-size: 13px;
-}
 
-.studio-native-canvas .studio-piece-secondary-trigger small {
-  color: var(--studio-muted);
-  font-size: 10px;
-}
 
-.studio-native-canvas .studio-piece-secondary-trigger > svg {
-  color: var(--studio-faint);
-  transition: transform 160ms var(--ease-liquid);
-}
 
 .studio-native-canvas .studio-piece-secondary-trigger:is(:hover, :focus-visible) {
   background: color-mix(in srgb, var(--studio-accent) 6%, transparent);
@@ -5062,14 +4713,12 @@ html[data-theme="dark"] body .studio-task-sheet {
   box-shadow: none;
 }
 
-.studio-piece-details-sheet .studio-piece-blockers,
 .studio-piece-details-sheet .studio-piece-shop,
 .studio-piece-details-sheet .studio-listing-preview,
 .studio-piece-details-sheet .studio-listing-editor {
   color: var(--studio-ink);
   padding: 18px 0;
 }
-
 .studio-piece-details-sheet .studio-listing-card {
   display: grid;
   grid-template-columns: 1fr;
@@ -5740,70 +5389,21 @@ body .studio-shell.studio-stack-shell[data-studio-page="stack"] main.page-canvas
 
 /* Publishing is an image-led review queue rather than a sparse metadata
    table. State remains textual and accessible; the tone only supports it. */
-.studio-shell.studio-stack-shell .studio-native-canvas .studio-publishing-queue {
-  gap: 12px;
-}
 
-.studio-shell.studio-stack-shell .studio-native-canvas .studio-publishing-row.studio-compact-row {
-  background: color-mix(in srgb, var(--studio-row-tone) 5%, var(--studio-panel));
-  border-radius: 24px;
-  box-shadow: none;
-  gap: 16px;
-  grid-template-columns: 112px minmax(0, 1fr) 20px;
-  min-height: 132px;
-  padding: 0 18px 0 0;
-}
 
-.studio-shell.studio-stack-shell .studio-native-canvas .studio-publishing-row.studio-compact-row:hover {
-  background: color-mix(in srgb, var(--studio-row-tone) 8%, var(--studio-panel-hover));
-}
 
-.studio-shell.studio-stack-shell .studio-native-canvas .studio-publishing-media {
-  min-height: 132px;
-  width: 112px;
-}
 
-.studio-shell.studio-stack-shell .studio-native-canvas .studio-publishing-copy > strong {
-  display: -webkit-box;
-  font-size: 17px;
-  line-height: 1.2;
-  overflow: hidden;
-  text-overflow: clip;
-  white-space: normal;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-}
 
-.studio-native-canvas .studio-publishing-queue > :not(:last-child)::after {
-  content: none;
-}
 
 @media (min-width: 1100px) {
-  .studio-shell.studio-stack-shell .studio-native-canvas .studio-publishing-queue {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-}
 
 @media (min-width: 1100px) and (min-height: 600px) {
-  body .studio-shell.studio-stack-shell[data-studio-page="stack"] main.page-canvas.studio-native-canvas:not(:has([data-studio-adaptive-workspace="true"])) .studio-publishing-queue {
-    grid-template-columns: minmax(0, 1fr);
   }
-}
 
 @media (max-width: 680px) {
-  .studio-shell.studio-stack-shell .studio-native-canvas .studio-publishing-row.studio-compact-row {
-    border-radius: 20px;
-    gap: 13px;
-    grid-template-columns: 88px minmax(0, 1fr) 18px;
-    min-height: 108px;
-    padding-right: 14px;
-  }
 
-  .studio-shell.studio-stack-shell .studio-native-canvas .studio-publishing-media {
-    min-height: 108px;
-    width: 88px;
   }
-}
 
 /* Media owns a three-part current action (copy, lifecycle, disclosure). The
    generic stack convergence intentionally reduces other current actions to

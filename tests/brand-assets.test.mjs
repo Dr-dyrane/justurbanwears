@@ -195,7 +195,7 @@ test("every live surface uses the centralized 2026.3 seal identity contract", as
     readFile(path.join(root, "lib", "brand", "assets.ts"), "utf8"),
     readFile(path.join(root, "components", "brand", "brand-icon.tsx"), "utf8"),
     readFile(path.join(root, "components", "brand", "brand-wordmark.tsx"), "utf8"),
-    readFile(path.join(root, "app", "foundation.css"), "utf8"),
+    readFile(path.join(root, "app", "studio-stack-navigation.css"), "utf8"),
     readFile(path.join(root, "app", "logo", "route.ts"), "utf8"),
     readFile(path.join(root, "app", "wordmark", "route.ts"), "utf8"),
     readFile(path.join(root, "app", "icon", "route.ts"), "utf8"),
@@ -226,7 +226,8 @@ test("every live surface uses the centralized 2026.3 seal identity contract", as
     "/favicon.svg?v=2026.3-seal",
     "/favicon.ico?v=2026.3-seal",
   ]) assert.ok(brandAssets.includes(`"${runtimePath}"`), runtimePath);
-  assert.match(styles, /@media \(max-width: 820px\) \{\s*\.studio-shell \.studio-brand-mark \{ display: inline-flex; \}/);
+  assert.match(styles, /\.studio-home-signoff-mark\s*\{/);
+  assert.doesNotMatch(studio, /studio-brand-mark/);
   assert.match(logoRoute, /justurban-logo\.svg\?raw/);
   assert.match(wordmarkRoute, /justurban-wordmark\.svg\?raw/);
   assert.match(iconRoute, /justurban-app-icon\.svg\?raw/);

@@ -41,6 +41,21 @@ experience markers.
 > These ceilings are regression guards, not performance claims. Tighten them
 > only after a measured optimization establishes a lower stable baseline.
 
+## Stylesheet source boundary
+
+Tailwind utilities come from runtime `app`, `components`, `lib`, and `hooks`
+sources plus the explicitly registered Streamdown package. Documentation,
+test fixtures, private working files, and workstation clone suffixes do not
+generate production CSS. New runtime source roots must be registered in
+`app/globals.css` and covered by `tests/studio-source-discovery.test.ts`.
+
+Retired selector branches may be removed only after checking literal and
+dynamic runtime references. Keep the surviving cascade and declarations intact;
+retain uncertain selectors, focus styles, and accessibility media rules. A
+functional pseudo may be removed only when an absent mandatory outer class
+makes its entire selector unreachable. Validate Shop and Studio at mobile and desktop
+sizes before release. The September 2026 cleanup does not raise these ceilings.
+
 ## Product rules
 
 - Public catalogue HTML must be useful before hydration.

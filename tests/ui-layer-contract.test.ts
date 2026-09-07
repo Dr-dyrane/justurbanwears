@@ -5,6 +5,7 @@ import test from "node:test";
 
 const foundation = readFileSync(join(process.cwd(), "app/foundation.css"), "utf8");
 const globals = readFileSync(join(process.cwd(), "app/globals.css"), "utf8");
+const studioStack = readFileSync(join(process.cwd(), "app/studio-stack-navigation.css"), "utf8");
 
 function escapeRegExp(value: string) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -32,7 +33,7 @@ test("keeps one named cross-surface layer contract", () => {
   assert.equal(selectorUses(globals, ".workspace", "z-index: var(--z-content)"), true);
   assert.equal(selectorUses(foundation, ".shop-discovery-bar", "z-index: var(--z-route-sticky)"), true);
   assert.equal(selectorUses(foundation, ".shop-search-toolbar", "z-index: var(--z-route-sticky)"), true);
-  assert.equal(selectorUses(foundation, ".studio-view-nav-wrap", "z-index: var(--z-studio-subnav)"), true);
+  assert.equal(selectorUses(studioStack, ".studio-command-header", "z-index: var(--z-header)"), true);
   assert.equal(selectorUses(foundation, ".shop-header", "z-index: var(--z-header)"), true);
   assert.equal(selectorUses(foundation, ".shop-mobile-shell", "z-index: var(--z-mobile-chrome)"), true);
   assert.equal(selectorUses(foundation, ".shop-skip-link", "z-index: var(--z-skip-link)"), true);
