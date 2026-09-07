@@ -19,7 +19,7 @@
 - Operational cutover status: fail-closed. The route runtime returns
   `ENGINE_DISABLED`, the canonical qualification-bundle resolver returns
   `null`, and the native-room profile has no closed qualification receipt
-- Updated: 2026-09-04
+- Updated: 2026-09-07
 
 This guide turns the manual evidence accumulated from Garments 001 through 024
 into one reusable **01–07 semantic-view engine contract**. The durable facade
@@ -101,7 +101,7 @@ readiness nor replace the resolver. Production callers provide only five typed
 infrastructure ports: file verification, trusted truth, execution context,
 correction preparation and locked-room resolution. They cannot supply either
 evaluator function, evaluator descriptor or a qualification PASS declaration.
-The server-owned qualification resolver must return the exact v2 qualification
+The server-owned qualification resolver must return the exact v3 qualification
 receipt: six-case evidence, independent-review receipt, receipt-bound technical
 and semantic evaluators, and the exact transparent-subject profile, native-room
 canvas policy, compositor revision and room-profile/stage evidence matrix. No
@@ -667,6 +667,31 @@ Run the zero-spend qualification report before release:
 ```bash
 npm run atelier:check:qualification -- --compact
 ```
+
+Qualification preparation is offline and draft-only:
+
+```bash
+npx tsx scripts/virtual-atelier/assemble-qualification-evidence.mts --help
+```
+
+The assembler inventories exact private evidence bytes under the gitignored
+`storage/virtual-atelier/qualification/staging/` directory. Supplied assertions,
+JSON pointers and actor labels are not proof: an unverified `SATISFIED` claim
+becomes `INDETERMINATE`. It cannot sign, install or promote a PASS packet.
+The v4 suite retains both room profiles and all eight room/stage cells;
+existing 1024x1536 operations remain supported alongside the approved native
+1024x1280 room.
+
+Independent reviewer authority additionally requires deployment-owned
+`STUDIO_ATELIER_REVIEWER_TRUST_POLICY_SHA256`, pinned to the canonical content
+of a separately approved reviewer policy. A packet cannot supply its own trust
+anchor. Leave this unset until that approval exists; a missing or mismatched
+pin blocks qualification, not ordinary Studio use.
+
+The visual-evaluator adapter is an unqualified foundation, not the production
+evaluator bundle. It decodes and verifies its images, requires rubric-bound
+authority IDs, roles and hashes, and returns `productionPass: false`. Releasing
+this code neither installs an evaluator nor enables paid generation.
 
 Do not enable a production final-scene claim merely because tests pass. The
 exact readback-verified room must resolve to a supported native profile, the

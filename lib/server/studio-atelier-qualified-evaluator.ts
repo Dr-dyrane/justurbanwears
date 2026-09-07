@@ -37,9 +37,9 @@ import { STUDIO_ATELIER_SUBJECT_COMPOSITE_REVISION } from "./studio-atelier-subj
 export { resolveStudioAtelierQualifiedEvaluatorBundle } from "./studio-atelier-qualified-evaluator-resolver";
 
 export const STUDIO_ATELIER_QUALIFICATION_SUITE_VERSION =
-  "juw.atelier-qualification.g004-g005-g009-g017-g023-g024.v3" as const;
+  "juw.atelier-qualification.g004-g005-g009-g017-g023-g024.v4" as const;
 export const STUDIO_ATELIER_QUALIFICATION_RECEIPT_SCHEMA_VERSION =
-  "juw.atelier-qualified-evaluator-receipt.v2" as const;
+  "juw.atelier-qualified-evaluator-receipt.v3" as const;
 
 export const STUDIO_ATELIER_QUALIFICATION_CASE_IDS = Object.freeze([
   "G004_FOUNDING_POSITIVE_TARGET",

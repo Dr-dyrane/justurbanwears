@@ -2,6 +2,7 @@ import { createHash, createPublicKey, verify as verifySignature } from "node:cry
 import { readFile, realpath } from "node:fs/promises";
 import { dirname, isAbsolute, relative, resolve } from "node:path";
 import { canonicalStringify } from "../studio/atelier/canonical";
+import { resolveStudioAtelierReviewerTrustPolicySha256 } from "./studio-atelier-reviewer-trust";
 import {
   STUDIO_ATELIER_QUALIFICATION_CASE_IDS,
   STUDIO_ATELIER_QUALIFICATION_READINESS_REPORT_SCHEMA_VERSION,
@@ -53,6 +54,8 @@ export const STUDIO_ATELIER_QUALIFICATION_BLOCKER_CATEGORIES = Object.freeze([
   "TRUST_POLICY_JSON_NON_CANONICAL",
   "TRUST_POLICY_SCHEMA_INVALID",
   "TRUST_POLICY_CONTENT_HASH_MISMATCH",
+  "TRUST_ANCHOR_MISSING",
+  "TRUST_ANCHOR_MISMATCH",
   "REVIEW_RECEIPT_MISSING",
   "REVIEW_RECEIPT_INVALID",
   "REVIEW_RECEIPT_NON_CANONICAL",
@@ -288,6 +291,15 @@ async function loadTrustPolicy(
   policyPath: string,
   state: MutableVerificationState,
 ): Promise<StudioAtelierReviewerTrustPolicy | null> {
+  const trustedPolicySha256 = resolveStudioAtelierReviewerTrustPolicySha256();
+  if (!trustedPolicySha256) {
+    addBlocker(
+      state,
+      "TRUST_ANCHOR_MISSING",
+      "server.reviewerTrustPolicy",
+      "The server has no independently configured reviewer trust-policy SHA-256 pin.",
+    );
+  }
   const bytes = await readDirectFile(
     policyPath,
     state,
@@ -320,6 +332,14 @@ async function loadTrustPolicy(
       "TRUST_POLICY_CONTENT_HASH_MISMATCH",
       "reviewerTrustPolicy.policyContentSha256",
       "The trust policy content hash does not match its canonical body.",
+    );
+  }
+  if (trustedPolicySha256 && expectedHash !== trustedPolicySha256) {
+    addBlocker(
+      state,
+      "TRUST_ANCHOR_MISMATCH",
+      "reviewerTrustPolicy.policyContentSha256",
+      "The supplied reviewer policy does not match the independently configured server trust anchor.",
     );
   }
   return parsed.data;

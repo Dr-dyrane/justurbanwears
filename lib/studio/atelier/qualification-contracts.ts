@@ -2,17 +2,17 @@ import { z } from "zod";
 import { canonicalStringify, sha256Text } from "./canonical";
 
 export const STUDIO_ATELIER_QUALIFICATION_EVIDENCE_SCHEMA_VERSION =
-  "juw.atelier-qualification-evidence.v1" as const;
+  "juw.atelier-qualification-evidence.v2" as const;
 export const STUDIO_ATELIER_QUALIFICATION_READINESS_REPORT_SCHEMA_VERSION =
   "juw.atelier-qualification-readiness-report.v1" as const;
 export const STUDIO_ATELIER_INDEPENDENT_REVIEW_SCHEMA_VERSION =
-  "juw.atelier-independent-qualification-review.v1" as const;
+  "juw.atelier-independent-qualification-review.v2" as const;
 export const STUDIO_ATELIER_REVIEWER_TRUST_POLICY_SCHEMA_VERSION =
   "juw.atelier-qualified-reviewer-trust-policy.v1" as const;
 export const STUDIO_ATELIER_EVALUATOR_BINDING_SCHEMA_VERSION =
   "juw.atelier-evaluator-implementation-binding.v1" as const;
 export const STUDIO_ATELIER_QUALIFICATION_SUITE_VERSION =
-  "juw.atelier-qualification.g004-g005-g009-g017-g023-g024.v3" as const;
+  "juw.atelier-qualification.g004-g005-g009-g017-g023-g024.v4" as const;
 
 export const STUDIO_ATELIER_QUALIFICATION_CASE_SPECS = Object.freeze([
   Object.freeze({
@@ -584,7 +584,7 @@ const reviewedEvaluatorsSchema = z.tuple([
 export const STUDIO_ATELIER_INDEPENDENCE_STATEMENT =
   "I am a human reviewer independent of evidence authorship and qualification execution, and I reviewed the exact content-addressed packet." as const;
 export const STUDIO_ATELIER_REVIEW_SIGNATURE_CONVENTION =
-  "juw.atelier-independent-qualification-review.v1\\n{reviewContentSha256}" as const;
+  "juw.atelier-independent-qualification-review.v2\\n{reviewContentSha256}" as const;
 
 export const studioAtelierIndependentReviewReceiptSchema = z.object({
   schemaVersion: z.literal(STUDIO_ATELIER_INDEPENDENT_REVIEW_SCHEMA_VERSION),

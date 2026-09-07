@@ -35,6 +35,14 @@ provider. Production cutover requires `PASS` from the exact installed packet,
 then the separate server-port, migration, private-store, authority and room
 preflights in the target environment.
 
+For offline evidence preparation, run
+`npx tsx scripts/virtual-atelier/assemble-qualification-evidence.mts --help`.
+Its private staging output is a draft inventory, never a qualification PASS
+or an installed packet. Do not convert supplied assertion labels into proof.
+An independently approved reviewer policy must be pinned separately through
+`STUDIO_ATELIER_REVIEWER_TRUST_POLICY_SHA256` before readiness can pass. See
+`ENGINE-GUIDE.md` for the trust boundary and retained eight-cell room matrix.
+
 Do not accept an evaluator or qualification claim from a route, browser or
 composition caller. Confirm the internal qualified-evaluator resolver holds one
 canonical six-case PASS receipt, its independent-review receipt and both exact

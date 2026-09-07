@@ -57,6 +57,7 @@ import {
 import {
   STUDIO_ATELIER_NATIVE_ROOM_QUALIFICATION_STAGES as RUNTIME_NATIVE_ROOM_QUALIFICATION_STAGES,
   STUDIO_ATELIER_QUALIFICATION_CASE_IDS as RUNTIME_QUALIFICATION_CASE_IDS,
+  STUDIO_ATELIER_QUALIFICATION_RECEIPT_SCHEMA_VERSION,
   STUDIO_ATELIER_QUALIFICATION_SUITE_VERSION as RUNTIME_QUALIFICATION_SUITE_VERSION,
   resolveStudioAtelierQualifiedEvaluatorBundle,
 } from "../lib/server/studio-atelier-qualified-evaluator";
@@ -73,8 +74,10 @@ import {
   STUDIO_GPT_IMAGE_2_TRANSPARENT_SUBJECT_PROFILE_REVISION,
 } from "../lib/ai/studio-gpt-image-2-subject-layer";
 import {
+  STUDIO_ATELIER_PROVIDER_CANVAS,
   STUDIO_ATELIER_ROOM_CANVAS_POLICY_REVISION,
   STUDIO_ATELIER_SUPPORTED_ROOM_CANVAS_PROFILES,
+  resolveStudioAtelierRoomCanvasProfile,
 } from "../lib/studio/atelier/canvas-policy";
 import { STUDIO_ATELIER_SUBJECT_COMPOSITE_REVISION } from "../lib/server/studio-atelier-subject-compositor";
 
@@ -415,9 +418,13 @@ async function withSyntheticFixture(
   runFixture: (fixture: SyntheticFixture) => Promise<void>,
 ): Promise<void> {
   const fixture = await makeSyntheticFixture();
+  const priorAnchor = process.env.STUDIO_ATELIER_REVIEWER_TRUST_POLICY_SHA256;
+  process.env.STUDIO_ATELIER_REVIEWER_TRUST_POLICY_SHA256 = fixture.policy.policyContentSha256;
   try {
     await runFixture(fixture);
   } finally {
+    if (priorAnchor === undefined) delete process.env.STUDIO_ATELIER_REVIEWER_TRUST_POLICY_SHA256;
+    else process.env.STUDIO_ATELIER_REVIEWER_TRUST_POLICY_SHA256 = priorAnchor;
     await rm(fixture.root, { recursive: true, force: true });
   }
 }
@@ -429,6 +436,22 @@ function blockerCategories(report: Awaited<ReturnType<
 }
 
 test("qualification evidence contract is pinned to the exact current runtime identities", () => {
+  assert.equal(
+    STUDIO_ATELIER_QUALIFICATION_SUITE_VERSION,
+    "juw.atelier-qualification.g004-g005-g009-g017-g023-g024.v4",
+  );
+  assert.equal(
+    STUDIO_ATELIER_QUALIFICATION_EVIDENCE_SCHEMA_VERSION,
+    "juw.atelier-qualification-evidence.v2",
+  );
+  assert.equal(
+    STUDIO_ATELIER_INDEPENDENT_REVIEW_SCHEMA_VERSION,
+    "juw.atelier-independent-qualification-review.v2",
+  );
+  assert.equal(
+    STUDIO_ATELIER_QUALIFICATION_RECEIPT_SCHEMA_VERSION,
+    "juw.atelier-qualified-evaluator-receipt.v3",
+  );
   assert.equal(STUDIO_ATELIER_QUALIFICATION_SUITE_VERSION, RUNTIME_QUALIFICATION_SUITE_VERSION);
   assert.deepEqual(
     STUDIO_ATELIER_QUALIFICATION_CASE_SPECS.map((item) => item.caseId),
@@ -447,6 +470,31 @@ test("qualification evidence contract is pinned to the exact current runtime ide
       transparentGuardPixels: profile.transparentGuardPixels,
     })),
   );
+  assert.deepEqual(STUDIO_ATELIER_PROVIDER_CANVAS, { width: 1024, height: 1536 });
+  assert.equal(
+    resolveStudioAtelierRoomCanvasProfile({ width: 1024, height: 1536 })?.profileId,
+    "atelier-room-native-2x3-v1",
+  );
+  assert.deepEqual(
+    resolveStudioAtelierRoomCanvasProfile({ width: 1024, height: 1280 }),
+    {
+      profileId: "atelier-room-native-4x5-center-window-v1",
+      policyRevision: "juw.atelier-native-room-canvas.v1",
+      roomCanvas: { width: 1024, height: 1280 },
+      subjectWindow: { left: 0, top: 128, width: 1024, height: 1280 },
+      transparentGuardPixels: 16,
+    },
+  );
+  assert.deepEqual(STUDIO_ATELIER_ROOM_STAGE_MATRIX, [
+    { profileId: "atelier-room-native-2x3-v1", stage: "ROOM_FINAL_05" },
+    { profileId: "atelier-room-native-2x3-v1", stage: "SIBLING_06" },
+    { profileId: "atelier-room-native-2x3-v1", stage: "SIBLING_07_CORE" },
+    { profileId: "atelier-room-native-2x3-v1", stage: "SIBLING_07_RECOVERY" },
+    { profileId: "atelier-room-native-4x5-center-window-v1", stage: "ROOM_FINAL_05" },
+    { profileId: "atelier-room-native-4x5-center-window-v1", stage: "SIBLING_06" },
+    { profileId: "atelier-room-native-4x5-center-window-v1", stage: "SIBLING_07_CORE" },
+    { profileId: "atelier-room-native-4x5-center-window-v1", stage: "SIBLING_07_RECOVERY" },
+  ]);
   const adapterBinding = {
     baseAdapterId: STUDIO_GPT_IMAGE_2_ADAPTER,
     baseAdapterVersion: STUDIO_GPT_IMAGE_2_ADAPTER_VERSION,
@@ -516,6 +564,38 @@ test("qualification evidence verifier remains non-installing after complete synt
     assert.equal(report.verified.evaluatorBindings, 2);
     assert.ok(report.verified.exactFileBindings > 0);
     assert.equal(resolveStudioAtelierQualifiedEvaluatorBundle(), null);
+  });
+});
+
+test("a self-signed packet and policy cannot introduce their own reviewer authority", async (t) => {
+  await t.test("no independently configured trust anchor", async () => {
+    await withSyntheticFixture(async (fixture) => {
+      delete process.env.STUDIO_ATELIER_REVIEWER_TRUST_POLICY_SHA256;
+      const report = await inspectStudioAtelierQualificationEvidence({
+        packetPath: fixture.packetPath,
+        reviewerTrustPolicyPath: fixture.policyPath,
+      });
+      assert.equal(report.status, "BLOCKED");
+      assert.ok(blockerCategories(report).has("TRUST_ANCHOR_MISSING"));
+    });
+  });
+  await t.test("valid attacker signature and self-hashed policy still mismatch the server pin", async () => {
+    await withSyntheticFixture(async () => {
+      // A second complete fixture has its own valid key, policy hash and signature.
+      // It must not replace the independently configured first reviewer's key.
+      const substituted = await makeSyntheticFixture();
+      try {
+        const report = await inspectStudioAtelierQualificationEvidence({
+          packetPath: substituted.packetPath,
+          reviewerTrustPolicyPath: substituted.policyPath,
+        });
+        assert.equal(report.status, "BLOCKED");
+        assert.ok(blockerCategories(report).has("TRUST_ANCHOR_MISMATCH"));
+        assert.ok(!blockerCategories(report).has("REVIEW_SIGNATURE_INVALID"));
+      } finally {
+        await rm(substituted.root, { recursive: true, force: true });
+      }
+    });
   });
 });
 
@@ -786,6 +866,6 @@ test("zero-spend readiness CLI reports categorical blockers without a packet", (
   assert.equal(report.providerCallsMade, 0);
   assert.deepEqual(
     new Set(report.blockers.map((blocker) => blocker.category)),
-    new Set(["PACKET_MISSING", "TRUST_POLICY_MISSING"]),
+    new Set(["PACKET_MISSING", "TRUST_POLICY_MISSING", "TRUST_ANCHOR_MISSING"]),
   );
 });
