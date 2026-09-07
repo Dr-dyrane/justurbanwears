@@ -12,7 +12,10 @@ operation authority.
 ## Development lifecycle simulator
 
 `?scenario=lifecycle` is a development-only, in-memory compatibility fixture.
-It never reads or writes connected Studio state and resets on reload. Wardrobe,
+Its business projection resets on reload; it is not a guarantee of complete
+network isolation. The [2026-09-07 iOS Simulator check](../screenshots/studio-ux/2026-09-07-ios-simulator/README.md)
+found that Home still requests the connected profile-avatar endpoint. Do not
+use the fixture flag alone as a no-connected-access safety boundary. Wardrobe,
 Media and Operations are its supported surfaces. Because the fixture does not
 mount the connected Orders routes, Studio links translate `/studio/orders` to
 `/studio/operations?view=orders`; a specific order also carries its reference

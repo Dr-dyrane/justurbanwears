@@ -1,4 +1,14 @@
-# Historical Studio UX proof
+# Studio UX evidence
+
+## Current partial capture
+
+The [2026-09-07 iOS Simulator check](2026-09-07-ios-simulator/README.md)
+contains native Safari Search/Ask keyboard and nested-media dismissal evidence
+at source `14cf58f`. It is explicitly partial: local fixtures, light theme,
+no mutation and no physical-iPhone certification. The receipt records the
+broken fixture avatar, keyboard layout observation and unverified form scroll.
+
+## Historical baseline
 
 These captures are the historical ADR 0041 baseline, not current Studio release
 acceptance. In particular, the Home work-card grid and contextual FABs shown

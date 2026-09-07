@@ -148,6 +148,21 @@ authority and wardrobe reads returned 200. No business data, private media,
 database configuration or paid generation changed. This release does not close
 the outstanding screenshot refresh or `STU-012C` real-iOS certification.
 
+### iOS Simulator evidence — 2026-09-07
+
+At the operator's request, the next check used Apple Simulator iPhone 17 Pro
+Max / iOS 26.5 Safari after iPhone Mirroring reported camera use. Source
+`14cf58f` rendered local lifecycle fixtures. Search with the native keyboard,
+piece-to-Ask context, unsent Ask text across keyboard dismissal and nested-media
+Close → sheet Close were exercised. The [five native captures and bounded
+receipt](../screenshots/studio-ux/2026-09-07-ios-simulator/README.md) are partial
+evidence, not a production or physical-device pass. Ask's header scrolls away
+with the keyboard, the fixture avatar still makes a failing connected-endpoint
+request, and scrolling to garment form fields was not reliably exercised.
+`STU-012C` and the full current-shell screenshot refresh remain open. No business
+mutation or provider dispatch occurred; no runtime change accompanies this
+receipt.
+
 Two observations from the audit are intentional and should not be “fixed” into
 new navigation:
 
