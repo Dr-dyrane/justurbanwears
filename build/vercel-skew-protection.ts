@@ -227,6 +227,11 @@ function wrapRenderBuiltUrl(
   if (taggedRenderer[VINEXT_RENDER_WRAPPER]) return renderer;
 
   const wrapped: RenderBuiltAssetUrl = (filename, context) => {
+    // Nitro copies public files to the output root. Vinext's renderer drops
+    // context.type and otherwise moves CSS masks under /_next/static, where
+    // those files do not exist. Public URLs are not content-hashed assets.
+    if (context.type === "public") return `/${filename.replace(/^\/+/, "")}`;
+
     const rendered = renderer(filename, context);
     return typeof rendered === "string"
       ? appendVercelDeploymentId(rendered, deploymentId)
