@@ -170,3 +170,75 @@ remain unchanged; `STU-012C` is still partial.
 
 Capture: unmodified 1320 × 2868 PNG, SHA-256
 `ae42012d004052c06115bd0bbba9fc920bee40409ff16ed7cd0b139dd41afd69`.
+
+## Next bounded cell — native verification blocked, 15:11
+
+Base: clean `main` / `origin/main` at
+`d13f9552a06738b78af3e83ab0e7cdf5baeb90d2`. That revision, including the
+separate footer-copy commit `0e1e934`, was live-verified through READY
+`dpl_9aniKySJqkNAHkSoStt4f8Dgy6N8`; production smoke passed 35/35 and the
+authenticated listing editor rendered 16px inputs, select and textarea.
+
+The next candidate is **local-uncommitted**, not released. It binds the mobile
+task sheet to the visible viewport and, after layout, reveals the active field
+inside its nearest scroll owner. It excludes nested-dialog focus, preserves
+pinch zoom and existing desktop geometry, and disposes its listeners on close.
+Runtime paths: `lib/studio/ui/task-sheet-viewport.ts`,
+`components/studio/atoms/studio-task-sheet.tsx`, and
+`app/studio-stack-navigation.css`. The regression file is
+`tests/studio-task-sheet-viewport.test.ts`.
+
+The six new behavioral cases and existing focused contracts pass 31/31;
+targeted lint and diff checks pass. One independent source review found no
+blocker in the candidate. Native acceptance is **not proven**:
+Simulator screenshots and accessibility reads still show the running iPhone,
+but taps return `noWindowsAvailable`. Reattaching the app and one tool-kernel
+reset did not restore interaction. This is a computer-control blocker, not
+evidence that the candidate passes or fails on iOS. The local host remains on
+`127.0.0.1:3001`. No build, commit, push, deployment or domain mutation was
+performed for this candidate. Production remains at `d13f955`.
+
+Resume with native title, price and multiline-description focus: the active
+field and Close must be simultaneously reachable with the keyboard open.
+Then verify Done, Close, nested dismissal and unchanged desktop behavior;
+run the single integration/build/CSS gate only after native acceptance.
+
+## Resumed cell — focused native acceptance, 15:27–15:33
+
+Simulator interaction recovered during the user-requested resume. The same
+iPhone 17 Pro Max / iOS 26.5 Safari, light theme and isolated lifecycle fixture
+were used; this is not physical-device or authenticated-role certification.
+
+- Title, price and multiline-description focus keep the active field and the
+  Facts & price header/Close simultaneously above the native keyboard.
+- A native Return and `A` were entered in the description; the new line stayed
+  visible. [Unmodified native capture](09-form-keyboard-corrected.png) is
+  1320 × 2868, SHA-256
+  `0cc252b480117794b24201fbd79cd72e90704e707960d45aa91453575e2edcb4`.
+- Keyboard Done restores the full sheet. Close returns to the same Piece.
+  Native touch-drag scrolls the sheet back to its photos; Fabric detail opens
+  above it and closing that preview preserves the parent sheet.
+- The temporary unsaved description edit was cleared by the CSS-refresh reload;
+  subsequent native inspection showed the original fixture description. No
+  Save, Publish, Confirm, business mutation or paid call was performed.
+- The desktop check exposed an existing universal-CSS-reset defect, not a
+  viewport-helper regression: `.studio-task-sheet` lacked `margin: auto` and
+  rendered at x=0/y=0. Restoring that property in `app/foundation.css` centers
+  the 840 × 820 sheet at x=300/y=40 in a 1440 × 900 viewport. Header, focused
+  description and Close remain visible; scrollWidth equals clientWidth (840).
+  Nested-preview dismissal restores the preview trigger, then closing the
+  task sheet restores Facts & price. Mobile placement overrides remain intact.
+
+The original focused set passed 31/31. The centering correction added one
+contract; its affected file passed 7/7 with clean lint. One independent review
+covered the candidate and confirmed the desktop root cause. Release typecheck
+and the native Vercel build passed. The first CSS gate exceeded its unchanged
+560 KiB budget by 0.14 KiB; consolidating the identical theme backgrounds into
+the existing `--studio-canvas-deep` token brought the final build to 559.94 KiB.
+CSS/font certification now passes. Release verification follows this receipt;
+do not infer deployment from these local results. No migration or external
+configuration is required.
+
+This closes the bounded native form-keyboard check only. Full six-surface,
+physical-device, landscape, both authenticated admins and mutation/recovery
+certification remain outside this cell, so `STU-012C` stays partial.

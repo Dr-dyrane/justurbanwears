@@ -11,6 +11,7 @@ import { createPortal } from "react-dom";
 import { ArrowLeft, X } from "lucide-react";
 import { useDocumentScrollLock } from "../../../hooks/use-document-scroll-lock";
 import { useHistoryBackedDialog } from "../../../hooks/use-history-backed-dialog";
+import { bindStudioTaskSheetViewport } from "../../../lib/studio/ui/task-sheet-viewport";
 
 const subscribeToClientReady = () => () => {};
 const getClientReady = () => true;
@@ -62,6 +63,12 @@ export function StudioTaskSheet({
   const mounted = useSyncExternalStore(subscribeToClientReady, getClientReady, getServerReady);
   const titleId = useId();
   useDocumentScrollLock(open);
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!mounted || !open || !dialog) return;
+    return bindStudioTaskSheetViewport(dialog, window.visualViewport);
+  }, [mounted, open]);
 
   const acceptDismiss = useCallback(() => {
     const dialog = dialogRef.current;

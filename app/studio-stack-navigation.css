@@ -3739,19 +3739,11 @@ html[data-theme="dark"] .studio-stack-shell {
 }
 /* Every bounded CRUD flow is one sheet canvas—not cards inside a card. */
 .studio-task-sheet.studio-task-sheet .studio-task-sheet-frame {
-  background: var(--studio-panel-strong);
+  background: var(--studio-canvas-deep);
   border: 0;
 }
 
-html[data-theme="dark"] .studio-task-sheet.studio-task-sheet .studio-task-sheet-frame {
-  background: #090909;
-}
-
-html:not([data-theme="dark"]) .studio-task-sheet.studio-task-sheet .studio-task-sheet-frame {
-  background: #fffaf5;
-}
-
-.studio-task-sheet.studio-task-sheet .studio-task-sheet-header {
+.studio-task-sheet.studio-task-sheet :is(.studio-task-sheet-header, .studio-task-sheet-footer) {
   background: transparent;
   border: 0;
   box-shadow: none;
@@ -3762,9 +3754,6 @@ html:not([data-theme="dark"]) .studio-task-sheet.studio-task-sheet .studio-task-
 }
 
 .studio-task-sheet.studio-task-sheet .studio-task-sheet-footer {
-  background: transparent;
-  border: 0;
-  box-shadow: none;
   padding-inline: 0;
 }
 
@@ -5152,6 +5141,12 @@ body .studio-shell.studio-stack-shell main.page-canvas.studio-native-canvas:has(
 }
 
 @media (max-width: 760px) {
+  body .studio-task-sheet {
+    height: calc(var(--studio-visual-height, 100dvh) - 12px);
+    inset-block: calc(var(--studio-visual-top, 0px) + 12px) auto;
+    margin-block: 0;
+    min-height: 0;
+  }
   body .studio-shell.studio-stack-shell:has(.studio-ask-page) {
     height: var(--studio-visual-height, 100dvh);
     inset-inline: 0;
