@@ -127,3 +127,46 @@ open; these two corrected observations do not close `STU-012C`.
 | --- | --- |
 | `06-ask-keyboard-corrected.png` | `8e3716c2c7e0c7e665d5b80bff888629f9b156763e71d59da3b8aacd515127fe` |
 | `07-ask-dismissed-corrected.png` | `a2b8235f46243f502a3ac44785f6b06972a2fe7f33bf5823fa0c464fd123f7d8` |
+
+## Release receipt for the preceding correction
+
+`b2ea93d5f2110d5d5fedf8b8993649628aa4f2ff` was live-verified on the canonical
+domain through READY deployment `dpl_7qo6K6XvDqbkfv5du7tqgLZzYuBV`.
+Production smoke passed 35/35. A fresh authenticated Ask document loaded that
+deployment's CSS: at 437 × 782, the composer ended exactly at y=782 with its
+own 74.195px height and the thread was the scroll owner. At 1440 × 900,
+History opened and dismissed its established side island. This production
+browser evidence remains separate from the native fixture evidence above.
+
+## Garment form follow-up — 14:29–14:59
+
+Source: `b2ea93d` plus the bounded `app/foundation.css` control-font correction.
+The same native Simulator and isolated local fixture were used. The 9px field
+label size had been inherited by inputs, selects and textareas: focusing a
+field caused Safari auto-zoom, right-edge clipping and header displacement.
+The retained correction explicitly sizes control text at 16px, keeps the
+existing label typography, and does not disable user zoom.
+
+- Native title typing no longer auto-zooms or clips the field's right edge.
+- [Description multiline typing](08-form-multiline-partial.png) shows a newline
+  and temporary `A` above the keyboard. Keyboard Done restores the sheet header;
+  Close returns to Piece. Reload cleared all unsaved fixture edits. No Save,
+  Publish or domain command was dispatched.
+- **Still open:** Safari can pan the sheet header/Close offscreen while the
+  keyboard is open. One attempted visual-viewport sheet adjustment kept Close
+  visible but hid the focused description below the keyboard. That adjustment
+  and its source assertion were removed after native recheck; they are not
+  part of the release. A further keyboard-scroll correction needs a separately
+  bounded cell, not a claim that the native form is fully certified.
+- Find on Page was used to reach the fields after native automation scroll and
+  drag did not move the sheet. Touch-scroll certification therefore remains
+  open; no product touch-scroll failure is inferred from that tool limitation.
+
+Focused checks: 25/25; targeted lint, release typecheck, native Vercel build and
+CSS/font budget passed (559.98 KiB raw CSS / 560 KiB). One independent review
+found no blocker in the retained font change. No migration or external
+configuration is required. Physical-device and authenticated-role limits
+remain unchanged; `STU-012C` is still partial.
+
+Capture: unmodified 1320 × 2868 PNG, SHA-256
+`ae42012d004052c06115bd0bbba9fc920bee40409ff16ed7cd0b139dd41afd69`.

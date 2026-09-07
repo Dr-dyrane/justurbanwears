@@ -82,6 +82,16 @@ test("Ask Studio keeps icon-led summaries compact and actionable on mobile", () 
   assert.match(stackCss, /\.studio-ask-suggestion \{[\s\S]*?min-height: 44px;/);
 });
 
+test("Studio form controls prevent iOS focus zoom without disabling user zoom", () => {
+  const controls = css.match(/\.studio-field\s+:is\(\s*input\s*,\s*select\s*,\s*textarea\s*\)\s*\{([^}]*)\}/);
+  assert.ok(controls, "Studio inputs, selects and textareas share one control rule");
+  assert.match(controls[1], /(?:^|;)\s*font-size:\s*16px\s*;/);
+  const label = css.match(/\.studio-field\s*\{([^}]*)\}/);
+  assert.ok(label, "Studio field labels retain their own typography");
+  assert.match(label[1], /(?:^|;)\s*font-size:\s*9px\s*;/);
+  assert.doesNotMatch(rootLayout, /user-scalable|maximum-scale|userScalable|maximumScale/);
+});
+
 test("Home presents four primary destinations while search retains all seven domains", () => {
   for (const key of ["wardrobe", "atelier", "shop", "orders", "inventory", "models", "operations"]) {
     assert.match(serviceRegistry, new RegExp(`key: "${key}"`));
